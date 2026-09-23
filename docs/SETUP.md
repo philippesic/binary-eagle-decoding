@@ -55,7 +55,7 @@ An uncommitted project has no HEAD yet; the manifest records the failed revision
 query and working-tree state explicitly. A manifest alone does not preserve
 uncommitted code: commit or archive the exact changes before reporting results.
 
-## First model run (next milestone)
+## Model preparation
 
 1. Resolve immutable Hugging Face revisions for the target and draft, and record
    them in an experiment-specific copy of `configs/baseline.toml`.
@@ -76,11 +76,12 @@ python third_party/llama.cpp/convert_hf_to_gguf.py models/hf/Qwen3-4B_eagle3 \
 ```
 
 The pinned upstream [conversion and EAGLE instructions](../third_party/llama.cpp/docs/speculative.md)
-describe the model pairing and target metadata requirement. FP16 is the proposed
-baseline; do not treat a BF16 checkpoint file as proof of native BF16 execution
-on Turing.
+describe the model pairing and target metadata requirement. FP16 is the planned
+comparison anchor; do not treat a BF16 checkpoint file as proof of native BF16
+execution on Turing.
 
-Run these servers separately, using the same prompts and request parameters:
+For the direct comparison with native W1A1, run these servers separately using
+the same prompts and request parameters:
 
 ```sh
 # Target only
@@ -100,9 +101,9 @@ Run these servers separately, using the same prompts and request parameters:
 
 These are starting commands, not validated benchmark results. Check actual
 memory placement, KV cache settings, chat template/thinking mode, and successful
-generation before freezing a baseline. FP16 target weights plus draft, KV cache,
-and workspaces may strain available memory; measure this before increasing
-context. Preserve the same settings across comparisons. See
+generation before the paired measurements. FP16 target weights plus draft, KV
+cache, and workspaces may strain available memory; check this when preparing the
+comparison. Preserve the same settings across variants. See
 [evaluation](EVALUATION.md) for the full reporting protocol.
 
 `llama-bench` is useful for target-only diagnostics, but the speculative

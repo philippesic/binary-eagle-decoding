@@ -20,8 +20,8 @@ The initial time budget is approximately two to three weeks of experimental work
 - Candidate target: `Qwen/Qwen3-4B`.
 - Candidate drafter: `AngelSlim/Qwen3-4B_eagle3`.
 - Runtime: extend llama.cpp/ggml rather than building an inference engine.
-- Day-to-day experiment hardware: RTX 5080. Use it for conversion, baseline
-  bring-up, W1A1 simulation/QAT, and general iteration when available.
+- Day-to-day experiment hardware: RTX 5080. Use it for conversion, W1A1
+  simulation/QAT, and general iteration when available.
 - Binary Tensor Core measurement hardware: RTX 2080 Ti, Turing, compute
   capability 7.5. Re-run all comparison anchors on this device before making
   an SM75 end-to-end speedup claim.
@@ -92,10 +92,10 @@ preserve them as reviewable commits or patches before sharing experiments.
 
 | Stage | Work and deliverable | Decision gate |
 | --- | --- | --- |
-| 0: baseline, days 1–3 | Build and convert the pair on RTX 5080; validate target-only and FP16 EAGLE generation; record memory, layer shapes, acceptance and latency. Reproduce anchors on SM75 when available. | Both runs work under the same workload and fit memory. Resolve compatibility before quantization. |
-| 1: acceptance, days 3–7 | Simulate W1A1 in PyTorch; ablate linear groups and scaling; use bounded QAT if initial acceptance is poor. | Measure held-out accepted tokens per round. Estimate the draft-time reduction needed to beat normal EAGLE; stop or narrow scope if even optimistic savings cannot help. |
+| 0: preparation, days 1–3 | Pin and convert the target/draft pair; audit drafter layer shapes, precision, and binary eligibility. Resolve conversion or memory issues that block W1A1 work. | The model artifacts and graph information needed for simulation are available. A separate FP16 EAGLE benchmark is not a prerequisite. |
+| 1: acceptance, days 3–7 | Simulate W1A1 in PyTorch; ablate linear groups and scaling; use bounded QAT if initial acceptance is poor. | Measure held-out W1A1 acceptance and choose a candidate for native execution. Defer relative throughput and break-even conclusions until paired comparison runs. |
 | 2: kernels, days 7–11 | Implement a numerical reference, packer, and SM75 XOR/POPCOUNT kernel for measured shapes; benchmark packing-inclusive latency. | Correctness covers tails, scales, layouts, and zero-sign behavior. Real layer shapes show useful savings after packing and launch costs. |
-| 3: integration, days 11–15 | Route selected draft operations to binary execution; compare end-to-end runs; profile bottlenecks and write a report. | Report repeatable throughput gains or a quantified negative result with artifacts sufficient to reproduce it. |
+| 3: integration and comparison, days 11–15 | Route selected draft operations to binary execution. Run target-only, FP16 EAGLE, and native W1A1 under matched settings on each relevant GPU; measure acceptance and end-to-end latency together, profile bottlenecks, and write a report. | Report repeatable throughput gains or a quantified negative result with artifacts sufficient to reproduce it. |
 
 These dates are planning estimates, not a reason to expand scope. If a gate fails,
 run a small diagnostic or ablation, record the outcome, and favor a clear result
@@ -103,8 +103,9 @@ over adding more architectures or training infrastructure.
 
 An approximate planning model is `throughput = emitted tokens per round / round
 time`, with round time including draft, verification, and all other overhead.
-Use measured values, including target-emitted tokens, when estimating the
-break-even draft cost. The final decision comes from end-to-end timing.
+Use values measured in the paired comparison, including target-emitted tokens,
+when estimating the break-even draft cost. The final decision comes from
+end-to-end timing.
 
 ## Comparison and evidence
 
@@ -113,7 +114,9 @@ comparisons are W8A8, W4A4, and W1A1 EAGLE. Record the actual execution path for
 every precision; weight-only GGUF quantization is not automatically W8A8/W4A4.
 If a genuine low-bit baseline is unavailable within scope, state that limitation.
 Keep 5080 development results separate from 2080 Ti binary-speed conclusions;
-each hardware track needs its own same-device anchors.
+each hardware track needs its own same-device anchors. Measure the anchors in
+direct, matched comparisons with native W1A1 rather than as a separate early
+baseline milestone.
 
 Measure draft latency, activation packing, binary kernels, output-head cost,
 verification latency, accepted/drafted tokens, accepted tokens per round,

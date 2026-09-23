@@ -72,10 +72,11 @@ Check greedy outputs against the unchanged target and investigate divergences;
 for stochastic sampling, validate the verifier's required proposal semantics
 and distributional behavior instead of requiring identical random sequences.
 
-Evaluate acceptance on held-out prompts before kernel investment. Estimate an
-optimistic upper bound using measured emitted tokens per round and verification
-cost with draft time reduced toward zero. If that bound cannot beat FP16 EAGLE,
-prioritize diagnosing acceptance and stop broad kernel development.
+Evaluate W1A1 acceptance on held-out prompts before kernel investment. During
+the direct comparison, estimate an optimistic upper bound using measured emitted
+tokens per round and verification cost with draft time reduced toward zero. If
+that bound cannot beat FP16 EAGLE, prioritize diagnosing acceptance over further
+kernel optimization.
 
 Publish a positive result only when repeated end-to-end measurements support it
 and variability is disclosed. Otherwise quantify the bottleneck and which
