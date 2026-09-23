@@ -1,0 +1,20 @@
+name: Scaffold checks
+
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.9.15"
+      - run: make setup check
+      - run: make build-cpu
+      - run: ./build/llama-cpu/bin/llama-server --version

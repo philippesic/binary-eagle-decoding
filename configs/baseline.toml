@@ -1,0 +1,32 @@
+# Planning manifest only: no benchmark runner consumes this file yet.
+schema_version = 1
+status = "planned"
+
+[models]
+target = "Qwen/Qwen3-4B"
+draft = "AngelSlim/Qwen3-4B_eagle3"
+# Resolve immutable HF commit IDs before downloading/converting.
+target_revision = "UNRESOLVED"
+draft_revision = "UNRESOLVED"
+target_precision = "f16"
+draft_precision = "f16"
+
+[runtime]
+llama_cpp_revision = "6e60f35608ec6918b44a9839c0c433687165f086"
+backend = "cuda"
+cuda_architectures = [75]
+gpu = "RTX 2080 Ti"
+context_tokens = 2048
+concurrent_requests = 1
+
+[evaluation]
+modes = ["none", "draft-eagle3"]
+max_draft_tokens = 5
+max_output_tokens = 256
+temperature = 0.0
+seed = 42
+warmup_requests = 3
+repetitions = 5
+# Proposed starting values; freeze prompts and all runtime parameters at gate 0.
+prompt_manifest = "UNRESOLVED"
+include_prefill_in_decode_tps = false

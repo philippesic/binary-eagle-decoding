@@ -1,0 +1,23 @@
+# Applies to new Codex sessions started in this repository.
+model = "gpt-6-sol"
+model_reasoning_effort = "high"
+# The local model catalog is configured for a 1,050,000-token context window.
+# 630,000 tokens is 60%; revisit this if the selected model/window changes.
+model_auto_compact_token_limit = 630000
+
+[features]
+hooks = true
+
+[agents]
+default_subagent_model = "gpt-6-luna"
+default_subagent_reasoning_effort = "high"
+
+[[hooks.SessionStart]]
+matcher = "^(startup|resume|compact)$"
+
+[[hooks.SessionStart.hooks]]
+type = "command"
+command = '/usr/bin/python3 "$(git rev-parse --show-toplevel)/.codex/hooks/compaction_handoff.py"'
+timeout = 10
+additionalContextLimit = 1800
+statusMessage = "Checking project handoff state"
