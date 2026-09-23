@@ -1,10 +1,12 @@
 # Current project status
 
 **Active goal:** [PyTorch W1A1 EAGLE drafter](goals/pytorch-w1a1-eagle.md).
-The current stage is graph/loading audit and fake-binary quantizer construction.
-No remote jobs are running; RTX 5080 access details are pending. The next
-actions are to dispatch independent audit/implementation work, pin model
-snapshots, and build the held-out acceptance path. The target stays unchanged.
+The graph audit, fake-binary quantizer, selective adapter, and acceptance runner
+are committed on `main`. The current stage is loader review and preparation for
+the first full model run. No remote jobs are running; RTX 5080 access details
+are pending. The next actions are to lock the CUDA environment, download pinned
+snapshots, verify model parity, and run the held-out prompts. The target stays
+unchanged.
 
 **Repository:** initial llama.cpp scaffold and agent infrastructure are in place.
 The published target/draft pair is the starting point; local conversion, remote

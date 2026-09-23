@@ -76,18 +76,40 @@ goal is about binary-operand quality and acceptance, not native speed.
   pass with Frameworks Python 3.11 and PyTorch 2.8.0. The project uv environment
   does not yet include PyTorch; lock the simulation environment before full runs.
 - `adapter_advice` found official AngelSlim EAGLE-3 PyTorch inference code and
-  recommended using it as the forward implementation/oracle. Pin its source at
-  `0358da9c651e6a7d7ccafea26ced4b9c98d11681` and wrap selected `nn.Linear`
-  modules. This avoids reimplementing head dimension 128, Q/K/V cache semantics,
-  recurrent prenorm state, and offset-form `d2t` for the first candidate. A
-  bounded disabled-quantization parity check must precede acceptance runs.
+  recommended it as the forward implementation/oracle. Source pin:
+  `0358da9c651e6a7d7ccafea26ced4b9c98d11681`. This avoids reimplementing
+  head dimension 128, Q/K/V cache semantics, recurrent prenorm state, and
+  offset-form `d2t` for the first candidate.
+- `eagle_adapter` implemented selective wrappers for feature fusion, attention,
+  FFN, and the drafter-owned head. It was reviewed, formatted, and integrated
+  into `main` at `3a98c7c`; 13 local tests passed with Frameworks Python 3.11
+  and PyTorch 2.8.0. Its temporary worktree and branch were removed after push.
+- Source audit of the pinned AngelSlim greedy verifier found that
+  `accept_length_list` excludes the target-selected seed; each tree proposes
+  `total_token - 1` draft nodes. See
+  `experiments/eagle3-acceptance-metric-audit.md`.
+- The orchestrator added the pinned experiment config, snapshot download and
+  hash script, strict official-code loader, and held-out acceptance runner at
+  `6e22fae`. The runner dry run sees 12 prompts and five variants. The target
+  tokenizer-only snapshot was fetched locally; non-thinking prompt lengths are
+  32–56 tokens. No target or draft weight payloads have been downloaded.
+- Isolated local import of the pinned AngelSlim source succeeds with Python
+  3.11, PyTorch 2.14, and Transformers 5.6. A meta-device instance of the
+  actual drafter accepted all nine eligible wrappers. Recent Transformers
+  synthesizes a default RoPE dictionary when the raw draft config says null;
+  the local loader restores `None` for this pinned unscaled checkpoint. Full
+  target/drafter loading and forward parity remain untested.
+- `acceptance_audit` is independently reviewing the committed loader/runner;
+  it owns no files or GPU.
 - The orchestrator prepared 12 self-authored held-out prompts across prose,
   code, and reasoning in `configs/acceptance_prompts.jsonl`. They will not be
   used for training or calibration.
 - The RTX 5080 host/user details are pending from the user. The local host
   registry is blank. RTX 2080 Ti is outside this goal.
-- Next: build selective wrapping for the pinned official drafter, lock a usable
-  PyTorch environment, implement the acceptance runner, then execute the pinned
-  run on RTX 5080. Before the sweep, check hidden-state taps `[2, 18, 33]`,
-  token/feature shift, absolute positions, cache rollback, and offset-form
-  `d2t` with a short deterministic continuation.
+- Next: incorporate the runner review, lock a CUDA environment on RTX 5080,
+  download and hash both pinned snapshots, then verify full-checkpoint forward
+  behavior and a short deterministic target-only/speculative continuation.
+  Before the held-out sweep, check hidden-state taps `[2, 18, 33]`, token/feature
+  shift, absolute positions, cache rollback, and offset-form `d2t`. Produce
+  per-prompt raw counts and a compact acceptance report. The RTX 5080 host/user
+  details remain the only external input needed; no remote jobs are running.
