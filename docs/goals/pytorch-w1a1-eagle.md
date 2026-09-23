@@ -66,10 +66,17 @@ goal is about binary-operand quality and acceptance, not native speed.
   target `1cfa9a7208912126459214e8b04321603b3df60c`; drafter
   `fd331e59626c8e95c392381a16ee59d518727fbb`. Model file hashes remain
   pending until download.
-- `eagle_audit` is reviewing the graph/loading path without edits. `quant_core`
-  owns `src/w1a1_eagle/` and focused tests in the temporary worktree
-  `/Users/pippo/.codex/worktrees/w1a1-quant-core` on
-  `feature/w1a1-quant-core`; it has no GPU ownership.
+- `eagle_audit` finished a read-only structural audit, summarized in
+  `experiments/eagle3-graph-audit.md`. The pinned drafter has one decoder layer,
+  uses target block-input taps `[2, 18, 33]`, owns a 32,000-row output head,
+  and borrows target token embeddings. Forward parity is not yet verified.
+- `quant_core` implemented the inference-only fake-binary linear core and five
+  passing numerical tests. It was reviewed and integrated into `main` at
+  `88c41a3`; its temporary worktree and branch were removed after push. Tests
+  pass with Frameworks Python 3.11 and PyTorch 2.8.0. The project uv environment
+  does not yet include PyTorch; lock the simulation environment before full runs.
+- `adapter_advice` is reviewing whether an official AngelSlim PyTorch runtime
+  can be reused safely for the model and verifier. It owns no files or GPU.
 - The orchestrator prepared 12 self-authored held-out prompts across prose,
   code, and reasoning in `configs/acceptance_prompts.jsonl`. They will not be
   used for training or calibration.
