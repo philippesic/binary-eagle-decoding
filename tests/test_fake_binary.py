@@ -113,6 +113,17 @@ class FakeBinaryLinearTests(unittest.TestCase):
         torch.testing.assert_close(linear.bias, original_bias, rtol=0, atol=0)
         self.assertIs(wrapper.linear, linear)
 
+    def test_wrapper_refreshes_cached_weight_sign_after_weight_change(self) -> None:
+        linear = nn.Linear(3, 2, bias=False, dtype=torch.float64)
+        with torch.no_grad():
+            linear.weight.copy_(self.weight)
+        wrapper = W1A1Linear(linear)
+        wrapper(self.input)
+        with torch.no_grad():
+            linear.weight[0, 0] = -7.0
+        expected = fake_binary_linear(self.input, linear.weight)
+        torch.testing.assert_close(wrapper(self.input), expected)
+
     def test_invalid_configuration_or_shape_fails_clearly(self) -> None:
         with self.assertRaises(ValueError):
             W1A1Config(zero_sign=0)

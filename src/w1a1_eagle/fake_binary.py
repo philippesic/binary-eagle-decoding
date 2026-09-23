@@ -83,6 +83,8 @@ class W1A1Linear(nn.Module):
 
     The wrapped module and its parameters are retained by reference. Call
     ``set_enabled(False)`` to recover the ordinary ``nn.Linear`` computation.
+    Inference-only weight signs and scales are cached and refreshed when the
+    underlying parameter changes.
     """
 
     def __init__(
@@ -98,6 +100,10 @@ class W1A1Linear(nn.Module):
         self.linear = linear
         self.config = config
         self.enabled = enabled
+        self.register_buffer("_weight_sign", None, persistent=False)
+        self.register_buffer("_weight_scale", None, persistent=False)
+        self._weight_version = -1
+        self._weight_dtype = None
 
     def set_enabled(self, enabled: bool) -> None:
         self.enabled = enabled
@@ -105,4 +111,21 @@ class W1A1Linear(nn.Module):
     def forward(self, input: Tensor) -> Tensor:
         if not self.enabled:
             return self.linear(input)
-        return fake_binary_linear(input, self.linear.weight, self.linear.bias, self.config)
+        weight = self.linear.weight
+        if (
+            self._weight_sign is None
+            or self._weight_version != weight._version
+            or self._weight_dtype != weight.dtype
+            or self._weight_sign.device != weight.device
+        ):
+            self._weight_sign = _sign(weight.detach(), self.config.zero_sign)
+            self._weight_scale = _scale(weight.detach(), self.config.weight_scale).squeeze(-1)
+            self._weight_version = weight._version
+            self._weight_dtype = weight.dtype
+        input_sign = _sign(input, self.config.zero_sign)
+        input_scale = _scale(input, self.config.activation_scale)
+        output = F.linear(input_sign, self._weight_sign)
+        output = output * self._weight_scale * input_scale
+        if self.linear.bias is not None:
+            output = output + self.linear.bias
+        return output
