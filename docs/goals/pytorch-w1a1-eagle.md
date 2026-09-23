@@ -94,21 +94,43 @@ goal is about binary-operand quality and acceptance, not native speed.
   tokenizer-only snapshot was fetched locally; non-thinking prompt lengths are
   32–56 tokens. No target or draft weight payloads have been downloaded.
 - Isolated local import of the pinned AngelSlim source succeeds with Python
-  3.11, PyTorch 2.14, and Transformers 5.6. A meta-device instance of the
-  actual drafter accepted all nine eligible wrappers. Recent Transformers
-  synthesizes a default RoPE dictionary when the raw draft config says null;
-  the local loader restores `None` for this pinned unscaled checkpoint. Full
-  target/drafter loading and forward parity remain untested.
-- `acceptance_audit` is independently reviewing the committed loader/runner;
-  it owns no files or GPU.
+  3.11 and PyTorch 2.14. Meta-device target/drafter construction and all nine
+  eligible wrappers pass with Transformers 4.57.6. Versions 5.6 and 5.17 fail
+  target RoPE initialization; see `docs/DECISIONS.md`. The local loader checks
+  for the required initializer and restores `rope_scaling=None` for the pinned
+  unscaled draft config. Full forward parity remains untested.
+- `acceptance_audit` confirmed acceptance and proposal counts against the
+  pinned implementation. It found that the runner did not recheck model hashes;
+  this was fixed at `f5ccbee`, with a model-file corruption check. The raw run
+  now contains a copy of the snapshot manifest.
+- The orchestrator downloaded both pinned checkpoints to ignored local model
+  paths. The local manifest is `results/local-prep/model_manifest.json`: target
+  13 files / 8,060,926,626 bytes; drafter 5 files / 436,987,505 bytes. File
+  hashes are preserved in that ignored manifest.
+- Full BF16 model loading and fake-W1A1 feature-fusion generation succeeded on
+  Apple M3 Max Metal for one prompt (`results/metal-smoke-20260923b`): 50
+  accepted draft nodes across 79 verification rounds, from 4,661 proposed tree
+  nodes. This is a development smoke check, not a CUDA result or held-out sweep.
+  The first run exposed that the pinned drafter reads `fc.weight.dtype`; the
+  wrapper now forwards weight/bias attributes and tests that path.
+- A stricter greedy check found ordinary BF16 EAGLE and target-only sequences
+  first differ at generated token 21 on that Metal prompt. Full-prefix target
+  logits for the two choices were 27.75 and 27.625, a 0.125 gap. A separate
+  FP32 Metal diagnostic matched the first 33 generated tokens. The cause is
+  consistent with precision-sensitive target decisions, but has not been
+  proven; keep the mismatch visible. The runner permits it only for an
+  explicitly flagged Metal development run and remains strict on CUDA.
+- All 15 repository tests passed after the wrapper fix, including the
+  model-manifest corruption check. Ruff checks and runner dry-run passed.
 - The orchestrator prepared 12 self-authored held-out prompts across prose,
   code, and reasoning in `configs/acceptance_prompts.jsonl`. They will not be
   used for training or calibration.
 - The RTX 5080 host/user details are pending from the user. The local host
   registry is blank. RTX 2080 Ti is outside this goal.
-- Next: incorporate the runner review, lock a CUDA environment on RTX 5080,
-  download and hash both pinned snapshots, then verify full-checkpoint forward
-  behavior and a short deterministic target-only/speculative continuation.
+- Next: run the held-out Metal development sweep with the greedy mismatch
+  recorded, then lock a CUDA environment on RTX 5080, download and hash both pinned
+  snapshots there, and verify full-checkpoint forward behavior plus a short
+  deterministic target-only/speculative continuation.
   Before the held-out sweep, check hidden-state taps `[2, 18, 33]`, token/feature
   shift, absolute positions, cache rollback, and offset-form `d2t`. Produce
   per-prompt raw counts and a compact acceptance report. The RTX 5080 host/user

@@ -108,6 +108,15 @@ class W1A1Linear(nn.Module):
     def set_enabled(self, enabled: bool) -> None:
         self.enabled = enabled
 
+    @property
+    def weight(self) -> Tensor:
+        """Preserve ``nn.Linear.weight`` reads in the pinned EAGLE forward."""
+        return self.linear.weight
+
+    @property
+    def bias(self) -> Tensor | None:
+        return self.linear.bias
+
     def forward(self, input: Tensor) -> Tensor:
         if not self.enabled:
             return self.linear(input)

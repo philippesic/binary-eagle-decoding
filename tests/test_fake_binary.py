@@ -112,6 +112,8 @@ class FakeBinaryLinearTests(unittest.TestCase):
         torch.testing.assert_close(linear.weight, original_weight, rtol=0, atol=0)
         torch.testing.assert_close(linear.bias, original_bias, rtol=0, atol=0)
         self.assertIs(wrapper.linear, linear)
+        self.assertIs(wrapper.weight, linear.weight)
+        self.assertIs(wrapper.bias, linear.bias)
 
     def test_wrapper_refreshes_cached_weight_sign_after_weight_change(self) -> None:
         linear = nn.Linear(3, 2, bias=False, dtype=torch.float64)

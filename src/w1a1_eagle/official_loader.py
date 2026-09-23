@@ -55,6 +55,13 @@ def load_official_eagle3(
         ModelLoader,
     )
     from transformers import AutoTokenizer
+    from transformers.modeling_rope_utils import ROPE_INIT_FUNCTIONS
+
+    if "default" not in ROPE_INIT_FUNCTIONS:
+        raise RuntimeError(
+            "the pinned AngelSlim Qwen3 target requires Transformers with default RoPE; "
+            "Transformers 4.57.6 passed the local structure check"
+        )
 
     target_dir = Path(target_dir).resolve()
     draft_dir = Path(draft_dir).resolve()

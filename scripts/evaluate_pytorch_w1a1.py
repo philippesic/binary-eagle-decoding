@@ -11,6 +11,7 @@ import sys
 import tomllib
 from datetime import UTC, datetime
 from importlib.metadata import version
+from itertools import zip_longest
 from pathlib import Path
 
 
@@ -93,6 +94,11 @@ def main() -> None:
     parser.add_argument("--variants", nargs="*", help="Variant names; default: all")
     parser.add_argument("--device", choices=("cuda", "mps"), default="cuda")
     parser.add_argument("--limit-prompts", type=int, help="Short diagnostic subset")
+    parser.add_argument(
+        "--allow-greedy-mismatch",
+        action="store_true",
+        help="Continue a Metal development run after recording a target/EAGLE mismatch",
+    )
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
@@ -207,6 +213,9 @@ def main() -> None:
         raise RuntimeError("unexpected draft tree node budget")
     model.eval()
     device = next(model.base_model.parameters()).device
+    environment["target_dtype"] = str(model.base_model.dtype)
+    environment["draft_dtype"] = str(next(model.eagle_layer.parameters()).dtype)
+    (run_dir / "environment.json").write_text(json.dumps(environment, indent=2) + "\n")
     quant = config["quantization"]
     quant_config = W1A1Config(
         zero_sign=quant["zero_sign"],
@@ -216,7 +225,46 @@ def main() -> None:
     first_ids = encode_prompt(
         model.tokenizer, prompts[0]["messages"], evaluation["thinking_mode"], device
     )
+    parity_tokens = min(32, evaluation["max_new_tokens"])
+    target_only, _, _ = model.naive_generate(
+        first_ids,
+        temperature=0.0,
+        max_new_tokens=parity_tokens,
+        max_length=evaluation["max_length"],
+        log=True,
+    )
+    target_only_ids = target_only[0, first_ids.shape[1] :].detach().cpu().tolist()
     ordinary = run_generation(model, first_ids, evaluation)
+    missing_token = object()
+    mismatch = next(
+        (
+            index
+            for index, (target_id, eagle_id) in enumerate(
+                zip_longest(
+                    target_only_ids[:parity_tokens],
+                    ordinary[0][:parity_tokens],
+                    fillvalue=missing_token,
+                )
+            )
+            if target_id != eagle_id
+        ),
+        None,
+    )
+    parity = {
+        "prompt_id": prompts[0]["id"],
+        "checked_tokens": parity_tokens,
+        "target_only_token_ids": target_only_ids[:parity_tokens],
+        "ordinary_eagle_token_ids": ordinary[0][:parity_tokens],
+        "first_mismatch_index": mismatch,
+        "target_eagle_match": mismatch is None,
+    }
+    (run_dir / "greedy-parity.json").write_text(json.dumps(parity, indent=2) + "\n")
+    environment["target_eagle_greedy_match"] = mismatch is None
+    (run_dir / "environment.json").write_text(json.dumps(environment, indent=2) + "\n")
+    if mismatch is not None and not (args.device == "mps" and args.allow_greedy_mismatch):
+        raise RuntimeError("ordinary EAGLE differs from target-only greedy continuation")
+    if mismatch is not None:
+        print(f"Metal development run: target/EAGLE first differ at token {mismatch + 1}")
     results = []
     parity_checked = False
     with (run_dir / "acceptance.jsonl").open("w") as stream:
@@ -233,6 +281,8 @@ def main() -> None:
                     disabled = run_generation(model, first_ids, evaluation)
                     if disabled != ordinary:
                         raise RuntimeError("disabled W1A1 wrapper changed ordinary EAGLE output")
+                    parity["disabled_wrapper_token_ids"] = disabled[0][:parity_tokens]
+                    (run_dir / "greedy-parity.json").write_text(json.dumps(parity, indent=2) + "\n")
                     parity_checked = True
                 handle.set_enabled(True)
                 for prompt in prompts:

@@ -74,6 +74,7 @@ class MockDrafter(nn.Module):
 
     def forward(self, token_ids, features):
         emb = self.embed_tokens(token_ids)
+        _ = self.fc.weight.dtype  # The pinned drafter reads this before calling fc.
         fused = self.fc(features)
         return self.lm_head(self.midlayer(emb, fused))
 
