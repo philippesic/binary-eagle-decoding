@@ -20,7 +20,11 @@ The initial time budget is approximately two to three weeks of experimental work
 - Candidate target: `Qwen/Qwen3-4B`.
 - Candidate drafter: `AngelSlim/Qwen3-4B_eagle3`.
 - Runtime: extend llama.cpp/ggml rather than building an inference engine.
-- Primary measurement hardware: RTX 2080 Ti, Turing, compute capability 7.5.
+- Day-to-day experiment hardware: RTX 5080. Use it for conversion, baseline
+  bring-up, W1A1 simulation/QAT, and general iteration when available.
+- Binary Tensor Core measurement hardware: RTX 2080 Ti, Turing, compute
+  capability 7.5. Re-run all comparison anchors on this device before making
+  an SM75 end-to-end speedup claim.
 - Start from existing draft weights. Fine-tune the small EAGLE component with
   quantization-aware training if needed; do not train a foundation model.
 - Keep target precision, weights, sampling, and verifier settings fixed within
@@ -88,7 +92,7 @@ preserve them as reviewable commits or patches before sharing experiments.
 
 | Stage | Work and deliverable | Decision gate |
 | --- | --- | --- |
-| 0: baseline, days 1–3 | Build on SM75; convert the pair; validate target-only and FP16 EAGLE generation; record memory, layer shapes, acceptance and latency. | Both runs work under the same workload and fit memory. Resolve compatibility before quantization. |
+| 0: baseline, days 1–3 | Build and convert the pair on RTX 5080; validate target-only and FP16 EAGLE generation; record memory, layer shapes, acceptance and latency. Reproduce anchors on SM75 when available. | Both runs work under the same workload and fit memory. Resolve compatibility before quantization. |
 | 1: acceptance, days 3–7 | Simulate W1A1 in PyTorch; ablate linear groups and scaling; use bounded QAT if initial acceptance is poor. | Measure held-out accepted tokens per round. Estimate the draft-time reduction needed to beat normal EAGLE; stop or narrow scope if even optimistic savings cannot help. |
 | 2: kernels, days 7–11 | Implement a numerical reference, packer, and SM75 XOR/POPCOUNT kernel for measured shapes; benchmark packing-inclusive latency. | Correctness covers tails, scales, layouts, and zero-sign behavior. Real layer shapes show useful savings after packing and launch costs. |
 | 3: integration, days 11–15 | Route selected draft operations to binary execution; compare end-to-end runs; profile bottlenecks and write a report. | Report repeatable throughput gains or a quantified negative result with artifacts sufficient to reproduce it. |
@@ -108,6 +112,8 @@ Mandatory anchors are no speculation and normal FP16 EAGLE. Desired additional
 comparisons are W8A8, W4A4, and W1A1 EAGLE. Record the actual execution path for
 every precision; weight-only GGUF quantization is not automatically W8A8/W4A4.
 If a genuine low-bit baseline is unavailable within scope, state that limitation.
+Keep 5080 development results separate from 2080 Ti binary-speed conclusions;
+each hardware track needs its own same-device anchors.
 
 Measure draft latency, activation packing, binary kernels, output-head cost,
 verification latency, accepted/drafted tokens, accepted tokens per round,

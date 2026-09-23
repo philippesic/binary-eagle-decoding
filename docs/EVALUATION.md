@@ -2,7 +2,10 @@
 
 ## Freeze the experiment
 
-Use the same RTX 2080 Ti and target model for all comparisons. Record project
+Use RTX 5080 for routine experiments and the RTX 2080 Ti for the SM75 binary
+claim. Compare variants only within the same GPU track and use the same target
+model within that track. Do not use a 5080 baseline as the denominator for a
+2080 Ti speedup. Record project
 and llama.cpp commits (plus any dirty diffs), model snapshot revisions and hashes,
 conversion commands, CUDA/driver/compiler versions, GPU memory/clock/power state,
 build flags, and actual backend dispatch. Save an environment manifest alongside

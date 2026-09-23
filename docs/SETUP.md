@@ -38,7 +38,7 @@ uv run --locked python scripts/build_llama.py cpu --configure-only
 uv run --locked python scripts/build_llama.py cpu --jobs 4
 ```
 
-For the primary GPU experiment, use Linux, an RTX 2080 Ti, a matching NVIDIA
+For the SM75 binary experiment, use Linux, an RTX 2080 Ti, a matching NVIDIA
 driver, and a CUDA toolkit/host compiler combination that supports SM75. Record
 the exact toolkit rather than assuming a version from the workstation. The
 scaffold explicitly targets architecture 75; CUDA compilation and binary

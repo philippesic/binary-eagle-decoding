@@ -107,3 +107,9 @@ resume rtx5080` and a fresh host/resource check.
 
 The SSH host fields are intentionally blank until the user supplies them. No
 remote GPU operation or CUDA result has been validated in this scaffold.
+
+Codex may ask the user to review and trust the repository hook before it runs.
+The [Codex hooks reference](https://learn.chatgpt.com/docs/hooks) describes that
+trust step and the `SessionStart` behavior. The [subagents reference](https://learn.chatgpt.com/docs/agent-configuration/subagents)
+documents project agent profiles; the [skills reference](https://learn.chatgpt.com/docs/build-skills)
+documents repository-local skills.
