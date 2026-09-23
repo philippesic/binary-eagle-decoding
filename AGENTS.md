@@ -9,7 +9,11 @@ task; do not load every document for a small edit.
   decision is pending; record options and evidence in `docs/DECISIONS.md`.
 - Keep one active goal at a time. Its durable state lives in `docs/STATUS.md`
   and its own file under `docs/goals/`. Checkpoint before handing work to a new
-  agent. A thread's memory or Goal is not the project record.
+  agent. Start a new goal only when the user requests one. A thread's memory or
+  Goal is not the project record. Work autonomously within the active goal.
+- The orchestrator speaks to the user briefly and technically, explaining terms
+  that require project-specific background. Give periodic milestone updates and
+  answer check-ins directly. Save detailed state in the goal file.
 - Delegate independent, bounded work. Sol high owns coordination and features;
   Luna high handles tests, logs, and experiment supervision; Astra medium gives
   focused advice on hard problems. Avoid parallel edits to the same files or
