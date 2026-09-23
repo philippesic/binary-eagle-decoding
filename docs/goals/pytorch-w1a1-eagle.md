@@ -75,12 +75,19 @@ goal is about binary-operand quality and acceptance, not native speed.
   `88c41a3`; its temporary worktree and branch were removed after push. Tests
   pass with Frameworks Python 3.11 and PyTorch 2.8.0. The project uv environment
   does not yet include PyTorch; lock the simulation environment before full runs.
-- `adapter_advice` is reviewing whether an official AngelSlim PyTorch runtime
-  can be reused safely for the model and verifier. It owns no files or GPU.
+- `adapter_advice` found official AngelSlim EAGLE-3 PyTorch inference code and
+  recommended using it as the forward implementation/oracle. Pin its source at
+  `0358da9c651e6a7d7ccafea26ced4b9c98d11681` and wrap selected `nn.Linear`
+  modules. This avoids reimplementing head dimension 128, Q/K/V cache semantics,
+  recurrent prenorm state, and offset-form `d2t` for the first candidate. A
+  bounded disabled-quantization parity check must precede acceptance runs.
 - The orchestrator prepared 12 self-authored held-out prompts across prose,
   code, and reasoning in `configs/acceptance_prompts.jsonl`. They will not be
   used for training or calibration.
 - The RTX 5080 host/user details are pending from the user. The local host
   registry is blank. RTX 2080 Ti is outside this goal.
-- Next: review audit findings, integrate the quantizer core, build the PyTorch
-  EAGLE adapter and acceptance runner, then execute the pinned run on RTX 5080.
+- Next: build selective wrapping for the pinned official drafter, lock a usable
+  PyTorch environment, implement the acceptance runner, then execute the pinned
+  run on RTX 5080. Before the sweep, check hidden-state taps `[2, 18, 33]`,
+  token/feature shift, absolute positions, cache rollback, and offset-form
+  `d2t` with a short deterministic continuation.
