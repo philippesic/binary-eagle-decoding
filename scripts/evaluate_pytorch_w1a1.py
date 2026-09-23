@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import platform
 import re
 import shutil
 import subprocess
@@ -30,6 +31,27 @@ def load_prompts(path: Path) -> list[dict]:
         if not isinstance(item.get("messages"), list) or not item["messages"]:
             raise ValueError(f"prompt {item['id']} has no messages")
     return prompts
+
+
+def verify_model_snapshot(directory: Path, manifest_entry: dict) -> None:
+    if directory.resolve() != Path(manifest_entry["directory"]).resolve():
+        raise ValueError(f"model directory differs from manifest: {directory}")
+    expected = {item["path"]: item for item in manifest_entry["files"]}
+    actual = {
+        str(path.relative_to(directory)): path
+        for path in directory.rglob("*")
+        if path.is_file() and ".cache" not in path.relative_to(directory).parts
+    }
+    if set(actual) != set(expected):
+        raise ValueError(
+            f"model file set differs from manifest: {directory}; "
+            f"missing={sorted(set(expected) - set(actual))}, "
+            f"extra={sorted(set(actual) - set(expected))}"
+        )
+    for relative_path, path in actual.items():
+        recorded = expected[relative_path]
+        if path.stat().st_size != recorded["bytes"] or sha256_file(path) != recorded["sha256"]:
+            raise ValueError(f"model file hash differs from manifest: {path}")
 
 
 def git_revision(project_root: Path) -> str:
@@ -69,6 +91,8 @@ def main() -> None:
     parser.add_argument("--model-manifest", type=Path)
     parser.add_argument("--run-id")
     parser.add_argument("--variants", nargs="*", help="Variant names; default: all")
+    parser.add_argument("--device", choices=("cuda", "mps"), default="cuda")
+    parser.add_argument("--limit-prompts", type=int, help="Short diagnostic subset")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
@@ -85,6 +109,10 @@ def main() -> None:
     if prompt_hash != evaluation["prompt_sha256"]:
         raise ValueError(f"prompt manifest hash changed: {prompt_hash}")
     prompts = load_prompts(prompt_path)
+    if args.limit_prompts is not None:
+        if args.limit_prompts < 1:
+            raise ValueError("--limit-prompts must be positive")
+        prompts = prompts[: args.limit_prompts]
     variants = config["variants"]
     if args.variants:
         requested = set(args.variants)
@@ -105,8 +133,12 @@ def main() -> None:
     if model_manifest["config_sha256"] != sha256_file(config_path):
         raise ValueError("model manifest was created with a different config")
     for role in ("target", "draft"):
-        if model_manifest["models"][role]["revision"] != config["models"][f"{role}_revision"]:
+        entry = model_manifest["models"][role]
+        if entry["repo"] != config["models"][f"{role}_repo"]:
+            raise ValueError(f"{role} model repository mismatch")
+        if entry["revision"] != config["models"][f"{role}_revision"]:
             raise ValueError(f"{role} model revision mismatch")
+        verify_model_snapshot(project_root / config["models"][f"{role}_dir"], entry)
 
     import torch
     import transformers
@@ -115,31 +147,48 @@ def main() -> None:
     from w1a1_eagle import W1A1Config, install_w1a1
     from w1a1_eagle.official_loader import load_official_eagle3
 
-    if not torch.cuda.is_available():
-        raise RuntimeError("a CUDA GPU is required for the held-out model run")
-    gpu_name = torch.cuda.get_device_name(0)
-    if "5080" not in gpu_name:
-        raise RuntimeError(f"expected the RTX 5080 experiment host, found {gpu_name}")
+    if args.device == "cuda":
+        if not torch.cuda.is_available():
+            raise RuntimeError("CUDA is not available")
+        gpu_name = torch.cuda.get_device_name(0)
+        if "5080" not in gpu_name:
+            raise RuntimeError(f"expected the RTX 5080 experiment host, found {gpu_name}")
+        hardware_memory = torch.cuda.get_device_properties(0).total_memory
+        device_map = "cuda:0"
+    else:
+        if not torch.backends.mps.is_available():
+            raise RuntimeError("Apple Metal is not available")
+        gpu_name = subprocess.check_output(
+            ["sysctl", "-n", "machdep.cpu.brand_string"], text=True
+        ).strip()
+        hardware_memory = int(
+            subprocess.check_output(["sysctl", "-n", "hw.memsize"], text=True).strip()
+        )
+        device_map = "mps"
     torch.manual_seed(evaluation["seed"])
 
     run_dir = project_root / "results" / args.run_id
     run_dir.mkdir(parents=True, exist_ok=False)
     shutil.copyfile(config_path, run_dir / "resolved-config.toml")
     shutil.copyfile(prompt_path, run_dir / "prompts.jsonl")
+    shutil.copyfile(args.model_manifest, run_dir / "model-manifest.json")
     environment = {
         "created_at_utc": datetime.now(UTC).isoformat(),
         "project_revision": git_revision(project_root),
         "llama_cpp_revision": config.get("runtime", {}).get("llama_cpp_revision"),
         "angelslim_revision": config["models"]["angelslim_revision"],
-        "model_manifest": str(args.model_manifest.resolve()),
+        "model_manifest_sha256": sha256_file(args.model_manifest),
         "prompt_sha256": prompt_hash,
         "python": sys.version,
         "torch": torch.__version__,
         "transformers": transformers.__version__,
         "angelslim_package": version("angelslim"),
+        "execution_device": args.device,
+        "development_check": args.device == "mps" or args.limit_prompts is not None,
+        "host_platform": platform.platform(),
         "gpu": gpu_name,
         "cuda_runtime": torch.version.cuda,
-        "gpu_memory_bytes": torch.cuda.get_device_properties(0).total_memory,
+        "hardware_memory_bytes": hardware_memory,
     }
     (run_dir / "environment.json").write_text(json.dumps(environment, indent=2) + "\n")
 
@@ -152,7 +201,7 @@ def main() -> None:
         depth=evaluation["depth"],
         top_k=evaluation["top_k"],
         threshold=evaluation["threshold"],
-        target_load_kwargs={"dtype": torch.bfloat16, "device_map": "cuda:0"},
+        target_load_kwargs={"dtype": torch.bfloat16, "device_map": device_map},
     )
     if model.eagle_layer.total_tokens != evaluation["total_token"] - 1:
         raise RuntimeError("unexpected draft tree node budget")
