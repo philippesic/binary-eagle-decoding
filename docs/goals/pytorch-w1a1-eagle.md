@@ -60,8 +60,20 @@ goal is about binary-operand quality and acceptance, not native speed.
 
 ## Current checkpoint
 
-- Initial scaffold is on `main`; no W1A1 implementation or model files exist.
+- Goal opened and pushed on `main` at `a9e1082`. No W1A1 implementation or
+  model files exist yet.
+- Hugging Face API reports both checkpoints public and ungated. Snapshot pins:
+  target `1cfa9a7208912126459214e8b04321603b3df60c`; drafter
+  `fd331e59626c8e95c392381a16ee59d518727fbb`. Model file hashes remain
+  pending until download.
+- `eagle_audit` is reviewing the graph/loading path without edits. `quant_core`
+  owns `src/w1a1_eagle/` and focused tests in the temporary worktree
+  `/Users/pippo/.codex/worktrees/w1a1-quant-core` on
+  `feature/w1a1-quant-core`; it has no GPU ownership.
+- The orchestrator prepared 12 self-authored held-out prompts across prose,
+  code, and reasoning in `configs/acceptance_prompts.jsonl`. They will not be
+  used for training or calibration.
 - The RTX 5080 host/user details are pending from the user. The local host
   registry is blank. RTX 2080 Ti is outside this goal.
-- Next: commit and push this checkpoint, then dispatch the graph audit and
-  quantizer core as independent work.
+- Next: review audit findings, integrate the quantizer core, build the PyTorch
+  EAGLE adapter and acceptance runner, then execute the pinned run on RTX 5080.
