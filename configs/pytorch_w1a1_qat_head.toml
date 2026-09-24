@@ -1,0 +1,37 @@
+# Derived head-only QAT draft acceptance on the original held-out prompts.
+schema_version = 1
+
+[models]
+target_repo = "Qwen/Qwen3-4B"
+target_revision = "1cfa9a7208912126459214e8b04321603b3df60c"
+target_dir = "models/hf/Qwen3-4B"
+draft_repo = "local/qat-head-pilot"
+draft_revision = "qat-head-pilot-v1"
+draft_dir = "models/qat-head-pilot-v1"
+angelslim_revision = "0358da9c651e6a7d7ccafea26ced4b9c98d11681"
+
+[quantization]
+zero_sign = 1
+weight_scale = "mean_abs"
+activation_scale = "mean_abs"
+
+[evaluation]
+prompt_manifest = "configs/acceptance_prompts.jsonl"
+prompt_sha256 = "0d6a698d6816592c6ff435fed2fea4cdafe9f5248393d2a5ac091e1551919476"
+thinking_mode = false
+temperature = 0.0
+seed = 42
+max_new_tokens = 128
+max_length = 2048
+total_token = 60
+depth = 5
+top_k = 10
+threshold = 1.0
+
+[[variants]]
+name = "ordinary"
+groups = []
+
+[[variants]]
+name = "head"
+groups = ["lm_head"]

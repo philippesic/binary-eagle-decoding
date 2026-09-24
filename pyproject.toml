@@ -14,7 +14,11 @@ dev = [
     "ninja>=1.11,<2",
     "ruff>=0.12,<1",
 ]
-w1a1 = ["torch==2.14.0"]
+w1a1 = [
+    "numpy>=1.26,<3",
+    "safetensors>=0.5,<1",
+    "torch==2.14.0",
+]
 
 [tool.ruff]
 target-version = "py311"
