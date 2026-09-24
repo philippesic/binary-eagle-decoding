@@ -1,9 +1,9 @@
 # Goal: RTX 5080 W1A1 draft acceptance
 
 **Opened:** 2026-09-23  
-**State:** paused at user request; no GPU work may start
+**State:** active; RTX 5080 work resumed by user
 **Orchestrator:** current Codex task  
-**GPU owner:** Luna high task dispatched; remote access has not begun
+**GPU owner:** Luna high operator to be assigned; remote access has not begun
 
 ## Objective
 
@@ -95,7 +95,7 @@ binary execution.
   BF16 candidate linear shapes. `experiments/drafter-static-coverage.md`
   records exact parameter counts and distinguishes storage share from the
   pending measured draft time share.
-- The user explicitly said not to start yet. The RTX 5080 pause flag is set in
-  the shared local GPU control file before recording its SSH username, so an
-  operator must not start a run. On user resumption, clear that flag, check
-  current host/resources via tmux MCP, and then begin the supervised CUDA work.
+- The user resumed RTX 5080 work. The shared local pause flag is clear. The
+  earlier queued GPU task never became visible in the app task list or a GPU
+  worktree; no remote work from it has been observed. Assign one Luna high
+  operator, verify host resources via tmux MCP, and use only supervised runs.
