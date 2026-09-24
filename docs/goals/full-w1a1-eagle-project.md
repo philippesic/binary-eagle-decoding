@@ -452,3 +452,18 @@ draft time no higher than 2.351 ms/round, 33.1% below its measured value.
 The main comparison, overview, and decision log now link the raw verifier
 trace and preserve the target-equivalence limitation. This is analysis of
 existing artifacts; no new GPU run or target/verifier code change occurred.
+
+## Integrated binary-MMA candidate in progress
+
+Because a portable-kernel negative result on SM75 would leave the Tensor Core
+alternative unmeasured, `/root/sm75_mma_probe_impl` owns a bounded, isolated
+llama.cpp `w1a1.cu` implementation based on production `92bc706`. It will
+keep portable XOR/POPCOUNT as default and expose an explicit opt-in MMA path;
+no GPU is assigned to the implementation worker. In a separate worktree
+`/private/tmp/llama-w1a1-mma-tests`, branch `feat/w1a1-mma-tests` commit
+`f52dbc7` (published to the user's fork) expands the independent scalar
+reference checks to full 8×8, partial/multi-tile 9×10, and head-like
+320×1 shapes. The Mac CPU backend passed 8/8 cases, including dirty K tails.
+The 5080 remains idle. Review and combine the isolated commits, then use a
+single GPU owner for a separate supervised 5080 proxy build/correctness check;
+actual SM75 runtime and performance still require the RTX 2080 Ti address.
