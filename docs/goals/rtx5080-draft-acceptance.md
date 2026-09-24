@@ -3,7 +3,7 @@
 **Opened:** 2026-09-23  
 **State:** active; RTX 5080 work resumed by user
 **Orchestrator:** current Codex task  
-**GPU owner:** `/root/cuda_acceptance_operator` (Luna high); fresh idle check in progress
+**GPU owner:** `/root/cuda_acceptance_operator` (Luna high); full exploratory sweep assigned
 
 ## Objective
 
@@ -222,3 +222,9 @@ binary execution.
   No project process remains and Windows GPU memory returned to idle baseline.
   The full 12-prompt sweep is still required for an exploratory same-verifier
   comparison and will use the same explicit mismatch-recording mode.
+- The user-authorized full diagnostic sweep is assigned to the same Luna
+  operator. It will keep remote code fixed at `ae47119` and run all 12 prompts
+  across ordinary EAGLE plus five W1A1 variants with
+  `--allow-greedy-mismatch`, after a fresh idle gate. It must preserve all
+  target-greedy mismatches and return aggregate/per-prompt counts and raw
+  hashes. This does not override the strict parity failure or start QAT.

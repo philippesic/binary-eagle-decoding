@@ -19,6 +19,7 @@ unresolved. A one-prompt ordinary drafter profile measured candidate linears at
 finished one prompt: ordinary EAGLE accepted 1.787 draft tokens/round and
 fusion-only W1A1 accepted 0.483, both under a non-target-equivalent verifier
 path. The fixed 12-prompt exploratory sweep is next.
+The Luna operator has exclusive 5080 ownership for that supervised sweep.
 The prior [PyTorch W1A1 EAGLE
 goal](goals/pytorch-w1a1-eagle.md) and
 `experiments/pytorch-w1a1-metal-acceptance.md` contain the Metal development
