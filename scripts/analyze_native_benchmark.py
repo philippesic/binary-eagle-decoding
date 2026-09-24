@@ -7,6 +7,8 @@ import random
 from pathlib import Path
 
 VARIANTS = ("target_only", "ordinary_eagle", "packed_head_w1a1")
+MMA_VARIANT = "packed_head_w1a1_mma"
+ALL_VARIANTS = (*VARIANTS, MMA_VARIANT)
 METRICS = ("request", "decode")
 
 
@@ -18,11 +20,22 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def paired_index(records: list[dict]) -> tuple[dict, list[int], list[str]]:
+def selected_variants(records: list[dict], reported: list[str] | None = None) -> tuple[str, ...]:
+    observed = {row["variant"] for row in records}
+    variants = ALL_VARIANTS if MMA_VARIANT in observed else VARIANTS
+    if observed != set(variants) or (reported is not None and tuple(reported) != variants):
+        raise ValueError("benchmark variants are incomplete or unknown")
+    return variants
+
+
+def paired_index(
+    records: list[dict], variants: tuple[str, ...] | None = None
+) -> tuple[dict, list[int], list[str]]:
+    variants = variants or selected_variants(records)
     index = {}
     for row in records:
         key = (row["repetition"], row["prompt_id"], row["variant"])
-        if key in index or row["variant"] not in VARIANTS:
+        if key in index or row["variant"] not in variants:
             raise ValueError("duplicate or unknown variant in benchmark records")
         index[key] = row
     if not index:
@@ -31,7 +44,7 @@ def paired_index(records: list[dict]) -> tuple[dict, list[int], list[str]]:
     prompts = sorted({key[1] for key in index})
     for repetition in repetitions:
         for prompt in prompts:
-            if any((repetition, prompt, variant) not in index for variant in VARIANTS):
+            if any((repetition, prompt, variant) not in index for variant in variants):
                 raise ValueError(f"incomplete paired records for {repetition}/{prompt}")
     return index, repetitions, prompts
 
@@ -49,8 +62,10 @@ def pooled_rate(rows: list[dict], variant: str, metric: str) -> float | None:
     return sum(tokens) / total_s if total_s > 0 else None
 
 
-def pooled_speedup(rows: list[dict], anchor: str, metric: str) -> float | None:
-    packed = pooled_rate(rows, "packed_head_w1a1", metric)
+def pooled_speedup(
+    rows: list[dict], anchor: str, metric: str, candidate: str = "packed_head_w1a1"
+) -> float | None:
+    packed = pooled_rate(rows, candidate, metric)
     baseline = pooled_rate(rows, anchor, metric)
     return (
         packed / baseline if packed is not None and baseline is not None and baseline > 0 else None
@@ -64,12 +79,19 @@ def percentile(sorted_values: list[float], fraction: float) -> float:
     return sorted_values[low] + (sorted_values[high] - sorted_values[low]) * (position - low)
 
 
-def paired_bootstrap(records: list[dict], samples: int, seed: int) -> dict:
+def paired_bootstrap(
+    records: list[dict], samples: int, seed: int,
+    candidate: str = "packed_head_w1a1",
+) -> dict:
     if samples < 100:
         raise ValueError("at least 100 bootstrap samples are required")
-    index, repetitions, prompts = paired_index(records)
+    variants = selected_variants(records)
+    if candidate not in variants or candidate == "target_only":
+        raise ValueError("candidate variant is unavailable")
+    anchors = tuple(variant for variant in variants if variant != candidate)
+    index, repetitions, prompts = paired_index(records, variants)
     rng = random.Random(seed)
-    draws = {(anchor, metric): [] for anchor in VARIANTS[:2] for metric in METRICS}
+    draws = {(anchor, metric): [] for anchor in anchors for metric in METRICS}
     unavailable = set()
     for _ in range(samples):
         selected_repetitions = rng.choices(repetitions, k=len(repetitions))
@@ -78,19 +100,19 @@ def paired_bootstrap(records: list[dict], samples: int, seed: int) -> dict:
             index[repetition, prompt, variant]
             for repetition in selected_repetitions
             for prompt in selected_prompts
-            for variant in VARIANTS
+            for variant in variants
         ]
         for key, values in draws.items():
             if key in unavailable:
                 continue
-            value = pooled_speedup(sample_rows, *key)
+            value = pooled_speedup(sample_rows, *key, candidate=candidate)
             if value is None:
                 unavailable.add(key)
             else:
                 values.append(value)
     intervals = {}
     for (anchor, metric), values in draws.items():
-        if key in unavailable or len(values) != samples:
+        if (anchor, metric) in unavailable or len(values) != samples:
             intervals[f"{anchor}/{metric}"] = None
             continue
         values.sort()
@@ -103,10 +125,11 @@ def paired_bootstrap(records: list[dict], samples: int, seed: int) -> dict:
 
 
 def category_summary(records: list[dict], categories: dict[str, str]) -> dict:
+    variants = selected_variants(records)
     result = {}
     for category in sorted(set(categories.values())):
         result[category] = {}
-        for variant in VARIANTS:
+        for variant in variants:
             rows = [
                 row
                 for row in records
@@ -142,17 +165,18 @@ def analyze(run_dir: Path, samples: int, seed: int) -> dict:
     records = json.loads(records_path.read_text())
     if report.get("status") != "complete" or report.get("records") != len(records):
         raise ValueError("benchmark run is incomplete or records count differs")
-    _, repetitions, prompts = paired_index(records)
+    variants = selected_variants(records, report.get("variants"))
+    _, repetitions, prompts = paired_index(records, variants)
     prompt_rows = [json.loads(line) for line in prompts_path.read_text().splitlines() if line]
     categories = {row["id"]: row["category"] for row in prompt_rows}
     if set(categories) != set(prompts):
         raise ValueError("benchmark prompts differ from paired records")
-    speedups = {
+    portable_speedups = {
         f"{anchor}/{metric}": pooled_speedup(records, anchor, metric)
         for anchor in VARIANTS[:2]
         for metric in METRICS
     }
-    return {
+    result = {
         "source_sha256": {
             "report.json": sha256(report_path),
             "records.json": sha256(records_path),
@@ -160,17 +184,28 @@ def analyze(run_dir: Path, samples: int, seed: int) -> dict:
         },
         "repetitions": len(repetitions),
         "prompts": len(prompts),
+        "variants": list(variants),
         "bootstrap_seed": seed,
         "bootstrap_samples": samples,
-        "pooled_packed_speedup": speedups,
+        "pooled_packed_speedup": portable_speedups,
         "paired_prompt_repetition_bootstrap_95pct": paired_bootstrap(records, samples, seed),
         "category_summary": category_summary(records, categories),
         "interpretation": (
-            "Resample prompt IDs and repetitions with replacement, preserving all three "
+            f"Resample prompt IDs and repetitions with replacement, preserving all {len(variants)} "
             "variants per draw; each speedup is a ratio of pooled token/time rates. "
             "These descriptive intervals do not correct model or hardware systematic bias."
         ),
     }
+    if MMA_VARIANT in variants:
+        result["pooled_mma_speedup"] = {
+            f"{anchor}/{metric}": pooled_speedup(records, anchor, metric, MMA_VARIANT)
+            for anchor in VARIANTS
+            for metric in METRICS
+        }
+        result["paired_mma_bootstrap_95pct"] = paired_bootstrap(
+            records, samples, seed, MMA_VARIANT
+        )
+    return result
 
 
 def main() -> None:
