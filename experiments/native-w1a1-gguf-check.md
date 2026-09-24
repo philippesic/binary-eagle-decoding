@@ -33,6 +33,19 @@ packed file and generated eight greedy tokens. Its raw log SHA256 is
 The worker's CPU-only speculative smoke also logged explicit packed-head
 selection and exited successfully.
 
+A local Metal `llama-server` API smoke sent one 16-token greedy held-out
+request separately to target-only, ordinary EAGLE, and packed-head EAGLE.
+All returned HTTP 200 with token usage and prompt/decode timing fields; both
+speculative variants exposed draft, accepted, and round counters through
+`/metrics`. This validates the paired harness's request/metrics schema, not
+its performance or acceptance distribution. Ordinary/packed server log
+SHA256 values are
+`866956499c37fb27ca5e9ce00fcea8956e5d0243127d17c56f11337ad5b92478`
+and `5373d029834c8ebf7ab8040b643a25c6e075bf653dde1f78b13be4621da2d9ef`.
+The server's default verbosity omitted the loader's packed-head message, so
+the benchmark requires the explicit CUDA operation marker for a CUDA dispatch
+claim.
+
 The integrated submodule's `test-backend-ops test -b CPU -o W1A1_MUL_MAT`
 passed all five cases on M3 Max after both bridge and CUDA-source commits were
 combined: K=31/32/33/2560 plus a strided K=33 input. Raw test-log SHA256 is

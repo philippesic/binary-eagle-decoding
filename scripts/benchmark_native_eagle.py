@@ -227,11 +227,11 @@ def dispatch_evidence(server_log: str, variant: str) -> dict[str, Any]:
         "explicit_cuda_w1a1_op_log": explicit_cuda_op,
         "cuda_w1a1_dispatch_marker": marker if explicit_cuda_op else None,
         "cuda_w1a1_dispatch_confirmed": (
-            True if variant == "packed_head_w1a1" and packed_loaded and explicit_cuda_op else None
+            True if variant == "packed_head_w1a1" and explicit_cuda_op else None
         ),
         "interpretation": (
-            "Packed-head loader and CUDA backend logs alone do not prove that "
-            "the W1A1 CUDA kernel ran; confirm with an explicit op log or profiler trace."
+            "The explicit CUDA W1A1 op marker confirms dispatch; model load "
+            "and general CUDA backend logs alone do not."
         ),
     }
 

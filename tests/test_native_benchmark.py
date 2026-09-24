@@ -97,6 +97,10 @@ class NativeBenchmarkTests(unittest.TestCase):
             "packed_head_w1a1",
         )
         self.assertTrue(confirmed["cuda_w1a1_dispatch_confirmed"])
+        marker_only = benchmark.dispatch_evidence(
+            "CUDA packed W1A1 XOR/POPCOUNT dispatch", "packed_head_w1a1"
+        )
+        self.assertTrue(marker_only["cuda_w1a1_dispatch_confirmed"])
 
     def test_aggregate_uses_ratio_of_sums(self):
         rows = []
