@@ -1,7 +1,7 @@
 # Goal: complete W1A1 EAGLE research program
 
 **Opened:** 2026-09-24  
-**State:** blocked pending the current RTX 2080 Ti address
+**State:** active local preparation; RTX 2080 Ti measurements await Ubuntu WSL and SSH access
 
 **Orchestrator:** current Codex task  
 **GPU owner:** none; RTX 5080 is idle
@@ -535,3 +535,33 @@ status, and diff hash separately from the parent gitlink, since the 2080 Ti
 candidate trial will run from published `9bb01a6` while production remains
 pinned at `92bc706`. The combined focused suite passed 15/15 again under
 the locked Python 3.11 environment; Ruff checks and `git diff --check` pass.
+
+## 2080 Ti access and expanded coverage request
+
+The user supplied the current 2080 Ti address on 2026-09-24. It was registered
+only in the shared machine-local hosts file with user `philip`; it is not in Git.
+A tmux-MCP SSH attempt to port 22 timed out (exit 255). The user reports WSL
+installed but no Ubuntu distribution. No remote command, build, model transfer,
+or GPU process has started. The access tmux session was closed. The user was
+asked asynchronously to complete Ubuntu/SSH setup or provide a different port.
+
+After reviewing the 5080 evidence, the user requested native tests on the
+2080 Ti for all five previously simulated coverage settings: fusion-only,
+attention-only, FFN-only, head-only, and all nine linears, with ordinary EAGLE
+and target-only anchors. The native pinned branch `92bc706` implements only
+head-only. `/root/full_w1a1_bridge` is preparing selectable packed conversion
+and EAGLE graph routing in an isolated submodule worktree, without GPU use or
+parent gitlink changes. The benchmark harness will need variant expansion and
+per-group dispatch evidence before a full five-setting run. The separate
+binary-MMA candidate remains experimental until real SM75 correctness.
+
+The user also requested a QAT revisit. The earlier head-only teacher-KL pilot
+trained 500 steps and improved validation KL but lowered held-out acceptance
+from 1.677 to 1.565 drafts/round. The next QAT protocol must specify a new
+training objective, which groups are trainable, and a fresh untouched held-out
+suite before training; do not reuse the original 12 prompts for selection.
+
+Next: complete and review the selectable native bridge and benchmark controls;
+prepare a bounded QAT plan and model/precision manifest locally. Once Ubuntu
+and SSH are reachable, perform the runbook preflight, correctness gates, and
+same-device measurements with one GPU owner. No 2080 Ti result exists yet.

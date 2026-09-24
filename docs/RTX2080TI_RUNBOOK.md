@@ -1,10 +1,11 @@
 # RTX 2080 Ti execution gate
 
-**Pending input:** the current RTX 2080 Ti host/IP. The username is `philip`.
-Do not infer an address from the 5080 or an old session. Record the supplied
-address only in the shared local `hosts.toml` via `scripts/agent_env.py`, not
-in Git. All SSH to this WSL GPU must use tmux MCP and all experiments must
-use `scripts/remote_job.py` with unique run IDs.
+**Access state:** the user supplied the current RTX 2080 Ti address and it is
+stored only in the shared local `hosts.toml`; the username is `philip`. A
+2026-09-24 SSH attempt to port 22 timed out. The user reports WSL installed but
+no Ubuntu distribution yet. Recheck access after Ubuntu and SSH are configured.
+All SSH to this WSL GPU must use tmux MCP and all experiments must use
+`scripts/remote_job.py` with unique run IDs.
 
 The [active project goal](goals/full-w1a1-eagle-project.md) and
 [evaluation protocol](EVALUATION.md) govern this gate. The 5080
@@ -57,6 +58,23 @@ SM75 and passed numerical checks only on an SM120 proxy path.
    XOR/POPCOUNT dispatch before a timed run.
 
 ## Matched hardware comparison
+
+The user requested all five W1A1 coverage settings previously evaluated in
+PyTorch: fusion-only (one linear), attention-only (Q/K/V/O), FFN-only
+(gate/up/down), head-only, and all nine linears. Test these as **native packed
+execution** on the 2080 Ti, with ordinary FP16 EAGLE and target-only anchors,
+the same target and evaluation settings, and explicit per-group dispatch and
+precision coverage. The pinned runtime at `92bc706` supports only head-only;
+do not report the other four as native until their GGUF conversion, loader,
+graph execution, CUDA correctness, and dispatch are verified. Treat the
+existing BF16 PyTorch counts as quality screening, not SM75 timing.
+
+Revisit QAT as a separate, versioned experiment after establishing the
+post-training matrix. The previous head-only 500-step teacher-KL reconstruction
+improved validation KL but lowered held-out acceptance. Choose a new objective
+and a new untouched held-out prompt set before training; record which drafter
+groups change and compare each trained path with its untrained counterpart.
+Do not tune on the original 12 held-out prompts.
 
 The 2080 Ti has a different memory budget. Try the same FP16 target/draft,
 context and KV settings as the 5080 comparison only after checking actual

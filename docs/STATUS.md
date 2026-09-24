@@ -1,6 +1,13 @@
 # Current project status
 
-**Goal blocked on RTX 2080 Ti access:** [complete the W1A1 EAGLE research program](goals/full-w1a1-eagle-project.md).
+**Active goal:** [complete the W1A1 EAGLE research program](goals/full-w1a1-eagle-project.md).
+The user supplied the RTX 2080 Ti address, which is recorded only in the shared
+local host registry. SSH to port 22 timed out; Ubuntu WSL is not installed yet.
+Local preparation continues while actual SM75 measurements await access.
+The user requested same-device tests of ordinary EAGLE and all five W1A1
+coverage settings (fusion, attention, FFN, head, all groups), plus a fresh QAT
+investigation. The pinned native runtime currently supports head-only W1A1;
+the other native variants require conversion and graph integration.
 The user delegated research choices and RTX 5080 access for an initial
 roughly 10-hour autonomous work window. The goal file has exact commits,
 owners, raw artifact hashes, and the next action.
@@ -82,10 +89,11 @@ speed ratios. Local fake-server and analysis checks passed 15/15; the
 
 ## Next gate
 
-The RTX 2080 Ti address is absent from the shared host registry (username
-`philip`). Its actual SM75 correctness and same-device target-only/ordinary/
-binary comparisons are required before a Turing speed claim. The address
-has been requested from the user; the [runbook](RTX2080TI_RUNBOOK.md) is ready.
+The RTX 2080 Ti address is present in the shared host registry (username
+`philip`). Its actual SM75 correctness and same-device comparisons are still
+required before a Turing speed claim. SSH is unreachable until the Windows/WSL
+setup is completed; the [runbook](RTX2080TI_RUNBOOK.md) remains the execution
+guide.
 The 5080 experiments are complete and sealed. Its remote checkout was restored
 to pinned `92bc706`; all supervised jobs exited, no project process remained,
 and repeated GPU samples showed 0% utilization. The repository checks pass
