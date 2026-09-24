@@ -64,10 +64,12 @@ PyTorch: fusion-only (one linear), attention-only (Q/K/V/O), FFN-only
 (gate/up/down), head-only, and all nine linears. Test these as **native packed
 execution** on the 2080 Ti, with ordinary FP16 EAGLE and target-only anchors,
 the same target and evaluation settings, and explicit per-group dispatch and
-precision coverage. The pinned runtime at `92bc706` supports only head-only;
-do not report the other four as native until their GGUF conversion, loader,
-graph execution, CUDA correctness, and dispatch are verified. Treat the
-existing BF16 PyTorch counts as quality screening, not SM75 timing.
+precision coverage. The 5080-tested runtime at `92bc706` supported only
+head-only; expanded revision `8d2b18a` passed local conversion, exhaustive
+packed-row audit, and CPU graph generation for all groups. Do not report the
+other four as **CUDA** results until their actual SM75 backend correctness,
+model-level dispatch, and timing are verified. Treat the existing BF16
+PyTorch counts as quality screening, not SM75 timing.
 
 Revisit QAT as a separate, versioned experiment after establishing the
 post-training matrix. The previous head-only 500-step teacher-KL reconstruction

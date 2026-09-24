@@ -579,3 +579,19 @@ tensors and one I64 mapping. Source, output and tool SHA256 values, exact
 commands, bytes, and log hashes are in the [artifact prep report](../../experiments/native-weight-only-draft-prep.md).
 These are weight-only candidates, not native W4A4/W8A8 timing. Actual 2080 Ti
 loader, activation/kernel precision and end-to-end measurements remain pending.
+
+The selectable EAGLE native bridge was reviewed at llama.cpp commit
+`8d2b18a9c9b3a42927404a91799a823c758c09b6` and pushed to the user's
+fork before updating the parent gitlink. It supports the four missing coverage
+settings while retaining the existing head-only path. Four real-checkpoint
+GGUF conversions produced the expected 1/4/3/9 packed linears. An independent
+BF16-source audit checked all 65,280 unique rows in the all-group GGUF (and
+each selected subset) with zero sign-word mismatches and maximum F32 scale
+error `7.45e-9`; Q/K RoPE row permutation was applied explicitly. Each variant
+loaded and generated nonzero drafts in a short Apple M3 Max CPU smoke. The
+branch CPU backend W1A1 suite passed 5/5; parent `make check` passed 85 tests
+after adapting the new QAT manifest tests to the project's unittest gate.
+Exact GGUF, source, audit, and log hashes are in the
+[local group report](../../experiments/native-w1a1-groups-local.md). No CUDA
+build or 2080 Ti inference has run. The next hardware gate remains WSL/SSH
+access, then SM75 correctness and same-device timing.

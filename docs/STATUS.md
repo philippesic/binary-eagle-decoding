@@ -6,8 +6,10 @@ local host registry. SSH to port 22 timed out; Ubuntu WSL is not installed yet.
 Local preparation continues while actual SM75 measurements await access.
 The user requested same-device tests of ordinary EAGLE and all five W1A1
 coverage settings (fusion, attention, FFN, head, all groups), plus a fresh QAT
-investigation. The pinned native runtime currently supports head-only W1A1;
-the other native variants require conversion and graph integration.
+investigation. The 5080-tested native runtime supported head-only W1A1;
+the expanded llama.cpp revision now supports all five settings. Local
+[conversion and CPU gates](../experiments/native-w1a1-groups-local.md) passed;
+SM75 CUDA correctness and timing remain unmeasured.
 Local [Q4_0/Q8_0 draft artifacts](../experiments/native-weight-only-draft-prep.md)
 are prepared and audited as weight-only comparisons; they have no 2080 Ti
 execution or timing result. A separate Q4_K_M target GGUF is prepared only as
@@ -20,7 +22,8 @@ owners, raw artifact hashes, and the next action.
 ## RTX 5080 result
 
 A dedicated packed W1A1 operation, EAGLE output-head GGUF exporter/loader,
-and CUDA dispatch are integrated in the pinned llama.cpp fork at `92bc706`.
+and CUDA dispatch were integrated in the 5080-tested llama.cpp revision
+`92bc706`. The expanded five-setting revision is `8d2b18a`.
 CUDA backend correctness passed 5/5 cases, all 32,000 packed head rows were
 audited against the published BF16 source, and every packed benchmark server
 logged actual CUDA XOR/POPCOUNT dispatch. See the
