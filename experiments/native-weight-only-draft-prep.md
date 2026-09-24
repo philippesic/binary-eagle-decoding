@@ -34,6 +34,20 @@ artifacts are under `models/gguf/` and
 SHA256 values `66d1abbc1e057fcaa23afe85ebd79addbeadf93a88606513fd21029b21b8c39c`
 and `3520b681a537cb50e9d2ba79e6fb830bef88dda35926840aa3a6694e7c624469`.
 
+A two-token CPU `llama-cli` smoke with the pinned FP16 target,
+`--spec-type draft-eagle3`, context 512, and each quantized draft exited zero.
+This only checks that the local model pair loads and runs; it does not validate
+CUDA dispatch, output parity, acceptance, or speed. The exact command used for
+each draft was:
+
+```sh
+build/llama-cpu/bin/llama-cli -m models/gguf/Qwen3-4B-f16.gguf -md models/gguf/Qwen3-4B-eagle3-q4_0.gguf --spec-type draft-eagle3 --spec-draft-n-max 2 --ctx-size 512 --n-gpu-layers 0 --spec-draft-ngl 0 --no-warmup --single-turn -p 'Say hello.' -n 2 -lv 2
+```
+
+The Q8_0 run differed only in its draft GGUF path. CPU smoke log SHA256 values
+were `06c97c3d4a64bd0f554828514c5ac83854b356af2094cd221a298c5aa326d776`
+and `86d84835d64a561a029773d8943e15ad77bc2fea649c4533bd9eaf1daebe7d55`.
+
 For the 2080 Ti comparison, copy or reproduce these artifacts under its
 project workdir; hash again there. Use the same target GGUF and server settings
 as every other draft variant in that track. Run a loader/correctness smoke,
