@@ -6,8 +6,15 @@ an initial roughly 10-hour autonomous work window. The first work units are a
 bounded BF16 verifier-parity investigation on the 5080, a CPU binary
 reference/packer, and native-path planning. Luna operator
 `/root/cuda_acceptance_operator` alone owns the 5080; Sol worker
-`/root/binary_reference` owns the CPU reference in an isolated worktree;
-`/root/parity_advice` is read-only. No new GPU job is running yet.
+`/root/binary_reference` delivered the CPU packed reference at `f8f3209`
+(38 passing tests; worktree cleaned); `/root/parity_advice` is auditing the
+native GGML path. The GPU parity operator has passed preflight and is running
+bounded diagnostics. The BF16 fake-binary versus FP32 native rounding
+contract must be reconciled before native acceptance claims.
+The [native W1A1 design](native-w1a1-path.md) uses a dedicated packed
+operation and ordinary I32/F32 GGUF companions, initially for the EAGLE head.
+A [bounded head-only QAT pilot](../experiments/qat-head-pilot-plan.md) is
+planned after the current parity diagnostic; no QAT job has started.
 The completed [RTX 5080 W1A1 draft acceptance goal](goals/rtx5080-draft-acceptance.md) and
 `experiments/pytorch-w1a1-cuda-acceptance.md` contain the pinned CUDA setup,
 strict BF16 parity diagnostic, full 12-prompt exploratory acceptance sweep,

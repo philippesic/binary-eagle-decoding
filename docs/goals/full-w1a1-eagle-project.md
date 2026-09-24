@@ -98,3 +98,26 @@ RTX 5080 access. Make bounded decisions from evidence, checkpoint them in
   minutes for the roughly 10-hour away window, with instructions to avoid
   duplicate work while a task/worker is active and to report meaningful
   progress only. It will be paused at the window end.
+- CPU packed-binary reference/packer was reviewed and integrated on `main` at
+  `f8f3209`; the isolated worktree/branch were removed after verifying its
+  three owned files matched the pushed cherry-pick. `make check` passes 38
+  tests. The reference uses row-major little-bit-order uint32 words, sign(0)
+  = +1, logical-K tail masking, per-row/per-token FP32 scales, and
+  `K - 2*popcount(XOR)`. No GPU kernel or native speed claim exists yet.
+- A numerical-contract issue needs explicit handling: the prior PyTorch
+  W1A1 wrapper performs sign GEMM and successive scaling in BF16, while the
+  new packed reference uses integer dot with FP32 scales/output. The native
+  path must pin its rounding contract and either match/re-evaluate held-out
+  acceptance or reproduce BF16 stages for a parity diagnostic. Do not project
+  previous accepted/round values directly onto a native implementation.
+- The pinned llama.cpp graph/loader audit selected a narrow native route:
+  one dedicated W1A1 matrix operation with I32 packed-weight and F32 scale
+  companion tensors, initially at the EAGLE head. The staged file/interface
+  plan and loader/converter pitfalls are in `docs/native-w1a1-path.md`.
+  Existing GGML Q1_0 is weight-only block quantization and does not implement
+  this row-scaled W1A1 contract.
+- A bounded head-only QAT pilot was chosen from acceptance and layer-cost
+  evidence, after the current GPU parity diagnostic. Its data split,
+  forward-equivalence checks, 500-step/45-minute stop, export audit, and
+  held-out gate are fixed in `experiments/qat-head-pilot-plan.md`. No QAT
+  process has started and the 5080 remains owned by the parity operator.
