@@ -363,11 +363,23 @@ RTX 5080 access. Make bounded decisions from evidence, checkpoint them in
   [the RTX 2080 Ti runbook](../RTX2080TI_RUNBOOK.md). Its current address is
   absent from the shared host registry; the username `philip` is known and
   the user was asked asynchronously for the IP. No 2080 Ti run has started.
-- A new compile-only integrated SM75 check is running on the 5080 host under
+- A compile-only integrated SM75 check ran on the 5080 host under
   supervised ID `integrated-sm75-cuda-build-20260924`, owned by
   `/root/cuda_acceptance_operator`. It uses a separate ignored
   `build/llama-cuda-sm75` tree (leaving the measured SM120 binary intact),
   CUDA 13.1/GCC 15, `CMAKE_CUDA_ARCHITECTURES=75`, and the previously audited
   private CUDA header copy. No SM75 binary will be executed on the 5080.
-  Capture its terminal state/disassembly/hashes before claiming compile-only
-  success; the 2080 Ti runtime gate remains pending.
+  The build completed 358/358 steps (supervisor exit 0), producing the CUDA
+  backend test/server binaries and shared library without executing them.
+  Supervised disassembly also exited zero: the integrated W1A1 CUDA PTX has
+  `xor.b32`/`popc.b32`, and its SM75 SASS contains `POPC`/LOP3 in the XOR
+  kernel. Exact hashes/excerpt are being sealed. The 2080 Ti runtime gate
+  remains pending.
+- `1e4e76a` integrated a versioned real-head parity fixture generator and
+  standalone CUDA checker from an isolated Sol worktree (cleaned after
+  integration). It uses eight deterministic rows from the ignored BF16 QAT
+  capture and **all 32,000** packed GGUF head rows, with exact sign/dot
+  reference and F32 output tolerance. Local synthetic/full-size CPU fixture
+  checks and `make check` passed 78 tests; the remote real capture fixture and
+  CUDA execution await the integrated SM75 build's artifact sealing and the
+  sole 5080 GPU handoff.

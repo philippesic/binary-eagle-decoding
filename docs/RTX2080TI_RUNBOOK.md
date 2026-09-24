@@ -66,6 +66,11 @@ though serial. A negative result is valid if its bottleneck and limitations
 are quantified. If the portable path is negative, only claim that path is
 negative; compare an actual integrated MMA path before ruling out Turing
 binary Tensor Cores.
+The current activation packer accumulates magnitudes in F64 before writing
+an F32 scale; measure that reduction separately on Turing rather than
+carrying over the 5080 pack cost. The 5080 integrated-kernel NCU attempt was
+denied GPU performance counters, so its standalone CUDA-event result is the
+available component baseline, not an integrated per-kernel profile.
 
 After each run, stop the supervised process group, check its state and GPU
 process list, record final memory/utilization, close SSH/tmux, and checkpoint

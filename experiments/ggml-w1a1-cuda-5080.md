@@ -142,3 +142,21 @@ under remote `results/packed-w1a1-ncu-profile-20260924/`, manifest SHA256
 `1f3268c4dce267609fdc7cec9b355dcd14d382cab780e1539c81e36def2cd031`.
 No second profiler attempt was made; the GPU returned to idle and SSH/tmux
 closed.
+
+## Integrated SM75 compile-only gate
+
+The pinned llama.cpp submodule `92bc706` also built in a **separate**
+`build/llama-cuda-sm75` Release tree on the 5080 host with CUDA architecture
+75, tests/server enabled, and the same audited private CUDA include root.
+Its supervised configure/build completed 358/358 Ninja steps and produced
+`llama-server`, `test-backend-ops`, and `libggml-cuda.so.0.25.1`. Neither
+SM75 binary was executed on the SM120 5080. A separate supervised
+`cuobjdump/nvdisasm` pass found integrated PTX symbols
+`w1a1_pack_activations` and `w1a1_xor_popc`, `xor.b32`/`popc.b32`, and SM75
+SASS `POPC` instructions with LOP3 bit logic in the W1A1 XOR kernel. This
+establishes integrated SM75 compile/codegen feasibility for the portable
+binary operation. It does **not** validate its output or speed on the 2080 Ti.
+The raw disassembly is large (~1.3 GiB SASS and 254 MiB PTX); a compact
+excerpt, exact flags, binary and output hashes will be recorded from the
+operator's sealed artifact manifest. The SM120 build and timed binary remain
+untouched.
