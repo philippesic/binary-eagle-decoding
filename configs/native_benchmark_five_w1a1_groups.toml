@@ -1,0 +1,94 @@
+# Optional paired seven-variant native matrix. Duplicate the existing model,
+# prompt, server, and precision paths for the actual 2080 Ti checkout before use.
+# Each expected marker is an evidence contract: the exact CUDA W1A1 dispatch
+# log substring emitted by the llama.cpp revision for that group's kernel.
+schema_version = 1
+
+[server]
+binary = "build/llama-cuda/bin/llama-server"
+host = "127.0.0.1"
+port = 18080
+startup_timeout_s = 300
+request_timeout_s = 180
+common_args = [
+  "--n-gpu-layers", "all", "--ctx-size", "2048", "--parallel", "1",
+  "--fit", "off", "--cache-type-k", "f16", "--cache-type-v", "f16",
+  "--jinja", "--metrics", "--perf", "-lv", "4",
+]
+
+[models]
+target = "models/gguf/Qwen3-4B-f16.gguf"
+ordinary_draft = "models/gguf/Qwen3-4B-eagle3-f16.gguf"
+
+[packed_variants.fusion]
+draft = "models/gguf/Qwen3-4B-eagle3-fusion-w1a1.gguf"
+weight_coverage = "feature_fusion_only"
+activation_coverage = "feature_fusion_only"
+expected_loader_marker = "EAGLE3 W1A1 active groups: fusion (1 tensors)"
+expected_cuda_marker = "CUDA packed W1A1 XOR/POPCOUNT dispatch"
+
+[packed_variants.attention]
+draft = "models/gguf/Qwen3-4B-eagle3-attention-w1a1.gguf"
+weight_coverage = "q_k_v_output_projections"
+activation_coverage = "q_k_v_output_projections"
+expected_loader_marker = "EAGLE3 W1A1 active groups: attention (4 tensors)"
+expected_cuda_marker = "CUDA packed W1A1 XOR/POPCOUNT dispatch"
+
+[packed_variants.ffn]
+draft = "models/gguf/Qwen3-4B-eagle3-ffn-w1a1.gguf"
+weight_coverage = "gate_up_down_projections"
+activation_coverage = "gate_up_down_projections"
+expected_loader_marker = "EAGLE3 W1A1 active groups: ffn (3 tensors)"
+expected_cuda_marker = "CUDA packed W1A1 XOR/POPCOUNT dispatch"
+
+[packed_variants.head]
+draft = "models/gguf/Qwen3-4B-eagle3-head-w1a1.gguf"
+weight_coverage = "vocabulary_output_projection"
+activation_coverage = "vocabulary_output_projection"
+expected_loader_marker = "EAGLE3 using packed W1A1 draft head"
+expected_cuda_marker = "CUDA packed W1A1 XOR/POPCOUNT dispatch"
+
+[packed_variants.all]
+draft = "models/gguf/Qwen3-4B-eagle3-all-w1a1.gguf"
+weight_coverage = "all_nine_linears"
+activation_coverage = "all_nine_linears"
+expected_loader_marker = "EAGLE3 W1A1 active groups: fusion,attention,ffn,head (9 tensors)"
+expected_cuda_marker = "CUDA packed W1A1 XOR/POPCOUNT dispatch"
+
+# These are independent weight-only draft variants, distinct from W4A4/W8A8.
+# Replace the precision labels with values verified from the server/backend logs.
+[weight_only_variants.q4_0]
+draft = "models/gguf/Qwen3-4B-eagle3-q4_0.gguf"
+weight_format = "Q4_0"
+activation_precision = "unknown until confirmed from server/backend logs"
+backend_precision = "unknown until confirmed from CUDA operator logs"
+
+[weight_only_variants.q8_0]
+draft = "models/gguf/Qwen3-4B-eagle3-q8_0.gguf"
+weight_format = "Q8_0"
+activation_precision = "unknown until confirmed from server/backend logs"
+backend_precision = "unknown until confirmed from CUDA operator logs"
+
+[precision]
+target_weights = "f16"
+target_kv = "f16"
+ordinary_draft_weights = "f16"
+ordinary_draft_kv = "f16"
+packed_draft_kv = "f16"
+packed_draft_other_weights = "f16_except_variant_coverage"
+packed_activation = "runtime sign quantization with f32 scale"
+
+[evaluation]
+group_matrix = true
+weight_only_matrix = true
+prompt_file = "configs/acceptance_prompts.jsonl"
+warmup_requests = 2
+repetitions = 5
+max_output_tokens = 128
+temperature = 0.0
+seed = 42
+max_draft_tokens = 5
+enable_thinking = false
+
+[environment]
+CUDA_VISIBLE_DEVICES = "0"

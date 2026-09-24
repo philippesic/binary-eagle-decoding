@@ -37,7 +37,8 @@ args = sys.argv
 host = args[args.index("--host") + 1]
 port = int(args[args.index("--port") + 1])
 spec = args[args.index("--spec-type") + 1] != "none"
-packed = "packed.gguf" in args[args.index("-md") + 1] if "-md" in args else False
+draft_path = args[args.index("-md") + 1] if "-md" in args else ""
+packed = "w1a1" in draft_path or "packed.gguf" in draft_path
 emitted = False
 counts = {"proposed": 0, "accepted": 0, "rounds": 0}
 
@@ -80,16 +81,29 @@ class Handler(BaseHTTPRequestHandler):
             counts["accepted"] += 2
             counts["rounds"] += 1
         if packed and not emitted and os.environ.get("FAKE_EMIT_DISPATCH") == "1":
-            print("EAGLE3 using packed W1A1 draft head", flush=True)
+            if "fusion" in draft_path:
+                print("EAGLE3 W1A1 active groups: fusion (1 tensors)", flush=True)
+            elif "attention" in draft_path:
+                print("EAGLE3 W1A1 active groups: attention (4 tensors)", flush=True)
+            elif "ffn" in draft_path:
+                print("EAGLE3 W1A1 active groups: ffn (3 tensors)", flush=True)
+            elif "all-w1a1" in draft_path:
+                print(
+                    "EAGLE3 W1A1 active groups: fusion,attention,ffn,head (9 tensors)",
+                    flush=True,
+                )
+            else:
+                print("EAGLE3 using packed W1A1 draft head", flush=True)
             if os.environ.get("GGML_CUDA_W1A1_MMA") == "1":
                 print("CUDA packed W1A1 binary MMA dispatch", flush=True)
             else:
-                print("CUDA packed W1A1 portable XOR/POPCOUNT dispatch", flush=True)
+                print("CUDA packed W1A1 XOR/POPCOUNT dispatch", flush=True)
             emitted = True
         self.write(200, json.dumps({
             "choices": [{"finish_reason": "length", "message": {"content": "test"}}],
             "usage": {"prompt_tokens": 5, "completion_tokens": 4},
             "timings": {"prompt_n": 5, "prompt_ms": 20, "predicted_n": 4, "predicted_ms": 10},
+            "tokens": [1, 2, 3, 4] if request.get("return_tokens") else None,
             "seen": request["messages"],
         }))
 
@@ -158,6 +172,44 @@ class NativeBenchmarkTests(unittest.TestCase):
             "CUDA packed W1A1 portable XOR/POPCOUNT dispatch", benchmark.MMA_VARIANT
         )
         self.assertIsNone(wrong_mode["cuda_w1a1_dispatch_confirmed"])
+        expected = "CUDA packed W1A1 XOR/POPCOUNT dispatch"
+        loader = "EAGLE3 W1A1 active groups: attention (4 tensors)"
+        group_confirmed = benchmark.dispatch_evidence(
+            expected + "\n" + loader, "packed_attention_w1a1", expected, loader
+        )
+        self.assertTrue(group_confirmed["cuda_w1a1_dispatch_confirmed"])
+        group_missing = benchmark.dispatch_evidence(
+            "CUDA packed W1A1 XOR/POPCOUNT dispatch",
+            "packed_attention_w1a1",
+            expected,
+            loader,
+        )
+        self.assertIsNone(group_missing["cuda_w1a1_dispatch_confirmed"])
+
+    def test_group_matrix_variant_selection_and_balanced_order(self):
+        variants = benchmark.selected_variants({"group_matrix": True})
+        self.assertEqual(variants, ("target_only", "ordinary_eagle", *benchmark.GROUP_VARIANTS))
+        full_matrix = benchmark.selected_variants(
+            {"group_matrix": True, "weight_only_matrix": True}
+        )
+        self.assertEqual(
+            full_matrix,
+            (
+                "target_only",
+                "ordinary_eagle",
+                *benchmark.GROUP_VARIANTS,
+                *benchmark.WEIGHT_ONLY_VARIANTS,
+            ),
+        )
+        self.assertEqual(len(benchmark.schedule(5, full_matrix)[0]), 9)
+        orders = benchmark.schedule(5, variants)
+        self.assertEqual(len(orders), 5)
+        self.assertTrue(all(set(order) == set(variants) for order in orders))
+        for position in range(len(variants)):
+            counts = [sum(order[position] == variant for order in orders) for variant in variants]
+            self.assertLessEqual(max(counts) - min(counts), 1)
+        with self.assertRaises(ValueError):
+            benchmark.selected_variants({"group_matrix": True, "binary_mma": True})
 
     def test_greedy_text_match_pairs(self):
         records = [
@@ -192,6 +244,29 @@ class NativeBenchmarkTests(unittest.TestCase):
             records, (*benchmark.VARIANTS, benchmark.MMA_VARIANT), "packed_head_w1a1"
         )
         self.assertEqual(paired[benchmark.MMA_VARIANT]["matched_text"], 1)
+
+    def test_generated_token_id_parity_records_first_mismatch(self):
+        rows = [
+            {
+                "repetition": 0,
+                "prompt_id": "p",
+                "variant": "target_only",
+                "generated_token_ids": [10, 20, 30],
+            },
+            {
+                "repetition": 0,
+                "prompt_id": "p",
+                "variant": "packed_head_w1a1",
+                "generated_token_ids": [10, 22, 30],
+            },
+        ]
+        result = benchmark.generated_token_id_matches(rows)
+        self.assertEqual(result["packed_head_w1a1"]["mismatched_sequences"], 1)
+        self.assertEqual(result["packed_head_w1a1"]["mismatch_pairs"][0]["first_mismatch_index"], 1)
+        rows[1]["generated_token_ids"] = None
+        self.assertEqual(
+            benchmark.generated_token_id_matches(rows)["packed_head_w1a1"]["unavailable"], 1
+        )
 
     def test_aggregate_uses_ratio_of_sums(self):
         rows = []
@@ -344,6 +419,74 @@ class NativeBenchmarkTests(unittest.TestCase):
             self.assertEqual(len(report["repetitions"][0]["aggregation"]), 4)
             self.assertTrue(benchmark.available_port("127.0.0.1", port))
 
+    def test_seven_variant_fake_run_records_coverage_hashes_and_dispatch(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            config, port = self.prepare(root, group_matrix=True)
+            with (
+                patch.object(benchmark, "ROOT", root),
+                patch.object(benchmark, "git_output", side_effect=fake_git_output),
+            ):
+                output = benchmark.run(config, "group-matrix-run")
+            report = json.loads((output / "report.json").read_text())
+            manifest = json.loads((output / "manifest.json").read_text())
+            self.assertEqual(report["records"], 35)
+            self.assertEqual(
+                report["variants"], ["target_only", "ordinary_eagle", *benchmark.GROUP_VARIANTS]
+            )
+            self.assertEqual(
+                report["cuda_dispatch_confirmed_by_variant"],
+                {variant: True for variant in benchmark.GROUP_VARIANTS},
+            )
+            self.assertEqual(set(manifest["variant_specs"]), set(benchmark.GROUP_VARIANTS))
+            for spec in manifest["variant_specs"].values():
+                self.assertEqual(len(spec["draft_model_sha256"]), 64)
+                self.assertTrue(spec["weight_coverage"])
+                self.assertTrue(spec["activation_coverage"])
+            records = json.loads((output / "records.json").read_text())
+            head = next(row for row in records if row["variant"] == "packed_head_w1a1")
+            self.assertEqual(head["weight_coverage"], "head")
+            self.assertEqual(len(head["draft_model_sha256"]), 64)
+            self.assertEqual(head["generated_token_ids"], [1, 2, 3, 4])
+            self.assertEqual(head["generated_token_ids_status"], "available")
+            self.assertEqual(len(head["generated_token_ids_sha256"]), 64)
+            environment = manifest["environment_manifest"]
+            self.assertIn("nvidia_smi_q", environment)
+            self.assertIn("cuda_toolkit_nvcc", environment)
+            self.assertIn("cmake_cache", environment)
+            self.assertTrue(benchmark.available_port("127.0.0.1", port))
+
+    def test_optional_q4_q8_drafts_are_labeled_weight_only(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            config, _ = self.prepare(root, weight_only_matrix=True)
+            with (
+                patch.object(benchmark, "ROOT", root),
+                patch.object(benchmark, "git_output", side_effect=fake_git_output),
+            ):
+                output = benchmark.run(config, "weight-only-dry-run", dry_run=True)
+            manifest = json.loads((output / "manifest.json").read_text())
+            self.assertEqual(
+                manifest["variants"],
+                [*benchmark.VARIANTS, *benchmark.WEIGHT_ONLY_VARIANTS],
+            )
+            for variant, weight_format in (("draft_q4_0", "Q4_0"), ("draft_q8_0", "Q8_0")):
+                spec = manifest["variant_specs"][variant]
+                self.assertEqual(spec["weight_format"], weight_format)
+                self.assertEqual(
+                    spec["weight_coverage"], "all draft weights, weight-only quantization"
+                )
+                self.assertIn("activation", spec["activation_precision"])
+                self.assertIn("CUDA", spec["backend_precision"])
+                self.assertEqual(
+                    Path(
+                        manifest["commands"][variant][
+                            manifest["commands"][variant].index("-md") + 1
+                        ]
+                    ).name,
+                    f"draft-{weight_format.lower()}.gguf",
+                )
+
     def test_failed_request_stops_server_and_keeps_failure(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -367,7 +510,12 @@ class NativeBenchmarkTests(unittest.TestCase):
             self.assertTrue(benchmark.available_port("127.0.0.1", port))
 
     def prepare(
-        self, root: Path, failure: bool = False, binary_mma: bool = False
+        self,
+        root: Path,
+        failure: bool = False,
+        binary_mma: bool = False,
+        group_matrix: bool = False,
+        weight_only_matrix: bool = False,
     ) -> tuple[Path, int]:
         (root / "results").mkdir()
         fake = root / "fake-server"
@@ -375,6 +523,11 @@ class NativeBenchmarkTests(unittest.TestCase):
         fake.chmod(0o755)
         for name in ("target.gguf", "draft.gguf", "packed.gguf"):
             (root / name).write_bytes(b"fake")
+        group_names = ("fusion", "attention", "ffn", "head", "all")
+        for name in group_names:
+            (root / f"packed-{name}-w1a1.gguf").write_bytes(f"fake-{name}".encode())
+        for name in ("q4_0", "q8_0"):
+            (root / f"draft-{name}.gguf").write_bytes(f"fake-{name}".encode())
         (root / "prompts.jsonl").write_text(
             json.dumps({"id": "test-prompt", "messages": [{"role": "user", "content": "Hi"}]})
             + "\n"
@@ -383,6 +536,35 @@ class NativeBenchmarkTests(unittest.TestCase):
             probe.bind(("127.0.0.1", 0))
             port = probe.getsockname()[1]
         config = root / "config.toml"
+        loader_markers = {
+            "fusion": "EAGLE3 W1A1 active groups: fusion (1 tensors)",
+            "attention": "EAGLE3 W1A1 active groups: attention (4 tensors)",
+            "ffn": "EAGLE3 W1A1 active groups: ffn (3 tensors)",
+            "head": "EAGLE3 using packed W1A1 draft head",
+            "all": "EAGLE3 W1A1 active groups: fusion,attention,ffn,head (9 tensors)",
+        }
+        quant_tables = """\n[weight_only_variants.q4_0]
+draft = "draft-q4_0.gguf"
+weight_format = "Q4_0"
+activation_precision = "f16 runtime activations"
+backend_precision = "verified CUDA Q4_0 path"
+
+[weight_only_variants.q8_0]
+draft = "draft-q8_0.gguf"
+weight_format = "Q8_0"
+activation_precision = "f16 runtime activations"
+backend_precision = "verified CUDA Q8_0 path"
+"""
+        packed_tables = "".join(
+            f'''\n[packed_variants.{name}]
+draft = "packed-{name}-w1a1.gguf"
+weight_coverage = "{name}"
+activation_coverage = "{name}"
+expected_cuda_marker = "CUDA packed W1A1 XOR/POPCOUNT dispatch"
+expected_loader_marker = "{loader_markers[name]}"
+'''
+            for name in group_names
+        )
         config.write_text(
             f'''schema_version = 1
 [server]
@@ -406,12 +588,22 @@ seed = 42
 max_draft_tokens = 3
 enable_thinking = false
 {"binary_mma = true" if binary_mma else ""}
+{"group_matrix = true" if group_matrix else ""}
+{"weight_only_matrix = true" if weight_only_matrix else ""}
 [environment]
 FAKE_FAIL = "{int(failure)}"
-FAKE_EMIT_DISPATCH = "{int(binary_mma)}"
+FAKE_EMIT_DISPATCH = "{int(binary_mma or group_matrix)}"
 GGML_CUDA_W1A1_MMA = "1"
 '''
         )
+        if group_matrix:
+            # Keep the five model specifications next to top-level sections in valid TOML.
+            text = config.read_text().replace("[evaluation]", packed_tables + "\n[evaluation]")
+            config.write_text(text)
+        elif weight_only_matrix:
+            config.write_text(
+                config.read_text().replace("[environment]", quant_tables + "\n[environment]")
+            )
         return config, port
 
 

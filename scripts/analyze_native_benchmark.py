@@ -9,6 +9,15 @@ from pathlib import Path
 VARIANTS = ("target_only", "ordinary_eagle", "packed_head_w1a1")
 MMA_VARIANT = "packed_head_w1a1_mma"
 ALL_VARIANTS = (*VARIANTS, MMA_VARIANT)
+GROUP_VARIANTS = (
+    "packed_fusion_w1a1",
+    "packed_attention_w1a1",
+    "packed_ffn_w1a1",
+    "packed_head_w1a1",
+    "packed_all_w1a1",
+)
+GROUP_MATRIX_VARIANTS = (*VARIANTS[:2], *GROUP_VARIANTS)
+WEIGHT_ONLY_VARIANTS = ("draft_q4_0", "draft_q8_0")
 METRICS = ("request", "decode")
 
 
@@ -22,7 +31,16 @@ def sha256(path: Path) -> str:
 
 def selected_variants(records: list[dict], reported: list[str] | None = None) -> tuple[str, ...]:
     observed = {row["variant"] for row in records}
-    variants = ALL_VARIANTS if MMA_VARIANT in observed else VARIANTS
+    weight_only = tuple(variant for variant in WEIGHT_ONLY_VARIANTS if variant in observed)
+    core = observed - set(weight_only)
+    if core == set(GROUP_MATRIX_VARIANTS):
+        variants = (*GROUP_MATRIX_VARIANTS, *weight_only)
+    elif core == set(ALL_VARIANTS):
+        variants = (*ALL_VARIANTS, *weight_only)
+    elif core == set(VARIANTS):
+        variants = (*VARIANTS, *weight_only)
+    else:
+        variants = VARIANTS
     if observed != set(variants) or (reported is not None and tuple(reported) != variants):
         raise ValueError("benchmark variants are incomplete or unknown")
     return variants
@@ -173,6 +191,15 @@ def analyze(run_dir: Path, samples: int, seed: int) -> dict:
     categories = {row["id"]: row["category"] for row in prompt_rows}
     if set(categories) != set(prompts):
         raise ValueError("benchmark prompts differ from paired records")
+    packed_speedups = {
+        variant: {
+            f"{anchor}/{metric}": pooled_speedup(records, anchor, metric, variant)
+            for anchor in VARIANTS[:2]
+            for metric in METRICS
+        }
+        for variant in variants
+        if variant.startswith(("packed_", "draft_q"))
+    }
     portable_speedups = {
         f"{anchor}/{metric}": pooled_speedup(records, anchor, metric)
         for anchor in VARIANTS[:2]
@@ -190,6 +217,7 @@ def analyze(run_dir: Path, samples: int, seed: int) -> dict:
         "bootstrap_seed": seed,
         "bootstrap_samples": samples,
         "pooled_packed_speedup": portable_speedups,
+        "pooled_variant_speedups": packed_speedups,
         "paired_prompt_repetition_bootstrap_95pct": paired_bootstrap(records, samples, seed),
         "category_summary": category_summary(records, categories),
         "interpretation": (
@@ -197,6 +225,11 @@ def analyze(run_dir: Path, samples: int, seed: int) -> dict:
             "variants per draw; each speedup is a ratio of pooled token/time rates. "
             "These descriptive intervals do not correct model or hardware systematic bias."
         ),
+    }
+    result["paired_variant_bootstrap_95pct"] = {
+        variant: paired_bootstrap(records, samples, seed, variant)
+        for variant in variants
+        if variant.startswith(("packed_", "draft_q")) and variant != MMA_VARIANT
     }
     if MMA_VARIANT in variants:
         result["pooled_mma_speedup"] = {

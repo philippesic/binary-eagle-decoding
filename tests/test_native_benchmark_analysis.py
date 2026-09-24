@@ -50,6 +50,26 @@ class NativeBenchmarkAnalysisTests(unittest.TestCase):
                 rows.append(mma)
         return rows
 
+    def records_with_groups(self) -> list[dict]:
+        rows = []
+        variants = (*analysis.VARIANTS[:2], *analysis.GROUP_VARIANTS)
+        for repetition in range(2):
+            for prompt_id, tokens in (("prose-01", 2), ("code-01", 8)):
+                for index, variant in enumerate(variants):
+                    wall = 2.0 / (index + 1)
+                    rows.append(
+                        {
+                            "repetition": repetition,
+                            "prompt_id": prompt_id,
+                            "variant": variant,
+                            "completion_tokens": tokens,
+                            "request_wall_s": wall,
+                            "server_predicted_ms": wall * 500,
+                            "speculative": {"proposed": 4, "accepted": 2, "rounds": 2},
+                        }
+                    )
+        return rows
+
     def test_pooled_speedup_and_paired_bootstrap(self) -> None:
         rows = self.records()
         self.assertEqual(analysis.pooled_speedup(rows, "target_only", "request"), 2.0)
@@ -99,6 +119,52 @@ class NativeBenchmarkAnalysisTests(unittest.TestCase):
             analysis.paired_index(missing)
         with self.assertRaisesRegex(ValueError, "benchmark variants"):
             analysis.selected_variants(rows, list(analysis.VARIANTS))
+
+    def test_seven_variant_group_matrix_and_pooled_speedups(self) -> None:
+        rows = self.records_with_groups()
+        self.assertEqual(analysis.selected_variants(rows), analysis.GROUP_MATRIX_VARIANTS)
+        self.assertAlmostEqual(
+            analysis.pooled_speedup(rows, "ordinary_eagle", "request", "packed_all_w1a1"),
+            3.5,
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            (directory / "records.json").write_text(json.dumps(rows))
+            (directory / "report.json").write_text(
+                json.dumps(
+                    {
+                        "status": "complete",
+                        "records": len(rows),
+                        "variants": list(analysis.GROUP_MATRIX_VARIANTS),
+                    }
+                )
+            )
+            (directory / "prompts.jsonl").write_text(
+                '{"id":"prose-01","category":"prose"}\n{"id":"code-01","category":"code"}\n'
+            )
+            result = analysis.analyze(directory, 100, 42)
+            self.assertEqual(
+                result["pooled_variant_speedups"]["packed_all_w1a1"]["ordinary_eagle/request"],
+                3.5,
+            )
+            self.assertIn("packed_fusion_w1a1", result["paired_variant_bootstrap_95pct"])
+            self.assertIn("packed_all_w1a1", result["category_summary"]["code"])
+
+        quant_rows = [dict(row) for row in rows]
+        for row in rows:
+            if row["variant"] != "ordinary_eagle":
+                continue
+            for variant in analysis.WEIGHT_ONLY_VARIANTS:
+                quant = dict(row)
+                quant["variant"] = variant
+                quant["request_wall_s"] *= 0.75
+                quant_rows.append(quant)
+        expected = (*analysis.GROUP_MATRIX_VARIANTS, *analysis.WEIGHT_ONLY_VARIANTS)
+        self.assertEqual(analysis.selected_variants(quant_rows), expected)
+        self.assertAlmostEqual(
+            analysis.pooled_speedup(quant_rows, "ordinary_eagle", "request", "draft_q4_0"),
+            4 / 3,
+        )
 
     def test_missing_decode_metric_does_not_hide_request_interval(self) -> None:
         rows = self.records()

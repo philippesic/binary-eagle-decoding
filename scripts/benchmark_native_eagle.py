@@ -28,6 +28,16 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 VARIANTS = ("target_only", "ordinary_eagle", "packed_head_w1a1")
 MMA_VARIANT = "packed_head_w1a1_mma"
+GROUP_VARIANTS = (
+    "packed_fusion_w1a1",
+    "packed_attention_w1a1",
+    "packed_ffn_w1a1",
+    "packed_head_w1a1",
+    "packed_all_w1a1",
+)
+GROUP_NAMES = ("fusion", "attention", "ffn", "head", "all")
+WEIGHT_ONLY_VARIANTS = ("draft_q4_0", "draft_q8_0")
+WEIGHT_ONLY_NAMES = ("q4_0", "q8_0")
 SPEC_COUNTERS = {
     "proposed": "llamacpp:spec_decode_num_draft_tokens_total",
     "accepted": "llamacpp:spec_decode_num_accepted_tokens_total",
@@ -114,6 +124,144 @@ def gpu_snapshot() -> dict[str, Any]:
     return result
 
 
+def command_snapshot(command: list[str], timeout: int = 15) -> dict[str, Any]:
+    if shutil.which(command[0]) is None:
+        return {"available": False, "command": command}
+    try:
+        completed = subprocess.run(command, capture_output=True, text=True, timeout=timeout)
+    except (OSError, subprocess.TimeoutExpired) as error:
+        return {"available": True, "command": command, "error": str(error)}
+    return {
+        "available": True,
+        "command": command,
+        "exit_code": completed.returncode,
+        "stdout": completed.stdout,
+        "stderr": completed.stderr,
+    }
+
+
+def environment_manifest(binary: Path) -> dict[str, Any]:
+    """Collect host/build facts once per run, outside the measured request loop."""
+    full_query = command_snapshot(["nvidia-smi", "-q"], timeout=30)
+    cuda_query = command_snapshot(["nvcc", "--version"])
+    runtime_links = command_snapshot(["ldd", str(binary)])
+    cache_files = []
+    for parent in (binary.parent, *binary.parents):
+        candidate = parent / "CMakeCache.txt"
+        if candidate.is_file():
+            cache_files.append(candidate)
+            break
+    cmake_cache: dict[str, str] = {}
+    cache_path = cache_files[0] if cache_files else None
+    if cache_path:
+        wanted = (
+            "CMAKE_BUILD_TYPE",
+            "CMAKE_CXX_COMPILER:FILEPATH",
+            "CMAKE_CXX_FLAGS",
+            "CMAKE_CUDA_COMPILER:FILEPATH",
+            "CMAKE_CUDA_FLAGS",
+            "CMAKE_CUDA_ARCHITECTURES",
+            "CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES",
+            "GGML_CUDA",
+            "GGML_CUDA_FORCE_CUBLAS",
+            "GGML_CUDA_W1A1_MMA",
+        )
+        for line in cache_path.read_text(errors="replace").splitlines():
+            if line.startswith("//") or not line or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            if any(key == prefix or key.startswith(prefix + ":") for prefix in wanted):
+                cmake_cache[key] = value
+    cxx_path = cmake_cache.get("CMAKE_CXX_COMPILER:FILEPATH")
+    cxx_version = (
+        command_snapshot([cxx_path, "--version"])
+        if cxx_path
+        else {"available": False, "reason": "CMake cache has no C++ compiler path"}
+    )
+    capability = command_snapshot(
+        [
+            "nvidia-smi",
+            "--query-gpu=name,uuid,driver_version,memory.total,compute_cap",
+            "--format=csv,noheader",
+        ]
+    )
+    runtime_text = runtime_links.get("stdout") or ""
+    runtime_libs = [line.strip() for line in runtime_text.splitlines() if "libcudart" in line]
+    compile_commands_path = cache_path.parent / "compile_commands.json" if cache_path else None
+    compile_commands: dict[str, Any] = {"available": False}
+    build_files = []
+    if cache_path:
+        for name in ("compile_commands.json", "build.ninja", "Makefile"):
+            candidate = cache_path.parent / name
+            if candidate.is_file():
+                build_files.append(
+                    {
+                        "path": str(candidate),
+                        "sha256": sha256(candidate),
+                        "bytes": candidate.stat().st_size,
+                    }
+                )
+    if compile_commands_path and compile_commands_path.is_file():
+        try:
+            commands = json.loads(compile_commands_path.read_text())
+            cuda_commands = [row for row in commands if str(row.get("file", "")).endswith(".cu")]
+            cxx_commands = [
+                row
+                for row in commands
+                if str(row.get("file", "")).endswith((".cc", ".cpp", ".cxx"))
+            ]
+
+            def compact_command(row: dict[str, Any]) -> dict[str, Any]:
+                return {
+                    key: row.get(key)
+                    for key in ("directory", "file", "command", "arguments")
+                    if row.get(key) is not None
+                }
+
+            compile_commands = {
+                "available": True,
+                "path": str(compile_commands_path),
+                "sha256": sha256(compile_commands_path),
+                "entries": len(commands),
+                "cuda_command_samples": [compact_command(row) for row in cuda_commands[:5]],
+                "cxx_command_samples": [compact_command(row) for row in cxx_commands[:5]],
+            }
+        except (OSError, json.JSONDecodeError, TypeError) as error:
+            compile_commands = {
+                "available": True,
+                "path": str(compile_commands_path),
+                "error": str(error),
+            }
+    return {
+        "gpu_capability_query": capability,
+        "nvidia_smi_q": full_query,
+        "cuda_toolkit_nvcc": cuda_query,
+        "cxx_compiler": cxx_version,
+        "binary_dynamic_runtime_links": runtime_links,
+        "cuda_runtime_libraries": runtime_libs,
+        "binary": {
+            "path": str(binary),
+            "sha256": sha256(binary) if binary.is_file() else None,
+            "bytes": binary.stat().st_size if binary.is_file() else None,
+        },
+        "cmake_cache": {
+            "path": str(cache_path) if cache_path else None,
+            "available": cache_path is not None,
+            "selected_build_flags": cmake_cache,
+        },
+        "compile_commands": compile_commands,
+        "build_files": build_files,
+        "runtime_version": {
+            "status": "driver compatibility and linked CUDA runtime captured where available",
+            "driver_cuda_compatibility": full_query.get("stdout")
+            if full_query.get("available")
+            else None,
+            "toolkit_nvcc": cuda_query.get("stdout") if cuda_query.get("available") else None,
+            "linked_runtime_libraries": runtime_libs if runtime_libs else None,
+        },
+    }
+
+
 def resolve(root: Path, value: str) -> Path:
     path = Path(value).expanduser()
     return path.resolve() if path.is_absolute() else (root / path).resolve()
@@ -150,9 +298,90 @@ def load_prompts(path: Path) -> list[dict[str, Any]]:
 
 def selected_variants(evaluation: dict[str, Any]) -> tuple[str, ...]:
     enabled = evaluation.get("binary_mma", False)
-    if not isinstance(enabled, bool):
-        raise ValueError("evaluation.binary_mma must be a boolean")
-    return (*VARIANTS, MMA_VARIANT) if enabled else VARIANTS
+    group_matrix = evaluation.get("group_matrix", False)
+    weight_only_matrix = evaluation.get("weight_only_matrix", False)
+    if not all(isinstance(value, bool) for value in (enabled, group_matrix, weight_only_matrix)):
+        raise ValueError(
+            "evaluation.binary_mma, group_matrix, and weight_only_matrix must be booleans"
+        )
+    if group_matrix and enabled:
+        raise ValueError("evaluation.group_matrix and binary_mma cannot be enabled together")
+    base = (
+        (*VARIANTS[:2], *GROUP_VARIANTS)
+        if group_matrix
+        else ((*VARIANTS, MMA_VARIANT) if enabled else VARIANTS)
+    )
+    return (*base, *WEIGHT_ONLY_VARIANTS) if weight_only_matrix else base
+
+
+def packed_specs(config: dict[str, Any], variants: tuple[str, ...]) -> dict[str, dict[str, Any]]:
+    """Return packed-model metadata; group variants require a configurable evidence contract."""
+    if GROUP_VARIANTS[0] not in variants:
+        return {}
+    raw = config.get("packed_variants")
+    if not isinstance(raw, dict) or set(raw) != set(GROUP_NAMES):
+        raise ValueError("group_matrix requires [packed_variants.<group>] for all five groups")
+    specs = {}
+    for variant, name in zip(GROUP_VARIANTS, GROUP_NAMES, strict=True):
+        spec = raw[name]
+        if not isinstance(spec, dict):
+            raise ValueError(f"packed_variants.{name} must be a table")
+        for key in (
+            "draft",
+            "weight_coverage",
+            "activation_coverage",
+            "expected_loader_marker",
+            "expected_cuda_marker",
+        ):
+            if not isinstance(spec.get(key), str) or not spec[key].strip():
+                raise ValueError(f"packed_variants.{name}.{key} must be a nonempty string")
+        marker = spec["expected_cuda_marker"]
+        if "CUDA" not in marker or "W1A1" not in marker:
+            raise ValueError(
+                f"packed_variants.{name}.expected_cuda_marker must name CUDA W1A1 dispatch"
+            )
+        loader_marker = spec["expected_loader_marker"]
+        if "EAGLE3" not in loader_marker or "W1A1" not in loader_marker:
+            raise ValueError(
+                f"packed_variants.{name}.expected_loader_marker must identify loaded W1A1 groups"
+            )
+        specs[variant] = {
+            "draft": spec["draft"],
+            "weight_coverage": spec["weight_coverage"],
+            "activation_coverage": spec["activation_coverage"],
+            "expected_cuda_marker": marker,
+            "expected_loader_marker": loader_marker,
+        }
+    return specs
+
+
+def weight_only_specs(
+    config: dict[str, Any], variants: tuple[str, ...]
+) -> dict[str, dict[str, Any]]:
+    selected = tuple(variant for variant in WEIGHT_ONLY_VARIANTS if variant in variants)
+    if not selected:
+        return {}
+    raw = config.get("weight_only_variants")
+    if not isinstance(raw, dict) or set(raw) != set(WEIGHT_ONLY_NAMES):
+        raise ValueError("weight_only_matrix requires [weight_only_variants.q4_0] and .q8_0")
+    specs = {}
+    for variant, name in zip(WEIGHT_ONLY_VARIANTS, WEIGHT_ONLY_NAMES, strict=True):
+        spec = raw[name]
+        if not isinstance(spec, dict):
+            raise ValueError(f"weight_only_variants.{name} must be a table")
+        for key in ("draft", "weight_format", "activation_precision", "backend_precision"):
+            if not isinstance(spec.get(key), str) or not spec[key].strip():
+                raise ValueError(f"weight_only_variants.{name}.{key} must be a nonempty string")
+        if spec["weight_format"].upper() != name.upper():
+            raise ValueError(f"weight_only_variants.{name}.weight_format must be {name.upper()}")
+        specs[variant] = {
+            "draft": spec["draft"],
+            "weight_format": spec["weight_format"],
+            "weight_coverage": "all draft weights, weight-only quantization",
+            "activation_precision": spec["activation_precision"],
+            "backend_precision": spec["backend_precision"],
+        }
+    return specs
 
 
 def schedule(repetitions: int, variants: tuple[str, ...] = VARIANTS) -> list[list[str]]:
@@ -167,10 +396,17 @@ def schedule(repetitions: int, variants: tuple[str, ...] = VARIANTS) -> list[lis
             (3, 2, 1, 0),
         )
         return [[base[index] for index in balanced[rep % 4]] for rep in range(repetitions)]
+    if len(base) == len(VARIANTS):
+        orders = []
+        for rep in range(repetitions):
+            offset = rep % len(base)
+            rotated = base[offset:] + base[:offset]
+            orders.append(rotated if rep % 2 == 0 else list(reversed(rotated)))
+        return orders
     orders = []
     for rep in range(repetitions):
-        rotated = base[rep % len(base) :] + base[: rep % len(base)]
-        orders.append(rotated if rep % 2 == 0 else list(reversed(rotated)))
+        offset = rep % len(base)
+        orders.append(base[offset:] + base[:offset])
     return orders
 
 
@@ -250,9 +486,19 @@ def wait_ready(process: subprocess.Popen[bytes], base_url: str, timeout: float) 
     raise TimeoutError("llama-server readiness timeout")
 
 
-def dispatch_evidence(server_log: str, variant: str) -> dict[str, Any]:
+def dispatch_evidence(
+    server_log: str,
+    variant: str,
+    expected_marker: str | None = None,
+    expected_loader_marker: str | None = None,
+) -> dict[str, Any]:
     """Distinguish a packed model load from proof of actual CUDA op execution."""
     packed_loaded = "EAGLE3 using packed W1A1 draft head" in server_log
+    expected_loader_seen = (
+        expected_loader_marker in server_log
+        if expected_loader_marker is not None
+        else packed_loaded
+    )
     cuda_backend = bool(
         re.search(r"CUDA\d+.*(?:model buffer|compute buffer|KV buffer)|ggml_cuda_init", server_log)
     )
@@ -261,17 +507,33 @@ def dispatch_evidence(server_log: str, variant: str) -> dict[str, Any]:
     mma_marker = "CUDA packed W1A1 binary MMA dispatch"
     portable_seen = portable_marker in server_log or legacy_portable_marker in server_log
     mma_seen = mma_marker in server_log
-    expected_seen = mma_seen if variant == MMA_VARIANT else portable_seen
+    expected_seen = (
+        expected_marker in server_log
+        if expected_marker is not None
+        else mma_seen
+        if variant == MMA_VARIANT
+        else portable_seen
+    )
     unexpected_seen = portable_seen if variant == MMA_VARIANT else mma_seen
+    if expected_marker is not None:
+        unexpected_seen = unexpected_seen or not expected_seen
+    packed_variant = variant in (*GROUP_VARIANTS, "packed_head_w1a1", MMA_VARIANT)
     confirmed = (
-        variant in ("packed_head_w1a1", MMA_VARIANT) and expected_seen and not unexpected_seen
+        packed_variant
+        and expected_seen
+        and (expected_loader_marker is None or expected_loader_seen)
+        and not unexpected_seen
     )
     return {
         "packed_head_loader_log": packed_loaded,
+        "configured_expected_loader_marker": expected_loader_marker,
+        "configured_expected_loader_marker_seen": expected_loader_seen,
         "cuda_backend_log": cuda_backend,
         "explicit_cuda_w1a1_op_log": portable_seen or mma_seen,
         "portable_cuda_dispatch_log": portable_seen,
         "binary_mma_cuda_dispatch_log": mma_seen,
+        "configured_expected_cuda_dispatch_marker": expected_marker,
+        "configured_expected_cuda_dispatch_marker_seen": expected_seen,
         "cuda_w1a1_dispatch_marker": (
             mma_marker
             if mma_seen
@@ -358,13 +620,22 @@ def stop_server(process: subprocess.Popen[bytes]) -> None:
 
 
 def command_for(config: dict[str, Any], paths: dict[str, Path], variant: str) -> list[str]:
-    if variant not in (*VARIANTS, MMA_VARIANT):
+    if variant not in (*VARIANTS, MMA_VARIANT, *GROUP_VARIANTS, *WEIGHT_ONLY_VARIANTS):
         raise ValueError(f"unknown benchmark variant: {variant}")
     command = [str(paths["binary"]), "-m", str(paths["target"])]
     if variant == "target_only":
         command += ["--spec-type", "none"]
     else:
-        draft_key = "ordinary_draft" if variant == "ordinary_eagle" else "packed_head_draft"
+        if variant == "ordinary_eagle":
+            draft_key = "ordinary_draft"
+        elif variant in GROUP_VARIANTS and variant != "packed_head_w1a1":
+            draft_key = variant
+        elif variant in GROUP_VARIANTS and config["evaluation"].get("group_matrix", False):
+            draft_key = variant
+        elif variant in WEIGHT_ONLY_VARIANTS:
+            draft_key = variant
+        else:
+            draft_key = "packed_head_draft"
         command += [
             "-md",
             str(paths[draft_key]),
@@ -386,7 +657,7 @@ def command_for(config: dict[str, Any], paths: dict[str, Path], variant: str) ->
 
 def request_body(config: dict[str, Any], prompt: dict[str, Any]) -> dict[str, Any]:
     evaluation = config["evaluation"]
-    return {
+    body = {
         "messages": prompt["messages"],
         "max_tokens": evaluation["max_output_tokens"],
         "temperature": evaluation["temperature"],
@@ -395,7 +666,51 @@ def request_body(config: dict[str, Any], prompt: dict[str, Any]) -> dict[str, An
         "cache_prompt": False,
         "chat_template_kwargs": {"enable_thinking": evaluation["enable_thinking"]},
         "reasoning_format": "none",
+        # Kept identical for every variant so raw generation IDs can be paired.
+        "return_tokens": True,
+        "verbose": True,
     }
+    return body
+
+
+def generated_token_ids(response: dict[str, Any]) -> list[int] | None:
+    """Extract server-returned generated IDs across supported response layouts."""
+    candidates: list[Any] = [response.get("generated_token_ids"), response.get("token_ids")]
+    choices = response.get("choices") or []
+    if choices:
+        first = choices[0]
+        message = first.get("message")
+        if not isinstance(message, dict):
+            message = {}
+        logprobs = first.get("logprobs")
+        candidates.extend(
+            [
+                first.get("generated_token_ids"),
+                first.get("token_ids"),
+                first.get("tokens"),
+                message.get("tokens"),
+                logprobs.get("content") if isinstance(logprobs, dict) else None,
+            ]
+        )
+    candidates.append(response.get("tokens"))
+    for value in candidates:
+        if not isinstance(value, list):
+            continue
+        if all(isinstance(item, int) and not isinstance(item, bool) for item in value):
+            return value
+        object_ids = []
+        for item in value:
+            if not isinstance(item, dict):
+                object_ids = []
+                break
+            token_id = item.get("id", item.get("token_id"))
+            if not isinstance(token_id, int) or isinstance(token_id, bool):
+                object_ids = []
+                break
+            object_ids.append(token_id)
+        if object_ids:
+            return object_ids
+    return None
 
 
 def extract_record(
@@ -410,6 +725,7 @@ def extract_record(
     choices = response.get("choices") or []
     finish_reason = choices[0].get("finish_reason") if choices else None
     content = choices[0].get("message", {}).get("content") if choices else None
+    token_ids = generated_token_ids(response)
     return {
         "request_wall_s": elapsed_s,
         "completion_tokens": tokens,
@@ -429,6 +745,13 @@ def extract_record(
         "completion_sha256": (
             hashlib.sha256(content.encode()).hexdigest() if isinstance(content, str) else None
         ),
+        "generated_token_ids": token_ids,
+        "generated_token_ids_sha256": hashlib.sha256(
+            json.dumps(token_ids, separators=(",", ":")).encode()
+        ).hexdigest()
+        if token_ids is not None
+        else None,
+        "generated_token_ids_status": "available" if token_ids is not None else "omitted_by_server",
         "speculative": counters,
     }
 
@@ -543,23 +866,91 @@ def completion_text_matches(
     return result
 
 
-def relative_speedups(aggregated: dict[str, Any]) -> dict[str, Any]:
-    """Compute packed/anchor ratios from pooled token/time totals only."""
-    packed = aggregated["packed_head_w1a1"]
+def generated_token_id_matches(
+    records: list[dict[str, Any]],
+    variants: tuple[str, ...] = VARIANTS,
+    reference_variant: str = "target_only",
+) -> dict[str, Any]:
+    """Compare raw generated IDs for paired requests; retain first-difference evidence."""
+    if reference_variant not in variants:
+        raise ValueError("reference variant is unavailable")
+    by_key = {(row["repetition"], row["prompt_id"], row["variant"]): row for row in records}
     result = {}
-    for anchor in ("target_only", "ordinary_eagle"):
-        baseline = aggregated[anchor]
-        result[anchor] = {}
-        for metric in ("request_tokens_per_s", "decode_tokens_per_s"):
-            numerator = packed[metric]
-            denominator = baseline[metric]
-            result[anchor][metric] = (
-                numerator / denominator
-                if isinstance(numerator, (int, float))
-                and isinstance(denominator, (int, float))
-                and denominator > 0
-                else None
+    for variant in variants:
+        if variant == reference_variant:
+            continue
+        matched = 0
+        unavailable = 0
+        mismatches = []
+        for row in records:
+            if row["variant"] != variant:
+                continue
+            reference = by_key.get((row["repetition"], row["prompt_id"], reference_variant))
+            reference_ids = reference.get("generated_token_ids") if reference else None
+            candidate_ids = row.get("generated_token_ids")
+            if not isinstance(reference_ids, list) or not isinstance(candidate_ids, list):
+                unavailable += 1
+                continue
+            if reference_ids == candidate_ids:
+                matched += 1
+                continue
+            first_difference = next(
+                (
+                    index
+                    for index, (expected, actual) in enumerate(zip(reference_ids, candidate_ids))
+                    if expected != actual
+                ),
+                min(len(reference_ids), len(candidate_ids)),
             )
+            mismatches.append(
+                {
+                    "repetition": row["repetition"],
+                    "prompt_id": row["prompt_id"],
+                    "first_mismatch_index": first_difference,
+                    "reference_id": reference_ids[first_difference]
+                    if first_difference < len(reference_ids)
+                    else None,
+                    "candidate_id": candidate_ids[first_difference]
+                    if first_difference < len(candidate_ids)
+                    else None,
+                    "reference_length": len(reference_ids),
+                    "candidate_length": len(candidate_ids),
+                }
+            )
+        result[variant] = {
+            "matched_sequences": matched,
+            "mismatched_sequences": len(mismatches),
+            "unavailable": unavailable,
+            "mismatch_pairs": mismatches,
+        }
+    return result
+
+
+def relative_speedups(aggregated: dict[str, Any]) -> dict[str, Any]:
+    """Compute legacy head ratios plus every packed/anchor pooled-rate ratio."""
+    result = {anchor: {} for anchor in ("target_only", "ordinary_eagle")}
+    by_variant = {}
+    for variant, packed in aggregated.items():
+        if not (variant.startswith("packed_") or variant.startswith("draft_q")):
+            continue
+        by_variant[variant] = {}
+        for anchor in ("target_only", "ordinary_eagle"):
+            baseline = aggregated[anchor]
+            by_variant[variant][anchor] = {}
+            for metric in ("request_tokens_per_s", "decode_tokens_per_s"):
+                numerator = packed[metric]
+                denominator = baseline[metric]
+                value = (
+                    numerator / denominator
+                    if isinstance(numerator, (int, float))
+                    and isinstance(denominator, (int, float))
+                    and denominator > 0
+                    else None
+                )
+                by_variant[variant][anchor][metric] = value
+                if variant == "packed_head_w1a1":
+                    result[anchor][metric] = value
+    result["by_variant"] = by_variant
     return result
 
 
@@ -653,15 +1044,20 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
     evaluation = config["evaluation"]
     variants = selected_variants(evaluation)
     orders = schedule(evaluation["repetitions"], variants)
+    group_specs = packed_specs(config, variants)
+    weight_specs = weight_only_specs(config, variants)
     if evaluation["warmup_requests"] < 0 or evaluation["max_output_tokens"] <= 0:
         raise ValueError("invalid warmup or max output setting")
     if config["server"]["host"] not in ("127.0.0.1", "localhost"):
         raise ValueError("server must bind loopback for this local harness")
+    model_paths = dict(config["models"])
+    model_paths.update({variant: spec["draft"] for variant, spec in group_specs.items()})
+    model_paths.update({variant: spec["draft"] for variant, spec in weight_specs.items()})
     paths = {
         name: resolve(ROOT, value)
         for name, value in {
             "binary": config["server"]["binary"],
-            **config["models"],
+            **model_paths,
             "prompt_file": evaluation["prompt_file"],
         }.items()
     }
@@ -705,6 +1101,32 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
             "environment": env,
             "variant_environments": variant_environments,
             "variants": list(variants),
+            "variant_specs": {
+                **{
+                    variant: {
+                        "weight_coverage": group_specs[variant]["weight_coverage"],
+                        "activation_coverage": group_specs[variant]["activation_coverage"],
+                        "weight_format": "W1A1 packed",
+                        "activation_precision": "runtime sign with f32 scale",
+                        "backend_precision": (
+                            "must be established by per-variant CUDA dispatch evidence"
+                        ),
+                        "expected_cuda_marker": group_specs[variant]["expected_cuda_marker"],
+                        "expected_loader_marker": group_specs[variant]["expected_loader_marker"],
+                        "draft_model_path": str(paths[variant]),
+                        "draft_model_sha256": sha256(paths[variant]),
+                    }
+                    for variant in group_specs
+                },
+                **{
+                    variant: {
+                        **weight_specs[variant],
+                        "draft_model_path": str(paths[variant]),
+                        "draft_model_sha256": sha256(paths[variant]),
+                    }
+                    for variant in weight_specs
+                },
+            },
             "orders": orders,
             "commands": {variant: command_for(config, paths, variant) for variant in variants},
             "request_options": {
@@ -715,6 +1137,7 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
             "prompt_ids": [prompt["id"] for prompt in prompts],
             "precision": config.get("precision"),
             "initial_gpu_snapshot": gpu_snapshot(),
+            "environment_manifest": environment_manifest(paths["binary"]),
             "project_commit": git_output("rev-parse", "HEAD").strip(),
             "project_status": git_output("status", "--porcelain"),
             "project_diff_sha256": sha256(destination / "project-diff.patch"),
@@ -777,6 +1200,35 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                                         "variant": variant,
                                         "prompt_id": prompt["id"],
                                         "w1a1_mma_selector": variant_env["GGML_CUDA_W1A1_MMA"],
+                                        "weight_coverage": group_specs.get(variant, {}).get(
+                                            "weight_coverage"
+                                        ),
+                                        "activation_coverage": group_specs.get(variant, {}).get(
+                                            "activation_coverage"
+                                        ),
+                                        "weight_format": group_specs.get(variant, {}).get(
+                                            "weight_format"
+                                        )
+                                        or weight_specs.get(variant, {}).get("weight_format"),
+                                        "activation_precision": group_specs.get(variant, {}).get(
+                                            "activation_precision"
+                                        )
+                                        or weight_specs.get(variant, {}).get(
+                                            "activation_precision"
+                                        ),
+                                        "backend_precision": group_specs.get(variant, {}).get(
+                                            "backend_precision"
+                                        )
+                                        or weight_specs.get(variant, {}).get("backend_precision"),
+                                        "draft_model_sha256": sha256(paths[variant])
+                                        if variant in group_specs
+                                        else sha256(paths[variant])
+                                        if variant in weight_specs
+                                        else sha256(paths["packed_head_draft"])
+                                        if variant in ("packed_head_w1a1", MMA_VARIANT)
+                                        else sha256(paths["ordinary_draft"])
+                                        if variant == "ordinary_eagle"
+                                        else None,
                                     }
                                 )
                                 records.append(measurement)
@@ -785,7 +1237,10 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                             stop_server(process)
                             log.flush()
                             evidence = dispatch_evidence(
-                                (server_dir / "server.log").read_text(errors="replace"), variant
+                                (server_dir / "server.log").read_text(errors="replace"),
+                                variant,
+                                group_specs.get(variant, {}).get("expected_cuda_marker"),
+                                group_specs.get(variant, {}).get("expected_loader_marker"),
                             )
                             json_write(server_dir / "dispatch-evidence.json", evidence)
                             timing = speculative_timing(
@@ -807,11 +1262,23 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                 "packed_speedup_vs": relative_speedups(aggregated),
                 "repetitions": repetition_summaries(records, variants),
                 "greedy_text_match_vs_target_only": completion_text_matches(records, variants),
+                "generated_token_id_match_vs_target_only": generated_token_id_matches(
+                    records, variants
+                ),
                 "draft_timing": summarize_draft_timings(timing_rows, aggregated, variants),
                 "records": len(records),
                 "native_cuda_dispatch_confirmed": all_dispatches_confirmed(
                     destination, evaluation["repetitions"], "packed_head_w1a1"
-                ),
+                )
+                if "packed_head_w1a1" in variants
+                else None,
+                "cuda_dispatch_confirmed_by_variant": {
+                    variant: all_dispatches_confirmed(
+                        destination, evaluation["repetitions"], variant
+                    )
+                    for variant in variants
+                    if variant.startswith("packed_")
+                },
                 "definition": {
                     "request": "completion tokens / client wall time including prefill",
                     "decode": "completion tokens / sum of server predicted_ms (excludes prompt_ms)",
