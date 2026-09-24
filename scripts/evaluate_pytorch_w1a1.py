@@ -111,7 +111,7 @@ def main() -> None:
     parser.add_argument(
         "--allow-greedy-mismatch",
         action="store_true",
-        help="Continue a Metal development run after recording a target/EAGLE mismatch",
+        help="Exploratory only: record target/EAGLE mismatches and continue on either device",
     )
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
@@ -204,7 +204,10 @@ def main() -> None:
         "transformers": transformers.__version__,
         "angelslim_package": version("angelslim"),
         "execution_device": args.device,
-        "development_check": args.device == "mps" or args.limit_prompts is not None,
+        "development_check": (
+            args.device == "mps" or args.limit_prompts is not None or args.allow_greedy_mismatch
+        ),
+        "greedy_mismatch_allowed": args.allow_greedy_mismatch,
         "host_platform": platform.platform(),
         "gpu": gpu_name,
         "cuda_runtime": torch.version.cuda,
@@ -261,16 +264,17 @@ def main() -> None:
     (run_dir / "greedy-parity.json").write_text(json.dumps(parity, indent=2) + "\n")
     environment["target_eagle_greedy_match"] = mismatch is None
     (run_dir / "environment.json").write_text(json.dumps(environment, indent=2) + "\n")
-    if mismatch is not None and not (args.device == "mps" and args.allow_greedy_mismatch):
+    if mismatch is not None and not args.allow_greedy_mismatch:
         raise RuntimeError("ordinary EAGLE differs from target-only greedy continuation")
     if mismatch is not None:
-        print(f"Metal development run: target/EAGLE first differ at token {mismatch + 1}")
+        print(f"Exploratory run: target/EAGLE first differ at token {mismatch + 1}")
     results = []
     parity_checked = False
     target_references = {}
     with (
         (run_dir / "acceptance.jsonl").open("w") as stream,
         (run_dir / "target-reference.jsonl").open("w") as target_stream,
+        (run_dir / "greedy-mismatches.jsonl").open("w") as mismatch_stream,
     ):
         for variant in variants:
             handle = install_w1a1(
@@ -317,20 +321,19 @@ def main() -> None:
                     generated, accepted = run_generation(model, input_ids, evaluation)
                     full_mismatch = first_greedy_mismatch(target_ids, generated)
                     if full_mismatch is not None:
-                        (run_dir / "greedy-mismatch.json").write_text(
-                            json.dumps(
-                                {
-                                    "variant": variant["name"],
-                                    "prompt_id": prompt["id"],
-                                    "first_mismatch_index": full_mismatch,
-                                    "target_token_ids": target_ids,
-                                    "eagle_token_ids": generated,
-                                },
-                                indent=2,
+                        mismatch_record = {
+                            "variant": variant["name"],
+                            "prompt_id": prompt["id"],
+                            "first_mismatch_index": full_mismatch,
+                            "target_token_ids": target_ids,
+                            "eagle_token_ids": generated,
+                        }
+                        mismatch_stream.write(json.dumps(mismatch_record) + "\n")
+                        mismatch_stream.flush()
+                        if not args.allow_greedy_mismatch:
+                            (run_dir / "greedy-mismatch.json").write_text(
+                                json.dumps(mismatch_record, indent=2) + "\n"
                             )
-                            + "\n"
-                        )
-                        if not (args.device == "mps" and args.allow_greedy_mismatch):
                             raise RuntimeError(
                                 f"{variant['name']} differs from target-only greedy continuation "
                                 f"on prompt {prompt['id']} at token {full_mismatch + 1}"
@@ -350,6 +353,7 @@ def main() -> None:
                         "generated_tokens": len(generated),
                         "target_greedy_checked_tokens": len(target_ids),
                         "target_greedy_match": full_mismatch is None,
+                        "first_target_greedy_mismatch_index": full_mismatch,
                         "accepted_per_round": accepted,
                         "accepted_draft_tokens": sum(accepted),
                         "proposed_tree_nodes_per_round": proposed_per_round,
@@ -370,6 +374,7 @@ def main() -> None:
         rounds = sum(row["rounds"] for row in rows)
         summary[variant["name"]] = {
             "prompts": len(rows),
+            "target_greedy_match_prompts": sum(row["target_greedy_match"] for row in rows),
             "accepted_draft_tokens": accepted,
             "proposed_tree_nodes": proposed,
             "rounds": rounds,
