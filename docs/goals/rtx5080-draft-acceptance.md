@@ -69,5 +69,12 @@ binary execution.
 - User reports that the RTX 5080 is free and supplied a rotated address. SSH
   username and port are being confirmed; the address belongs only in the
   machine-local host registry. No remote connection or experiment has begun.
-- No worker has been launched yet. The opening checkpoint must be committed
-  and pushed before isolated work starts.
+- Opening checkpoint `95cf31c` was pushed to `main` before worker setup.
+  A Sol high profiling task has been dispatched into an isolated worktree;
+  its GPU-free tool/check deliverable is pending. A Luna high GPU-operator
+  task has been dispatched and is waiting for host registry details; it is
+  the sole intended RTX 5080 owner. Task IDs are pending asynchronous setup.
+- `e010c8c` adds an unquantized ordinary EAGLE row to the held-out CUDA
+  sweep, making six configurations over 12 prompts. Runner dry-run passes.
+  The remote model manifest must be generated against this updated config
+  hash.

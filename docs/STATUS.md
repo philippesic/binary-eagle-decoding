@@ -5,7 +5,8 @@ The phase will confirm the fixed held-out PyTorch acceptance sweep on CUDA,
 check target/EAGLE greedy parity, and audit drafter layer cost before the user
 chooses selective W1A1 coverage or bounded QAT. The user reports the 5080 free
 at a new address; SSH username/port confirmation and remote setup are pending.
-No experiment job is running. The prior [PyTorch W1A1 EAGLE
+Profiling and GPU-operator tasks have been dispatched; the GPU operator waits
+for SSH username/port before connecting. No experiment job is running. The prior [PyTorch W1A1 EAGLE
 goal](goals/pytorch-w1a1-eagle.md) and
 `experiments/pytorch-w1a1-metal-acceptance.md` contain the Metal development
 evidence and its BF16 greedy-parity limitation.
