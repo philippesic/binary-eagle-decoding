@@ -8,6 +8,9 @@ The user requested same-device tests of ordinary EAGLE and all five W1A1
 coverage settings (fusion, attention, FFN, head, all groups), plus a fresh QAT
 investigation. The pinned native runtime currently supports head-only W1A1;
 the other native variants require conversion and graph integration.
+Local [Q4_0/Q8_0 draft artifacts](../experiments/native-weight-only-draft-prep.md)
+are prepared and audited as weight-only comparisons; they have no 2080 Ti
+execution or timing result.
 The user delegated research choices and RTX 5080 access for an initial
 roughly 10-hour autonomous work window. The goal file has exact commits,
 owners, raw artifact hashes, and the next action.

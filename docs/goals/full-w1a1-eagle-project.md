@@ -568,3 +568,11 @@ Next: complete and review the selectable native bridge and benchmark controls;
 prepare a bounded QAT plan and model/precision manifest locally. Once Ubuntu
 and SSH are reachable, perform the runbook preflight, correctness gates, and
 same-device measurements with one GPU owner. No 2080 Ti result exists yet.
+
+The pinned FP16 EAGLE draft was locally quantized with `--pure` to Q4_0 and
+Q8_0 GGUFs at parent `098042e`/llama.cpp `92bc706`. A GGUF readback counted
+nine linears at the requested weight type in each, with four F32 normalizer
+tensors and one I64 mapping. Source, output and tool SHA256 values, exact
+commands, bytes, and log hashes are in the [artifact prep report](../../experiments/native-weight-only-draft-prep.md).
+These are weight-only candidates, not native W4A4/W8A8 timing. Actual 2080 Ti
+loader, activation/kernel precision and end-to-end measurements remain pending.
