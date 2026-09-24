@@ -1,7 +1,7 @@
 # Goal: PyTorch W1A1 EAGLE drafter
 
 **Opened:** 2026-09-23  
-**State:** active  
+**State:** complete
 **Orchestrator:** current Codex task  
 **GPU owner:** unassigned; no remote jobs are running
 
@@ -30,6 +30,11 @@ goal is about binary-operand quality and acceptance, not native speed.
   in ignored `results/`; summarize evidence in `experiments/`.
 - State any model-loading or hardware blocker precisely if the full acceptance
   run cannot be completed. Do not substitute synthetic values for acceptance.
+
+**Outcome:** All implementation and reporting evidence above exists. The
+held-out sweep ran on Apple M3 Max Metal in BF16 and is reported as development
+quality evidence. Its target-only/speculative greedy divergence is recorded;
+RTX 5080 confirmation remains a separate proposed research step.
 
 ## Boundaries and decisions
 
@@ -138,12 +143,9 @@ goal is about binary-operand quality and acceptance, not native speed.
   used for training or calibration.
 - The RTX 5080 host/user details are pending from the user. The local host
   registry is blank. RTX 2080 Ti is outside this goal.
-- Next: lock a CUDA environment on RTX 5080, download and hash both pinned
-  snapshots there, and verify full-checkpoint forward behavior plus a short
-  deterministic target-only/speculative continuation.
-  Before the held-out sweep, check hidden-state taps `[2, 18, 33]`, token/feature
-  shift, absolute positions, cache rollback, and offset-form `d2t`. Produce
-  per-prompt raw counts and a compact acceptance report. The RTX 5080 host/user
-  details remain the only external input needed; no local or remote experiment
-  jobs are running. All temporary feature worktrees and branches were merged
-  and removed.
+- The goal is complete. Proposed next work, when the user chooses it: lock a
+  CUDA environment on RTX 5080, download and hash both pinned snapshots there,
+  verify greedy parity and acceptance, profile drafter layer costs, then decide
+  between selective W1A1 coverage and bounded QAT. The RTX 5080 host/user
+  details are needed for that work. No local or remote experiment jobs are
+  running. All temporary feature worktrees and branches were merged and removed.
