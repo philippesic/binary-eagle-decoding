@@ -93,3 +93,8 @@ scope.
   is active. Ordinary completed 12 rows; W4A4 is progressing. WDDM sampled
   15,123 MiB used / 855 MiB free at 01:54:39 with no OOM/error. The operator
   is watching memory; do not start another GPU job concurrently.
+- The supervised full sweep finished exit 0 with 36 acceptance rows (12 per
+  variant), 12 target-reference rows, and 19 greedy-mismatch records. Weighted
+  accepted drafts/round were ordinary 2.3166, W4A4 0.2882, and W8A8 2.1816.
+  The supervisor/evaluator process ended and GPU memory returned to idle.
+  Prompt spread, raw artifact hashes, and final cleanup are being verified.
