@@ -16,6 +16,11 @@ to idle, and tmux SSH sessions were closed.
 **Next decision:** the user chooses the next goal: investigate BF16 verifier
 parity, narrow W1A1 coverage, or bounded drafter QAT. Evidence and tradeoffs
 are in `docs/DECISIONS.md`. No QAT or native binary work is active.
+The user also requested a follow-on INT4/INT8 accepted-per-round comparison;
+its [measurement plan](../experiments/int4-int8-acceptance-plan.md) fixes the
+same held-out CUDA setup and keeps the operand-precision interpretation
+explicit. Implementation and measurement are underway without a new native
+binary or throughput claim.
 The prior [PyTorch W1A1 EAGLE
 goal](goals/pytorch-w1a1-eagle.md) and
 `experiments/pytorch-w1a1-metal-acceptance.md` contain the Metal development
