@@ -121,3 +121,11 @@ RTX 5080 access. Make bounded decisions from evidence, checkpoint them in
   forward-equivalence checks, 500-step/45-minute stop, export audit, and
   held-out gate are fixed in `experiments/qat-head-pilot-plan.md`. No QAT
   process has started and the 5080 remains owned by the parity operator.
+- `5cb3ea4` integrated a trainable head-only W1A1 arithmetic core from an
+  isolated Sol worktree, which was cleaned after the cherry-pick. Its FP32
+  latent weights use a documented clipped weight STE, while the BF16 forward
+  is bitwise equal to `fake_binary_linear` on tested inputs; BF16 export is
+  explicit. `make check` now passes 43 tests. No capture, optimizer, or
+  held-out QAT run has begun. Sol worker `/root/qat_capture` owns the separate
+  prompt-generation and feature-capture scripts; the orchestrator will own
+  training/evaluation integration after its artifact schema is fixed.
