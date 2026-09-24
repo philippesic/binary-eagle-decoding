@@ -18,9 +18,9 @@ def main() -> None:
     parser.add_argument("--jobs", type=int, default=min(os.cpu_count() or 2, 8))
     parser.add_argument("--cuda-arch", default="75", help="CUDA compute capability, e.g. 120 or 75")
     parser.add_argument(
-        "--cuda-glibc-compat",
-        action="store_true",
-        help="Use CUDA 13.1 / glibc 2.43 host math-header workaround",
+        "--cuda-include-root",
+        type=Path,
+        help="Private CUDA include tree for a documented host-toolkit compatibility fix",
     )
     parser.add_argument("--with-tests", action="store_true", help="Build test-backend-ops too")
     args = parser.parse_args()
@@ -28,8 +28,11 @@ def main() -> None:
         parser.error("--jobs must be positive")
     if not re.fullmatch(r"[0-9]+", args.cuda_arch):
         parser.error("--cuda-arch must be a numeric compute capability")
-    if args.cuda_glibc_compat and args.backend != "cuda":
-        parser.error("--cuda-glibc-compat requires the CUDA backend")
+    if args.cuda_include_root is not None:
+        if args.backend != "cuda":
+            parser.error("--cuda-include-root requires the CUDA backend")
+        if not args.cuda_include_root.is_dir():
+            parser.error("--cuda-include-root must be an existing directory")
     source = ROOT / "third_party" / "llama.cpp"
     if not (source / "CMakeLists.txt").exists():
         parser.error("Missing llama.cpp: run make setup first")
@@ -56,8 +59,8 @@ def main() -> None:
     ]
     if args.backend == "cuda":
         options.append(f"-DCMAKE_CUDA_ARCHITECTURES={args.cuda_arch}")
-        if args.cuda_glibc_compat:
-            options.append("-DCMAKE_CUDA_FLAGS=-U_GNU_SOURCE -D_DEFAULT_SOURCE")
+        if args.cuda_include_root is not None:
+            options.append(f"-DCMAKE_CUDA_FLAGS=-I{args.cuda_include_root.resolve()}")
     subprocess.run(
         ["cmake", "-S", str(source), "-B", str(build), "-G", "Ninja", *options], check=True
     )

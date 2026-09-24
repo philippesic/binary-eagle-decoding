@@ -249,3 +249,10 @@ RTX 5080 access. Make bounded decisions from evidence, checkpoint them in
   also found the default logger omits the packed loader message. Benchmark
   config pins `-lv 4`, which emitted it locally, and requires the explicit
   CUDA op marker. This is schema/load evidence, not a performance result.
+- Native GGML CUDA build attempt `runs/native-ggml-cuda-build-20260924/`
+  on RTX 5080/CUDA 13.1.115/GCC 15.2/glibc 2.43 stopped at 27/368 before
+  W1A1 source validation: suppressing `_GNU_SOURCE` to avoid CUDA's rsqrt
+  declaration conflict hid pthread clockwait/clocklock prototypes needed by
+  libstdc++ `<mutex>`. The supervisor exited 1, no GPU job remained. A bounded
+  private-header probe is underway, preserving original CUDA/toolkit headers
+  and full logs. Do not infer a kernel defect from this host-header failure.
