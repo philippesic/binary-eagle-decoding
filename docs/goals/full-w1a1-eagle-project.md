@@ -529,3 +529,8 @@ project's locked Python 3.11. Focused Ruff checks pass. No GPU was used.
 The [2080 Ti runbook](../RTX2080TI_RUNBOOK.md) now names the opt-in flag,
 required dispatch fields, and MMA/portable analysis. The current 2080 Ti
 address is still absent; that actual runtime and timing gate remains open.
+The runner manifest now also captures the actual llama.cpp checkout commit,
+status, and diff hash separately from the parent gitlink, since the 2080 Ti
+candidate trial will run from published `9bb01a6` while production remains
+pinned at `92bc706`. The combined focused suite passed 15/15 again under
+the locked Python 3.11 environment; Ruff checks and `git diff --check` pass.

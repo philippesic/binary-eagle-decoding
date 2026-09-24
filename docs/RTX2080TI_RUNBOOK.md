@@ -92,6 +92,10 @@ the selector is saved with every raw record and per-server environment. Require
 `scripts/analyze_native_benchmark.py` on the completed run to obtain pooled
 MMA/portable ratios and paired bootstrap intervals. With the flag absent,
 the existing three-variant behavior remains the default.
+The run manifest records both the parent gitlink and the actual llama.cpp
+checkout commit, status, and diff hash. For a candidate-branch trial, confirm
+the actual checkout is `9bb01a6` while the pinned production gitlink remains
+`92bc706`; preserve that distinction when reporting binary provenance.
 The current activation packer accumulates magnitudes in F64 before writing
 an F32 scale; measure that reduction separately on Turing rather than
 carrying over the 5080 pack cost. The 5080 integrated-kernel NCU attempt was

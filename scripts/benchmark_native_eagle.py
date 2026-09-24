@@ -684,6 +684,13 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
             for variant in variants
         }
         (destination / "project-diff.patch").write_text(git_output("diff", "--binary", "HEAD"))
+        (destination / "llama-diff.patch").write_text(
+            git_output("-C", "third_party/llama.cpp", "diff", "--binary", "HEAD")
+        )
+        llama_gitlink = git_output("ls-tree", "HEAD", "third_party/llama.cpp").split()[2]
+        llama_checkout_commit = git_output(
+            "-C", "third_party/llama.cpp", "rev-parse", "HEAD"
+        ).strip()
         manifest = {
             "started_utc": datetime.now(UTC).isoformat(),
             "platform": platform.platform(),
@@ -711,7 +718,13 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
             "project_commit": git_output("rev-parse", "HEAD").strip(),
             "project_status": git_output("status", "--porcelain"),
             "project_diff_sha256": sha256(destination / "project-diff.patch"),
-            "llama_gitlink": git_output("ls-tree", "HEAD", "third_party/llama.cpp").split()[2],
+            "llama_gitlink": llama_gitlink,
+            "llama_checkout_commit": llama_checkout_commit,
+            "llama_checkout_matches_gitlink": llama_checkout_commit == llama_gitlink,
+            "llama_checkout_status": git_output(
+                "-C", "third_party/llama.cpp", "status", "--porcelain"
+            ),
+            "llama_checkout_diff_sha256": sha256(destination / "llama-diff.patch"),
         }
         json_write(destination / "manifest.json", manifest)
         if dry_run:

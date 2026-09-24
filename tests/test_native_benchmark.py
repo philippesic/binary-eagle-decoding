@@ -15,6 +15,17 @@ SPEC = importlib.util.spec_from_file_location("benchmark_native_eagle", MODULE_P
 benchmark = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(benchmark)
 
+
+def fake_git_output(*args: str) -> str:
+    if args == ("ls-tree", "HEAD", "third_party/llama.cpp"):
+        return "160000 commit abc\tthird_party/llama.cpp\n"
+    if args == ("-C", "third_party/llama.cpp", "rev-parse", "HEAD"):
+        return "def\n"
+    if args == ("rev-parse", "HEAD"):
+        return "abc\n"
+    return ""
+
+
 FAKE_SERVER = r"""#!PYTHON
 import json
 import os
@@ -250,7 +261,7 @@ class NativeBenchmarkTests(unittest.TestCase):
                 patch.object(
                     benchmark,
                     "git_output",
-                    return_value="160000 commit abc\tthird_party/llama.cpp\n",
+                    side_effect=fake_git_output,
                 ),
             ):
                 output = benchmark.run(config, "fake-run")
@@ -286,7 +297,7 @@ class NativeBenchmarkTests(unittest.TestCase):
                 patch.object(
                     benchmark,
                     "git_output",
-                    return_value="160000 commit abc\tthird_party/llama.cpp\n",
+                    side_effect=fake_git_output,
                 ),
             ):
                 output = benchmark.run(config, "mma-run")
@@ -300,6 +311,10 @@ class NativeBenchmarkTests(unittest.TestCase):
             self.assertEqual(report["greedy_text_match_mma_vs_portable"]["matched_text"], 5)
             self.assertIn("target_only", report["packed_speedup_vs"])
             self.assertEqual(manifest["variants"], report["variants"])
+            self.assertEqual(manifest["llama_gitlink"], "abc")
+            self.assertEqual(manifest["llama_checkout_commit"], "def")
+            self.assertFalse(manifest["llama_checkout_matches_gitlink"])
+            self.assertTrue((output / "llama-diff.patch").exists())
             self.assertNotIn("GGML_CUDA_W1A1_MMA", manifest["environment"])
             self.assertEqual(
                 manifest["commands"]["packed_head_w1a1"],
@@ -338,7 +353,7 @@ class NativeBenchmarkTests(unittest.TestCase):
                 patch.object(
                     benchmark,
                     "git_output",
-                    return_value="160000 commit abc\tthird_party/llama.cpp\n",
+                    side_effect=fake_git_output,
                 ),
             ):
                 with self.assertRaisesRegex(RuntimeError, "HTTP 500"):
