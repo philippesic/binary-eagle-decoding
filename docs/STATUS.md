@@ -24,7 +24,12 @@ explicit. W4A4/W8A8 simulation and runner integration are pushed on `main` at
 operator owns the low-bit smoke and held-out run. No new native binary or
 throughput claim has been made. The one-prompt CUDA smoke passed: ordinary,
 W4A4, and W8A8 accepted 1.787, 0.238, and 1.538 drafts/round respectively,
-all with the known target-greedy mismatch. The full 12-prompt run is next.
+all with the known target-greedy mismatch. Supervised
+`cuda-int4-int8-12prompt-20260924` is active on the 5080; ordinary has
+completed all 12 prompts and W4A4 is progressing. Memory headroom is tight,
+and the Luna operator is monitoring it. The
+[draft report](../experiments/pytorch-int4-int8-cuda-acceptance.md) is being
+filled as the run completes.
 The prior [PyTorch W1A1 EAGLE
 goal](goals/pytorch-w1a1-eagle.md) and
 `experiments/pytorch-w1a1-metal-acceptance.md` contain the Metal development

@@ -87,3 +87,9 @@ scope.
   simulated accumulation, TF32 disabled, and highest FP32 matmul precision.
   GPU memory returned to its 3,108 MiB Windows idle baseline. These are
   exploratory one-prompt counts; the 12-prompt sweep is next.
+- After a fresh idle gate, supervised `cuda-int4-int8-12prompt-20260924` is
+  running all 12 prompts for ordinary, W4A4, and W8A8 under fixed remote code
+  `92c91a4cecdd0123a2e1d7bf7c6d394fa673dabe`. Supervisor PID/PGID 866
+  is active. Ordinary completed 12 rows; W4A4 is progressing. WDDM sampled
+  15,123 MiB used / 855 MiB free at 01:54:39 with no OOM/error. The operator
+  is watching memory; do not start another GPU job concurrently.
