@@ -152,3 +152,11 @@ binary execution.
 - The user asked to proceed again on 2026-09-24. The same Luna operator now
   owns the fresh idle gate and, if it passes, the supervised CUDA parity,
   acceptance, and profiling runs. Stop at a parity blocker; no QAT or 2080 Ti.
+- Fortnite is gone. Three Windows-side idle samples at 00:14:58–00:15:08
+  showed 0–1% use with 12,872 MiB free; idle EOS overlay processes remained.
+  No other project job was active. The supervised one-prompt
+  `cuda-parity-smoke-20260924` run exited 1 before model loading or CUDA
+  allocation because the pinned AngelSlim import required missing `datasets`.
+  This is an environment dependency failure, not a parity outcome. The
+  operator is checking pinned package metadata and will retry under a new run
+  ID after installing the minimal required dependency.
