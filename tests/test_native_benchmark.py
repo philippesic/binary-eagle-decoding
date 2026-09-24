@@ -152,6 +152,37 @@ class NativeBenchmarkTests(unittest.TestCase):
         self.assertEqual(result["target_only"]["request_tokens_per_s"], 1.2)
         self.assertEqual(result["ordinary_eagle"]["decode_tokens_per_s"], 1.5)
 
+    def test_speculative_timing_excludes_warmup(self):
+        log = (
+            "statistics draft-eagle3: dur(b,g,a) = 1.000, 4.000, 0.100 ms\n"
+            "statistics draft-eagle3: dur(b,g,a) = 1.500, 7.250, 0.125 ms\n"
+        )
+        timing = benchmark.speculative_timing(log, "ordinary_eagle", 1, 1)
+        self.assertEqual(timing["status"], "available")
+        self.assertAlmostEqual(timing["measured_totals_ms"]["draft_ms"], 3.25)
+        self.assertEqual(
+            benchmark.speculative_timing(log, "target_only", 1, 1)["status"], "not_applicable"
+        )
+        self.assertEqual(
+            benchmark.speculative_timing(log, "ordinary_eagle", 2, 1)["status"], "unavailable"
+        )
+
+    def test_summarize_draft_timing_uses_measured_rounds(self):
+        timing = {
+            "status": "available",
+            "measured_totals_ms": {"begin_ms": 1.0, "draft_ms": 12.0, "accept_ms": 2.0},
+        }
+        entries = [
+            {"variant": "ordinary_eagle", "timing": timing},
+            {"variant": "packed_head_w1a1", "timing": timing},
+        ]
+        aggregated = {
+            variant: {"speculative": {"rounds": 4}}
+            for variant in ("ordinary_eagle", "packed_head_w1a1")
+        }
+        summary = benchmark.summarize_draft_timings(entries, aggregated)
+        self.assertEqual(summary["ordinary_eagle"]["draft_ms_per_verification_round"], 3.0)
+
     def test_full_fake_run_preserves_artifacts_and_stops_server(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -183,6 +214,7 @@ class NativeBenchmarkTests(unittest.TestCase):
             )
             self.assertTrue((output / "rep-00/ordinary_eagle/server.log").exists())
             self.assertTrue((output / "rep-00/ordinary_eagle/dispatch-evidence.json").exists())
+            self.assertTrue((output / "rep-00/ordinary_eagle/speculative-timing.json").exists())
             self.assertTrue(benchmark.available_port("127.0.0.1", port))
 
     def test_failed_request_stops_server_and_keeps_failure(self):

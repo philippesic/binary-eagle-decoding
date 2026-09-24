@@ -51,6 +51,10 @@ SAFE_INHERITED_ENV = (
 METRIC_LINE = re.compile(
     r"^([a-zA-Z_:][a-zA-Z0-9_:]*)\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)$"
 )
+SPEC_TIMING_LINE = re.compile(
+    r"statistics\s+draft-eagle3:.*?dur\(b,g,a\)\s*=\s*"
+    r"([0-9.]+),\s*([0-9.]+),\s*([0-9.]+)\s*ms"
+)
 
 
 def json_write(path: Path, value: Any) -> None:
@@ -233,6 +237,46 @@ def dispatch_evidence(server_log: str, variant: str) -> dict[str, Any]:
             "The explicit CUDA W1A1 op marker confirms dispatch; model load "
             "and general CUDA backend logs alone do not."
         ),
+    }
+
+
+def speculative_timing(
+    server_log: str, variant: str, warmup_requests: int, measured_requests: int
+) -> dict[str, Any]:
+    """Read cumulative EAGLE impl host timings without mixing warmup into measurement."""
+    if variant == "target_only":
+        return {"status": "not_applicable"}
+    cumulative = [
+        tuple(float(value) for value in match.groups())
+        for match in SPEC_TIMING_LINE.finditer(server_log)
+    ]
+    expected = warmup_requests + measured_requests
+    if len(cumulative) != expected:
+        return {
+            "status": "unavailable",
+            "reason": "cumulative speculative timing lines do not match request count",
+            "expected": expected,
+            "observed": len(cumulative),
+        }
+    previous = (0.0, 0.0, 0.0)
+    deltas = []
+    for current in cumulative:
+        delta = tuple(now - before for now, before in zip(current, previous, strict=True))
+        if any(value < -1e-9 for value in delta):
+            return {"status": "unavailable", "reason": "cumulative timing counter decreased"}
+        deltas.append(dict(zip(("begin_ms", "draft_ms", "accept_ms"), delta, strict=True)))
+        previous = current
+    measured = deltas[warmup_requests:]
+    return {
+        "status": "available",
+        "source": "common_speculative_print_stats cumulative host wall times",
+        "warmup_requests": warmup_requests,
+        "measured_requests": measured_requests,
+        "measured_per_request": measured,
+        "measured_totals_ms": {
+            key: sum(item[key] for item in measured)
+            for key in ("begin_ms", "draft_ms", "accept_ms")
+        },
     }
 
 
@@ -474,6 +518,33 @@ def repetition_summaries(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return summaries
 
 
+def summarize_draft_timings(
+    timings: list[dict[str, Any]], aggregated: dict[str, Any]
+) -> dict[str, Any]:
+    """Pool measured-only speculative impl timings; keep unavailable explicit."""
+    result = {}
+    for variant in ("ordinary_eagle", "packed_head_w1a1"):
+        rows = [entry["timing"] for entry in timings if entry["variant"] == variant]
+        if not rows or any(row["status"] != "available" for row in rows):
+            result[variant] = {"status": "unavailable"}
+            continue
+        totals = {
+            key: sum(row["measured_totals_ms"][key] for row in rows)
+            for key in ("begin_ms", "draft_ms", "accept_ms")
+        }
+        rounds = aggregated[variant]["speculative"]["rounds"]
+        result[variant] = {
+            "status": "available",
+            "measured_totals_ms": totals,
+            "draft_ms_per_verification_round": totals["draft_ms"] / rounds if rounds else None,
+            "definition": (
+                "host wall time inside common_speculative_impl draft calls, "
+                "excluding warmup; not a standalone GPU kernel duration"
+            ),
+        }
+    return result
+
+
 def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,79}", run_id):
         raise ValueError("run ID must be a safe, relative name")
@@ -540,6 +611,7 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
             return destination
         base_url = f"http://{config['server']['host']}:{config['server']['port']}"
         records = []
+        timing_rows = []
         try:
             for repetition, order in enumerate(orders):
                 for variant in order:
@@ -593,6 +665,16 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                                 (server_dir / "server.log").read_text(errors="replace"), variant
                             )
                             json_write(server_dir / "dispatch-evidence.json", evidence)
+                            timing = speculative_timing(
+                                (server_dir / "server.log").read_text(errors="replace"),
+                                variant,
+                                evaluation["warmup_requests"],
+                                len(prompts),
+                            )
+                            json_write(server_dir / "speculative-timing.json", timing)
+                            timing_rows.append(
+                                {"repetition": repetition, "variant": variant, "timing": timing}
+                            )
                             json_write(server_dir / "gpu-after.json", gpu_snapshot())
             aggregated = aggregate(records)
             report = {
@@ -601,6 +683,7 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                 "packed_speedup_vs": relative_speedups(aggregated),
                 "repetitions": repetition_summaries(records),
                 "greedy_text_match_vs_target_only": completion_text_matches(records),
+                "draft_timing": summarize_draft_timings(timing_rows, aggregated),
                 "records": len(records),
                 "native_cuda_dispatch_confirmed": (
                     True
