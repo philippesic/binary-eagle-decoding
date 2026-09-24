@@ -72,6 +72,8 @@ The RTX 2080 Ti address is absent from the shared host registry (username
 `philip`). Its actual SM75 correctness and same-device target-only/ordinary/
 binary comparisons are required before a Turing speed claim. The address
 has been requested from the user; the [runbook](RTX2080TI_RUNBOOK.md) is ready.
-The 5080 remains available. All supervised
-project GPU jobs are terminal, no project process remains, and SSH/tmux
-sessions are closed. The repository checks pass (78 tests).
+The 5080 was idle before this diagnostic; all earlier supervised GPU jobs
+were terminal with no lingering process. A separate
+two-prompt ordinary-EAGLE target-logit trace is now in preparation under sole
+5080 owner `/root/cuda_acceptance_operator`; it will not change the timed
+benchmark. The repository checks pass (78 tests).

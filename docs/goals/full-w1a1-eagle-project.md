@@ -3,7 +3,7 @@
 **Opened:** 2026-09-24  
 **State:** active  
 **Orchestrator:** current Codex task  
-**GPU owner:** none; all supervised jobs ended and RTX 5080 is free
+**GPU owner:** `/root/cuda_acceptance_operator` for a bounded verifier-logit trace
 **First autonomous work window:** 2026-09-24 09:08–19:08 UTC; the objective
 continues beyond that window if required.
 
@@ -363,6 +363,20 @@ RTX 5080 access. Make bounded decisions from evidence, checkpoint them in
   [the RTX 2080 Ti runbook](../RTX2080TI_RUNBOOK.md). Its current address is
   absent from the shared host registry; the username `philip` is known and
   the user was asked asynchronously for the IP. No 2080 Ti run has started.
+- A bounded native baseline verifier diagnostic is being prepared independently
+  of the sealed 5080 benchmark. Pinned llama.cpp `common_sampler` samples
+  target verifier rows at `tools/server/server-context.cpp:3897-3920`; a
+  temporary opt-in trace commit
+  `b06892b697cba17a1e47ec3fc770716a91a8e699` on fork branch
+  `feat/verify-logit-trace` logs raw target top-two logits and emitted/draft
+  status only at generated positions 33/123 under
+  `W1A1_TRACE_VERIFY_LOGITS=1`. The parent gitlink remains `92bc706`;
+  isolated submodule worktree `/private/tmp/llama-verify-logit-trace` owns
+  the diagnostic patch, with a local CPU server build/diff check passed.
+  `/root/cuda_acceptance_operator` has exclusive 5080 access for one
+  two-prompt ordinary-EAGLE trace using a separate CUDA build and supervised
+  run. Preserve raw hashes and reset the remote submodule after the run;
+  do not alter or relabel the timed benchmark.
 - A compile-only integrated SM75 check ran on the 5080 host under
   supervised ID `integrated-sm75-cuda-build-20260924`, owned by
   `/root/cuda_acceptance_operator`. It uses a separate ignored
