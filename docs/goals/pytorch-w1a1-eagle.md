@@ -128,6 +128,11 @@ goal is about binary-operand quality and acceptance, not native speed.
   artifact hashes, and interpretation. The combined setting accepted 0.202
   draft nodes/round; head-only accepted 1.683. This is quality evidence for
   prioritization, not a native speed or RTX 5080 result.
+- The optional PyTorch test dependency is locked separately from default setup
+  at `46afe96`. `make check` now covers `src/` and passes all 15 tests in the
+  locked test group. The local Metal acceptance run used project commit
+  `f781efd`; later commits only added documentation and test-environment
+  configuration, not quantization behavior.
 - The orchestrator prepared 12 self-authored held-out prompts across prose,
   code, and reasoning in `configs/acceptance_prompts.jsonl`. They will not be
   used for training or calibration.
@@ -139,4 +144,6 @@ goal is about binary-operand quality and acceptance, not native speed.
   Before the held-out sweep, check hidden-state taps `[2, 18, 33]`, token/feature
   shift, absolute positions, cache rollback, and offset-form `d2t`. Produce
   per-prompt raw counts and a compact acceptance report. The RTX 5080 host/user
-  details remain the only external input needed; no remote jobs are running.
+  details remain the only external input needed; no local or remote experiment
+  jobs are running. All temporary feature worktrees and branches were merged
+  and removed.
