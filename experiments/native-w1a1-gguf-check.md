@@ -22,6 +22,11 @@ dimension order and F32 `output.w1a1_scale` `[32000]`; the ordinary dense
 `output.weight` is absent. It retains `d2t` and the other draft tensors.
 Versioned metadata records logical K=2560, little-bit-order signs, zero as
 positive, and F32 mean-absolute scaling/arithmetic.
+The original F16 head occupies 163,840,000 bytes; packed signs plus F32 scales
+occupy 10,368,000 bytes, saving 153,472,000 bytes for this matrix. The whole
+draft GGUF shrank by 153,471,488 bytes after alignment. This storage saving
+does not predict end-to-end latency because the target and remaining draft
+operations are unchanged.
 
 An independent full-head readback compared **all 32,000 rows** with the pinned
 BF16 `lm_head.weight`: zero packed-sign mismatches and zero F32 scale

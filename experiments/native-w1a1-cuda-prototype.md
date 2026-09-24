@@ -18,7 +18,10 @@ The WSL CUDA 13.1/glibc 2.43 headers disagree on `rsqrt` declarations with
 plain `nvcc`. The working command used
 `nvcc -std=c++17 -O3 -arch=sm_120 -U_GNU_SOURCE -D_DEFAULT_SOURCE -Xcompiler=-Wall,-Wextra`
 as recorded in `kernels/README.md`. This host-specific fix must be retested on
-SM75 and should not be mistaken for a kernel correctness issue.
+SM75 and should not be mistaken for a kernel correctness issue. The same
+feature-macro suppression failed in the integrated llama.cpp build because it
+hid pthread declarations needed by libstdc++; see the
+[integrated CUDA report](ggml-w1a1-cuda-5080.md) for its private-header fix.
 
 The supervised correctness run
 `runs/cuda-w1a1-correctness-20260924-c` exited zero. It covered all eight
