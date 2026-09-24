@@ -67,3 +67,8 @@ scope.
 - GPU acceptance has not run. Use a fresh host/process/memory check via tmux
   MCP, regenerate a model manifest for the new config hash, validate one
   prompt, then run all 12 prompts if memory and the verifier path are stable.
+- Luna operator `/root/cuda_acceptance_operator` exclusively owns the RTX 5080
+  measurement. Initial Windows/WSL idle gate passed: no Fortnite or project
+  job, three 0% samples, 3,108 MiB used / 12,870 MiB free. It is fetching the
+  pushed low-bit code and will hold a fixed exact revision across smoke and
+  full sweep. No low-bit acceptance result exists yet.
