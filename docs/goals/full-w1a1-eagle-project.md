@@ -254,5 +254,16 @@ RTX 5080 access. Make bounded decisions from evidence, checkpoint them in
   W1A1 source validation: suppressing `_GNU_SOURCE` to avoid CUDA's rsqrt
   declaration conflict hid pthread clockwait/clocklock prototypes needed by
   libstdc++ `<mutex>`. The supervisor exited 1, no GPU job remained. A bounded
-  private-header probe is underway, preserving original CUDA/toolkit headers
-  and full logs. Do not infer a kernel defect from this host-header failure.
+  private-header probe and successful retry are documented below. Do not infer
+  a kernel defect from this host-header failure.
+- A private CUDA include-tree copy with only two `rsqrt`/`rsqrtf` declaration
+  exception-specification fixes passed a bounded nvcc probe with normal GNU
+  macros; the system header remained unchanged. The full patched SM120a
+  llama.cpp CUDA build then completed 341/341 steps under supervisor
+  `native-ggml-cuda-build-patched-20260924`. Supervised CUDA0
+  `test-backend-ops test -b CUDA0 -o W1A1_MUL_MAT` passed all five cases
+  (K=31/32/33/2560 and strided K=33) on the RTX 5080, including the explicit
+  CUDA XOR/POPCOUNT dispatch log. Both supervisors exited and GPU returned to
+  its 3,050 MiB/0% baseline. The operator is now converting the pinned target,
+  ordinary draft, and packed-head draft GGUF on that host before a one-prompt
+  model-level CUDA smoke. Raw hashes/environment will be added once sealed.

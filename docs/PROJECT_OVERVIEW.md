@@ -130,8 +130,10 @@ The standalone packed CUDA kernel has since passed eight-width correctness
 and packing-inclusive component timing on the 5080; see the
 [native prototype report](../experiments/native-w1a1-cuda-prototype.md). A
 dedicated GGML operation and EAGLE packed-head bridge are in the pinned
-llama.cpp fork, with CPU tests and local GGUF load checks. GGML CUDA execution
-and matched end-to-end throughput remain open gates. The 5080 prototype uses
+llama.cpp fork, with CPU tests and local GGUF load checks. Integrated GGML
+CUDA backend correctness passed five focused cases on the 5080; model-level
+CUDA dispatch and matched end-to-end throughput remain open gates. See the
+[CUDA integration report](../experiments/ggml-w1a1-cuda-5080.md). The 5080 prototype uses
 portable XOR/`__popc`; a separate
 [SM75 binary-MMA probe](../experiments/sm75-binary-mma-plan.md) is scoped for
 the 2080 Ti before a claim about Turing Tensor Core performance.

@@ -20,7 +20,7 @@ head core is integrated at `5cb3ea4` with 43 passing tests, while a separate
 capture path was integrated at `f88eaa9`. A local deterministic generator
 created ignored 96/24 train/validation prompt manifests, disjoint from the
 held-out set. Bounded head-only trainer, derived BF16 checkpoint exporter, and
-standalone CUDA XOR/popcount prototype have been integrated. All 56 checks
+standalone CUDA XOR/popcount prototype have been integrated. All 71 checks
 pass. The standalone kernel passed real 5080 correctness and two
 packing-inclusive component benchmarks; see
 [the report](../experiments/native-w1a1-cuda-prototype.md). QAT capture and
@@ -31,7 +31,10 @@ see [pilot report](../experiments/qat-head-pilot-results.md). The GPU returned
 to idle. The llama.cpp submodule combines the dedicated packed
 W1A1 CPU op, CUDA backend, and EAGLE packed-head converter/loader in pushed
 fork commit `92bc706`. Mac build, converter tests, and a local packed-draft
-smoke passed; GGML CUDA execution remains untested. Pinned target and ordinary
+smoke passed; integrated GGML CUDA backend tests passed 5/5 on the RTX 5080
+after a private CUDA-header compatibility fix. Model-level CUDA dispatch and
+paired timing remain pending; see the
+[CUDA integration report](../experiments/ggml-w1a1-cuda-5080.md). Pinned target and ordinary
 EAGLE draft FP16 GGUF files were [converted and load-checked](../experiments/gguf-baseline-conversion.md).
 The completed [RTX 5080 W1A1 draft acceptance goal](goals/rtx5080-draft-acceptance.md) and
 `experiments/pytorch-w1a1-cuda-acceptance.md` contain the pinned CUDA setup,

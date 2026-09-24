@@ -34,9 +34,11 @@ forward equivalence before optimization. The bounded training then ran all
 500 steps in 39.31 seconds, optimizing only the head's FP32 latent weights
 against the frozen BF16 teacher with temperature-1 full-vocabulary KL,
 AdamW (`lr=1e-4`, zero weight decay), batch 64, 20-step warmup, and norm-1
-gradient clipping. The custom weight STE passes a scale-normalized surrogate
-inside its documented clipping window; forward remains the BF16 fake-binary
-operation. Validation was separate from training and checked every 50 steps.
+gradient clipping. The weight STE uses
+`s=max(detached_BF16_row_mean_abs,1e-3)` and surrogate derivative `1/s` where
+`abs(BF16(weight)/s) <= 1`, zero elsewhere; the row scale is detached in
+backward. Forward remains the BF16 fake-binary operation. Validation was
+separate from training and checked every 50 steps.
 The best checkpoint was at step 500:
 
 | Validation metric | Step 0 | Best step 500 |
