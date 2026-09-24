@@ -164,5 +164,13 @@ Compare pooled rates and prompt/repetition spread against both anchors.
   production build. The first supervised configure attempt identified missing
   cuBLAS development libraries; the operator added them locally. The retry
   `sm75-production-build-retry-20260924` advanced through CUDA compilation
-  and runtime linking with no GPU process. Model staging and actual correctness
-  remain pending.
+  and runtime linking and finished 368/368 targets, exit 0, with no GPU process.
+  It produced `llama-server` and `test-backend-ops`; raw state/stdout are kept
+  under that run directory. Model staging remains pending.
+- The first real SM75 native W1A1 backend gate then passed 5/5 cases under
+  supervised run `sm75-w1a1-op-gate-20260924`: K=31, 32, 33, 2560, and a
+  strided K=33 input. The log explicitly showed CUDA packed W1A1
+  XOR/POPCOUNT dispatch on the RTX 2080 Ti. The process exited zero and a
+  fresh sample found the GPU idle. This validates the core operation, not the
+  five EAGLE group graphs or end-to-end timing. The standalone binary-MMA
+  probe and model-level checks are next.

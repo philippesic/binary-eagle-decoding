@@ -9,8 +9,10 @@ and genuinely native INT4/INT8 draft execution if correctness gates can be met.
 No RTX 2080 Ti result has been measured yet.
 The user supplied the RTX 2080 Ti address, which is recorded only in the shared
 local host registry. Ubuntu 24.04 WSL2 and SSH are now reachable. The host
-reports an idle RTX 2080 Ti (compute capability 7.5); a user-space CUDA/build
-toolchain and model staging are in progress before actual SM75 measurements.
+reports an RTX 2080 Ti (compute capability 7.5). A user-space CUDA 12.8.93
+production build completed, and the five-case native W1A1 CUDA backend gate
+passed with explicit XOR/POPCOUNT dispatch. Model staging and paired timing
+remain pending.
 The user requested same-device tests of ordinary EAGLE and all five W1A1
 coverage settings (fusion, attention, FFN, head, all groups), plus a fresh QAT
 investigation. The 5080-tested native runtime supported head-only W1A1;
