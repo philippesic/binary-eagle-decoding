@@ -66,9 +66,10 @@ binary execution.
 - Goal opened from the completed PyTorch W1A1 EAGLE phase. The fixed prompt and
   model config are `configs/pytorch_w1a1.toml`; the Metal development report is
   `experiments/pytorch-w1a1-metal-acceptance.md`.
-- User reports that the RTX 5080 is free and supplied a rotated address. SSH
-  username and port are being confirmed; the address belongs only in the
-  machine-local host registry. No remote connection or experiment has begun.
+- User reports that the RTX 5080 is free and supplied a rotated address, now
+  stored in the machine-local host registry. SSH username remains unset (port
+  defaults to 22 pending confirmation). No remote connection or experiment has
+  begun.
 - Opening checkpoint `95cf31c` was pushed to `main` before worker setup.
   A Sol high profiling task has been dispatched into an isolated worktree;
   its GPU-free tool/check deliverable is pending. A Luna high GPU-operator
