@@ -37,8 +37,7 @@ results/cuda-glibc-compat/include --with-tests --jobs 4` under
 `scripts/remote_job.py`; the CMake cache records the copied include root
 and no `-U_GNU_SOURCE`. The patched build completed all 341 objects under
 `runs/native-ggml-cuda-build-patched-20260924/`. Exact private header and
-build-log hashes remain in the remote run artifacts; they will be added after
-the operator seals the model-level run.
+build-log hashes are in the sealed remote validation manifest cited below.
 
 ## Backend correctness
 
@@ -99,6 +98,13 @@ proposed tree nodes, two accepted draft tokens, and 12 verification rounds:
 at 12,269 MiB used with 3,709 MiB free; after clean shutdown it returned to
 the 3,050 MiB/0% Windows baseline. Supervisor
 `native-cuda-packed-head-smoke-20260924` exited zero. Raw log/request/model
-hashes remain under the host's ignored `results/` and `runs/` and will be
-added when the operator seals its manifest. One short prompt is only a
+hashes are sealed in the ignored host manifest
+`results/native-ggml-cuda-validation-20260924/run-manifest.json`, SHA256
+`8707fc2e774508a8945211168841edeafea15774ddd8b4ddd4c4ba9b572bab3d`.
+It covers the failed/successful build, patched header, backend test,
+conversions/audits, smoke, and final GPU state. One short prompt is only a
 dispatch/counter gate, not an acceptance distribution or speed measurement.
+The native server uses `--spec-draft-n-max 5`; its proposals differ from the
+AngelSlim PyTorch acceptance sweep's 59-node tree. Native same-device
+comparisons must use the target-only and ordinary llama.cpp anchors rather
+than transplanting PyTorch accepted/round counts.

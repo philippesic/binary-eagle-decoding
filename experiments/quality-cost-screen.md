@@ -33,7 +33,9 @@ held-out prompts.
 The calculation is not a bound on actual native throughput: layer shares are
 from one instrumented prompt, the native GGUF path uses F16 upstream and F32
 packed-head arithmetic rather than the BF16 PyTorch simulation, acceptance
-streams can differ, and actual packing/kernel costs are nonzero. It also
+streams and proposal topology can differ (the PyTorch sweep uses a 59-node
+tree per round, while the planned llama.cpp server uses
+`--spec-draft-n-max 5`), and actual packing/kernel costs are nonzero. It also
 omits the target/verifier cost, which would ordinarily reduce the benefit of
 draft-only acceleration. The decisive test remains a matched same-device
 target-only/ordinary/native run with real accepted/emitted tokens and wall

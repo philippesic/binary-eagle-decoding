@@ -272,5 +272,17 @@ RTX 5080 access. Make bounded decisions from evidence, checkpoint them in
   A one-prompt CUDA server smoke returned HTTP 200, confirmed packed-head
   loader and CUDA XOR/POPCOUNT dispatch, and recorded 50 proposed / 2 accepted
   / 12 rounds. The server and supervisor exited, GPU returned to baseline.
-  The next gate is the five-repetition matched native benchmark. Raw smoke
-  hashes/environment will be added once sealed.
+  The sealed native validation manifest at remote
+  `results/native-ggml-cuda-validation-20260924/run-manifest.json` has SHA256
+  `8707fc2e774508a8945211168841edeafea15774ddd8b4ddd4c4ba9b572bab3d`.
+  The next gate is the five-repetition matched native benchmark; the dry run
+  passed and its supervised run is documented below.
+- The benchmark dry run passed on remote parent `ef2f47b`/submodule
+  `92bc706`, checking all three GGUFs, 12 prompt IDs, five alternating
+  orders, two warmups/server, F16 target/draft KV, greedy 128-token limit,
+  CUDA binary and hashes. The one supervised paired run
+  `runs/native-eagle-5080-20260924/` is now **running** under PID/PGID 6950,
+  with `/root/cuda_acceptance_operator` as sole GPU owner. Initial GPU sample
+  during repetition 0 target-only warmup was 11,481 MiB used / 4,497 MiB
+  free at 82% utilization. Do not start another GPU job or report the GPU
+  free until its supervisor is terminal and project processes are gone.

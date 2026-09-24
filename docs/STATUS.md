@@ -48,8 +48,11 @@ are verifier-relative acceptance and diagnostic timing results, not native
 binary or end-to-end speed claims. All supervised runs ended, the GPU returned
 to idle, and tmux SSH sessions were closed.
 
-**Current sequence:** measure paired target-only/ordinary/native throughput
-on the RTX 5080. The RTX 2080 Ti host address is still missing, so SM75 claims
+**Current sequence:** the supervised 5080 paired benchmark
+`native-eagle-5080-20260924` is running (PID/PGID 6950) under sole GPU owner
+`/root/cuda_acceptance_operator`. It compares target-only, ordinary EAGLE,
+and packed-head W1A1 with five alternating repetitions on the same 12 prompts.
+The RTX 2080 Ti host address is still missing, so SM75 claims
 remain pending while 5080 work continues.
 The user also requested a follow-on INT4/INT8 accepted-per-round comparison;
 its [completed report](../experiments/pytorch-int4-int8-cuda-acceptance.md)

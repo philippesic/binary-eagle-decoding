@@ -21,6 +21,10 @@ so native acceptance must be remeasured under a matching numerical contract.
   version, selected tensor names,
   logical K, bit order, sign rule, scale precision, and output arithmetic in
   metadata. Keep K separate from padded word count.
+  PyTorch's F32 reduction order can differ by a few ULP across CPU platforms;
+  hash the exported scale tensor and use the model artifact from the actual
+  benchmark host. The 5080 export differs from Mac by at most three ULP in
+  12,883 of 32,000 head scales; packed signs match exactly.
 - For each activation token vector, accumulate absolute F32 magnitudes in
   F64, divide by logical K, round once to an F32 mean-absolute scale, and pack
   its signs once. The standalone prototype's earlier F32 reduction can differ

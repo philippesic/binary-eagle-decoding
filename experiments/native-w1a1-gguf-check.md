@@ -15,6 +15,10 @@ results/convert-env/bin/python third_party/llama.cpp/convert_hf_to_gguf.py model
 
 The resulting ignored file has 289,229,312 bytes and SHA256
 `6250363f5fdb70fcb3113be90cca8755e916ac0da533a76e340335aa418c16ca`.
+This is the Mac export hash; the 5080 host export differs slightly in F32
+weight-scale reduction order while packing identical sign bits. See the
+[5080 integration report](ggml-w1a1-cuda-5080.md) for that host's file/tensor
+hashes and scale difference.
 Conversion log SHA256 is
 `c4e8e9c4afdaa725467f7c129c362c967756e132b83d5c7652fec477236c9ff3`.
 The GGUF contains I32 `output.w1a1_packed` with shape `[80, 32000]` in GGML
