@@ -3,7 +3,7 @@
 **Opened:** 2026-09-23  
 **State:** active; RTX 5080 work resumed by user
 **Orchestrator:** current Codex task  
-**GPU owner:** `/root/cuda_acceptance_operator` (Luna high); preflight held on GPU use
+**GPU owner:** none while the device is occupied; Luna operator finished CPU prep
 
 ## Objective
 
@@ -96,10 +96,9 @@ binary execution.
 - The user resumed RTX 5080 work. The shared local pause flag is clear. The
   earlier queued GPU task never became visible in the app task list or a GPU
   worktree; no remote work from it has been observed. Luna high subagent
-  `/root/cuda_acceptance_operator` exclusively owns 5080 host verification,
-  parity, the fixed acceptance sweep, and layer profiling. It must use tmux
-  MCP and supervised remote runs, stop at a parity blocker, and report raw
-  artifacts and process status. No other agent may use the 5080 concurrently.
+  `/root/cuda_acceptance_operator` was assigned exclusive 5080 ownership for
+  host verification and CPU preparation. Its bounded turn finished before
+  CUDA runs because the Windows game continued to occupy the GPU.
 - The operator reached the registered WSL host through tmux MCP and confirmed
   the RTX 5080 (16,303 MiB), WSL NVIDIA-SMI 615.71.08, Windows driver 616.92,
   and CUDA UMD 13.4. Windows-side inspection identified Fortnite and its
@@ -107,7 +106,7 @@ binary execution.
   No WSL project process was found. Preflight evidence is saved locally at
   `results/preflight-5080-20260924T034000Z.txt` (SHA256
   `10dd5c335349668d80ebe59077c72e6750edd110d02253347c9fcfd659e8cdae`).
-  The tmux MCP session is `w1a1-5080-acceptance`, pane `%0`. CUDA runs are held
+  The tmux MCP session was `w1a1-5080-acceptance`, pane `%0`. CUDA runs are held
   until the game closes and a fresh idle check passes. CPU-only checkout,
   environment, and model snapshot preparation may proceed meanwhile.
 - The profiler worktree was clean, and its two owned files matched `main`
@@ -120,8 +119,8 @@ binary execution.
   `cuda-runtime-deps-20260924` run installed Transformers 4.57.6 and AngelSlim
   at the config-pinned revision; resolved Hugging Face Hub 0.36.2 and
   Accelerate 1.15.0. A first environment-report command exited 1 after a
-  package metadata-name typo; the operator is correcting the manifest.
-  Model snapshots are next. No CUDA command has run while the GPU is occupied.
+  package metadata-name typo; a corrected import/package check later passed.
+  No CUDA command has run while the GPU is occupied.
 - Corrected package-version evidence is in remote supervised
   `runs/cuda-envfreeze-20260924/stdout.log`. The CPU-only supervised
   `cuda-model-snapshots-20260924` job downloaded and hashed the pinned model
@@ -136,3 +135,14 @@ binary execution.
   Prompt SHA256 remains `0d6a698d6816592c6ff435fed2fea4cdafe9f5248393d2a5ac091e1551919476`.
   Import and package metadata checks pass; CUDA-backed model loading has not
   been attempted. A fresh Windows-side idle check is next.
+- Fresh Windows-side samples at 20:51:55–20:52:05 stayed at 43% utilization
+  and 5,587 MiB, with Fortnite and its overlays still running. The local
+  ignored record is `results/preflight-5080-20260924T034000Z/host-preflight.txt`
+  (SHA256 `11904b197bb51c43ac1bd3e752bc9eb4ca03407c7a77b0625d23bb7e23d0f495`).
+  It contains exact commands, remote run IDs, hashes, and process checks.
+  All CPU setup/download supervisor jobs are terminal; the remote checkout is
+  clean at `daad157`, no project process group remains, and both SSH sessions
+  were closed. CUDA parity, acceptance, and profiling have not started.
+- Next: establish that Fortnite is gone and the GPU is idle using a fresh
+  tmux MCP host check. Then assign one Luna GPU owner for the supervised CUDA
+  parity smoke, full held-out sweep, and layer profile. No QAT begins here.
