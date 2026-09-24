@@ -281,7 +281,7 @@ def main() -> None:
                 target=model.base_model,
             )
             try:
-                if not parity_checked:
+                if not parity_checked and variant["groups"]:
                     disabled = run_generation(model, first_ids, evaluation)
                     if disabled != ordinary:
                         raise RuntimeError("disabled W1A1 wrapper changed ordinary EAGLE output")
