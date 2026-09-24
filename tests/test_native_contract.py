@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from w1a1_eagle.native_contract import (  # noqa: E402
     NativeContractHead,
+    activation_scale_f64_to_f32,
     install_native_contract_head,
     integer_sign_dot,
     native_contract_linear,
@@ -25,6 +26,13 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
 class NativeContractTests(unittest.TestCase):
+    def test_activation_scale_uses_f64_sum_before_f32_rounding(self):
+        values = torch.tensor([[2**20, 2**-4, 2**-4]], dtype=torch.bfloat16)
+        f32_mean = values.float().abs().mean(dim=-1, keepdim=True)
+        native_mean = activation_scale_f64_to_f32(values)
+        self.assertEqual(f32_mean.item(), 349525.34375)
+        self.assertEqual(native_mean.item(), 349525.375)
+
     def test_integer_sign_dot_matches_packed_reference_for_tails_and_signed_zero(self):
         for k in (1, 31, 32, 33, 63, 64, 65, 2560):
             with self.subTest(k=k):
@@ -108,7 +116,7 @@ class NativeContractTests(unittest.TestCase):
             "mode": "native_packed_binary",
             "zero_sign": 1,
             "weight_scale": "mean_abs_f32_per_row",
-            "activation_scale": "mean_abs_f32_per_token",
+            "activation_scale": "mean_abs_f64_sum_f32_per_token",
             "integer_dot": "k_minus_2_popcount_xor",
             "scale_order": "dot_weight_activation_f32",
             "output_dtype": "bfloat16",

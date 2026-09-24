@@ -1,5 +1,6 @@
 # PyTorch acceptance simulation of the planned native packed head arithmetic.
 # It measures quality, not packed-kernel speed or native runtime throughput.
+# Only the head arithmetic matches GGML; upstream PyTorch BF16 may differ from GGUF F16.
 schema_version = 1
 
 [models]
@@ -15,7 +16,7 @@ angelslim_revision = "0358da9c651e6a7d7ccafea26ced4b9c98d11681"
 mode = "native_packed_binary"
 zero_sign = 1
 weight_scale = "mean_abs_f32_per_row"
-activation_scale = "mean_abs_f32_per_token"
+activation_scale = "mean_abs_f64_sum_f32_per_token"
 integer_dot = "k_minus_2_popcount_xor"
 scale_order = "dot_weight_activation_f32"
 output_dtype = "bfloat16"

@@ -3,8 +3,11 @@
 This is an acceptance simulation, not a packed kernel or a speed measurement.
 For the EAGLE head K=2560, float32 matmul of exact +/-1 operands returns the
 same integer dot as K-2*popcount(XOR): every partial integer is exactly
-representable. Scaling is then ordered as dot * weight_scale * token_scale in
-float32, with one bfloat16 cast at the output boundary.
+representable. The GGUF converter computes weight scales with float32 means;
+the native CPU/CUDA activation pack uses a float64 absolute-value sum and
+division, rounded once to float32. Scaling is ordered as dot * weight_scale *
+token_scale in float32, with one bfloat16 cast at the PyTorch drafter boundary.
+The rest of this PyTorch model remains BF16, whereas GGUF may use F16 upstream.
 """
 
 import torch
@@ -17,7 +20,7 @@ MAX_EXACT_INTEGER_DOT_K = 1 << 24
 
 
 def native_contract_linear(input: Tensor, weight: Tensor, bias: Tensor | None = None) -> Tensor:
-    """Simulate sign(0)=+1, F32 row/token mean-absolute scales, BF16 output."""
+    """Simulate sign(0)=+1, native scale reductions, and BF16 head output."""
     if input.ndim < 1 or weight.ndim != 2 or input.shape[-1] != weight.shape[-1]:
         raise ValueError("expected input (..., in_features) and weight (out_features, in_features)")
     if weight.shape[-1] < 1 or weight.shape[-1] > MAX_EXACT_INTEGER_DOT_K:
@@ -29,7 +32,7 @@ def native_contract_linear(input: Tensor, weight: Tensor, bias: Tensor | None = 
     weight_f32 = weight.float()
     input_f32 = input.float()
     weight_scale = weight_f32.abs().mean(dim=-1)
-    input_scale = input_f32.abs().mean(dim=-1, keepdim=True)
+    input_scale = activation_scale_f64_to_f32(input_f32)
     dot = integer_sign_dot(input_f32, weight_f32)
     output = dot * weight_scale
     output = output * input_scale
@@ -41,6 +44,11 @@ def native_contract_linear(input: Tensor, weight: Tensor, bias: Tensor | None = 
 def torch_sign_f32(values: Tensor) -> Tensor:
     """Return exact F32 +/-1 signs, mapping both zero encodings to +1."""
     return torch.where(values < 0, -1.0, 1.0)
+
+
+def activation_scale_f64_to_f32(values: Tensor) -> Tensor:
+    """Match native abs(F32) -> F64 sum/mean -> F32 token scale."""
+    return values.float().abs().double().mean(dim=-1, keepdim=True).float()
 
 
 def integer_sign_dot(input: Tensor, weight: Tensor) -> Tensor:
@@ -104,7 +112,7 @@ class NativeContractHead(nn.Module):
         input_f32 = input.float()
         dot = F.linear(torch_sign_f32(input_f32), self._weight_sign)
         output = dot * self._weight_scale
-        output = output * input_f32.abs().mean(dim=-1, keepdim=True)
+        output = output * activation_scale_f64_to_f32(input_f32)
         if self.linear.bias is not None:
             output = output + self.linear.bias.float()
         return output.to(input.dtype)

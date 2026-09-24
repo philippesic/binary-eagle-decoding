@@ -54,7 +54,7 @@ def variant_quantization(quant: dict, variant: dict) -> dict:
         expected = {
             "zero_sign": 1,
             "weight_scale": "mean_abs_f32_per_row",
-            "activation_scale": "mean_abs_f32_per_token",
+            "activation_scale": "mean_abs_f64_sum_f32_per_token",
             "integer_dot": "k_minus_2_popcount_xor",
             "scale_order": "dot_weight_activation_f32",
             "output_dtype": "bfloat16",
