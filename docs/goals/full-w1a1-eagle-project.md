@@ -3,7 +3,8 @@
 **Opened:** 2026-09-24  
 **State:** active  
 **Orchestrator:** current Codex task  
-**GPU owner:** `/root/cuda_acceptance_operator` for a bounded verifier-logit trace
+**GPU owner:** none; RTX 5080 is idle
+
 **First autonomous work window:** 2026-09-24 09:08–19:08 UTC; the objective
 continues beyond that window if required.
 
@@ -363,7 +364,7 @@ RTX 5080 access. Make bounded decisions from evidence, checkpoint them in
   [the RTX 2080 Ti runbook](../RTX2080TI_RUNBOOK.md). Its current address is
   absent from the shared host registry; the username `philip` is known and
   the user was asked asynchronously for the IP. No 2080 Ti run has started.
-- A bounded native baseline verifier diagnostic is being prepared independently
+- A bounded native baseline verifier diagnostic was completed independently
   of the sealed 5080 benchmark. Pinned llama.cpp `common_sampler` samples
   target verifier rows at `tools/server/server-context.cpp:3897-3920`; a
   temporary opt-in trace commit
@@ -373,16 +374,29 @@ RTX 5080 access. Make bounded decisions from evidence, checkpoint them in
   `W1A1_TRACE_VERIFY_LOGITS=1`. The parent gitlink remains `92bc706`;
   isolated submodule worktree `/private/tmp/llama-verify-logit-trace` owns
   the diagnostic patch, with a local CPU server build/diff check passed.
-  `/root/cuda_acceptance_operator` has exclusive 5080 access for one
-  two-prompt ordinary-EAGLE trace using a separate CUDA build and supervised
-  run. Preserve raw hashes and reset the remote submodule after the run;
-  do not alter or relabel the timed benchmark.
+  `/root/cuda_acceptance_operator` owned the 5080 for one two-prompt
+  ordinary-EAGLE trace using a separate CUDA build and supervised run.
 - The remote diagnostic branch was fetched over HTTPS after the submodule's
   SSH `origin` fetch failed; no build or GPU request had started at that point.
-  The separate SM120a trace-server build is now live under supervised ID
-  `verify-logit-trace-build-20260924`, PID/PGID 626/626, at Ninja step
-  150/356 without an error. GPU is idle. Do not launch a second GPU run until
-  that supervisor is terminal and the two-prompt trace has its own run ID.
+  The separate SM120a trace-server build ran under supervised ID
+  `verify-logit-trace-build-20260924`, PID/PGID 626/626, completed 356
+  build steps and exited zero. The isolated two-prompt run
+  `verify-logit-trace-run-20260924` (PID/PGID 5245/5245) also exited zero.
+  Both ordinary output ID arrays reproduced the sealed baseline. Eight
+  opt-in verifier rows were logged at positions 33/123 with no null logits.
+  The two emitted rows showed the verifier ranked the speculative token first
+  by 0.008074 (`prose-04`) and 0.000729 (`reasoning-04`) raw-logit units;
+  both drafts were rejected. Thus the immediate mismatch is the batched
+  target verifier choosing a different argmax than target-only decoding,
+  with numerical sensitivity plausible but exact cause unproven. See
+  [the trace report](../../experiments/native-verifier-trace-5080.md).
+  Remote `results/verify-logit-trace-20260924/artifact-manifest.json` SHA256
+  `9e64ede2a31c50417b843d5245ab45aff206453f1df61eee36bd001835aac898`
+  seals responses, logs, summary, commands, environment, and file hashes.
+  Remote submodule was restored clean to `92bc706`; all project processes
+  and tmux sessions ended. Repeated final GPU samples were 3,046 MiB used /
+  12,932 MiB free / 0%. Do not treat the temporary diagnostic build as timed
+  evidence.
 - A compile-only integrated SM75 check ran on the 5080 host under
   supervised ID `integrated-sm75-cuda-build-20260924`, owned by
   `/root/cuda_acceptance_operator`. It uses a separate ignored
@@ -417,3 +431,15 @@ RTX 5080 access. Make bounded decisions from evidence, checkpoint them in
   it records capture/GGUF/fixture/binary/stdout/state/code hashes and selected
   row indices. Three final 5080 samples returned to 3,046 MiB used /
   12,932 MiB free / 0%; no project process or SSH/tmux remained.
+
+## Next action after the 5080 verifier trace
+
+The 5080 evidence is sealed and GPU ownership is released. Keep the
+diagnostic llama.cpp branch `feat/verify-logit-trace` published on the user's
+fork and its clean local worktree at `/private/tmp/llama-verify-logit-trace`
+until the trace artifact has been reviewed; the production parent gitlink
+remains `92bc706`. The remaining hardware gate is actual SM75 execution and
+same-device timing on the RTX 2080 Ti. Its address is blank in the shared host
+registry, so wait for the user's current address, then follow
+[the runbook](../RTX2080TI_RUNBOOK.md) with a single GPU owner. Do not infer
+Turing performance from SM120 proxy correctness or compile-only evidence.

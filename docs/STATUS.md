@@ -42,12 +42,16 @@ are preserved, but no integrated per-kernel trace is claimed.
 
 Ordinary and packed EAGLE decoded texts matched on all 60 paired requests.
 A separate raw-token check found identical ordinary/packed IDs on the two
-target-only mismatch prompts. Target-only ranked the speculative IDs second
-by 0.000963 and 0.016508 nats; the API did not expose the verifier logits
-for those accepted draft positions. The precise native baseline mismatch
-cause remains unproven. The earlier BF16 PyTorch verifier trace separately
-identified a tree-versus-incremental target logit tie; see the
-[acceptance report](../experiments/pytorch-w1a1-cuda-acceptance.md).
+target-only mismatch prompts. An isolated [raw verifier-logit
+trace](../experiments/native-verifier-trace-5080.md) reproduced both: at the
+emitted rows, the target verifier itself ranked the speculative output first,
+by 0.008074 and 0.000729 raw-logit units. The drafts were rejected, so these
+were not wrongly accepted tokens. Target-only ranked the opposite IDs first
+by 0.000963 and 0.016508 nats. Numerical sensitivity is plausible, but the
+precise native baseline mismatch cause remains unproven. The earlier BF16
+PyTorch verifier trace separately identified a tree-versus-incremental target
+logit tie; see the [acceptance
+report](../experiments/pytorch-w1a1-cuda-acceptance.md).
 
 ## Other completed gates
 
@@ -72,8 +76,7 @@ The RTX 2080 Ti address is absent from the shared host registry (username
 `philip`). Its actual SM75 correctness and same-device target-only/ordinary/
 binary comparisons are required before a Turing speed claim. The address
 has been requested from the user; the [runbook](RTX2080TI_RUNBOOK.md) is ready.
-The 5080 was idle before this diagnostic; all earlier supervised GPU jobs
-were terminal with no lingering process. A separate
-two-prompt ordinary-EAGLE target-logit trace is now in preparation under sole
-5080 owner `/root/cuda_acceptance_operator`; it will not change the timed
-benchmark. The repository checks pass (78 tests).
+The 5080 diagnostic is complete and sealed. Its remote checkout was restored
+to pinned `92bc706`; all supervised jobs exited, no project process remained,
+and repeated GPU samples showed 0% utilization. The repository checks pass
+(78 tests).
