@@ -8,8 +8,9 @@ portable and binary-MMA paths, FP16 anchors, Q4_0/Q8_0 weight-only drafts,
 and genuinely native INT4/INT8 draft execution if correctness gates can be met.
 No RTX 2080 Ti result has been measured yet.
 The user supplied the RTX 2080 Ti address, which is recorded only in the shared
-local host registry. SSH to port 22 timed out; Ubuntu WSL is not installed yet.
-Local preparation continues while actual SM75 measurements await access.
+local host registry. Ubuntu 24.04 WSL2 and SSH are now reachable. The host
+reports an idle RTX 2080 Ti (compute capability 7.5); a user-space CUDA/build
+toolchain and model staging are in progress before actual SM75 measurements.
 The user requested same-device tests of ordinary EAGLE and all five W1A1
 coverage settings (fusion, attention, FFN, head, all groups), plus a fresh QAT
 investigation. The 5080-tested native runtime supported head-only W1A1;

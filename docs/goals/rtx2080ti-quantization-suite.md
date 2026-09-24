@@ -1,9 +1,9 @@
 # Goal: benchmark the RTX 2080 Ti quantization suite
 
 **Opened:** 2026-09-24  
-**State:** active; 2080 Ti access and WSL preflight pending  
+**State:** active; WSL access established, toolchain and models pending
 **Orchestrator:** current Codex task  
-**GPU owner:** unassigned until access preflight; one owner at a time
+**GPU owner:** `/root/sm75_operator`, exclusive 2080 Ti access
 
 ## Objective
 
@@ -98,3 +98,25 @@ Compare pooled rates and prompt/repetition spread against both anchors.
   WSL was absent. No 2080 Ti runtime or benchmark result exists.
 - Next: commit and push this checkpoint, dispatch independent precision audit
   and GPU access work, and update this file after the first hardware gate.
+
+## Access milestone
+
+- Opening checkpoint `af5f337` and Turing scope clarification `beffcc8` were
+  pushed to `main` before worker access. `/root/int_precision_audit` owns the
+  no-GPU native INT8/INT4 feasibility audit; `/root/sm75_operator` alone owns
+  the 2080 Ti remote session, setup, raw artifacts, and experiment report.
+- tmux-MCP SSH now reaches Ubuntu 24.04 WSL2 at the registered host. The GPU
+  is an RTX 2080 Ti, compute capability 7.5, with 11,264 MiB VRAM. The first
+  sample showed 855 MiB used, 0% utilization, Xwayland only, and no project
+  compute process. The host has about 955 GiB free disk and 15 GiB RAM.
+- The fresh WSL environment has no system nvcc, CMake, Ninja, or G++ and no
+  passwordless sudo. HTTPS is available. The operator cloned clean parent
+  `beffcc883b1a595ef1861971d4ee19559145a6f1` with pinned llama.cpp
+  `8d2b18a9c9b3a42927404a91799a823c758c09b6` and bootstrapped
+  micromamba 2.9.0 under ignored `runs/toolchain-bootstrap` (archive SHA256
+  `8761c382127e6363bd9e0a2451aa3ef90d071a79133f736e2f759a3bf13040dd`).
+  CUDA 12.8/build tools are being resolved in user space. No models or SM75
+  run results are staged yet.
+- The precision audit found that Q4_0/Q8_0 GGUF formats alone do not specify
+  CUDA activation arithmetic. It is tracing the actual small-batch EAGLE
+  operators before assigning any INT4/INT8 execution label.

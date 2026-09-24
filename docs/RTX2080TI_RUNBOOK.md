@@ -1,9 +1,10 @@
 # RTX 2080 Ti execution gate
 
 **Access state:** the user supplied the current RTX 2080 Ti address and it is
-stored only in the shared local `hosts.toml`; the username is `philip`. A
-2026-09-24 SSH attempt to port 22 timed out. The user reports WSL installed but
-no Ubuntu distribution yet. Recheck access after Ubuntu and SSH are configured.
+stored only in the shared local `hosts.toml`; the username is `philip`.
+Ubuntu 24.04 WSL2 and SSH became reachable on 2026-09-24. The fresh host lacks
+system CUDA and build tools, so a user-space toolchain is being prepared before
+the SM75 correctness gate.
 All SSH to this WSL GPU must use tmux MCP and all experiments must use
 `scripts/remote_job.py` with unique run IDs.
 
