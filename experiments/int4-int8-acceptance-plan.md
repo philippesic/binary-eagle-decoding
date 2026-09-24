@@ -71,4 +71,19 @@ scope.
   measurement. Initial Windows/WSL idle gate passed: no Fortnite or project
   job, three 0% samples, 3,108 MiB used / 12,870 MiB free. It is fetching the
   pushed low-bit code and will hold a fixed exact revision across smoke and
-  full sweep. No low-bit acceptance result exists yet.
+  full sweep.
+- Remote code is clean at `92c91a4cecdd0123a2e1d7bf7c6d394fa673dabe`.
+  New config SHA256 is
+  `7ac30ee431e9b2583598ab68cb28731daca6edb5e453ebd1c300578621752c3a`;
+  model manifest SHA256 is
+  `872cc50776ce1e5adb9494e1822cadaec37fbc81338dd1a7b455057907c1f807`.
+  All 18 pinned model files matched prior hashes, and the prompt SHA was
+  unchanged.
+- Supervised one-prompt `cuda-int4-int8-smoke-20260924` finished exit 0.
+  The disabled wrapper matched ordinary EAGLE exactly; all three settings
+  recorded the known target-greedy mismatch at index 3. On `prose-01`,
+  accepted/round was ordinary 84/47 = 1.787, W4A4 25/105 = 0.238, and W8A8
+  80/52 = 1.538. The environment confirms BF16 target/drafter outputs, FP32
+  simulated accumulation, TF32 disabled, and highest FP32 matmul precision.
+  GPU memory returned to its 3,108 MiB Windows idle baseline. These are
+  exploratory one-prompt counts; the 12-prompt sweep is next.

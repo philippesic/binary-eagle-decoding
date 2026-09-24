@@ -22,7 +22,9 @@ same held-out CUDA setup and keeps the operand-precision interpretation
 explicit. W4A4/W8A8 simulation and runner integration are pushed on `main` at
 `01ce2fb`, with all 30 checks passing. A fresh 5080 idle gate passed; the Luna
 operator owns the low-bit smoke and held-out run. No new native binary or
-throughput claim has been made.
+throughput claim has been made. The one-prompt CUDA smoke passed: ordinary,
+W4A4, and W8A8 accepted 1.787, 0.238, and 1.538 drafts/round respectively,
+all with the known target-greedy mismatch. The full 12-prompt run is next.
 The prior [PyTorch W1A1 EAGLE
 goal](goals/pytorch-w1a1-eagle.md) and
 `experiments/pytorch-w1a1-metal-acceptance.md` contain the Metal development
