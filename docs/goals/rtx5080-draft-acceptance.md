@@ -3,7 +3,7 @@
 **Opened:** 2026-09-23  
 **State:** active; RTX 5080 work resumed by user
 **Orchestrator:** current Codex task  
-**GPU owner:** Luna high operator to be assigned; remote access has not begun
+**GPU owner:** `/root/cuda_acceptance_operator` (Luna high); host check pending
 
 ## Objective
 
@@ -97,5 +97,8 @@ binary execution.
   pending measured draft time share.
 - The user resumed RTX 5080 work. The shared local pause flag is clear. The
   earlier queued GPU task never became visible in the app task list or a GPU
-  worktree; no remote work from it has been observed. Assign one Luna high
-  operator, verify host resources via tmux MCP, and use only supervised runs.
+  worktree; no remote work from it has been observed. Luna high subagent
+  `/root/cuda_acceptance_operator` exclusively owns 5080 host verification,
+  parity, the fixed acceptance sweep, and layer profiling. It must use tmux
+  MCP and supervised remote runs, stop at a parity blocker, and report raw
+  artifacts and process status. No other agent may use the 5080 concurrently.
