@@ -13,9 +13,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from w1a1_eagle import (  # noqa: E402
     GROUP_PATHS,
     DrafterStructureError,
+    FakeUniformLinear,
+    UniformQuantConfig,
     W1A1Config,
     W1A1Linear,
     fake_binary_linear,
+    install_fake_uniform,
     install_w1a1,
 )
 
@@ -167,6 +170,33 @@ class DrafterAdapterTests(unittest.TestCase):
         with self.assertRaisesRegex(DrafterStructureError, "target-owned"):
             install_w1a1(self.drafter, ["lm_head"], target=self.target)
         self.assertIs(self.drafter.lm_head, self.target.lm_head)
+
+    def test_uniform_wrapper_preserves_dense_path_and_target(self):
+        dense = self.drafter(self.tokens, self.features)
+        original_fc = self.drafter.fc
+        target_embedding = self.target.embed_tokens
+        handle = install_fake_uniform(
+            self.drafter,
+            ["feature_fusion"],
+            UniformQuantConfig(4, 4),
+            enabled=False,
+            target=self.target,
+        )
+        self.assertIsInstance(self.drafter.fc, FakeUniformLinear)
+        torch.testing.assert_close(self.drafter(self.tokens, self.features), dense, rtol=0, atol=0)
+        handle.set_enabled(True)
+        self.assertEqual(self.drafter(self.tokens, self.features).shape, dense.shape)
+        handle.set_enabled(False)
+        torch.testing.assert_close(self.drafter(self.tokens, self.features), dense, rtol=0, atol=0)
+        handle.uninstall()
+        self.assertIs(self.drafter.fc, original_fc)
+        self.assertIs(self.target.embed_tokens, target_embedding)
+
+        self.drafter.lm_head = self.target.lm_head
+        with self.assertRaisesRegex(DrafterStructureError, "target-owned"):
+            install_fake_uniform(
+                self.drafter, ["lm_head"], UniformQuantConfig(8, 8), target=self.target
+            )
 
     def test_reinstall_and_external_replacement_fail_clearly(self):
         handle = install_w1a1(self.drafter, ["feature_fusion"])

@@ -12,6 +12,7 @@ from types import MappingProxyType
 from torch import nn
 
 from .fake_binary import W1A1Config, W1A1Linear
+from .fake_uniform import FakeUniformLinear, UniformQuantConfig
 
 GROUP_PATHS = MappingProxyType(
     {
@@ -58,7 +59,7 @@ def _target_owns_linear(target: nn.Module, linear: nn.Linear) -> bool:
 
 
 class DrafterW1A1Adapter:
-    """Handle for in-place wrappers on an already-loaded official drafter.
+    """Handle for in-place quantizer wrappers on an already-loaded drafter.
 
     ``set_enabled(False)`` calls each original ``nn.Linear`` directly. The
     original module objects and parameters are retained, so ``uninstall()`` can
@@ -66,7 +67,7 @@ class DrafterW1A1Adapter:
     ``nn.Module``: it must not register another copy of the drafter.
     """
 
-    def __init__(self, drafter: nn.Module, wrappers: dict[str, W1A1Linear]):
+    def __init__(self, drafter: nn.Module, wrappers: dict[str, W1A1Linear | FakeUniformLinear]):
         self.drafter = drafter
         self.wrappers = MappingProxyType(wrappers)
         self._installed = True
@@ -92,25 +93,13 @@ class DrafterW1A1Adapter:
         self._installed = False
 
 
-def install_w1a1(
+def _validated_linears(
     drafter: nn.Module,
     groups: Iterable[str],
-    config: W1A1Config = W1A1Config(),
-    *,
-    enabled: bool = True,
-    target: nn.Module | None = None,
-) -> DrafterW1A1Adapter:
-    """Wrap selected EAGLE-3 linear groups without changing its forward code.
-
-    Group names are ``feature_fusion``, ``attention``, ``ffn``, and ``lm_head``.
-    ``target`` is optional, but when given, any selected linear sharing a module
-    or weight parameter with it is rejected. In all cases only exact paths
-    under ``drafter`` can be wrapped; ``embed_tokens`` is never selected.
-
-    The pinned attention and MLP code bypasses module calls when
-    ``config.pretraining_tp > 1``. Those groups are rejected in that mode.
-    Validation precedes mutation, so a bad path cannot leave partial wrappers.
-    """
+    target: nn.Module | None,
+    kind: str,
+) -> dict[str, tuple[nn.Module, str, nn.Linear]]:
+    """Reject unsupported or target-owned paths before changing the drafter."""
     if not isinstance(drafter, nn.Module):
         raise TypeError("drafter must be an nn.Module")
     if target is not None and not isinstance(target, nn.Module):
@@ -120,7 +109,7 @@ def install_w1a1(
     selected = frozenset(groups)
     unknown = selected - GROUP_PATHS.keys()
     if unknown:
-        raise ValueError(f"unknown W1A1 group(s): {', '.join(sorted(unknown))}")
+        raise ValueError(f"unknown {kind} group(s): {', '.join(sorted(unknown))}")
     if selected & {"attention", "ffn"}:
         draft_config = getattr(drafter, "config", None)
         tp = getattr(draft_config, "pretraining_tp", None)
@@ -146,10 +135,51 @@ def install_w1a1(
         if target is not None and _target_owns_linear(target, linear):
             raise DrafterStructureError(f"refusing to wrap target-owned linear at {path!r}")
         pending[path] = (parent, name, linear)
+    return pending
+
+
+def install_w1a1(
+    drafter: nn.Module,
+    groups: Iterable[str],
+    config: W1A1Config = W1A1Config(),
+    *,
+    enabled: bool = True,
+    target: nn.Module | None = None,
+) -> DrafterW1A1Adapter:
+    """Wrap selected EAGLE-3 linear groups without changing its forward code.
+
+    Group names are ``feature_fusion``, ``attention``, ``ffn``, and ``lm_head``.
+    ``target`` is optional, but when given, any selected linear sharing a module
+    or weight parameter with it is rejected. In all cases only exact paths
+    under ``drafter`` can be wrapped; ``embed_tokens`` is never selected.
+
+    The pinned attention and MLP code bypasses module calls when
+    ``config.pretraining_tp > 1``. Those groups are rejected in that mode.
+    Validation precedes mutation, so a bad path cannot leave partial wrappers.
+    """
+    pending = _validated_linears(drafter, groups, target, "W1A1")
 
     wrappers: dict[str, W1A1Linear] = {}
     for path, (parent, name, linear) in pending.items():
         wrapper = W1A1Linear(linear, config, enabled=enabled)
+        setattr(parent, name, wrapper)
+        wrappers[path] = wrapper
+    return DrafterW1A1Adapter(drafter, wrappers)
+
+
+def install_fake_uniform(
+    drafter: nn.Module,
+    groups: Iterable[str],
+    config: UniformQuantConfig,
+    *,
+    enabled: bool = True,
+    target: nn.Module | None = None,
+) -> DrafterW1A1Adapter:
+    """Wrap only the selected drafter linears with uniform low-bit simulation."""
+    pending = _validated_linears(drafter, groups, target, "uniform quantization")
+    wrappers: dict[str, W1A1Linear | FakeUniformLinear] = {}
+    for path, (parent, name, linear) in pending.items():
+        wrapper = FakeUniformLinear(linear, config, enabled=enabled)
         setattr(parent, name, wrapper)
         wrappers[path] = wrapper
     return DrafterW1A1Adapter(drafter, wrappers)

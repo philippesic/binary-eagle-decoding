@@ -34,6 +34,45 @@ def load_prompts(path: Path) -> list[dict]:
     return prompts
 
 
+def variant_quantization(quant: dict, variant: dict) -> dict:
+    """Resolve the precise simulated operands before loading model weights."""
+    if not variant["groups"]:
+        if "weight_bits" in variant or "activation_bits" in variant:
+            raise ValueError("ordinary variant must not specify quantized operand bits")
+        return {"mode": "ordinary"}
+    mode = quant.get("mode", "binary")
+    if mode == "binary":
+        return {
+            "mode": "w1a1",
+            "weight_bits": 1,
+            "activation_bits": 1,
+            "zero_sign": quant["zero_sign"],
+            "weight_scale": quant["weight_scale"],
+            "activation_scale": quant["activation_scale"],
+        }
+    if mode != "symmetric_uniform":
+        raise ValueError(f"unsupported quantization mode: {mode}")
+    expected = {
+        "scale": "absmax_per_row_and_token",
+        "rounding": "nearest_even",
+        "accumulation": "fp32_simulation",
+        "output_dtype": "drafter_dtype",
+    }
+    for key, value in expected.items():
+        if quant.get(key) != value:
+            raise ValueError(f"symmetric_uniform requires {key}={value}")
+    weight_bits = variant.get("weight_bits")
+    activation_bits = variant.get("activation_bits")
+    if weight_bits not in (4, 8) or activation_bits not in (4, 8, None):
+        raise ValueError("uniform operands require 4 or 8 weight bits and 4 or 8 activation bits")
+    return {
+        "mode": "symmetric_uniform",
+        "weight_bits": weight_bits,
+        "activation_bits": activation_bits,
+        **expected,
+    }
+
+
 def verify_model_snapshot(directory: Path, manifest_entry: dict) -> None:
     if directory.resolve() != Path(manifest_entry["directory"]).resolve():
         raise ValueError(f"model directory differs from manifest: {directory}")
@@ -141,6 +180,8 @@ def main() -> None:
             raise ValueError("one or more requested variant names are missing from config")
     if not variants:
         raise ValueError("no variants selected")
+    quant = config["quantization"]
+    variant_specs = {variant["name"]: variant_quantization(quant, variant) for variant in variants}
     if args.dry_run:
         print(json.dumps({"prompts": len(prompts), "variants": [v["name"] for v in variants]}))
         return
@@ -164,9 +205,11 @@ def main() -> None:
     import transformers
 
     sys.path.insert(0, str(project_root / "src"))
-    from w1a1_eagle import W1A1Config, install_w1a1
+    from w1a1_eagle import UniformQuantConfig, W1A1Config, install_fake_uniform, install_w1a1
     from w1a1_eagle.official_loader import load_official_eagle3
 
+    if quant.get("mode") == "symmetric_uniform" and args.device == "cuda":
+        torch.backends.cuda.matmul.allow_tf32 = False
     if args.device == "cuda":
         if not torch.cuda.is_available():
             raise RuntimeError("CUDA is not available")
@@ -211,7 +254,13 @@ def main() -> None:
         "host_platform": platform.platform(),
         "gpu": gpu_name,
         "cuda_runtime": torch.version.cuda,
+        "float32_matmul_precision": torch.get_float32_matmul_precision(),
+        "cuda_matmul_allow_tf32": (
+            torch.backends.cuda.matmul.allow_tf32 if args.device == "cuda" else None
+        ),
         "hardware_memory_bytes": hardware_memory,
+        "quantization": quant,
+        "variant_quantization": variant_specs,
     }
     (run_dir / "environment.json").write_text(json.dumps(environment, indent=2) + "\n")
 
@@ -233,11 +282,14 @@ def main() -> None:
     environment["target_dtype"] = str(model.base_model.dtype)
     environment["draft_dtype"] = str(next(model.eagle_layer.parameters()).dtype)
     (run_dir / "environment.json").write_text(json.dumps(environment, indent=2) + "\n")
-    quant = config["quantization"]
-    quant_config = W1A1Config(
-        zero_sign=quant["zero_sign"],
-        weight_scale=quant["weight_scale"],
-        activation_scale=quant["activation_scale"],
+    quant_config = (
+        W1A1Config(
+            zero_sign=quant["zero_sign"],
+            weight_scale=quant["weight_scale"],
+            activation_scale=quant["activation_scale"],
+        )
+        if quant.get("mode", "binary") == "binary"
+        else None
     )
     first_ids = encode_prompt(
         model.tokenizer, prompts[0]["messages"], evaluation["thinking_mode"], device
@@ -277,13 +329,26 @@ def main() -> None:
         (run_dir / "greedy-mismatches.jsonl").open("w") as mismatch_stream,
     ):
         for variant in variants:
-            handle = install_w1a1(
-                model.eagle_layer,
-                variant["groups"],
-                quant_config,
-                enabled=False,
-                target=model.base_model,
-            )
+            spec = variant_specs[variant["name"]]
+            if spec["mode"] == "symmetric_uniform":
+                handle = install_fake_uniform(
+                    model.eagle_layer,
+                    variant["groups"],
+                    UniformQuantConfig(
+                        weight_bits=spec["weight_bits"],
+                        activation_bits=spec["activation_bits"],
+                    ),
+                    enabled=False,
+                    target=model.base_model,
+                )
+            else:
+                handle = install_w1a1(
+                    model.eagle_layer,
+                    variant["groups"],
+                    quant_config or W1A1Config(),
+                    enabled=False,
+                    target=model.base_model,
+                )
             try:
                 if not parity_checked and variant["groups"]:
                     disabled = run_generation(model, first_ids, evaluation)
@@ -346,6 +411,7 @@ def main() -> None:
                     row = {
                         "variant": variant["name"],
                         "groups": variant["groups"],
+                        "quantization": spec,
                         "prompt_id": prompt["id"],
                         "category": prompt["category"],
                         "prompt_tokens": input_ids.shape[1],
