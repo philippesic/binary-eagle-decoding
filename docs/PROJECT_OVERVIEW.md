@@ -112,9 +112,12 @@ instrumented draft time. See the [W1A1 CUDA report](../experiments/pytorch-w1a1-
 and [W4A4/W8A8 report](../experiments/pytorch-int4-int8-cuda-acceptance.md).
 
 Strict target-only versus ordinary EAGLE greedy parity fails at generated
-token 4 on CUDA BF16 through a target-selected verifier tie; the underlying
-tree-versus-prefix logit shift is not yet explained. The acceptance counts are
-verifier-relative exploratory evidence, not a target-equivalent speed claim.
+token 4 on CUDA BF16 through a target-selected verifier tie. A bounded 5080
+replay found that off-path sibling tokens do not alter the selected hidden
+state or logits; the tree row's 21.0 tie versus the incremental/full-prefix
+target's 20.875 logit for ID 11 is the immediate mismatch source. The
+acceptance counts are verifier-relative exploratory evidence, not a
+target-equivalent speed claim.
 The current autonomous goal investigates that discrepancy, tests a bounded
 head-only QAT recovery path, and builds a packed native numerical path before
 end-to-end comparison. The [native integration plan](native-w1a1-path.md)

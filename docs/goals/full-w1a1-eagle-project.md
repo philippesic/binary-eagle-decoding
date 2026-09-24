@@ -3,7 +3,7 @@
 **Opened:** 2026-09-24  
 **State:** active  
 **Orchestrator:** current Codex task  
-**GPU owner:** `/root/cuda_acceptance_operator` (Luna high), host check pending
+**GPU owner:** `/root/cuda_kernel_prototype` (Sol high), native correctness/latency run
 **First autonomous work window:** 2026-09-24 09:08–19:08 UTC; the objective
 continues beyond that window if required.
 
@@ -138,3 +138,40 @@ RTX 5080 access. Make bounded decisions from evidence, checkpoint them in
   `2dcec4dd9c954506415b63fe13cd165f6395eab942da61562d82a284d89cc531`),
   balanced across three categories and bound to the held-out prompt hash.
   Remote capture and official runtime integration have not been validated yet.
+- A bounded 5080 BF16 parity replay finished under supervisor
+  `fullw1a1-parity-matrix-20260924-r1`; the GPU returned to its 3,050 MiB
+  baseline and 0% utilization before handoff. At absolute target position 40,
+  the EAGLE tree verifier has logits 21.0 for token IDs 11/272/7578 and
+  selects lowest ID 11; incremental and full-prefix target evaluation select
+  272, with token 11 at 20.875. Mutating every off-path sibling in a replay
+  leaves the selected hidden state/logits bitwise identical. This bounds the
+  discrepancy to BF16 tree-versus-incremental arithmetic/tie sensitivity at
+  this row rather than sibling contamination. The 12-prompt acceptance counts
+  remain verifier-relative, not strict target-equivalent. The parity operator
+  has relinquished the GPU and closed SSH/tmux. Remote code revision
+  `92c91a4cecdd0123a2e1d7bf7c6d394fa673dabe`, run path
+  `~/binary-eagle-decoding/runs/fullw1a1-parity-matrix-20260924-r1/`, raw
+  trace path `results/full-w1a1-parity-20260924/`, run manifest SHA256
+  `39630fc737efcfe9ad9a710b4007188c29613398cfdafb35336847ffa654e421`,
+  trace SHA256
+  `17bd8f7626cf42b1919add214c095b5b614c4e711f63f097b59f9a622e59df52`,
+  script SHA256
+  `5a401cbd84ceccbcc3b3b45aecc04236f5c3608c6aff22719dae09257cb8b35b`.
+- `fa58da2` integrated bounded head QAT training and `2ddc513` added a
+  derived BF16 full-drafter checkpoint exporter and fixed-config held-out
+  evaluator manifest. `4b7a365` integrated a standalone CUDA activation
+  pack/XOR-popcount prototype. `make check` passes 56 tests. The CUDA source
+  still needs real CUDA compilation/correctness/timing; its worker now alone
+  owns the 5080. QAT capture/training remain unrun on the GPU.
+- llama.cpp submodule commit `257e2c670e892bd9ca9c404167b2919020b969f8`
+  adds a dedicated GGML packed W1A1 CPU operation. Its five independent
+  scalar-reference backend tests passed on M3 Max, including K tails and
+  strided activations. This submodule commit was pushed to the user's fork
+  branch `w1a1-cpu-op` before the parent gitlink update. The orchestrator is
+  integrating that gitlink; separate Sol owners are building the GGML CUDA
+  dispatch and EAGLE packed-head loader/export bridge without GPU access.
+- Remaining immediate sequence: finish CUDA prototype on 5080, hand off the
+  GPU to QAT capture/training and held-out evaluation, validate GGML CUDA
+  dispatch when available, then run paired native comparisons. The RTX 2080 Ti
+  address is still absent from the local host registry, so SM75 results await
+  access even while 5080 work proceeds.
