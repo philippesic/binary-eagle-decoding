@@ -1,6 +1,6 @@
 # Current project status
 
-**Active goal:** [complete the W1A1 EAGLE research program](goals/full-w1a1-eagle-project.md).
+**Goal blocked on RTX 2080 Ti access:** [complete the W1A1 EAGLE research program](goals/full-w1a1-eagle-project.md).
 The user delegated research choices and RTX 5080 access for an initial
 roughly 10-hour autonomous work window. The goal file has exact commits,
 owners, raw artifact hashes, and the next action.

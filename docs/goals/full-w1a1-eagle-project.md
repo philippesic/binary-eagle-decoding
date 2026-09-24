@@ -1,7 +1,8 @@
 # Goal: complete W1A1 EAGLE research program
 
 **Opened:** 2026-09-24  
-**State:** active  
+**State:** blocked pending the current RTX 2080 Ti address
+
 **Orchestrator:** current Codex task  
 **GPU owner:** none; RTX 5080 is idle
 
