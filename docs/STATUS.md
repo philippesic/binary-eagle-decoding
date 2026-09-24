@@ -7,7 +7,10 @@ five-configuration Metal development sweep is in
 `experiments/pytorch-w1a1-metal-acceptance.md`: combined W1A1 accepted 0.202
 draft nodes/round, versus 1.683 for head-only. Ordinary BF16 EAGLE and
 target-only greedy generation diverged at token 21 on Metal; FP32 Metal matched
-through 33 tokens. The locked `make check` gate passes all 15 tests. No
+through 33 tokens. A follow-up trace found the divergent token was a
+target-selected seed from an exact BF16 verifier-logit tie, not an accepted
+draft; the upstream logit shift remains under investigation. The locked
+`make check` gate passes all 15 tests. No
 experiment jobs are running.
 
 **Repository:** initial llama.cpp scaffold and agent infrastructure are in place.

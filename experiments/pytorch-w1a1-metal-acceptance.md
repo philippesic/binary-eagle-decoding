@@ -48,14 +48,20 @@ QAT is the next research fork after RTX 5080 confirmation and layer-cost audit.
 
 The disabled wrapper exactly matched unwrapped EAGLE on the first prompt.
 Ordinary BF16 EAGLE and target-only greedy generation first differed at
-generated token 21 on Metal. Recomputing the target on their common prefix
-gave logits 27.75 and 27.625 for the two competing IDs, a 0.125 gap. An FP32
-Metal diagnostic matched the first 33 generated tokens. This is consistent
-with a precision-sensitive decision, but does not prove the cause. The run
-recorded the mismatch and continued only because it was flagged as a Metal
-development check; the CUDA runner remains strict. Verify target-only and
-speculative behavior again on RTX 5080 before using these counts as the
-project's acceptance gate.
+generated token 21 on Metal. A follow-up trace located it at zero-based
+generated index 20, round 9, position 0: it was a **target-selected seed**
+from the preceding verification round, not an accepted draft token. The tree
+verifier's BF16 logits were tied at 27.5 for token IDs 11 and 34512, so
+`argmax` selected the lower ID, 11. A separate full-prefix target computation
+on the same 20-token prefix gave 27.75 for ID 34512 and 27.625 for ID 11.
+Thus the immediate token-choice mechanism is established; the cause of the
+tree-versus-sequential logit shift is not. BF16 arithmetic and cache-history
+differences are plausible, while a mask, position, or cache-index defect has
+not been ruled out. An FP32 Metal diagnostic matched the first 33 generated
+tokens. The run recorded the mismatch and continued only because it was
+flagged as a Metal development check; the CUDA runner remains strict. These
+counts remain observed acceptance under the Metal verifier, but are not yet a
+clean estimate of quantization-induced acceptance loss.
 
 ## Raw artifacts
 
@@ -70,3 +76,7 @@ per-prompt accepted counts, and aggregate summary. SHA256:
 | `summary.json` | `e11d96c3da1b05aa144545de749c54efc8ca86512993f26155fd0a85cba25272` |
 | `model-manifest.json` | `397937106d9de6f74d556455ccc3a292983e7b200a814dd69451f9a3705efa6c` |
 | `greedy-parity.json` | `c1ef27c7e67455b0b4eeb61c70cc4af26c8e03e0f237b719e5600ec850133a38` |
+
+The follow-up verifier trace is at `results/local-prep/greedy-trace-bf16.json`
+on the same Mac, SHA256
+`debd26d03da06bc37f95fc97b20b4a5f540494e5853f7fbc9811e10055294c22`.

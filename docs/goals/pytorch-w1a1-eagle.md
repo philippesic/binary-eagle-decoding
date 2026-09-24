@@ -119,12 +119,15 @@ RTX 5080 confirmation remains a separate proposed research step.
   The first run exposed that the pinned drafter reads `fc.weight.dtype`; the
   wrapper now forwards weight/bias attributes and tests that path.
 - A stricter greedy check found ordinary BF16 EAGLE and target-only sequences
-  first differ at generated token 21 on that Metal prompt. Full-prefix target
-  logits for the two choices were 27.75 and 27.625, a 0.125 gap. A separate
-  FP32 Metal diagnostic matched the first 33 generated tokens. The cause is
-  consistent with precision-sensitive target decisions, but has not been
-  proven; keep the mismatch visible. The runner permits it only for an
-  explicitly flagged Metal development run and remains strict on CUDA.
+  first differ at generated token 21 on that Metal prompt. Follow-up tracing
+  proved that this token was a target-selected root from the prior verification
+  round, not a wrongly accepted draft. The tree verifier saw a BF16 tie at 27.5
+  for IDs 11 and 34512; `argmax` chose lower ID 11. Full-prefix target logits
+  on the shared prefix were 27.75 for ID 34512 and 27.625 for ID 11. The
+  immediate token-choice mechanism is known, but the cause of the logit shift
+  remains open. A separate FP32 Metal diagnostic matched the first 33 tokens.
+  The runner permits the mismatch only for an explicitly flagged Metal
+  development run and remains strict on CUDA.
 - All 15 repository tests passed after the wrapper fix, including the
   model-manifest corruption check. Ruff checks and runner dry-run passed.
 - The full 12-prompt, five-configuration Apple M3 Max Metal development sweep
