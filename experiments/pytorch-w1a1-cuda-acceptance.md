@@ -109,6 +109,13 @@ These are one-prompt, event-instrumented draft timings. The residual includes
 non-linear graph work, tree selection, launch gaps, and instrumentation cost;
 the shares are not native binary-kernel savings or end-to-end speedups.
 
+As a deliberately optimistic planning model, hold all other measured work
+fixed and reduce a selected group's time to zero. The resulting draft-event
+speedup is `1 / (1 - group_share)`: fusion 1.010×, attention 1.112×, FFN
+1.167×, head 1.148×, or all listed linears 1.621×. Real W1A1 execution retains
+packing, scales, and kernel time, and end-to-end inference also includes target
+verification. Acceptance changes can outweigh these draft-time savings.
+
 ## Interpretation pending
 
 The strict smoke cannot establish a CUDA W1A1 acceptance rate or a clean

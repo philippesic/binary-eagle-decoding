@@ -228,3 +228,7 @@ binary execution.
   `--allow-greedy-mismatch`, after a fresh idle gate. It must preserve all
   target-greedy mismatches and return aggregate/per-prompt counts and raw
   hashes. This does not override the strict parity failure or start QAT.
+- A fresh Windows/WSL idle gate at 00:47:50–00:48:00 passed: no Fortnite or
+  project process, 0–1% GPU use, 12,871 MiB free. The remote checkout remains
+  clean at `ae47119`. Supervised `cuda-exploratory-12prompt-20260924` is now
+  running all 12 prompts and six variants with `--allow-greedy-mismatch`.
