@@ -50,6 +50,21 @@ def variant_quantization(quant: dict, variant: dict) -> dict:
             "weight_scale": quant["weight_scale"],
             "activation_scale": quant["activation_scale"],
         }
+    if mode == "native_packed_binary":
+        expected = {
+            "zero_sign": 1,
+            "weight_scale": "mean_abs_f32_per_row",
+            "activation_scale": "mean_abs_f32_per_token",
+            "integer_dot": "k_minus_2_popcount_xor",
+            "scale_order": "dot_weight_activation_f32",
+            "output_dtype": "bfloat16",
+        }
+        for key, value in expected.items():
+            if quant.get(key) != value:
+                raise ValueError(f"native_packed_binary requires {key}={value}")
+        if variant["groups"] != ["lm_head"]:
+            raise ValueError("native_packed_binary currently supports only the lm_head group")
+        return {"mode": "native_packed_binary", **expected}
     if mode != "symmetric_uniform":
         raise ValueError(f"unsupported quantization mode: {mode}")
     expected = {
@@ -206,9 +221,10 @@ def main() -> None:
 
     sys.path.insert(0, str(project_root / "src"))
     from w1a1_eagle import UniformQuantConfig, W1A1Config, install_fake_uniform, install_w1a1
+    from w1a1_eagle.native_contract import install_native_contract_head
     from w1a1_eagle.official_loader import load_official_eagle3
 
-    if quant.get("mode") == "symmetric_uniform" and args.device == "cuda":
+    if quant.get("mode") in ("symmetric_uniform", "native_packed_binary") and args.device == "cuda":
         torch.backends.cuda.matmul.allow_tf32 = False
     if args.device == "cuda":
         if not torch.cuda.is_available():
@@ -338,6 +354,12 @@ def main() -> None:
                         weight_bits=spec["weight_bits"],
                         activation_bits=spec["activation_bits"],
                     ),
+                    enabled=False,
+                    target=model.base_model,
+                )
+            elif spec["mode"] == "native_packed_binary":
+                handle = install_native_contract_head(
+                    model.eagle_layer,
                     enabled=False,
                     target=model.base_model,
                 )
