@@ -6,8 +6,10 @@ same integer dot as K-2*popcount(XOR): every partial integer is exactly
 representable. The GGUF converter computes weight scales with float32 means;
 the native CPU/CUDA activation pack uses a float64 absolute-value sum and
 division, rounded once to float32. Scaling is ordered as dot * weight_scale *
-token_scale in float32, with one bfloat16 cast at the PyTorch drafter boundary.
-The rest of this PyTorch model remains BF16, whereas GGUF may use F16 upstream.
+token_scale in float32. The head returns float32 logits to match the native
+GGML graph; AngelSlim's log-softmax, top-k selection, and d2t indexing accept
+those logits. The rest of this PyTorch model remains BF16, whereas GGUF may
+use F16 upstream.
 """
 
 import torch
@@ -20,7 +22,7 @@ MAX_EXACT_INTEGER_DOT_K = 1 << 24
 
 
 def native_contract_linear(input: Tensor, weight: Tensor, bias: Tensor | None = None) -> Tensor:
-    """Simulate sign(0)=+1, native scale reductions, and BF16 head output."""
+    """Simulate sign(0)=+1, native scale reductions, and F32 head output."""
     if input.ndim < 1 or weight.ndim != 2 or input.shape[-1] != weight.shape[-1]:
         raise ValueError("expected input (..., in_features) and weight (out_features, in_features)")
     if weight.shape[-1] < 1 or weight.shape[-1] > MAX_EXACT_INTEGER_DOT_K:
@@ -38,7 +40,7 @@ def native_contract_linear(input: Tensor, weight: Tensor, bias: Tensor | None = 
     output = output * input_scale
     if bias is not None:
         output = output + bias.float()
-    return output.to(input.dtype)
+    return output
 
 
 def torch_sign_f32(values: Tensor) -> Tensor:
@@ -115,7 +117,7 @@ class NativeContractHead(nn.Module):
         output = output * activation_scale_f64_to_f32(input_f32)
         if self.linear.bias is not None:
             output = output + self.linear.bias.float()
-        return output.to(input.dtype)
+        return output
 
 
 def install_native_contract_head(
