@@ -190,3 +190,17 @@ binary execution.
   `05563bd35b5f502c77a0a4485779e02bf74e8e07bda25d6f0a17341ac09a65ac`.
   Its diagnostic supervisor finished exit 0 and GPU memory returned to idle.
   `experiments/pytorch-w1a1-cuda-acceptance.md` records the current evidence.
+- The separate ordinary drafter profile
+  `cuda-drafter-profile-20260924` finished exit 0 on `prose-01`: two warmups,
+  five measured repetitions, 70 draft invocations, 628.69 ms total draft-event
+  time. The nine candidate linears accounted for 240.95 ms (38.32%): fusion
+  1.03%, attention 10.08%, FFN 14.29%, head 12.93%; residual 61.68% includes
+  other work and instrumentation. Peak PyTorch allocation was 9,781,691,904
+  bytes. Remote profile SHA256 is
+  `1677a3dd0b0cce78cec1e7296c6b18a30ed51e5e780fcd53509b8faed473c15f`.
+  This diagnostic timing is not a binary or end-to-end speedup result.
+- `ae47119` adds an explicit exploratory CUDA mode to the acceptance runner:
+  strict parity remains default, while opt-in runs preserve per-prompt target
+  mismatch records and mark the run as development evidence. `make check`
+  passes all 22 tests. The operator will validate that mode on one prompt
+  before considering a full held-out exploratory sweep.

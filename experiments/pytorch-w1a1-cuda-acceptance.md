@@ -1,6 +1,6 @@
 # PyTorch W1A1 acceptance: RTX 5080 CUDA confirmation
 
-**Status:** parity diagnostic complete; layer profile pending. The held-out
+**Status:** parity diagnostic and ordinary drafter profile complete. The held-out
 W1A1 sweep has not run.
 This is a BF16 PyTorch fake-binary acceptance experiment, not native one-bit
 execution or an end-to-end throughput comparison.
@@ -68,15 +68,42 @@ The diagnostic supervisor finished with exit 0 and released its GPU memory.
 This divergence occurs earlier than the Metal BF16 divergence at index 20.
 
 The disabled W1A1 wrapper, all five W1A1 variants, and the full held-out sweep
-were **not measured** because the ordinary baseline failed the parity gate.
-The supervised process exited, GPU memory returned to the idle baseline, and
-the W1A1 sweep remains stopped. Drafter layer profiling is a separate pending
-diagnostic and must be labeled with this baseline limitation.
+were **not measured** by the strict run because the ordinary baseline failed
+the parity gate. The supervised process exited and GPU memory returned to the
+idle baseline.
+
+## Ordinary drafter layer-cost diagnostic
+
+A separate supervised ordinary EAGLE profile on `prose-01` used a 38-token
+prompt, a 32-token generation cap, two warmups, and five measured repetitions.
+It recorded 70 `topK_genrate` draft invocations. CUDA events on the current
+stream bracketed each draft invocation and each of the nine eligible linear
+calls; the instrumented intervals were synchronized before reduction. The
+aggregate draft-event time was 628.69 ms. Candidate linears accounted for
+240.95 ms (38.32%); the residual was 387.75 ms (61.68%).
+
+| Group | Share of instrumented draft-event time |
+| --- | ---: |
+| Feature fusion | 1.03% |
+| Attention Q/K/V/O | 10.08% |
+| FFN gate/up/down | 14.29% |
+| Drafter vocabulary head | 12.93% |
+| Remaining graph and instrumentation | 61.68% |
+
+Peak PyTorch allocation for the profiled generation was 9,781,691,904 bytes.
+The remote artifact is
+`results/cuda-drafter-profile-20260924/layer-profile.json`, SHA256
+`1677a3dd0b0cce78cec1e7296c6b18a30ed51e5e780fcd53509b8faed473c15f`.
+These are one-prompt, event-instrumented draft timings. The residual includes
+non-linear graph work, tree selection, launch gaps, and instrumentation cost;
+the shares are not native binary-kernel savings or end-to-end speedups.
 
 ## Interpretation pending
 
 No CUDA W1A1 acceptance rate or quantization-induced acceptance loss can be
 reported from this smoke. The immediate mismatch mechanism is established,
 but the upstream logit shift remains a blocker to clean target-equivalent
-acceptance interpretation. The prior Metal development counts are in
+acceptance interpretation. An opt-in, mismatch-recording diagnostic mode is
+being checked to collect observed CUDA acceptance under the same verifier
+without relabeling it target equivalent. The prior Metal development counts are in
 `experiments/pytorch-w1a1-metal-acceptance.md`; they are not a CUDA baseline.

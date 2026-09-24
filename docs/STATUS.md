@@ -14,7 +14,9 @@ passed a fresh idle check. A corrected supervised CUDA smoke loaded the target
 but found ordinary EAGLE differs from target-only greedy output. The full W1A1
 sweep is stopped. A BF16 trace attributes the fourth-token choice to a
 target-selected verifier tie; the underlying tree-versus-prefix logit shift is
-unresolved. The ordinary drafter layer-cost profile is still pending.
+unresolved. A one-prompt ordinary drafter profile measured candidate linears at
+38.32% of instrumented draft time. An opt-in mismatch-recording CUDA diagnostic
+is being validated before any exploratory acceptance sweep.
 The prior [PyTorch W1A1 EAGLE
 goal](goals/pytorch-w1a1-eagle.md) and
 `experiments/pytorch-w1a1-metal-acceptance.md` contain the Metal development
