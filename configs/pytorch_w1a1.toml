@@ -29,6 +29,10 @@ top_k = 10
 threshold = 1.0
 
 [[variants]]
+name = "ordinary"
+groups = []
+
+[[variants]]
 name = "fusion"
 groups = ["feature_fusion"]
 
