@@ -55,3 +55,24 @@ record actual CUDA kernel and activation precision, then five alternating
 repetitions with acceptance and end-to-end timing. Report these rows as
 `Q4_0 weight-only` and `Q8_0 weight-only`, separately from genuine W4A4/W8A8
 if those kernels are later implemented.
+
+## Quantized-target contingency
+
+The 2080 Ti has a smaller VRAM budget. A separate Q4_K_M target GGUF was
+prepared locally as a contingency **only if** the same FP16 target/draft track
+cannot fit. It must not be mixed with FP16-target denominators. The pinned
+FP16 target source SHA256 is
+`05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6`.
+The command was:
+
+```sh
+build/llama-cpu/bin/llama-quantize models/gguf/Qwen3-4B-f16.gguf models/gguf/Qwen3-4B-q4_k_m.gguf Q4_K_M 8
+```
+
+The output is 2,497,280,800 bytes, SHA256
+`cd53292bd4e165a39c1fbd0b9c2f80f5dc8f83774112a581f43f19ab0b876450`.
+GGUF readback counted 216 Q4_K, 37 Q6_K, and 145 F32 tensors; Q4_K_M is a
+mixed tensor recipe, not uniform four-bit target execution. The ignored log
+`results/quantization-prep-20260924/target-q4_k_m.log` has SHA256
+`a41a9d3e6acd6b2d72256e11088ef81c87887a7ed103be9e25e424c682b3ccdf`.
+No target load or inference smoke has been run with this artifact yet.
