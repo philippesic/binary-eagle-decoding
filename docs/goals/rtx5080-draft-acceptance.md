@@ -82,3 +82,12 @@ binary execution.
   every variant's output against it (allowing only round-boundary overshoot).
   A CUDA mismatch stops the sweep with token IDs preserved. `make check`
   passes all 17 tests. The GPU operator must fetch this commit before running.
+- `7957efe` ensures the disabled-wrapper check uses an actual selected group.
+  The Sol profiling tool was reviewed and integrated at `bfce552`. It records
+  CUDA-event spans for the nine eligible drafter linears and `topK_genrate`,
+  shapes, dtypes, group shares, and a residual; no 5080 measurement exists yet.
+  The main-branch `make check` gate passes all 22 tests. The profiler's
+  temporary worktree remains until its task is confirmed idle and clean.
+- The GPU operator should use current `main` at or after `bfce552`, regenerate
+  the model manifest against the updated config hash, then run parity,
+  acceptance, and layer profiling under separate supervised run IDs.
