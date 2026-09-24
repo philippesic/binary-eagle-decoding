@@ -1,7 +1,7 @@
 # Goal: RTX 5080 W1A1 draft acceptance
 
 **Opened:** 2026-09-23  
-**State:** blocked on SSH username
+**State:** paused at user request; no GPU work may start
 **Orchestrator:** current Codex task  
 **GPU owner:** Luna high task dispatched; remote access has not begun
 
@@ -66,10 +66,9 @@ binary execution.
 - Goal opened from the completed PyTorch W1A1 EAGLE phase. The fixed prompt and
   model config are `configs/pytorch_w1a1.toml`; the Metal development report is
   `experiments/pytorch-w1a1-metal-acceptance.md`.
-- User reports that the RTX 5080 is free and supplied a rotated address, now
-  stored in the machine-local host registry. SSH username remains unset (port
-  defaults to 22 pending confirmation). No remote connection or experiment has
-  begun.
+- User supplied the RTX 5080 address and SSH usernames for both GPU hosts;
+  these are stored only in the machine-local host registry. The 2080 Ti address
+  remains unset. No remote connection or experiment has begun.
 - Opening checkpoint `95cf31c` was pushed to `main` before worker setup.
   The Sol high profiling task's code was integrated at `bfce552`; its clean
   temporary worktree is retained until task liveness can be confirmed. A Luna
@@ -96,7 +95,7 @@ binary execution.
   BF16 candidate linear shapes. `experiments/drafter-static-coverage.md`
   records exact parameter counts and distinguishes storage share from the
   pending measured draft time share.
-- The SSH username remains absent after three goal turns. The host address is
-  recorded locally, but the project requires a verified host registry and
-  tmux-managed SSH access. No CUDA measurement can start until the user gives
-  the SSH username (and nondefault port, if any).
+- The user explicitly said not to start yet. The RTX 5080 pause flag is set in
+  the shared local GPU control file before recording its SSH username, so an
+  operator must not start a run. On user resumption, clear that flag, check
+  current host/resources via tmux MCP, and then begin the supervised CUDA work.
