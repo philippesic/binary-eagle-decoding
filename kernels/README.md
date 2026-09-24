@@ -81,3 +81,21 @@ Packed weights are synthetic for timing. Use captured real activations,
 CUDA-graph replay, matched ordinary baselines, and the full verifier for any
 subsequent performance claim. Nothing here measures the RTX 2080 Ti or SM75
 binary instructions.
+
+## SM75 binary-MMA probe
+
+`sm75_mma_probe.cu` is a separate one-warp `m8n8k128` XOR/popcount correctness
+probe for an RTX 2080 Ti. On an SM75 host with a CUDA toolkit that supports
+`sm_75`, build and run it with:
+
+```sh
+nvcc -std=c++17 -O2 -arch=sm_75 -o sm75_mma_probe kernels/sm75_mma_probe.cu
+./sm75_mma_probe
+cuobjdump --dump-sass sm75_mma_probe | grep -E 'BMMA|MMA'
+```
+
+It checks every integer output against a dense CPU sign reference for a full
+8-by-8 tile, partial row/token tiles, K tails with dirty padding bits, and the
+five audited EAGLE widths. The program rejects non-SM75 devices. Compilation
+or disassembly alone does not establish SM75 runtime correctness or speed;
+neither the 5080 nor this probe measures a complete EAGLE draft call.
