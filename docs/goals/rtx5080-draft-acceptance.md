@@ -122,3 +122,9 @@ binary execution.
   Accelerate 1.15.0. A first environment-report command exited 1 after a
   package metadata-name typo; the operator is correcting the manifest.
   Model snapshots are next. No CUDA command has run while the GPU is occupied.
+- Corrected package-version evidence is in remote supervised
+  `runs/cuda-envfreeze-20260924/stdout.log`. The CPU-only supervised
+  `cuda-model-snapshots-20260924` job is active, downloading and hashing the
+  pinned model snapshots under the remote workdir. The target snapshot is
+  partially present (about 3.3 GiB at last report). No GPU-backed command
+  has started; Fortnite still occupies the device.
