@@ -26,6 +26,19 @@ These are possible explanations, not a proven causal decomposition.
    original 12 held-out prompts, and the first QAT pilot's prompts. Use the
    original 12 only for historical regression reporting, never recipe or
    checkpoint selection.
+
+   This manifest gate is now frozen locally by
+   `scripts/generate_qat_revisit_prompts.py` at parent commit `ded3234`.
+   Ignored files under `data/qat-revisit/` have SHA256 values: train
+   `80e365bbc6d2caf4abd5e216e53d72ce62d80f9cf1a668e6862efb845a185e74`,
+   development `a3b97d942a99f1bddd5bb97216c32a9920aaa50788baa5bdb92354842547e885`,
+   and final `67575d0466b03758723b5e6be6d78237385fd3ce45b2caf67ea15c4bc83f4c62`.
+   Generation audited all three sets against the original 12 and the prior
+   96/24 pilot manifests by ID and exact content hash, with whole topic/template
+   families assigned to one split. The generator SHA256 is
+   `5017b5ce49618ca6c368b22f7b55c72816692ccf0f4a10e5c4ec4bf71550fb56`.
+   Four focused tests and Ruff passed. No model was trained or evaluated on
+   these new prompts yet.
 2. On the pinned AngelSlim target/drafter, trace target next-token labels and
    logits alongside drafter inputs, absolute positions, recurrent depth,
    trajectory source, and `d2t`/`t2d` mappings. Before optimization, prove the

@@ -563,6 +563,9 @@ suite before training; do not reuse the original 12 prompts for selection. A
 [bounded target-aligned head-first protocol](../../experiments/qat-revisit-plan.md)
 records the alignment, split, selection, stop, and wider-group gates. It is a
 plan, not a new measured result.
+The fresh 96/24/24 QAT prompt manifests are now frozen locally at `ded3234`;
+their hashes and overlap audits against the prior held-out and pilot sets are
+in that plan. No new capture, training, or final-set evaluation has begun.
 
 Next: complete and review the selectable native bridge and benchmark controls;
 prepare a bounded QAT plan and model/precision manifest locally. Once Ubuntu
