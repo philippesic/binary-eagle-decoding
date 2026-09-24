@@ -438,6 +438,42 @@ def completion_text_matches(records: list[dict[str, Any]]) -> dict[str, Any]:
     return result
 
 
+def relative_speedups(aggregated: dict[str, Any]) -> dict[str, Any]:
+    """Compute packed/anchor ratios from pooled token/time totals only."""
+    packed = aggregated["packed_head_w1a1"]
+    result = {}
+    for anchor in ("target_only", "ordinary_eagle"):
+        baseline = aggregated[anchor]
+        result[anchor] = {}
+        for metric in ("request_tokens_per_s", "decode_tokens_per_s"):
+            numerator = packed[metric]
+            denominator = baseline[metric]
+            result[anchor][metric] = (
+                numerator / denominator
+                if isinstance(numerator, (int, float))
+                and isinstance(denominator, (int, float))
+                and denominator > 0
+                else None
+            )
+    return result
+
+
+def repetition_summaries(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Preserve run-to-run spread without averaging speedup ratios globally."""
+    summaries = []
+    for repetition in sorted({row["repetition"] for row in records}):
+        selected = [row for row in records if row["repetition"] == repetition]
+        aggregated = aggregate(selected)
+        summaries.append(
+            {
+                "repetition": repetition,
+                "aggregation": aggregated,
+                "packed_speedup_vs": relative_speedups(aggregated),
+            }
+        )
+    return summaries
+
+
 def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,79}", run_id):
         raise ValueError("run ID must be a safe, relative name")
@@ -558,9 +594,12 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                             )
                             json_write(server_dir / "dispatch-evidence.json", evidence)
                             json_write(server_dir / "gpu-after.json", gpu_snapshot())
+            aggregated = aggregate(records)
             report = {
                 "status": "complete",
-                "aggregation": aggregate(records),
+                "aggregation": aggregated,
+                "packed_speedup_vs": relative_speedups(aggregated),
+                "repetitions": repetition_summaries(records),
                 "greedy_text_match_vs_target_only": completion_text_matches(records),
                 "records": len(records),
                 "native_cuda_dispatch_confirmed": (

@@ -142,6 +142,16 @@ class NativeBenchmarkTests(unittest.TestCase):
         self.assertAlmostEqual(aggregate["decode_tokens_per_s"], 1000 / 3)
         self.assertIsNone(aggregate["acceptance_rate"])
 
+    def test_relative_speedup_uses_pooled_rates(self):
+        values = {
+            "target_only": {"request_tokens_per_s": 10.0, "decode_tokens_per_s": 20.0},
+            "ordinary_eagle": {"request_tokens_per_s": 8.0, "decode_tokens_per_s": 16.0},
+            "packed_head_w1a1": {"request_tokens_per_s": 12.0, "decode_tokens_per_s": 24.0},
+        }
+        result = benchmark.relative_speedups(values)
+        self.assertEqual(result["target_only"]["request_tokens_per_s"], 1.2)
+        self.assertEqual(result["ordinary_eagle"]["decode_tokens_per_s"], 1.5)
+
     def test_full_fake_run_preserves_artifacts_and_stops_server(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -157,6 +167,7 @@ class NativeBenchmarkTests(unittest.TestCase):
                 output = benchmark.run(config, "fake-run")
             report = json.loads((output / "report.json").read_text())
             self.assertEqual(report["records"], 15)
+            self.assertEqual(len(report["repetitions"]), 5)
             self.assertIsNone(report["native_cuda_dispatch_confirmed"])
             self.assertEqual(
                 report["aggregation"]["ordinary_eagle"]["speculative"],
