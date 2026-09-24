@@ -474,3 +474,11 @@ was cherry-picked into the implementation branch, now published as
 build/correctness check plus compile-only SM75 SASS inspection, restoring the
 remote production checkout afterward. Actual SM75 runtime and performance
 still require the RTX 2080 Ti address.
+The remote candidate fetch verified full SHA
+`9bb01a682ed4ba5e506870c8a38338589830b164`; parent/production gitlink
+remain unchanged. The isolated SM120a CUDA build is live under supervisor
+`binary-mma-sm120-build-20260924`, PID/PGID 655, in
+`build/llama-cuda-bmma-sm120-20260924`. CUDA 13.1 uses the previously audited
+private include root. Preflight found no project GPU process; 5080 idle sample
+was 3,046/16,303 MiB and 0%. Wait for this exact supervisor to reach a
+terminal state before launching the correctness runs.
