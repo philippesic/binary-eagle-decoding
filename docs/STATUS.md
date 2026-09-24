@@ -1,7 +1,11 @@
 # Current project status
 
-**Active goal:** none. The completed [RTX 5080 W1A1 draft acceptance
-goal](goals/rtx5080-draft-acceptance.md) and
+**Active goal:** [complete W1A1 EAGLE research program](goals/full-w1a1-eagle-project.md).
+The user delegated project research decisions and granted RTX 5080 access for
+an initial roughly 10-hour autonomous work window. The first work units are a
+bounded BF16 verifier-parity investigation on the 5080, a CPU binary
+reference/packer, and native-path planning. No new GPU job is running yet.
+The completed [RTX 5080 W1A1 draft acceptance goal](goals/rtx5080-draft-acceptance.md) and
 `experiments/pytorch-w1a1-cuda-acceptance.md` contain the pinned CUDA setup,
 strict BF16 parity diagnostic, full 12-prompt exploratory acceptance sweep,
 and drafter layer-cost audit. Ordinary EAGLE accepted 2.317 drafts/round,
@@ -13,9 +17,11 @@ are verifier-relative acceptance and diagnostic timing results, not native
 binary or end-to-end speed claims. All supervised runs ended, the GPU returned
 to idle, and tmux SSH sessions were closed.
 
-**Next decision:** the user chooses the next goal: investigate BF16 verifier
-parity, narrow W1A1 coverage, or bounded drafter QAT. Evidence and tradeoffs
-are in `docs/DECISIONS.md`. No QAT or native binary work is active.
+**Current research fork:** first investigate BF16 verifier parity while a
+packed-binary numerical reference proceeds independently. Then choose narrow
+coverage and/or bounded drafter QAT from the measured acceptance and layer
+cost evidence. The user delegated these research choices for this work window;
+record each in `docs/DECISIONS.md`. No QAT or native binary work is active yet.
 The user also requested a follow-on INT4/INT8 accepted-per-round comparison;
 its [completed report](../experiments/pytorch-int4-int8-cuda-acceptance.md)
 records the same 12-prompt RTX 5080 comparison. Accepted drafts/round were
