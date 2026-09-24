@@ -237,3 +237,11 @@ binary execution.
   W1A1 variants are still running; no final summary or artifact hashes exist
   yet. WDDM sampled 13,207 MiB used / 2,771 MiB free at 00:50:08 while the
   project process group 494 was active, without OOM or contention.
+- `cuda-exploratory-12prompt-20260924` finished exit 0 with exactly 72 unique
+  variant/prompt rows (12 each), 12 target-reference rows, and 43 greedy
+  mismatch records. Ordinary accepted 1,061 drafts / 458 rounds (2.317/round).
+  W1A1 accepted/round: fusion 0.683, attention 0.771, FFN 1.067, head 1.677,
+  all groups 0.202. The combined setting retained 8.7% of ordinary acceptance
+  under this verifier. All six settings had target-greedy mismatches on at
+  least six prompts; the strict parity limitation remains. Artifact hashes,
+  prompt spread, and final GPU cleanup are under verification.

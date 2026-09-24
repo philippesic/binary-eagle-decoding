@@ -1,7 +1,8 @@
 # PyTorch W1A1 acceptance: RTX 5080 CUDA confirmation
 
-**Status:** parity diagnostic, ordinary drafter profile, and one-prompt
-exploratory acceptance check complete. The held-out 12-prompt sweep has not run.
+**Status:** strict parity failed; the full 12-prompt exploratory acceptance
+sweep and ordinary drafter profile are complete. Results are verifier-relative
+and are not a clean target-equivalent comparison.
 This is a BF16 PyTorch fake-binary acceptance experiment, not native one-bit
 execution or an end-to-end throughput comparison.
 
@@ -143,6 +144,41 @@ and `summary.json` (SHA256
 `c62aeaacb4a666b92c8a97238fe848d6219b196f8cbf87b7888ef301bcde4bda`)
 under remote `results/cuda-exploratory-ordinary-fusion-20260924/`. This is one
 prompt and two variants, so it cannot replace the fixed 12-prompt comparison.
-The full suite will be run in the same explicitly exploratory mode. The prior
-Metal development counts are in
-`experiments/pytorch-w1a1-metal-acceptance.md`; they are not a CUDA baseline.
+## Full held-out exploratory acceptance
+
+The supervised `cuda-exploratory-12prompt-20260924` run used the same pinned
+CUDA code, models, prompt manifest, and `--allow-greedy-mismatch` policy. It
+finished with exit 0 and produced 72 unique variant/prompt rows: 12 prompts
+each for ordinary EAGLE and five W1A1 layer-group settings (four prose, four
+code, four reasoning prompts). All 12 target-reference rows were preserved.
+There were 43 target-greedy mismatch records across the 72 rows. The table
+uses total accepted drafts divided by total verification rounds; each round
+proposed 59 tree nodes. Percent of ordinary uses the ordinary variant's
+accepted-per-round value on this same run.
+
+| Drafter setting | Accepted / proposed nodes | Rounds | Accepted/round | Node acceptance | % of ordinary | Target-greedy matches |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Ordinary BF16 EAGLE | 1,061 / 27,022 | 458 | 2.317 | 3.93% | 100% | 5/12 |
+| W1A1 feature fusion | 616 / 53,218 | 902 | 0.683 | 1.16% | 29.5% | 5/12 |
+| W1A1 attention | 656 / 50,209 | 851 | 0.771 | 1.31% | 33.3% | 5/12 |
+| W1A1 FFN | 783 / 43,306 | 734 | 1.067 | 1.81% | 46.0% | 4/12 |
+| W1A1 vocabulary head | 949 / 33,394 | 566 | 1.677 | 2.84% | 72.4% | 4/12 |
+| W1A1 all listed groups | 256 / 74,694 | 1,266 | 0.202 | 0.34% | 8.7% | 6/12 |
+
+The five CUDA W1A1 accepted-per-round values closely reproduce the Metal
+development pattern: fusion 0.683 versus 0.712, attention 0.771 versus 0.773,
+FFN 1.067 versus 1.057, head 1.677 versus 1.683, and all groups 0.202 versus
+0.202. Ordinary EAGLE was not measured across the Metal prompt suite, so the
+same-device ordinary baseline here is new. The combined post-training W1A1
+setting retained only 8.7% of ordinary EAGLE's accepted drafts per round under
+this verifier. Head-only retained the most acceptance among the tested W1A1
+groups. These ratios describe accepted drafts, not end-to-end speed: draft
+latency, target verification, emitted target tokens, and packing costs also
+matter.
+
+Every variant has some prompts that differ from target-only greedy output.
+The BF16 tree-versus-prefix logit shift is unresolved, and generated paths can
+diverge across variants. Therefore these are **observed acceptance counts under
+one verifier**, not a clean causal estimate of quantization-induced acceptance
+loss or evidence of target-equivalent speculative decoding. The prior Metal
+development counts are in `experiments/pytorch-w1a1-metal-acceptance.md`.
