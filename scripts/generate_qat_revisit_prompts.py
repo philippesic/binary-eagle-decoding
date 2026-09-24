@@ -1,3 +1,4 @@
+# ruff: noqa: E501 -- keep frozen prompt literals intact for reproducible hashes
 """Freeze fresh prompt-level train/development/final manifests for QAT revisit.
 
 Generated files default to the ignored ``data/qat-revisit`` directory. The

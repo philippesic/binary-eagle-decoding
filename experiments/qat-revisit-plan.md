@@ -36,8 +36,8 @@ These are possible explanations, not a proven causal decomposition.
    Generation audited all three sets against the original 12 and the prior
    96/24 pilot manifests by ID and exact content hash, with whole topic/template
    families assigned to one split. The generator SHA256 is
-   `5017b5ce49618ca6c368b22f7b55c72816692ccf0f4a10e5c4ec4bf71550fb56`.
-   Four focused tests and Ruff passed. No model was trained or evaluated on
+   `92d7b1bc86b559d35088c004b04c1acd3a1c66530b13e837d70761512057daf7`.
+   The full project `make check` passed 85 tests after integration. No model was trained or evaluated on
    these new prompts yet.
 2. On the pinned AngelSlim target/drafter, trace target next-token labels and
    logits alongside drafter inputs, absolute positions, recurrent depth,
@@ -46,6 +46,18 @@ These are possible explanations, not a proven causal decomposition.
    state. Record target probability mass outside the 32,000-token draft
    vocabulary and the exact treatment of unmapped targets. A failed mapping or
    off-by-one audit blocks training; do not silently drop rows.
+
+   A source audit found that `d2t[i]` is an **offset**: target token ID is
+   `i + d2t[i]`. The current capture records a head-call ordinal and row, but
+   not the parent tree node/path or corresponding target verifier row. The
+   first head call predicts after the target-selected seed; each later call
+   predicts after its draft parent node. The next capture must record these
+   node IDs/paths and match each row to the verifier's next-token logits,
+   including padded, pruned, EOS, and unmapped rows. Audit the actual inverse
+   consistency of `t2d` before using it; its presence alone is insufficient.
+   The loss treatment of target labels outside draft support remains a
+   research decision to fix after measuring their frequency and probability
+   mass, before training.
 3. Match the training fake-binary forward, export, and native packed arithmetic
    closely enough to state their rounding differences. The first pilot used a
    BF16 fake-binary forward; the native llama.cpp comparison uses FP16 model

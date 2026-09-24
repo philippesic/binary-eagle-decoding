@@ -54,9 +54,7 @@ def audit(source: Path, gguf_path: Path, rows_per_chunk: int = 128) -> dict:
     reader = GGUFReader(gguf_path)
     tensors = {tensor.name: tensor for tensor in reader.tensors}
     bases = sorted(
-        name.removesuffix(".w1a1_packed")
-        for name in tensors
-        if name.endswith(".w1a1_packed")
+        name.removesuffix(".w1a1_packed") for name in tensors if name.endswith(".w1a1_packed")
     )
     if not bases or len(bases) != len(set(bases)):
         raise ValueError("GGUF has no distinct packed W1A1 tensors")
