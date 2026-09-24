@@ -1,5 +1,3 @@
-#include "w1a1_cuda.cuh"
-
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -12,6 +10,8 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "w1a1_cuda.cuh"
 
 namespace {
 
