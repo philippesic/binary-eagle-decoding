@@ -69,6 +69,12 @@ proxy run. It has **not** executed on the RTX 2080 Ti; see the
 [probe record](../experiments/sm75-binary-mma-plan.md). A focused
 [related-work note](../experiments/related-work-note.md) keeps novelty claims
 narrow: quantized EAGLE and native QAT already exist.
+An opt-in [integrated binary-MMA
+candidate](../experiments/integrated-binary-mma-5080.md) also passed 8/8
+scalar-reference backend cases on the 5080, matched all 85 packed-draft
+tokens in one model request, and compiled to SM75 SASS containing the exact
+binary-MMA instruction. It remains on a published experimental branch; no
+SM75 binary was run and no MMA speed result is claimed.
 
 ## Next gate
 
@@ -76,7 +82,7 @@ The RTX 2080 Ti address is absent from the shared host registry (username
 `philip`). Its actual SM75 correctness and same-device target-only/ordinary/
 binary comparisons are required before a Turing speed claim. The address
 has been requested from the user; the [runbook](RTX2080TI_RUNBOOK.md) is ready.
-The 5080 diagnostic is complete and sealed. Its remote checkout was restored
+The 5080 experiments are complete and sealed. Its remote checkout was restored
 to pinned `92bc706`; all supervised jobs exited, no project process remained,
 and repeated GPU samples showed 0% utilization. The repository checks pass
-(78 tests).
+(78 tests); the expanded W1A1 branch tests passed 8/8 on CPU and CUDA.

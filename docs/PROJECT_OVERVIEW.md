@@ -157,6 +157,14 @@ cache/position state caused it. Keep target-only throughput ratios labeled
 as timing observations, not strict lossless speedups. See the
 [native verifier trace](../experiments/native-verifier-trace-5080.md).
 
+An opt-in integrated binary-MMA branch passed 8/8 scalar-reference CUDA
+backend checks on the 5080, and one packed-draft request matched the
+production portable path's 85 token IDs. A separate SM75 compile emitted
+`BMMA.88128.XOR.POPC` in the candidate GGML library. This is 5080 proxy
+correctness and SM75 compile-only evidence; no Turing runtime or timing has
+been measured. See the [integrated MMA
+report](../experiments/integrated-binary-mma-5080.md).
+
 An approximate planning model is `throughput = emitted tokens per round / round
 time`, with round time including draft, verification, and all other overhead.
 Use values measured in the paired comparison, including target-emitted tokens,

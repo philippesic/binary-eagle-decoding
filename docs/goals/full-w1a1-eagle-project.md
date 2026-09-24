@@ -3,7 +3,7 @@
 **Opened:** 2026-09-24  
 **State:** active  
 **Orchestrator:** current Codex task  
-**GPU owner:** `/root/cuda_acceptance_operator` for isolated MMA validation
+**GPU owner:** none; RTX 5080 is idle
 
 **First autonomous work window:** 2026-09-24 09:08–19:08 UTC; the objective
 continues beyond that window if required.
@@ -490,5 +490,19 @@ MMA logged dispatch and matched all 85 generated `prose-04` token IDs and
 proxy correctness checks, not SM75 runtime or speed evidence. GPU returned
 to roughly 3,040 MiB used / 12,938 MiB free / 0% after the request.
 A separate supervised SM75 compile-only job
-`binary-mma-sm75-build-20260924` is now active; await its terminal state and
-SASS inspection before sealing artifacts and restoring production checkout.
+`binary-mma-sm75-build-20260924` completed 157/157 steps and exited zero.
+The inspected candidate library's SM75 SASS contains
+`BMMA.88128.XOR.POPC`; this image was never executed on the 5080. All six
+supervised jobs exited zero. The sealed remote manifest at
+`results/binary-mma-sm120-20260924/artifact-manifest.json` has SHA256
+`f0a578fc6bb4324f7a37387a202a70bdceed2dbd16497fa944dc1868a6ae62e7`
+and preserves 25 file hashes, exact commands, environment, raw outputs,
+supervisor states, and cleanup. Full SM75 SASS dump SHA256 is
+`d86b73b9507d28c7ff1ae270189b5d761e3ada08237b1745c392a2fa8c495b37`.
+Remote parent and production submodule were restored clean to `92bc706`;
+all project processes stopped and both SSH/tmux connections closed. Final
+GPU samples were 3,040 MiB used / 12,938 MiB free / 0%. The candidate
+remains a published experimental branch, not the production gitlink. See
+[the integrated MMA report](../../experiments/integrated-binary-mma-5080.md).
+The next meaningful hardware action is to obtain the current RTX 2080 Ti
+address and run default/opt-in correctness plus same-device timing there.

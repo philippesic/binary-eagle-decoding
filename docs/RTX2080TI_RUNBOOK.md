@@ -40,6 +40,17 @@ SM75 and passed numerical checks only on an SM120 proxy path.
    the real 2080 Ti. Require all 21 cases/880 exact integer dots to pass.
    The 5080 proxy pass is not a substitute. If this fails, stop the MMA claim
    and keep the portable `__popc` path separate.
+   The opt-in [integrated MMA branch](../experiments/integrated-binary-mma-5080.md)
+   is published as `feat/w1a1-sm75-mma` at
+   `9bb01a682ed4ba5e506870c8a38338589830b164`, based on production
+   `92bc706`. Build its SM75 CUDA backend in a separate tree, verify SASS
+   contains `BMMA.88128.XOR.POPC`, and run the expanded
+   `test-backend-ops test -b CUDA0 -o W1A1_MUL_MAT` suite with the default
+   portable path and then `GGML_CUDA_W1A1_MMA=1`. Require 8/8 scalar-reference
+   cases and distinct dispatch logs for each, plus a model-level generated-ID
+   parity smoke. The 5080 proxy passed these checks; SM75 runtime remains
+   untested. Keep this branch separate from the pinned production gitlink
+   until real 2080 Ti correctness and timing are reviewed.
 3. Convert the pinned target and ordinary/packed EAGLE draft on this host,
    auditing all 32,000 packed head rows and hashing the three GGUFs. A short
    native server smoke must show the packed-head loader and explicit CUDA
@@ -64,8 +75,11 @@ token/time ratios and paired prompt/repetition spread. Profile packing and
 the portable binary kernel separately; do not add overlapping GPU spans as
 though serial. A negative result is valid if its bottleneck and limitations
 are quantified. If the portable path is negative, only claim that path is
-negative; compare an actual integrated MMA path before ruling out Turing
-binary Tensor Cores.
+negative. Compare the opt-in integrated MMA path against portable under the
+same target, draft weights, prompts, server binary, and settings before ruling
+out Turing binary Tensor Cores. Run both paths with five alternating measured
+repetitions if the MMA correctness gates pass; identify the selector in every
+raw record. Do not compare the 2080 Ti speed ratios to the 5080 track.
 The current activation packer accumulates magnitudes in F64 before writing
 an F32 scale; measure that reduction separately on Turing rather than
 carrying over the 5080 pack cost. The 5080 integrated-kernel NCU attempt was
