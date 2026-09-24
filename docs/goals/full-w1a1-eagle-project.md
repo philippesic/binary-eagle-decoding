@@ -3,7 +3,7 @@
 **Opened:** 2026-09-24  
 **State:** active  
 **Orchestrator:** current Codex task  
-**GPU owner:** none; RTX 5080 is idle
+**GPU owner:** `/root/cuda_acceptance_operator` for isolated MMA validation
 
 **First autonomous work window:** 2026-09-24 09:08–19:08 UTC; the objective
 continues beyond that window if required.
@@ -464,6 +464,13 @@ no GPU is assigned to the implementation worker. In a separate worktree
 `f52dbc7` (published to the user's fork) expands the independent scalar
 reference checks to full 8×8, partial/multi-tile 9×10, and head-like
 320×1 shapes. The Mac CPU backend passed 8/8 cases, including dirty K tails.
-The 5080 remains idle. Review and combine the isolated commits, then use a
-single GPU owner for a separate supervised 5080 proxy build/correctness check;
-actual SM75 runtime and performance still require the RTX 2080 Ti address.
+The implementation commits `e3026d3` and `6d18bde` add an opt-in
+`GGML_CUDA_W1A1_MMA=1` path and cache the selector/device capability without
+altering the portable default. The numerical kernel passed host emulation for
+8×8, 9×10, and 320×1 shapes; no CUDA run has yet occurred. The test commit
+was cherry-picked into the implementation branch, now published as
+`feat/w1a1-sm75-mma` at `9bb01a6`. Sole 5080 owner
+`/root/cuda_acceptance_operator` is assigned a supervised SM120a proxy
+build/correctness check plus compile-only SM75 SASS inspection, restoring the
+remote production checkout afterward. Actual SM75 runtime and performance
+still require the RTX 2080 Ti address.
