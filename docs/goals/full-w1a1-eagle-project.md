@@ -3,7 +3,7 @@
 **Opened:** 2026-09-24  
 **State:** active  
 **Orchestrator:** current Codex task  
-**GPU owner:** `/root/cuda_kernel_prototype` (Sol high), native correctness/latency run
+**GPU owner:** `/root/cuda_acceptance_operator` (Luna high), bounded QAT capture/training
 **First autonomous work window:** 2026-09-24 09:08–19:08 UTC; the objective
 continues beyond that window if required.
 
@@ -170,8 +170,37 @@ RTX 5080 access. Make bounded decisions from evidence, checkpoint them in
   branch `w1a1-cpu-op` before the parent gitlink update. The orchestrator is
   integrating that gitlink; separate Sol owners are building the GGML CUDA
   dispatch and EAGLE packed-head loader/export bridge without GPU access.
-- Remaining immediate sequence: finish CUDA prototype on 5080, hand off the
-  GPU to QAT capture/training and held-out evaluation, validate GGML CUDA
-  dispatch when available, then run paired native comparisons. The RTX 2080 Ti
+- Remaining immediate sequence: finish QAT capture/training and held-out
+  evaluation, validate GGML CUDA dispatch after GPU handoff, then run paired
+  native comparisons. The RTX 2080 Ti
   address is still absent from the local host registry, so SM75 results await
   access even while 5080 work proceeds.
+- The standalone CUDA prototype compiled and passed exact integer-dot
+  correctness on the 5080 at eight K widths, plus F32 scales/output
+  tolerances. Two supervised nine-shape CUDA-event runs preserve raw samples.
+  In the repeat, the 10-token head medians were 0.070016 ms prepacked and
+  0.079136 ms packing-inclusive. These omit draft, verifier, H2D, allocation,
+  and graph overhead; the one-token samples were variable. Full hashes,
+  compiler flags, and table are in
+  [the CUDA prototype report](../../experiments/native-w1a1-cuda-prototype.md).
+  Branch `feat/cuda-w1a1-prototype` at `8950822` was pushed; fixes `26484b7`
+  and `37ebbc6` were cherry-picked into `main`. The GPU was cleanly released.
+- The RTX 5080 was handed exclusively to `/root/cuda_acceptance_operator` for
+  the QAT pilot. Remote checkout `855fea5` produced the expected disjoint
+  96/24 prompt hashes. Capture supervisor `qat-head-capture-20260924` is
+  running, with per-prompt cap 384 and global cap 32768. No training job has
+  started. The parity/CUDA prototype supervisors and SSH sessions are closed.
+- Pinned target and ordinary EAGLE draft converted to FP16 GGUF locally; CPU
+  and Metal runtime builds succeeded, and Metal target-only/ordinary EAGLE
+  smoke generation loaded both. Source/output hashes, commands, log hashes,
+  and limitations are in
+  [the conversion report](../../experiments/gguf-baseline-conversion.md).
+- Dedicated GGML CUDA dispatch `96e11b5` and strict packed EAGLE-head
+  loader/export bridge `d9ab59c` were integrated on submodule branch
+  `w1a1-integrated` after the CPU op. The combined submodule commit
+  `d9ab59ce19bc5206436a07789d6ca66dbc79ddad` was pushed to the user's
+  fork before parent gitlink update. Mac Metal build, two converter tests,
+  original-head packed GGUF export, and local mixed Metal target/CPU packed
+  drafter smoke passed; CUDA compilation/backend tests are still pending GPU
+  handoff. Packed GGUF SHA256 is
+  `6250363f5fdb70fcb3113be90cca8755e916ac0da533a76e340335aa418c16ca`.

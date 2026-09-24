@@ -123,6 +123,14 @@ head-only QAT recovery path, and builds a packed native numerical path before
 end-to-end comparison. The [native integration plan](native-w1a1-path.md)
 records the proposed narrow GGML/GGUF changes.
 
+The standalone packed CUDA kernel has since passed eight-width correctness
+and packing-inclusive component timing on the 5080; see the
+[native prototype report](../experiments/native-w1a1-cuda-prototype.md). A
+dedicated GGML operation and EAGLE packed-head bridge are in the pinned
+llama.cpp fork, with CPU tests and local GGUF load checks. GGML CUDA execution,
+head-QAT held-out acceptance, and matched end-to-end throughput remain the
+open gates.
+
 An approximate planning model is `throughput = emitted tokens per round / round
 time`, with round time including draft, verification, and all other overhead.
 Use values measured in the paired comparison, including target-emitted tokens,
