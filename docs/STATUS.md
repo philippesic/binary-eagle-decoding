@@ -19,8 +19,9 @@ are in `docs/DECISIONS.md`. No QAT or native binary work is active.
 The user also requested a follow-on INT4/INT8 accepted-per-round comparison;
 its [measurement plan](../experiments/int4-int8-acceptance-plan.md) fixes the
 same held-out CUDA setup and keeps the operand-precision interpretation
-explicit. Implementation and measurement are underway without a new native
-binary or throughput claim.
+explicit. W4A4/W8A8 simulation and runner integration are pushed on `main` at
+`01ce2fb`, with all 30 checks passing. The RTX 5080 held-out run is next; no
+new native binary or throughput claim has been made.
 The prior [PyTorch W1A1 EAGLE
 goal](goals/pytorch-w1a1-eagle.md) and
 `experiments/pytorch-w1a1-metal-acceptance.md` contain the Metal development

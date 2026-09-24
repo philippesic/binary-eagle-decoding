@@ -1,6 +1,6 @@
 # INT4 and INT8 drafter acceptance plan
 
-**Status:** implementation and held-out CUDA run pending. This is a follow-on
+**Status:** implementation integrated; held-out CUDA run pending. This is a follow-on
 acceptance measurement, not a native INT4/INT8 speed claim.
 
 ## Question and fixed comparison
@@ -21,7 +21,9 @@ the integer-valued operands in floating point for the PyTorch simulation and
 cast the linear result back to the drafter dtype. Record the exact simulated
 math and compare it with a small independent numerical reference. The user has
 been asked whether they instead intend weight-only W4A16/W8A16; the runner
-should make that choice explicit and keep the two protocols distinct.
+keeps that mode explicit and distinct. The W4A4/W8A8 CUDA run disables TF32
+matmul shortcuts during FP32 numerical simulation; this setting is recorded
+in the environment manifest.
 
 The selected drafter modules are feature fusion, attention Q/K/V/O, FFN
 gate/up/down, and the drafter-owned vocabulary head. Embeddings, normalizations,
@@ -50,3 +52,18 @@ scope.
    the quantizer; no concurrent edits to the core quantizer files.
 3. One Luna GPU operator owns the 5080 for the supervised held-out run after
    current code is pushed and a fresh idle check passes.
+
+## Current checkpoint
+
+- `01ce2fb` on pushed `main` contains the fake uniform quantizer, selective
+  reversible adapter, explicit per-variant protocol metadata, and the matched
+  `configs/pytorch_int4_int8.toml` config. The old W1A1 config and strict
+  parity default remain available.
+- `make check` passes all 30 tests. The new core's independent scalar checks
+  cover 4/8-bit codes, nearest-even rounding, saturation, zero rows/vectors,
+  scale broadcasting, BF16 output, weight-cache refresh, and exact disabled
+  wrapper parity. Temporary feature worktrees/branches were integrated and
+  removed; `main` is clean.
+- GPU acceptance has not run. Use a fresh host/process/memory check via tmux
+  MCP, regenerate a model manifest for the new config hash, validate one
+  prompt, then run all 12 prompts if memory and the verifier path are stable.
