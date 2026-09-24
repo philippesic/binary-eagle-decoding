@@ -101,10 +101,15 @@ binary execution.
   MCP and supervised remote runs, stop at a parity blocker, and report raw
   artifacts and process status. No other agent may use the 5080 concurrently.
 - The operator reached the registered WSL host through tmux MCP and confirmed
-  the RTX 5080 (16,303 MiB), NVIDIA driver 615.71.08, and CUDA UMD 13.4.
-  Initial `nvidia-smi` reported 5,587 MiB allocated and 42% utilization but
-  no WSL process, so the operator is checking Windows-side ownership and
-  repeat samples before any model setup or experiment. No remote run started.
+  the RTX 5080 (16,303 MiB), WSL NVIDIA-SMI 615.71.08, Windows driver 616.92,
+  and CUDA UMD 13.4. Windows-side inspection identified Fortnite and its
+  overlay using 5,587 MiB; three samples showed 43%, 42%, and 41% GPU use.
+  No WSL project process was found. Preflight evidence is saved locally at
+  `results/preflight-5080-20260924T034000Z.txt` (SHA256
+  `10dd5c335349668d80ebe59077c72e6750edd110d02253347c9fcfd659e8cdae`).
+  The tmux MCP session is `w1a1-5080-acceptance`, pane `%0`. CUDA runs are held
+  until the game closes and a fresh idle check passes. CPU-only checkout,
+  environment, and model snapshot preparation may proceed meanwhile.
 - The profiler worktree was clean, and its two owned files matched `main`
   exactly after cherry-pick integration. The temporary worktree and branch
   were removed; the published implementation remains at `bfce552`.
