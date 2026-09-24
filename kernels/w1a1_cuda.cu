@@ -1,7 +1,5 @@
 #include "w1a1_cuda.cuh"
 
-#include <cmath>
-
 namespace w1a1 {
 namespace {
 
@@ -29,7 +27,7 @@ __global__ void pack_words(const float *__restrict__ input, int k, int words,
     const bool positive_sign = (representation & 0x80000000u) == 0 ||
                                (representation & 0x7fffffffu) == 0;
     bits |= static_cast<uint32_t>(positive_sign) << bit;
-    absolute_sum += fabsf(value);
+    absolute_sum += __uint_as_float(representation & 0x7fffffffu);
   }
   const size_t offset = static_cast<size_t>(token) * words + word;
   packed[offset] = bits;
