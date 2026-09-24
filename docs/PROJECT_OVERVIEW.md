@@ -193,8 +193,9 @@ precision coverage, and repeatable measurements on the RTX 2080 Ti. Validation
 includes greedy equivalence checks and appropriate sampling correctness checks;
 do not assume identical seeded sampled sequences across different execution paths.
 The [RTX 2080 Ti runbook](RTX2080TI_RUNBOOK.md) records the remaining host,
-memory, correctness, and matched-comparison gates; its address is currently
-missing from the shared local registry.
+memory, correctness, and matched-comparison gates. Its address is in the
+shared local registry, but Ubuntu WSL and reachable SSH are still needed for
+the first actual SM75 run.
 
 ## Principal risks and responses
 
