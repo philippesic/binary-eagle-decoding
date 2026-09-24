@@ -1,7 +1,8 @@
 # Current project status
 
 **Active goal:** [RTX 5080 W1A1 draft acceptance](goals/rtx5080-draft-acceptance.md).
-The phase will confirm the fixed held-out PyTorch acceptance sweep on CUDA,
+The goal is blocked on the RTX 5080 SSH username. The phase will confirm the
+fixed held-out PyTorch acceptance sweep on CUDA,
 check target/EAGLE greedy parity, and audit drafter layer cost before the user
 chooses selective W1A1 coverage or bounded QAT. The user reports the 5080 free
 at a new address; SSH username/port confirmation and remote setup are pending.

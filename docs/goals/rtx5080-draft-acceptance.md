@@ -1,9 +1,9 @@
 # Goal: RTX 5080 W1A1 draft acceptance
 
 **Opened:** 2026-09-23  
-**State:** active  
+**State:** blocked on SSH username
 **Orchestrator:** current Codex task  
-**GPU owner:** to be assigned after the host connection is verified
+**GPU owner:** Luna high task dispatched; remote access has not begun
 
 ## Objective
 
@@ -71,10 +71,10 @@ binary execution.
   defaults to 22 pending confirmation). No remote connection or experiment has
   begun.
 - Opening checkpoint `95cf31c` was pushed to `main` before worker setup.
-  A Sol high profiling task has been dispatched into an isolated worktree;
-  its GPU-free tool/check deliverable is pending. A Luna high GPU-operator
-  task has been dispatched and is waiting for host registry details; it is
-  the sole intended RTX 5080 owner. Task IDs are pending asynchronous setup.
+  The Sol high profiling task's code was integrated at `bfce552`; its clean
+  temporary worktree is retained until task liveness can be confirmed. A Luna
+  high GPU-operator task was dispatched, but its Codex task ID is still pending
+  asynchronous setup and no GPU work began. It is the sole intended 5080 owner.
 - `e010c8c` adds an unquantized ordinary EAGLE row to the held-out CUDA
   sweep, making six configurations over 12 prompts. Runner dry-run passes.
   The remote model manifest must be generated against this updated config
@@ -89,10 +89,14 @@ binary execution.
   shapes, dtypes, group shares, and a residual; no 5080 measurement exists yet.
   The main-branch `make check` gate passes all 22 tests. The profiler's
   temporary worktree remains until its task is confirmed idle and clean.
-- The GPU operator should use current `main` at or after `bfce552`, regenerate
+- The GPU operator should use current `main` at or after `df8c6db`, regenerate
   the model manifest against the updated config hash, then run parity,
   acceptance, and layer profiling under separate supervised run IDs.
 - A local read of the pinned drafter safetensors header confirmed all nine
   BF16 candidate linear shapes. `experiments/drafter-static-coverage.md`
   records exact parameter counts and distinguishes storage share from the
   pending measured draft time share.
+- The SSH username remains absent after three goal turns. The host address is
+  recorded locally, but the project requires a verified host registry and
+  tmux-managed SSH access. No CUDA measurement can start until the user gives
+  the SSH username (and nondefault port, if any).
