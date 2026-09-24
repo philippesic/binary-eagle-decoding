@@ -103,3 +103,43 @@ integer-dot checks through the JIT-compiled PTX. It reports a proxy result
 and does not establish SM75 runtime correctness or performance. Compilation
 or disassembly alone also does not establish either result; this probe never
 measures a complete EAGLE draft call.
+
+## Real packed-head parity fixture
+
+`scripts/create_real_head_fixture.py` reads BF16 pre-head activations from the
+QAT capture and the actual I32/F32 packed head tensors in the GGUF. Its ignored,
+versioned binary fixture contains eight deterministic captured rows, **all**
+32,000 packed output rows, the source SHA256 hashes, expected sign words, F64
+sum then F32 activation scales, exact integer dots, and ordered F32 outputs.
+Its JSON sidecar records the capture, GGUF, fixture and code hashes, selected
+source row indices, project and llama.cpp revisions, the GGUF contract version,
+package versions, and reference arithmetic policy. The script rejects an
+existing output file or sidecar; keep each run in its own directory.
+
+On a checkout with the captured inputs and packed GGUF present, create it using
+the existing GGUF conversion environment (which includes `gguf-py`):
+
+```sh
+results/convert-env/bin/python scripts/create_real_head_fixture.py \
+  --capture results/qat-head-capture-20260924/train.pt \
+  --gguf models/gguf/Qwen3-4B-eagle3-head-w1a1.gguf \
+  --output results/real-head-fixture/w1a1-real-head.bin
+```
+
+Build and run the standalone CUDA checker on the RTX 5080 after GPU ownership
+is available:
+
+```sh
+nvcc -std=c++17 -O3 -arch=sm_120 -U_GNU_SOURCE -D_DEFAULT_SOURCE \
+  -o build/w1a1_real_head_check \
+  kernels/w1a1_cuda.cu kernels/w1a1_real_head_check.cu
+build/w1a1_real_head_check results/real-head-fixture/w1a1-real-head.bin
+```
+
+It validates the fixture version, dimensions, and exact file length; compares
+every activation sign word and integer dot exactly; and checks scale/output
+against the F64-sum reference with the same F32 reduction tolerances used by
+the standalone synthetic correctness benchmark. It prints one JSON result and
+exits nonzero on mismatch. This is numerical parity for the portable CUDA
+prototype. It does not measure latency, invoke the SM75 binary-MMA kernel, or
+establish a 2080 Ti result.
