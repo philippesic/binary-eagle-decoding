@@ -281,8 +281,33 @@ RTX 5080 access. Make bounded decisions from evidence, checkpoint them in
   `92bc706`, checking all three GGUFs, 12 prompt IDs, five alternating
   orders, two warmups/server, F16 target/draft KV, greedy 128-token limit,
   CUDA binary and hashes. The one supervised paired run
-  `runs/native-eagle-5080-20260924/` is now **running** under PID/PGID 6950,
+  `runs/native-eagle-5080-20260924/` ran under PID/PGID 6950,
   with `/root/cuda_acceptance_operator` as sole GPU owner. Initial GPU sample
   during repetition 0 target-only warmup was 11,481 MiB used / 4,497 MiB
-  free at 82% utilization. Do not start another GPU job or report the GPU
-  free until its supervisor is terminal and project processes are gone.
+  free at 82% utilization. It later completed all 180 requests; supervisor
+  and all server children exited, and the GPU returned to baseline. The
+  operator retains ownership for a separate two-prompt token-ID diagnostic.
+- `dee6556` integrated a bounded standalone SM75 binary-MMA correctness
+  probe from an isolated Sol worktree, which was then removed. The probe uses
+  `mma.sync.aligned.m8n8k128.row.col.s32.b1.b1.s32.xor.popc`, compares full
+  and partial 8×8 tiles and audited K widths to dense CPU signs, and rejects
+  non-SM75 runtime devices. Local formatting/diff/CPU lane-layout emulation
+  checks passed. It is uncompiled and unrun because the 2080 Ti address is
+  absent; no Tensor Core correctness or speed claim follows.
+- The paired 5080 run progressed through all of repetition 0 and 20 rows of
+  repetition 1 (56/180 measured rows total) without OOM/error; one expected
+  server held 12,487 MiB at 84% GPU utilization. Final results are below.
+- The complete 5080 comparison found packed-head W1A1 at 115.3805 request
+  and 122.9426 decode tokens/s versus ordinary EAGLE 123.9626 and 132.8794,
+  or **0.931×/0.925× ordinary**. Target-only was 96.6686/99.3866, so both
+  speculative paths beat it. Packed draft-generation time fell 4.386→3.515
+  ms/round, but accepted drafts/round fell 1.161→0.892 and verification
+  rounds rose 3420→3900. All five per-repetition speed ratios favored
+  ordinary; paired descriptive 95% intervals were [0.891,0.973] request and
+  [0.884,0.970] decode. Every packed server logged actual CUDA dispatch.
+  Ordinary and packed decoded texts matched 60/60; both mismatched target-only
+  on the same two prompts (50/60 matches). Raw manifest/report/records hashes,
+  memory and category spread are in
+  [the native end-to-end report](../../experiments/native-end-to-end-5080.md).
+  A separate six-request token-ID diagnostic is planned for those two prompts
+  without altering the timed run. The RTX 2080 Ti address is still absent.

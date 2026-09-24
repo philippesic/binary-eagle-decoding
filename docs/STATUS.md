@@ -48,10 +48,14 @@ are verifier-relative acceptance and diagnostic timing results, not native
 binary or end-to-end speed claims. All supervised runs ended, the GPU returned
 to idle, and tmux SSH sessions were closed.
 
-**Current sequence:** the supervised 5080 paired benchmark
-`native-eagle-5080-20260924` is running (PID/PGID 6950) under sole GPU owner
-`/root/cuda_acceptance_operator`. It compares target-only, ordinary EAGLE,
-and packed-head W1A1 with five alternating repetitions on the same 12 prompts.
+**Current sequence:** the matched five-repetition RTX 5080 benchmark finished
+all 180 requests. [Native results](../experiments/native-end-to-end-5080.md):
+packed-head W1A1 achieved 0.931× ordinary EAGLE request and 0.925× decode
+throughput, though both speculative paths beat target-only. The faster binary
+draft needed 480 more verification rounds after acceptance fell. All packed
+server logs showed CUDA dispatch. Ordinary and packed decoded texts matched
+60/60; both differed from target-only on the same two prompts, so a bounded
+token-ID diagnostic is underway under `/root/cuda_acceptance_operator`.
 The RTX 2080 Ti host address is still missing, so SM75 claims
 remain pending while 5080 work continues.
 The user also requested a follow-on INT4/INT8 accepted-per-round comparison;
