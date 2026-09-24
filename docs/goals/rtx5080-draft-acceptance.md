@@ -78,3 +78,7 @@ binary execution.
   sweep, making six configurations over 12 prompts. Runner dry-run passes.
   The remote model manifest must be generated against this updated config
   hash.
+- `6f32a63` adds a full target-only greedy reference per prompt and checks
+  every variant's output against it (allowing only round-boundary overshoot).
+  A CUDA mismatch stops the sweep with token IDs preserved. `make check`
+  passes all 17 tests. The GPU operator must fetch this commit before running.
