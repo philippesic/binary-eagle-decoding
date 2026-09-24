@@ -132,3 +132,13 @@ The native server uses `--spec-draft-n-max 5`; its proposals differ from the
 AngelSlim PyTorch acceptance sweep's 59-node tree. Native same-device
 comparisons must use the target-only and ordinary llama.cpp anchors rather
 than transplanting PyTorch accepted/round counts.
+
+After the matched comparison, one bounded Nsight Compute 2025.4.1 attempt
+filtered to the activation-pack and XOR/POPCOUNT kernels. The packed request
+completed and logged CUDA dispatch, but NCU returned `ERR_NVGPUCTRPERM`
+(performance counters unavailable), so no integrated kernel timings or
+launch counts were obtained. The partial trace/log artifacts are preserved
+under remote `results/packed-w1a1-ncu-profile-20260924/`, manifest SHA256
+`1f3268c4dce267609fdc7cec9b355dcd14d382cab780e1539c81e36def2cd031`.
+No second profiler attempt was made; the GPU returned to idle and SSH/tmux
+closed.

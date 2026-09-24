@@ -32,6 +32,9 @@ all three prompt categories favored ordinary EAGLE. The packed draft used
 148 MiB less GPU memory while loaded. Both speculative paths exceeded
 target-only throughput, but their outputs differed from target-only on two
 prompts, so that ratio is not a clean lossless speedup claim.
+An integrated-kernel Nsight Compute attempt was limited by
+`ERR_NVGPUCTRPERM`; separate standalone packing-inclusive CUDA-event timings
+are preserved, but no integrated per-kernel trace is claimed.
 
 Ordinary and packed EAGLE decoded texts matched on all 60 paired requests.
 A separate raw-token check found identical ordinary/packed IDs on the two

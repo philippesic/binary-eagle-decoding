@@ -125,6 +125,19 @@ a direct verifier timer. The observed draft saving did not recover the lost
 emissions per round. The host timing inside `common_speculative_impl` is not
 the standalone CUDA kernel duration or a packing-only timer.
 
+One separate 16-token Nsight Compute 2025.4.1 profile attempted to capture
+the integrated activation-pack and XOR/POPCOUNT kernels. The request itself
+completed and logged CUDA W1A1 dispatch, but NCU returned
+`ERR_NVGPUCTRPERM`; no kernel call count or duration trace was produced.
+Its partial raw artifacts are preserved at remote
+`results/packed-w1a1-ncu-profile-20260924/`, manifest SHA256
+`1f3268c4dce267609fdc7cec9b355dcd14d382cab780e1539c81e36def2cd031`.
+No profiler retry was made. The earlier
+[standalone CUDA prototype](native-w1a1-cuda-prototype.md) provides
+packing-inclusive component timing on real shapes, with a different
+activation-scale reduction and without the full GGML graph. It cannot be
+substituted for an integrated per-kernel trace.
+
 At this run's pooled decode rate, ordinary EAGLE spent about 16.427 ms per
 verification round and packed W1A1 about 15.569 ms. Holding the packed
 round-time fixed, it would need about **2.069 emitted tokens/round** instead

@@ -349,6 +349,16 @@ RTX 5080 access. Make bounded decisions from evidence, checkpoint them in
   preserves compiler/source/header/binary/SASS/PTX/stdout/state hashes. The
   one supervised proxy run exited zero; final GPU samples were 3,047 MiB
   used / 12,931 MiB free / 0–1%, and all project processes/SSH/tmux ended.
+- One final bounded integrated-kernel profile attempted Nsight Compute
+  2025.4.1 on a 16-token packed-draft request. The request executed and logged
+  CUDA W1A1 dispatch, but the profiler returned `ERR_NVGPUCTRPERM`; no kernel
+  counts/durations were produced. Partial artifacts are sealed under remote
+  `results/packed-w1a1-ncu-profile-20260924/`, manifest SHA256
+  `1f3268c4dce267609fdc7cec9b355dcd14d382cab780e1539c81e36def2cd031`.
+  The operator stopped after this one attempt. Three GPU samples returned to
+  3,047 MiB used / 12,931 MiB free / 0%, no project processes remained, and
+  SSH/tmux closed. No additional 5080 GPU job is planned while the 2080 Ti
+  address is pending.
 - The remaining hardware gate is documented in
   [the RTX 2080 Ti runbook](../RTX2080TI_RUNBOOK.md). Its current address is
   absent from the shared host registry; the username `philip` is known and
