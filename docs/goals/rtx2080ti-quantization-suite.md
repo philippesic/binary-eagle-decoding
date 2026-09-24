@@ -120,3 +120,21 @@ Compare pooled rates and prompt/repetition spread against both anchors.
 - The precision audit found that Q4_0/Q8_0 GGUF formats alone do not specify
   CUDA activation arithmetic. It is tracing the actual small-batch EAGLE
   operators before assigning any INT4/INT8 execution label.
+
+## Precision audit milestone
+
+- The static [INT8/INT4 path audit](../../experiments/rtx2080ti-int4-int8-path.md)
+  was integrated at parent `c425ca2`. At the frozen single-sequence decode
+  shape, source control flow predicts MMVQ with one token column, subject to
+  runtime source/output/layout gates. Q8_0 storage with live Q8_1 activation
+  would use signed-byte `DP4A`; Q4_0 storage with Q8_1 activation would extract
+  packed nibbles and compute with byte `DP4A`. Neither follows the prior
+  whole-row/whole-token F32-scale W8A8/W4A4 simulation contract, and neither
+  demonstrates INT4 Tensor Core execution. These are predictions until an
+  actual SM75 dispatch trace is captured.
+- The same precision owner has started a separate no-GPU native W8A8
+  numerical/export/CPU stage in a new isolated worktree. It must retain the
+  earlier signed-code and scale contract across all nine eligible linears.
+  W4A4 remains a separate subsequent implementation gate. The 2080 Ti owner
+  continues user-space toolchain setup, model staging, and the existing
+  nine-variant SM75 suite independently.
