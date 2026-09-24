@@ -1,0 +1,44 @@
+# Starting point for a same-device llama.cpp comparison. Replace model paths
+# with the exact converted artifacts before running; the runner checks them.
+schema_version = 1
+
+[server]
+binary = "build/llama-cuda/bin/llama-server"
+host = "127.0.0.1"
+port = 18080
+startup_timeout_s = 300
+request_timeout_s = 180
+common_args = [
+  "--n-gpu-layers", "all", "--ctx-size", "2048", "--parallel", "1",
+  "--fit", "off", "--cache-type-k", "f16", "--cache-type-v", "f16",
+  "--jinja", "--metrics", "--perf",
+]
+
+[models]
+target = "models/gguf/Qwen3-4B-f16.gguf"
+ordinary_draft = "models/gguf/Qwen3-4B-eagle3-f16.gguf"
+packed_head_draft = "models/gguf/Qwen3-4B-eagle3-head-w1a1.gguf"
+
+[precision]
+target_weights = "f16"
+target_kv = "f16"
+ordinary_draft_weights = "f16"
+ordinary_draft_kv = "f16"
+packed_draft_head_weights = "w1a1_packed_i32_f32_scale"
+packed_draft_head_activations = "w1a1_runtime_sign_f32_scale"
+packed_draft_other_weights = "f16"
+packed_draft_kv = "f16"
+
+[evaluation]
+prompt_file = "configs/acceptance_prompts.jsonl"
+warmup_requests = 2
+repetitions = 5
+max_output_tokens = 128
+temperature = 0.0
+seed = 42
+max_draft_tokens = 5
+enable_thinking = false
+
+[environment]
+# Optional exact subprocess overrides, for example CUDA_VISIBLE_DEVICES = "0".
+CUDA_VISIBLE_DEVICES = "0"
