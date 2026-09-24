@@ -232,3 +232,8 @@ binary execution.
   project process, 0–1% GPU use, 12,871 MiB free. The remote checkout remains
   clean at `ae47119`. Supervised `cuda-exploratory-12prompt-20260924` is now
   running all 12 prompts and six variants with `--allow-greedy-mismatch`.
+- The live supervisor completed all 12 ordinary EAGLE rows and their
+  target-only references. Seven ordinary prompts have mismatch records so far.
+  W1A1 variants are still running; no final summary or artifact hashes exist
+  yet. WDDM sampled 13,207 MiB used / 2,771 MiB free at 00:50:08 while the
+  project process group 494 was active, without OOM or contention.

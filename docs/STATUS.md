@@ -21,7 +21,7 @@ fusion-only W1A1 accepted 0.483, both under a non-target-equivalent verifier
 path.
 The Luna operator has exclusive 5080 ownership. After a fresh idle gate,
 supervised `cuda-exploratory-12prompt-20260924` is running the full exploratory
-sweep.
+sweep. Ordinary EAGLE completed 12 prompts; W1A1 variants remain in progress.
 The prior [PyTorch W1A1 EAGLE
 goal](goals/pytorch-w1a1-eagle.md) and
 `experiments/pytorch-w1a1-metal-acceptance.md` contain the Metal development
