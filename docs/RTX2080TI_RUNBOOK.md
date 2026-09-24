@@ -16,7 +16,7 @@ SM75 and passed numerical checks only on an SM120 proxy path.
 
 ## Access and preflight
 
-1. Register the user-supplied IP with `python scripts/agent_env.py set-host
+1. Register the user-supplied IP with `python3 scripts/agent_env.py set-host
    rtx2080ti <ip> philip --port 22`; verify the pause flag and recorded
    workdir. Use tmux MCP for the SSH session. Check actual GPU name, compute
    capability 7.5, VRAM, driver, toolkit, compiler, glibc, free disk, and

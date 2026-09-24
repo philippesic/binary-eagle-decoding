@@ -65,12 +65,12 @@ baselines recorded when updating it.
 
 All local worktrees read the machine-local
 `~/.config/binary-eagle-decoding/hosts.toml`. Initialize it with
-`python scripts/agent_env.py init`. When the user supplies a rotated address:
+`python3 scripts/agent_env.py init`. When the user supplies a rotated address:
 
 ```sh
-python scripts/agent_env.py set-host rtx5080 <host-or-ip> <ssh-user> --port 22
-python scripts/agent_env.py set-host rtx2080ti <host-or-ip> <ssh-user> --port 22
-python scripts/agent_env.py status
+python3 scripts/agent_env.py set-host rtx5080 <host-or-ip> <ssh-user> --port 22
+python3 scripts/agent_env.py set-host rtx2080ti <host-or-ip> <ssh-user> --port 22
+python3 scripts/agent_env.py status
 ```
 
 The file stores host, user, port, and a remote project directory; no keys or
@@ -88,21 +88,21 @@ the orchestrator explicitly coordinates sharing.
 Keep the remote checkout, models, caches, logs, and outputs under the host
 file's `workdir` (default `~/binary-eagle-decoding`). A run has a unique
 `runs/<run-id>/`. Start it inside a named tmux MCP-managed session with
-`python scripts/remote_job.py <run-id> -- <command> [args...]`. The supervisor
+`python3 scripts/remote_job.py <run-id> -- <command> [args...]`. The supervisor
 puts the child in its own process group and places common caches and temporary
 files inside that run directory. It records `state.json` and `stdout.log`.
 Do not start detached GPU processes outside this supervisor. A run directory
 can be removed only after its job has stopped and its artifacts are preserved.
 
 For **“pause GPU work”**, immediately mark the relevant host paused with
-`python scripts/agent_env.py pause rtx5080` (or `all`) so agents start no new
+`python3 scripts/agent_env.py pause rtx5080` (or `all`) so agents start no new
 runs. Via tmux MCP, send an interrupt to each active remote supervisor, wait for
 its `state.json` to show stopped, inspect the process group and `nvidia-smi` for
 remaining project GPU use, then report that the machine is free. If graceful
 stop fails, terminate the recorded process group through the remote tmux MCP
 session and verify again. Checkpoint the experiment and task before leaving it.
 `pause` alone is only a local request flag; it does not free GPU memory. Resume
-new runs only after the user asks to resume, with `python scripts/agent_env.py
+new runs only after the user asks to resume, with `python3 scripts/agent_env.py
 resume rtx5080` and a fresh host/resource check.
 
 The SSH host fields are intentionally blank until the user supplies them. No
