@@ -160,3 +160,16 @@ binary execution.
   This is an environment dependency failure, not a parity outcome. The
   operator is checking pinned package metadata and will retry under a new run
   ID after installing the minimal required dependency.
+- AngelSlim's pinned wheel metadata required `datasets`; supervised CPU setup
+  installed it (resolved version 5.0.1) plus two import-path requirements,
+  `shortuuid` and Pillow. The pinned Torch 2.14.0, Transformers 4.57.6, and
+  AngelSlim commit remained intact; CPU import probe passed. A fresh idle gate
+  showed Fortnite absent and 0–1% GPU use before retry.
+- Supervised `cuda-parity-smoke3-20260924` loaded all three target shards but
+  exited 1 at the strict ordinary-EAGLE versus target-only greedy check. The
+  disabled W1A1 wrapper and quantized variants did not run. Initial run peak
+  sampling left about 3,358 MiB free; after supervisor exit Windows GPU memory
+  returned to the 3,107 MiB idle baseline. Raw token IDs are in remote
+  `results/cuda-parity-smoke3-20260924/greedy-parity.json`; the operator is
+  capturing a bounded verifier-logit trace. The full held-out sweep and layer
+  profile are stopped until the baseline mismatch is diagnosed.
