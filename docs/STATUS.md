@@ -13,7 +13,12 @@ reports an RTX 2080 Ti (compute capability 7.5). A user-space CUDA 12.8.93
 production build completed, and the five-case native W1A1 CUDA backend gate
 passed with explicit XOR/POPCOUNT dispatch. A standalone SM75 binary-MMA probe
 matched 880 integer dots, and integrated portable/MMA selectors each passed
-8/8 backend cases. Model staging and paired timing remain pending.
+8/8 backend cases. The full paired timing remains pending.
+The pinned model source files and target/ordinary/Q4_0/Q8_0 GGUFs are now
+hash-verified on WSL; all five W1A1 conversions passed source-row audits.
+A fixed runtime loads the FP16 target and draft within 11,264 MiB VRAM,
+with at least 1,154 MiB free in the short four-path smoke. The full
+five-repetition, 12-prompt comparison remains pending.
 The user requested same-device tests of ordinary EAGLE and all five W1A1
 coverage settings (fusion, attention, FFN, head, all groups), plus a fresh QAT
 investigation. The 5080-tested native runtime supported head-only W1A1;

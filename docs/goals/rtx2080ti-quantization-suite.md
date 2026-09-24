@@ -263,3 +263,48 @@ Compare pooled rates and prompt/repetition spread against both anchors.
   and both real GGUF load checks. The parent gitlink remains pinned to
   `8d2b18a`. The GPU operator will build and validate this exact branch in an
   isolated remote checkout after the existing nine-variant suite.
+
+## Production model and link milestone
+
+- On WSL, F16 target GGUF SHA256
+  `05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6`
+  and ordinary F16 draft GGUF SHA256
+  `c1f895a130b64cd3d5a97fba7aa7605dc7fe3a389dd6d48e6751128614ee76d1`
+  exactly match local artifacts. All five W1A1 group GGUFs were converted;
+  each corresponding source-row audit passed with zero packed-word mismatches.
+  The all-group audit `audit-w1a1-all-20260924` checked nine tensors and
+  65,280 rows, with maximum F32 scale difference `7.45e-9` from source.
+  Non-head GGUF bytes can vary slightly across hosts despite matching signs
+  and this bounded scale difference; full host hashes are in the operator's
+  experiment report.
+- Q4_0 and Q8_0 controls were produced with the already built older standard
+  quantizer and exactly match local SHA256 values
+  `2db40f99d27e404298b80b2865671b9fd0136060ffb503007cb2ae23759e7280`
+  and `29ee91f09971555458cf420461fdfeeeabc9236f8a2c20662b7333a980a49507`.
+  The original production `8d2b18a` shared-library `llama-quantize` failed
+  before reading a GGUF due to a missing exported string-array loader symbol.
+- Minimal published llama.cpp fix `34e21b7d85c17e25d5a91ce2ab1074d4c18bfe39`
+  explicitly instantiates that loader template. A local shared build exported
+  it; an incremental SM75 build (28/28) exported the Linux symbol. Supervised
+  real Q4_0 conversion `quantizer-link-fix-q4-20260924` exited zero and
+  reproduced the expected hash. The combined W8A8/W4A4 source branch includes
+  the same fix at `d0724427b`, with local shared-build and both draft-load
+  checks; SM75 validation of that branch is pending.
+- A short fixed-binary four-path model smoke
+  `sm75-integrated-mma-model-gpu-20260924` completed 20 requests over five
+  repetitions: target-only, ordinary EAGLE, portable head W1A1, and MMA head
+  W1A1 all loaded. Both packed CUDA dispatch flags were true. Each speculative
+  variant's greedy text matched target-only 5/5 on this short suite; MMA and
+  portable matched 5/5. API token IDs were unavailable. Loaded memory samples
+  were 9,074 / 10,110 / 9,962 / 9,962 MiB respectively on the 11,264 MiB
+  card; minimum observed free was 1,154 MiB. All servers stopped and GPU
+  returned to 855 MiB/0%. Raw manifest/report/records SHA256 values are
+  `416e40a136c42d496bd909e75ae9d30510d3df7b2bc6b35490f49891221ed573`,
+  `3517a7f6c1661ccbdc9668e0631093c4127027da3dffcd14773d31488fa176b7`,
+  and `08732c541ffcd7911b203fc333fdec2f8f09703f50dce86e3adebdc32df212a2`.
+  This establishes FP16 target fit and short model-level dispatch/parity, not
+  the frozen 12-prompt throughput comparison.
+- The fixed llama.cpp commit was published to the user's fork before this
+  parent gitlink update. Next: pin it in `main`, run the production five-W1A1
+  plus Q4/Q8 model smokes and matched benchmark, then test the combined native
+  INT branch in a separate isolated build.
