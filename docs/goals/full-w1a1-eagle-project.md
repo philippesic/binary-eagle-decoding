@@ -3,7 +3,7 @@
 **Opened:** 2026-09-24  
 **State:** active  
 **Orchestrator:** current Codex task  
-**GPU owner:** `/root/cuda_acceptance_operator` (Luna high), bounded QAT capture/training
+**GPU owner:** `/root/cuda_acceptance_operator` (Luna high), next native GGML CUDA validation
 **First autonomous work window:** 2026-09-24 09:08–19:08 UTC; the objective
 continues beyond that window if required.
 
@@ -220,8 +220,8 @@ RTX 5080 access. Make bounded decisions from evidence, checkpoint them in
   The GPU supervisor exited and memory returned to baseline. Raw manifests,
   exact hashes, config, and limits are in
   [the QAT pilot report](../../experiments/qat-head-pilot-results.md).
-  `/root/cuda_acceptance_operator` remains the GPU owner for one frozen
-  exported-checkpoint held-out acceptance run; no tuning against held-out.
+  `/root/cuda_acceptance_operator` retained GPU ownership for the one frozen
+  exported-checkpoint held-out acceptance run; no tuning used held-out data.
 - `235a359` integrated a PyTorch head-only simulation of GGML's integer sign
   dot, F32 exported weight scales, F64-summed/F32 activation scale, ordered
   F32 products and F32 logits. Its ordinary variant stays BF16, and the
@@ -232,3 +232,20 @@ RTX 5080 access. Make bounded decisions from evidence, checkpoint them in
   and artifact hashes, raw responses/metrics, process cleanup, and explicit
   CUDA dispatch evidence. Its four fake-server tests pass; no real benchmark
   has run. The RTX 2080 Ti address remains absent.
+- The one held-out QAT export/evaluation gate finished cleanly on code
+  `855fea5`. The derived model differed only at `lm_head.weight`; the new
+  safetensors SHA256 is
+  `450e1d3e27244a46faa2dc28b937b507d490c7a1c66d1ab2763c4c6fc677f5a1`.
+  Trained W1A1 accepted 936 drafts / 598 rounds = 1.56522, below untrained
+  W1A1 1.67668; the trained head at ordinary BF16 accepted 981 / 541 =
+  1.81331, below original ordinary 2.31659. Exact target-greedy streams
+  matched 6/12 and 4/12 respectively. The bounded recipe is stopped without
+  held-out tuning. Full totals, mismatch positions, raw hashes and limitations
+  are in [QAT pilot results](../../experiments/qat-head-pilot-results.md).
+  Supervisor exited zero; GPU returned to its 3,050 MiB/0% baseline and SSH
+  and tmux closed. The GPU is ready for GGML CUDA validation.
+- A real one-request Metal `llama-server` API smoke for target-only, ordinary
+  EAGLE, and packed-head EAGLE returned timing and speculative counters; it
+  also found the default logger omits the packed loader message. Benchmark
+  config pins `-lv 4`, which emitted it locally, and requires the explicit
+  CUDA op marker. This is schema/load evidence, not a performance result.

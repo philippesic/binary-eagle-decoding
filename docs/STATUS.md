@@ -9,7 +9,7 @@ paths choose 272. Mutating off-path siblings did not change the selected row,
 so BF16 tree arithmetic and tie sensitivity explain the immediate divergence.
 Acceptance counts remain verifier-relative. The parity job is stopped and GPU
 ownership has passed through native prototype validation to
-`/root/cuda_acceptance_operator` for the one frozen QAT held-out gate. The
+`/root/cuda_acceptance_operator` for native GGML CUDA validation. The
 BF16 fake-binary versus FP32 native rounding
 contract must still be reconciled before native acceptance claims.
 The [native W1A1 design](native-w1a1-path.md) uses a dedicated packed
@@ -24,9 +24,11 @@ standalone CUDA XOR/popcount prototype have been integrated. All 56 checks
 pass. The standalone kernel passed real 5080 correctness and two
 packing-inclusive component benchmarks; see
 [the report](../experiments/native-w1a1-cuda-prototype.md). QAT capture and
-500-step training completed; validation KL improved from 2.506 to 1.017, and
-the GPU returned to idle. The fixed held-out export/evaluation is next; see
-[pilot report](../experiments/qat-head-pilot-results.md). The llama.cpp submodule combines the dedicated packed
+500-step training completed; validation KL improved from 2.506 to 1.017, but
+the fixed held-out W1A1 head accepted only 1.565 drafts/round versus 1.677
+for the untrained head. The bounded recipe is stopped without held-out tuning;
+see [pilot report](../experiments/qat-head-pilot-results.md). The GPU returned
+to idle. The llama.cpp submodule combines the dedicated packed
 W1A1 CPU op, CUDA backend, and EAGLE packed-head converter/loader in pushed
 fork commit `92bc706`. Mac build, converter tests, and a local packed-draft
 smoke passed; GGML CUDA execution remains untested. Pinned target and ordinary
@@ -43,8 +45,7 @@ are verifier-relative acceptance and diagnostic timing results, not native
 binary or end-to-end speed claims. All supervised runs ended, the GPU returned
 to idle, and tmux SSH sessions were closed.
 
-**Current sequence:** finish bounded head-only QAT held-out gate, validate
-native GGML CUDA dispatch on the 5080, then measure paired
+**Current sequence:** validate native GGML CUDA dispatch on the 5080, then measure paired
 target-only/ordinary/native
 throughput. The RTX 2080 Ti host address is still missing, so SM75 claims
 remain pending while 5080 work continues.

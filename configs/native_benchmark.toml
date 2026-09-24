@@ -11,7 +11,7 @@ request_timeout_s = 180
 common_args = [
   "--n-gpu-layers", "all", "--ctx-size", "2048", "--parallel", "1",
   "--fit", "off", "--cache-type-k", "f16", "--cache-type-v", "f16",
-  "--jinja", "--metrics", "--perf",
+  "--jinja", "--metrics", "--perf", "-lv", "4",
 ]
 
 [models]

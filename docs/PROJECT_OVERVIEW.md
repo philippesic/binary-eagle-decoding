@@ -118,10 +118,13 @@ state or logits; the tree row's 21.0 tie versus the incremental/full-prefix
 target's 20.875 logit for ID 11 is the immediate mismatch source. The
 acceptance counts are verifier-relative exploratory evidence, not a
 target-equivalent speed claim.
-The current autonomous goal investigates that discrepancy, tests a bounded
-head-only QAT recovery path, and builds a packed native numerical path before
-end-to-end comparison. The [native integration plan](native-w1a1-path.md)
-records the proposed narrow GGML/GGUF changes.
+The current autonomous goal investigated that discrepancy and completed one
+bounded head-only QAT recovery path. Validation KL improved, but held-out
+W1A1 accepted drafts/round fell from 1.677 untrained to 1.565 after training;
+the recipe is stopped without held-out tuning. See the
+[QAT report](../experiments/qat-head-pilot-results.md). The
+[native integration plan](native-w1a1-path.md) records the narrow GGML/GGUF
+path before end-to-end comparison.
 
 The standalone packed CUDA kernel has since passed eight-width correctness
 and packing-inclusive component timing on the 5080; see the
@@ -174,8 +177,11 @@ do not assume identical seeded sampled sequences across different execution path
 
 The candidate contribution is the combination of EAGLE drafting, W1A1 operands,
 packed native binary execution, and an end-to-end acceptance/latency evaluation.
-Do not claim to invent binary inference or quantized speculative decoding, and
-treat novelty as provisional until a focused related-work review is complete.
+Do not claim to invent binary inference or quantized speculative decoding.
+A [focused related-work review](../experiments/related-work-note.md) found
+prior quantized EAGLE QAT and native deployment; the narrow W1A1
+weight-and-activation combination remains a provisional experimental claim,
+not an established first.
 
 Deliver a pinned runtime, conversion/quantization configuration, bounded training
 recipe if used, binary correctness checks and kernels, reproducible benchmark

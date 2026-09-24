@@ -1,8 +1,8 @@
 # Bounded head-only W1A1 QAT pilot
 
 **Device:** RTX 5080, BF16 PyTorch AngelSlim drafter/target. **Date:**
-2026-09-24. **State:** capture/training complete; the single fixed held-out
-export/evaluation gate is pending. This is a quality experiment, not native
+2026-09-24. **State:** bounded pilot complete; the single fixed held-out
+export/evaluation gate failed to improve acceptance. This is a quality experiment, not native
 W1A1 speed evidence.
 
 The training/capture code stayed at parent commit
@@ -56,9 +56,52 @@ The BF16 export-ready best head is
 in the summary/run manifest. All three supervised jobs terminated and the
 GPU returned to its Windows baseline of 3,050 MiB used and 0% utilization.
 
-The validation improvement does not establish speculative acceptance.
-The next gate exports only the best BF16 head into a fresh full drafter
-checkpoint, audits unchanged tensors/maps, then evaluates that checkpoint
-once on the fixed held-out prompts against the original verifier-relative
-ordinary/untrained-head references. If acceptance fails to recover, stop this
-head-reconstruction recipe rather than tuning against held-out data.
+## Single held-out gate
+
+The exporter placed only `best-head.pt`'s BF16 weight into a fresh copy of the
+pinned full drafter checkpoint. It verified all other tensors and the key set
+unchanged, including `d2t`/`t2d` and the missing `embed_tokens.weight`. The
+five source/derived draft files match by path; only `model.safetensors` changed.
+Derived checkpoint SHA256 is
+`450e1d3e27244a46faa2dc28b937b507d490c7a1c66d1ab2763c4c6fc677f5a1`,
+derived model manifest SHA256 is
+`6e980e788855d850a16e60e81cab6bac9ea5e4d2292b73b1225e54adcc7c2f16`,
+and tensor/file audit SHA256 is
+`a693025bbe9984498e63846d377e2b115d4bba6729684e5cbd6fd5b3eb8257c5`.
+
+The exporter/evaluator then ran **once** on the frozen 12 held-out prompts,
+with the same pinned BF16 target, AngelSlim verifier, greedy decoding, prompt
+manifest, and acceptance settings as the original 5080 sweep. The two derived
+variants were the trained head in ordinary full-precision execution and the
+trained head with W1A1 fake-binary execution:
+
+| Draft variant | Accepted | Proposed | Rounds | Accepted/round | Exact target-greedy streams |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Original ordinary BF16 (earlier fixed sweep) | 1,061 | 27,022 | 458 | 2.31659 | 5/12 |
+| Original untrained W1A1 head (earlier fixed sweep) | 949 | 33,394 | 566 | 1.67668 | 4/12 |
+| Trained head, ordinary BF16 | 981 | 31,919 | 541 | 1.81331 | 4/12 |
+| Trained head, W1A1 BF16 | 936 | 35,282 | 598 | 1.56522 | 6/12 |
+
+The derived ordinary and trained-W1A1 paths respectively matched 1,117 and
+1,014 of 1,506 checked target positions through each stream's first
+divergence. The earliest mismatches recur at generated position 3 on
+`prose-01` and `prose-03`; the run manifest records all mismatch indices.
+Raw artifacts remain under `results/qat-head-heldout-20260924/` on the 5080
+host: `run-manifest.json` SHA256
+`8e99e0ed25b55150824d93c535cc0397d942d61353602719ed8ec7644071de9c`,
+`acceptance.jsonl` SHA256
+`78556cbe20d9b0b6a65a226b122bc211a639006bdff1d305524e41bedc522020`,
+`summary.json` SHA256
+`c2502bcc5c0df710df5584a62bb726363886e17d1e15fa2de9ea8ad0f0c90455`,
+and `greedy-mismatches.jsonl` SHA256
+`c360f29276dd3bbecf94cfb9497cc511d754f6ad1baa3540cdfa49a5310989e9`.
+The evaluator supervisor exited zero and Windows GPU samples returned to its
+3,050 MiB/0% baseline with no project process; SSH/tmux sessions were closed.
+
+The held-out result rejects this bounded head-reconstruction recipe: lower
+validation KL did not recover W1A1 draft acceptance and the exported head also
+hurt ordinary execution. The accepted/round counts are verifier-relative;
+generated-stream mismatches remain, so they do not establish strict
+target-equivalent decoding. No further tuning against this held-out set is
+planned. Native packed execution with the original head still needs direct
+correctness and same-device throughput measurement.

@@ -45,6 +45,8 @@ and `5373d029834c8ebf7ab8040b643a25c6e075bf653dde1f78b13be4621da2d9ef`.
 The server's default verbosity omitted the loader's packed-head message, so
 the benchmark requires the explicit CUDA operation marker for a CUDA dispatch
 claim.
+At `-lv 4`, the same local packed model emitted the loader's packed-head
+message; the paired benchmark fixes this verbosity for all three variants.
 
 The integrated submodule's `test-backend-ops test -b CPU -o W1A1_MUL_MAT`
 passed all five cases on M3 Max after both bridge and CUDA-source commits were
