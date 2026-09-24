@@ -5,10 +5,10 @@ setup:
 	uv sync --locked
 
 check:
-	uv run --locked ruff check scripts .codex/hooks tests
-	uv run --locked ruff format --check scripts .codex/hooks tests
+	uv run --locked ruff check src scripts .codex/hooks tests
+	uv run --locked ruff format --check src scripts .codex/hooks tests
 	uv run --locked python -c 'import pathlib, tomllib; [tomllib.loads(p.read_text()) for d in ("configs", ".codex") for p in pathlib.Path(d).rglob("*.toml")]'
-	uv run --locked python -m unittest discover -s tests
+	uv run --group w1a1 --locked python -m unittest discover -s tests
 	git diff --check
 
 doctor:

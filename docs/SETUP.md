@@ -17,6 +17,8 @@ tools provide the compiler; on Linux, use a supported GCC/Clang toolchain.
 `make setup` restores the recorded submodule and installs the locked CMake,
 Ninja, and Ruff tools in `.venv`. `.python-version` selects Python 3.11.
 It does not install PyTorch, training frameworks, or download model weights.
+`make check` installs the optional locked `w1a1` group when it runs the
+PyTorch simulation tests.
 
 ## Runtime builds
 
