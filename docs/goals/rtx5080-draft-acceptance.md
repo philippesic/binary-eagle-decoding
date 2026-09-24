@@ -173,3 +173,10 @@ binary execution.
   `results/cuda-parity-smoke3-20260924/greedy-parity.json`; the operator is
   capturing a bounded verifier-logit trace. The full held-out sweep and layer
   profile are stopped until the baseline mismatch is diagnosed.
+- The first CUDA mismatch on `prose-01` is generated index 3 (fourth token):
+  target-only ID 272 versus ordinary EAGLE ID 11, after shared IDs
+  `[785, 7406, 41506]`. This is earlier than the Metal BF16 divergence at
+  index 20. The raw parity file SHA256 is
+  `592278d6ca4d1f23c3890f50cecd0cd0473de0f985d07c75f7e28a9c2c8c53a4`.
+  Both target and draft loaded in BF16. The token source and full-prefix versus
+  tree-verifier logits remain under trace; no causal interpretation yet.
