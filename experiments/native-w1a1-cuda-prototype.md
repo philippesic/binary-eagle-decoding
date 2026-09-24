@@ -57,6 +57,13 @@ shapes. Attention Q's first-run one-token packing-inclusive median was
 variance and the missing graph/H2D/system costs preclude a component speedup
 or end-to-end claim from these numbers alone.
 
+The standalone packer accumulates activation magnitudes in F32 before storing
+an F32 scale. The integrated GGML CPU/CUDA operation accumulates magnitudes in
+F64 and rounds the mean once to F32. Integer dots are the same, but close
+floating results can differ. The native-contract acceptance check must use
+the integrated GGML reduction policy; the standalone timing cannot by itself
+validate exact GGML head logits.
+
 The CUDA prototype's supervisors are terminal, PIDs gone, and GPU memory
 returned to its 3,050 MiB Windows baseline at 0% utilization before QAT GPU
 handoff. Next, compile and validate the GGML CUDA dispatch, then measure the

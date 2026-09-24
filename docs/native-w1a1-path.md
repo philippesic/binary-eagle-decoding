@@ -16,11 +16,16 @@ so native acceptance must be remeasured under a matching numerical contract.
   `k // 32`. The packed weight tensor has GGML dimensions
   `[ceil(K/32), output_rows]`; store it in GGUF as ordinary I32 bit patterns.
 - Store one F32 mean-absolute weight scale per entire logical output row in a
-  companion GGUF tensor. Record format version, selected tensor names,
+  companion GGUF tensor. The pinned exporter casts BF16 weights to F32 and
+  uses PyTorch's F32 row mean, then writes the F32 result. Record format
+  version, selected tensor names,
   logical K, bit order, sign rule, scale precision, and output arithmetic in
   metadata. Keep K separate from padded word count.
-- For each activation token vector, compute its F32 mean-absolute scale over
-  logical K and pack its signs once. Integer dot is exactly
+- For each activation token vector, accumulate absolute F32 magnitudes in
+  F64, divide by logical K, round once to an F32 mean-absolute scale, and pack
+  its signs once. The standalone prototype's earlier F32 reduction can differ
+  near rounding boundaries, so it is a performance prototype rather than the
+  exact GGML numerical contract. Integer dot is exactly
   `K - 2*sum(popcount((weight_word XOR activation_word) & valid_bits))`.
   Padding bits cannot contribute to the dot or scale. Apply row and token
   scales in an explicit order using F32 arithmetic, then follow the output
