@@ -11,7 +11,8 @@ The profiling tool is integrated on `main` and its CPU checks pass. The Luna
 operator completed CPU-only setup: the pinned CUDA Python environment and both
 model snapshots are prepared and hash verified. All remote setup jobs stopped
 and SSH sessions closed. Fortnite occupied the GPU at the last check, so no
-CUDA experiment has started; a fresh idle check is required before one does.
+CUDA experiment has started. The Luna operator is checking GPU idleness now;
+it will run parity first if the device is free.
 The prior [PyTorch W1A1 EAGLE
 goal](goals/pytorch-w1a1-eagle.md) and
 `experiments/pytorch-w1a1-metal-acceptance.md` contain the Metal development

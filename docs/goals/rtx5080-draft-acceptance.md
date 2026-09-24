@@ -3,7 +3,7 @@
 **Opened:** 2026-09-23  
 **State:** active; RTX 5080 work resumed by user
 **Orchestrator:** current Codex task  
-**GPU owner:** none while the device is occupied; Luna operator finished CPU prep
+**GPU owner:** `/root/cuda_acceptance_operator` (Luna high); fresh idle check in progress
 
 ## Objective
 
@@ -149,3 +149,6 @@ binary execution.
 - Next: establish that Fortnite is gone and the GPU is idle using a fresh
   tmux MCP host check. Then assign one Luna GPU owner for the supervised CUDA
   parity smoke, full held-out sweep, and layer profile. No QAT begins here.
+- The user asked to proceed again on 2026-09-24. The same Luna operator now
+  owns the fresh idle gate and, if it passes, the supervised CUDA parity,
+  acceptance, and profiling runs. Stop at a parity blocker; no QAT or 2080 Ti.
