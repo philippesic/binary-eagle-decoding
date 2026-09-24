@@ -2,13 +2,15 @@
 
 **Status:** packed signed-I4 CUDA vector path and an isolated SM75 signed-I4 MMA correctness probe are published as source on 2026-09-24. Neither was compiled or executed on CUDA because this local Apple M3 Max host has no `nvcc` or NVIDIA device. No SM75 correctness, Tensor Core dispatch, or speed claim is made.
 
-**Code:** llama.cpp fork branch `feat/w4a4-eagle-export`, commit `e98ef51f34faa882ef33f0ab2aaa7dff6fe754fd`, atop the [W4A4 loader and CPU gate](w4a4-cpu-loader-gate.md) commit `edd3615561519f7b1537b4b215d5c58eb822e7f5`. The parent gitlink is unchanged by this report.
+**Code:** llama.cpp fork branch `feat/w4a4-eagle-export`, commit `308713988d5b2863a974d5edbaf7409b8d32b1d5` (initial CUDA source `e98ef51f34faa882ef33f0ab2aaa7dff6fe754fd`), atop the [W4A4 loader and CPU gate](w4a4-cpu-loader-gate.md) commit `edd3615561519f7b1537b4b215d5c58eb822e7f5`. The parent gitlink is unchanged by this report.
 
 ## Production CUDA path in source
 
 The `GGML_OP_W4A4_MUL_MAT` CUDA dispatch uses a separate activation-pack kernel and a signed-nibble vector-dot kernel. Packing computes one F32 absmax/7 scale per token, divides in F32, rounds to nearest even, clamps to `[-7,7]`, stores two signed nibbles per byte, zeroes a zero token, and handles strided token rows and odd-K zero padding. A nonfinite activation traps rather than silently producing codes. The dot kernel reads both operands in packed I4 storage, sign-extends each nibble, accumulates an exact I32 dot, then applies F32 row and token scales in the declared order. Its grid covers `N=1` decode and `N>1` work, including row and token tails.
 
 The first dispatch in each N class logs **“CUDA W4A4 signed-nibble vector dot, scalar integer MUL/ADD; no INT4 Tensor Core MMA.”** This labels the source path; executed instruction evidence remains pending. It is distinct from the pinned Q4_0/Q8_1 control and from true signed-I4 Tensor Core MMA. No CUDA timing is available.
+
+The follow-up commit `3087139` protects numerical parity under GGML CUDA's `-use_fast_math`: explicit PTX round-nearest F32 division computes absmax/7 and each activation/scale quotient; explicit round-nearest F32 multiplies preserve `((float) dot * row_scale) * token_scale`. It also uses explicit F32 absolute value and maximum instructions so the first correctness gate does not silently change FTZ behavior, and marks the source path unavailable on HIP/MUSA. These are source safeguards; SM75 execution remains unverified.
 
 ## Separate SM75 instruction probe
 
@@ -26,5 +28,6 @@ Require all exact I32 comparisons to pass, inspect the executed kernel's SASS, t
 ## Checks and integration
 
 - CPU-only CMake rebuilt `test-backend-ops` and `test-w4a4-eagle-load`; `test-backend-ops -b CPU -o 'W4A4.*'` passed **2/2** on Apple M3 Max. Focused W4A4 Python converter/reference tests passed **5/5**; `git diff --cached --check` passed.
+- After `3087139`, the CPU backend rebuilt and the same two W4A4 oracle cases passed **2/2**. The K=9 case now includes non-unit scale `11/7` and positive/negative near-half values whose F32 quotients are exact ties while double quotients lie off the tie; the independent oracle rounds the F32 quotient before nearest-even conversion. `git diff --cached --check` passed again.
 - CUDA compilation and execution remain **unverified**: local `nvcc` is unavailable. The probe has no SM75 result or SASS yet. No 2080 Ti session or other GPU was used.
 - This W4 branch is based on the published W8A8 CPU/loader commit `492818599`; concurrent W8A8 CUDA source is on another branch. Integrating both will require review of shared `ggml-cuda.cu` dispatch/supports-op edits. The first runtime gate is an SM75 CUDA build and exact backend oracle run, followed by the isolated MMA probe, graph-dispatch trace across all nine linears, logits/acceptance checks, and only then packing-inclusive timing.
