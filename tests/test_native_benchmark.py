@@ -25,6 +25,8 @@ args = sys.argv
 host = args[args.index("--host") + 1]
 port = int(args[args.index("--port") + 1])
 spec = args[args.index("--spec-type") + 1] != "none"
+packed = "packed.gguf" in args[args.index("-md") + 1] if "-md" in args else False
+emitted = False
 counts = {"proposed": 0, "accepted": 0, "rounds": 0}
 
 class Handler(BaseHTTPRequestHandler):
@@ -53,6 +55,7 @@ class Handler(BaseHTTPRequestHandler):
             self.write(404, "{}")
 
     def do_POST(self):
+        global emitted
         if self.path != "/v1/chat/completions":
             self.write(404, "{}")
             return
@@ -64,6 +67,13 @@ class Handler(BaseHTTPRequestHandler):
             counts["proposed"] += 3
             counts["accepted"] += 2
             counts["rounds"] += 1
+        if packed and not emitted and os.environ.get("FAKE_EMIT_DISPATCH") == "1":
+            print("EAGLE3 using packed W1A1 draft head", flush=True)
+            if os.environ.get("GGML_CUDA_W1A1_MMA") == "1":
+                print("CUDA packed W1A1 binary MMA dispatch", flush=True)
+            else:
+                print("CUDA packed W1A1 portable XOR/POPCOUNT dispatch", flush=True)
+            emitted = True
         self.write(200, json.dumps({
             "choices": [{"finish_reason": "length", "message": {"content": "test"}}],
             "usage": {"prompt_tokens": 5, "completion_tokens": 4},
@@ -94,6 +104,14 @@ class NativeBenchmarkTests(unittest.TestCase):
         self.assertTrue(all(set(order) == set(benchmark.VARIANTS) for order in orders))
         self.assertNotEqual(orders[0], orders[1])
         self.assertRaises(ValueError, benchmark.schedule, 4)
+        self.assertEqual(benchmark.selected_variants({}), benchmark.VARIANTS)
+        four = benchmark.selected_variants({"binary_mma": True})
+        self.assertEqual(four[-1], benchmark.MMA_VARIANT)
+        four_orders = benchmark.schedule(5, four)
+        self.assertEqual(len(four_orders), 5)
+        for position in range(4):
+            self.assertEqual({order[position] for order in four_orders[:4]}, set(four))
+        self.assertRaises(ValueError, benchmark.selected_variants, {"binary_mma": "true"})
         self.assertEqual(
             benchmark.counter_delta(None, "llamacpp:spec_decode_num_drafts_total 5"),
             {"proposed": None, "accepted": None, "rounds": None},
@@ -114,6 +132,15 @@ class NativeBenchmarkTests(unittest.TestCase):
             "CUDA packed W1A1 XOR/POPCOUNT dispatch", "packed_head_w1a1"
         )
         self.assertTrue(marker_only["cuda_w1a1_dispatch_confirmed"])
+        mma = benchmark.dispatch_evidence(
+            "CUDA packed W1A1 binary MMA dispatch", benchmark.MMA_VARIANT
+        )
+        self.assertTrue(mma["cuda_w1a1_dispatch_confirmed"])
+        self.assertTrue(mma["binary_mma_cuda_dispatch_log"])
+        wrong_mode = benchmark.dispatch_evidence(
+            "CUDA packed W1A1 portable XOR/POPCOUNT dispatch", benchmark.MMA_VARIANT
+        )
+        self.assertIsNone(wrong_mode["cuda_w1a1_dispatch_confirmed"])
 
     def test_greedy_text_match_pairs(self):
         records = [
@@ -211,6 +238,8 @@ class NativeBenchmarkTests(unittest.TestCase):
                 output = benchmark.run(config, "fake-run")
             report = json.loads((output / "report.json").read_text())
             self.assertEqual(report["records"], 15)
+            self.assertEqual(report["variants"], list(benchmark.VARIANTS))
+            self.assertNotIn("mma_speedup_vs_portable", report)
             self.assertEqual(len(report["repetitions"]), 5)
             self.assertIsNone(report["native_cuda_dispatch_confirmed"])
             self.assertEqual(
@@ -228,6 +257,57 @@ class NativeBenchmarkTests(unittest.TestCase):
             self.assertTrue((output / "rep-00/ordinary_eagle/server.log").exists())
             self.assertTrue((output / "rep-00/ordinary_eagle/dispatch-evidence.json").exists())
             self.assertTrue((output / "rep-00/ordinary_eagle/speculative-timing.json").exists())
+            self.assertTrue(benchmark.available_port("127.0.0.1", port))
+
+    def test_four_variant_fake_run_isolates_selector_and_dispatch(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            config, port = self.prepare(root, binary_mma=True)
+            with (
+                patch.object(benchmark, "ROOT", root),
+                patch.object(
+                    benchmark,
+                    "git_output",
+                    return_value="160000 commit abc\tthird_party/llama.cpp\n",
+                ),
+            ):
+                output = benchmark.run(config, "mma-run")
+            report = json.loads((output / "report.json").read_text())
+            manifest = json.loads((output / "manifest.json").read_text())
+            self.assertEqual(report["variants"], list(benchmark.VARIANTS) + [benchmark.MMA_VARIANT])
+            self.assertEqual(report["records"], 20)
+            self.assertTrue(report["native_cuda_dispatch_confirmed"])
+            self.assertTrue(report["mma_cuda_dispatch_confirmed"])
+            self.assertEqual(report["mma_speedup_vs_portable"]["decode_tokens_per_s"], 1.0)
+            self.assertIn("target_only", report["packed_speedup_vs"])
+            self.assertEqual(manifest["variants"], report["variants"])
+            self.assertNotIn("GGML_CUDA_W1A1_MMA", manifest["environment"])
+            self.assertEqual(
+                manifest["commands"]["packed_head_w1a1"],
+                manifest["commands"][benchmark.MMA_VARIANT],
+            )
+            for variant in report["variants"]:
+                selector = "1" if variant == benchmark.MMA_VARIANT else "0"
+                self.assertEqual(
+                    manifest["variant_environments"][variant]["GGML_CUDA_W1A1_MMA"],
+                    selector,
+                )
+                self.assertEqual(
+                    json.loads((output / f"rep-00/{variant}/environment.json").read_text())[
+                        "GGML_CUDA_W1A1_MMA"
+                    ],
+                    selector,
+                )
+            records = json.loads((output / "records.json").read_text())
+            self.assertEqual(
+                {
+                    row["w1a1_mma_selector"]
+                    for row in records
+                    if row["variant"] == benchmark.MMA_VARIANT
+                },
+                {"1"},
+            )
+            self.assertEqual(len(report["repetitions"][0]["aggregation"]), 4)
             self.assertTrue(benchmark.available_port("127.0.0.1", port))
 
     def test_failed_request_stops_server_and_keeps_failure(self):
@@ -252,7 +332,9 @@ class NativeBenchmarkTests(unittest.TestCase):
             )
             self.assertTrue(benchmark.available_port("127.0.0.1", port))
 
-    def prepare(self, root: Path, failure: bool = False) -> tuple[Path, int]:
+    def prepare(
+        self, root: Path, failure: bool = False, binary_mma: bool = False
+    ) -> tuple[Path, int]:
         (root / "results").mkdir()
         fake = root / "fake-server"
         fake.write_text(FAKE_SERVER)
@@ -289,8 +371,11 @@ temperature = 0.0
 seed = 42
 max_draft_tokens = 3
 enable_thinking = false
+{"binary_mma = true" if binary_mma else ""}
 [environment]
 FAKE_FAIL = "{int(failure)}"
+FAKE_EMIT_DISPATCH = "{int(binary_mma)}"
+GGML_CUDA_W1A1_MMA = "1"
 '''
         )
         return config, port

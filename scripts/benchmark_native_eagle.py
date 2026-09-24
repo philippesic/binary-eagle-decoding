@@ -27,6 +27,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 VARIANTS = ("target_only", "ordinary_eagle", "packed_head_w1a1")
+MMA_VARIANT = "packed_head_w1a1_mma"
 SPEC_COUNTERS = {
     "proposed": "llamacpp:spec_decode_num_draft_tokens_total",
     "accepted": "llamacpp:spec_decode_num_accepted_tokens_total",
@@ -147,10 +148,25 @@ def load_prompts(path: Path) -> list[dict[str, Any]]:
     return prompts
 
 
-def schedule(repetitions: int) -> list[list[str]]:
+def selected_variants(evaluation: dict[str, Any]) -> tuple[str, ...]:
+    enabled = evaluation.get("binary_mma", False)
+    if not isinstance(enabled, bool):
+        raise ValueError("evaluation.binary_mma must be a boolean")
+    return (*VARIANTS, MMA_VARIANT) if enabled else VARIANTS
+
+
+def schedule(repetitions: int, variants: tuple[str, ...] = VARIANTS) -> list[list[str]]:
     if repetitions < 5:
         raise ValueError("at least five measured repetitions are required")
-    base = list(VARIANTS)
+    base = list(variants)
+    if len(base) == 4:
+        balanced = (
+            (0, 1, 2, 3),
+            (1, 0, 3, 2),
+            (2, 3, 0, 1),
+            (3, 2, 1, 0),
+        )
+        return [[base[index] for index in balanced[rep % 4]] for rep in range(repetitions)]
     orders = []
     for rep in range(repetitions):
         rotated = base[rep % len(base) :] + base[: rep % len(base)]
@@ -240,19 +256,35 @@ def dispatch_evidence(server_log: str, variant: str) -> dict[str, Any]:
     cuda_backend = bool(
         re.search(r"CUDA\d+.*(?:model buffer|compute buffer|KV buffer)|ggml_cuda_init", server_log)
     )
-    marker = "CUDA packed W1A1 XOR/POPCOUNT dispatch"
-    explicit_cuda_op = marker in server_log
+    legacy_portable_marker = "CUDA packed W1A1 XOR/POPCOUNT dispatch"
+    portable_marker = "CUDA packed W1A1 portable XOR/POPCOUNT dispatch"
+    mma_marker = "CUDA packed W1A1 binary MMA dispatch"
+    portable_seen = portable_marker in server_log or legacy_portable_marker in server_log
+    mma_seen = mma_marker in server_log
+    expected_seen = mma_seen if variant == MMA_VARIANT else portable_seen
+    unexpected_seen = portable_seen if variant == MMA_VARIANT else mma_seen
+    confirmed = (
+        variant in ("packed_head_w1a1", MMA_VARIANT) and expected_seen and not unexpected_seen
+    )
     return {
         "packed_head_loader_log": packed_loaded,
         "cuda_backend_log": cuda_backend,
-        "explicit_cuda_w1a1_op_log": explicit_cuda_op,
-        "cuda_w1a1_dispatch_marker": marker if explicit_cuda_op else None,
-        "cuda_w1a1_dispatch_confirmed": (
-            True if variant == "packed_head_w1a1" and explicit_cuda_op else None
+        "explicit_cuda_w1a1_op_log": portable_seen or mma_seen,
+        "portable_cuda_dispatch_log": portable_seen,
+        "binary_mma_cuda_dispatch_log": mma_seen,
+        "cuda_w1a1_dispatch_marker": (
+            mma_marker
+            if mma_seen
+            else portable_marker
+            if portable_marker in server_log
+            else legacy_portable_marker
+            if portable_seen
+            else None
         ),
+        "cuda_w1a1_dispatch_confirmed": True if confirmed else None,
         "interpretation": (
-            "The explicit CUDA W1A1 op marker confirms dispatch; model load "
-            "and general CUDA backend logs alone do not."
+            "The expected explicit CUDA op marker confirms the selected packed dispatch; "
+            "model load and general CUDA backend logs alone do not."
         ),
     }
 
@@ -326,6 +358,8 @@ def stop_server(process: subprocess.Popen[bytes]) -> None:
 
 
 def command_for(config: dict[str, Any], paths: dict[str, Path], variant: str) -> list[str]:
+    if variant not in (*VARIANTS, MMA_VARIANT):
+        raise ValueError(f"unknown benchmark variant: {variant}")
     command = [str(paths["binary"]), "-m", str(paths["target"])]
     if variant == "target_only":
         command += ["--spec-type", "none"]
@@ -422,9 +456,11 @@ def execute_request(
     return result
 
 
-def aggregate(records: list[dict[str, Any]]) -> dict[str, Any]:
+def aggregate(
+    records: list[dict[str, Any]], variants: tuple[str, ...] = VARIANTS
+) -> dict[str, Any]:
     output = {}
-    for variant in VARIANTS:
+    for variant in variants:
         rows = [row for row in records if row["variant"] == variant]
         n_tokens = [row["completion_tokens"] for row in rows]
         wall = [row["request_wall_s"] for row in rows]
@@ -467,11 +503,15 @@ def aggregate(records: list[dict[str, Any]]) -> dict[str, Any]:
     return output
 
 
-def completion_text_matches(records: list[dict[str, Any]]) -> dict[str, Any]:
+def completion_text_matches(
+    records: list[dict[str, Any]], variants: tuple[str, ...] = VARIANTS
+) -> dict[str, Any]:
     """Compare decoded response text hashes for matched repetition/prompt pairs."""
     by_key = {(row["repetition"], row["prompt_id"], row["variant"]): row for row in records}
     result = {}
-    for variant in ("ordinary_eagle", "packed_head_w1a1"):
+    for variant in variants:
+        if variant == "target_only":
+            continue
         matched = 0
         unavailable = 0
         mismatches = []
@@ -519,28 +559,53 @@ def relative_speedups(aggregated: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
-def repetition_summaries(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def mma_speedup_vs_portable(aggregated: dict[str, Any]) -> dict[str, float | None]:
+    """Use pooled token/time rates for an MMA/portable comparison."""
+    mma = aggregated[MMA_VARIANT]
+    portable = aggregated["packed_head_w1a1"]
+    result = {}
+    for metric in ("request_tokens_per_s", "decode_tokens_per_s"):
+        numerator = mma[metric]
+        denominator = portable[metric]
+        result[metric] = (
+            numerator / denominator
+            if isinstance(numerator, (int, float))
+            and isinstance(denominator, (int, float))
+            and denominator > 0
+            else None
+        )
+    return result
+
+
+def repetition_summaries(
+    records: list[dict[str, Any]], variants: tuple[str, ...] = VARIANTS
+) -> list[dict[str, Any]]:
     """Preserve run-to-run spread without averaging speedup ratios globally."""
     summaries = []
     for repetition in sorted({row["repetition"] for row in records}):
         selected = [row for row in records if row["repetition"] == repetition]
-        aggregated = aggregate(selected)
-        summaries.append(
-            {
-                "repetition": repetition,
-                "aggregation": aggregated,
-                "packed_speedup_vs": relative_speedups(aggregated),
-            }
-        )
+        aggregated = aggregate(selected, variants)
+        summary = {
+            "repetition": repetition,
+            "aggregation": aggregated,
+            "packed_speedup_vs": relative_speedups(aggregated),
+        }
+        if MMA_VARIANT in variants:
+            summary["mma_speedup_vs_portable"] = mma_speedup_vs_portable(aggregated)
+        summaries.append(summary)
     return summaries
 
 
 def summarize_draft_timings(
-    timings: list[dict[str, Any]], aggregated: dict[str, Any]
+    timings: list[dict[str, Any]],
+    aggregated: dict[str, Any],
+    variants: tuple[str, ...] = VARIANTS,
 ) -> dict[str, Any]:
     """Pool measured-only speculative impl timings; keep unavailable explicit."""
     result = {}
-    for variant in ("ordinary_eagle", "packed_head_w1a1"):
+    for variant in variants:
+        if variant == "target_only":
+            continue
         rows = [entry["timing"] for entry in timings if entry["variant"] == variant]
         if not rows or any(row["status"] != "available" for row in rows):
             result[variant] = {"status": "unavailable"}
@@ -562,6 +627,19 @@ def summarize_draft_timings(
     return result
 
 
+def all_dispatches_confirmed(destination: Path, repetitions: int, variant: str) -> bool | None:
+    return (
+        True
+        if all(
+            json.loads(
+                (destination / f"rep-{rep:02d}" / variant / "dispatch-evidence.json").read_text()
+            )["cuda_w1a1_dispatch_confirmed"]
+            for rep in range(repetitions)
+        )
+        else None
+    )
+
+
 def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,79}", run_id):
         raise ValueError("run ID must be a safe, relative name")
@@ -569,7 +647,8 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
     if config.get("schema_version") != 1:
         raise ValueError("unsupported config schema")
     evaluation = config["evaluation"]
-    orders = schedule(evaluation["repetitions"])
+    variants = selected_variants(evaluation)
+    orders = schedule(evaluation["repetitions"], variants)
     if evaluation["warmup_requests"] < 0 or evaluation["max_output_tokens"] <= 0:
         raise ValueError("invalid warmup or max output setting")
     if config["server"]["host"] not in ("127.0.0.1", "localhost"):
@@ -595,6 +674,11 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
         shutil.copy2(paths["prompt_file"], destination / "prompts.jsonl")
         env = {key: os.environ[key] for key in SAFE_INHERITED_ENV if key in os.environ}
         env.update(config.get("environment", {}))
+        env.pop("GGML_CUDA_W1A1_MMA", None)
+        variant_environments = {
+            variant: {**env, "GGML_CUDA_W1A1_MMA": "1" if variant == MMA_VARIANT else "0"}
+            for variant in variants
+        }
         (destination / "project-diff.patch").write_text(git_output("diff", "--binary", "HEAD"))
         manifest = {
             "started_utc": datetime.now(UTC).isoformat(),
@@ -608,8 +692,10 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                 for name, path in paths.items()
             },
             "environment": env,
+            "variant_environments": variant_environments,
+            "variants": list(variants),
             "orders": orders,
-            "commands": {variant: command_for(config, paths, variant) for variant in VARIANTS},
+            "commands": {variant: command_for(config, paths, variant) for variant in variants},
             "request_options": {
                 key: value
                 for key, value in request_body(config, prompts[0]).items()
@@ -636,11 +722,13 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                     server_dir.mkdir(parents=True)
                     json_write(server_dir / "gpu-before.json", gpu_snapshot())
                     command = manifest["commands"][variant]
+                    variant_env = variant_environments[variant]
+                    json_write(server_dir / "environment.json", variant_env)
                     with (server_dir / "server.log").open("wb") as log:
                         process = subprocess.Popen(
                             command,
                             cwd=ROOT,
-                            env=env,
+                            env=variant_env,
                             stdout=log,
                             stderr=subprocess.STDOUT,
                             start_new_session=os.name == "posix",
@@ -671,6 +759,7 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                                         "repetition": repetition,
                                         "variant": variant,
                                         "prompt_id": prompt["id"],
+                                        "w1a1_mma_selector": variant_env["GGML_CUDA_W1A1_MMA"],
                                     }
                                 )
                                 records.append(measurement)
@@ -693,29 +782,18 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                                 {"repetition": repetition, "variant": variant, "timing": timing}
                             )
                             json_write(server_dir / "gpu-after.json", gpu_snapshot())
-            aggregated = aggregate(records)
+            aggregated = aggregate(records, variants)
             report = {
                 "status": "complete",
+                "variants": list(variants),
                 "aggregation": aggregated,
                 "packed_speedup_vs": relative_speedups(aggregated),
-                "repetitions": repetition_summaries(records),
-                "greedy_text_match_vs_target_only": completion_text_matches(records),
-                "draft_timing": summarize_draft_timings(timing_rows, aggregated),
+                "repetitions": repetition_summaries(records, variants),
+                "greedy_text_match_vs_target_only": completion_text_matches(records, variants),
+                "draft_timing": summarize_draft_timings(timing_rows, aggregated, variants),
                 "records": len(records),
-                "native_cuda_dispatch_confirmed": (
-                    True
-                    if all(
-                        json.loads(
-                            (
-                                destination
-                                / f"rep-{rep:02d}"
-                                / "packed_head_w1a1"
-                                / "dispatch-evidence.json"
-                            ).read_text()
-                        )["cuda_w1a1_dispatch_confirmed"]
-                        for rep in range(evaluation["repetitions"])
-                    )
-                    else None
+                "native_cuda_dispatch_confirmed": all_dispatches_confirmed(
+                    destination, evaluation["repetitions"], "packed_head_w1a1"
                 ),
                 "definition": {
                     "request": "completion tokens / client wall time including prefill",
@@ -730,6 +808,11 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                     ),
                 },
             }
+            if MMA_VARIANT in variants:
+                report["mma_cuda_dispatch_confirmed"] = all_dispatches_confirmed(
+                    destination, evaluation["repetitions"], MMA_VARIANT
+                )
+                report["mma_speedup_vs_portable"] = mma_speedup_vs_portable(aggregated)
             json_write(destination / "report.json", report)
         except BaseException as error:
             json_write(

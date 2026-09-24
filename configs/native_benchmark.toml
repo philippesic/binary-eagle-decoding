@@ -38,6 +38,7 @@ temperature = 0.0
 seed = 42
 max_draft_tokens = 5
 enable_thinking = false
+# Set binary_mma = true for the opt-in four-variant 2080 Ti comparison.
 
 [environment]
 # Optional exact subprocess overrides, for example CUDA_VISIBLE_DEVICES = "0".
