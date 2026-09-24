@@ -3,7 +3,7 @@
 **Opened:** 2026-09-23  
 **State:** active; RTX 5080 work resumed by user
 **Orchestrator:** current Codex task  
-**GPU owner:** `/root/cuda_acceptance_operator` (Luna high); host check pending
+**GPU owner:** `/root/cuda_acceptance_operator` (Luna high); preflight held on GPU use
 
 ## Objective
 
@@ -68,10 +68,9 @@ binary execution.
   `experiments/pytorch-w1a1-metal-acceptance.md`.
 - User supplied the RTX 5080 address and SSH usernames for both GPU hosts;
   these are stored only in the machine-local host registry. The 2080 Ti address
-  remains unset. No remote connection or experiment has begun.
+  remains unset. No remote experiment has begun.
 - Opening checkpoint `95cf31c` was pushed to `main` before worker setup.
-  The Sol high profiling task's code was integrated at `bfce552`; its clean
-  temporary worktree is retained until task liveness can be confirmed. A Luna
+  The Sol high profiling task's code was integrated at `bfce552`. A Luna
   high GPU-operator task was dispatched, but its Codex task ID is still pending
   asynchronous setup and no GPU work began. It is the sole intended 5080 owner.
 - `e010c8c` adds an unquantized ordinary EAGLE row to the held-out CUDA
@@ -86,8 +85,7 @@ binary execution.
   The Sol profiling tool was reviewed and integrated at `bfce552`. It records
   CUDA-event spans for the nine eligible drafter linears and `topK_genrate`,
   shapes, dtypes, group shares, and a residual; no 5080 measurement exists yet.
-  The main-branch `make check` gate passes all 22 tests. The profiler's
-  temporary worktree remains until its task is confirmed idle and clean.
+  The main-branch `make check` gate passes all 22 tests.
 - The GPU operator should use current `main` at or after `df8c6db`, regenerate
   the model manifest against the updated config hash, then run parity,
   acceptance, and layer profiling under separate supervised run IDs.
@@ -102,3 +100,11 @@ binary execution.
   parity, the fixed acceptance sweep, and layer profiling. It must use tmux
   MCP and supervised remote runs, stop at a parity blocker, and report raw
   artifacts and process status. No other agent may use the 5080 concurrently.
+- The operator reached the registered WSL host through tmux MCP and confirmed
+  the RTX 5080 (16,303 MiB), NVIDIA driver 615.71.08, and CUDA UMD 13.4.
+  Initial `nvidia-smi` reported 5,587 MiB allocated and 42% utilization but
+  no WSL process, so the operator is checking Windows-side ownership and
+  repeat samples before any model setup or experiment. No remote run started.
+- The profiler worktree was clean, and its two owned files matched `main`
+  exactly after cherry-pick integration. The temporary worktree and branch
+  were removed; the published implementation remains at `bfce552`.

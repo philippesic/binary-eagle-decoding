@@ -9,7 +9,8 @@ and SSH username are recorded in the machine-local host registry, and the
 shared pause flag is clear.
 The profiling tool is integrated on `main` and its CPU checks pass. The Luna
 operator `/root/cuda_acceptance_operator` owns the 5080 checks and runs; it is
-verifying host state before starting a supervised experiment. The prior [PyTorch W1A1 EAGLE
+checking unexpected GPU memory/use before starting a supervised experiment.
+No remote run has started. The prior [PyTorch W1A1 EAGLE
 goal](goals/pytorch-w1a1-eagle.md) and
 `experiments/pytorch-w1a1-metal-acceptance.md` contain the Metal development
 evidence and its BF16 greedy-parity limitation.
