@@ -7,6 +7,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 MODULE_PATH = Path(__file__).resolve().parents[1] / "scripts/benchmark_native_eagle.py"
@@ -75,6 +76,18 @@ ThreadingHTTPServer((host, port), Handler).serve_forever()
 
 
 class NativeBenchmarkTests(unittest.TestCase):
+    def test_gpu_snapshot_falls_back_to_memory_query(self):
+        failed = SimpleNamespace(returncode=1, stdout="", stderr="unsupported query")
+        simpler = SimpleNamespace(returncode=0, stdout="RTX 5080, 16384 MiB, 3050 MiB", stderr="")
+        with (
+            patch.object(benchmark.shutil, "which", return_value="/usr/bin/nvidia-smi"),
+            patch.object(benchmark.subprocess, "run", side_effect=[failed, simpler]),
+        ):
+            result = benchmark.gpu_snapshot()
+        self.assertEqual(result["exit_code"], 1)
+        self.assertEqual(result["fallback"]["exit_code"], 0)
+        self.assertIn("3050 MiB", result["fallback"]["stdout"])
+
     def test_schedule_and_missing_counters(self):
         orders = benchmark.schedule(6)
         self.assertEqual(len(orders), 6)

@@ -87,13 +87,30 @@ def gpu_snapshot() -> dict[str, Any]:
         completed = subprocess.run(command, capture_output=True, text=True, timeout=15)
     except (OSError, subprocess.TimeoutExpired) as error:
         return {"available": True, "command": command, "error": str(error)}
-    return {
+    result = {
         "available": True,
         "command": command,
         "exit_code": completed.returncode,
         "stdout": completed.stdout,
         "stderr": completed.stderr,
     }
+    if completed.returncode != 0:
+        fallback = [
+            "nvidia-smi",
+            "--query-gpu=name,memory.total,memory.used",
+            "--format=csv,noheader",
+        ]
+        try:
+            simpler = subprocess.run(fallback, capture_output=True, text=True, timeout=15)
+            result["fallback"] = {
+                "command": fallback,
+                "exit_code": simpler.returncode,
+                "stdout": simpler.stdout,
+                "stderr": simpler.stderr,
+            }
+        except (OSError, subprocess.TimeoutExpired) as error:
+            result["fallback"] = {"command": fallback, "error": str(error)}
+    return result
 
 
 def resolve(root: Path, value: str) -> Path:
