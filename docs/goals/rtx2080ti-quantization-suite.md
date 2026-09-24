@@ -192,13 +192,21 @@ Compare pooled rates and prompt/repetition spread against both anchors.
   XOR/POPCOUNT and binary-MMA dispatch; the latter reported `cc=750` on a
   K=31, seven-row, three-token case. The GPU returned to its 855 MiB/0%
   Xwayland baseline after each run. A separate supervised SASS dump
-  `sm75-integrated-mma-sass-20260924` is active; model-level parity and timing
-  remain unmeasured.
+  `sm75-integrated-mma-sass-20260924` exited zero: the integrated library
+  (SHA256 `1985378050b10c13958dd3c2394cc28bcc940a03c0d1f49b98f6b84891e679f3`)
+  contains seven static `BMMA.88128.XOR.POPC` sites. The seven-line extract
+  SHA256 is `c272c95c3de53b7304e3db4bc9e84f325898ef24250fc98a27bfa32885727f82`;
+  the preserved full SASS dump SHA256 is
+  `9a4eb5027d197146337b5ba0ceea2655c276eba4d26701afc1ebc09a1c37c1da`.
+  Model-level parity and timing remain unmeasured.
 - Supervised download `fetch-pinned-models-20260924` is active. Its first
-  Qwen target shard matched the local source manifest SHA256; subsequent
-  source files and all GGUF conversions remain pending. The remote worktree
-  for the integrated candidate is isolated from the production gitlink
-  `8d2b18a`.
+  Qwen target shard matched the local source manifest SHA256. It subsequently
+  completed: all 18 pinned target/drafter source files matched local source
+  hashes. The remote model manifest is
+  `runs/fetch-pinned-models-20260924/model-manifest.json`, SHA256
+  `e665b63bc4470f1a3d59015fe641eedb3e4ce824894c6ebae9d7eb0a7aa2d539`.
+  GGUF conversion remains pending. The remote worktree for the integrated
+  candidate is isolated from the production gitlink `8d2b18a`.
 - The W8A8 [strict loader and CPU operator gate](../../experiments/w8a8-cpu-loader-gate.md)
   was integrated as parent report `2006582`; its published llama.cpp feature
   commit is `492818599` on top of exporter `bad469841`. The parent gitlink
@@ -229,3 +237,14 @@ Compare pooled rates and prompt/repetition spread against both anchors.
   format has no runtime loader or SM75 result yet. Its owner now proceeds to
   a separate strict loader/CPU operator gate, without GPU use or gitlink
   update.
+- The W4A4 [strict loader and CPU operator gate](../../experiments/w4a4-cpu-loader-gate.md)
+  was integrated as parent report `8b40f34`; published llama.cpp fork commit
+  `edd3615` remains outside the parent gitlink. The complete all-nine GGUF
+  loaded, malformed metadata and forbidden -8 nibbles were rejected, two
+  numerical backend cases passed (including K=9 odd/strided and K=9,728),
+  ordinary/W1A1/W8A8 model loads still passed, and a short CPU speculative
+  request completed. It proposed 20 W4A4 draft tokens and accepted zero on
+  that one prompt; this is an execution smoke, not a quality estimate. Its
+  owner now works on W4A4 CUDA source without GPU use. A focused advisor is
+  checking the SM75 signed INT4 Tensor Core layout; actual instruction,
+  dispatch, and timing evidence remain pending.
