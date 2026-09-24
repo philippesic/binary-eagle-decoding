@@ -138,3 +138,31 @@ Compare pooled rates and prompt/repetition spread against both anchors.
   W4A4 remains a separate subsequent implementation gate. The 2080 Ti owner
   continues user-space toolchain setup, model staging, and the existing
   nine-variant SM75 suite independently.
+
+## Export and harness milestone
+
+- The W8A8 [export and CPU gate](../../experiments/w8a8-export-cpu-gate.md)
+  was integrated as parent report `5c02865`. The published llama.cpp fork
+  commit `bad469841` is deliberately not the parent gitlink yet. A full local
+  EAGLE conversion produced all nine I8-code/F32-row-scale tensors with no
+  dense shadows; a fresh BF16-source audit matched all arrays exactly. The
+  GGUF SHA256 is
+  `48d8c517253ee24278412efc18eaf38340d6e9eede4fc819f64ab268dab590d8`.
+  Focused W8A8/W1A1 converter and CPU tests passed 7/7. This is storage and
+  numerical evidence, not a loadable or timed runtime. The same feature owner
+  now owns strict loader/graph and CPU operator work in its isolated submodule
+  checkout, without GPU use or a parent gitlink update.
+- Optional native W8A8/W4A4 benchmark rows were integrated in parent
+  `97c85e0` and `64e3cb5`. The two formats can run independently or together
+  with the existing anchors and five W1A1 groups. Each selected row requires
+  a present GGUF and exact loader/CUDA operator marker; a missing marker leaves
+  failure artifacts but no complete report. The integrated fake-server and
+  analysis suite passed 25/25, and the temporary worktree and branch were
+  removed after content verification. Real operand rows remain disabled until
+  their runtime correctness gates pass.
+- The remote user-space CUDA 12.8.93/GNU 13.4 toolchain configured an SM75
+  production build. The first supervised configure attempt identified missing
+  cuBLAS development libraries; the operator added them locally. The retry
+  `sm75-production-build-retry-20260924` advanced through CUDA compilation
+  and runtime linking with no GPU process. Model staging and actual correctness
+  remain pending.
