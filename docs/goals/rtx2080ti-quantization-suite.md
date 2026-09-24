@@ -174,3 +174,22 @@ Compare pooled rates and prompt/repetition spread against both anchors.
   fresh sample found the GPU idle. This validates the core operation, not the
   five EAGLE group graphs or end-to-end timing. The standalone binary-MMA
   probe and model-level checks are next.
+
+## Binary MMA and W8A8 CPU milestones
+
+- The standalone binary-MMA probe compiled on the real 2080 Ti using CUDA
+  12.8. `cuobjdump` found six `BMMA.88128.XOR.POPC` static instruction sites;
+  default runtime mode passed 21 cases and 880 exact integer dots against the
+  dense CPU reference. The supervised `sm75-mma-probe-20260924` exited zero,
+  its process group ended, and the GPU returned to its 855 MiB/0% Xwayland
+  baseline. This proves the standalone probe, not integrated EAGLE dispatch or
+  throughput. The operator is building the opt-in integrated candidate next.
+- The W8A8 [strict loader and CPU operator gate](../../experiments/w8a8-cpu-loader-gate.md)
+  was integrated as parent report `2006582`; its published llama.cpp feature
+  commit is `492818599` on top of exporter `bad469841`. The parent gitlink
+  remains `8d2b18a` until CUDA integration is reviewed. CPU backend scalar
+  oracle passed, a complete W8A8 GGUF loaded, malformed rounding/missing
+  tensor cases were rejected, and an eight-token CPU speculative smoke
+  generated 16 draft tokens. Ordinary and W1A1 smoke runs also passed. The
+  feature owner now owns CUDA W8A8 source/tests without GPU use; the operator
+  retains exclusive 2080 Ti access.
