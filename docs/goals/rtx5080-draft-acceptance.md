@@ -210,3 +210,15 @@ binary execution.
   `cuda-exploratory-ordinary-fusion-20260924` is running one prompt with the
   ordinary and fusion variants and `--allow-greedy-mismatch`. Its output is
   exploratory verifier acceptance only; full-suite work awaits this check.
+- That supervised one-prompt diagnostic finished exit 0. The disabled wrapper
+  matched ordinary EAGLE. Both ordinary and fusion outputs were marked
+  non-target-equivalent and recorded in `greedy-mismatches.jsonl`. Ordinary
+  accepted 84 / 2,773 proposed nodes over 47 rounds (1.787 per round);
+  fusion-only W1A1 accepted 42 / 5,133 over 87 rounds (0.483 per round).
+  Acceptance file SHA256 is
+  `517a38441c8a8d7501bfdb6e5aa18b3a51752de1ea5234a1b3a29fb6117d01fe`;
+  mismatch JSONL SHA256 is
+  `6c8dd7ba2365f1b5ac3570422a7ae976b52d1861aeb691b2d87d376becd8361e`.
+  No project process remains and Windows GPU memory returned to idle baseline.
+  The full 12-prompt sweep is still required for an exploratory same-verifier
+  comparison and will use the same explicit mismatch-recording mode.

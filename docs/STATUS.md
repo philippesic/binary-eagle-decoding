@@ -16,8 +16,9 @@ sweep is stopped. A BF16 trace attributes the fourth-token choice to a
 target-selected verifier tie; the underlying tree-versus-prefix logit shift is
 unresolved. A one-prompt ordinary drafter profile measured candidate linears at
 38.32% of instrumented draft time. An opt-in mismatch-recording CUDA diagnostic
-is running one prompt under supervised run
-`cuda-exploratory-ordinary-fusion-20260924` before any full exploratory sweep.
+finished one prompt: ordinary EAGLE accepted 1.787 draft tokens/round and
+fusion-only W1A1 accepted 0.483, both under a non-target-equivalent verifier
+path. The fixed 12-prompt exploratory sweep is next.
 The prior [PyTorch W1A1 EAGLE
 goal](goals/pytorch-w1a1-eagle.md) and
 `experiments/pytorch-w1a1-metal-acceptance.md` contain the Metal development

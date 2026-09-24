@@ -1,7 +1,7 @@
 # PyTorch W1A1 acceptance: RTX 5080 CUDA confirmation
 
-**Status:** parity diagnostic and ordinary drafter profile complete. The held-out
-W1A1 sweep has not run.
+**Status:** parity diagnostic, ordinary drafter profile, and one-prompt
+exploratory acceptance check complete. The held-out 12-prompt sweep has not run.
 This is a BF16 PyTorch fake-binary acceptance experiment, not native one-bit
 execution or an end-to-end throughput comparison.
 
@@ -111,10 +111,31 @@ the shares are not native binary-kernel savings or end-to-end speedups.
 
 ## Interpretation pending
 
-No CUDA W1A1 acceptance rate or quantization-induced acceptance loss can be
-reported from this smoke. The immediate mismatch mechanism is established,
+The strict smoke cannot establish a CUDA W1A1 acceptance rate or a clean
+quantization-induced acceptance loss. The immediate mismatch mechanism is
+established,
 but the upstream logit shift remains a blocker to clean target-equivalent
-acceptance interpretation. An opt-in, mismatch-recording diagnostic mode is
-being checked to collect observed CUDA acceptance under the same verifier
-without relabeling it target equivalent. The prior Metal development counts are in
+acceptance interpretation. An opt-in, mismatch-recording diagnostic mode was
+checked on one prompt under supervised
+`cuda-exploratory-ordinary-fusion-20260924` at code commit
+`ae471198911fe7e093a4e26ff95655105843b725`. The disabled wrapper matched
+ordinary EAGLE exactly; both generated outputs were flagged as mismatching
+target-only greedy output. Observed verifier acceptance was:
+
+| Variant | Accepted drafts | Proposed tree nodes | Rounds | Accepted/round |
+| --- | ---: | ---: | ---: | ---: |
+| Ordinary BF16 EAGLE | 84 | 2,773 | 47 | 1.787 |
+| Fusion-only W1A1 simulation | 42 | 5,133 | 87 | 0.483 |
+
+The run finished exit 0 and all project processes stopped. It preserved
+`acceptance.jsonl` (SHA256
+`517a38441c8a8d7501bfdb6e5aa18b3a51752de1ea5234a1b3a29fb6117d01fe`),
+`greedy-mismatches.jsonl` (SHA256
+`6c8dd7ba2365f1b5ac3570422a7ae976b52d1861aeb691b2d87d376becd8361e`),
+and `summary.json` (SHA256
+`c62aeaacb4a666b92c8a97238fe848d6219b196f8cbf87b7888ef301bcde4bda`)
+under remote `results/cuda-exploratory-ordinary-fusion-20260924/`. This is one
+prompt and two variants, so it cannot replace the fixed 12-prompt comparison.
+The full suite will be run in the same explicitly exploratory mode. The prior
+Metal development counts are in
 `experiments/pytorch-w1a1-metal-acceptance.md`; they are not a CUDA baseline.
