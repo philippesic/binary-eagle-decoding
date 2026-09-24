@@ -179,4 +179,14 @@ binary execution.
   index 20. The raw parity file SHA256 is
   `592278d6ca4d1f23c3890f50cecd0cd0473de0f985d07c75f7e28a9c2c8c53a4`.
   Both target and draft loaded in BF16. The token source and full-prefix versus
-  tree-verifier logits remain under trace; no causal interpretation yet.
+  tree-verifier logits were traced next.
+- The BF16 trace confirms the divergent token was a target-selected seed after
+  two accepted draft positions. At absolute position 40, tree verification
+  tied IDs 11, 272, and 7578 at logit 21.0 and selected lowest ID 11; the
+  full-prefix target pass on the same 41-token prefix had 272 at 21.0 and 11
+  and 7578 at 20.875, selecting 272. The immediate token-choice mechanism is
+  known; the source of the tree/cache logit shift remains unresolved. Remote
+  `results/cuda-parity-diagnostic-20260924/trace.json` SHA256 is
+  `05563bd35b5f502c77a0a4485779e02bf74e8e07bda25d6f0a17341ac09a65ac`.
+  Its diagnostic supervisor finished exit 0 and GPU memory returned to idle.
+  `experiments/pytorch-w1a1-cuda-acceptance.md` records the current evidence.

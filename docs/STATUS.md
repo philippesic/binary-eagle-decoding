@@ -12,7 +12,9 @@ operator completed CPU-only setup: the pinned CUDA Python environment and both
 model snapshots are prepared and hash verified. Fortnite is gone and the GPU
 passed a fresh idle check. A corrected supervised CUDA smoke loaded the target
 but found ordinary EAGLE differs from target-only greedy output. The full W1A1
-sweep is stopped; the operator is tracing the first verifier-logit mismatch.
+sweep is stopped. A BF16 trace attributes the fourth-token choice to a
+target-selected verifier tie; the underlying tree-versus-prefix logit shift is
+unresolved. The ordinary drafter layer-cost profile is still pending.
 The prior [PyTorch W1A1 EAGLE
 goal](goals/pytorch-w1a1-eagle.md) and
 `experiments/pytorch-w1a1-metal-acceptance.md` contain the Metal development
