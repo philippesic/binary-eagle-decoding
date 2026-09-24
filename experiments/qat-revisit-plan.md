@@ -53,8 +53,14 @@ These are possible explanations, not a proven causal decomposition.
    first head call predicts after the target-selected seed; each later call
    predicts after its draft parent node. The next capture must record these
    node IDs/paths and match each row to the verifier's next-token logits,
-   including padded, pruned, EOS, and unmapped rows. Audit the actual inverse
-   consistency of `t2d` before using it; its presence alone is insufficient.
+   including padded, pruned, EOS, and unmapped rows. A direct read of the
+   pinned safetensors checkpoint (SHA256
+   `58ac5bbfdd71047ebaa5d5535b895c2af37004eb820ca2dda55bd7666658853e`)
+   found 32,000 unique, strictly increasing absolute `d2t` IDs in a 151,936
+   target-token vocabulary. `t2d` is a boolean mask with exactly 32,000 true
+   entries at those IDs; its inverse consistency passed. The all-group GGUF's
+   I64 `d2t` tensor exactly matched the absolute IDs. This checks the mapping
+   table, not the target probability mass that falls outside it.
    The loss treatment of target labels outside draft support remains a
    research decision to fix after measuring their frequency and probability
    mass, before training.

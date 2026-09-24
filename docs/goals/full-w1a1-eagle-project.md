@@ -605,3 +605,14 @@ commands/orders, and confirmed parent gitlink equals actual llama.cpp checkout
 `8d2b18a`. It launched no server. Review moved draft model hashing out of the
 per-request loop to avoid disturbing the timed comparisons. The full
 `make check` suite passed 90 tests. The 2080 Ti still has no reachable SSH.
+
+The integrated parent checkpoint was `8ce660e`, with llama.cpp gitlink
+`8d2b18a`. The QAT mapping audit read the pinned safetensors directly:
+`d2t` offset plus draft index yields 32,000 unique, strictly increasing target
+IDs; the `t2d` boolean mask has exactly those 32,000 true positions among
+151,936 target IDs. The all-group GGUF I64 mapping is bytewise equal to the
+absolute source mapping. The target probability mass outside this draft
+support and aligned tree-row labels still need measurement before new QAT.
+At roughly 20:52 UTC, a second tmux-MCP SSH check to the registered 2080 Ti
+port 22 also timed out (exit 255); the tmux session was closed. No remote
+command or GPU process has run on that machine.
