@@ -91,3 +91,7 @@ binary execution.
 - The GPU operator should use current `main` at or after `bfce552`, regenerate
   the model manifest against the updated config hash, then run parity,
   acceptance, and layer profiling under separate supervised run IDs.
+- A local read of the pinned drafter safetensors header confirmed all nine
+  BF16 candidate linear shapes. `experiments/drafter-static-coverage.md`
+  records exact parameter counts and distinguishes storage share from the
+  pending measured draft time share.
