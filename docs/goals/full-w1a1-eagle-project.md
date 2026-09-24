@@ -129,3 +129,12 @@ RTX 5080 access. Make bounded decisions from evidence, checkpoint them in
   held-out QAT run has begun. Sol worker `/root/qat_capture` owns the separate
   prompt-generation and feature-capture scripts; the orchestrator will own
   training/evaluation integration after its artifact schema is fixed.
+- `f88eaa9` integrated deterministic QAT prompt generation and pinned-model
+  drafter-head input capture; the Sol worker's isolated worktree/branch were
+  removed after verification. `make check` passes 48 tests. A local generator
+  run produced ignored, disjoint prompt manifests: 96 train (SHA256
+  `4e44fd2f5806cd7edd56de56a87a211efcc1293b418a5e99cdfc2c1a3cce7a8a`)
+  and 24 validation (SHA256
+  `2dcec4dd9c954506415b63fe13cd165f6395eab942da61562d82a284d89cc531`),
+  balanced across three categories and bound to the held-out prompt hash.
+  Remote capture and official runtime integration have not been validated yet.

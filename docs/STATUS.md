@@ -16,7 +16,9 @@ operation and ordinary I32/F32 GGUF companions, initially for the EAGLE head.
 A [bounded head-only QAT pilot](../experiments/qat-head-pilot-plan.md) is
 planned after the current parity diagnostic. The BF16-forward-exact trainable
 head core is integrated at `5cb3ea4` with 43 passing tests, while a separate
-worker builds calibration feature capture. No QAT GPU job has started.
+capture path was integrated at `f88eaa9`. A local deterministic generator
+created ignored 96/24 train/validation prompt manifests, disjoint from the
+held-out set; all 48 checks pass. No QAT GPU job has started.
 The completed [RTX 5080 W1A1 draft acceptance goal](goals/rtx5080-draft-acceptance.md) and
 `experiments/pytorch-w1a1-cuda-acceptance.md` contain the pinned CUDA setup,
 strict BF16 parity diagnostic, full 12-prompt exploratory acceptance sweep,
