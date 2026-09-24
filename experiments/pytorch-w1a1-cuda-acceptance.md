@@ -82,18 +82,29 @@ calls; the instrumented intervals were synchronized before reduction. The
 aggregate draft-event time was 628.69 ms. Candidate linears accounted for
 240.95 ms (38.32%); the residual was 387.75 ms (61.68%).
 
-| Group | Share of instrumented draft-event time |
-| --- | ---: |
-| Feature fusion | 1.03% |
-| Attention Q/K/V/O | 10.08% |
-| FFN gate/up/down | 14.29% |
-| Drafter vocabulary head | 12.93% |
-| Remaining graph and instrumentation | 61.68% |
+| Group | Linear calls | Event ms | Share of draft-event time |
+| --- | ---: | ---: | ---: |
+| Feature fusion | 70 | 6.475 | 1.03% |
+| Attention Q/K/V/O | 1,680 | 63.345 | 10.08% |
+| FFN gate/up/down | 1,260 | 89.846 | 14.29% |
+| Drafter vocabulary head | 420 | 81.280 | 12.93% |
+| Remaining graph and instrumentation | — | 387.75 | 61.68% |
+
+The five measured draft-event totals were 126.349, 124.037, 126.925,
+125.227, and 126.155 ms (range 124.037–126.925). Common observed BF16
+inputs included fusion `[1,3,7680]` into `(2560,7680)`, attention Q
+`[1,10,5120]` into `(4096,5120)` with K/V using `(1024,5120)`, FFN gate/up
+`[1,10,2560]` into `(9728,2560)`, and head `[10,2560]` into `(32000,2560)`.
+The raw profile lists all observed sequence lengths and weight shapes, including
+the attention output and FFN down projections.
 
 Peak PyTorch allocation for the profiled generation was 9,781,691,904 bytes.
 The remote artifact is
 `results/cuda-drafter-profile-20260924/layer-profile.json`, SHA256
 `1677a3dd0b0cce78cec1e7296c6b18a30ed51e5e780fcd53509b8faed473c15f`.
+Its supervisor finished with exit 0, no project process remained, and three
+post-run GPU samples returned to 0% use and the 3,107 MiB Windows idle memory
+baseline.
 These are one-prompt, event-instrumented draft timings. The residual includes
 non-linear graph work, tree selection, launch gaps, and instrumentation cost;
 the shares are not native binary-kernel savings or end-to-end speedups.
