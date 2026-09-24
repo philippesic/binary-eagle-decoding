@@ -105,3 +105,13 @@ generated-stream mismatches remain, so they do not establish strict
 target-equivalent decoding. No further tuning against this held-out set is
 planned. Native packed execution with the original head still needs direct
 correctness and same-device throughput measurement.
+
+For screening only, if each round emits one additional verifier token, the
+original untrained head's emitted-token ratio to ordinary is
+`(1+1.67668)/(1+2.31659) ≈ 0.807`. Using the one-prompt instrumented head
+draft-time share of 12.93%, even making that head free gives at most a
+`1/(1-0.1293) ≈ 1.148` draft-event speedup and an optimistic product of
+about **0.927×** ordinary throughput. The trained head's analogous product
+is about **0.888×**. This is a deliberately favorable planning bound using
+BF16 verifier-relative acceptance and one profiled prompt, not a substitute
+for the matched native end-to-end measurement.

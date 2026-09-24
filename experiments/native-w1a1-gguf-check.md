@@ -55,6 +55,9 @@ control and report generation only; one prompt on Metal is not the paired
 5080 performance experiment. Ignored smoke manifest/report SHA256 values are
 `2a4bf11fc48c8ea9a637b7c950cc42bfe7a5ae8d8ea2290f102c7def344c3d3e`
 and `66c8c2ff8aaf71fc561b6d3e6f4d58350aa77efd9b7f57a14df517367bfe334c`.
+For this one prompt, all five 16-token completions were text-identical across
+target-only, ordinary, and packed-head paths. That is a local greedy smoke,
+not a 12-prompt or sampled verifier-correctness proof.
 
 The integrated submodule's `test-backend-ops test -b CPU -o W1A1_MUL_MAT`
 passed all five cases on M3 Max after both bridge and CUDA-source commits were

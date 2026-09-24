@@ -406,6 +406,38 @@ def aggregate(records: list[dict[str, Any]]) -> dict[str, Any]:
     return output
 
 
+def completion_text_matches(records: list[dict[str, Any]]) -> dict[str, Any]:
+    """Compare decoded response text hashes for matched repetition/prompt pairs."""
+    by_key = {(row["repetition"], row["prompt_id"], row["variant"]): row for row in records}
+    result = {}
+    for variant in ("ordinary_eagle", "packed_head_w1a1"):
+        matched = 0
+        unavailable = 0
+        mismatches = []
+        for row in records:
+            if row["variant"] != variant:
+                continue
+            key = (row["repetition"], row["prompt_id"], "target_only")
+            reference = by_key.get(key)
+            if (
+                reference is None
+                or not row.get("completion_sha256")
+                or not reference.get("completion_sha256")
+            ):
+                unavailable += 1
+            elif row["completion_sha256"] == reference["completion_sha256"]:
+                matched += 1
+            else:
+                mismatches.append({"repetition": row["repetition"], "prompt_id": row["prompt_id"]})
+        result[variant] = {
+            "matched_text": matched,
+            "mismatched_text": len(mismatches),
+            "unavailable": unavailable,
+            "mismatch_pairs": mismatches,
+        }
+    return result
+
+
 def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,79}", run_id):
         raise ValueError("run ID must be a safe, relative name")
@@ -529,6 +561,7 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
             report = {
                 "status": "complete",
                 "aggregation": aggregate(records),
+                "greedy_text_match_vs_target_only": completion_text_matches(records),
                 "records": len(records),
                 "native_cuda_dispatch_confirmed": (
                     True
@@ -551,6 +584,10 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                     "acceptance": (
                         "accepted draft tokens / proposed draft tokens "
                         "from per-request metrics deltas"
+                    ),
+                    "greedy_text_match": (
+                        "SHA256 equality of decoded response text for matched prompt/repetition; "
+                        "does not prove token-ID or stochastic distribution equivalence"
                     ),
                 },
             }

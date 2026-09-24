@@ -102,6 +102,28 @@ class NativeBenchmarkTests(unittest.TestCase):
         )
         self.assertTrue(marker_only["cuda_w1a1_dispatch_confirmed"])
 
+    def test_greedy_text_match_pairs(self):
+        records = [
+            {"repetition": 0, "prompt_id": "p", "variant": "target_only", "completion_sha256": "a"},
+            {
+                "repetition": 0,
+                "prompt_id": "p",
+                "variant": "ordinary_eagle",
+                "completion_sha256": "a",
+            },
+            {
+                "repetition": 0,
+                "prompt_id": "p",
+                "variant": "packed_head_w1a1",
+                "completion_sha256": "b",
+            },
+        ]
+        result = benchmark.completion_text_matches(records)
+        self.assertEqual(result["ordinary_eagle"]["matched_text"], 1)
+        self.assertEqual(
+            result["packed_head_w1a1"]["mismatch_pairs"], [{"repetition": 0, "prompt_id": "p"}]
+        )
+
     def test_aggregate_uses_ratio_of_sums(self):
         rows = []
         for variant in benchmark.VARIANTS:
