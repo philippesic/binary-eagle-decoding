@@ -3,8 +3,10 @@
 **State:** conversion, exhaustive source-to-GGUF row audit, and short CPU
 generation passed. No RTX 2080 Ti/CUDA result or speed measurement exists.
 The llama.cpp implementation commit `8d2b18a9c9b3a42927404a91799a823c758c09b6`
-is published to the user's fork on `w1a1-full-drafter`, based on the pinned
-production `92bc70602e13214d6db94c007894261b51f5f36c`.
+is published to the user's fork on `w1a1-integrated` and pinned by the parent
+repository at `08f370a`, based on the 5080-tested
+`92bc70602e13214d6db94c007894261b51f5f36c`. The temporary implementation
+branch and worktree were removed after integration.
 
 The converter retains the existing head-only flag and adds
 `--w1a1-eagle-groups fusion|attention|ffn|all`. The loader requires a
@@ -26,11 +28,13 @@ Each variant was converted from that source with the pinned target tokenizer,
 drafter's unselected linears remain F16. Exact command shape:
 
 ```sh
-results/convert-env/bin/python /private/tmp/llama-w1a1-full-drafter/convert_hf_to_gguf.py models/hf/Qwen3-4B_eagle3 --target-model-dir models/hf/Qwen3-4B --outtype f16 --w1a1-eagle-groups all --outfile models/gguf/Qwen3-4B-eagle3-all-w1a1.gguf
+results/convert-env/bin/python third_party/llama.cpp/convert_hf_to_gguf.py models/hf/Qwen3-4B_eagle3 --target-model-dir models/hf/Qwen3-4B --outtype f16 --w1a1-eagle-groups all --outfile models/gguf/Qwen3-4B-eagle3-all-w1a1.gguf
 ```
 
 The other three commands change `all` in the flag and output filename to
-`fusion`, `attention`, or `ffn`. The GGUF readback showed the expected I32
+`fusion`, `attention`, or `ffn`. The original commands used the temporary
+implementation worktree path at the same llama.cpp commit; the command above
+uses the integrated submodule path for replay. The GGUF readback showed the expected I32
 packed tensor count and companion F32 scales, with no dense shadow for each
 selected linear:
 

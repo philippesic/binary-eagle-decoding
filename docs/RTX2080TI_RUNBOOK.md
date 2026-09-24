@@ -116,6 +116,19 @@ The run manifest records both the parent gitlink and the actual llama.cpp
 checkout commit, status, and diff hash. For a candidate-branch trial, confirm
 the actual checkout is `9bb01a6` while the pinned production gitlink remains
 `92bc706`; preserve that distinction when reporting binary provenance.
+
+For the five W1A1 groups plus Q4_0/Q8_0 weight-only draft comparison, use a
+run-specific copy of `configs/native_benchmark_five_w1a1_groups.toml`. Its
+opt-in matrix has target-only, ordinary FP16, five packed W1A1 group drafts,
+and two weight-only drafts. The harness requires each packed variant's exact
+loader group marker and CUDA W1A1 dispatch marker, preserves generated token
+IDs where the server returns them, and records pooled ratios versus both
+anchors. The environment manifest captures GPU/driver/toolkit/compiler/build
+information before timed requests, with per-server GPU samples. Resolve the
+Q4_0/Q8_0 activation and operator precision labels from actual 2080 Ti
+backend evidence; do not call them W4A4/W8A8. A local nine-variant dry-run
+validated model paths and hashes, command assembly, and the parent/submodule
+commit record; it is not a runtime result.
 The current activation packer accumulates magnitudes in F64 before writing
 an F32 scale; measure that reduction separately on Turing rather than
 carrying over the 5080 pack cost. The 5080 integrated-kernel NCU attempt was

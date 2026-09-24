@@ -1152,6 +1152,16 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
         json_write(destination / "manifest.json", manifest)
         if dry_run:
             return destination
+        draft_hashes = {}
+        for variant in variants:
+            if variant == "target_only":
+                draft_hashes[variant] = None
+            elif variant == "ordinary_eagle":
+                draft_hashes[variant] = manifest["files"]["ordinary_draft"]["sha256"]
+            elif variant in group_specs or variant in weight_specs:
+                draft_hashes[variant] = manifest["files"][variant]["sha256"]
+            else:
+                draft_hashes[variant] = manifest["files"]["packed_head_draft"]["sha256"]
         base_url = f"http://{config['server']['host']}:{config['server']['port']}"
         records = []
         timing_rows = []
@@ -1220,15 +1230,7 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                                             "backend_precision"
                                         )
                                         or weight_specs.get(variant, {}).get("backend_precision"),
-                                        "draft_model_sha256": sha256(paths[variant])
-                                        if variant in group_specs
-                                        else sha256(paths[variant])
-                                        if variant in weight_specs
-                                        else sha256(paths["packed_head_draft"])
-                                        if variant in ("packed_head_w1a1", MMA_VARIANT)
-                                        else sha256(paths["ordinary_draft"])
-                                        if variant == "ordinary_eagle"
-                                        else None,
+                                        "draft_model_sha256": draft_hashes[variant],
                                     }
                                 )
                                 records.append(measurement)

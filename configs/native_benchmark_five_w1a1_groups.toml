@@ -1,4 +1,4 @@
-# Optional paired seven-variant native matrix. Duplicate the existing model,
+# Optional paired nine-variant native matrix. Duplicate the existing model,
 # prompt, server, and precision paths for the actual 2080 Ti checkout before use.
 # Each expected marker is an evidence contract: the exact CUDA W1A1 dispatch
 # log substring emitted by the llama.cpp revision for that group's kernel.

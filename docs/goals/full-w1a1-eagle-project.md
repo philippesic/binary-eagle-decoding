@@ -595,3 +595,13 @@ Exact GGUF, source, audit, and log hashes are in the
 [local group report](../../experiments/native-w1a1-groups-local.md). No CUDA
 build or 2080 Ti inference has run. The next hardware gate remains WSL/SSH
 access, then SM75 correctness and same-device timing.
+
+The expanded paired runner at parent `e973c4e` adds opt-in target-only,
+ordinary, five W1A1 group, and Q4_0/Q8_0 weight-only rows with loader/dispatch
+evidence, per-request generated token IDs where available, pooled comparisons,
+and a pre-timing hardware/build manifest. A local nine-variant dry-run with
+the CPU binary resolved and hashed every current model path, assembled all
+commands/orders, and confirmed parent gitlink equals actual llama.cpp checkout
+`8d2b18a`. It launched no server. Review moved draft model hashing out of the
+per-request loop to avoid disturbing the timed comparisons. The full
+`make check` suite passed 90 tests. The 2080 Ti still has no reachable SSH.
