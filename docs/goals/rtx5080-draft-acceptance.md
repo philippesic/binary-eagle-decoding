@@ -124,7 +124,15 @@ binary execution.
   Model snapshots are next. No CUDA command has run while the GPU is occupied.
 - Corrected package-version evidence is in remote supervised
   `runs/cuda-envfreeze-20260924/stdout.log`. The CPU-only supervised
-  `cuda-model-snapshots-20260924` job is active, downloading and hashing the
-  pinned model snapshots under the remote workdir. The target snapshot is
-  partially present (about 3.3 GiB at last report). No GPU-backed command
-  has started; Fortnite still occupies the device.
+  `cuda-model-snapshots-20260924` job downloaded and hashed the pinned model
+  snapshots under the remote workdir. No GPU-backed command has started.
+- `cuda-model-snapshots-20260924` finished with exit 0. The remote target has
+  13 files / 8,060,926,626 bytes, and the drafter has 5 files / 436,987,505
+  bytes; all file SHA256 values match the prior local manifest. Remote model
+  manifest SHA256 is
+  `2db1c860f059bd8702ca6bb523e64f0c7d064c7a95f59919a001fc88168a91e3`;
+  resolved config SHA256 is
+  `41e4509a5a444357b9c6c3079569ea9649a6ce9a34752b0d5908913d9062d6a2`.
+  Prompt SHA256 remains `0d6a698d6816592c6ff435fed2fea4cdafe9f5248393d2a5ac091e1551919476`.
+  Import and package metadata checks pass; CUDA-backed model loading has not
+  been attempted. A fresh Windows-side idle check is next.
