@@ -113,3 +113,12 @@ binary execution.
 - The profiler worktree was clean, and its two owned files matched `main`
   exactly after cherry-pick integration. The temporary worktree and branch
   were removed; the published implementation remains at `bfce552`.
+- CPU-only remote preparation now has a clean HTTPS clone of pushed project
+  commit `daad157` under the configured workdir. The supervised
+  `cuda-envsetup-20260924` run completed `uv sync --locked --group w1a1` with
+  Python 3.11.15 and PyTorch 2.14.0+cu130 (CUDA build 13.0). The supervised
+  `cuda-runtime-deps-20260924` run installed Transformers 4.57.6 and AngelSlim
+  at the config-pinned revision; resolved Hugging Face Hub 0.36.2 and
+  Accelerate 1.15.0. A first environment-report command exited 1 after a
+  package metadata-name typo; the operator is correcting the manifest.
+  Model snapshots are next. No CUDA command has run while the GPU is occupied.

@@ -9,7 +9,8 @@ and SSH username are recorded in the machine-local host registry, and the
 shared pause flag is clear.
 The profiling tool is integrated on `main` and its CPU checks pass. The Luna
 operator `/root/cuda_acceptance_operator` owns the 5080 checks and runs; it is
-preparing the pinned environment while a Windows game occupies the GPU. No
+preparing pinned model snapshots after a clean remote checkout and CUDA-capable
+Python environment, while a Windows game occupies the GPU. No
 CUDA experiment has started; a fresh idle check is required before one does.
 The prior [PyTorch W1A1 EAGLE
 goal](goals/pytorch-w1a1-eagle.md) and
