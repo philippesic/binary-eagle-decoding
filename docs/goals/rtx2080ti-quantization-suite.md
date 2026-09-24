@@ -193,3 +193,13 @@ Compare pooled rates and prompt/repetition spread against both anchors.
   generated 16 draft tokens. Ordinary and W1A1 smoke runs also passed. The
   feature owner now owns CUDA W8A8 source/tests without GPU use; the operator
   retains exclusive 2080 Ti access.
+- W8A8 [CUDA source](../../experiments/w8a8-cuda-source-gate.md) was published
+  at llama.cpp fork commit `a68968fad`; its parent report was integrated at
+  `4075ae2` without a gitlink change. The source packs F32 activations into
+  signed I8 once per token and uses signed byte-dot/I32 accumulation plus
+  ordered F32 scales for one or multiple tokens. Expanded CPU-oracle tests
+  passed K=8, 33, and 9,728. Mac lacks nvcc, so SM75 compilation, dispatch,
+  SASS, and model-level parity are still required. The operator has the branch
+  and gate instructions, after the integrated MMA check. A separate no-GPU
+  worker owns W4A4 export/CPU format work in its own checkout; it does not
+  touch GGML/CUDA or the 2080 Ti.
