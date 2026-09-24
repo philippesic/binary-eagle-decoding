@@ -85,17 +85,21 @@ binary instructions.
 ## SM75 binary-MMA probe
 
 `sm75_mma_probe.cu` is a separate one-warp `m8n8k128` XOR/popcount correctness
-probe for an RTX 2080 Ti. On an SM75 host with a CUDA toolkit that supports
-`sm_75`, build and run it with:
+probe for an RTX 2080 Ti. Build an SM75 cubin plus `compute_75` PTX so the
+same executable can JIT on a later architecture:
 
 ```sh
-nvcc -std=c++17 -O2 -arch=sm_75 -o sm75_mma_probe kernels/sm75_mma_probe.cu
+nvcc -std=c++17 -O2 --gpu-architecture=compute_75 \
+  --gpu-code=sm_75,compute_75 -o sm75_mma_probe kernels/sm75_mma_probe.cu
 ./sm75_mma_probe
 cuobjdump --dump-sass sm75_mma_probe | grep -E 'BMMA|MMA'
 ```
 
 It checks every integer output against a dense CPU sign reference for a full
 8-by-8 tile, partial row/token tiles, K tails with dirty padding bits, and the
-five audited EAGLE widths. The program rejects non-SM75 devices. Compilation
-or disassembly alone does not establish SM75 runtime correctness or speed;
-neither the 5080 nor this probe measures a complete EAGLE draft call.
+five audited EAGLE widths. The default run rejects non-SM75 devices. On an
+SM120 RTX 5080, `./sm75_mma_probe --proxy-correctness` runs those same exact
+integer-dot checks through the JIT-compiled PTX. It reports a proxy result
+and does not establish SM75 runtime correctness or performance. Compilation
+or disassembly alone also does not establish either result; this probe never
+measures a complete EAGLE draft call.

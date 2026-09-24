@@ -1,13 +1,13 @@
 // Standalone SM75 binary Tensor Core correctness probe. No project GPU
-// dispatch. Build: nvcc -std=c++17 -O2 -arch=sm_75 -o sm75_mma_probe
-// kernels/sm75_mma_probe.cu The exact fragment mapping and opcode come from
-// NVIDIA PTX ISA 8.5, sections 9.7.15.4.5 and 9.7.15.4.14 (CUDA 12.6
-// documentation).
+// dispatch. Build command and proxy scope are documented in kernels/README.md.
+// Fragment mapping and opcode: NVIDIA PTX ISA 8.5, sections 9.7.15.4.5 and
+// 9.7.15.4.14 (CUDA 12.6 documentation).
 
 #include <cuda_runtime.h>
 
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
 #include <initializer_list>
 #include <stdexcept>
 #include <string>
@@ -200,21 +200,50 @@ void run_case(int rows, int tokens, int k) {
 
 } // namespace
 
-int main() {
+int main(int argc, char **argv) {
+  constexpr const char *usage =
+      "Usage: sm75_mma_probe [--proxy-correctness | --help]\n"
+      "  default: require SM75 and check exact integer dots\n"
+      "  --proxy-correctness: allow SM120 correctness check only; no SM75 "
+      "claim\n";
+  if (argc == 2 && std::strcmp(argv[1], "--help") == 0) {
+    std::fputs(usage, stdout);
+    return 0;
+  }
+  const bool proxy =
+      argc == 2 && std::strcmp(argv[1], "--proxy-correctness") == 0;
+  if (argc != 1 && !proxy) {
+    std::fputs(usage, stderr);
+    return 2;
+  }
   try {
     cudaDeviceProp device{};
     check(cudaGetDeviceProperties(&device, 0), "cudaGetDeviceProperties");
-    if (device.major != 7 || device.minor != 5) {
-      throw std::runtime_error("runtime probe requires an SM75 GPU");
+    if (proxy) {
+      if (device.major != 12 || device.minor != 0) {
+        throw std::runtime_error("--proxy-correctness requires an SM120 GPU");
+      }
+      std::printf("PROXY CORRECTNESS ONLY on SM120 device: %s\n", device.name);
+      std::puts(
+          "This DOES NOT validate SM75 runtime correctness or performance.");
+    } else {
+      if (device.major != 7 || device.minor != 5) {
+        throw std::runtime_error(
+            "default runtime probe requires SM75; use --proxy-correctness "
+            "only for an SM120 correctness proxy");
+      }
+      std::printf("SM75 device: %s\n", device.name);
     }
-    std::printf("SM75 device: %s\n", device.name);
     for (int k : {31, 32, 33, 128, 129, 2560, 4096, 5120, 7680, 9728}) {
       run_case(8, 8, k); // all 64 outputs of a full tile
       run_case(5, 3, k); // partial row and token tile
     }
     run_case(9, 10, 129); // second tile in both output dimensions
-    std::puts(
-        "All SM75 binary-MMA integer dots matched the dense CPU reference.");
+    std::puts("All binary-MMA integer dots matched the dense CPU reference.");
+    if (proxy) {
+      std::puts(
+          "PROXY RESULT ONLY: SM75 runtime and performance remain untested.");
+    }
     return 0;
   } catch (const std::exception &error) {
     std::fprintf(stderr, "FAIL: %s\n", error.what());
