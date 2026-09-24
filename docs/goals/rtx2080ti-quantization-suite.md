@@ -203,3 +203,14 @@ Compare pooled rates and prompt/repetition spread against both anchors.
   and gate instructions, after the integrated MMA check. A separate no-GPU
   worker owns W4A4 export/CPU format work in its own checkout; it does not
   touch GGML/CUDA or the 2080 Ti.
+- The W4A4 [export and CPU gate](../../experiments/w4a4-export-cpu-gate.md)
+  was integrated as parent report `c173233`. Published llama.cpp fork commit
+  `f0cf0cf` adds an opt-in all-nine-linears format with two signed I4 codes
+  per I8 storage byte, F32 row scales, explicit nibble order and odd-K padding.
+  The full source audit matched all nine packed matrices and scales exactly;
+  GGUF SHA256 is
+  `0471dd2a1ac7628ae97018dad5d24aaf08cbfc6a258758a975d4e60b0d40beed`.
+  Focused W4A4/W8A8/W1A1 converter and numerical tests passed 12/12. This
+  format has no runtime loader or SM75 result yet. Its owner now proceeds to
+  a separate strict loader/CPU operator gate, without GPU use or gitlink
+  update.
