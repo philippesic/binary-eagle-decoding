@@ -204,3 +204,9 @@ binary execution.
   mismatch records and mark the run as development evidence. `make check`
   passes all 22 tests. The operator will validate that mode on one prompt
   before considering a full held-out exploratory sweep.
+- The operator fetched exact remote code commit `ae471198911fe7e093a4e26ff95655105843b725`
+  with a clean tree. A fresh idle check found no Fortnite or project process
+  and 0–1% GPU use. Supervised
+  `cuda-exploratory-ordinary-fusion-20260924` is running one prompt with the
+  ordinary and fusion variants and `--allow-greedy-mismatch`. Its output is
+  exploratory verifier acceptance only; full-suite work awaits this check.
