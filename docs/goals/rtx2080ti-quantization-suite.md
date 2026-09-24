@@ -184,6 +184,21 @@ Compare pooled rates and prompt/repetition spread against both anchors.
   its process group ended, and the GPU returned to its 855 MiB/0% Xwayland
   baseline. This proves the standalone probe, not integrated EAGLE dispatch or
   throughput. The operator is building the opt-in integrated candidate next.
+- The opt-in integrated candidate branch `9bb01a6` built 358/358 SM75 targets
+  and exited zero. Supervised runs
+  `sm75-integrated-mma-portable-gate-20260924` and
+  `sm75-integrated-mma-tensorcore-gate-20260924` each passed 8/8 backend
+  cases and exited zero. Their respective logs show portable
+  XOR/POPCOUNT and binary-MMA dispatch; the latter reported `cc=750` on a
+  K=31, seven-row, three-token case. The GPU returned to its 855 MiB/0%
+  Xwayland baseline after each run. A separate supervised SASS dump
+  `sm75-integrated-mma-sass-20260924` is active; model-level parity and timing
+  remain unmeasured.
+- Supervised download `fetch-pinned-models-20260924` is active. Its first
+  Qwen target shard matched the local source manifest SHA256; subsequent
+  source files and all GGUF conversions remain pending. The remote worktree
+  for the integrated candidate is isolated from the production gitlink
+  `8d2b18a`.
 - The W8A8 [strict loader and CPU operator gate](../../experiments/w8a8-cpu-loader-gate.md)
   was integrated as parent report `2006582`; its published llama.cpp feature
   commit is `492818599` on top of exporter `bad469841`. The parent gitlink

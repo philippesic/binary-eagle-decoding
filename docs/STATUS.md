@@ -11,8 +11,9 @@ The user supplied the RTX 2080 Ti address, which is recorded only in the shared
 local host registry. Ubuntu 24.04 WSL2 and SSH are now reachable. The host
 reports an RTX 2080 Ti (compute capability 7.5). A user-space CUDA 12.8.93
 production build completed, and the five-case native W1A1 CUDA backend gate
-passed with explicit XOR/POPCOUNT dispatch. Model staging and paired timing
-remain pending.
+passed with explicit XOR/POPCOUNT dispatch. A standalone SM75 binary-MMA probe
+matched 880 integer dots, and integrated portable/MMA selectors each passed
+8/8 backend cases. Model staging and paired timing remain pending.
 The user requested same-device tests of ordinary EAGLE and all five W1A1
 coverage settings (fusion, attention, FFN, head, all groups), plus a fresh QAT
 investigation. The 5080-tested native runtime supported head-only W1A1;
