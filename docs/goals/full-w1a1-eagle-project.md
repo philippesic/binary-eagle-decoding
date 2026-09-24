@@ -559,7 +559,10 @@ The user also requested a QAT revisit. The earlier head-only teacher-KL pilot
 trained 500 steps and improved validation KL but lowered held-out acceptance
 from 1.677 to 1.565 drafts/round. The next QAT protocol must specify a new
 training objective, which groups are trainable, and a fresh untouched held-out
-suite before training; do not reuse the original 12 prompts for selection.
+suite before training; do not reuse the original 12 prompts for selection. A
+[bounded target-aligned head-first protocol](../../experiments/qat-revisit-plan.md)
+records the alignment, split, selection, stop, and wider-group gates. It is a
+plan, not a new measured result.
 
 Next: complete and review the selectable native bridge and benchmark controls;
 prepare a bounded QAT plan and model/precision manifest locally. Once Ubuntu
