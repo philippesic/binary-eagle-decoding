@@ -1,9 +1,10 @@
 # Goal: RTX 5080 W1A1 draft acceptance
 
 **Opened:** 2026-09-23  
-**State:** active; RTX 5080 work resumed by user
+**State:** complete; bounded CUDA acceptance and cost diagnostic delivered
+**Closed:** 2026-09-24
 **Orchestrator:** current Codex task  
-**GPU owner:** `/root/cuda_acceptance_operator` (Luna high); full exploratory sweep assigned
+**GPU owner:** none; all supervised jobs terminal and GPU back at idle baseline
 
 ## Objective
 
@@ -61,7 +62,7 @@ binary execution.
    write the experiment report and decision options, and update this goal and
    `docs/STATUS.md` at milestones.
 
-## Current checkpoint
+## Milestones and final checkpoint
 
 - Goal opened from the completed PyTorch W1A1 EAGLE phase. The fixed prompt and
   model config are `configs/pytorch_w1a1.toml`; the Metal development report is
@@ -243,5 +244,22 @@ binary execution.
   W1A1 accepted/round: fusion 0.683, attention 0.771, FFN 1.067, head 1.677,
   all groups 0.202. The combined setting retained 8.7% of ordinary acceptance
   under this verifier. All six settings had target-greedy mismatches on at
-  least six prompts; the strict parity limitation remains. Artifact hashes,
-  prompt spread, and final GPU cleanup are under verification.
+  least six prompts; the strict parity limitation remains. The report records
+  per-prompt medians/ranges, category-weighted rates, and zero-accept rounds.
+  The remote result artifact hashes, exact command, environment, and replay
+  limits are in `experiments/pytorch-w1a1-cuda-acceptance.md`.
+- Final cleanup: supervisor PID/PGID 494 was absent, project process scans
+  were empty, Fortnite was absent, and three Windows samples returned to 0%
+  GPU use with 3,108 MiB used / 12,870 MiB free. Both tmux MCP SSH panes and
+  the session were closed. The ignored local command/cleanup record is
+  `results/preflight-5080-20260924T034000Z/host-preflight.txt` (SHA256
+  `394838155567ba0e463df47bd9bdecf7b98349c2341aba04092f6557229303a9`).
+- Outcome: combined post-training W1A1 retained 8.7% of ordinary accepted
+  drafts per round under the same BF16 verifier; head-only retained 72.4%.
+  Candidate linears took 38.32% of one-prompt instrumented draft time. Strict
+  target-only/ordinary EAGLE parity failed due a target-selected BF16 tie from
+  a small tree-versus-prefix logit shift; its deeper cause remains unresolved.
+  The counts are exploratory verifier-relative evidence, with no native binary
+  or end-to-end speed claim. The user owns the next fork, recorded in
+  `docs/DECISIONS.md`: parity investigation, selective coverage, or bounded
+  drafter QAT. No QAT began in this goal.

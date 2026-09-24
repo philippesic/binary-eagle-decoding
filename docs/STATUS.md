@@ -1,28 +1,21 @@
 # Current project status
 
-**Active goal:** [RTX 5080 W1A1 draft acceptance](goals/rtx5080-draft-acceptance.md).
-The user resumed the RTX 5080 work. The phase will confirm the
-fixed held-out PyTorch acceptance sweep on CUDA,
-check target/EAGLE greedy parity, and audit drafter layer cost before the user
-chooses selective W1A1 coverage or bounded QAT. The current RTX 5080 address
-and SSH username are recorded in the machine-local host registry, and the
-shared pause flag is clear.
-The profiling tool is integrated on `main` and its CPU checks pass. The Luna
-operator completed CPU-only setup: the pinned CUDA Python environment and both
-model snapshots are prepared and hash verified. Fortnite is gone and the GPU
-passed a fresh idle check. A corrected supervised CUDA smoke loaded the target
-but found ordinary EAGLE differs from target-only greedy output. The full W1A1
-sweep is stopped. A BF16 trace attributes the fourth-token choice to a
-target-selected verifier tie; the underlying tree-versus-prefix logit shift is
-unresolved. A one-prompt ordinary drafter profile measured candidate linears at
-38.32% of instrumented draft time. An opt-in mismatch-recording CUDA diagnostic
-finished one prompt: ordinary EAGLE accepted 1.787 draft tokens/round and
-fusion-only W1A1 accepted 0.483, both under a non-target-equivalent verifier
-path.
-Supervised `cuda-exploratory-12prompt-20260924` finished all 72 rows. Ordinary
-EAGLE accepted 2.317 draft tokens/round; the combined W1A1 setting accepted
-0.202 under the same verifier. Raw hashes, prompt spread, and GPU cleanup are
-being checked before the final report.
+**Active goal:** none. The completed [RTX 5080 W1A1 draft acceptance
+goal](goals/rtx5080-draft-acceptance.md) and
+`experiments/pytorch-w1a1-cuda-acceptance.md` contain the pinned CUDA setup,
+strict BF16 parity diagnostic, full 12-prompt exploratory acceptance sweep,
+and drafter layer-cost audit. Ordinary EAGLE accepted 2.317 drafts/round,
+head-only W1A1 1.677, and all listed W1A1 groups 0.202 under the same
+verifier. Strict target-only/ordinary parity failed at generated token 4 due
+a target-selected BF16 verifier tie; the deeper logit shift is unresolved.
+Candidate linears occupied 38.32% of one-prompt instrumented draft time. These
+are verifier-relative acceptance and diagnostic timing results, not native
+binary or end-to-end speed claims. All supervised runs ended, the GPU returned
+to idle, and tmux SSH sessions were closed.
+
+**Next decision:** the user chooses the next goal: investigate BF16 verifier
+parity, narrow W1A1 coverage, or bounded drafter QAT. Evidence and tradeoffs
+are in `docs/DECISIONS.md`. No QAT or native binary work is active.
 The prior [PyTorch W1A1 EAGLE
 goal](goals/pytorch-w1a1-eagle.md) and
 `experiments/pytorch-w1a1-metal-acceptance.md` contain the Metal development

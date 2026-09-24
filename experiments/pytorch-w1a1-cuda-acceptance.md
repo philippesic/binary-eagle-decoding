@@ -8,8 +8,10 @@ execution or an end-to-end throughput comparison.
 
 ## Fixed inputs and environment
 
-- Remote project code: `daad1571f2f2be8404912c66cc19754e9f0daa00`, clean
-  checkout. AngelSlim source:
+- Remote project code: strict parity and profiling at
+  `daad1571f2f2be8404912c66cc19754e9f0daa00`; the exploratory runner at
+  `ae471198911fe7e093a4e26ff95655105843b725`. Both checkouts were clean
+  for their runs. AngelSlim source:
   `0358da9c651e6a7d7ccafea26ced4b9c98d11681`.
 - Target: `Qwen/Qwen3-4B@1cfa9a7208912126459214e8b04321603b3df60c`,
   13 files / 8,060,926,626 bytes. Drafter:
@@ -24,17 +26,22 @@ execution or an end-to-end throughput comparison.
   `0d6a698d6816592c6ff435fed2fea4cdafe9f5248393d2a5ac091e1551919476`.
 - Hardware: RTX 5080, 16,303 MiB reported; WSL NVIDIA-SMI 615.71.08,
   Windows driver/KMD 616.92, CUDA UMD 13.4. Python 3.11.15,
-  PyTorch 2.14.0+cu130, Transformers 4.57.6, BF16 target and drafter.
-  The import path also required `datasets`, `shortuuid`, and Pillow.
+  PyTorch 2.14.0+cu130, Transformers 4.57.6, Hugging Face Hub 0.36.2,
+  Accelerate 1.15.0, `datasets` 5.0.1, `shortuuid` 1.0.13, Pillow 12.3.0,
+  and the pinned AngelSlim commit. The CUDA runtime package is 13.0.96,
+  cuDNN 9.24.0.43, cuBLAS 13.1.1.3, and Triton 3.8.0. Target and drafter
+  were BF16. No CUDA compiler or native kernel was invoked in this phase.
 - Greedy non-thinking prompts and the 60-token EAGLE tree settings are fixed
-  in `configs/pytorch_w1a1.toml`. The intended sweep includes ordinary EAGLE
+  in `configs/pytorch_w1a1.toml`. The sweep included ordinary EAGLE
   and five W1A1 layer-group variants over the same 12 held-out prompts.
+  Fake W1A1 uses `sign(0)=+1`, mean-absolute scales per output weight row and
+  per input token vector; only selected drafter linear groups are quantized.
 
 The pinned environment and model snapshots were prepared under supervised
 CPU-only runs before GPU work. Exact setup commands and run states are preserved
 in ignored remote `runs/` and the local
 `results/preflight-5080-20260924T034000Z/host-preflight.txt` record (SHA256
-`11904b197bb51c43ac1bd3e752bc9eb4ca03407c7a77b0625d23bb7e23d0f495`).
+`394838155567ba0e463df47bd9bdecf7b98349c2341aba04092f6557229303a9`).
 The RTX 5080 was initially occupied by a Windows game; CUDA work began only
 after repeated idle samples and a process check found the game closed. Idle
 overlays still reserved about 3,107 MiB.
@@ -97,7 +104,10 @@ inputs included fusion `[1,3,7680]` into `(2560,7680)`, attention Q
 `[1,10,5120]` into `(4096,5120)` with K/V using `(1024,5120)`, FFN gate/up
 `[1,10,2560]` into `(9728,2560)`, and head `[10,2560]` into `(32000,2560)`.
 The raw profile lists all observed sequence lengths and weight shapes, including
-the attention output and FFN down projections.
+the attention output and FFN down projections. These nine linears are the
+binary-eligible candidates; embedding lookup, RMSNorm, RoPE, attention
+softmax, residuals, tree selection, and target verification remain ordinary
+operations.
 
 Peak PyTorch allocation for the profiled generation was 9,781,691,904 bytes.
 The remote artifact is
@@ -117,7 +127,7 @@ speedup is `1 / (1 - group_share)`: fusion 1.010×, attention 1.112×, FFN
 packing, scales, and kernel time, and end-to-end inference also includes target
 verification. Acceptance changes can outweigh these draft-time savings.
 
-## Interpretation pending
+## Exploratory runner validation
 
 The strict smoke cannot establish a CUDA W1A1 acceptance rate or a clean
 quantization-induced acceptance loss. The immediate mismatch mechanism is
@@ -144,6 +154,7 @@ and `summary.json` (SHA256
 `c62aeaacb4a666b92c8a97238fe848d6219b196f8cbf87b7888ef301bcde4bda`)
 under remote `results/cuda-exploratory-ordinary-fusion-20260924/`. This is one
 prompt and two variants, so it cannot replace the fixed 12-prompt comparison.
+
 ## Full held-out exploratory acceptance
 
 The supervised `cuda-exploratory-12prompt-20260924` run used the same pinned
@@ -154,7 +165,9 @@ code, four reasoning prompts). All 12 target-reference rows were preserved.
 There were 43 target-greedy mismatch records across the 72 rows. The table
 uses total accepted drafts divided by total verification rounds; each round
 proposed 59 tree nodes. Percent of ordinary uses the ordinary variant's
-accepted-per-round value on this same run.
+accepted-per-round value on this same run. Actual generated outputs ranged
+from 85 to 133 tokens because stopping occurred at verification-round
+boundaries; each raw row preserves its output length and token IDs.
 
 | Drafter setting | Accepted / proposed nodes | Rounds | Accepted/round | Node acceptance | % of ordinary | Target-greedy matches |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -176,9 +189,95 @@ groups. These ratios describe accepted drafts, not end-to-end speed: draft
 latency, target verification, emitted target tokens, and packing costs also
 matter.
 
+Prompt variation is substantial, and prose has lower acceptance than code or
+reasoning in this suite. The median and range below are across 12 prompt-level
+accepted-per-round values; category values pool accepted tokens and rounds
+within each four-prompt category. There was one deterministic greedy run per
+prompt/variant, so these ranges describe prompt variation, not confidence
+intervals or repetition variance.
+
+| Setting | Prompt median (range) | Prose | Code | Reasoning | Zero-accept rounds |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Ordinary | 2.467 (1.729–3.000) | 1.856 | 2.568 | 2.593 | 9.2% |
+| Fusion | 0.700 (0.483–0.870) | 0.600 | 0.702 | 0.747 | 55.7% |
+| Attention | 0.792 (0.554–0.955) | 0.699 | 0.789 | 0.823 | 38.2% |
+| FFN | 1.055 (0.724–1.339) | 0.868 | 1.093 | 1.262 | 29.3% |
+| Head | 1.758 (1.224–2.095) | 1.319 | 1.821 | 1.938 | 15.5% |
+| All | 0.217 (0.121–0.303) | 0.129 | 0.231 | 0.249 | 81.3% |
+
 Every variant has some prompts that differ from target-only greedy output.
 The BF16 tree-versus-prefix logit shift is unresolved, and generated paths can
 diverge across variants. Therefore these are **observed acceptance counts under
 one verifier**, not a clean causal estimate of quantization-induced acceptance
 loss or evidence of target-equivalent speculative decoding. The prior Metal
 development counts are in `experiments/pytorch-w1a1-metal-acceptance.md`.
+No W8A8 or W4A4 acceptance track was measured here; "ordinary" means the
+unmodified BF16 EAGLE drafter.
+
+## Decision implications
+
+The combined post-training W1A1 setting loses 91.3% of ordinary EAGLE's
+accepted drafts per round under this verifier. Its five-group Metal result was
+nearly identical. That is strong evidence that the initial broad fake-binary
+rule damages draft quality, even though the parity issue prevents a clean
+target-equivalent attribution. The one-prompt profile shows all nine candidate
+linears account for 38.32% of instrumented draft time, so native binary math
+would still leave most observed draft work and all target verification.
+
+- **Selective coverage:** head-only W1A1 retained 72.4% of ordinary acceptance,
+  the best of the tested groups. The head accounted for 12.93% of measured
+  draft time on the profiled prompt. Its optimistic zero-cost draft-time model
+  was 1.148× before packing or acceptance effects. FFN-only retained 46.0%
+  of ordinary acceptance for 14.29% of measured draft time. More combinations
+  could be ablated without training, but no selective variant has demonstrated
+  an end-to-end speedup.
+- **Bounded QAT:** a short drafter-only fine-tuning run with fake W1A1 forward
+  operations could test whether broader binary coverage regains acceptance.
+  Use separate calibration/training prompts and re-evaluate this held-out
+  suite. No QAT result exists, and training cost or success is uncertain.
+
+The user owns that fork. Before either path supports a target-equivalent or
+speedup claim, the BF16 tree-verifier versus full-prefix target discrepancy
+needs a bounded resolution or a protocol that explicitly carries the
+limitation. The RTX 2080 Ti native-binary timing and paired end-to-end
+comparisons remain later stages.
+
+## Raw artifacts and replay
+
+The full sweep used this exact command under the configured remote workdir:
+
+```sh
+python3 scripts/remote_job.py cuda-exploratory-12prompt-20260924 -- \
+  .venv/bin/python scripts/evaluate_pytorch_w1a1.py \
+  --model-manifest results/model-manifest-5080-20260924.json \
+  --run-id cuda-exploratory-12prompt-20260924 \
+  --variants ordinary fusion attention ffn head all \
+  --allow-greedy-mismatch
+```
+
+The code revision was `ae471198911fe7e093a4e26ff95655105843b725`.
+Raw files are ignored by Git under remote
+`results/cuda-exploratory-12prompt-20260924/`, with supervisor state and log
+under `runs/cuda-exploratory-12prompt-20260924/`. The results directory also
+contains the resolved config, prompt copy, and model-manifest copy. SHA256:
+
+| Artifact | SHA256 |
+| --- | --- |
+| `acceptance.jsonl` | `83f1442ad157c3e2c8b53ed9f4edcaee2bfdb64226d04776b4bb873bab402963` |
+| `summary.json` | `f881d367d535b3b9de5ac72a0572ba0540eeb798f06d15ea93d0ff3a68defb2a` |
+| `greedy-mismatches.jsonl` | `f2576dae0ff4c4b0ef2888a6d5ab61b7d683a357547854bfd97f3b600dcbd596` |
+| `greedy-parity.json` | `7e9d7694774349163d96c8080cdd120158e7209d57fcd0a19201e296eaa49742` |
+| `target-reference.jsonl` | `7cafdfff4e7bf728264021c4ac65f571419648637121fb73da9cb3426cafe0c8` |
+| `derived-metrics.json` | `c6aee99e843af727283968054b762cbe6898c39c045d3bfc2fe8a734ab7852a1` |
+| `zero-accept-rounds.json` | `96062da51512ef6c4e63be5a1639008b2ac07431b3f791860d3fabe7267f3524` |
+| `environment.json` | `fcd54fb9f52eb6982128e4436a76f5c83688a5e4357432bcb69d29390dab382a` |
+| `environment-freeze.txt` | `d0027ce02dd9c4929338edecd66c58e2258da0bf3056d5c62713381d94db619e` |
+| supervisor `state.json` | `60bbddb5b1b5298a7f30b56456b9e06d0311ffa62674f1bba7cbb5cc4136762c` |
+| supervisor `stdout.log` | `d6639e02b977b1641a39e25c732494f37522d7fee4983f9715ee16d94120ac39` |
+
+The supervisor finished with exit 0; PID/PGID 494 and all project evaluator
+processes were absent afterward. Three Windows samples showed 0% GPU use and
+memory back at the 3,108 MiB idle baseline. No model, cache, or raw run file
+was added to Git. The ignored local command and cleanup record is
+`results/preflight-5080-20260924T034000Z/host-preflight.txt`, SHA256
+`394838155567ba0e463df47bd9bdecf7b98349c2341aba04092f6557229303a9`.
