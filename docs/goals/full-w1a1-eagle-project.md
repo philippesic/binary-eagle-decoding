@@ -506,3 +506,17 @@ remains a published experimental branch, not the production gitlink. See
 [the integrated MMA report](../../experiments/integrated-binary-mma-5080.md).
 The next meaningful hardware action is to obtain the current RTX 2080 Ti
 address and run default/opt-in correctness plus same-device timing there.
+
+## Four-variant 2080 Ti comparison preparation
+
+The paired runner was originally fixed to target-only, ordinary EAGLE, and
+portable packed-head W1A1, so it could not directly alternate the new MMA
+variant on one GPU. `/root/paired_benchmark_harness` owns an optional fourth
+`packed_head_w1a1_mma` variant in the runner and its tests, with explicit
+per-server `GGML_CUDA_W1A1_MMA` selection and raw dispatch evidence; no GPU
+is assigned. Analysis support for three or four complete paired variants is
+already committed/pushed at parent `ab45e49`, with dedicated MMA/portable
+pooled ratios and bootstrap intervals. Five analysis tests pass, including
+four-way pairing and a missing-decode-metric regression. The runner change
+and fake-server end-to-end tests remain in progress. Keep the production
+three-variant path unchanged when the opt-in flag is absent.
