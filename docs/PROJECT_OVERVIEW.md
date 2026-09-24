@@ -146,6 +146,17 @@ the 2080 Ti before a claim about Turing Tensor Core performance. That probe
 cross-compiled to SM75 and passed exact integer-dot checks through a 5080
 proxy mode, but has not run on Turing.
 
+The native ordinary EAGLE and packed-head paths produced identical decoded
+text across all 60 paired 5080 requests, but both differed from target-only
+on two prompt IDs. A separate opt-in raw-logit diagnostic reproduced those
+ordinary EAGLE outputs and showed that the emitted verifier rows themselves
+ranked the speculative token first; the differing drafts were rejected.
+This narrows the immediate discrepancy to a target-verifier versus
+target-only argmax difference, without proving whether rounding or target
+cache/position state caused it. Keep target-only throughput ratios labeled
+as timing observations, not strict lossless speedups. See the
+[native verifier trace](../experiments/native-verifier-trace-5080.md).
+
 An approximate planning model is `throughput = emitted tokens per round / round
 time`, with round time including draft, verification, and all other overhead.
 Use values measured in the paired comparison, including target-emitted tokens,

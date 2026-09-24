@@ -150,7 +150,16 @@ verification round and packed W1A1 about 15.569 ms. Holding the packed
 round-time fixed, it would need about **2.069 emitted tokens/round** instead
 of 1.914 to match ordinary throughput; holding its emissions fixed, it would
 need to reduce round time to about **14.405 ms** (another 1.164 ms/round).
-These are same-run break-even calculations, not predictions for the 2080 Ti.
+If all measured packed draft time vanished while its 47.012 s non-draft
+decode residual and 7,465 emitted tokens stayed fixed, its optimistic decode
+rate would be **158.79 tokens/s**, or **1.195× ordinary EAGLE**. To reach
+ordinary's 56.179 s decode time at unchanged acceptance, draft time would
+need to fall from 13.707 s to at most **9.167 s** across 3,900 rounds:
+**2.351 ms/round**, another 1.164 ms/round or 33.1% below the measured
+packed draft time. This bound holds a residual that includes verification,
+scheduling, and other work fixed; it is a screening calculation rather than
+a realizable kernel speed estimate. These are same-run calculations, not
+predictions for the 2080 Ti.
 
 These native figures must not be compared numerically with the earlier
 AngelSlim PyTorch acceptance table: that sweep used BF16 and a 59-node tree
@@ -201,6 +210,19 @@ and artifact manifest SHA256 is
 No full benchmark was rerun or altered for this check. After the diagnostic,
 three GPU samples were idle at 3,047 MiB used / 12,931 MiB free / 0%; no
 project process or SSH/tmux session remained.
+
+A later isolated [raw verifier-logit trace](native-verifier-trace-5080.md)
+filled that API gap without changing the measured server. The two ordinary
+EAGLE outputs reproduced the sealed token arrays. At the emitted verifier
+rows, raw target logits ranked the speculative tokens 264 and 5737 first by
+0.008074 and 0.000729 respectively; the mismatching draft tokens were
+rejected. The immediate divergence therefore comes from the target verifier
+choosing a different argmax from target-only incremental decoding, not from
+accepting a bad draft. The trace does not distinguish numerical sensitivity
+from a target cache or position-state difference, so strict target
+equivalence remains unproven. Its artifact manifest SHA256 is
+`9e64ede2a31c50417b843d5245ab45aff206453f1df61eee36bd001835aac898`.
+
 The benchmark otherwise had no error or OOM. All completed requests were
 128 tokens except five target-only 80-token stops and five 85-token stops
 for each speculative variant; these actual lengths are included in the pooled

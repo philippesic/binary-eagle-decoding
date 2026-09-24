@@ -443,3 +443,12 @@ same-device timing on the RTX 2080 Ti. Its address is blank in the shared host
 registry, so wait for the user's current address, then follow
 [the runbook](../RTX2080TI_RUNBOOK.md) with a single GPU owner. Do not infer
 Turing performance from SM120 proxy correctness or compile-only evidence.
+
+The native report now includes the zero-draft screening bound from sealed
+totals: holding packed acceptance and the measured non-draft residual fixed,
+removing all 13.707 s of draft time would yield 158.79 decode tokens/s,
+1.195× ordinary on this 5080 run. Reaching ordinary instead requires packed
+draft time no higher than 2.351 ms/round, 33.1% below its measured value.
+The main comparison, overview, and decision log now link the raw verifier
+trace and preserve the target-equivalence limitation. This is analysis of
+existing artifacts; no new GPU run or target/verifier code change occurred.
