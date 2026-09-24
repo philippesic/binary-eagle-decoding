@@ -42,14 +42,18 @@ build the 5080 executable after confirming the device architecture:
 
 ```sh
 mkdir -p build
-nvcc -std=c++17 -O3 -arch=sm_120 -Xcompiler=-Wall,-Wextra \
+nvcc -std=c++17 -O3 -arch=sm_120 -U_GNU_SOURCE -D_DEFAULT_SOURCE \
+  -Xcompiler=-Wall,-Wextra \
   -o build/w1a1_cuda_bench kernels/w1a1_cuda.cu kernels/w1a1_cuda_bench.cu
 build/w1a1_cuda_bench --correctness-only > results/w1a1-cuda-correctness.json
 build/w1a1_cuda_bench --warmups 10 --samples 30 > results/w1a1-cuda-bench.json
 ```
 
 `sm_120` is the intended 5080 build target; check the actual device and
-`nvcc --list-gpu-arch` first. The runner prints one JSON object and returns
+`nvcc --list-gpu-arch` first. On the tested CUDA 13.1 / glibc 2.43 WSL host,
+`-U_GNU_SOURCE -D_DEFAULT_SOURCE` avoids conflicting `rsqrt` declarations
+while retaining declarations required by libstdc++; record the flags as part
+of the build manifest. The runner prints one JSON object and returns
 nonzero on a failed numerical check. Capture compiler command/version, GPU,
 driver, clocks, project commit, and file hashes alongside the JSON according
 to `docs/EVALUATION.md`. The commands above do not create the ignored
