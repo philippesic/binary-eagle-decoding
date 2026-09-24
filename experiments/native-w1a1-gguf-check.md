@@ -47,6 +47,14 @@ the benchmark requires the explicit CUDA operation marker for a CUDA dispatch
 claim.
 At `-lv 4`, the same local packed model emitted the loader's packed-head
 message; the paired benchmark fixes this verbosity for all three variants.
+The full paired harness control flow also completed a **one-prompt, 16-token
+Metal smoke** with five repetitions per variant: 15 measured requests, 15
+server logs, raw metrics and a report, no failure or orphaned server process.
+CUDA dispatch appropriately remained unconfirmed. This validates process
+control and report generation only; one prompt on Metal is not the paired
+5080 performance experiment. Ignored smoke manifest/report SHA256 values are
+`2a4bf11fc48c8ea9a637b7c950cc42bfe7a5ae8d8ea2290f102c7def344c3d3e`
+and `66c8c2ff8aaf71fc561b6d3e6f4d58350aa77efd9b7f57a14df517367bfe334c`.
 
 The integrated submodule's `test-backend-ops test -b CPU -o W1A1_MUL_MAT`
 passed all five cases on M3 Max after both bridge and CUDA-source commits were
