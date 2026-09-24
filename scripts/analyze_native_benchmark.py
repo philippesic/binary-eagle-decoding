@@ -34,8 +34,6 @@ def selected_variants(records: list[dict], reported: list[str] | None = None) ->
     observed = {row["variant"] for row in records}
     weight_only = tuple(variant for variant in WEIGHT_ONLY_VARIANTS if variant in observed)
     native_operand = tuple(variant for variant in NATIVE_OPERAND_VARIANTS if variant in observed)
-    if native_operand and native_operand != NATIVE_OPERAND_VARIANTS:
-        raise ValueError("benchmark variants are incomplete or unknown")
     core = observed - set(weight_only) - set(native_operand)
     if core == set(GROUP_MATRIX_VARIANTS):
         variants = (*GROUP_MATRIX_VARIANTS, *weight_only, *native_operand)

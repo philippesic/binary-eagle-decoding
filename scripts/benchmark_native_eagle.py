@@ -303,6 +303,7 @@ def selected_variants(evaluation: dict[str, Any]) -> tuple[str, ...]:
     group_matrix = evaluation.get("group_matrix", False)
     weight_only_matrix = evaluation.get("weight_only_matrix", False)
     native_operand_matrix = evaluation.get("native_operand_matrix", False)
+    native_operand_names = evaluation.get("native_operand_variants")
     if not all(
         isinstance(value, bool)
         for value in (enabled, group_matrix, weight_only_matrix, native_operand_matrix)
@@ -313,6 +314,19 @@ def selected_variants(evaluation: dict[str, Any]) -> tuple[str, ...]:
         )
     if group_matrix and enabled:
         raise ValueError("evaluation.group_matrix and binary_mma cannot be enabled together")
+    if native_operand_names is not None:
+        if native_operand_matrix:
+            raise ValueError(
+                "evaluation.native_operand_matrix and native_operand_variants cannot both be set"
+            )
+        if (
+            not isinstance(native_operand_names, list)
+            or any(name not in NATIVE_OPERAND_NAMES for name in native_operand_names)
+            or len(native_operand_names) != len(set(native_operand_names))
+        ):
+            raise ValueError(
+                "evaluation.native_operand_variants must list distinct w8a8/w4a4 names"
+            )
     base = (
         (*VARIANTS[:2], *GROUP_VARIANTS)
         if group_matrix
@@ -320,7 +334,16 @@ def selected_variants(evaluation: dict[str, Any]) -> tuple[str, ...]:
     )
     if weight_only_matrix:
         base = (*base, *WEIGHT_ONLY_VARIANTS)
-    return (*base, *NATIVE_OPERAND_VARIANTS) if native_operand_matrix else base
+    selected_native = (
+        NATIVE_OPERAND_VARIANTS
+        if native_operand_matrix
+        else tuple(
+            variant
+            for variant, name in zip(NATIVE_OPERAND_VARIANTS, NATIVE_OPERAND_NAMES, strict=True)
+            if native_operand_names is not None and name in native_operand_names
+        )
+    )
+    return (*base, *selected_native)
 
 
 def packed_specs(config: dict[str, Any], variants: tuple[str, ...]) -> dict[str, dict[str, Any]]:
@@ -397,13 +420,24 @@ def native_operand_specs(
     config: dict[str, Any], variants: tuple[str, ...]
 ) -> dict[str, dict[str, Any]]:
     """Require model and exact runtime evidence contracts for true W8A8/W4A4 rows."""
-    if not any(variant in variants for variant in NATIVE_OPERAND_VARIANTS):
+    selected = tuple(
+        (variant, name)
+        for variant, name in zip(NATIVE_OPERAND_VARIANTS, NATIVE_OPERAND_NAMES, strict=True)
+        if variant in variants
+    )
+    if not selected:
         return {}
     raw = config.get("native_operand_variants")
-    if not isinstance(raw, dict) or set(raw) != set(NATIVE_OPERAND_NAMES):
-        raise ValueError("native_operand_matrix requires [native_operand_variants.w8a8] and .w4a4")
+    if (
+        not isinstance(raw, dict)
+        or not {name for _, name in selected} <= set(raw)
+        or not set(raw) <= set(NATIVE_OPERAND_NAMES)
+    ):
+        raise ValueError(
+            "selected native operand variants require their [native_operand_variants.<name>] tables"
+        )
     specs = {}
-    for variant, name in zip(NATIVE_OPERAND_VARIANTS, NATIVE_OPERAND_NAMES, strict=True):
+    for variant, name in selected:
         spec = raw[name]
         if not isinstance(spec, dict):
             raise ValueError(f"native_operand_variants.{name} must be a table")

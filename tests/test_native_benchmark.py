@@ -217,6 +217,21 @@ class NativeBenchmarkTests(unittest.TestCase):
         )
         self.assertEqual(expanded, (*full_matrix, *benchmark.NATIVE_OPERAND_VARIANTS))
         self.assertEqual(len(benchmark.schedule(5, expanded)[0]), 11)
+        self.assertEqual(
+            benchmark.selected_variants({"native_operand_variants": ["w8a8"]}),
+            (*benchmark.VARIANTS, "draft_w8a8"),
+        )
+        self.assertEqual(
+            benchmark.selected_variants({"native_operand_variants": ["w4a4"]}),
+            (*benchmark.VARIANTS, "draft_w4a4"),
+        )
+        for invalid in (["w8a8", "w8a8"], ["w2a2"], "w8a8"):
+            with self.assertRaisesRegex(ValueError, "native_operand_variants"):
+                benchmark.selected_variants({"native_operand_variants": invalid})
+        with self.assertRaisesRegex(ValueError, "cannot both be set"):
+            benchmark.selected_variants(
+                {"native_operand_matrix": True, "native_operand_variants": ["w8a8"]}
+            )
         orders = benchmark.schedule(5, variants)
         self.assertEqual(len(orders), 5)
         self.assertTrue(all(set(order) == set(variants) for order in orders))
@@ -535,6 +550,46 @@ class NativeBenchmarkTests(unittest.TestCase):
                 {"fake operator"},
             )
 
+    def test_w8a8_runs_without_w4a4_model_or_spec(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            config, _ = self.prepare(root, native_operand_names=("w8a8",))
+            (root / "draft-w4a4.gguf").unlink()
+            with (
+                patch.object(benchmark, "ROOT", root),
+                patch.object(benchmark, "git_output", side_effect=fake_git_output),
+            ):
+                output = benchmark.run(config, "w8a8-only")
+            manifest = json.loads((output / "manifest.json").read_text())
+            report = json.loads((output / "report.json").read_text())
+            self.assertEqual(report["variants"], [*benchmark.VARIANTS, "draft_w8a8"])
+            self.assertEqual(report["records"], 20)
+            self.assertEqual(set(manifest["variant_specs"]), {"draft_w8a8"})
+            self.assertEqual(
+                report["native_operand_dispatch_confirmed_by_variant"],
+                {"draft_w8a8": True},
+            )
+            for anchor in ("target_only", "ordinary_eagle"):
+                self.assertIsNotNone(
+                    report["packed_speedup_vs"]["by_variant"]["draft_w8a8"][anchor][
+                        "request_tokens_per_s"
+                    ]
+                )
+
+    def test_w4a4_dry_run_does_not_require_w8a8(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            config, _ = self.prepare(root, native_operand_names=("w4a4",))
+            (root / "draft-w8a8.gguf").unlink()
+            with (
+                patch.object(benchmark, "ROOT", root),
+                patch.object(benchmark, "git_output", side_effect=fake_git_output),
+            ):
+                output = benchmark.run(config, "w4a4-only-dry", dry_run=True)
+            manifest = json.loads((output / "manifest.json").read_text())
+            self.assertEqual(manifest["variants"], [*benchmark.VARIANTS, "draft_w4a4"])
+            self.assertEqual(set(manifest["variant_specs"]), {"draft_w4a4"})
+
     def test_native_operand_missing_gguf_or_dispatch_fails(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -594,6 +649,7 @@ class NativeBenchmarkTests(unittest.TestCase):
         group_matrix: bool = False,
         weight_only_matrix: bool = False,
         native_operand_matrix: bool = False,
+        native_operand_names: tuple[str, ...] = (),
     ) -> tuple[Path, int]:
         (root / "results").mkdir()
         fake = root / "fake-server"
@@ -645,6 +701,7 @@ expected_loader_marker = "{loader_markers[name]}"
 '''
             for name in group_names
         )
+        selected_native_names = ("w8a8", "w4a4") if native_operand_matrix else native_operand_names
         native_tables = "".join(
             f'''\n[native_operand_variants.{name}]
 draft = "draft-{name}.gguf"
@@ -656,7 +713,12 @@ activation_coverage = "all test draft activations"
 expected_loader_marker = "EAGLE3 {name.upper()} draft loaded"
 expected_cuda_marker = "CUDA {name.upper()} fake operator dispatch"
 '''
-            for name in ("w8a8", "w4a4")
+            for name in selected_native_names
+        )
+        native_select_line = (
+            f"native_operand_variants = {json.dumps(list(native_operand_names))}"
+            if native_operand_names
+            else ""
         )
         config.write_text(
             f'''schema_version = 1
@@ -684,17 +746,18 @@ enable_thinking = false
 {"group_matrix = true" if group_matrix else ""}
 {"weight_only_matrix = true" if weight_only_matrix else ""}
 {"native_operand_matrix = true" if native_operand_matrix else ""}
+{native_select_line}
 [environment]
 FAKE_FAIL = "{int(failure)}"
 FAKE_EMIT_DISPATCH = "{int(binary_mma or group_matrix)}"
-FAKE_EMIT_NATIVE_DISPATCH = "{int(native_operand_matrix)}"
+FAKE_EMIT_NATIVE_DISPATCH = "{int(bool(selected_native_names))}"
 GGML_CUDA_W1A1_MMA = "1"
 '''
         )
         tables = (
             (packed_tables if group_matrix else "")
             + (quant_tables if weight_only_matrix else "")
-            + (native_tables if native_operand_matrix else "")
+            + native_tables
         )
         if tables:
             config.write_text(config.read_text().replace("[evaluation]", tables + "\n[evaluation]"))

@@ -1,7 +1,8 @@
 # Run-specific example for genuine activation-and-weight INT8/INT4 draft operators.
-# Replace every model path, operator name, and marker with observed values from
-# the runtime being evaluated. A missing GGUF fails preflight; an absent marker
-# fails the run without producing a complete report.
+# Select the available formats in evaluation.native_operand_variants. Only
+# selected formats need GGUFs and runtime markers. Replace their paths, operator
+# names, and markers with observed values. A missing GGUF fails preflight; an
+# absent marker fails the run without producing a complete report.
 schema_version = 1
 
 [server]
@@ -50,7 +51,9 @@ temperature = 0.0
 seed = 42
 max_draft_tokens = 5
 enable_thinking = false
-native_operand_matrix = true
+native_operand_variants = ["w8a8"]
+# Set native_operand_variants = ["w8a8", "w4a4"] for both, or use
+# native_operand_matrix = true when both formats are ready.
 # group_matrix and weight_only_matrix can also be enabled with their tables.
 
 [environment]

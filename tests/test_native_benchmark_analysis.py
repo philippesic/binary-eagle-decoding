@@ -202,8 +202,13 @@ class NativeBenchmarkAnalysisTests(unittest.TestCase):
             analysis.pooled_speedup(rows, "ordinary_eagle", "request", "draft_w8a8"),
             4 / 3,
         )
+        w8_rows = [row for row in rows if row["variant"] != "draft_w4a4"]
+        w8_variants = (*analysis.VARIANTS, "draft_w8a8")
+        self.assertEqual(analysis.selected_variants(w8_rows), w8_variants)
+        with self.assertRaisesRegex(ValueError, "incomplete paired records"):
+            analysis.paired_index(w8_rows[:-1])
         with self.assertRaisesRegex(ValueError, "incomplete or unknown"):
-            analysis.selected_variants([row for row in rows if row["variant"] != "draft_w4a4"])
+            analysis.selected_variants(w8_rows, list(expected))
         with tempfile.TemporaryDirectory() as tmp:
             directory = Path(tmp)
             (directory / "records.json").write_text(json.dumps(rows))
@@ -237,6 +242,15 @@ class NativeBenchmarkAnalysisTests(unittest.TestCase):
             (directory / "report.json").write_text(json.dumps(report))
             with self.assertRaisesRegex(ValueError, "dispatch is unconfirmed"):
                 analysis.analyze(directory, 100, 42)
+            report["records"] = len(w8_rows)
+            report["variants"] = list(w8_variants)
+            del report["native_operand_variant_specs"]["draft_w4a4"]
+            del report["native_operand_dispatch_confirmed_by_variant"]["draft_w4a4"]
+            (directory / "records.json").write_text(json.dumps(w8_rows))
+            (directory / "report.json").write_text(json.dumps(report))
+            w8_result = analysis.analyze(directory, 100, 42)
+            self.assertEqual(w8_result["variants"], list(w8_variants))
+            self.assertEqual(set(w8_result["native_operand_variant_specs"]), {"draft_w8a8"})
 
     def test_run_artifacts_and_category_summary(self) -> None:
         rows = self.records()
