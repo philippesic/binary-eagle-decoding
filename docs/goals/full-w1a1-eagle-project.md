@@ -377,6 +377,12 @@ RTX 5080 access. Make bounded decisions from evidence, checkpoint them in
   two-prompt ordinary-EAGLE trace using a separate CUDA build and supervised
   run. Preserve raw hashes and reset the remote submodule after the run;
   do not alter or relabel the timed benchmark.
+- The remote diagnostic branch was fetched over HTTPS after the submodule's
+  SSH `origin` fetch failed; no build or GPU request had started at that point.
+  The separate SM120a trace-server build is now live under supervised ID
+  `verify-logit-trace-build-20260924`, PID/PGID 626/626, at Ninja step
+  150/356 without an error. GPU is idle. Do not launch a second GPU run until
+  that supervisor is terminal and the two-prompt trace has its own run ID.
 - A compile-only integrated SM75 check ran on the 5080 host under
   supervised ID `integrated-sm75-cuda-build-20260924`, owned by
   `/root/cuda_acceptance_operator`. It uses a separate ignored
