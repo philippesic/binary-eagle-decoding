@@ -248,3 +248,18 @@ Compare pooled rates and prompt/repetition spread against both anchors.
   owner now works on W4A4 CUDA source without GPU use. A focused advisor is
   checking the SM75 signed INT4 Tensor Core layout; actual instruction,
   dispatch, and timing evidence remain pending.
+- W4A4 [CUDA vector source and standalone signed-I4 MMA probe](../../experiments/w4a4-cuda-source-gate.md)
+  were published at llama.cpp fork `3087139`, with source reports integrated
+  at parent `0e741b7` and `7c5478c`. The vector source explicitly labels
+  scalar integer multiply/add over packed nibbles, while the separate
+  `m8n8k32` MMA probe has no production dispatch. A follow-up pins F32
+  round-nearest quantization and scale order under CUDA fast-math; CPU oracle
+  tests passed 2/2 with non-unit near-half cases. Neither CUDA path has
+  compiled or run on SM75 yet.
+- A combined [W8A8/W4A4 CUDA source branch](../../experiments/w8a8-w4a4-cuda-integration.md)
+  was published at llama.cpp fork `b881a6346`, with parent note `59a4d90`.
+  It retains distinct runtime operators and labels, allows one future binary
+  to load both nine-linear formats, and passed CPU build, W8A8 3/3, W4A4 2/2,
+  and both real GGUF load checks. The parent gitlink remains pinned to
+  `8d2b18a`. The GPU operator will build and validate this exact branch in an
+  isolated remote checkout after the existing nine-variant suite.
