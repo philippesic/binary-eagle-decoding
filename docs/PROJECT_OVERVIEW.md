@@ -133,6 +133,9 @@ dedicated GGML operation and EAGLE packed-head bridge are in the pinned
 llama.cpp fork, with CPU tests and local GGUF load checks. Integrated GGML
 CUDA backend correctness passed five focused cases on the 5080; model-level
 CUDA dispatch and a matched five-repetition end-to-end comparison then ran.
+The standalone packed CUDA checker also matched exact integer dots for
+eight captured drafter inputs across all 32,000 real head rows; see the
+[captured-input parity report](../experiments/real-head-parity-5080.md).
 Packed-head W1A1 reached 0.931× ordinary EAGLE request throughput and
 0.925× its decode throughput on the 5080, while both exceeded target-only.
 See the [native comparison](../experiments/native-end-to-end-5080.md) and

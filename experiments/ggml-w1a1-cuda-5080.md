@@ -157,6 +157,19 @@ SASS `POPC` instructions with LOP3 bit logic in the W1A1 XOR kernel. This
 establishes integrated SM75 compile/codegen feasibility for the portable
 binary operation. It does **not** validate its output or speed on the 2080 Ti.
 The raw disassembly is large (~1.3 GiB SASS and 254 MiB PTX); a compact
-excerpt, exact flags, binary and output hashes will be recorded from the
-operator's sealed artifact manifest. The SM120 build and timed binary remain
-untouched.
+excerpt, exact flags, binary and output hashes are recorded in the
+operator's sealed artifact manifest at remote
+`results/integrated-sm75-backend-20260924/artifact-manifest.json`, SHA256
+`05fddb64d3b47f1b5c5086a02fc6a257ccb35944bc65be04668f8f1466c7d76c`.
+Both build and disassembly supervisors exited zero; the SM120 build and timed
+binary remain untouched. The SM75 server/backend-test binaries were **not
+executed**. The 2080 Ti hardware result remains pending.
+
+The SM75 `llama-server`, `test-backend-ops`, and `libggml-cuda.so.0.25.1`
+SHA256 values are respectively
+`be38f3415a78686b4522d4934f761047db181dfe7d217c62d9b6c8531024f2e0`,
+`c8cf0fdfdda26435a3f43ad15690ba38d8512c841e5a7d0738277cba527601a6`,
+and `3e585a1b9e0adfb5bacd9f0090867d96ca9ef5493f6c23c443a74c63aaca9e79`.
+The full SASS/PTX dump SHA256 values are
+`2c87e010851e3787de73e049bc74d6bd8ed7656738df591a33de8cbc970fd1f3`
+and `799cd7354ee18104a00db9eadc2e57bd57d0eb38ee9b11119221b1f61cf406eb`.

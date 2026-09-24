@@ -13,6 +13,10 @@ CUDA backend correctness passed 5/5 cases, all 32,000 packed head rows were
 audited against the published BF16 source, and every packed benchmark server
 logged actual CUDA XOR/POPCOUNT dispatch. See the
 [integration report](../experiments/ggml-w1a1-cuda-5080.md).
+A separate [captured-input parity run](../experiments/real-head-parity-5080.md)
+checked 8 real drafter inputs against all 32,000 packed head rows on the
+5080: exact sign packing and 256,000 integer dots, with no scaled-output
+tolerance failures.
 
 The [matched five-repetition comparison](../experiments/native-end-to-end-5080.md)
 completed 180 requests on 12 fixed prompts with the same FP16 target and
@@ -70,4 +74,4 @@ binary comparisons are required before a Turing speed claim. The address
 has been requested from the user; the [runbook](RTX2080TI_RUNBOOK.md) is ready.
 The 5080 remains available. All supervised
 project GPU jobs are terminal, no project process remains, and SSH/tmux
-sessions are closed. The repository checks pass (75 tests).
+sessions are closed. The repository checks pass (78 tests).

@@ -373,7 +373,10 @@ RTX 5080 access. Make bounded decisions from evidence, checkpoint them in
   backend test/server binaries and shared library without executing them.
   Supervised disassembly also exited zero: the integrated W1A1 CUDA PTX has
   `xor.b32`/`popc.b32`, and its SM75 SASS contains `POPC`/LOP3 in the XOR
-  kernel. Exact hashes/excerpt are being sealed. The 2080 Ti runtime gate
+  kernel. The sealed remote
+  `results/integrated-sm75-backend-20260924/artifact-manifest.json` SHA256 is
+  `05fddb64d3b47f1b5c5086a02fc6a257ccb35944bc65be04668f8f1466c7d76c`.
+  No SM75 binary was executed; the 2080 Ti runtime gate
   remains pending.
 - `1e4e76a` integrated a versioned real-head parity fixture generator and
   standalone CUDA checker from an isolated Sol worktree (cleaned after
@@ -381,5 +384,16 @@ RTX 5080 access. Make bounded decisions from evidence, checkpoint them in
   capture and **all 32,000** packed GGUF head rows, with exact sign/dot
   reference and F32 output tolerance. Local synthetic/full-size CPU fixture
   checks and `make check` passed 78 tests; the remote real capture fixture and
-  CUDA execution await the integrated SM75 build's artifact sealing and the
-  sole 5080 GPU handoff.
+  CUDA execution followed after the integrated SM75 build was sealed. The
+  supervised real-head checker passed on RTX 5080: exact activation sign words
+  and **256,000/256,000 integer dots** across eight captured vectors and all
+  32,000 output rows; zero scale/output tolerance failures. Max absolute
+  activation-scale/output errors were 1.1920929e-7/9.53674316e-7. This is
+  standalone CUDA arithmetic parity, not an integrated GGML real-logit or
+  SM75 runtime result. All three fixture/compile/checker supervisors exited
+  zero. The sealed remote
+  `results/real-head-fixture/artifact-manifest.json` SHA256 is
+  `dd3b732e5f9188589b12700f3e059275a6bc1b7e81e407655cc066854b7a6d98`;
+  it records capture/GGUF/fixture/binary/stdout/state/code hashes and selected
+  row indices. Three final 5080 samples returned to 3,046 MiB used /
+  12,932 MiB free / 0%; no project process or SSH/tmux remained.
