@@ -2,11 +2,13 @@
 
 **Active goal:** [PyTorch W1A1 EAGLE drafter](goals/pytorch-w1a1-eagle.md).
 The graph audit, fake-binary quantizer, selective adapter, and acceptance runner
-are committed on `main`. A one-prompt W1A1 Metal smoke run completed, with a
-recorded BF16 target-only/speculative greedy divergence at token 21; FP32 Metal
-matched through 33 tokens. The current stage is a held-out Metal development
-sweep, followed by the planned RTX 5080 run. No remote jobs are running; RTX
-5080 access details are pending. The target stays unchanged.
+are committed on `main`. The 12-prompt, five-configuration Metal development
+sweep completed; see `experiments/pytorch-w1a1-metal-acceptance.md`. Combined
+W1A1 accepted 0.202 draft nodes/round, versus 1.683 for head-only. Ordinary
+BF16 EAGLE and target-only greedy generation diverged at token 21 on Metal;
+FP32 Metal matched through 33 tokens. The next stage is RTX 5080 confirmation.
+No remote jobs are running; RTX 5080 access details are pending. The target
+stays unchanged.
 
 **Repository:** initial llama.cpp scaffold and agent infrastructure are in place.
 The published target/draft pair is the starting point; local conversion, remote

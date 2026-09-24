@@ -122,13 +122,18 @@ goal is about binary-operand quality and acceptance, not native speed.
   explicitly flagged Metal development run and remains strict on CUDA.
 - All 15 repository tests passed after the wrapper fix, including the
   model-manifest corruption check. Ruff checks and runner dry-run passed.
+- The full 12-prompt, five-configuration Apple M3 Max Metal development sweep
+  completed. See `experiments/pytorch-w1a1-metal-acceptance.md` for method,
+  per-group counts, prompt spread, the BF16 greedy-parity limitation, raw local
+  artifact hashes, and interpretation. The combined setting accepted 0.202
+  draft nodes/round; head-only accepted 1.683. This is quality evidence for
+  prioritization, not a native speed or RTX 5080 result.
 - The orchestrator prepared 12 self-authored held-out prompts across prose,
   code, and reasoning in `configs/acceptance_prompts.jsonl`. They will not be
   used for training or calibration.
 - The RTX 5080 host/user details are pending from the user. The local host
   registry is blank. RTX 2080 Ti is outside this goal.
-- Next: run the held-out Metal development sweep with the greedy mismatch
-  recorded, then lock a CUDA environment on RTX 5080, download and hash both pinned
+- Next: lock a CUDA environment on RTX 5080, download and hash both pinned
   snapshots there, and verify full-checkpoint forward behavior plus a short
   deterministic target-only/speculative continuation.
   Before the held-out sweep, check hidden-state taps `[2, 18, 33]`, token/feature
