@@ -1,0 +1,57 @@
+# Run-specific example for genuine activation-and-weight INT8/INT4 draft operators.
+# Replace every model path, operator name, and marker with observed values from
+# the runtime being evaluated. A missing GGUF fails preflight; an absent marker
+# fails the run without producing a complete report.
+schema_version = 1
+
+[server]
+binary = "build/llama-cuda/bin/llama-server"
+host = "127.0.0.1"
+port = 18080
+startup_timeout_s = 300
+request_timeout_s = 180
+common_args = [
+  "--n-gpu-layers", "all", "--ctx-size", "2048", "--parallel", "1",
+  "--fit", "off", "--cache-type-k", "f16", "--cache-type-v", "f16",
+  "--jinja", "--metrics", "--perf", "-lv", "4",
+]
+
+[models]
+target = "models/gguf/Qwen3-4B-f16.gguf"
+ordinary_draft = "models/gguf/Qwen3-4B-eagle3-f16.gguf"
+packed_head_draft = "models/gguf/Qwen3-4B-eagle3-head-w1a1.gguf"
+
+[native_operand_variants.w8a8]
+draft = "models/gguf/REPLACE-W8A8.gguf"
+weight_format = "W8A8"
+activation_precision = "W8A8 runtime quantized activations"
+operator = "REPLACE_WITH_INT8_OPERATOR"
+weight_coverage = "REPLACE_WITH_EXACT_DRAFT_LINEAR_GROUPS"
+activation_coverage = "REPLACE_WITH_EXACT_DRAFT_LINEAR_GROUPS"
+expected_loader_marker = "EAGLE3 W8A8 REPLACE_WITH_EXACT_LOAD_LOG"
+expected_cuda_marker = "CUDA W8A8 REPLACE_WITH_INT8_OPERATOR dispatch"
+
+[native_operand_variants.w4a4]
+draft = "models/gguf/REPLACE-W4A4.gguf"
+weight_format = "W4A4"
+activation_precision = "W4A4 runtime quantized activations"
+operator = "REPLACE_WITH_INT4_OPERATOR"
+weight_coverage = "REPLACE_WITH_EXACT_DRAFT_LINEAR_GROUPS"
+activation_coverage = "REPLACE_WITH_EXACT_DRAFT_LINEAR_GROUPS"
+expected_loader_marker = "EAGLE3 W4A4 REPLACE_WITH_EXACT_LOAD_LOG"
+expected_cuda_marker = "CUDA W4A4 REPLACE_WITH_INT4_OPERATOR dispatch"
+
+[evaluation]
+prompt_file = "configs/acceptance_prompts.jsonl"
+warmup_requests = 2
+repetitions = 5
+max_output_tokens = 128
+temperature = 0.0
+seed = 42
+max_draft_tokens = 5
+enable_thinking = false
+native_operand_matrix = true
+# group_matrix and weight_only_matrix can also be enabled with their tables.
+
+[environment]
+CUDA_VISIBLE_DEVICES = "0"

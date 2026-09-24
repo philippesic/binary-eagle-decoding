@@ -99,6 +99,12 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 print("CUDA packed W1A1 XOR/POPCOUNT dispatch", flush=True)
             emitted = True
+        for precision in ("W8A8", "W4A4"):
+            if precision.lower() in draft_path and not emitted:
+                print(f"EAGLE3 {precision} draft loaded", flush=True)
+                if os.environ.get("FAKE_EMIT_NATIVE_DISPATCH") == "1":
+                    print(f"CUDA {precision} fake operator dispatch", flush=True)
+                emitted = True
         self.write(200, json.dumps({
             "choices": [{"finish_reason": "length", "message": {"content": "test"}}],
             "usage": {"prompt_tokens": 5, "completion_tokens": 4},
@@ -202,6 +208,15 @@ class NativeBenchmarkTests(unittest.TestCase):
             ),
         )
         self.assertEqual(len(benchmark.schedule(5, full_matrix)[0]), 9)
+        expanded = benchmark.selected_variants(
+            {
+                "group_matrix": True,
+                "weight_only_matrix": True,
+                "native_operand_matrix": True,
+            }
+        )
+        self.assertEqual(expanded, (*full_matrix, *benchmark.NATIVE_OPERAND_VARIANTS))
+        self.assertEqual(len(benchmark.schedule(5, expanded)[0]), 11)
         orders = benchmark.schedule(5, variants)
         self.assertEqual(len(orders), 5)
         self.assertTrue(all(set(order) == set(variants) for order in orders))
@@ -487,6 +502,68 @@ class NativeBenchmarkTests(unittest.TestCase):
                     f"draft-{weight_format.lower()}.gguf",
                 )
 
+    def test_native_operand_dry_run_and_fake_dispatch_gate(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            config, _ = self.prepare(root, native_operand_matrix=True)
+            with (
+                patch.object(benchmark, "ROOT", root),
+                patch.object(benchmark, "git_output", side_effect=fake_git_output),
+            ):
+                dry = benchmark.run(config, "native-dry-run", dry_run=True)
+                manifest = json.loads((dry / "manifest.json").read_text())
+                self.assertEqual(
+                    manifest["variants"],
+                    [*benchmark.VARIANTS, *benchmark.NATIVE_OPERAND_VARIANTS],
+                )
+                for variant in benchmark.NATIVE_OPERAND_VARIANTS:
+                    spec = manifest["variant_specs"][variant]
+                    self.assertEqual(spec["weight_format"], variant.removeprefix("draft_").upper())
+                    self.assertIn(spec["operator"], spec["expected_cuda_marker"])
+                    self.assertEqual(len(spec["draft_model_sha256"]), 64)
+                output = benchmark.run(config, "native-fake-run")
+            report = json.loads((output / "report.json").read_text())
+            self.assertEqual(report["records"], 25)
+            self.assertEqual(
+                report["native_operand_dispatch_confirmed_by_variant"],
+                {variant: True for variant in benchmark.NATIVE_OPERAND_VARIANTS},
+            )
+            self.assertIn("draft_w8a8", report["packed_speedup_vs"]["by_variant"])
+            records = json.loads((output / "records.json").read_text())
+            self.assertEqual(
+                {row["operator"] for row in records if row["variant"] == "draft_w4a4"},
+                {"fake operator"},
+            )
+
+    def test_native_operand_missing_gguf_or_dispatch_fails(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            config, _ = self.prepare(root, native_operand_matrix=True)
+            (root / "draft-w4a4.gguf").unlink()
+            with patch.object(benchmark, "ROOT", root):
+                with self.assertRaises(FileNotFoundError):
+                    benchmark.run(config, "missing-gguf", dry_run=True)
+            (root / "draft-w4a4.gguf").write_bytes(b"fake-w4a4")
+            config.write_text(
+                config.read_text().replace(
+                    'FAKE_EMIT_NATIVE_DISPATCH = "1"', 'FAKE_EMIT_NATIVE_DISPATCH = "0"'
+                )
+            )
+            with (
+                patch.object(benchmark, "ROOT", root),
+                patch.object(benchmark, "git_output", side_effect=fake_git_output),
+            ):
+                with self.assertRaisesRegex(RuntimeError, "CUDA operand dispatch markers"):
+                    benchmark.run(config, "missing-dispatch")
+            self.assertFalse((root / "results/missing-dispatch/report.json").exists())
+            self.assertTrue((root / "results/missing-dispatch/failure.json").exists())
+            failed_records = json.loads(
+                (root / "results/missing-dispatch/records.json").read_text()
+            )
+            self.assertFalse(
+                any(row["variant"] in benchmark.NATIVE_OPERAND_VARIANTS for row in failed_records)
+            )
+
     def test_failed_request_stops_server_and_keeps_failure(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -516,6 +593,7 @@ class NativeBenchmarkTests(unittest.TestCase):
         binary_mma: bool = False,
         group_matrix: bool = False,
         weight_only_matrix: bool = False,
+        native_operand_matrix: bool = False,
     ) -> tuple[Path, int]:
         (root / "results").mkdir()
         fake = root / "fake-server"
@@ -527,6 +605,8 @@ class NativeBenchmarkTests(unittest.TestCase):
         for name in group_names:
             (root / f"packed-{name}-w1a1.gguf").write_bytes(f"fake-{name}".encode())
         for name in ("q4_0", "q8_0"):
+            (root / f"draft-{name}.gguf").write_bytes(f"fake-{name}".encode())
+        for name in ("w8a8", "w4a4"):
             (root / f"draft-{name}.gguf").write_bytes(f"fake-{name}".encode())
         (root / "prompts.jsonl").write_text(
             json.dumps({"id": "test-prompt", "messages": [{"role": "user", "content": "Hi"}]})
@@ -565,6 +645,19 @@ expected_loader_marker = "{loader_markers[name]}"
 '''
             for name in group_names
         )
+        native_tables = "".join(
+            f'''\n[native_operand_variants.{name}]
+draft = "draft-{name}.gguf"
+weight_format = "{name.upper()}"
+activation_precision = "{name.upper()} runtime activations"
+operator = "fake operator"
+weight_coverage = "all test draft weights"
+activation_coverage = "all test draft activations"
+expected_loader_marker = "EAGLE3 {name.upper()} draft loaded"
+expected_cuda_marker = "CUDA {name.upper()} fake operator dispatch"
+'''
+            for name in ("w8a8", "w4a4")
+        )
         config.write_text(
             f'''schema_version = 1
 [server]
@@ -590,20 +683,21 @@ enable_thinking = false
 {"binary_mma = true" if binary_mma else ""}
 {"group_matrix = true" if group_matrix else ""}
 {"weight_only_matrix = true" if weight_only_matrix else ""}
+{"native_operand_matrix = true" if native_operand_matrix else ""}
 [environment]
 FAKE_FAIL = "{int(failure)}"
 FAKE_EMIT_DISPATCH = "{int(binary_mma or group_matrix)}"
+FAKE_EMIT_NATIVE_DISPATCH = "{int(native_operand_matrix)}"
 GGML_CUDA_W1A1_MMA = "1"
 '''
         )
-        if group_matrix:
-            # Keep the five model specifications next to top-level sections in valid TOML.
-            text = config.read_text().replace("[evaluation]", packed_tables + "\n[evaluation]")
-            config.write_text(text)
-        elif weight_only_matrix:
-            config.write_text(
-                config.read_text().replace("[environment]", quant_tables + "\n[environment]")
-            )
+        tables = (
+            (packed_tables if group_matrix else "")
+            + (quant_tables if weight_only_matrix else "")
+            + (native_tables if native_operand_matrix else "")
+        )
+        if tables:
+            config.write_text(config.read_text().replace("[evaluation]", tables + "\n[evaluation]"))
         return config, port
 
 

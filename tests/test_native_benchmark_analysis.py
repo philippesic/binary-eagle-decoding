@@ -165,6 +165,18 @@ class NativeBenchmarkAnalysisTests(unittest.TestCase):
             analysis.pooled_speedup(quant_rows, "ordinary_eagle", "request", "draft_q4_0"),
             4 / 3,
         )
+        expanded_rows = [dict(row) for row in quant_rows]
+        for row in rows:
+            if row["variant"] != "ordinary_eagle":
+                continue
+            for variant in analysis.NATIVE_OPERAND_VARIANTS:
+                native = dict(row)
+                native["variant"] = variant
+                expanded_rows.append(native)
+        self.assertEqual(
+            analysis.selected_variants(expanded_rows),
+            (*expected, *analysis.NATIVE_OPERAND_VARIANTS),
+        )
 
     def test_missing_decode_metric_does_not_hide_request_interval(self) -> None:
         rows = self.records()
@@ -172,6 +184,59 @@ class NativeBenchmarkAnalysisTests(unittest.TestCase):
         intervals = analysis.paired_bootstrap(rows, 100, 42)
         self.assertIsNotNone(intervals["target_only/request"])
         self.assertIsNone(intervals["target_only/decode"])
+
+    def test_native_operand_pairs_ratios_and_dispatch_requirement(self) -> None:
+        rows = self.records()
+        for row in self.records():
+            if row["variant"] != "ordinary_eagle":
+                continue
+            for variant in analysis.NATIVE_OPERAND_VARIANTS:
+                native = dict(row)
+                native["variant"] = variant
+                native["request_wall_s"] *= 0.75
+                native["server_predicted_ms"] *= 0.75
+                rows.append(native)
+        expected = (*analysis.VARIANTS, *analysis.NATIVE_OPERAND_VARIANTS)
+        self.assertEqual(analysis.selected_variants(rows), expected)
+        self.assertAlmostEqual(
+            analysis.pooled_speedup(rows, "ordinary_eagle", "request", "draft_w8a8"),
+            4 / 3,
+        )
+        with self.assertRaisesRegex(ValueError, "incomplete or unknown"):
+            analysis.selected_variants([row for row in rows if row["variant"] != "draft_w4a4"])
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            (directory / "records.json").write_text(json.dumps(rows))
+            report = {
+                "status": "complete",
+                "records": len(rows),
+                "variants": list(expected),
+                "native_operand_variant_specs": {
+                    "draft_w8a8": {"operator": "test int8"},
+                    "draft_w4a4": {"operator": "test int4"},
+                },
+                "native_operand_dispatch_confirmed_by_variant": {
+                    variant: True for variant in analysis.NATIVE_OPERAND_VARIANTS
+                },
+            }
+            (directory / "report.json").write_text(json.dumps(report))
+            (directory / "prompts.jsonl").write_text(
+                '{"id":"prose-01","category":"prose"}\n{"id":"code-01","category":"code"}\n'
+            )
+            result = analysis.analyze(directory, 100, 42)
+            self.assertAlmostEqual(
+                result["pooled_variant_speedups"]["draft_w8a8"]["ordinary_eagle/request"],
+                4 / 3,
+            )
+            self.assertIn("draft_w4a4", result["paired_variant_bootstrap_95pct"])
+            self.assertEqual(
+                result["native_operand_variant_specs"]["draft_w4a4"]["operator"],
+                "test int4",
+            )
+            report["native_operand_dispatch_confirmed_by_variant"]["draft_w4a4"] = False
+            (directory / "report.json").write_text(json.dumps(report))
+            with self.assertRaisesRegex(ValueError, "dispatch is unconfirmed"):
+                analysis.analyze(directory, 100, 42)
 
     def test_run_artifacts_and_category_summary(self) -> None:
         rows = self.records()

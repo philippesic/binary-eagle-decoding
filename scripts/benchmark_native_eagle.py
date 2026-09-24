@@ -38,6 +38,8 @@ GROUP_VARIANTS = (
 GROUP_NAMES = ("fusion", "attention", "ffn", "head", "all")
 WEIGHT_ONLY_VARIANTS = ("draft_q4_0", "draft_q8_0")
 WEIGHT_ONLY_NAMES = ("q4_0", "q8_0")
+NATIVE_OPERAND_VARIANTS = ("draft_w8a8", "draft_w4a4")
+NATIVE_OPERAND_NAMES = ("w8a8", "w4a4")
 SPEC_COUNTERS = {
     "proposed": "llamacpp:spec_decode_num_draft_tokens_total",
     "accepted": "llamacpp:spec_decode_num_accepted_tokens_total",
@@ -300,9 +302,14 @@ def selected_variants(evaluation: dict[str, Any]) -> tuple[str, ...]:
     enabled = evaluation.get("binary_mma", False)
     group_matrix = evaluation.get("group_matrix", False)
     weight_only_matrix = evaluation.get("weight_only_matrix", False)
-    if not all(isinstance(value, bool) for value in (enabled, group_matrix, weight_only_matrix)):
+    native_operand_matrix = evaluation.get("native_operand_matrix", False)
+    if not all(
+        isinstance(value, bool)
+        for value in (enabled, group_matrix, weight_only_matrix, native_operand_matrix)
+    ):
         raise ValueError(
-            "evaluation.binary_mma, group_matrix, and weight_only_matrix must be booleans"
+            "evaluation.binary_mma, group_matrix, weight_only_matrix, "
+            "and native_operand_matrix must be booleans"
         )
     if group_matrix and enabled:
         raise ValueError("evaluation.group_matrix and binary_mma cannot be enabled together")
@@ -311,7 +318,9 @@ def selected_variants(evaluation: dict[str, Any]) -> tuple[str, ...]:
         if group_matrix
         else ((*VARIANTS, MMA_VARIANT) if enabled else VARIANTS)
     )
-    return (*base, *WEIGHT_ONLY_VARIANTS) if weight_only_matrix else base
+    if weight_only_matrix:
+        base = (*base, *WEIGHT_ONLY_VARIANTS)
+    return (*base, *NATIVE_OPERAND_VARIANTS) if native_operand_matrix else base
 
 
 def packed_specs(config: dict[str, Any], variants: tuple[str, ...]) -> dict[str, dict[str, Any]]:
@@ -380,6 +389,66 @@ def weight_only_specs(
             "weight_coverage": "all draft weights, weight-only quantization",
             "activation_precision": spec["activation_precision"],
             "backend_precision": spec["backend_precision"],
+        }
+    return specs
+
+
+def native_operand_specs(
+    config: dict[str, Any], variants: tuple[str, ...]
+) -> dict[str, dict[str, Any]]:
+    """Require model and exact runtime evidence contracts for true W8A8/W4A4 rows."""
+    if not any(variant in variants for variant in NATIVE_OPERAND_VARIANTS):
+        return {}
+    raw = config.get("native_operand_variants")
+    if not isinstance(raw, dict) or set(raw) != set(NATIVE_OPERAND_NAMES):
+        raise ValueError("native_operand_matrix requires [native_operand_variants.w8a8] and .w4a4")
+    specs = {}
+    for variant, name in zip(NATIVE_OPERAND_VARIANTS, NATIVE_OPERAND_NAMES, strict=True):
+        spec = raw[name]
+        if not isinstance(spec, dict):
+            raise ValueError(f"native_operand_variants.{name} must be a table")
+        required = (
+            "draft",
+            "weight_format",
+            "activation_precision",
+            "operator",
+            "weight_coverage",
+            "activation_coverage",
+            "expected_loader_marker",
+            "expected_cuda_marker",
+        )
+        for key in required:
+            if not isinstance(spec.get(key), str) or not spec[key].strip():
+                raise ValueError(f"native_operand_variants.{name}.{key} must be a nonempty string")
+        if spec["weight_format"].upper() != name.upper():
+            raise ValueError(f"native_operand_variants.{name}.weight_format must be {name.upper()}")
+        if name.upper() not in spec["activation_precision"].upper():
+            raise ValueError(
+                f"native_operand_variants.{name}.activation_precision must identify {name.upper()}"
+            )
+        if spec["operator"] not in spec["expected_cuda_marker"]:
+            raise ValueError(
+                f"native_operand_variants.{name}.expected_cuda_marker must name its operator"
+            )
+        if (
+            name.upper() not in spec["expected_cuda_marker"].upper()
+            or "CUDA" not in spec["expected_cuda_marker"].upper()
+        ):
+            raise ValueError(
+                f"native_operand_variants.{name}.expected_cuda_marker "
+                f"must name CUDA {name.upper()} dispatch"
+            )
+        if (
+            name.upper() not in spec["expected_loader_marker"].upper()
+            or "EAGLE3" not in spec["expected_loader_marker"].upper()
+        ):
+            raise ValueError(
+                f"native_operand_variants.{name}.expected_loader_marker "
+                f"must identify EAGLE3 {name.upper()} load"
+            )
+        specs[variant] = {
+            **{key: spec[key] for key in required},
+            "backend_precision": spec["operator"],
         }
     return specs
 
@@ -551,6 +620,20 @@ def dispatch_evidence(
     }
 
 
+def native_operand_dispatch_evidence(server_log: str, spec: dict[str, Any]) -> dict[str, Any]:
+    """Confirm the configured draft load and the actual CUDA operand operator."""
+    loader_seen = spec["expected_loader_marker"] in server_log
+    operator_seen = spec["expected_cuda_marker"] in server_log
+    return {
+        "expected_loader_marker": spec["expected_loader_marker"],
+        "expected_loader_marker_seen": loader_seen,
+        "expected_cuda_marker": spec["expected_cuda_marker"],
+        "expected_cuda_marker_seen": operator_seen,
+        "operator": spec["operator"],
+        "cuda_native_operand_dispatch_confirmed": loader_seen and operator_seen,
+    }
+
+
 def speculative_timing(
     server_log: str, variant: str, warmup_requests: int, measured_requests: int
 ) -> dict[str, Any]:
@@ -620,7 +703,13 @@ def stop_server(process: subprocess.Popen[bytes]) -> None:
 
 
 def command_for(config: dict[str, Any], paths: dict[str, Path], variant: str) -> list[str]:
-    if variant not in (*VARIANTS, MMA_VARIANT, *GROUP_VARIANTS, *WEIGHT_ONLY_VARIANTS):
+    if variant not in (
+        *VARIANTS,
+        MMA_VARIANT,
+        *GROUP_VARIANTS,
+        *WEIGHT_ONLY_VARIANTS,
+        *NATIVE_OPERAND_VARIANTS,
+    ):
         raise ValueError(f"unknown benchmark variant: {variant}")
     command = [str(paths["binary"]), "-m", str(paths["target"])]
     if variant == "target_only":
@@ -632,7 +721,7 @@ def command_for(config: dict[str, Any], paths: dict[str, Path], variant: str) ->
             draft_key = variant
         elif variant in GROUP_VARIANTS and config["evaluation"].get("group_matrix", False):
             draft_key = variant
-        elif variant in WEIGHT_ONLY_VARIANTS:
+        elif variant in (*WEIGHT_ONLY_VARIANTS, *NATIVE_OPERAND_VARIANTS):
             draft_key = variant
         else:
             draft_key = "packed_head_draft"
@@ -931,7 +1020,7 @@ def relative_speedups(aggregated: dict[str, Any]) -> dict[str, Any]:
     result = {anchor: {} for anchor in ("target_only", "ordinary_eagle")}
     by_variant = {}
     for variant, packed in aggregated.items():
-        if not (variant.startswith("packed_") or variant.startswith("draft_q")):
+        if not (variant.startswith("packed_") or variant.startswith(("draft_q", "draft_w"))):
             continue
         by_variant[variant] = {}
         for anchor in ("target_only", "ordinary_eagle"):
@@ -1035,6 +1124,17 @@ def all_dispatches_confirmed(destination: Path, repetitions: int, variant: str) 
     )
 
 
+def all_native_operand_dispatches_confirmed(
+    destination: Path, repetitions: int, variant: str
+) -> bool:
+    return all(
+        json.loads(
+            (destination / f"rep-{rep:02d}" / variant / "dispatch-evidence.json").read_text()
+        )["cuda_native_operand_dispatch_confirmed"]
+        for rep in range(repetitions)
+    )
+
+
 def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,79}", run_id):
         raise ValueError("run ID must be a safe, relative name")
@@ -1046,6 +1146,7 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
     orders = schedule(evaluation["repetitions"], variants)
     group_specs = packed_specs(config, variants)
     weight_specs = weight_only_specs(config, variants)
+    native_specs = native_operand_specs(config, variants)
     if evaluation["warmup_requests"] < 0 or evaluation["max_output_tokens"] <= 0:
         raise ValueError("invalid warmup or max output setting")
     if config["server"]["host"] not in ("127.0.0.1", "localhost"):
@@ -1053,6 +1154,7 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
     model_paths = dict(config["models"])
     model_paths.update({variant: spec["draft"] for variant, spec in group_specs.items()})
     model_paths.update({variant: spec["draft"] for variant, spec in weight_specs.items()})
+    model_paths.update({variant: spec["draft"] for variant, spec in native_specs.items()})
     paths = {
         name: resolve(ROOT, value)
         for name, value in {
@@ -1126,6 +1228,14 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                     }
                     for variant in weight_specs
                 },
+                **{
+                    variant: {
+                        **native_specs[variant],
+                        "draft_model_path": str(paths[variant]),
+                        "draft_model_sha256": sha256(paths[variant]),
+                    }
+                    for variant in native_specs
+                },
             },
             "orders": orders,
             "commands": {variant: command_for(config, paths, variant) for variant in variants},
@@ -1158,7 +1268,7 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                 draft_hashes[variant] = None
             elif variant == "ordinary_eagle":
                 draft_hashes[variant] = manifest["files"]["ordinary_draft"]["sha256"]
-            elif variant in group_specs or variant in weight_specs:
+            elif variant in group_specs or variant in weight_specs or variant in native_specs:
                 draft_hashes[variant] = manifest["files"][variant]["sha256"]
             else:
                 draft_hashes[variant] = manifest["files"]["packed_head_draft"]["sha256"]
@@ -1170,6 +1280,7 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                 for variant in order:
                     server_dir = destination / f"rep-{repetition:02d}" / variant
                     server_dir.mkdir(parents=True)
+                    pending_native_records = []
                     json_write(server_dir / "gpu-before.json", gpu_snapshot())
                     command = manifest["commands"][variant]
                     variant_env = variant_environments[variant]
@@ -1212,29 +1323,38 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                                         "w1a1_mma_selector": variant_env["GGML_CUDA_W1A1_MMA"],
                                         "weight_coverage": group_specs.get(variant, {}).get(
                                             "weight_coverage"
-                                        ),
+                                        )
+                                        or native_specs.get(variant, {}).get("weight_coverage"),
                                         "activation_coverage": group_specs.get(variant, {}).get(
                                             "activation_coverage"
-                                        ),
+                                        )
+                                        or native_specs.get(variant, {}).get("activation_coverage"),
                                         "weight_format": group_specs.get(variant, {}).get(
                                             "weight_format"
                                         )
-                                        or weight_specs.get(variant, {}).get("weight_format"),
+                                        or weight_specs.get(variant, {}).get("weight_format")
+                                        or native_specs.get(variant, {}).get("weight_format"),
+                                        "operator": native_specs.get(variant, {}).get("operator"),
                                         "activation_precision": group_specs.get(variant, {}).get(
                                             "activation_precision"
                                         )
-                                        or weight_specs.get(variant, {}).get(
+                                        or weight_specs.get(variant, {}).get("activation_precision")
+                                        or native_specs.get(variant, {}).get(
                                             "activation_precision"
                                         ),
                                         "backend_precision": group_specs.get(variant, {}).get(
                                             "backend_precision"
                                         )
-                                        or weight_specs.get(variant, {}).get("backend_precision"),
+                                        or weight_specs.get(variant, {}).get("backend_precision")
+                                        or native_specs.get(variant, {}).get("backend_precision"),
                                         "draft_model_sha256": draft_hashes[variant],
                                     }
                                 )
-                                records.append(measurement)
-                                json_write(destination / "records.json", records)
+                                if variant in native_specs:
+                                    pending_native_records.append(measurement)
+                                else:
+                                    records.append(measurement)
+                                    json_write(destination / "records.json", records)
                         finally:
                             stop_server(process)
                             log.flush()
@@ -1244,6 +1364,11 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                                 group_specs.get(variant, {}).get("expected_cuda_marker"),
                                 group_specs.get(variant, {}).get("expected_loader_marker"),
                             )
+                            if variant in native_specs:
+                                evidence = native_operand_dispatch_evidence(
+                                    (server_dir / "server.log").read_text(errors="replace"),
+                                    native_specs[variant],
+                                )
                             json_write(server_dir / "dispatch-evidence.json", evidence)
                             timing = speculative_timing(
                                 (server_dir / "server.log").read_text(errors="replace"),
@@ -1256,6 +1381,17 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                                 {"repetition": repetition, "variant": variant, "timing": timing}
                             )
                             json_write(server_dir / "gpu-after.json", gpu_snapshot())
+                    if (
+                        variant in native_specs
+                        and not evidence["cuda_native_operand_dispatch_confirmed"]
+                    ):
+                        raise RuntimeError(
+                            f"{variant}: expected draft load and CUDA operand dispatch "
+                            "markers were not both observed"
+                        )
+                    if pending_native_records:
+                        records.extend(pending_native_records)
+                        json_write(destination / "records.json", records)
             aggregated = aggregate(records, variants)
             report = {
                 "status": "complete",
@@ -1280,6 +1416,15 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                     )
                     for variant in variants
                     if variant.startswith("packed_")
+                },
+                "native_operand_dispatch_confirmed_by_variant": {
+                    variant: all_native_operand_dispatches_confirmed(
+                        destination, evaluation["repetitions"], variant
+                    )
+                    for variant in native_specs
+                },
+                "native_operand_variant_specs": {
+                    variant: manifest["variant_specs"][variant] for variant in native_specs
                 },
                 "definition": {
                     "request": "completion tokens / client wall time including prefill",

@@ -18,6 +18,7 @@ GROUP_VARIANTS = (
 )
 GROUP_MATRIX_VARIANTS = (*VARIANTS[:2], *GROUP_VARIANTS)
 WEIGHT_ONLY_VARIANTS = ("draft_q4_0", "draft_q8_0")
+NATIVE_OPERAND_VARIANTS = ("draft_w8a8", "draft_w4a4")
 METRICS = ("request", "decode")
 
 
@@ -32,13 +33,16 @@ def sha256(path: Path) -> str:
 def selected_variants(records: list[dict], reported: list[str] | None = None) -> tuple[str, ...]:
     observed = {row["variant"] for row in records}
     weight_only = tuple(variant for variant in WEIGHT_ONLY_VARIANTS if variant in observed)
-    core = observed - set(weight_only)
+    native_operand = tuple(variant for variant in NATIVE_OPERAND_VARIANTS if variant in observed)
+    if native_operand and native_operand != NATIVE_OPERAND_VARIANTS:
+        raise ValueError("benchmark variants are incomplete or unknown")
+    core = observed - set(weight_only) - set(native_operand)
     if core == set(GROUP_MATRIX_VARIANTS):
-        variants = (*GROUP_MATRIX_VARIANTS, *weight_only)
+        variants = (*GROUP_MATRIX_VARIANTS, *weight_only, *native_operand)
     elif core == set(ALL_VARIANTS):
-        variants = (*ALL_VARIANTS, *weight_only)
+        variants = (*ALL_VARIANTS, *weight_only, *native_operand)
     elif core == set(VARIANTS):
-        variants = (*VARIANTS, *weight_only)
+        variants = (*VARIANTS, *weight_only, *native_operand)
     else:
         variants = VARIANTS
     if observed != set(variants) or (reported is not None and tuple(reported) != variants):
@@ -186,6 +190,11 @@ def analyze(run_dir: Path, samples: int, seed: int) -> dict:
     if report.get("status") != "complete" or report.get("records") != len(records):
         raise ValueError("benchmark run is incomplete or records count differs")
     variants = selected_variants(records, report.get("variants"))
+    native_operand = tuple(variant for variant in variants if variant in NATIVE_OPERAND_VARIANTS)
+    if native_operand:
+        dispatch = report.get("native_operand_dispatch_confirmed_by_variant", {})
+        if any(dispatch.get(variant) is not True for variant in native_operand):
+            raise ValueError("native operand runtime dispatch is unconfirmed")
     _, repetitions, prompts = paired_index(records, variants)
     prompt_rows = [json.loads(line) for line in prompts_path.read_text().splitlines() if line]
     categories = {row["id"]: row["category"] for row in prompt_rows}
@@ -198,7 +207,7 @@ def analyze(run_dir: Path, samples: int, seed: int) -> dict:
             for metric in METRICS
         }
         for variant in variants
-        if variant.startswith(("packed_", "draft_q"))
+        if variant.startswith(("packed_", "draft_q", "draft_w"))
     }
     portable_speedups = {
         f"{anchor}/{metric}": pooled_speedup(records, anchor, metric)
@@ -218,6 +227,7 @@ def analyze(run_dir: Path, samples: int, seed: int) -> dict:
         "bootstrap_samples": samples,
         "pooled_packed_speedup": portable_speedups,
         "pooled_variant_speedups": packed_speedups,
+        "native_operand_variant_specs": report.get("native_operand_variant_specs", {}),
         "paired_prompt_repetition_bootstrap_95pct": paired_bootstrap(records, samples, seed),
         "category_summary": category_summary(records, categories),
         "interpretation": (
@@ -229,7 +239,7 @@ def analyze(run_dir: Path, samples: int, seed: int) -> dict:
     result["paired_variant_bootstrap_95pct"] = {
         variant: paired_bootstrap(records, samples, seed, variant)
         for variant in variants
-        if variant.startswith(("packed_", "draft_q")) and variant != MMA_VARIANT
+        if variant.startswith(("packed_", "draft_q", "draft_w")) and variant != MMA_VARIANT
     }
     if MMA_VARIANT in variants:
         result["pooled_mma_speedup"] = {
