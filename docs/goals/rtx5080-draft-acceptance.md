@@ -143,6 +143,9 @@ binary execution.
   All CPU setup/download supervisor jobs are terminal; the remote checkout is
   clean at `daad157`, no project process group remains, and both SSH sessions
   were closed. CUDA parity, acceptance, and profiling have not started.
+- A final independent tmux MCP check at 20:56:12 again found the Fortnite
+  process and overlays, 43% utilization, and 5,587 MiB allocated. That SSH
+  connection and its local tmux session were closed. The GPU remains in use.
 - Next: establish that Fortnite is gone and the GPU is idle using a fresh
   tmux MCP host check. Then assign one Luna GPU owner for the supervised CUDA
   parity smoke, full held-out sweep, and layer profile. No QAT begins here.
