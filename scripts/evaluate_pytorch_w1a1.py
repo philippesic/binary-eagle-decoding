@@ -74,6 +74,20 @@ def run_generation(model, input_ids, evaluation: dict) -> tuple[list[int], list[
     return generated, accepted
 
 
+def first_greedy_mismatch(target_ids: list[int], eagle_ids: list[int]) -> int | None:
+    missing_token = object()
+    return next(
+        (
+            index
+            for index, (target_id, eagle_id) in enumerate(
+                zip_longest(target_ids, eagle_ids[: len(target_ids)], fillvalue=missing_token)
+            )
+            if target_id != eagle_id
+        ),
+        None,
+    )
+
+
 def encode_prompt(tokenizer, messages: list[dict], thinking_mode: bool, device):
     encoded = tokenizer.apply_chat_template(
         messages,
@@ -235,21 +249,7 @@ def main() -> None:
     )
     target_only_ids = target_only[0, first_ids.shape[1] :].detach().cpu().tolist()
     ordinary = run_generation(model, first_ids, evaluation)
-    missing_token = object()
-    mismatch = next(
-        (
-            index
-            for index, (target_id, eagle_id) in enumerate(
-                zip_longest(
-                    target_only_ids[:parity_tokens],
-                    ordinary[0][:parity_tokens],
-                    fillvalue=missing_token,
-                )
-            )
-            if target_id != eagle_id
-        ),
-        None,
-    )
+    mismatch = first_greedy_mismatch(target_only_ids[:parity_tokens], ordinary[0][:parity_tokens])
     parity = {
         "prompt_id": prompts[0]["id"],
         "checked_tokens": parity_tokens,
@@ -267,7 +267,11 @@ def main() -> None:
         print(f"Metal development run: target/EAGLE first differ at token {mismatch + 1}")
     results = []
     parity_checked = False
-    with (run_dir / "acceptance.jsonl").open("w") as stream:
+    target_references = {}
+    with (
+        (run_dir / "acceptance.jsonl").open("w") as stream,
+        (run_dir / "target-reference.jsonl").open("w") as target_stream,
+    ):
         for variant in variants:
             handle = install_w1a1(
                 model.eagle_layer,
@@ -292,7 +296,45 @@ def main() -> None:
                         evaluation["thinking_mode"],
                         device,
                     )
+                    if prompt["id"] not in target_references:
+                        target_output, _, _ = model.naive_generate(
+                            input_ids,
+                            temperature=0.0,
+                            max_new_tokens=evaluation["max_new_tokens"],
+                            max_length=evaluation["max_length"],
+                            log=True,
+                        )
+                        target_ids = target_output[0, input_ids.shape[1] :].detach().cpu().tolist()
+                        target_references[prompt["id"]] = target_ids
+                        target_stream.write(
+                            json.dumps(
+                                {"prompt_id": prompt["id"], "generated_token_ids": target_ids}
+                            )
+                            + "\n"
+                        )
+                        target_stream.flush()
+                    target_ids = target_references[prompt["id"]]
                     generated, accepted = run_generation(model, input_ids, evaluation)
+                    full_mismatch = first_greedy_mismatch(target_ids, generated)
+                    if full_mismatch is not None:
+                        (run_dir / "greedy-mismatch.json").write_text(
+                            json.dumps(
+                                {
+                                    "variant": variant["name"],
+                                    "prompt_id": prompt["id"],
+                                    "first_mismatch_index": full_mismatch,
+                                    "target_token_ids": target_ids,
+                                    "eagle_token_ids": generated,
+                                },
+                                indent=2,
+                            )
+                            + "\n"
+                        )
+                        if not (args.device == "mps" and args.allow_greedy_mismatch):
+                            raise RuntimeError(
+                                f"{variant['name']} differs from target-only greedy continuation "
+                                f"on prompt {prompt['id']} at token {full_mismatch + 1}"
+                            )
                     proposed_per_round = model.eagle_layer.total_tokens
                     if not accepted or any(
                         value < 0 or value > proposed_per_round for value in accepted
@@ -306,6 +348,8 @@ def main() -> None:
                         "prompt_tokens": input_ids.shape[1],
                         "generated_token_ids": generated,
                         "generated_tokens": len(generated),
+                        "target_greedy_checked_tokens": len(target_ids),
+                        "target_greedy_match": full_mismatch is None,
                         "accepted_per_round": accepted,
                         "accepted_draft_tokens": sum(accepted),
                         "proposed_tree_nodes_per_round": proposed_per_round,
