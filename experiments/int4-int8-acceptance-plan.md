@@ -1,6 +1,6 @@
 # INT4 and INT8 drafter acceptance plan
 
-**Status:** implementation integrated; held-out CUDA run pending. This is a follow-on
+**Status:** complete; matched held-out CUDA acceptance measured. This is a follow-on
 acceptance measurement, not a native INT4/INT8 speed claim.
 
 ## Question and fixed comparison
@@ -53,7 +53,7 @@ scope.
 3. One Luna GPU operator owns the 5080 for the supervised held-out run after
    current code is pushed and a fresh idle check passes.
 
-## Current checkpoint
+## Milestones and final checkpoint
 
 - `01ce2fb` on pushed `main` contains the fake uniform quantizer, selective
   reversible adapter, explicit per-variant protocol metadata, and the matched
@@ -97,4 +97,9 @@ scope.
   variant), 12 target-reference rows, and 19 greedy-mismatch records. Weighted
   accepted drafts/round were ordinary 2.3166, W4A4 0.2882, and W8A8 2.1816.
   The supervisor/evaluator process ended and GPU memory returned to idle.
-  Prompt spread, raw artifact hashes, and final cleanup are being verified.
+  `experiments/pytorch-int4-int8-cuda-acceptance.md` records prompt spread,
+  exact replay command, quantization rules, raw artifact hashes, and the
+  target-greedy parity limitation. The ignored local audit record SHA256 is
+  `505280ce549ca001d0c63a70be054b3a59a7ca5748a22cc7658b43b565506f0e`.
+  No GPU project process remains and tmux SSH sessions were closed. No QAT,
+  native INT kernel, or throughput claim was made.

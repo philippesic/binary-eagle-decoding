@@ -17,19 +17,15 @@ to idle, and tmux SSH sessions were closed.
 parity, narrow W1A1 coverage, or bounded drafter QAT. Evidence and tradeoffs
 are in `docs/DECISIONS.md`. No QAT or native binary work is active.
 The user also requested a follow-on INT4/INT8 accepted-per-round comparison;
-its [measurement plan](../experiments/int4-int8-acceptance-plan.md) fixes the
-same held-out CUDA setup and keeps the operand-precision interpretation
-explicit. W4A4/W8A8 simulation and runner integration are pushed on `main` at
-`01ce2fb`, with all 30 checks passing. A fresh 5080 idle gate passed; the Luna
-operator owns the low-bit smoke and held-out run. No new native binary or
-throughput claim has been made. The one-prompt CUDA smoke passed: ordinary,
-W4A4, and W8A8 accepted 1.787, 0.238, and 1.538 drafts/round respectively,
-all with the known target-greedy mismatch. Supervised
-`cuda-int4-int8-12prompt-20260924` finished all 36 rows with exit 0. Accepted
-drafts/round were ordinary BF16 2.3166, W4A4 0.2882, and W8A8 2.1816.
-The [report](../experiments/pytorch-int4-int8-cuda-acceptance.md) is being
-finalized with prompt spread and raw hashes; no native INT4/INT8 speed is
-claimed.
+its [completed report](../experiments/pytorch-int4-int8-cuda-acceptance.md)
+records the same 12-prompt RTX 5080 comparison. Accepted drafts/round were
+ordinary BF16 2.3166, W4A4 simulation 0.2882, and W8A8 simulation 2.1816.
+Both operands were quantized for the selected drafter linears, with FP32
+simulated accumulation and BF16 output. The known target/verifier parity
+limitation remains; these are verifier-relative counts, not native INT4/INT8
+speed results. All supervised jobs ended, the GPU returned to idle, and SSH
+sessions closed. The [measurement plan](../experiments/int4-int8-acceptance-plan.md)
+has the implementation and run checkpoint.
 The prior [PyTorch W1A1 EAGLE
 goal](goals/pytorch-w1a1-eagle.md) and
 `experiments/pytorch-w1a1-metal-acceptance.md` contain the Metal development
