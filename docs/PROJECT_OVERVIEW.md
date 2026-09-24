@@ -101,6 +101,25 @@ These dates are planning estimates, not a reason to expand scope. If a gate fail
 run a small diagnostic or ablation, record the outcome, and favor a clear result
 over adding more architectures or training infrastructure.
 
+### Evidence at the current gate (2026-09-24)
+
+The pinned PyTorch fake-binary drafter and 12-prompt held-out RTX 5080 sweep are
+implemented. Under the AngelSlim BF16 verifier, ordinary EAGLE accepted 2.317
+draft tokens/round, head-only W1A1 1.677, and all selected W1A1 groups 0.202.
+W4A4 and W8A8 simulations over all candidate linears accepted 0.288 and 2.182
+respectively. The nine candidate linears occupied 38.32% of one-prompt
+instrumented draft time. See the [W1A1 CUDA report](../experiments/pytorch-w1a1-cuda-acceptance.md)
+and [W4A4/W8A8 report](../experiments/pytorch-int4-int8-cuda-acceptance.md).
+
+Strict target-only versus ordinary EAGLE greedy parity fails at generated
+token 4 on CUDA BF16 through a target-selected verifier tie; the underlying
+tree-versus-prefix logit shift is not yet explained. The acceptance counts are
+verifier-relative exploratory evidence, not a target-equivalent speed claim.
+The current autonomous goal investigates that discrepancy, tests a bounded
+head-only QAT recovery path, and builds a packed native numerical path before
+end-to-end comparison. The [native integration plan](native-w1a1-path.md)
+records the proposed narrow GGML/GGUF changes.
+
 An approximate planning model is `throughput = emitted tokens per round / round
 time`, with round time including draft, verification, and all other overhead.
 Use values measured in the paired comparison, including target-emitted tokens,
@@ -156,7 +175,8 @@ commands/raw results, and a short report explaining gains or failure modes.
 At repository setup, llama.cpp revision
 `6e60f35608ec6918b44a9839c0c433687165f086` documents this target/drafter pair and
 `draft-eagle3`. That establishes upstream support, not a successful local model
-run. The current scaffold has no W1A1 implementation or measured results.
+run. The starting scaffold had no W1A1 implementation or measured results;
+the current state is summarized above and in `docs/STATUS.md`.
 
 - [Pinned upstream EAGLE-3 instructions](https://github.com/ggml-org/llama.cpp/blob/6e60f35608ec6918b44a9839c0c433687165f086/docs/speculative.md)
 - [Candidate draft checkpoint](https://huggingface.co/AngelSlim/Qwen3-4B_eagle3)

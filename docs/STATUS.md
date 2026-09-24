@@ -47,9 +47,10 @@ goal](goals/pytorch-w1a1-eagle.md) and
 `experiments/pytorch-w1a1-metal-acceptance.md` contain the Metal development
 evidence and its BF16 greedy-parity limitation.
 
-**Repository:** initial llama.cpp scaffold and agent infrastructure are in place.
-The published target/draft pair is the starting point; local conversion, remote
-CUDA builds, and GPU throughput are not yet validated. See
+**Repository:** the published target/draft pair, PyTorch acceptance simulation,
+RTX 5080 development measurements, and CPU packed-binary reference are in
+place. Native GGML execution, local GGUF conversion, RTX 2080 Ti binary
+measurements, and paired throughput remain unvalidated. See
 `docs/PROJECT_OVERVIEW.md` for the overall research gates.
 
 When a goal is active, link its `docs/goals/<slug>.md` here and summarize the
