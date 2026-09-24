@@ -132,11 +132,16 @@ and packing-inclusive component timing on the 5080; see the
 dedicated GGML operation and EAGLE packed-head bridge are in the pinned
 llama.cpp fork, with CPU tests and local GGUF load checks. Integrated GGML
 CUDA backend correctness passed five focused cases on the 5080; model-level
-CUDA dispatch and matched end-to-end throughput remain open gates. See the
+CUDA dispatch and a matched five-repetition end-to-end comparison then ran.
+Packed-head W1A1 reached 0.931× ordinary EAGLE request throughput and
+0.925× its decode throughput on the 5080, while both exceeded target-only.
+See the [native comparison](../experiments/native-end-to-end-5080.md) and
 [CUDA integration report](../experiments/ggml-w1a1-cuda-5080.md). The 5080 prototype uses
 portable XOR/`__popc`; a separate
 [SM75 binary-MMA probe](../experiments/sm75-binary-mma-plan.md) is scoped for
-the 2080 Ti before a claim about Turing Tensor Core performance.
+the 2080 Ti before a claim about Turing Tensor Core performance. That probe
+cross-compiled to SM75 and passed exact integer-dot checks through a 5080
+proxy mode, but has not run on Turing.
 
 An approximate planning model is `throughput = emitted tokens per round / round
 time`, with round time including draft, verification, and all other overhead.
@@ -165,6 +170,9 @@ Success requires correct binary math, preserved target/verifier behavior, clear
 precision coverage, and repeatable measurements on the RTX 2080 Ti. Validation
 includes greedy equivalence checks and appropriate sampling correctness checks;
 do not assume identical seeded sampled sequences across different execution paths.
+The [RTX 2080 Ti runbook](RTX2080TI_RUNBOOK.md) records the remaining host,
+memory, correctness, and matched-comparison gates; its address is currently
+missing from the shared local registry.
 
 ## Principal risks and responses
 

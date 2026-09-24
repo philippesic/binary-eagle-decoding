@@ -3,7 +3,7 @@
 **Opened:** 2026-09-24  
 **State:** active  
 **Orchestrator:** current Codex task  
-**GPU owner:** `/root/cuda_acceptance_operator` (Luna high), next native GGML CUDA validation
+**GPU owner:** none; all supervised jobs ended and RTX 5080 is free
 **First autonomous work window:** 2026-09-24 09:08–19:08 UTC; the objective
 continues beyond that window if required.
 
@@ -286,14 +286,18 @@ RTX 5080 access. Make bounded decisions from evidence, checkpoint them in
   during repetition 0 target-only warmup was 11,481 MiB used / 4,497 MiB
   free at 82% utilization. It later completed all 180 requests; supervisor
   and all server children exited, and the GPU returned to baseline. The
-  operator retains ownership for a separate two-prompt token-ID diagnostic.
+  operator retained ownership for a separate two-prompt token-ID diagnostic,
+  now complete.
 - `dee6556` integrated a bounded standalone SM75 binary-MMA correctness
   probe from an isolated Sol worktree, which was then removed. The probe uses
   `mma.sync.aligned.m8n8k128.row.col.s32.b1.b1.s32.xor.popc`, compares full
   and partial 8×8 tiles and audited K widths to dense CPU signs, and rejects
   non-SM75 runtime devices. Local formatting/diff/CPU lane-layout emulation
-  checks passed. It is uncompiled and unrun because the 2080 Ti address is
-  absent; no Tensor Core correctness or speed claim follows.
+  checks passed. A later supervised CUDA 13.1.115 compile-only run on the
+  5080 host emitted an SM75 image with six static
+  `BMMA.88128.XOR.POPC` SASS sites and the matching PTX instruction; it
+  exited zero in 1.50 seconds. The binary was not run because the 2080 Ti
+  address is absent; no Tensor Core numerical or speed claim follows.
 - The paired 5080 run progressed through all of repetition 0 and 20 rows of
   repetition 1 (56/180 measured rows total) without OOM/error; one expected
   server held 12,487 MiB at 84% GPU utilization. Final results are below.
@@ -309,5 +313,43 @@ RTX 5080 access. Make bounded decisions from evidence, checkpoint them in
   on the same two prompts (50/60 matches). Raw manifest/report/records hashes,
   memory and category spread are in
   [the native end-to-end report](../../experiments/native-end-to-end-5080.md).
-  A separate six-request token-ID diagnostic is planned for those two prompts
-  without altering the timed run. The RTX 2080 Ti address is still absent.
+  A separate six-request token-ID diagnostic ran without altering the timed
+  data. Ordinary and packed token arrays were identical on both mismatching
+  prompts; relative to target-only, first differences were index 33 (target
+  ID 438, speculative 264) and index 123 (target 362, speculative 5737).
+  Diagnostic summary SHA256
+  `1806e2f230d0a07f4957bce7a3ae8e7ba6a79ee4b6b982fe24dec5c585043bf6`,
+  50-file artifact seal SHA256
+  `bcbf739dfbd4409059ff333bf36977f2a70d02d217193a568fe028c68165ad68`.
+  Its supervisor exited and final three GPU samples were 3,050 MiB used,
+  12,928 MiB free, 0%; no project process or SSH/tmux session remained.
+  The RTX 2080 Ti address is still absent.
+- A final four-request `n_probs:5` diagnostic reproduced the same token IDs
+  at the two native divergence positions. In target-only logits the
+  speculative IDs ranked second, 0.0009633 nats below ID 438 at `prose-04`
+  and 0.0165080 nats below ID 362 at `reasoning-04`. The ordinary EAGLE API
+  exposes only placeholder/empty candidate probabilities for accepted draft
+  tokens, so the actual verifier logits at those positions are unavailable.
+  Numerical batch sensitivity is plausible, but the native baseline
+  target-equivalence cause remains unproven. Summary SHA256
+  `cba59b6090bfacdf5713482f1b134ace97b2583ab195d521031008912696e0fe`,
+  artifact-manifest SHA256
+  `693415914997891220807069260c9f6df38e8d48f3a984ea7bb0661b5d27b723`.
+  No benchmark data was changed. Final three RTX 5080 samples were 3,047 MiB
+  used / 12,931 MiB free / 0%; no project processes, SSH, or tmux remained.
+- `a595ee8` added a guarded `--proxy-correctness` mode to the SM75 MMA probe.
+  A new combined SM75-SASS/compute_75-PTX binary compiled on CUDA 13.1 and
+  ran the virtual instruction on the RTX 5080 once under supervision:
+  21 cases and 880 integer dots exactly matched an independent dense CPU
+  sign reference across full/partial tiles, dirty tails, and audited K widths.
+  This is **5080 proxy numerical evidence only**; the program's default mode
+  still rejects non-SM75 devices, and the RTX 2080 Ti address remains absent.
+  Remote `results/sm75-mma-proxy-20260924/` manifest SHA256
+  `e6d9dadaf116dcd92f52b1fba3b187044c8c4c5f2eb56a50b0d95e777158250a`
+  preserves compiler/source/header/binary/SASS/PTX/stdout/state hashes. The
+  one supervised proxy run exited zero; final GPU samples were 3,047 MiB
+  used / 12,931 MiB free / 0–1%, and all project processes/SSH/tmux ended.
+- The remaining hardware gate is documented in
+  [the RTX 2080 Ti runbook](../RTX2080TI_RUNBOOK.md). Its current address is
+  absent from the shared host registry; the username `philip` is known and
+  the user was asked asynchronously for the IP. No 2080 Ti run has started.

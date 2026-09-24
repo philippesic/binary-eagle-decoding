@@ -53,6 +53,10 @@ faster than target-only in this run. The packed head saves about 153.5 MB of
 draft weights, but only one drafter linear is binary and packing/kernel work
 is nonzero. Every packed server log confirmed actual CUDA W1A1 dispatch;
 this is native packed execution rather than PyTorch fake quantization.
+The target-only ratios are timing observations rather than a clean lossless
+speedup claim because both speculative paths differed from target-only on two
+prompts, as detailed below. The packed-versus-ordinary negative comparison
+uses identical decoded outputs across all 60 matched requests.
 
 | Repetition | Packed/ordinary request TPS | Packed/ordinary decode TPS |
 | --- | ---: | ---: |
@@ -82,10 +86,19 @@ It was produced by `scripts/analyze_native_benchmark.py --samples 2000
 
 All three categories favored ordinary EAGLE on both timing definitions;
 the loss was smallest on prose and largest on code. Loaded GPU samples across
-the 15 server instances ranged from 11,381 to 12,417 MiB used, including
-the 3,050 MiB Windows idle baseline. The exact per-server snapshots are raw
-artifacts; this range alone does not isolate the head's memory saving from
-other server allocations.
+the 15 server instances were stable within each variant:
+
+| Variant | GPU memory used while loaded |
+| --- | ---: |
+| Target-only | 11,381 MiB |
+| Ordinary EAGLE | 12,417 MiB |
+| Packed-head W1A1 | 12,269 MiB |
+
+These samples include the 3,050 MiB Windows idle baseline. The packed draft
+used **148 MiB less** than ordinary EAGLE, consistent with replacing the
+FP16 vocabulary head with packed signs and F32 scales; the exact file-level
+head saving is 153,472,000 bytes before runtime buffers/alignment. Memory
+samples are point-in-time loaded readings, not a peak-allocation profile.
 
 | Speculative variant | Accepted draft tokens | Proposed draft nodes | Verification rounds | Accepted/round | Emitted/round | Node acceptance |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -112,6 +125,13 @@ a direct verifier timer. The observed draft saving did not recover the lost
 emissions per round. The host timing inside `common_speculative_impl` is not
 the standalone CUDA kernel duration or a packing-only timer.
 
+At this run's pooled decode rate, ordinary EAGLE spent about 16.427 ms per
+verification round and packed W1A1 about 15.569 ms. Holding the packed
+round-time fixed, it would need about **2.069 emitted tokens/round** instead
+of 1.914 to match ordinary throughput; holding its emissions fixed, it would
+need to reduce round time to about **14.405 ms** (another 1.164 ms/round).
+These are same-run break-even calculations, not predictions for the 2080 Ti.
+
 These native figures must not be compared numerically with the earlier
 AngelSlim PyTorch acceptance table: that sweep used BF16 and a 59-node tree
 per round, while this llama.cpp run used FP16 GGUF and at most five draft
@@ -129,9 +149,38 @@ character 406 and reached the 128-token `length` cap with 417 target-only
 versus 423 speculative characters. Thus the ordinary EAGLE anchor itself is
 not strictly text-identical to target-only on this suite, while the packed
 path introduced no additional decoded-text divergences relative to ordinary.
-Response JSON did not contain generated token IDs, so these are character
-offsets and text equality, not token-ID parity or a proof of lossless
-stochastic verification. A bounded target/verifier diagnostic remains.
+
+A **separate**, supervised two-prompt diagnostic requested raw generated IDs
+with `return_tokens:true, verbose:true`; it did not change or rerun the timed
+comparison. Ordinary and packed token arrays matched exactly on both prompts.
+Against target-only, `prose-04` first differed at 0-based generated token
+index 33 (target ID 438 versus both speculative ID 264); `reasoning-04`
+first differed at index 123 (target 362 versus both speculative 5737). These
+IDs establish baseline-native EAGLE token divergence and no extra difference
+from the packed head on the two flagged prompts. They do not identify the
+underlying target-logit cause or validate stochastic distributional behavior.
+The diagnostic summary SHA256 is
+`1806e2f230d0a07f4957bce7a3ae8e7ba6a79ee4b6b982fe24dec5c585043bf6`;
+its 50-file artifact seal SHA256 is
+`bcbf739dfbd4409059ff333bf36977f2a70d02d217193a568fe028c68165ad68`.
+
+One further bounded `n_probs:5` check reproduced the same target-only and
+ordinary token IDs. At the first `prose-04` divergence, target-only ranked
+its winning ID 438 at logprob −0.6927611 and speculative ID 264 second at
+−0.6937244, a **0.0009633-nat** gap. At `reasoning-04`, target-only ranked
+winning ID 362 at −0.6957814 and speculative ID 5737 second at −0.7122894,
+a **0.0165080-nat** gap. These small target-only margins make numerical
+sensitivity plausible. The ordinary EAGLE API returned placeholder logprob
+zero and an empty top-candidate list at the accepted-draft positions, so the
+verifier's corresponding logits were not available; this diagnostic cannot
+prove that rounding, rather than a cache/verification issue, caused the
+native mismatch. Its summary SHA256 is
+`cba59b6090bfacdf5713482f1b134ace97b2583ab195d521031008912696e0fe`
+and artifact manifest SHA256 is
+`693415914997891220807069260c9f6df38e8d48f3a984ea7bb0661b5d27b723`.
+No full benchmark was rerun or altered for this check. After the diagnostic,
+three GPU samples were idle at 3,047 MiB used / 12,931 MiB free / 0%; no
+project process or SSH/tmux session remained.
 The benchmark otherwise had no error or OOM. All completed requests were
 128 tokens except five target-only 80-token stops and five 85-token stops
 for each speculative variant; these actual lengths are included in the pooled
@@ -143,10 +192,13 @@ out other coverage or retraining recipes, and it does not establish a Turing
 Tensor Core result. The bounded head-only QAT pilot was stopped after its
 separate held-out gate failed to recover acceptance; see its
 [report](qat-head-pilot-results.md). A focused SM75 binary-MMA probe is
-prepared but awaits actual RTX 2080 Ti access and measurements.
+cross-compiled with BMMA SASS and passed 880 integer-dot checks on a 5080
+proxy path, but awaits actual RTX 2080 Ti execution and
+measurements; see the [probe record](sm75-binary-mma-plan.md) and
+[2080 Ti runbook](../docs/RTX2080TI_RUNBOOK.md).
 
 The sealed raw run hashes are: `manifest.json`
-`86f5cd6b931132a41e4cf4132a0f490aefc13baa0753c66e987af458c0e9e24b`,
+`86f5cd6b931132a41e4cf4132a0f490aefc13baa0753c66e987af458b0c9e24b`,
 `report.json`
 `7986e79b409e5565d6323f69ee183f42dd1aff0b291ee48488c4447cf4aab27e`,
 and `records.json`

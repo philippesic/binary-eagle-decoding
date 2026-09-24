@@ -29,9 +29,33 @@ A private copy of CUDA's include tree was placed under the ignored
 `results/cuda-glibc-compat/include/`. Only the two copied
 `crt/math_functions.h` device declarations for `rsqrt(double)` and
 `rsqrtf(float)` received `noexcept(true)`. The system toolkit was not changed.
-A supervised nvcc probe including CUDA runtime, `<mutex>`, and
-`<condition_variable>` passed with normal GNU macros and confirmed the
-private header was resolved. The project build uses
+The original/system header SHA256 was
+`decdc28efcfaf0aaf806abc96d7bba9cb84b37c6e83cb82cda59b6aa59916ff8`;
+the patched private header SHA256 was
+`13256b220d400a5665cde8bc87c21b0188944390c6a945a7fffa2827254b305a`.
+The bounded local preparation was:
+
+```sh
+mkdir -p results/cuda-glibc-compat
+cp -aL /usr/local/cuda/targets/x86_64-linux/include results/cuda-glibc-compat/include
+python3 - <<'PY'
+from pathlib import Path
+import re
+p = Path('results/cuda-glibc-compat/include/crt/math_functions.h')
+s = p.read_text()
+for name in ('rsqrt', 'rsqrtf'):
+    pattern = rf'(\b{name}\(float x\)|\b{name}\(double x\));'
+    s, count = re.subn(pattern, r'\1 noexcept (true);', s)
+    assert count == 1, (name, count)
+p.write_text(s)
+PY
+```
+
+The copied header was verified by an nvcc probe including `<cuda_runtime.h>`,
+`<mutex>`, and `<condition_variable>` with normal GNU macros before
+attempting the full build. This workaround is tied to the recorded CUDA/glibc
+combination; do not apply it blindly on the 2080 Ti host if its toolchain
+differs. The project build uses
 `scripts/build_llama.py cuda --cuda-arch 120 --cuda-include-root
 results/cuda-glibc-compat/include --with-tests --jobs 4` under
 `scripts/remote_job.py`; the CMake cache records the copied include root

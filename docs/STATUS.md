@@ -1,83 +1,70 @@
 # Current project status
 
-**Active goal:** [complete W1A1 EAGLE research program](goals/full-w1a1-eagle-project.md).
-The user delegated project research decisions and granted RTX 5080 access for
-an initial roughly 10-hour autonomous work window. The 5080 BF16 parity
-diagnostic finished: the ordinary EAGLE tree verifier ties IDs 11/272/7578 at
-21.0 at generated position 40, while both incremental and full-prefix target
-paths choose 272. Mutating off-path siblings did not change the selected row,
-so BF16 tree arithmetic and tie sensitivity explain the immediate divergence.
-Acceptance counts remain verifier-relative. The parity job is stopped and GPU
-ownership has passed through native prototype validation to
-`/root/cuda_acceptance_operator` for native GGML CUDA validation. The
-BF16 fake-binary versus FP32 native rounding
-contract must still be reconciled before native acceptance claims.
-The [native W1A1 design](native-w1a1-path.md) uses a dedicated packed
-operation and ordinary I32/F32 GGUF companions, initially for the EAGLE head.
-A [bounded head-only QAT pilot](../experiments/qat-head-pilot-results.md)
-completed on disjoint 96/24 train/validation prompts. The BF16-forward-exact
-trainer, derived checkpoint exporter, and standalone CUDA XOR/popcount
-prototype are integrated. All project checks
-pass. The standalone kernel passed real 5080 correctness and two
-packing-inclusive component benchmarks; see
-[the report](../experiments/native-w1a1-cuda-prototype.md). QAT capture and
-500-step training completed; validation KL improved from 2.506 to 1.017, but
-the fixed held-out W1A1 head accepted only 1.565 drafts/round versus 1.677
-for the untrained head. The bounded recipe is stopped without held-out tuning;
-see [pilot report](../experiments/qat-head-pilot-results.md). The GPU returned
-to idle. The llama.cpp submodule combines the dedicated packed
-W1A1 CPU op, CUDA backend, and EAGLE packed-head converter/loader in pushed
-fork commit `92bc706`. Mac build, converter tests, and a local packed-draft
-smoke passed; integrated GGML CUDA backend tests passed 5/5 on the RTX 5080
-after a private CUDA-header compatibility fix. A one-prompt packed CUDA
-`llama-server` smoke confirmed model-level dispatch and speculative counters;
-paired timing remains pending. See the
-[CUDA integration report](../experiments/ggml-w1a1-cuda-5080.md). Pinned target and ordinary
-EAGLE draft FP16 GGUF files were [converted and load-checked](../experiments/gguf-baseline-conversion.md).
-The completed [RTX 5080 W1A1 draft acceptance goal](goals/rtx5080-draft-acceptance.md) and
-`experiments/pytorch-w1a1-cuda-acceptance.md` contain the pinned CUDA setup,
-strict BF16 parity diagnostic, full 12-prompt exploratory acceptance sweep,
-and drafter layer-cost audit. Ordinary EAGLE accepted 2.317 drafts/round,
-head-only W1A1 1.677, and all listed W1A1 groups 0.202 under the same
-verifier. Strict target-only/ordinary parity failed at generated token 4 due
-a target-selected BF16 verifier tie. A bounded trace found off-path siblings
-did not alter the selected row; tree-versus-incremental rounding at that row
-was the immediate source.
-Candidate linears occupied 38.32% of one-prompt instrumented draft time. These
-are verifier-relative acceptance and diagnostic timing results, not native
-binary or end-to-end speed claims. All supervised runs ended, the GPU returned
-to idle, and tmux SSH sessions were closed.
+**Active goal:** [complete the W1A1 EAGLE research program](goals/full-w1a1-eagle-project.md).
+The user delegated research choices and RTX 5080 access for an initial
+roughly 10-hour autonomous work window. The goal file has exact commits,
+owners, raw artifact hashes, and the next action.
 
-**Current sequence:** the matched five-repetition RTX 5080 benchmark finished
-all 180 requests. [Native results](../experiments/native-end-to-end-5080.md):
-packed-head W1A1 achieved 0.931× ordinary EAGLE request and 0.925× decode
-throughput, though both speculative paths beat target-only. The faster binary
-draft needed 480 more verification rounds after acceptance fell. All packed
-server logs showed CUDA dispatch. Ordinary and packed decoded texts matched
-60/60; both differed from target-only on the same two prompts, so a bounded
-token-ID diagnostic is underway under `/root/cuda_acceptance_operator`.
-The RTX 2080 Ti host address is still missing, so SM75 claims
-remain pending while 5080 work continues.
-The user also requested a follow-on INT4/INT8 accepted-per-round comparison;
-its [completed report](../experiments/pytorch-int4-int8-cuda-acceptance.md)
-records the same 12-prompt RTX 5080 comparison. Accepted drafts/round were
-ordinary BF16 2.3166, W4A4 simulation 0.2882, and W8A8 simulation 2.1816.
-Both operands were quantized for the selected drafter linears, with FP32
-simulated accumulation and BF16 output. The known target/verifier parity
-limitation remains; these are verifier-relative counts, not native INT4/INT8
-speed results. All supervised jobs ended, the GPU returned to idle, and SSH
-sessions closed. The [measurement plan](../experiments/int4-int8-acceptance-plan.md)
-has the implementation and run checkpoint.
-The prior [PyTorch W1A1 EAGLE
-goal](goals/pytorch-w1a1-eagle.md) and
-`experiments/pytorch-w1a1-metal-acceptance.md` contain the Metal development
-evidence and its BF16 greedy-parity limitation.
+## RTX 5080 result
 
-**Repository:** the published target/draft pair, PyTorch acceptance simulation,
-packed CPU/CUDA operations, GGUF conversion, and a one-prompt native CUDA
-smoke are in place. RTX 2080 Ti binary measurements and paired throughput
-remain unvalidated. See
-`docs/PROJECT_OVERVIEW.md` for the overall research gates.
+A dedicated packed W1A1 operation, EAGLE output-head GGUF exporter/loader,
+and CUDA dispatch are integrated in the pinned llama.cpp fork at `92bc706`.
+CUDA backend correctness passed 5/5 cases, all 32,000 packed head rows were
+audited against the published BF16 source, and every packed benchmark server
+logged actual CUDA XOR/POPCOUNT dispatch. See the
+[integration report](../experiments/ggml-w1a1-cuda-5080.md).
 
-When a goal is active, link its `docs/goals/<slug>.md` here and summarize the
-current stage, owner tasks, live remote jobs, next actions, and user decisions.
+The [matched five-repetition comparison](../experiments/native-end-to-end-5080.md)
+completed 180 requests on 12 fixed prompts with the same FP16 target and
+server settings:
+
+| Variant | Request tokens/s | Decode tokens/s |
+| --- | ---: | ---: |
+| Target-only | 96.67 | 99.39 |
+| Ordinary EAGLE | 123.96 | 132.88 |
+| Packed-head W1A1 EAGLE | 115.38 | 122.94 |
+
+Packed-head W1A1 achieved **0.931× ordinary request throughput** and
+**0.925× ordinary decode throughput**. Draft generation became faster per
+round (4.386→3.515 ms), but accepted draft tokens fell (1.161→0.892 per
+round), requiring 480 extra verification rounds. All five repetitions and
+all three prompt categories favored ordinary EAGLE. The packed draft used
+148 MiB less GPU memory while loaded. Both speculative paths exceeded
+target-only throughput, but their outputs differed from target-only on two
+prompts, so that ratio is not a clean lossless speedup claim.
+
+Ordinary and packed EAGLE decoded texts matched on all 60 paired requests.
+A separate raw-token check found identical ordinary/packed IDs on the two
+target-only mismatch prompts. Target-only ranked the speculative IDs second
+by 0.000963 and 0.016508 nats; the API did not expose the verifier logits
+for those accepted draft positions. The precise native baseline mismatch
+cause remains unproven. The earlier BF16 PyTorch verifier trace separately
+identified a tree-versus-incremental target logit tie; see the
+[acceptance report](../experiments/pytorch-w1a1-cuda-acceptance.md).
+
+## Other completed gates
+
+The [bounded head-only QAT pilot](../experiments/qat-head-pilot-results.md)
+improved validation KL but reduced fixed held-out W1A1 acceptance to 1.565
+drafts/round from the untrained 1.677. That recipe was stopped without
+held-out tuning. The user's requested [W4A4/W8A8 accepted-per-round
+comparison](../experiments/pytorch-int4-int8-cuda-acceptance.md) measured
+0.2882 and 2.1816 respectively under the BF16 PyTorch verifier; those are
+numerical simulations, not native INT4/INT8 timing.
+
+A standalone SM75 binary-MMA probe cross-compiled to `BMMA.88128.XOR.POPC`
+and passed 21 cases/880 exact integer dots in an explicitly labeled SM120
+proxy run. It has **not** executed on the RTX 2080 Ti; see the
+[probe record](../experiments/sm75-binary-mma-plan.md). A focused
+[related-work note](../experiments/related-work-note.md) keeps novelty claims
+narrow: quantized EAGLE and native QAT already exist.
+
+## Next gate
+
+The RTX 2080 Ti address is absent from the shared host registry (username
+`philip`). Its actual SM75 correctness and same-device target-only/ordinary/
+binary comparisons are required before a Turing speed claim. The address
+has been requested from the user; the [runbook](RTX2080TI_RUNBOOK.md) is ready.
+The 5080 remains available. All supervised
+project GPU jobs are terminal, no project process remains, and SSH/tmux
+sessions are closed. The repository checks pass (75 tests).
