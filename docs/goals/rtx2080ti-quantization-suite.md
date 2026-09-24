@@ -24,8 +24,9 @@ reproducible comparison, including a quantified negative result if appropriate.
 | Native INT8 and INT4 | W8A8 and W4A4 on the same eligible draft layer coverage, if a correct native path can be built | Actual operand format and operator/SASS evidence, numerical and model-level checks before timing |
 | Weight-only controls | Q8_0 and Q4_0 draft GGUFs | Actual CUDA operator and activation precision labels; never call these W8A8/W4A4 |
 
-Use NVIDIA's Turing precision set (FP16, INT8, INT4, binary) as the hardware
-inventory, then audit which formats the pinned runtime can actually execute.
+Use [NVIDIA's Turing precision set](https://docs.nvidia.com/cuda/turing-tuning-guide/#tensor-core-operations)
+(FP16, INT8, INT4, binary) as the hardware inventory, then audit which formats
+the pinned runtime can actually execute.
 Do not fill a native INT8/INT4 row with a simulation or weight-only result. If
 a true path proves infeasible, document the concrete blocker, its attempted
 check, and the available weight-only control; keep the row visibly unmeasured.

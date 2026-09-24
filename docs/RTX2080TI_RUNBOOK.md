@@ -7,7 +7,7 @@ no Ubuntu distribution yet. Recheck access after Ubuntu and SSH are configured.
 All SSH to this WSL GPU must use tmux MCP and all experiments must use
 `scripts/remote_job.py` with unique run IDs.
 
-The [active project goal](goals/full-w1a1-eagle-project.md) and
+The [active benchmark goal](goals/rtx2080ti-quantization-suite.md) and
 [evaluation protocol](EVALUATION.md) govern this gate. The 5080
 [native end-to-end comparison](../experiments/native-end-to-end-5080.md)
 found head-only packed W1A1 slower than ordinary EAGLE, but 5080 behavior
