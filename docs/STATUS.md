@@ -108,10 +108,11 @@ speed ratios. Local fake-server and analysis checks passed 15/15; the
 ## Next gate
 
 The RTX 2080 Ti address is present in the shared host registry (username
-`philip`). Its actual SM75 correctness and same-device comparisons are still
-required before a Turing speed claim. SSH is unreachable until the Windows/WSL
-setup is completed; the [runbook](RTX2080TI_RUNBOOK.md) remains the execution
-guide.
+`philip`), and WSL/SSH access is working. Native W1A1 and binary-MMA backend
+correctness have passed on SM75. All 18 pinned model source files are staged
+and hash-verified; conversion, model-level dispatch/parity, and matched
+same-device timing remain. The [runbook](RTX2080TI_RUNBOOK.md) governs those
+remaining gates.
 The 5080 experiments are complete and sealed. Its remote checkout was restored
 to pinned `92bc706`; all supervised jobs exited, no project process remained,
 and repeated GPU samples showed 0% utilization. The repository checks pass
