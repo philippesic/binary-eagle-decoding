@@ -22,6 +22,13 @@ one-prompt CUDA dispatch smoke passed before this run, documented in the
 | Ordinary EAGLE | same target | FP16 GGUF, F16 KV | FP16 weights, ordinary matmul |
 | Packed-head W1A1 | same target | FP16 GGUF, F16 KV | I32 packed signs + F32 row scales; F32 activation packing and XOR/`__popc` |
 
+The submodule diff from pinned upstream `6e60f356` to `92bc706` changes the
+GGML operation/backends, EAGLE draft-head graph/loading, converter and tests;
+it does not edit target-model execution or server speculative-verification
+source. The text divergences below therefore occur with the pinned native
+baseline's verifier algorithm, not a verifier-code edit in this branch. This
+source-scope check is not by itself a runtime equivalence proof.
+
 The harness used 12 fixed held-out prompts (four prose, code, and reasoning
 each), five alternating variant orders, two warmup requests after each server
 load, then one measured request per prompt/server/repetition: **180 measured

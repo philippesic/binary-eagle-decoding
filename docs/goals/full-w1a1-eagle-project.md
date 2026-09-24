@@ -363,3 +363,11 @@ RTX 5080 access. Make bounded decisions from evidence, checkpoint them in
   [the RTX 2080 Ti runbook](../RTX2080TI_RUNBOOK.md). Its current address is
   absent from the shared host registry; the username `philip` is known and
   the user was asked asynchronously for the IP. No 2080 Ti run has started.
+- A new compile-only integrated SM75 check is running on the 5080 host under
+  supervised ID `integrated-sm75-cuda-build-20260924`, owned by
+  `/root/cuda_acceptance_operator`. It uses a separate ignored
+  `build/llama-cuda-sm75` tree (leaving the measured SM120 binary intact),
+  CUDA 13.1/GCC 15, `CMAKE_CUDA_ARCHITECTURES=75`, and the previously audited
+  private CUDA header copy. No SM75 binary will be executed on the 5080.
+  Capture its terminal state/disassembly/hashes before claiming compile-only
+  success; the 2080 Ti runtime gate remains pending.
