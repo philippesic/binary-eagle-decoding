@@ -3,7 +3,7 @@
 **Opened:** 2026-09-24  
 **State:** active  
 **Orchestrator:** current Codex task  
-**GPU owner:** unassigned until the first RTX 5080 host/resource check  
+**GPU owner:** `/root/cuda_acceptance_operator` (Luna high), host check pending
 **First autonomous work window:** 2026-09-24 09:08–19:08 UTC; the objective
 continues beyond that window if required.
 
@@ -87,5 +87,14 @@ RTX 5080 access. Make bounded decisions from evidence, checkpoint them in
   and SSH sessions closed; no live project experiment is recorded.
 - The RTX 5080 registry entry is populated and unpaused; the RTX 2080 Ti entry
   has a username but no host address. Verify actual current host/resource state
-  before any new run. No new worker or GPU job has been launched yet.
-- Opening checkpoint must be committed and pushed before parallel work starts.
+  before any new run. No new GPU job has been launched yet.
+- Opening checkpoint `254eaba` was pushed before worker dispatch. Active
+  assignments: `/root/cuda_acceptance_operator` alone owns the 5080 parity
+  investigation; `/root/binary_reference` owns an isolated CPU kernel-reference
+  worktree; `/root/parity_advice` is read-only. The orchestrator owns docs,
+  integration, and research decisions. Workers must not edit each other's
+  files or share the GPU.
+- The thread heartbeat `continue-w1a1-eagle-project` is active every 30
+  minutes for the roughly 10-hour away window, with instructions to avoid
+  duplicate work while a task/worker is active and to report meaningful
+  progress only. It will be paused at the window end.

@@ -4,7 +4,10 @@
 The user delegated project research decisions and granted RTX 5080 access for
 an initial roughly 10-hour autonomous work window. The first work units are a
 bounded BF16 verifier-parity investigation on the 5080, a CPU binary
-reference/packer, and native-path planning. No new GPU job is running yet.
+reference/packer, and native-path planning. Luna operator
+`/root/cuda_acceptance_operator` alone owns the 5080; Sol worker
+`/root/binary_reference` owns the CPU reference in an isolated worktree;
+`/root/parity_advice` is read-only. No new GPU job is running yet.
 The completed [RTX 5080 W1A1 draft acceptance goal](goals/rtx5080-draft-acceptance.md) and
 `experiments/pytorch-w1a1-cuda-acceptance.md` contain the pinned CUDA setup,
 strict BF16 parity diagnostic, full 12-prompt exploratory acceptance sweep,
