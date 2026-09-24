@@ -80,7 +80,9 @@ def percentile(sorted_values: list[float], fraction: float) -> float:
 
 
 def paired_bootstrap(
-    records: list[dict], samples: int, seed: int,
+    records: list[dict],
+    samples: int,
+    seed: int,
     candidate: str = "packed_head_w1a1",
 ) -> dict:
     if samples < 100:
@@ -202,9 +204,7 @@ def analyze(run_dir: Path, samples: int, seed: int) -> dict:
             for anchor in VARIANTS
             for metric in METRICS
         }
-        result["paired_mma_bootstrap_95pct"] = paired_bootstrap(
-            records, samples, seed, MMA_VARIANT
-        )
+        result["paired_mma_bootstrap_95pct"] = paired_bootstrap(records, samples, seed, MMA_VARIANT)
     return result
 
 

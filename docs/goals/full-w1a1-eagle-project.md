@@ -514,9 +514,18 @@ portable packed-head W1A1, so it could not directly alternate the new MMA
 variant on one GPU. `/root/paired_benchmark_harness` owns an optional fourth
 `packed_head_w1a1_mma` variant in the runner and its tests, with explicit
 per-server `GGML_CUDA_W1A1_MMA` selection and raw dispatch evidence; no GPU
-is assigned. Analysis support for three or four complete paired variants is
-already committed/pushed at parent `ab45e49`, with dedicated MMA/portable
-pooled ratios and bootstrap intervals. Five analysis tests pass, including
-four-way pairing and a missing-decode-metric regression. The runner change
-and fake-server end-to-end tests remain in progress. Keep the production
-three-variant path unchanged when the opt-in flag is absent.
+is assigned. Analysis support for three or four complete paired variants was
+committed/pushed at parent `ab45e49`, with dedicated MMA/portable pooled
+ratios and bootstrap intervals. The runner from isolated worker `ac2d447`
+was cherry-picked into main as `473e9d2`; `[evaluation] binary_mma = true`
+selects all four variants, otherwise the three-variant behavior remains.
+The runner saves per-variant selector environments, checks distinct dispatch
+markers, and reports MMA/portable pooled speedup and text parity. A local
+fake-server test needed a test-only bypass for slow reverse DNS in Python
+3.14's `HTTPServer.server_bind`; the production runner did not change for
+that environment issue. The combined runner/analysis suite now passes 15/15
+under Python 3.14, and the worker independently passed 15/15 under the
+project's locked Python 3.11. Focused Ruff checks pass. No GPU was used.
+The [2080 Ti runbook](../RTX2080TI_RUNBOOK.md) now names the opt-in flag,
+required dispatch fields, and MMA/portable analysis. The current 2080 Ti
+address is still absent; that actual runtime and timing gate remains open.

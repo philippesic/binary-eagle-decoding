@@ -75,7 +75,13 @@ class NativeBenchmarkAnalysisTests(unittest.TestCase):
             directory = Path(tmp)
             (directory / "records.json").write_text(json.dumps(rows))
             (directory / "report.json").write_text(
-                json.dumps({"status": "complete", "records": len(rows), "variants": list(analysis.ALL_VARIANTS)})
+                json.dumps(
+                    {
+                        "status": "complete",
+                        "records": len(rows),
+                        "variants": list(analysis.ALL_VARIANTS),
+                    }
+                )
             )
             (directory / "prompts.jsonl").write_text(
                 '{"id":"prose-01","category":"prose"}\n{"id":"code-01","category":"code"}\n'

@@ -504,13 +504,17 @@ def aggregate(
 
 
 def completion_text_matches(
-    records: list[dict[str, Any]], variants: tuple[str, ...] = VARIANTS
+    records: list[dict[str, Any]],
+    variants: tuple[str, ...] = VARIANTS,
+    reference_variant: str = "target_only",
 ) -> dict[str, Any]:
     """Compare decoded response text hashes for matched repetition/prompt pairs."""
+    if reference_variant not in variants:
+        raise ValueError("reference variant is unavailable")
     by_key = {(row["repetition"], row["prompt_id"], row["variant"]): row for row in records}
     result = {}
     for variant in variants:
-        if variant == "target_only":
+        if variant == reference_variant:
             continue
         matched = 0
         unavailable = 0
@@ -518,7 +522,7 @@ def completion_text_matches(
         for row in records:
             if row["variant"] != variant:
                 continue
-            key = (row["repetition"], row["prompt_id"], "target_only")
+            key = (row["repetition"], row["prompt_id"], reference_variant)
             reference = by_key.get(key)
             if (
                 reference is None
@@ -813,6 +817,9 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                     destination, evaluation["repetitions"], MMA_VARIANT
                 )
                 report["mma_speedup_vs_portable"] = mma_speedup_vs_portable(aggregated)
+                report["greedy_text_match_mma_vs_portable"] = completion_text_matches(
+                    records, variants, "packed_head_w1a1"
+                )[MMA_VARIANT]
             json_write(destination / "report.json", report)
         except BaseException as error:
             json_write(

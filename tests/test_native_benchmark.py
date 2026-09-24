@@ -20,6 +20,7 @@ import json
 import os
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from socketserver import TCPServer
 
 args = sys.argv
 host = args[args.index("--host") + 1]
@@ -81,7 +82,12 @@ class Handler(BaseHTTPRequestHandler):
             "seen": request["messages"],
         }))
 
-ThreadingHTTPServer((host, port), Handler).serve_forever()
+class LoopbackServer(ThreadingHTTPServer):
+    def server_bind(self):
+        TCPServer.server_bind(self)
+        self.server_name, self.server_port = self.server_address[:2]
+
+LoopbackServer((host, port), Handler).serve_forever()
 """.replace("#!PYTHON", f"#!{sys.executable}")
 
 
@@ -163,6 +169,18 @@ class NativeBenchmarkTests(unittest.TestCase):
         self.assertEqual(
             result["packed_head_w1a1"]["mismatch_pairs"], [{"repetition": 0, "prompt_id": "p"}]
         )
+        records.append(
+            {
+                "repetition": 0,
+                "prompt_id": "p",
+                "variant": benchmark.MMA_VARIANT,
+                "completion_sha256": "b",
+            }
+        )
+        paired = benchmark.completion_text_matches(
+            records, (*benchmark.VARIANTS, benchmark.MMA_VARIANT), "packed_head_w1a1"
+        )
+        self.assertEqual(paired[benchmark.MMA_VARIANT]["matched_text"], 1)
 
     def test_aggregate_uses_ratio_of_sums(self):
         rows = []
@@ -279,6 +297,7 @@ class NativeBenchmarkTests(unittest.TestCase):
             self.assertTrue(report["native_cuda_dispatch_confirmed"])
             self.assertTrue(report["mma_cuda_dispatch_confirmed"])
             self.assertEqual(report["mma_speedup_vs_portable"]["decode_tokens_per_s"], 1.0)
+            self.assertEqual(report["greedy_text_match_mma_vs_portable"]["matched_text"], 5)
             self.assertIn("target_only", report["packed_speedup_vs"])
             self.assertEqual(manifest["variants"], report["variants"])
             self.assertNotIn("GGML_CUDA_W1A1_MMA", manifest["environment"])

@@ -75,6 +75,10 @@ scalar-reference backend cases on the 5080, matched all 85 packed-draft
 tokens in one model request, and compiled to SM75 SASS containing the exact
 binary-MMA instruction. It remains on a published experimental branch; no
 SM75 binary was run and no MMA speed result is claimed.
+The paired benchmark runner and analysis now support an opt-in fourth MMA
+variant with separate selector/dispatch records and same-device MMA/portable
+speed ratios. Local fake-server and analysis checks passed 15/15; the
+[2080 Ti runbook](RTX2080TI_RUNBOOK.md) specifies the required run.
 
 ## Next gate
 

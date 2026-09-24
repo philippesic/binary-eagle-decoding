@@ -32,6 +32,7 @@ distribution across prompts/runs, rather than averaging speedup ratios alone.
 | W8A8 / W4A4 EAGLE | Desired comparisons; identify whether kernels actually execute at that operand precision. |
 | W1A1 simulation | Accuracy/acceptance experiment; floating-point simulation is not binary acceleration. |
 | W1A1 native | Packed binary operands and XOR/POPCOUNT computation; identify normal-precision exceptions. |
+| W1A1 binary-MMA candidate | Same packed operands and scales as W1A1 native, with opt-in SM75 binary Tensor Core execution; compare its own dispatch and timing against portable W1A1 on the same GPU. |
 
 For every variant, list precision and execution kernel for each linear group,
 including the output head. Do not relabel a weight-only quantized format as a

@@ -80,6 +80,18 @@ same target, draft weights, prompts, server binary, and settings before ruling
 out Turing binary Tensor Cores. Run both paths with five alternating measured
 repetitions if the MMA correctness gates pass; identify the selector in every
 raw record. Do not compare the 2080 Ti speed ratios to the 5080 track.
+The paired runner supports this directly: use a run-specific copy of
+`configs/native_benchmark.toml` with `binary_mma = true` under `[evaluation]`
+and the candidate branch's `llama-server` binary. This selects target-only,
+ordinary EAGLE, portable packed-head W1A1, and MMA packed-head W1A1 in
+balanced order. It sets `GGML_CUDA_W1A1_MMA=0` for the first three server
+processes and `1` for MMA, even if an inherited/configured value differs;
+the selector is saved with every raw record and per-server environment. Require
+`native_cuda_dispatch_confirmed` and `mma_cuda_dispatch_confirmed` in
+`report.json`, inspect `greedy_text_match_mma_vs_portable`, then run
+`scripts/analyze_native_benchmark.py` on the completed run to obtain pooled
+MMA/portable ratios and paired bootstrap intervals. With the flag absent,
+the existing three-variant behavior remains the default.
 The current activation packer accumulates magnitudes in F64 before writing
 an F32 scale; measure that reduction separately on Turing rather than
 carrying over the 5080 pack cost. The 5080 integrated-kernel NCU attempt was
