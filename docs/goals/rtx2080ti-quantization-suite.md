@@ -1,0 +1,99 @@
+# Goal: benchmark the RTX 2080 Ti quantization suite
+
+**Opened:** 2026-09-24  
+**State:** active; 2080 Ti access and WSL preflight pending  
+**Orchestrator:** current Codex task  
+**GPU owner:** unassigned until access preflight; one owner at a time
+
+## Objective
+
+Measure the complete relevant EAGLE draft precision matrix on the RTX 2080 Ti
+under matched target, prompt, and server settings. Include every implemented
+native W1A1 coverage setting and the Turing-supported FP16, INT8, INT4, and
+binary arithmetic paths. Distinguish actual two-operand low-bit execution from
+weight-only GGUF storage and from PyTorch numerical simulations. Produce a
+reproducible comparison, including a quantified negative result if appropriate.
+
+## Required matrix and evidence
+
+| Track | Variants | Required execution evidence |
+| --- | --- | --- |
+| Anchors | target-only; ordinary FP16 EAGLE | Same target, settings, device, and paired prompts |
+| W1A1 | fusion, attention, FFN, head, all nine linears | Packed weight and activation operands, CUDA dispatch for each selected group |
+| Binary Tensor Core | at least head portable XOR/POPCOUNT versus opt-in SM75 MMA | Real SM75 correctness, `BMMA.88128.XOR.POPC` SASS and runtime dispatch, matched end-to-end comparison |
+| Native INT8 and INT4 | W8A8 and W4A4 on the same eligible draft layer coverage, if a correct native path can be built | Actual operand format and operator/SASS evidence, numerical and model-level checks before timing |
+| Weight-only controls | Q8_0 and Q4_0 draft GGUFs | Actual CUDA operator and activation precision labels; never call these W8A8/W4A4 |
+
+Use NVIDIA's Turing precision set (FP16, INT8, INT4, binary) as the hardware
+inventory, then audit which formats the pinned runtime can actually execute.
+Do not fill a native INT8/INT4 row with a simulation or weight-only result. If
+a true path proves infeasible, document the concrete blocker, its attempted
+check, and the available weight-only control; keep the row visibly unmeasured.
+Do not expand to unsupported newer formats such as FP8 or FP4.
+
+For each timed variant preserve at least five alternating measured repetitions
+over the frozen 12-prompt suite after warmups, with completion lengths,
+request/decode throughput, accepted/proposed/emitted drafts, per-round draft and
+verifier cost, memory, text/token parity, and raw artifacts. Record host GPU,
+driver, CUDA compiler, build and model hashes, CUDA dispatch, and precision
+coverage. Measure packing-inclusive component cost for real EAGLE shapes.
+Compare pooled rates and prompt/repetition spread against both anchors.
+
+## Boundaries and decision gates
+
+- Check the shared local host registry for the current address; never commit
+  it. SSH to WSL only through tmux MCP. If Ubuntu or SSH is absent, establish
+  access before claiming any SM75 result. All remote builds, tests, conversions,
+  and inference use unique supervised `scripts/remote_job.py` runs.
+- Give the 2080 Ti one GPU owner. Check GPU and other processes before and
+  after every experiment. Keep models, raw results, and caches outside Git.
+- First establish real SM75 W1A1 backend correctness, standalone binary-MMA
+  correctness, and model-level dispatch. Then measure the existing five-group
+  plus weight-only matrix. Pursue native INT8/INT4 operator paths only with a
+  pinned arithmetic contract and checks; profile them against the same anchors.
+- Try the existing FP16 target track subject to measured VRAM. If it does not
+  fit, define a separate quantized-target track and run every anchor and
+  candidate with the identical target model, KV precision, and context.
+- The earlier 5080 target-only versus speculative output mismatch remains a
+  correctness limitation. Report paired ordinary/W1A1 text parity and exact
+  target divergence evidence; do not call a divergent target-only ratio a
+  strict lossless speedup.
+- QAT is outside this measurement goal until the untrained post-training
+  matrix is established. Its separate plan remains in
+  `experiments/qat-revisit-plan.md`.
+
+## First independent work units
+
+1. **Orchestrator (docs and integration):** own this file, `docs/STATUS.md`,
+   decisions, runbook, final analysis, review, and main integration. Checkpoint
+   commits and raw artifact hashes; give brief user updates.
+2. **Sol high precision owner (isolated worktree, no GPU):** audit llama.cpp
+   CUDA paths for genuine SM75 W8A8/W4A4 on the eligible EAGLE linears. Deliver
+   a format/operator feasibility map and, if bounded, a tested implementation
+   proposal or reviewable commit. Own only new precision-path code/report;
+   stop before any GPU run or shared-file edit.
+3. **Luna high GPU operator (exclusive 2080 Ti owner):** via tmux MCP inspect
+   WSL access and hardware, prepare the pinned remote checkout and models,
+   run supervised SM75 correctness gates, then the existing five-W1A1 plus
+   weight-only paired suite. Own remote sessions/jobs/raw logs only. Stop at
+   access failure, correctness failure, or resource contention; record exact
+   state, commands, hashes, and results in an experiment report.
+4. **Astra medium advisor if needed:** answer a focused INT4/INT8 kernel or
+   memory-fit question without GPU use or code edits.
+
+## Opening checkpoint
+
+- Parent `main` was clean and matched `origin/main` at goal creation. The
+  expanded llama.cpp gitlink is `8d2b18a`; all five W1A1 variants have local
+  conversion, row audit, and CPU smoke evidence in
+  `experiments/native-w1a1-groups-local.md`. The nine-variant runner has a
+  local dry-run only. Q4_0 and Q8_0 drafts are prepared and audited in
+  `experiments/native-weight-only-draft-prep.md`.
+- The optional integrated SM75 binary-MMA branch is `9bb01a6`, based on the
+  older head-only production revision; it passed 5080 proxy checks only. It
+  needs real SM75 correctness and a carefully matched portable comparison.
+- The shared host registry lists RTX 2080 Ti user `philip`, port 22, and the
+  user-supplied current address. Earlier SSH attempts timed out while Ubuntu
+  WSL was absent. No 2080 Ti runtime or benchmark result exists.
+- Next: commit and push this checkpoint, dispatch independent precision audit
+  and GPU access work, and update this file after the first hardware gate.

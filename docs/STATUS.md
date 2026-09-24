@@ -1,6 +1,12 @@
 # Current project status
 
-**Active goal:** [complete the W1A1 EAGLE research program](goals/full-w1a1-eagle-project.md).
+**Active goal:** [benchmark the RTX 2080 Ti quantization suite](goals/rtx2080ti-quantization-suite.md).
+The prior [W1A1 EAGLE research goal](goals/full-w1a1-eagle-project.md) is
+checkpointed; its remaining Turing measurements are now tracked in the active
+benchmark goal. This suite covers all five native W1A1 layer settings, the
+portable and binary-MMA paths, FP16 anchors, Q4_0/Q8_0 weight-only drafts,
+and genuinely native INT4/INT8 draft execution if correctness gates can be met.
+No RTX 2080 Ti result has been measured yet.
 The user supplied the RTX 2080 Ti address, which is recorded only in the shared
 local host registry. SSH to port 22 timed out; Ubuntu WSL is not installed yet.
 Local preparation continues while actual SM75 measurements await access.

@@ -1,7 +1,8 @@
 # Goal: complete W1A1 EAGLE research program
 
 **Opened:** 2026-09-24  
-**State:** active local preparation; RTX 2080 Ti measurements await Ubuntu WSL and SSH access
+**State:** checkpointed 2026-09-24; remaining Turing measurements moved to
+[the active quantization-suite goal](rtx2080ti-quantization-suite.md)
 
 **Orchestrator:** current Codex task  
 **GPU owner:** none; RTX 5080 is idle
