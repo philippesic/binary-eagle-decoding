@@ -1,7 +1,8 @@
 # Integrated GGML W1A1 CUDA on RTX 5080
 
-**Date:** 2026-09-24. **State:** CUDA build and focused backend correctness
-passed; model-level CUDA smoke and paired end-to-end benchmark are next.
+**Date:** 2026-09-24. **State:** CUDA build, focused backend correctness,
+and one-prompt model-level CUDA dispatch passed; paired end-to-end benchmark
+is next.
 **Hardware:** RTX 5080, SM120a codegen, driver 616.92, CUDA 13.1.115,
 WSL GCC/G++ 15.2 and glibc 2.43. This is not an SM75 or 2080 Ti result.
 
@@ -56,3 +57,48 @@ are separate gates. The portable `__popc` implementation is true binary
 execution but does not exercise Turing binary Tensor Cores; the
 [SM75 MMA check](sm75-binary-mma-plan.md) remains pending actual 2080 Ti
 access.
+
+## Pinned GGUF conversion
+
+A separate pinned Python 3.11.15 conversion environment used torch 2.11.0,
+Transformers 4.57.6, and GGUF 0.19.0. Its package list hash matches the local
+reference `d5269b8b800401897f8c6519b745236f1882663c295b6c50891bf9df1fa8af69`.
+Every conversion set `CUDA_VISIBLE_DEVICES=` and left the GPU idle.
+
+| RTX 5080 host artifact | Bytes | SHA256 |
+| --- | ---: | --- |
+| Target F16 GGUF | 8,051,285,280 | `05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6` |
+| Ordinary EAGLE F16 GGUF | 442,700,800 | `c1f895a130b64cd3d5a97fba7aa7605dc7fe3a389dd6d48e6751128614ee76d1` |
+| Original-head packed W1A1 EAGLE GGUF | 289,229,312 | `b2095130b5196574a9a08a88d2fb9a32ac1ea870ff3cf587ae7d6e7f64e7819f` |
+
+Target and ordinary draft are byte-identical to the local Mac conversions.
+The packed file's whole hash differs from the local file because the F32
+weight-scale reduction is platform sensitive. The packed I32 tensor SHA256 is
+identical across hosts,
+`7e3c5642ec462e7a01691db84c4d25bbbd4a262977dc59794e441fc502a49b1b`;
+the 5080 host's F32 scale tensor SHA256 is
+`9683db664835fb5273fef0a2e8696da14cd224938cc9cc3b59bb8ba0b3d7460c`
+versus local
+`93c714eb6c21ce41ee27e8aeb6aad877f63e398a874167ce5f65f3a9cd2c56ea`.
+All 32,000 signs and scales exactly match the corresponding host's BF16
+source-to-F32-mean exporter; all 13 shared non-head tensors match the ordinary
+draft exactly, and dense `output.weight` is absent. Against a F64-summed/F32
+mean reference, remote F32 weight scales differ in 12,883 rows by at most
+three ULP or 5.59e-9 absolute. This is a small, recorded conversion
+rounding difference, not an integer packing error. Native results must cite
+the 5080 host packed GGUF hash rather than the Mac hash.
+
+## Model-level CUDA smoke
+
+A single supervised packed-draft `llama-server` request on held-out
+`prose-01` returned HTTP 200 with 16 generated tokens. The log showed the
+packed EAGLE-head loader and the explicit
+`CUDA packed W1A1 XOR/POPCOUNT dispatch` marker. `/metrics` deltas were 50
+proposed tree nodes, two accepted draft tokens, and 12 verification rounds:
+0.1667 accepted drafts/round for this short prompt. Loaded GPU memory sampled
+at 12,269 MiB used with 3,709 MiB free; after clean shutdown it returned to
+the 3,050 MiB/0% Windows baseline. Supervisor
+`native-cuda-packed-head-smoke-20260924` exited zero. Raw log/request/model
+hashes remain under the host's ignored `results/` and `runs/` and will be
+added when the operator seals its manifest. One short prompt is only a
+dispatch/counter gate, not an acceptance distribution or speed measurement.

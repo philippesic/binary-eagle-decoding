@@ -264,6 +264,13 @@ RTX 5080 access. Make bounded decisions from evidence, checkpoint them in
   `test-backend-ops test -b CUDA0 -o W1A1_MUL_MAT` passed all five cases
   (K=31/32/33/2560 and strided K=33) on the RTX 5080, including the explicit
   CUDA XOR/POPCOUNT dispatch log. Both supervisors exited and GPU returned to
-  its 3,050 MiB/0% baseline. The operator is now converting the pinned target,
-  ordinary draft, and packed-head draft GGUF on that host before a one-prompt
-  model-level CUDA smoke. Raw hashes/environment will be added once sealed.
+  its 3,050 MiB/0% baseline. The pinned target and ordinary draft F16 GGUF
+  are byte-identical to local conversions. The packed draft has identical
+  sign bits but F32 scale reductions differ by at most three ULP across Mac
+  and WSL; all 32,000 rows match the corresponding host source. Exact 5080
+  GGUF hashes are in [the integration report](../../experiments/ggml-w1a1-cuda-5080.md).
+  A one-prompt CUDA server smoke returned HTTP 200, confirmed packed-head
+  loader and CUDA XOR/POPCOUNT dispatch, and recorded 50 proposed / 2 accepted
+  / 12 rounds. The server and supervisor exited, GPU returned to baseline.
+  The next gate is the five-repetition matched native benchmark. Raw smoke
+  hashes/environment will be added once sealed.
