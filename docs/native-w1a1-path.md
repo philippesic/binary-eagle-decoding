@@ -28,8 +28,8 @@ so native acceptance must be remeasured under a matching numerical contract.
   exact GGML numerical contract. Integer dot is exactly
   `K - 2*sum(popcount((weight_word XOR activation_word) & valid_bits))`.
   Padding bits cannot contribute to the dot or scale. Apply row and token
-  scales in an explicit order using F32 arithmetic, then follow the output
-  dtype expected by the surrounding GGML graph. Preserve any bias separately.
+  scales in an explicit order using F32 arithmetic and return F32 logits to
+  the surrounding GGML graph. Preserve any bias separately.
 - An all-zero row has zero scale and therefore zero pre-bias output, while its
   signs still follow `sign(0)=+1`. Test both +0 and -0. Native kernel results
   must agree with the packed CPU reference for integer dots exactly and for

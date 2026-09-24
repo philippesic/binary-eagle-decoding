@@ -1,7 +1,9 @@
 # Bounded W1A1 drafter-head QAT pilot
 
-**Status:** planned; no QAT run has started. This is one bounded quality
-recovery experiment, not a foundation-model training program or a speed claim.
+**Status:** capture and bounded training completed; fixed held-out acceptance
+is pending. See [pilot results](qat-head-pilot-results.md). This is one bounded
+quality recovery experiment, not a foundation-model training program or a
+speed claim.
 
 ## Why this pilot
 

@@ -188,8 +188,9 @@ RTX 5080 access. Make bounded decisions from evidence, checkpoint them in
 - The RTX 5080 was handed exclusively to `/root/cuda_acceptance_operator` for
   the QAT pilot. Remote checkout `855fea5` produced the expected disjoint
   96/24 prompt hashes. Capture supervisor `qat-head-capture-20260924` is
-  running, with per-prompt cap 384 and global cap 32768. No training job has
-  started. The parity/CUDA prototype supervisors and SSH sessions are closed.
+  complete, with per-prompt cap 384 and global cap 32768. The later training
+  run is documented below. The parity/CUDA prototype supervisors and SSH
+  sessions are closed.
 - Pinned target and ordinary EAGLE draft converted to FP16 GGUF locally; CPU
   and Metal runtime builds succeeded, and Metal target-only/ordinary EAGLE
   smoke generation loaded both. Source/output hashes, commands, log hashes,
@@ -204,3 +205,30 @@ RTX 5080 access. Make bounded decisions from evidence, checkpoint them in
   drafter smoke passed; CUDA compilation/backend tests are still pending GPU
   handoff. Packed GGUF SHA256 is
   `6250363f5fdb70fcb3113be90cca8755e916ac0da533a76e340335aa418c16ca`.
+- The integrated submodule's CPU backend tests passed 5/5 after all changes;
+  an all-32,000-row GGUF readback had zero sign/scale mismatches and no dense
+  shadow head. See [native GGUF check](../../experiments/native-w1a1-gguf-check.md).
+  Submodule commit `92bc706` adds a one-time explicit CUDA W1A1 dispatch log
+  for the later server benchmark, was pushed to the fork before parent gitlink
+  update `102a062`, and remains uncompiled on CUDA.
+- QAT capture `qat-head-capture-20260924` finished with 32,768 train and 9,216
+  validation BF16 rows, disjoint 96/24 prompts, and balanced ordinary/W1A1
+  trajectories. A CUDA dry run validated artifact hashes and forward parity.
+  Bounded head-only training `qat-head-training-20260924` completed 500 steps
+  in 39.31 seconds; best step 500 reduced validation KL from 2.50634 to
+  1.01696 and improved teacher top-1 agreement from 0.47667 to 0.54167.
+  The GPU supervisor exited and memory returned to baseline. Raw manifests,
+  exact hashes, config, and limits are in
+  [the QAT pilot report](../../experiments/qat-head-pilot-results.md).
+  `/root/cuda_acceptance_operator` remains the GPU owner for one frozen
+  exported-checkpoint held-out acceptance run; no tuning against held-out.
+- `235a359` integrated a PyTorch head-only simulation of GGML's integer sign
+  dot, F32 exported weight scales, F64-summed/F32 activation scale, ordered
+  F32 products and F32 logits. Its ordinary variant stays BF16, and the
+  config explicitly labels the full PyTorch BF16 versus GGUF F16 upstream
+  difference. `make check` passes 63 tests; no 5080 acceptance run yet.
+- `6906771` integrated a same-device, sequential target-only/ordinary/packed
+  llama-server comparison harness, with five repetitions, exact prompt/config
+  and artifact hashes, raw responses/metrics, process cleanup, and explicit
+  CUDA dispatch evidence. Its four fake-server tests pass; no real benchmark
+  has run. The RTX 2080 Ti address remains absent.
