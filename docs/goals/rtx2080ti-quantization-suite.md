@@ -560,3 +560,26 @@ Compare pooled rates and prompt/repetition spread against both anchors.
 - Next: build/check the separate combined opt-in INT8/INT4 Tensor Core source
   `2d9712cde` on SM75, first exact probe/backend/model parity and then paired
   timing if those pass. Trace actual Q4_0/Q8_0 CUDA operator paths afterward.
+
+## Opt-in INT8/INT4 Tensor Core arithmetic milestone
+
+- The isolated combined opt-in branch `2d9712cde` built 360/360 SM75 targets
+  under a supervised WSL run; parent production gitlink remains `34e21b7`.
+  W8A8 default signed-byte DP4A and selector-enabled signed-INT8 MMA each
+  passed 5/5 CUDA backend cases with distinct markers. W4A4 default packed
+  vector and selector-enabled signed-I4 MMA each passed 4/4, also with
+  distinct markers. Every gate returned the GPU to the 855 MiB/0% baseline.
+- Standalone W8A8 MMA probe passed 63/63 exact I32 dot cases on SM75 and its
+  SASS contains `IMMA.8816.S8.S8`. The W4A4 probe passed six cases/308 exact
+  I32 outputs and contains `IMMA.8832.S4.S4.SAT`. Targeted SASS extracts of
+  the **built live candidate library** confirm the W8A8 MMA function contains
+  `IMMA.8816.S8.S8` (excerpt SHA256
+  `2d9c549f1df31c39122891a70f36cee5bed076f98c8d63c9df10b55217c1dfe1`)
+  and the W4A4 MMA function contains `IMMA.8832.S4.S4.SAT` (excerpt SHA256
+  `0b83964bb3d96ee47df168b3fbd35c75fe8967bee3db0ff17d4038a3c9999782`).
+  These prove numerical operator and instruction evidence, not real EAGLE
+  parity or end-to-end speed.
+- Next: short same-GGUF, all-nine model smoke with selector 0 versus 1 for
+  each format; require matching text/acceptance and actual dispatch before
+  using the integrated optional MMA benchmark rows. A full-library SASS dump
+  was stopped after exceeding 1 GiB; targeted function extracts are retained.
