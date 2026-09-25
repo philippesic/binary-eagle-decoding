@@ -333,3 +333,21 @@ Compare pooled rates and prompt/repetition spread against both anchors.
 - The operator is starting the full 12-prompt, five-repetition paired matrix
   with one GPU/server owner. Raw smoke hashes and final run IDs will be added
   to the experiment report and the next checkpoint.
+
+## Full run in progress
+
+- The production matrix is supervised as
+  `native-nine-quantization-full-supervisor-20260924`, writing ignored raw
+  artifacts to `results/native-nine-quantization-full-run-20260924/` on the
+  2080 Ti host. It pins parent `f99affa`/llama.cpp `34e21b7`, 12 frozen
+  prompts, two warmups/server, five alternating repetitions, 128 output-token
+  cap, and one server at a time. Preflight was 855 MiB used / 0% GPU use.
+  Repetition 0 target-only and ordinary EAGLE each completed all 12 prompts;
+  ordinary loaded at about 10,108 MiB used with 920 MiB free. The run remains
+  active; no throughput conclusion is available yet.
+- A separate opt-in Q4_0/Q8_0 dispatch trace source was published on
+  llama.cpp branch `feat/qformat-cuda-dispatch-trace` at
+  `5c52067`. With `GGML_CUDA_QFORMAT_DISPATCH_TRACE=1`, it will log bounded
+  actual MMVQ/MMQ/cuBLAS branch, activation format, and shapes. It is disabled
+  by default and has not been compiled on CUDA or run during timed requests.
+  A short isolated post-suite check will resolve the source-inferred labels.
