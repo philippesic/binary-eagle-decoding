@@ -255,3 +255,40 @@ python3 scripts/remote_job.py native-nine-quantization-analysis-20260924 -- runs
 ```
 
 Raw `manifest.json`, `report.json`, `records.json`, `prompts.jsonl`, every per-request response/metrics file, GPU snapshots, and per-variant server logs remain in the ignored remote run directory. No raw run data was added to Git.
+
+## Four-path portable versus binary-MMA head matrix
+
+After the sealed production run, a second independent matrix compared target-only, ordinary EAGLE, portable packed W1A1 head, and the opt-in packed-head binary-MMA candidate. The remote parent was `decec7a7ef5c09e51a1afb3fe3766560b338efcb`; the production submodule gitlink remained `34e21b7d85c17e25d5a91ce2ab1074d4c18bfe39`. The isolated candidate build tree was commit `9bb01a682ed4ba5e506870c8a38338589830b164`. Its CUDA binary was `build/llama-cuda-mma/bin/llama-server`, SHA256 `365edec352eb3cc57fa7649317ea3354410363a475afdeced0ea345d748355cf`.
+
+The config `runs/toolchain-bootstrap/native-mma-head-full.toml` was copied from `configs/native_benchmark.toml`, selected the integrated candidate server, and enabled `evaluation.binary_mma = true`. Its SHA256 is `3fa9a7d1254c47a3867dba30b72c212525363b8e3eb455997bea01afc85b1012`. The exact supervised commands were:
+
+```sh
+cd ~/binary-eagle-decoding
+python3 scripts/remote_job.py native-mma-head-full-supervisor-20260925 -- runs/toolchain-bootstrap/bin/micromamba run -p runs/toolchain-bootstrap/env env OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python scripts/benchmark_native_eagle.py --config runs/toolchain-bootstrap/native-mma-head-full.toml --run-id native-mma-head-full-run-20260925
+python3 scripts/remote_job.py native-mma-head-analysis-20260925 -- runs/toolchain-bootstrap/bin/micromamba run -p runs/toolchain-bootstrap/env python scripts/analyze_native_benchmark.py --run-dir results/native-mma-head-full-run-20260925 --samples 2000 --seed 42 --output results/native-mma-head-full-run-20260925/analysis.json
+```
+
+The run used the same 12 prompts, 2 warmups, five measured repetitions, 128-token cap, target F16 model, ordinary F16 EAGLE draft, and frozen W1A1-head GGUF as the production matrix. It finished exit 0 at `2026-09-25 00:54:48 UTC` with 240/240 records (60 per path). Every portable-head record records selector `0`; every MMA-head record records selector `1`. Both portable and MMA variants have confirmed CUDA dispatch across all five repetitions, and the report confirms the expected binary-MMA marker separately from portable XOR/POPCOUNT.
+
+| Variant | Request tok/s | Decode tok/s | Accepted / proposed | Rounds | Accepted / round |
+|---|---:|---:|---:|---:|---:|
+| Target only | 59.515 | 61.462 | — | — | — |
+| Ordinary EAGLE | 77.129 | 82.261 | 3,970 / 16,740 (23.72%) | 3,400 | 1.168 |
+| Portable W1A1 head | 70.388 | 74.591 | 3,405 / 19,480 (17.48%) | 3,960 | 0.860 |
+| Binary-MMA W1A1 head | 70.523 | 74.720 | 3,405 / 19,480 (17.48%) | 3,960 | 0.860 |
+
+MMA/portable pooled rate ratios were 1.0019 request and 1.0017 decode. Paired 95% bootstrap intervals (2,000 prompt-and-repetition resamples, seed 42) were `[0.9966, 1.0068]` for request rate and `[0.9973, 1.0062]` for decode rate, so this matrix measured no head-path speed difference. The report's MMA/ordinary ratios were 0.914 request and 0.908 decode. The target-only ratios were 1.185 request and 1.216 decode, subject to the same stable reasoning-02 formatting divergence described above.
+
+Portable W1A1 and binary-MMA W1A1 produced identical decoded text on all 60 paired inputs. Ordinary EAGLE, portable W1A1, and MMA W1A1 each had the same five formatting-only text differences from target-only on `reasoning-02`; target-only remained stable over repetitions. Generated token IDs were omitted by the server in all 240 responses despite `return_tokens=true`. Decode timing is available, but non-streaming requests did not provide client TTFT. Finish reasons were `length` for 220 records and `stop` for 20.
+
+The initial GPU sample was 855 MiB used / 10,173 MiB free; the largest sampled matrix reading was 10,160 MiB used / 868 MiB free. After the analysis job, no `llama-server`, benchmark runner, or supervisor process remained and GPU memory returned to 855 MiB / 0% utilization.
+
+Raw files are on the WSL host at `/home/philip/binary-eagle-decoding/results/native-mma-head-full-run-20260925/`:
+
+| Artifact | SHA256 |
+|---|---|
+| `manifest.json` | `ca7f6647b1731fcac8b6d6494cf3a7d0d348fb8e34bed7b2be17ce9cdb48b8a1` |
+| `report.json` | `0ee964ea70cc76ab7a479eea6291334bc783af370b36c8d07dabe1f12afba665` |
+| `records.json` | `ad53f8f9875b786117894e1dd54a637d7bea04976aead6609631a5746ef9ce3f` |
+| `prompts.jsonl` | `0d6a698d6816592c6ff435fed2fea4cdafe9f5248393d2a5ac091e1551919476` |
+| `analysis.json` | `9a996f457fa5864166e920dd08f185596b80da75e1009585fc1f8d2b9ad229c2` |
