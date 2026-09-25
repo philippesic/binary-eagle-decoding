@@ -634,8 +634,23 @@ Compare pooled rates and prompt/repetition spread against both anchors.
   The paired MMA/default conclusions are clean because draft weights,
   accepted counts, and emitted text are equal within each format. These are
   measurements of this single-sequence EAGLE workload, not general Tensor
-  Core throughput claims. Raw hashes, absolute rates, and component timing
-  will be added from the operator's report; do not invent missing values.
+  Core throughput claims. The detailed [experiment report](../../experiments/rtx2080ti-quantization-suite.md)
+  was committed/pushed at `37197fe`.
+- Absolute decode rates were W8A8 default 80.301 versus MMA 65.889 tok/s,
+  and W4A4 default 41.502 versus MMA 36.526. Host draft-call time per
+  verification round rose from 6.352→12.054 ms for W8A8 and 6.638→10.189 ms
+  for W4A4. This explains the cost loss while accepted tokens and rounds were
+  unchanged. These spans are host draft-call time, not isolated GPU kernel or
+  total target-verifier time.
+- Raw results are at
+  `/home/philip/binary-eagle-decoding/results/native-lowbit-mma-full-timed-2d9712cde-20260925/`.
+  Manifest/report/records/analysis SHA256 values are
+  `c1accfcc98eafb63230470beea84d149fee9bce8ed1708850de43ca4eb224779`,
+  `e51ce493b519aa5e6e6c37c23eb86aad836f98491015aa2b0ec97fd2b42a825d`,
+  `c254f858db9273054f71a24d3198dbcf0454f3da3792f4e1cb735df9198152e9`,
+  and `92e77f518c32bfa575b5946306da1690e775d8c28beb1dd21fad8232c12eb632`.
+  The highest live GPU sample was 10,160 MiB used / 868 MiB free; final GPU
+  was 855 MiB/0% and the production checkout/gitlink was restored cleanly.
 - Next: execute the isolated Q4_0/Q8_0 opt-in dispatch trace after restoring
   the production checkout, then synthesize all precision paths and close the
   goal only when the trace and full report are preserved.
