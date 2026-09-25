@@ -610,3 +610,32 @@ Compare pooled rates and prompt/repetition spread against both anchors.
   as supervisor `native-lowbit-mma-full-supervisor-timed-2d9712cde-20260925`
   with fresh result ID `native-lowbit-mma-full-timed-2d9712cde-20260925`.
   It is active; do not interpret partial rates.
+
+## Sealed live INT8/INT4 Tensor Core result
+
+- The full seven-path run completed 420/420 requests, 12 prompts × five
+  repetitions, with supervisor exit 0 and no error rows. Both MMA selectors
+  and CUDA dispatch markers were confirmed; forbidden default-path markers
+  were absent in candidate server logs. The GPU returned to 855 MiB/0% and
+  the process group ended. The operator is completing artifact hashes and
+  restoring the working submodule to the production `34e21b7` gitlink.
+- W8A8 default DP4A versus opt-in signed-INT8 MMA emitted identical text on
+  all 60 paired requests and identical 3,905/17,055 accepted/proposed drafts
+  over 3,465 rounds. W8A8 MMA/default request and decode ratios were
+  **0.8302** and **0.8205**; paired 95% intervals were 0.8255–0.8356 and
+  0.8172–0.8236. The specialized INT8 instruction was slower end-to-end.
+- W4A4 default packed-nibble vector versus opt-in signed-I4 MMA likewise
+  matched text 60/60 and had identical 620/33,055 accepted/proposed drafts
+  over 6,710 rounds. W4A4 MMA/default request and decode ratios were
+  **0.8844** and **0.8801**, with paired intervals 0.8801–0.8888 and
+  0.8759–0.8844. The specialized INT4 instruction also lost end-to-end.
+- Each speculative path matched target-only text 55/60, with the same stable
+  `reasoning-02` heading-format difference; generated token IDs were absent.
+  The paired MMA/default conclusions are clean because draft weights,
+  accepted counts, and emitted text are equal within each format. These are
+  measurements of this single-sequence EAGLE workload, not general Tensor
+  Core throughput claims. Raw hashes, absolute rates, and component timing
+  will be added from the operator's report; do not invent missing values.
+- Next: execute the isolated Q4_0/Q8_0 opt-in dispatch trace after restoring
+  the production checkout, then synthesize all precision paths and close the
+  goal only when the trace and full report are preserved.
