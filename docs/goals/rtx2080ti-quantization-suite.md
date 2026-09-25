@@ -308,3 +308,28 @@ Compare pooled rates and prompt/repetition spread against both anchors.
   parent gitlink update. Next: pin it in `main`, run the production five-W1A1
   plus Q4/Q8 model smokes and matched benchmark, then test the combined native
   INT branch in a separate isolated build.
+
+## Nine-variant model smoke milestone
+
+- Parent `main` commit `f99affa` now pins the WSL-validated llama.cpp fix
+  `34e21b7`; the fork's `w1a1-integrated` branch was advanced to that commit
+  before the temporary fix branch/worktree were removed.
+- Both Q-format controls have the expected GGUF inventory: Q4_0 has nine
+  Q4_0 linears, Q8_0 has nine Q8_0 linears, and each retains four F32 other
+  tensors plus one I64 mapping.
+- Supervised production smoke `sm75-native-nine-variant-smoke-20260924`
+  completed 45 measured requests (one held-out prompt × five repetitions)
+  after two warmups/server. Target-only, ordinary EAGLE, fusion/attention/FFN/
+  head/all W1A1, and Q4_0/Q8_0 all loaded and generated. Each W1A1 group
+  showed its expected loader marker and packed CUDA XOR/POPCOUNT dispatch.
+  Every candidate's greedy text matched target-only 5/5 in this short check;
+  the API did not return token IDs. GPU processes exited and the host returned
+  idle. This is a model/dispatch gate, not the frozen 12-prompt timing result.
+- Q4_0 and Q8_0 server logs show stored GGUF types but not selected kernel
+  names. At decode batch one, the pinned GGML source predicts Q8_1 activation
+  quantization and MMVQ/byte `DP4A`; prefill may take MMQ. Keep those labels
+  explicitly source-inferred until a kernel trace confirms actual execution.
+  They do not implement the prior per-row/per-token W4A4/W8A8 contract.
+- The operator is starting the full 12-prompt, five-repetition paired matrix
+  with one GPU/server owner. Raw smoke hashes and final run IDs will be added
+  to the experiment report and the next checkpoint.
