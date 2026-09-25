@@ -583,3 +583,27 @@ Compare pooled rates and prompt/repetition spread against both anchors.
   each format; require matching text/acceptance and actual dispatch before
   using the integrated optional MMA benchmark rows. A full-library SASS dump
   was stopped after exceeding 1 GiB; targeted function extracts are retained.
+
+## Opt-in Tensor Core model gate and full run
+
+- A one-prompt, five-repetition, seven-path model smoke completed 35/35
+  requests on the combined opt-in candidate `2d9712cde`. Target-only,
+  ordinary EAGLE, W1A1 head, W8A8 default/MMA, and W4A4 default/MMA loaded;
+  all intended CUDA markers appeared and opposite-path markers were absent.
+  The W8 pair emitted identical text and identical 46/392 accepted/proposed
+  counts per repeated request; the W4 pair likewise matched text and 9/575
+  counts. Every path matched target text 5/5 on `prose-01`. This is a model
+  parity gate, not a representative rate or quality result. The GPU returned
+  to 855 MiB/0% after the smoke.
+- The full seven-path paired comparison is supervised as
+  `native-lowbit-mma-full-supervisor-2d9712cde-20260925`, writing ignored
+  results under `native-lowbit-mma-full-2d9712cde-20260925`. It uses the 12
+  frozen prompts, five repetitions, two warmups/server, one server at a time,
+  and the same audited GGUF for each default/MMA pair. Its resolved config
+  SHA256 is `9084a6e0059da4ac478a03c5096680f34102b712a67749f0b4a27bed4140f6e5`;
+  candidate server binary SHA256 is
+  `07bb2339b000ba63f71cb4c5c7b74304a0816e466b5796d40f7e09712ff33b5a`.
+  The actual candidate checkout is `2d9712cde8d7808bb869e59e56a565e0e4fa2918`;
+  the parent committed gitlink remains `34e21b7`. Preflight found no project
+  process and 855 MiB GPU memory used/0% utilization. The run is active;
+  do not interpret partial rates.
