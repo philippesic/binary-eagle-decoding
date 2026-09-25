@@ -19,6 +19,10 @@ GROUP_VARIANTS = (
 GROUP_MATRIX_VARIANTS = (*VARIANTS[:2], *GROUP_VARIANTS)
 WEIGHT_ONLY_VARIANTS = ("draft_q4_0", "draft_q8_0")
 NATIVE_OPERAND_VARIANTS = ("draft_w8a8", "draft_w4a4")
+NATIVE_OPERAND_MMA_VARIANTS = ("draft_w8a8_mma", "draft_w4a4_mma")
+NATIVE_OPERAND_MMA_DEFAULTS = dict(
+    zip(NATIVE_OPERAND_MMA_VARIANTS, NATIVE_OPERAND_VARIANTS, strict=True)
+)
 METRICS = ("request", "decode")
 
 
@@ -34,13 +38,16 @@ def selected_variants(records: list[dict], reported: list[str] | None = None) ->
     observed = {row["variant"] for row in records}
     weight_only = tuple(variant for variant in WEIGHT_ONLY_VARIANTS if variant in observed)
     native_operand = tuple(variant for variant in NATIVE_OPERAND_VARIANTS if variant in observed)
-    core = observed - set(weight_only) - set(native_operand)
+    native_mma = tuple(variant for variant in NATIVE_OPERAND_MMA_VARIANTS if variant in observed)
+    if any(NATIVE_OPERAND_MMA_DEFAULTS[variant] not in observed for variant in native_mma):
+        raise ValueError("native operand MMA row requires its default benchmark variant")
+    core = observed - set(weight_only) - set(native_operand) - set(native_mma)
     if core == set(GROUP_MATRIX_VARIANTS):
-        variants = (*GROUP_MATRIX_VARIANTS, *weight_only, *native_operand)
+        variants = (*GROUP_MATRIX_VARIANTS, *weight_only, *native_operand, *native_mma)
     elif core == set(ALL_VARIANTS):
-        variants = (*ALL_VARIANTS, *weight_only, *native_operand)
+        variants = (*ALL_VARIANTS, *weight_only, *native_operand, *native_mma)
     elif core == set(VARIANTS):
-        variants = (*VARIANTS, *weight_only, *native_operand)
+        variants = (*VARIANTS, *weight_only, *native_operand, *native_mma)
     else:
         variants = VARIANTS
     if observed != set(variants) or (reported is not None and tuple(reported) != variants):
@@ -188,12 +195,24 @@ def analyze(run_dir: Path, samples: int, seed: int) -> dict:
     if report.get("status") != "complete" or report.get("records") != len(records):
         raise ValueError("benchmark run is incomplete or records count differs")
     variants = selected_variants(records, report.get("variants"))
-    native_operand = tuple(variant for variant in variants if variant in NATIVE_OPERAND_VARIANTS)
+    native_operand = tuple(
+        variant
+        for variant in variants
+        if variant in (*NATIVE_OPERAND_VARIANTS, *NATIVE_OPERAND_MMA_VARIANTS)
+    )
     if native_operand:
         dispatch = report.get("native_operand_dispatch_confirmed_by_variant", {})
         if any(dispatch.get(variant) is not True for variant in native_operand):
             raise ValueError("native operand runtime dispatch is unconfirmed")
     _, repetitions, prompts = paired_index(records, variants)
+    if any(variant in variants for variant in NATIVE_OPERAND_MMA_VARIANTS):
+        for row in records:
+            if row.get("w8a8_mma_selector") != (
+                "1" if row["variant"] == "draft_w8a8_mma" else "0"
+            ) or row.get("w4a4_mma_selector") != (
+                "1" if row["variant"] == "draft_w4a4_mma" else "0"
+            ):
+                raise ValueError("native operand MMA selectors differ from benchmark variants")
     prompt_rows = [json.loads(line) for line in prompts_path.read_text().splitlines() if line]
     categories = {row["id"]: row["category"] for row in prompt_rows}
     if set(categories) != set(prompts):
@@ -238,6 +257,21 @@ def analyze(run_dir: Path, samples: int, seed: int) -> dict:
         variant: paired_bootstrap(records, samples, seed, variant)
         for variant in variants
         if variant.startswith(("packed_", "draft_q", "draft_w")) and variant != MMA_VARIANT
+    }
+    result["pooled_native_mma_speedup_vs_default"] = {
+        mma: {metric: pooled_speedup(records, default, metric, mma) for metric in METRICS}
+        for mma, default in NATIVE_OPERAND_MMA_DEFAULTS.items()
+        if mma in variants
+    }
+    result["paired_native_mma_bootstrap_95pct_vs_default"] = {
+        mma: {
+            f"{default}/{metric}": result["paired_variant_bootstrap_95pct"][mma][
+                f"{default}/{metric}"
+            ]
+            for metric in METRICS
+        }
+        for mma, default in NATIVE_OPERAND_MMA_DEFAULTS.items()
+        if mma in variants
     }
     if MMA_VARIANT in variants:
         result["pooled_mma_speedup"] = {

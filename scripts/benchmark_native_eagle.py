@@ -40,6 +40,10 @@ WEIGHT_ONLY_VARIANTS = ("draft_q4_0", "draft_q8_0")
 WEIGHT_ONLY_NAMES = ("q4_0", "q8_0")
 NATIVE_OPERAND_VARIANTS = ("draft_w8a8", "draft_w4a4")
 NATIVE_OPERAND_NAMES = ("w8a8", "w4a4")
+NATIVE_OPERAND_MMA_VARIANTS = ("draft_w8a8_mma", "draft_w4a4_mma")
+NATIVE_OPERAND_MMA_DEFAULTS = dict(
+    zip(NATIVE_OPERAND_MMA_VARIANTS, NATIVE_OPERAND_VARIANTS, strict=True)
+)
 SPEC_COUNTERS = {
     "proposed": "llamacpp:spec_decode_num_draft_tokens_total",
     "accepted": "llamacpp:spec_decode_num_accepted_tokens_total",
@@ -304,6 +308,7 @@ def selected_variants(evaluation: dict[str, Any]) -> tuple[str, ...]:
     weight_only_matrix = evaluation.get("weight_only_matrix", False)
     native_operand_matrix = evaluation.get("native_operand_matrix", False)
     native_operand_names = evaluation.get("native_operand_variants")
+    native_mma_names = evaluation.get("native_operand_mma_variants", [])
     if not all(
         isinstance(value, bool)
         for value in (enabled, group_matrix, weight_only_matrix, native_operand_matrix)
@@ -327,6 +332,14 @@ def selected_variants(evaluation: dict[str, Any]) -> tuple[str, ...]:
             raise ValueError(
                 "evaluation.native_operand_variants must list distinct w8a8/w4a4 names"
             )
+    if (
+        not isinstance(native_mma_names, list)
+        or any(name not in NATIVE_OPERAND_NAMES for name in native_mma_names)
+        or len(native_mma_names) != len(set(native_mma_names))
+    ):
+        raise ValueError(
+            "evaluation.native_operand_mma_variants must list distinct w8a8/w4a4 names"
+        )
     base = (
         (*VARIANTS[:2], *GROUP_VARIANTS)
         if group_matrix
@@ -343,7 +356,17 @@ def selected_variants(evaluation: dict[str, Any]) -> tuple[str, ...]:
             if native_operand_names is not None and name in native_operand_names
         )
     )
-    return (*base, *selected_native)
+    if any(
+        name in native_mma_names and variant not in selected_native
+        for variant, name in zip(NATIVE_OPERAND_VARIANTS, NATIVE_OPERAND_NAMES, strict=True)
+    ):
+        raise ValueError("native operand MMA selection requires its default operand variant")
+    selected_mma = tuple(
+        variant
+        for variant, name in zip(NATIVE_OPERAND_MMA_VARIANTS, NATIVE_OPERAND_NAMES, strict=True)
+        if name in native_mma_names
+    )
+    return (*base, *selected_native, *selected_mma)
 
 
 def packed_specs(config: dict[str, Any], variants: tuple[str, ...]) -> dict[str, dict[str, Any]]:
@@ -421,8 +444,13 @@ def native_operand_specs(
 ) -> dict[str, dict[str, Any]]:
     """Require model and exact runtime evidence contracts for true W8A8/W4A4 rows."""
     selected = tuple(
-        (variant, name)
-        for variant, name in zip(NATIVE_OPERAND_VARIANTS, NATIVE_OPERAND_NAMES, strict=True)
+        (variant, mma_variant, name)
+        for variant, mma_variant, name in zip(
+            NATIVE_OPERAND_VARIANTS,
+            NATIVE_OPERAND_MMA_VARIANTS,
+            NATIVE_OPERAND_NAMES,
+            strict=True,
+        )
         if variant in variants
     )
     if not selected:
@@ -430,14 +458,14 @@ def native_operand_specs(
     raw = config.get("native_operand_variants")
     if (
         not isinstance(raw, dict)
-        or not {name for _, name in selected} <= set(raw)
+        or not {name for _, _, name in selected} <= set(raw)
         or not set(raw) <= set(NATIVE_OPERAND_NAMES)
     ):
         raise ValueError(
             "selected native operand variants require their [native_operand_variants.<name>] tables"
         )
     specs = {}
-    for variant, name in selected:
+    for variant, mma_variant, name in selected:
         spec = raw[name]
         if not isinstance(spec, dict):
             raise ValueError(f"native_operand_variants.{name} must be a table")
@@ -484,6 +512,33 @@ def native_operand_specs(
             **{key: spec[key] for key in required},
             "backend_precision": spec["operator"],
         }
+        if mma_variant in variants:
+            for key in ("mma_operator", "expected_mma_cuda_marker"):
+                if not isinstance(spec.get(key), str) or not spec[key].strip():
+                    raise ValueError(
+                        f"native_operand_variants.{name}.{key} must be a nonempty string"
+                    )
+            mma_marker = spec["expected_mma_cuda_marker"]
+            default_marker = spec["expected_cuda_marker"]
+            if (
+                "MMA" not in mma_marker.upper()
+                or spec["mma_operator"] not in mma_marker
+                or mma_marker in default_marker
+                or default_marker in mma_marker
+            ):
+                raise ValueError(
+                    f"native_operand_variants.{name}.expected_mma_cuda_marker "
+                    "must distinctly identify the MMA operator"
+                )
+            specs[variant]["forbidden_cuda_marker"] = mma_marker
+            specs[mma_variant] = {
+                **specs[variant],
+                "operator": spec["mma_operator"],
+                "backend_precision": spec["mma_operator"],
+                "expected_cuda_marker": mma_marker,
+                "forbidden_cuda_marker": default_marker,
+                "comparison_default_variant": variant,
+            }
     return specs
 
 
@@ -657,14 +712,21 @@ def dispatch_evidence(
 def native_operand_dispatch_evidence(server_log: str, spec: dict[str, Any]) -> dict[str, Any]:
     """Confirm the configured draft load and the actual CUDA operand operator."""
     loader_seen = spec["expected_loader_marker"] in server_log
-    operator_seen = spec["expected_cuda_marker"] in server_log
+    lines = server_log.splitlines()
+    operator_seen = any(spec["expected_cuda_marker"] in line for line in lines)
+    forbidden_marker = spec.get("forbidden_cuda_marker")
+    forbidden_seen = bool(forbidden_marker and any(forbidden_marker in line for line in lines))
     return {
         "expected_loader_marker": spec["expected_loader_marker"],
         "expected_loader_marker_seen": loader_seen,
         "expected_cuda_marker": spec["expected_cuda_marker"],
         "expected_cuda_marker_seen": operator_seen,
+        "forbidden_cuda_marker": forbidden_marker,
+        "forbidden_cuda_marker_seen": forbidden_seen,
         "operator": spec["operator"],
-        "cuda_native_operand_dispatch_confirmed": loader_seen and operator_seen,
+        "cuda_native_operand_dispatch_confirmed": (
+            loader_seen and operator_seen and not forbidden_seen
+        ),
     }
 
 
@@ -743,6 +805,7 @@ def command_for(config: dict[str, Any], paths: dict[str, Path], variant: str) ->
         *GROUP_VARIANTS,
         *WEIGHT_ONLY_VARIANTS,
         *NATIVE_OPERAND_VARIANTS,
+        *NATIVE_OPERAND_MMA_VARIANTS,
     ):
         raise ValueError(f"unknown benchmark variant: {variant}")
     command = [str(paths["binary"]), "-m", str(paths["target"])]
@@ -755,7 +818,11 @@ def command_for(config: dict[str, Any], paths: dict[str, Path], variant: str) ->
             draft_key = variant
         elif variant in GROUP_VARIANTS and config["evaluation"].get("group_matrix", False):
             draft_key = variant
-        elif variant in (*WEIGHT_ONLY_VARIANTS, *NATIVE_OPERAND_VARIANTS):
+        elif variant in (
+            *WEIGHT_ONLY_VARIANTS,
+            *NATIVE_OPERAND_VARIANTS,
+            *NATIVE_OPERAND_MMA_VARIANTS,
+        ):
             draft_key = variant
         else:
             draft_key = "packed_head_draft"
@@ -1095,6 +1162,44 @@ def mma_speedup_vs_portable(aggregated: dict[str, Any]) -> dict[str, float | Non
     return result
 
 
+def native_mma_speedup_vs_default(
+    aggregated: dict[str, Any], variants: tuple[str, ...]
+) -> dict[str, dict[str, float | None]]:
+    result = {}
+    for mma_variant, default_variant in NATIVE_OPERAND_MMA_DEFAULTS.items():
+        if mma_variant not in variants:
+            continue
+        result[mma_variant] = {}
+        for metric in ("request_tokens_per_s", "decode_tokens_per_s"):
+            numerator = aggregated[mma_variant][metric]
+            denominator = aggregated[default_variant][metric]
+            result[mma_variant][metric] = (
+                numerator / denominator
+                if isinstance(numerator, (int, float))
+                and isinstance(denominator, (int, float))
+                and denominator > 0
+                else None
+            )
+    return result
+
+
+def require_complete_pairs(
+    records: list[dict[str, Any]],
+    variants: tuple[str, ...],
+    repetitions: int,
+    prompts: list[dict[str, Any]],
+) -> None:
+    expected = {
+        (rep, prompt["id"], variant)
+        for rep in range(repetitions)
+        for prompt in prompts
+        for variant in variants
+    }
+    observed = [(row["repetition"], row["prompt_id"], row["variant"]) for row in records]
+    if len(observed) != len(expected) or set(observed) != expected:
+        raise RuntimeError("benchmark records are not complete prompt/repetition pairs")
+
+
 def repetition_summaries(
     records: list[dict[str, Any]], variants: tuple[str, ...] = VARIANTS
 ) -> list[dict[str, Any]]:
@@ -1210,9 +1315,15 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
         shutil.copy2(paths["prompt_file"], destination / "prompts.jsonl")
         env = {key: os.environ[key] for key in SAFE_INHERITED_ENV if key in os.environ}
         env.update(config.get("environment", {}))
-        env.pop("GGML_CUDA_W1A1_MMA", None)
+        for selector in ("GGML_CUDA_W1A1_MMA", "GGML_CUDA_W8A8_MMA", "GGML_CUDA_W4A4_MMA"):
+            env.pop(selector, None)
         variant_environments = {
-            variant: {**env, "GGML_CUDA_W1A1_MMA": "1" if variant == MMA_VARIANT else "0"}
+            variant: {
+                **env,
+                "GGML_CUDA_W1A1_MMA": "1" if variant == MMA_VARIANT else "0",
+                "GGML_CUDA_W8A8_MMA": "1" if variant == "draft_w8a8_mma" else "0",
+                "GGML_CUDA_W4A4_MMA": "1" if variant == "draft_w4a4_mma" else "0",
+            }
             for variant in variants
         }
         (destination / "project-diff.patch").write_text(git_output("diff", "--binary", "HEAD"))
@@ -1355,6 +1466,8 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                                         "variant": variant,
                                         "prompt_id": prompt["id"],
                                         "w1a1_mma_selector": variant_env["GGML_CUDA_W1A1_MMA"],
+                                        "w8a8_mma_selector": variant_env["GGML_CUDA_W8A8_MMA"],
+                                        "w4a4_mma_selector": variant_env["GGML_CUDA_W4A4_MMA"],
                                         "weight_coverage": group_specs.get(variant, {}).get(
                                             "weight_coverage"
                                         )
@@ -1426,6 +1539,7 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                     if pending_native_records:
                         records.extend(pending_native_records)
                         json_write(destination / "records.json", records)
+            require_complete_pairs(records, variants, evaluation["repetitions"], prompts)
             aggregated = aggregate(records, variants)
             report = {
                 "status": "complete",
@@ -1460,6 +1574,9 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                 "native_operand_variant_specs": {
                     variant: manifest["variant_specs"][variant] for variant in native_specs
                 },
+                "native_operand_mma_speedup_vs_default": native_mma_speedup_vs_default(
+                    aggregated, variants
+                ),
                 "definition": {
                     "request": "completion tokens / client wall time including prefill",
                     "decode": "completion tokens / sum of server predicted_ms (excludes prompt_ms)",

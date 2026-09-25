@@ -102,7 +102,10 @@ class Handler(BaseHTTPRequestHandler):
         for precision in ("W8A8", "W4A4"):
             if precision.lower() in draft_path and not emitted:
                 print(f"EAGLE3 {precision} draft loaded", flush=True)
-                if os.environ.get("FAKE_EMIT_NATIVE_DISPATCH") == "1":
+                mma_selector = os.environ.get(f"GGML_CUDA_{precision}_MMA") == "1"
+                if mma_selector and os.environ.get("FAKE_EMIT_NATIVE_MMA_DISPATCH") == "1":
+                    print(f"CUDA {precision} fake MMA operator dispatch", flush=True)
+                elif not mma_selector and os.environ.get("FAKE_EMIT_NATIVE_DISPATCH") == "1":
                     print(f"CUDA {precision} fake operator dispatch", flush=True)
                 emitted = True
         self.write(200, json.dumps({
@@ -191,6 +194,39 @@ class NativeBenchmarkTests(unittest.TestCase):
             loader,
         )
         self.assertIsNone(group_missing["cuda_w1a1_dispatch_confirmed"])
+        native_spec = {
+            "expected_loader_marker": "EAGLE3 W8A8 draft loaded",
+            "expected_cuda_marker": "CUDA W8A8 fake MMA operator dispatch",
+            "forbidden_cuda_marker": "CUDA W8A8 fake operator dispatch",
+            "operator": "fake MMA operator",
+        }
+        log = "EAGLE3 W8A8 draft loaded\nCUDA W8A8 fake MMA operator dispatch\n"
+        self.assertTrue(
+            benchmark.native_operand_dispatch_evidence(log, native_spec)[
+                "cuda_native_operand_dispatch_confirmed"
+            ]
+        )
+        both = log + "CUDA W8A8 fake operator dispatch\n"
+        self.assertFalse(
+            benchmark.native_operand_dispatch_evidence(both, native_spec)[
+                "cuda_native_operand_dispatch_confirmed"
+            ]
+        )
+
+    def test_complete_pair_gate_rejects_missing_or_duplicate_records(self):
+        prompts = [{"id": "a"}, {"id": "b"}]
+        variants = ("target_only", "draft_w8a8", "draft_w8a8_mma")
+        records = [
+            {"repetition": rep, "prompt_id": prompt["id"], "variant": variant}
+            for rep in range(5)
+            for prompt in prompts
+            for variant in variants
+        ]
+        benchmark.require_complete_pairs(records, variants, 5, prompts)
+        with self.assertRaisesRegex(RuntimeError, "not complete"):
+            benchmark.require_complete_pairs(records[:-1], variants, 5, prompts)
+        with self.assertRaisesRegex(RuntimeError, "not complete"):
+            benchmark.require_complete_pairs([*records, records[0]], variants, 5, prompts)
 
     def test_group_matrix_variant_selection_and_balanced_order(self):
         variants = benchmark.selected_variants({"group_matrix": True})
@@ -217,6 +253,30 @@ class NativeBenchmarkTests(unittest.TestCase):
         )
         self.assertEqual(expanded, (*full_matrix, *benchmark.NATIVE_OPERAND_VARIANTS))
         self.assertEqual(len(benchmark.schedule(5, expanded)[0]), 11)
+        mma_expanded = benchmark.selected_variants(
+            {
+                "group_matrix": True,
+                "weight_only_matrix": True,
+                "native_operand_matrix": True,
+                "native_operand_mma_variants": ["w8a8", "w4a4"],
+            }
+        )
+        self.assertEqual(mma_expanded, (*expanded, *benchmark.NATIVE_OPERAND_MMA_VARIANTS))
+        self.assertEqual(len(benchmark.schedule(5, mma_expanded)[0]), 13)
+        self.assertEqual(
+            benchmark.selected_variants(
+                {
+                    "native_operand_variants": ["w8a8"],
+                    "native_operand_mma_variants": ["w8a8"],
+                }
+            ),
+            (*benchmark.VARIANTS, "draft_w8a8", "draft_w8a8_mma"),
+        )
+        for invalid_mma in (["w8a8", "w8a8"], ["w2a2"], "w8a8"):
+            with self.assertRaisesRegex(ValueError, "native_operand_mma_variants"):
+                benchmark.selected_variants({"native_operand_mma_variants": invalid_mma})
+        with self.assertRaisesRegex(ValueError, "requires its default"):
+            benchmark.selected_variants({"native_operand_mma_variants": ["w8a8"]})
         self.assertEqual(
             benchmark.selected_variants({"native_operand_variants": ["w8a8"]}),
             (*benchmark.VARIANTS, "draft_w8a8"),
@@ -590,6 +650,140 @@ class NativeBenchmarkTests(unittest.TestCase):
             self.assertEqual(manifest["variants"], [*benchmark.VARIANTS, "draft_w4a4"])
             self.assertEqual(set(manifest["variant_specs"]), {"draft_w4a4"})
 
+    def test_w8a8_mma_uses_same_model_and_exact_dispatch(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            config, _ = self.prepare(
+                root, native_operand_names=("w8a8",), native_mma_names=("w8a8",)
+            )
+            (root / "draft-w4a4.gguf").unlink()
+            with (
+                patch.object(benchmark, "ROOT", root),
+                patch.object(benchmark, "git_output", side_effect=fake_git_output),
+            ):
+                output = benchmark.run(config, "w8a8-mma")
+            manifest = json.loads((output / "manifest.json").read_text())
+            report = json.loads((output / "report.json").read_text())
+            records = json.loads((output / "records.json").read_text())
+            self.assertEqual(
+                report["variants"],
+                [*benchmark.VARIANTS, "draft_w8a8", "draft_w8a8_mma"],
+            )
+            self.assertEqual(report["records"], 25)
+            for variant in ("draft_w8a8", "draft_w8a8_mma"):
+                self.assertTrue(report["native_operand_dispatch_confirmed_by_variant"][variant])
+                self.assertEqual(
+                    manifest["variant_specs"][variant]["draft_model_sha256"],
+                    manifest["variant_specs"]["draft_w8a8"]["draft_model_sha256"],
+                )
+                self.assertEqual(manifest["commands"][variant], manifest["commands"]["draft_w8a8"])
+            self.assertEqual(
+                report["native_operand_mma_speedup_vs_default"]["draft_w8a8_mma"][
+                    "decode_tokens_per_s"
+                ],
+                1.0,
+            )
+            self.assertGreater(
+                report["native_operand_mma_speedup_vs_default"]["draft_w8a8_mma"][
+                    "request_tokens_per_s"
+                ],
+                0,
+            )
+            self.assertNotIn("GGML_CUDA_W8A8_MMA", manifest["environment"])
+            self.assertNotIn("GGML_CUDA_W4A4_MMA", manifest["environment"])
+            for row in records:
+                expected_w8 = "1" if row["variant"] == "draft_w8a8_mma" else "0"
+                self.assertEqual(row["w8a8_mma_selector"], expected_w8)
+                self.assertEqual(row["w4a4_mma_selector"], "0")
+                self.assertEqual(
+                    manifest["variant_environments"][row["variant"]]["GGML_CUDA_W8A8_MMA"],
+                    expected_w8,
+                )
+                self.assertEqual(
+                    manifest["variant_environments"][row["variant"]]["GGML_CUDA_W4A4_MMA"],
+                    "0",
+                )
+            config.write_text(
+                config.read_text().replace(
+                    'FAKE_EMIT_NATIVE_MMA_DISPATCH = "1"',
+                    'FAKE_EMIT_NATIVE_MMA_DISPATCH = "0"',
+                )
+            )
+            with (
+                patch.object(benchmark, "ROOT", root),
+                patch.object(benchmark, "git_output", side_effect=fake_git_output),
+            ):
+                with self.assertRaisesRegex(RuntimeError, "CUDA operand dispatch markers"):
+                    benchmark.run(config, "w8a8-mma-no-marker")
+            self.assertFalse((root / "results/w8a8-mma-no-marker/report.json").exists())
+            failed_records = json.loads(
+                (root / "results/w8a8-mma-no-marker/records.json").read_text()
+            )
+            self.assertFalse(any(row["variant"] == "draft_w8a8_mma" for row in failed_records))
+
+    def test_w4a4_mma_dry_run_does_not_require_w8a8(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            config, _ = self.prepare(
+                root, native_operand_names=("w4a4",), native_mma_names=("w4a4",)
+            )
+            (root / "draft-w8a8.gguf").unlink()
+            with (
+                patch.object(benchmark, "ROOT", root),
+                patch.object(benchmark, "git_output", side_effect=fake_git_output),
+            ):
+                output = benchmark.run(config, "w4a4-mma-dry", dry_run=True)
+            manifest = json.loads((output / "manifest.json").read_text())
+            self.assertEqual(
+                manifest["variants"],
+                [*benchmark.VARIANTS, "draft_w4a4", "draft_w4a4_mma"],
+            )
+            self.assertEqual(
+                manifest["commands"]["draft_w4a4"],
+                manifest["commands"]["draft_w4a4_mma"],
+            )
+
+    def test_combined_thirteen_variant_mma_dry_run(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            config, _ = self.prepare(
+                root,
+                group_matrix=True,
+                weight_only_matrix=True,
+                native_operand_matrix=True,
+                native_mma_names=("w8a8", "w4a4"),
+            )
+            with (
+                patch.object(benchmark, "ROOT", root),
+                patch.object(benchmark, "git_output", side_effect=fake_git_output),
+            ):
+                output = benchmark.run(config, "both-mma-dry", dry_run=True)
+            manifest = json.loads((output / "manifest.json").read_text())
+            self.assertEqual(len(manifest["variants"]), 13)
+            self.assertEqual(
+                manifest["variants"][-4:],
+                [*benchmark.NATIVE_OPERAND_VARIANTS, *benchmark.NATIVE_OPERAND_MMA_VARIANTS],
+            )
+            for variant in manifest["variants"]:
+                env = manifest["variant_environments"][variant]
+                self.assertEqual(
+                    env["GGML_CUDA_W8A8_MMA"],
+                    "1" if variant == "draft_w8a8_mma" else "0",
+                )
+                self.assertEqual(
+                    env["GGML_CUDA_W4A4_MMA"],
+                    "1" if variant == "draft_w4a4_mma" else "0",
+                )
+            config.write_text(
+                config.read_text().replace(
+                    'expected_mma_cuda_marker = "CUDA W4A4 fake MMA operator dispatch"',
+                    'expected_mma_cuda_marker = "CUDA W4A4 fake operator dispatch"',
+                )
+            )
+            with patch.object(benchmark, "ROOT", root):
+                with self.assertRaisesRegex(ValueError, "distinctly identify"):
+                    benchmark.run(config, "bad-mma-marker", dry_run=True)
+
     def test_native_operand_missing_gguf_or_dispatch_fails(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -650,6 +844,7 @@ class NativeBenchmarkTests(unittest.TestCase):
         weight_only_matrix: bool = False,
         native_operand_matrix: bool = False,
         native_operand_names: tuple[str, ...] = (),
+        native_mma_names: tuple[str, ...] = (),
     ) -> tuple[Path, int]:
         (root / "results").mkdir()
         fake = root / "fake-server"
@@ -712,12 +907,19 @@ weight_coverage = "all test draft weights"
 activation_coverage = "all test draft activations"
 expected_loader_marker = "EAGLE3 {name.upper()} draft loaded"
 expected_cuda_marker = "CUDA {name.upper()} fake operator dispatch"
+mma_operator = "fake MMA operator"
+expected_mma_cuda_marker = "CUDA {name.upper()} fake MMA operator dispatch"
 '''
             for name in selected_native_names
         )
         native_select_line = (
             f"native_operand_variants = {json.dumps(list(native_operand_names))}"
             if native_operand_names
+            else ""
+        )
+        native_mma_select_line = (
+            f"native_operand_mma_variants = {json.dumps(list(native_mma_names))}"
+            if native_mma_names
             else ""
         )
         config.write_text(
@@ -747,11 +949,15 @@ enable_thinking = false
 {"weight_only_matrix = true" if weight_only_matrix else ""}
 {"native_operand_matrix = true" if native_operand_matrix else ""}
 {native_select_line}
+{native_mma_select_line}
 [environment]
 FAKE_FAIL = "{int(failure)}"
 FAKE_EMIT_DISPATCH = "{int(binary_mma or group_matrix)}"
 FAKE_EMIT_NATIVE_DISPATCH = "{int(bool(selected_native_names))}"
+FAKE_EMIT_NATIVE_MMA_DISPATCH = "{int(bool(native_mma_names))}"
 GGML_CUDA_W1A1_MMA = "1"
+GGML_CUDA_W8A8_MMA = "1"
+GGML_CUDA_W4A4_MMA = "1"
 '''
         )
         tables = (

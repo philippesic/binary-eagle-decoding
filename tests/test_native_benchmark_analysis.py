@@ -252,6 +252,77 @@ class NativeBenchmarkAnalysisTests(unittest.TestCase):
             self.assertEqual(w8_result["variants"], list(w8_variants))
             self.assertEqual(set(w8_result["native_operand_variant_specs"]), {"draft_w8a8"})
 
+    def test_native_mma_default_ratios_and_paired_intervals(self) -> None:
+        rows = self.records()
+        for row in rows:
+            row["w8a8_mma_selector"] = "0"
+            row["w4a4_mma_selector"] = "0"
+        for row in self.records():
+            if row["variant"] != "ordinary_eagle":
+                continue
+            for variant, scale in (
+                ("draft_w8a8", 0.75),
+                ("draft_w4a4", 1.0),
+                ("draft_w8a8_mma", 0.5),
+                ("draft_w4a4_mma", 0.8),
+            ):
+                candidate = dict(row)
+                candidate["variant"] = variant
+                candidate["request_wall_s"] *= scale
+                candidate["server_predicted_ms"] *= scale
+                candidate["w8a8_mma_selector"] = "1" if variant == "draft_w8a8_mma" else "0"
+                candidate["w4a4_mma_selector"] = "1" if variant == "draft_w4a4_mma" else "0"
+                rows.append(candidate)
+        expected = (
+            *analysis.VARIANTS,
+            *analysis.NATIVE_OPERAND_VARIANTS,
+            *analysis.NATIVE_OPERAND_MMA_VARIANTS,
+        )
+        self.assertEqual(analysis.selected_variants(rows), expected)
+        with self.assertRaisesRegex(ValueError, "incomplete paired records"):
+            analysis.paired_index(rows[:-1])
+        without_w8 = [row for row in rows if row["variant"] != "draft_w8a8"]
+        with self.assertRaisesRegex(ValueError, "requires its default"):
+            analysis.selected_variants(without_w8)
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            (directory / "records.json").write_text(json.dumps(rows))
+            report = {
+                "status": "complete",
+                "records": len(rows),
+                "variants": list(expected),
+                "native_operand_dispatch_confirmed_by_variant": {
+                    variant: True
+                    for variant in (
+                        *analysis.NATIVE_OPERAND_VARIANTS,
+                        *analysis.NATIVE_OPERAND_MMA_VARIANTS,
+                    )
+                },
+            }
+            (directory / "report.json").write_text(json.dumps(report))
+            (directory / "prompts.jsonl").write_text(
+                '{"id":"prose-01","category":"prose"}\n{"id":"code-01","category":"code"}\n'
+            )
+            result = analysis.analyze(directory, 100, 42)
+            self.assertAlmostEqual(
+                result["pooled_native_mma_speedup_vs_default"]["draft_w8a8_mma"]["request"],
+                1.5,
+            )
+            self.assertAlmostEqual(
+                result["pooled_native_mma_speedup_vs_default"]["draft_w4a4_mma"]["decode"],
+                1.25,
+            )
+            self.assertAlmostEqual(
+                result["paired_native_mma_bootstrap_95pct_vs_default"]["draft_w8a8_mma"][
+                    "draft_w8a8/request"
+                ]["median"],
+                1.5,
+            )
+            rows[0]["w8a8_mma_selector"] = "1"
+            (directory / "records.json").write_text(json.dumps(rows))
+            with self.assertRaisesRegex(ValueError, "selectors differ"):
+                analysis.analyze(directory, 100, 42)
+
     def test_run_artifacts_and_category_summary(self) -> None:
         rows = self.records()
         with tempfile.TemporaryDirectory() as tmp:
