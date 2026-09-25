@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-24–25  
 **Owner:** SM75 experiment operator  
-**Status:** Production W1A1 correctness gates, the frozen nine-variant matrix, and the full 12-prompt/five-repetition portable-versus-MMA head comparison are complete on the RTX 2080 Ti. MMA/portable decode-rate ratio was 1.0017 with 95% interval 0.9973–1.0062, so no resolved MMA gain was measured. The combined d0724427b source passed an SM75 build, its registered W8A8/W4A4 backend cases, source audits, a standalone signed-I4 MMA probe, and one-prompt all-nine model-load/dispatch smoke. The matched W8A8/W4A4 vector matrix is now the next gate; broader shape coverage and the opt-in live W4 MMA candidate remain pending. Q4_0/Q8_0 kernel/activation paths remain source-inferred, not profiler-confirmed.
+**Status:** Production W1A1 correctness gates, the frozen nine-variant matrix, the full portable-versus-MMA head comparison, and the matched W8A8/W4A4 vector matrix are complete on the RTX 2080 Ti. The default combined d0724427b W8A8/W4A4 paths passed their registered SM75 backend cases, full-source GGUF code/scale audits, all-nine model load/dispatch smoke, and 12-prompt/five-repetition vector matrix. W8A8 DP4A had roughly ordinary-EAGLE throughput; W4A4 vector had a severe acceptance and throughput loss. The isolated signed-I4 MMA probe passed exact I32 checks and emitted `IMMA.8832.S4.S4.SAT`; the published opt-in live MMA candidate still needs its own SM75 gates. Q4_0/Q8_0 kernel/activation paths remain source-inferred, not profiler-confirmed.
 
 ## Initial preflight (resolved below)
 
@@ -88,7 +88,7 @@ Pinned target and draft source snapshots are staged under `models/hf/Qwen3-4B/` 
 
 ## Next action
 
-The production and W1A1 MMA paired timing matrices are sealed and their raw outputs are hashed below. Run the matched five-repetition W8A8/W4A4 vector matrix, then validate the isolated live W4 MMA candidate and trace actual Q4_0/Q8_0 activation/operator paths. Keep weight-only timing labels distinct from the W8A8/W4A4 research contracts until an executed-kernel trace proves the path.
+The production, W1A1 MMA, and default W8A8/W4A4 vector matrices are sealed and their raw outputs are hashed below. Validate the combined opt-in W8A8/W4A4 MMA candidate on SM75, then trace actual Q4_0/Q8_0 activation/operator paths. Keep weight-only timing labels distinct from the W8A8/W4A4 research contracts until executed-kernel evidence proves the path.
 
 ## WSL user-space setup and build checkpoint
 
@@ -292,3 +292,109 @@ Raw files are on the WSL host at `/home/philip/binary-eagle-decoding/results/nat
 | `records.json` | `ad53f8f9875b786117894e1dd54a637d7bea04976aead6609631a5746ef9ce3f` |
 | `prompts.jsonl` | `0d6a698d6816592c6ff435fed2fea4cdafe9f5248393d2a5ac091e1551919476` |
 | `analysis.json` | `9a996f457fa5864166e920dd08f185596b80da75e1009585fc1f8d2b9ad229c2` |
+
+## Combined W8A8/W4A4 SM75 correctness and export audit
+
+The combined default-vector source was built from llama.cpp commit `d0724427b61f6ff4733b502d0ce3d800a2f4cd86` in isolated worktree `runs/llama-sm75-lowbit-src/`. The parent was `b9596675225271634881f631146d1e76bfce1a74`; its committed llama.cpp gitlink stayed `34e21b7d85c17e25d5a91ce2ab1074d4c18bfe39`. Before the low-bit full matrix, the production submodule working tree was temporarily checked out to d0724427b so the benchmark manifest records the actual compiled source; after the supervised run ended and no server process remained, it was restored to 34e21b7. The parent gitlink never changed.
+
+The supervised CUDA build was `sm75-eagle-int-lowbit-build-d0724427b-20260925`: 360/360 targets, exit 0, CUDA 12.8.93, architecture SM75. It built the isolated candidate into `build/llama-cuda-lowbit/`. The preserved build-log SHA256 is `aed016472e038a7501b7ec3e1a82e91be5f561c06b0a9e1ad6e03569f79ad969`; `test-backend-ops` SHA256 is `d6271d940deb54799ebc7fa2850d4cc1f2cbf7bde97c78b7e8804bb8cb9cf045`, `llama-server` is `bffe57951e5c4fafd47bba9bca970931ac008e7fe4b97418eac3b7c257213b69`, and `libggml-cuda.so.0.25.1` is `042c8184102f7b9512733f0f9711ea01add20dc39bc0c377b5cde92727326c86`. The only repeated build diagnostic was the known Conda `compiler-bindir` redefinition warning.
+
+The build command, run through `scripts/remote_job.py`, was:
+
+```sh
+cd ~/binary-eagle-decoding
+python3 scripts/remote_job.py sm75-eagle-int-lowbit-build-d0724427b-20260925 -- bash -c "set -eu; runs/toolchain-bootstrap/bin/micromamba run -p runs/toolchain-bootstrap/env env CC=/home/philip/binary-eagle-decoding/runs/toolchain-bootstrap/env/bin/x86_64-conda-linux-gnu-gcc CXX=/home/philip/binary-eagle-decoding/runs/toolchain-bootstrap/env/bin/x86_64-conda-linux-gnu-g++ CUDAHOSTCXX=/home/philip/binary-eagle-decoding/runs/toolchain-bootstrap/env/bin/x86_64-conda-linux-gnu-g++ cmake -S runs/llama-sm75-lowbit-src -B build/llama-cuda-lowbit -G Ninja -DCMAKE_BUILD_TYPE=Release -DLLAMA_BUILD_TESTS=ON -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_TOOLS=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_BUILD_APP=OFF -DLLAMA_BUILD_UI=OFF -DLLAMA_OPENSSL=OFF -DGGML_CUDA=ON -DGGML_METAL=OFF -DCMAKE_CUDA_ARCHITECTURES=75; runs/toolchain-bootstrap/bin/micromamba run -p runs/toolchain-bootstrap/env env CC=/home/philip/binary-eagle-decoding/runs/toolchain-bootstrap/env/bin/x86_64-conda-linux-gnu-gcc CXX=/home/philip/binary-eagle-decoding/runs/toolchain-bootstrap/env/bin/x86_64-conda-linux-gnu-g++ CUDAHOSTCXX=/home/philip/binary-eagle-decoding/runs/toolchain-bootstrap/env/bin/x86_64-conda-linux-gnu-g++ cmake --build build/llama-cuda-lowbit --parallel 4 --target test-backend-ops llama-server"
+```
+
+Two independent supervised backend gates passed on the RTX 2080 Ti, compute capability 7.5:
+
+| Gate | Run ID | Result | Runtime marker | Raw log SHA256 |
+|---|---|---:|---|---|
+| `W8A8_MUL_MAT` | `sm75-w8a8-backend-ops-d0724427b-20260925` | 3/3, K=8/33/9728 | `CUDA W8A8 signed INT8 dot/I32 accumulation dispatch` | `f609fa21de5594acbf1e43b8e5b4cede00c47656068e640ab3ec046c277ff85b` |
+| `W4A4_MUL_MAT` | `sm75-w4a4-backend-ops-d0724427b-20260925` | 2/2, K=9/9728 | `CUDA W4A4 signed-nibble vector dot, scalar integer MUL/ADD; no INT4 Tensor Core MMA` | `3c2e75fcedf08c0d58ee279bb396581e8b7ab4621dc2384847dd214656843686` |
+
+These are the backend cases registered in this source revision; the expanded W8A8 real-row/tail coverage in the source-gate plan remains a follow-up. Both tests returned the GPU to its idle baseline of 855 MiB / 0% utilization.
+
+The separate signed-I4 MMA probe, `sm75-w4a4-signed-i4-mma-probe-d0724427b-20260925`, is not wired into production W4A4 dispatch. It passed six shape/basis cases with 308 exact I32 outputs, including K=9/33/9728 and N=1/N=9. `cuobjdump --dump-sass` found `IMMA.8832.S4.S4.SAT` in the executed probe binary. Source SHA256 `a475b66cf7ebbbc5bf2bda6a8296070a0b68d811b2cb2982def01af7047d5285`, executable SHA256 `09bf81398bf102be029bfb6929b84a463967003cf6634b5ebd1c53bfb7f030d0`, SASS SHA256 `d4bc243e1db7d32d37353e95bb673cb7d0574ad19a723dbda5db396a386f419d`, and stdout SHA256 `94ee22ceb47369791c8ab0fcdd971a0014ab1010650f17a277e3efcad6d839f3`. This proves the standalone instruction-layout probe on SM75; it does not prove production W4A4 dispatch or speed. The probe job returned the GPU to 855 MiB / 0%.
+
+### WSL W8A8/W4A4 export and source audit
+
+Both draft GGUFs were generated under `scripts/remote_job.py` from the pinned BF16 checkpoint `models/hf/Qwen3-4B_eagle3/model.safetensors`, SHA256 `58ac5bbfdd71047ebaa5d5535b895c2af37004eb820ca2dda55bd7666658853e`, using the converter in the d0724427b worktree:
+
+```sh
+python3 scripts/remote_job.py convert-w8a8-d0724427b-20260925 -- runs/toolchain-bootstrap/bin/micromamba run -p runs/toolchain-bootstrap/convert-env env OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python runs/llama-sm75-lowbit-src/convert_hf_to_gguf.py models/hf/Qwen3-4B_eagle3 --target-model-dir models/hf/Qwen3-4B --outtype f16 --w8a8-eagle --outfile models/gguf/Qwen3-4B-eagle3-w8a8-d0724427b.gguf
+python3 scripts/remote_job.py convert-w4a4-d0724427b-20260925 -- runs/toolchain-bootstrap/bin/micromamba run -p runs/toolchain-bootstrap/convert-env env OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python runs/llama-sm75-lowbit-src/convert_hf_to_gguf.py models/hf/Qwen3-4B_eagle3 --target-model-dir models/hf/Qwen3-4B --outtype f16 --w4a4-eagle --outfile models/gguf/Qwen3-4B-eagle3-w4a4-d0724427b.gguf
+```
+
+An ignored WSL audit script, SHA256 `81cfbe97a344638cd388a024265a97c783d09a79e270bb8d6c61a922a576d3df`, read each GGUF back and re-quantized all nine pinned BF16 source tensors after the 32-Q-head / 8-K-head RoPE row permutation. It checked versioned metadata, all-nine tensor names and logical K, raw I8 code/packed matrices, F32 row scales, tensor inventory and absence of dense shadows.
+
+| Format | GGUF bytes | GGUF SHA256 | Audit run | Code mismatches | F32 scale byte mismatches |
+|---|---:|---|---|---:|---:|
+| W8A8 | 224,730,560 | `48d8c517253ee24278412efc18eaf38340d6e9eede4fc819f64ab268dab590d8` | `audit-w8a8-source-d0724427b-20260925` | 0 across 9 linears | 0; all scales byte-exact |
+| W4A4 | 115,613,408 | `0471dd2a1ac7628ae97018dad5d24aaf08cbfc6a258758a975d4e60b0d40beed` | `audit-w4a4-source-d0724427b-20260925` | 0 across 9 linears | 0; all scales byte-exact |
+
+W8A8 conversion/audit log SHA256 values are `1de672a30b1c4c275f428e131dfdb46fb9e58e8825ff8323a9a5067d4bc1a99c` and `e0b5124e14ecb8263e61dce07d48b6ce35e6095a9085c3b172dac152e2622c39`. W4A4 conversion/audit log SHA256 values are `57275f135f40243952a38dae744e460dde2590a8bb5a49262e5b8ccb00d9fc36` and `dd5add325a24807b7a8ff22e1a314114acb2441178c1dd26db3c46b058a8e9fc`. Both exports match the earlier local CPU-gate GGUF hashes byte-for-byte. No host-dependent F32 scale differences were observed on WSL.
+
+### All-nine WSL model-load/dispatch smoke
+
+The harness dry-run validated an ignored one-prompt, five-repetition config (seed 42, temperature 0, 128-token cap, F16 target/KV/context 2048). The supervised model smoke was `sm75-eagle-int-lowbit-model-smoke-d0724427b-20260925`, result directory `results/native-lowbit-model-smoke-d0724427b-20260925`. It compared target-only, ordinary EAGLE, portable W1A1 head, W8A8, and W4A4 on `prose-01` only (25 measured requests total). W8A8 and W4A4 both passed all-nine loader and exact CUDA operator markers. Every variant matched target-only text 5/5 on this prompt. Token IDs were omitted by the server in all 25 responses.
+
+| Smoke variant | Accepted / proposed | Rounds | Accepted / round | Acceptance |
+|---|---:|---:|---:|---:|
+| Ordinary EAGLE | 230 / 1,960 | 400 | 0.575 | 11.73% |
+| W1A1 head | 180 / 2,200 | 450 | 0.400 | 8.18% |
+| W8A8 vector | 230 / 1,960 | 400 | 0.575 | 11.73% |
+| W4A4 vector | 45 / 2,875 | 585 | 0.077 | 1.57% |
+
+The W4A4 smoke shows a severe acceptance loss on this one prompt; the full prompt suite below measures its aggregate impact. The maximum loaded GPU snapshot was 10,110 MiB; the final state was 855 MiB / 0% with no server or runner process. Smoke raw manifest/report/records/prompts SHA256 values are, respectively: `e14a98240c09a7013dc1e8a9f6b92b57f790c6f560b4585d481c2c05ba898694`, `d8cbc1a2b1a212c4c3ebdcb77a324e18ee2082768521d39c6c89cd081c985183`, `a1d772d94f73b33177885dd823d676346184f59724137aefa3d0775d3d542693`, and `ddb4868a2717c813a852713a7c455c35438d784ed6e334c70b2ae2b93af68164`.
+
+## Five-path W8A8/W4A4 vector matrix
+
+The full default-vector comparison used the audited d0724427b build and GGUFs, with W1A1, W8A8 and W4A4 Tensor Core selectors off. The candidate binary was SHA256 `bffe57951e5c4fafd47bba9bca970931ac008e7fe4b97418eac3b7c257213b69`; W8A8 and W4A4 GGUF hashes are listed above. The config SHA256 is `b69ae15c9b342736b5648847055acf708063bc421d7ed2f2ed6f31da4a14f9ee`; prompts are the same frozen 12 in the production suite. Settings were 2 warmups, five measured repetitions, 128-token cap, seed 42, temperature 0, same F16 target/drafter, F16 KV, context 2048, parallel 1, one server at a time.
+
+Exact supervised launch and analysis commands:
+
+```sh
+cd ~/binary-eagle-decoding
+python3 scripts/remote_job.py sm75-eagle-int-lowbit-vector-five-rep-d0724427b-20260925 -- runs/toolchain-bootstrap/bin/micromamba run -p runs/toolchain-bootstrap/env env OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python scripts/benchmark_native_eagle.py --config runs/toolchain-bootstrap/native-lowbit-full.toml --run-id native-lowbit-vector-five-rep-d0724427b-20260925
+python3 scripts/remote_job.py analyze-native-lowbit-vector-d0724427b-20260925 -- runs/toolchain-bootstrap/bin/micromamba run -p runs/toolchain-bootstrap/env python scripts/analyze_native_benchmark.py --run-dir results/native-lowbit-vector-five-rep-d0724427b-20260925 --samples 2000 --seed 42 --output results/native-lowbit-vector-five-rep-d0724427b-20260925/analysis.json
+```
+
+The runner completed 300/300 requests (60 per variant) at `2026-09-25 01:56:18 UTC`, exit 0. Its manifest records parent commit `b9596675225271634881f631146d1e76bfce1a74`, parent gitlink `34e21b7d85c17e25d5a91ce2ab1074d4c18bfe39`, and actual temporary llama.cpp checkout `d0724427b61f6ff4733b502d0ce3d800a2f4cd86` with `llama_checkout_matches_gitlink=false`. The parent submodule working tree was restored to 34e21b7 after the server/runner process group ended; post-run `git status` is clean. The maximum loaded-GPU snapshot was 10,110 MiB; the highest live sample was 10,160 MiB used / 868 MiB free. Final GPU memory returned to 855 MiB / 0% with no project process.
+
+| Variant | Request tok/s | Decode tok/s | Accepted / proposed | Rounds | Accepted / round | Acceptance |
+|---|---:|---:|---:|---:|---:|---:|
+| Target only | 58.670 | 60.604 | — | — | — | — |
+| Ordinary EAGLE | 76.007 | 80.994 | 3,970 / 16,740 | 3,400 | 1.168 | 23.72% |
+| W1A1 portable head | 69.401 | 73.580 | 3,405 / 19,480 | 3,960 | 0.860 | 17.48% |
+| W8A8 vector | 75.139 | 80.182 | 3,905 / 17,055 | 3,465 | 1.127 | 22.90% |
+| W4A4 vector | 40.048 | 41.404 | 620 / 33,055 | 6,710 | 0.092 | 1.88% |
+
+Pooled request/decode ratios against ordinary EAGLE were `0.989/0.990` for W8A8 and `0.527/0.511` for W4A4. Paired 95% bootstrap intervals (2,000 samples, seed 42, resampling prompts and repetitions) were:
+
+| Variant vs ordinary EAGLE | Request ratio median [95% interval] | Decode ratio median [95% interval] |
+|---|---:|---:|
+| W8A8 vector | 0.988 [0.974, 1.003] | 0.990 [0.975, 1.005] |
+| W4A4 vector | 0.526 [0.484, 0.575] | 0.510 [0.466, 0.561] |
+
+Against target-only, W8A8 ratios were 1.281 request and 1.323 decode; W4A4 ratios were 0.683 and 0.683. Each comparison with target-only contains the same stable reasoning-02 markdown difference described above, so those target-only ratios are timing observations rather than strict lossless speedups. All four speculative outputs (ordinary, W1A1 head, W8A8, W4A4) matched one another on all 60 prompt/repetition pairs. Against target-only, each matched 55/60; the five differences were the known `reasoning-02` heading capitalization, while target-only itself was stable across repetitions. Generated token IDs were omitted in all 300 responses. All five dispatch confirmations were true for both W8A8 and W4A4. W8A8 ran its signed-INT8 DP4A-style source path; W4A4 ran the signed-nibble scalar integer MUL/ADD vector path, not INT4 Tensor Core MMA.
+
+Per-prompt pooled request/decode ranges across the 12 prompts were 57.70–92.98 / 59.66–98.34 tok/s for W8A8 and 36.64–42.06 / 38.86–44.06 for W4A4. Category decode tok/s for prose/code/reasoning was 65.91/85.25/92.88 for W8A8 and 40.29/41.74/42.11 for W4A4; accepted-per-round by category was 0.749/1.263/1.461 and 0.063/0.100/0.113, respectively. Ordinary EAGLE category decode was 66.82/89.67/95.08 tok/s, accepted-per-round 0.749/1.358/1.510.
+
+Server `common_speculative_impl` timing decomposition is host wall time, not GPU-kernel time. `accept_ms` is the acceptance-hook span, not total target-verification latency; the runner has no isolated verifier span. Measured-only totals and draft-call cost per round were:
+
+| Variant | begin ms | draft ms | accept-hook ms | draft ms / verification round |
+|---|---:|---:|---:|---:|
+| Ordinary EAGLE | 0.096 | 22,499.275 | 4.281 | 6.617 |
+| W8A8 vector | 0.094 | 21,929.817 | 4.364 | 6.329 |
+| W4A4 vector | 0.094 | 44,696.353 | 8.287 | 6.661 |
+
+Raw artifacts remain under `/home/philip/binary-eagle-decoding/results/native-lowbit-vector-five-rep-d0724427b-20260925/`:
+
+| Artifact | SHA256 |
+|---|---|
+| `manifest.json` | `4dd772b7efd3bcc113528f51502e89fa763f362c4fb01b1bae7569091eb2051f` |
+| `report.json` | `72eb46d17da9d67cdc5f0211d3184eb53653cb66cde231b6323f18156aec1f27` |
+| `records.json` | `39bb90a4c105de4056a8104bd592cfd61524982aa6cf5f6c28d4392a0243eb12` |
+| `prompts.jsonl` | `0d6a698d6816592c6ff435fed2fea4cdafe9f5248393d2a5ac091e1551919476` |
+| `analysis.json` | `08302212b00d2f9e3ced34645f5d29a722c0a7feab5fa8ee6d881212b5035208` |
