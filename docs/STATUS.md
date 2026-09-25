@@ -1,14 +1,16 @@
 # Current project status
 
-**Active goal:** none. The [RTX 2080 Ti quantization suite](goals/rtx2080ti-quantization-suite.md)
-completed on 2026-09-25.
+**Active goal:** [all-layer W1Ax activation-precision suite on RTX 2080 Ti](goals/w1ax-activation-precision-suite.md),
+opened 2026-09-25. The [RTX 2080 Ti quantization
+suite](goals/rtx2080ti-quantization-suite.md) completed on 2026-09-25.
 The prior [W1A1 EAGLE research goal](goals/full-w1a1-eagle-project.md) is
 checkpointed, and its Turing measurements are complete. **Current research
-priority:** revisit W1A1 quantization-aware training (QAT) to recover held-out
-draft acceptance. Every future native W1A1 throughput comparison must include
+priority:** run the W1Ax activation-precision study, then revisit W1A1
+quantization-aware training (QAT) to recover held-out draft acceptance. Every
+future native W1A1 throughput comparison must include
 both ordinary FP16 EAGLE and Q4_0 EAGLE drafts under the same target/verifier;
 alternative drafter architectures are a later research direction. No new
-official goal or QAT run has begun.
+QAT run has begun.
 
 Ubuntu 24.04 WSL2 and SSH are reachable through the shared host registry. The
 RTX 2080 Ti (SM75) passed five native W1A1 CUDA backend
