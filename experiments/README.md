@@ -9,5 +9,9 @@ Current acceptance evidence: [Metal development sweep](pytorch-w1a1-metal-accept
 [RTX 5080 CUDA diagnostic](pytorch-w1a1-cuda-acceptance.md), and
 [W4A4/W8A8 CUDA acceptance](pytorch-int4-int8-cuda-acceptance.md), plus the
 [static drafter coverage](drafter-static-coverage.md). Target-only, ordinary
-EAGLE, and native W1A1 throughput anchors belong to the later paired runtime
-comparison on each relevant GPU.
+EAGLE, and native W1A1 throughput anchors were measured in direct paired
+runtime comparisons on each relevant GPU.
+
+The completed [RTX 2080 Ti synthesis](rtx2080ti-synthesis.md) summarizes
+the full precision suite; [detailed provenance](rtx2080ti-quantization-suite.md)
+preserves paired rates, acceptance, commands, raw hashes, and execution paths.

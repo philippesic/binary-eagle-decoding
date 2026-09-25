@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-24–25  
 **Owner:** SM75 experiment operator  
-**Status:** Production W1A1 correctness gates, the frozen nine-variant matrix, the full portable-versus-MMA head comparison, the matched W8A8/W4A4 vector matrix, and the seven-path opt-in W8A8/W4A4 MMA comparison are complete on the RTX 2080 Ti. The combined MMA candidate passed its SM75 backend/probe/model/SASS gates, then its full 12-prompt/five-repetition matrix measured both MMA kernels slower than their default vector paths with identical acceptance. Q4_0/Q8_0 kernel/activation paths remain source-inferred pending the isolated dispatch-trace run.
+**Status:** The full W1A1, W8A8, W4A4, Q4_0/Q8_0, and opt-in Tensor Core comparisons are complete on the RTX 2080 Ti. The combined MMA candidate passed its SM75 backend/probe/model/SASS gates, then its full 12-prompt/five-repetition matrix measured both INT8 and INT4 MMA kernels slower than their same-format default paths with identical acceptance. A separate executed-path trace confirmed Q4_0/Q8_0 use Q8_1 activation quantization, MMVQ at one/two-token shapes, and MMQ at an observed 38-token shape. All raw matrices and the trace are hashed below.
 
 ## Initial preflight (resolved below)
 
@@ -88,7 +88,7 @@ Pinned target and draft source snapshots are staged under `models/hf/Qwen3-4B/` 
 
 ## Next action
 
-The production, W1A1 MMA, default W8A8/W4A4 vector, and opt-in W8A8/W4A4 MMA matrices are sealed and their raw outputs are hashed below. The next action is the isolated Q4_0/Q8_0 SM75 dispatch-trace smoke. Keep weight-only timing labels distinct from the W8A8/W4A4 research contracts until executed-kernel evidence proves the path.
+The production, W1A1 MMA, default W8A8/W4A4 vector, and opt-in W8A8/W4A4 MMA matrices and the Q4_0/Q8_0 path diagnostic are sealed with raw hashes below. Keep Q4_0/Q8_0 block-scale format labels distinct from the W8A8/W4A4 research contracts.
 
 ## WSL user-space setup and build checkpoint
 

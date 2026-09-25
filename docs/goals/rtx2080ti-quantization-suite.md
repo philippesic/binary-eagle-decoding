@@ -651,6 +651,30 @@ Compare pooled rates and prompt/repetition spread against both anchors.
   and `92e77f518c32bfa575b5946306da1690e775d8c28beb1dd21fad8232c12eb632`.
   The highest live GPU sample was 10,160 MiB used / 868 MiB free; final GPU
   was 855 MiB/0% and the production checkout/gitlink was restored cleanly.
-- Next: execute the isolated Q4_0/Q8_0 opt-in dispatch trace after restoring
-  the production checkout, then synthesize all precision paths and close the
-  goal only when the trace and full report are preserved.
+- A separate short Q4_0/Q8_0 trace is complete below. The remaining action
+  is to finish the consolidated result, verify clean/published project state,
+  and close the goal only when that report is committed.
+
+## Q4_0/Q8_0 executed-path trace
+
+- An isolated SM75 server build from published llama.cpp diagnostic branch
+  `5c52067` completed 356/356 targets. The trace-only server SHA256 was
+  `0fd2d394a5136526c0e5fce96e0d704a27d53a3445d0d0135386034c02425199`.
+  Its short supervised run `native-qformat-dispatch-trace-supervisor-5c52067-20260925`
+  completed 25/25 measured requests with one prompt, one warmup, five
+  repetitions, and 32-token cap; GPU returned to 855 MiB/0% with no server.
+- Actual CUDA trace lines for **both** Q4_0 and Q8_0 recorded F32 input
+  activations quantized internally to **Q8_1**. One-token fused decode
+  `(K=4096,M=2560,N=1)` and two-token work `(K=5120,M=4096,N=2)` selected
+  **MMVQ**; an observed 38-token operation `(K=7680,M=2560,N=38)` selected
+  **MMQ**. No cuBLAS branch appeared in this diagnostic. The selected MMVQ
+  source uses byte `DP4A`, extracting Q4_0 nibbles for the Q4_0×Q8_1 path;
+  this instruction property is source-backed rather than disassembled in the
+  diagnostic. These are block-scale mixed-format operators, not the separate
+  whole-row/whole-token W4A4/W8A8 contracts.
+- The exact run commands, six branch/shape records, cleanup, and raw hashes
+  are in the [trace section](../../experiments/rtx2080ti-quantization-suite.md)
+  committed at `2b5c192`. Raw manifest/report/records SHA256 values are
+  `28c40fcf79cb570b349bab254e0b07f56db0672b513202a514fbac98952fc3d7`,
+  `56d28fe2323d5f14747911c1c8a59aa7a84faaa5c0e976129a3ec7622698c411`,
+  and `ca9566b44c74fa9cece3ca84122a0029a02cad88f8a691b46aa64c5bbb887f90`.

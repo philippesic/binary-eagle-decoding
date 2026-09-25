@@ -171,6 +171,34 @@ Use values measured in the paired comparison, including target-emitted tokens,
 when estimating the break-even draft cost. The final decision comes from
 end-to-end timing.
 
+### RTX 2080 Ti hardware result (2026-09-25)
+
+The completed [SM75 quantization suite](../experiments/rtx2080ti-quantization-suite.md)
+used the same FP16 target and frozen 12-prompt/five-repetition protocol on
+the 2080 Ti. All five native W1A1 coverage settings lost to ordinary EAGLE:
+head-only reached 0.907× ordinary decode rate and all-nine W1A1 0.561×.
+Head draft arithmetic became faster, but lower accepted drafts required
+more verification rounds. An actual binary Tensor Core head path passed
+correctness and instruction gates yet tied the portable binary path at
+1.002× decode rate (95% paired interval 0.997–1.006).
+
+Genuine all-nine W8A8 reached 0.990× ordinary decode rate (0.975–1.005),
+while W4A4 reached 0.511× (0.466–0.561) as acceptance collapsed. Opt-in
+live SM75 INT8 and INT4 MMA paths matched their same-format default outputs
+and accepted counts but were slower: 0.821× W8A8 DP4A and 0.880× W4A4
+packed-vector decode rate. The existing Q4_0/Q8_0 draft GGUF controls were
+faster than ordinary at 1.109×/1.064×. An isolated executed-path trace
+confirmed they quantize F32 activations to Q8_1 and select MMVQ at the
+observed one/two-token shapes and MMQ at an observed 38-token shape; their
+block-scale contracts remain distinct from W4A4/W8A8.
+
+All speculative variants in the matched runs produced identical text to
+their paired speculative anchors. Target-only differed on one stable
+heading-capitalization prompt, so ratios to target-only remain timing
+observations rather than strict lossless speedups. The result establishes a
+negative finding for these W1A1 and W4A4 recipes on this workload; it does
+not rule out other quantizers, QAT objectives, batch shapes, or kernel layouts.
+
 ## Comparison and evidence
 
 Mandatory anchors are no speculation and normal FP16 EAGLE. Desired additional
