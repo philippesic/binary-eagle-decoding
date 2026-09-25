@@ -400,8 +400,11 @@ Compare pooled rates and prompt/repetition spread against both anchors.
   was 0.907× (0.869–0.946) and all-group 0.561× (0.511–0.617). The acceptance
   collapse, especially all-group's 0.055 versus ordinary's 1.168 accepted
   drafts/round, is the primary measured reason to investigate before any
-  speedup claim. Draft/verification component timing is being checked in the
-  preserved server logs; do not invent missing spans.
+  speedup claim. The server's host draft span per verification round fell
+  from 6.471 ms ordinary to 3.558 ms all-group, but verification rounds
+  rose 3,400→6,940 and pooled draft time rose 22.0→24.7 s. The saved
+  `accept_ms` counter covers an acceptance hook, not an isolated target
+  verifier span; do not infer missing GPU kernel/verification durations.
 - Next: run a full paired portable-versus-integrated-binary-MMA head matrix
   on this device; then build/check the combined W8A8/W4A4 branch and use the
   opt-in Q-format trace after sealed timing. Keep the one-GPU-owner rule.
