@@ -27,7 +27,20 @@ Each ratio below comes from a **direct paired run with its own ordinary or same-
 
 The W1A1 all-group drafter cut measured host draft-call time per verification round from 6.471 to 3.558 ms, but accepted drafts fell from 1.168 to 0.055 per round. Verification rounds rose from 3,400 to 6,940, and total draft-call time rose from 22.0 to 24.7 seconds. A faster binary dot therefore did not translate to a faster decoder. W8A8 shortened draft-call time slightly (6.617 to 6.329 ms/round) but accepted slightly fewer drafts, yielding no resolved throughput change. W4A4 had both poor acceptance and no per-round draft-cost saving (6.661 versus ordinary's 6.617 ms).
 
-In the opt-in Tensor Core comparison, each MMA path used the **same GGUF, draft codes, scales, target, prompts, and accepted-draft totals** as its default counterpart. Yet host draft-call time per round rose from 6.352 to 12.054 ms for W8A8 and from 6.638 to 10.189 ms for W4A4. The small single-sequence draft shapes do not use the 8×8 matrix tiles efficiently in these implementations; that is an inference from the measured cost and kernel layouts, not a general claim about Turing Tensor Cores.
+In the opt-in Tensor Core comparison, each MMA path used the **same GGUF, draft codes, scales, target, prompts, and accepted-draft totals** as its default counterpart. Yet host draft-call time per round rose from 6.352 to 12.054 ms for W8A8 and from 6.638 to 10.189 ms for W4A4.
+
+An independent [Nsight Systems CUDA trace](rtx2080ti-quantization-suite.md) measured activation packing and matrix-dot kernels on real EAGLE shapes. The table reports the median of **same-stream, sequential pack-plus-dot pairs** over three short requests; these are profiler diagnostics in microseconds, not the end-to-end benchmark timings.
+
+| Actual layer shape | Default pack+dot | Tensor Core pack+dot | Pair counts |
+|---|---:|---:|---:|
+| W1A1 head, N=1, M=32,000 | 31.4 µs | — | 15 |
+| W1A1 all-group FFN output, N=1, M=9,728 | 14.7 µs | — | 36 |
+| W8A8 head, N=1, M=32,000 | 149.4 µs | 434.7 µs | 15 per path |
+| W8A8 FFN output, N=1, M=9,728 | 51.9 µs | 180.5 µs | 30 per path |
+| W4A4 head, N=1, M=32,000 | 152.7 µs | 362.4 µs | 15 per path |
+| W4A4 FFN output, N=1, M=9,728 | 53.3 µs | 129.0 µs | 30 per path |
+
+For larger N=37 head launches, the corresponding W8A8 pack-plus-dot medians were **5.236 ms default versus 3.045 ms MMA**, and W4A4 **5.359 ms versus 2.942 ms** (three pairs per path). Thus these MMA kernels can help at a larger token batch while losing in the repeated N=1 decode work. The 8×8 tile layout's unused columns at N=1 are a plausible cause, inferred from the layout and measured durations; the trace does not prove a unique cause. The profiler adds instrumentation overhead, so the paired request throughput above remains the performance conclusion.
 
 ## Execution and correctness evidence
 

@@ -186,7 +186,10 @@ Genuine all-nine W8A8 reached 0.990× ordinary decode rate (0.975–1.005),
 while W4A4 reached 0.511× (0.466–0.561) as acceptance collapsed. Opt-in
 live SM75 INT8 and INT4 MMA paths matched their same-format default outputs
 and accepted counts but were slower: 0.821× W8A8 DP4A and 0.880× W4A4
-packed-vector decode rate. The existing Q4_0/Q8_0 draft GGUF controls were
+packed-vector decode rate. A separate CUDA trace measured N=1 head
+pack-plus-dot medians of 149 versus 435 µs for W8A8 default/MMA and 153
+versus 362 µs for W4A4 default/MMA; at N=37 the MMA kernels were faster.
+The existing Q4_0/Q8_0 draft GGUF controls were
 faster than ordinary at 1.109×/1.064×. An isolated executed-path trace
 confirmed they quantize F32 activations to Q8_1 and select MMVQ at the
 observed one/two-token shapes and MMQ at an observed 38-token shape; their
