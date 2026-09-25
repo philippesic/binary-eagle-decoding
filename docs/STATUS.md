@@ -3,9 +3,15 @@
 **Active goal:** none. The [RTX 2080 Ti quantization suite](goals/rtx2080ti-quantization-suite.md)
 completed on 2026-09-25.
 The prior [W1A1 EAGLE research goal](goals/full-w1a1-eagle-project.md) is
-checkpointed; its remaining Turing measurements are now tracked in the active
-benchmark goal. Ubuntu 24.04 WSL2 and SSH are reachable through the shared
-host registry. The RTX 2080 Ti (SM75) passed five native W1A1 CUDA backend
+checkpointed, and its Turing measurements are complete. **Current research
+priority:** revisit W1A1 quantization-aware training (QAT) to recover held-out
+draft acceptance. Every future native W1A1 throughput comparison must include
+both ordinary FP16 EAGLE and Q4_0 EAGLE drafts under the same target/verifier;
+alternative drafter architectures are a later research direction. No new
+official goal or QAT run has begun.
+
+Ubuntu 24.04 WSL2 and SSH are reachable through the shared host registry. The
+RTX 2080 Ti (SM75) passed five native W1A1 CUDA backend
 cases, a standalone 21-case/880-dot binary-MMA probe, and both integrated
 portable/MMA eight-case backend gates. All five W1A1 draft GGUFs passed
 source-row audits; the FP16 target track fits in 11,264 MiB VRAM.
@@ -18,8 +24,8 @@ controls reached 91.51 and 87.73 (1.109× and 1.064×). Fusion, attention,
 and FFN W1A1 also trailed ordinary. All eight speculative variants produced
 identical text on all 60 paired requests; each differed from target-only on
 one prompt. Ratios to target-only are timing observations, not strict
-lossless speedups. Q4_0/Q8_0 stored types are verified, while their exact
-decode kernel path remains source-inferred pending an opt-in trace.
+lossless speedups. Q4_0/Q8_0 stored types are verified, and a later isolated
+trace confirmed their Q8_1 activation conversion and MMVQ/MMQ dispatch.
 
 A separate 240-request four-path comparison found integrated binary-MMA head
 W1A1 at 74.72 decode tok/s versus portable head W1A1 at 74.59, a 1.0017×
@@ -101,29 +107,28 @@ comparison](../experiments/pytorch-int4-int8-cuda-acceptance.md) measured
 numerical simulations, not native INT4/INT8 timing.
 
 A standalone SM75 binary-MMA probe cross-compiled to `BMMA.88128.XOR.POPC`
-and passed 21 cases/880 exact integer dots in an explicitly labeled SM120
-proxy run. It has **not** executed on the RTX 2080 Ti; see the
-[probe record](../experiments/sm75-binary-mma-plan.md). A focused
+and later passed 21 cases/880 exact integer dots on the RTX 2080 Ti; see the
+[2080 Ti suite](../experiments/rtx2080ti-quantization-suite.md). A focused
 [related-work note](../experiments/related-work-note.md) keeps novelty claims
 narrow: quantized EAGLE and native QAT already exist.
 An opt-in [integrated binary-MMA
 candidate](../experiments/integrated-binary-mma-5080.md) also passed 8/8
 scalar-reference backend cases on the 5080, matched all 85 packed-draft
 tokens in one model request, and compiled to SM75 SASS containing the exact
-binary-MMA instruction. It remains on a published experimental branch; no
-SM75 binary was run and no MMA speed result is claimed.
+binary-MMA instruction. It subsequently passed the real SM75 backend gate and
+tied portable W1A1 in the matched head comparison above.
 The paired benchmark runner and analysis now support an opt-in fourth MMA
 variant with separate selector/dispatch records and same-device MMA/portable
 speed ratios. Local fake-server and analysis checks passed 15/15; the
 [2080 Ti runbook](RTX2080TI_RUNBOOK.md) specifies the required run.
 
-## Next gate
+## Next research gate
 
-The nine-variant SM75 matrix, binary-MMA comparison, native W8A8/W4A4
-default-versus-Tensor-Core comparisons, Q4_0/Q8_0 path trace, and actual
-CUDA component profiles are complete. The 2080 Ti is free. The
-[runbook](RTX2080TI_RUNBOOK.md) records the hardware gates.
-The 5080 experiments are complete and sealed. Its remote checkout was restored
-to pinned `92bc706`; all supervised jobs exited, no project process remained,
-and repeated GPU samples showed 0% utilization. The repository checks pass
-(78 tests); the expanded W1A1 branch tests passed 8/8 on CPU and CUDA.
+Follow the [QAT revisit plan](../experiments/qat-revisit-plan.md): audit
+drafter-state/target-verifier alignment and target probability mass outside the
+draft vocabulary before training, then test one bounded target-aligned recipe
+on the frozen new development/final prompts. If acceptance improves, run native
+same-device end-to-end comparisons against **both** FP16 EAGLE and Q4_0 EAGLE.
+Later, screen non-EAGLE drafters such as block-parallel DFlash/DSpark before
+investing in their W1A1 kernels. The completed 2080 Ti and 5080 experiments
+are sealed, and the GPUs were released after their runs.

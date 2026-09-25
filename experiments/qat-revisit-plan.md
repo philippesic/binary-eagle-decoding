@@ -6,6 +6,13 @@ W1A1 coverage setting on the RTX 2080 Ti. Native post-training comparisons and
 QAT are separate experiments. See the [first pilot result](qat-head-pilot-results.md)
 and the [2080 Ti runbook](../docs/RTX2080TI_RUNBOOK.md).
 
+**2026-09-25 direction:** the native five-setting 2080 Ti matrix is complete.
+QAT acceptance recovery is now the research priority. A trained native W1A1
+candidate must be timed against **both** ordinary FP16 EAGLE and standard
+Q4_0 EAGLE drafts with the same target and verifier. The Q4_0 control is a
+block-scaled weight format, not the separate W4A4 quantizer. Alternative
+non-EAGLE drafters are a later direction, not part of this QAT gate.
+
 ## Why change the recipe
 
 The first pilot optimized the binary head against the original drafter head on
@@ -94,30 +101,33 @@ These are possible explanations, not a proven causal decomposition.
   original ordinary EAGLE, original untrained binary head, and the earlier
   trained pilot head. A final acceptance improvement over the unchanged binary
   path is required before spending effort on wider QAT. Do not infer native
-  throughput from acceptance alone.
+  throughput or a win over the Q4_0 draft from acceptance alone.
 
 ## Wider coverage decision
 
-The requested native 2080 Ti matrix includes fusion-only, attention-only,
-FFN-only, head-only, and all-group W1A1 **without QAT** first. Use its measured
-acceptance, draft cost, and precision coverage to choose a second QAT group.
+The requested native 2080 Ti matrix tested fusion-only, attention-only,
+FFN-only, head-only, and all-group W1A1 **without QAT**. Every setting lost to
+ordinary EAGLE; head-only retained the most acceptance (0.860 accepted
+drafts/round versus ordinary's 1.168), while all-group fell to 0.055. Use
+these measured quality/cost results to choose any later QAT group.
 Training FFN, attention, fusion, or all groups changes recurrent states and
 requires activation STE plus the pinned AngelSlim recurrent/alignment loss;
 the cached-head trainer cannot be reused for that purpose. Before a wider run,
 freeze a single candidate, objective, data split, time/step cap, and final gate
 in an amendment here. Preserve the target-only and ordinary anchors on the
-same 2080 Ti track.
+same 2080 Ti track, and include Q4_0 as the second draft throughput anchor.
 
-## 2080 Ti execution and reporting
+## Native execution and reporting
 
-The Windows host currently lacks Ubuntu WSL and reachable SSH, so no 2080 Ti
-QAT or inference result exists. Once accessible, first inventory VRAM and
-check whether the FP16 target/draft pair fits. If not, use a separately named
-quantized-target track with the same target GGUF for every compared draft.
-For every trained or untrained native variant, run the correctness/dispatch
-gate and at least five alternating timed repetitions with the same target,
+The 2080 Ti now has Ubuntu WSL, reachable SSH, and a completed FP16-target
+comparison suite; no new QAT model has been trained or run natively. For a
+trained native candidate, run the correctness/dispatch gate and at least five
+alternating timed repetitions with the same target,
 prompts, context, KV type, sampling, and speculative settings. Preserve model,
 code, build, compiler, driver, GPU, clocks/power, memory, exact commands,
 prompt and output hashes, acceptance counts, and per-request timings under a
-run-specific ignored results directory. Compare portable and SM75 binary-MMA
-dispatch only after both pass correctness on the actual 2080 Ti.
+run-specific ignored results directory. Include target-only for correctness
+context and both ordinary FP16 EAGLE and Q4_0 EAGLE draft anchors for throughput.
+The Q4_0 anchor must use the same FP16 target and verifier as the trained
+candidate. Compare portable and SM75 binary-MMA dispatch only after both pass
+correctness on the actual 2080 Ti.

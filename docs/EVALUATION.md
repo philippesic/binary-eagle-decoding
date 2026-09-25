@@ -29,6 +29,7 @@ distribution across prompts/runs, rather than averaging speedup ratios alone.
 | --- | --- |
 | No speculation | Same target and runtime settings; mandatory reference. |
 | FP16 EAGLE | Existing draft checkpoint converted to FP16; mandatory reference. |
+| Q4_0 EAGLE | Same target and verifier with the standard Q4_0 draft GGUF; mandatory throughput reference for future W1A1/QAT comparisons. Record its actual activation and CUDA path; do not label it genuine W4A4. |
 | W8A8 / W4A4 EAGLE | Desired comparisons; identify whether kernels actually execute at that operand precision. |
 | W1A1 simulation | Accuracy/acceptance experiment; floating-point simulation is not binary acceleration. |
 | W1A1 native | Packed binary operands and XOR/POPCOUNT computation; identify normal-precision exceptions. |
@@ -50,6 +51,7 @@ explicitly rather than silently replacing them.
 - Request throughput: generated output tokens / full request wall time, including
   prefill. Report time to first token separately when available.
 - Speedup over normal EAGLE: W1A1 decode tokens/sec / FP16 EAGLE decode tokens/sec.
+- Speedup over Q4_0 EAGLE: W1A1 decode tokens/sec / Q4_0 EAGLE decode tokens/sec, measured with the same target, prompts, hardware, and settings.
 - Speedup over no speculation: W1A1 decode tokens/sec / target-only decode tokens/sec.
 
 Record per-round draft latency, verification latency, other overhead, and
@@ -76,11 +78,13 @@ and distributional behavior instead of requiring identical random sequences.
 Evaluate W1A1 acceptance on held-out prompts before kernel investment. During
 the direct comparison, estimate an optimistic upper bound using measured emitted
 tokens per round and verification cost with draft time reduced toward zero. If
-that bound cannot beat FP16 EAGLE, prioritize diagnosing acceptance over further
-kernel optimization.
+that bound cannot beat both FP16 EAGLE and Q4_0 EAGLE, prioritize diagnosing
+acceptance over further kernel optimization.
 
-Publish a positive result only when repeated end-to-end measurements support it
-and variability is disclosed. Otherwise quantify the bottleneck and which
+For future W1A1 candidates, report both FP16 EAGLE and Q4_0 EAGLE comparisons;
+evaluate success against both anchors, not draft-call speed alone. Publish a
+positive result only when repeated end-to-end measurements support it and
+variability is disclosed. Otherwise quantify the bottleneck and which
 assumptions failed. A correct, well-instrumented negative result meets the goal.
 
 ## Run artifacts

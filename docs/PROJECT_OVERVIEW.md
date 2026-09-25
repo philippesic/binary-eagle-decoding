@@ -11,6 +11,14 @@ speculative acceptance. A faster binary matrix multiplication alone is not a
 successful outcome. A reproducible negative result that identifies the limiting
 cost is also a successful research outcome.
 
+For future W1A1 candidates, use both ordinary FP16 EAGLE and the standard
+Q4_0 EAGLE draft as same-device throughput anchors, with the target and verifier
+held fixed. The Q4_0 control is a block-scaled draft weight format, not the
+separate whole-row/whole-token W4A4 research quantizer. After the completed
+2080 Ti suite, prioritize quantization-aware training (QAT) that recovers
+held-out draft acceptance. Consider alternative drafter architectures after
+this quality-focused phase; no non-EAGLE W1A1 result exists yet.
+
 Treat this document as the project's overarching guidance. Update it when an
 experiment changes a major assumption, and record the evidence in `experiments/`.
 The initial time budget is approximately two to three weeks of experimental work.
@@ -204,8 +212,9 @@ not rule out other quantizers, QAT objectives, batch shapes, or kernel layouts.
 
 ## Comparison and evidence
 
-Mandatory anchors are no speculation and normal FP16 EAGLE. Desired additional
-comparisons are W8A8, W4A4, and W1A1 EAGLE. Record the actual execution path for
+Mandatory anchors for future W1A1 work are no speculation, normal FP16 EAGLE,
+and Q4_0 EAGLE. Desired additional comparisons are W8A8, W4A4, and W1A1
+EAGLE. Record the actual execution path for
 every precision; weight-only GGUF quantization is not automatically W8A8/W4A4.
 If a genuine low-bit baseline is unavailable within scope, state that limitation.
 Keep 5080 development results separate from 2080 Ti binary-speed conclusions;
@@ -215,7 +224,7 @@ baseline milestone.
 
 Measure draft latency, activation packing, binary kernels, output-head cost,
 verification latency, accepted/drafted tokens, accepted tokens per round,
-end-to-end output tokens/sec, and speedup over both mandatory anchors. Include
+end-to-end output tokens/sec, and speedup over each mandatory anchor. Include
 memory usage and runtime/environment metadata. Separate prefill from decode and
 report request time as well as decode throughput. See [evaluation](EVALUATION.md).
 
