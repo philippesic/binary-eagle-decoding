@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-24–25  
 **Owner:** SM75 experiment operator  
-**Status:** Production W1A1 correctness gates, the frozen nine-variant matrix, the full portable-versus-MMA head comparison, and the matched W8A8/W4A4 vector matrix are complete on the RTX 2080 Ti. The default combined d0724427b W8A8/W4A4 paths passed their registered SM75 backend cases, full-source GGUF code/scale audits, all-nine model load/dispatch smoke, and 12-prompt/five-repetition vector matrix. W8A8 DP4A had roughly ordinary-EAGLE throughput; W4A4 vector had a severe acceptance and throughput loss. The isolated signed-I4 MMA probe passed exact I32 checks and emitted `IMMA.8832.S4.S4.SAT`; the published opt-in live MMA candidate still needs its own SM75 gates. Q4_0/Q8_0 kernel/activation paths remain source-inferred, not profiler-confirmed.
+**Status:** Production W1A1 correctness gates, the frozen nine-variant matrix, the full portable-versus-MMA head comparison, the matched W8A8/W4A4 vector matrix, and the seven-path opt-in W8A8/W4A4 MMA comparison are complete on the RTX 2080 Ti. The combined MMA candidate passed its SM75 backend/probe/model/SASS gates, then its full 12-prompt/five-repetition matrix measured both MMA kernels slower than their default vector paths with identical acceptance. Q4_0/Q8_0 kernel/activation paths remain source-inferred pending the isolated dispatch-trace run.
 
 ## Initial preflight (resolved below)
 
@@ -88,7 +88,7 @@ Pinned target and draft source snapshots are staged under `models/hf/Qwen3-4B/` 
 
 ## Next action
 
-The production, W1A1 MMA, and default W8A8/W4A4 vector matrices are sealed and their raw outputs are hashed below. Validate the combined opt-in W8A8/W4A4 MMA candidate on SM75, then trace actual Q4_0/Q8_0 activation/operator paths. Keep weight-only timing labels distinct from the W8A8/W4A4 research contracts until executed-kernel evidence proves the path.
+The production, W1A1 MMA, default W8A8/W4A4 vector, and opt-in W8A8/W4A4 MMA matrices are sealed and their raw outputs are hashed below. The next action is the isolated Q4_0/Q8_0 SM75 dispatch-trace smoke. Keep weight-only timing labels distinct from the W8A8/W4A4 research contracts until executed-kernel evidence proves the path.
 
 ## WSL user-space setup and build checkpoint
 
@@ -398,3 +398,51 @@ Raw artifacts remain under `/home/philip/binary-eagle-decoding/results/native-lo
 | `records.json` | `39bb90a4c105de4056a8104bd592cfd61524982aa6cf5f6c28d4392a0243eb12` |
 | `prompts.jsonl` | `0d6a698d6816592c6ff435fed2fea4cdafe9f5248393d2a5ac091e1551919476` |
 | `analysis.json` | `08302212b00d2f9e3ced34645f5d29a722c0a7feab5fa8ee6d881212b5035208` |
+
+## Seven-path opt-in W8A8/W4A4 MMA matrix
+
+The combined opt-in candidate at llama.cpp `2d9712cde8d7808bb869e59e56a565e0e4fa2918` passed its SM75 build, backend-op selectors, exact-dot probes, candidate-library SASS checks, and the short all-nine model parity smoke before timing. The actual live-library extracts contain `IMMA.8816.S8.S8` in `_Z15w8a8_signed_mma...` (extract SHA256 `2d9c549f1df31c39122891a70f36cee5bed076f98c8d63c9df10b55217c1dfe1`) and `IMMA.8832.S4.S4.SAT` in `_Z17w4a4_sm75_mma_dot...` (extract SHA256 `0b83964bb3d96ee47df168b3fbd35c75fe8967bee3db0ff17d4038a3c9999782`). These are the candidate-library SASS excerpts, separate from the standalone probes. Both MMA paths were opt-in; the paired default rows kept their selectors disabled.
+
+The full run used the exact candidate server binary SHA256 `07bb2339b000ba63f71cb4c5c7b74304a0816e466b5796d40f7e09712ff33b5a`, the audited d0724427b W8A8 and W4A4 GGUFs above, the same F16 target and ordinary draft, 12 frozen prompts, two warmups per server, five repetitions, 128-token cap, seed 42, temperature 0, F16 KV, context 2048, and one server at a time. The ignored config `runs/toolchain-bootstrap/native-operand-mma-full.toml` has SHA256 `9084a6e0059da4ac478a03c5096680f34102b712a67749f0b4a27bed4140f6e5`. It enabled both default and MMA rows for W8A8 and W4A4 using the same audited GGUF for each pair, required the exact distinct operator marker, and forbade the paired path's marker.
+
+Supervised run `native-lowbit-mma-full-supervisor-timed-2d9712cde-20260925` launched `scripts/benchmark_native_eagle.py` with result ID `native-lowbit-mma-full-timed-2d9712cde-20260925`. It completed 420/420 measured requests (60 for each of seven variants) with supervisor exit 0. The manifest records parent commit `9fe5321c350bdea554935f2f28603c4e72e118da`, parent gitlink `34e21b7d85c17e25d5a91ce2ab1074d4c18bfe39`, and actual temporary llama.cpp checkout `2d9712cde8d7808bb869e59e56a565e0e4fa2918`. The initial dry-run correctly generated its manifest but occupied its requested result directory; the first timed invocation stopped before starting a server with `FileExistsError`. Its raw output was preserved, and the completed timed run used a fresh result ID. No timed records were discarded or repeated.
+
+| Variant | Request tok/s | Decode tok/s | Accepted / proposed | Rounds | Accepted / round | Acceptance |
+|---|---:|---:|---:|---:|---:|---:|
+| Target only | 58.814 | 60.739 | — | — | — | — |
+| Ordinary EAGLE | 76.399 | 81.435 | 3,970 / 16,740 | 3,400 | 1.168 | 23.72% |
+| W1A1 portable head | 69.430 | 73.620 | 3,405 / 19,480 | 3,960 | 0.860 | 17.48% |
+| W8A8 DP4A | 75.279 | 80.301 | 3,905 / 17,055 | 3,465 | 1.127 | 22.90% |
+| W8A8 SM75 MMA | 62.496 | 65.889 | 3,905 / 17,055 | 3,465 | 1.127 | 22.90% |
+| W4A4 signed-nibble vector | 40.114 | 41.502 | 620 / 33,055 | 6,710 | 0.092 | 1.88% |
+| W4A4 signed-I4 SM75 MMA | 35.478 | 36.526 | 620 / 33,055 | 6,710 | 0.092 | 1.88% |
+
+The opt-in Tensor Core kernels had a measured cost loss with unchanged acceptance. W8A8 MMA was 17.0% slower in pooled request rate and 17.9% slower in decode rate than its DP4A default; W4A4 MMA was 11.6% slower in request rate and 12.0% slower in decode rate than its signed-nibble vector default. Paired prompt/repetition bootstrap intervals (2,000 draws, seed 42) exclude parity:
+
+| MMA vs same-format default | Request ratio median [95% interval] | Decode ratio median [95% interval] |
+|---|---:|---:|
+| W8A8 MMA / DP4A | 0.830 [0.826, 0.836] | 0.821 [0.817, 0.824] |
+| W4A4 MMA / vector | 0.884 [0.880, 0.889] | 0.880 [0.876, 0.884] |
+
+Against ordinary EAGLE, the corresponding MMA request/decode ratios were 0.818 [0.807, 0.828] / 0.809 [0.797, 0.821] for W8A8 and 0.464 [0.426, 0.506] / 0.448 [0.409, 0.493] for W4A4. The candidate rows and their default rows produced identical completion-text hashes and identical acceptance/proposal/round counts on all 60 pairs for each format. Each speculative variant matched target-only on 55/60 requests; all six speculative variants shared the same five stable `reasoning-02` heading-capitalization differences. Token IDs were omitted by the server for all requests.
+
+Every W8A8 and W4A4 row had the intended selector tuple: W8A8 default `(W8=0,W4=0,W1=0)`, W8A8 MMA `(1,0,0)`, W4A4 default `(0,0,0)`, W4A4 MMA `(0,1,0)`. Harness dispatch evidence confirmed all-nine loader markers and each exact selected CUDA marker across repetitions, with the forbidden opposite-path marker absent. Both MMA candidates therefore executed the distinct Tensor Core paths whose SASS was inspected. Host draft-call timings show the cost increase: W8A8 default 22,009 ms total / 6.352 ms per verification round versus MMA 41,767 ms / 12.054 ms; W4A4 vector 44,543 ms / 6.638 ms versus MMA 68,368 ms / 10.189 ms. These are host wall times inside draft calls, not isolated GPU-kernel durations. The logged `accept_ms` is only the acceptance-hook span, not total target verification latency; the runner has no isolated verifier span.
+
+The highest live GPU sample during timing was 10,160 MiB used / 868 MiB free. After the supervisor exited, the RTX 2080 Ti returned to 855 MiB used / 10,173 MiB free at 0% utilization, with no server process. The temporary submodule checkout was restored from `2d9712cde` to the committed production gitlink `34e21b7`; post-restore parent status was clean and the gitlink stayed unchanged.
+
+Exact supervised launch and analysis commands:
+
+```sh
+cd ~/binary-eagle-decoding
+python3 scripts/remote_job.py native-lowbit-mma-full-supervisor-timed-2d9712cde-20260925 -- python3 scripts/benchmark_native_eagle.py --config runs/toolchain-bootstrap/native-operand-mma-full.toml --run-id native-lowbit-mma-full-timed-2d9712cde-20260925
+python3 scripts/analyze_native_benchmark.py --run-dir results/native-lowbit-mma-full-timed-2d9712cde-20260925 --samples 2000 --seed 42 --output results/native-lowbit-mma-full-timed-2d9712cde-20260925/analysis.json
+```
+
+Raw artifacts remain under `/home/philip/binary-eagle-decoding/results/native-lowbit-mma-full-timed-2d9712cde-20260925/`:
+
+| Artifact | SHA256 |
+|---|---|
+| `manifest.json` | `c1accfcc98eafb63230470beea84d149fee9bce8ed1708850de43ca4eb224779` |
+| `report.json` | `e51ce493b519aa5e6e6c37c23eb86aad836f98491015aa2b0ec97fd2b42a825d` |
+| `records.json` | `c254f858db9273054f71a24d3198dbcf0454f3da3792f4e1cb735df9198152e9` |
+| `analysis.json` | `92e77f518c32bfa575b5946306da1690e775d8c28beb1dd21fad8232c12eb632` |
