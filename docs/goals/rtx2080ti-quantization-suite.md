@@ -464,3 +464,27 @@ Compare pooled rates and prompt/repetition spread against both anchors.
   Independent no-GPU owners are preparing opt-in production W4A4 and W8A8
   Tensor Core candidates; each must pass its own real SM75 backend/model
   dispatch and paired timing before any live Tensor Core benefit is claimed.
+
+## Native INT8/INT4 artifact milestone
+
+- Supervised WSL conversions `convert-w8a8-d0724427b-20260925` and
+  `convert-w4a4-d0724427b-20260925` produced the full nine-linear draft
+  GGUFs: W8A8 224,730,560 bytes, SHA256
+  `48d8c517253ee24278412efc18eaf38340d6e9eede4fc819f64ab268dab590d8`;
+  W4A4 115,613,408 bytes, SHA256
+  `0471dd2a1ac7628ae97018dad5d24aaf08cbfc6a258758a975d4e60b0d40beed`.
+  Both exactly match their earlier local CPU-gate artifacts.
+- Supervised source audits `audit-w8a8-source-d0724427b-20260925` and
+  `audit-w4a4-source-d0724427b-20260925` checked every code and F32 scale
+  byte for all nine linears against the pinned BF16 safetensors after Q/K
+  permutation: zero code mismatches and zero scale-byte mismatches. Each GGUF
+  has 23 expected tensors, strict metadata/pair names and shapes, and no
+  dense shadow. The next gate is short all-nine CUDA model dispatch and
+  text/acceptance validation, before any low-bit timed row.
+- A separate opt-in live W4A4 SM75 Tensor Core candidate is published at
+  llama.cpp fork `eaa7fb1`, based on the combined vector branch. Local CPU
+  W4A4 backend cases passed 4/4; no production CUDA compile/run yet. A
+  separate W8A8 signed-INT8 MMA candidate is published at `fbaa9e2`, with
+  local CPU W8A8 cases 5/5; no SM75 probe/production run yet. Both retain the
+  validated default vector/DP4A paths and require exact instruction/model
+  evidence before an end-to-end hardware claim.
