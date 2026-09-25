@@ -444,3 +444,23 @@ Compare pooled rates and prompt/repetition spread against both anchors.
   oracles, the standalone signed-I4 MMA probe, model dispatch/parity, and
   only then optional paired timing. The parent gitlink remains the validated
   production W1A1 revision `34e21b7` until the low-bit branch passes.
+
+## Native INT8/INT4 SM75 arithmetic milestone
+
+- The isolated combined llama.cpp revision `d0724427b` compiled for SM75
+  (360/360 targets, exit 0) with its own `llama-server` and backend tests.
+  The production parent gitlink remains `34e21b7`.
+- On the actual RTX 2080 Ti, the W8A8 CUDA backend passed 3/3 independent
+  oracle cases (K=8, 33, and 9,728) with explicit signed INT8 dot/I32
+  dispatch. W4A4 passed 2/2 (K=9 and 9,728) with an explicit packed signed-I4
+  vector marker. This W4 production path uses scalar integer multiply/add,
+  so it is not labeled INT4 Tensor Core execution.
+- The separate signed-I4 `m8n8k32` Tensor Core probe passed all six SM75
+  cases, 308 exact I32 outputs, covering basis/random tiles, N=1/N>1, and
+  K=9/33/9,728. Its executed SASS contains `IMMA.8832.S4.S4.SAT`. This proves
+  the standalone instruction/layout, not an integrated EAGLE speedup.
+- The operator is converting W8A8/W4A4 draft GGUFs on WSL from pinned BF16
+  source and auditing every code/scale tensor before model-level CUDA checks.
+  Independent no-GPU owners are preparing opt-in production W4A4 and W8A8
+  Tensor Core candidates; each must pass its own real SM75 backend/model
+  dispatch and paired timing before any live Tensor Core benefit is claimed.
