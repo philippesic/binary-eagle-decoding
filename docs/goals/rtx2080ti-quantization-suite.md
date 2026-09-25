@@ -542,8 +542,21 @@ Compare pooled rates and prompt/repetition spread against both anchors.
 - All four speculative paths produced identical completion text on all 60
   paired requests. Each differed from target-only only on the established
   stable `reasoning-02` formatting prompt. Target-only ratios remain timing
-  observations. Raw run hashes, per-prompt spread, and memory peak are being
-  finalized in the operator's report; no missing value is inferred.
+  observations. The complete [experiment report](../../experiments/rtx2080ti-quantization-suite.md)
+  was committed/pushed at `8fc61d1`. Its raw run under
+  `/home/philip/binary-eagle-decoding/results/native-lowbit-vector-five-rep-d0724427b-20260925/`
+  has manifest/report/records/analysis SHA256 values
+  `4dd772b7efd3bcc113528f51502e89fa763f362c4fb01b1bae7569091eb2051f`,
+  `72eb46d17da9d67cdc5f0211d3184eb53653cb66cde231b6323f18156aec1f27`,
+  `39bb90a4c105de4056a8104bd592cfd61524982aa6cf5f6c28d4392a0243eb12`,
+  and `08302212b00d2f9e3ced34645f5d29a722c0a7feab5fa8ee6d881212b5035208`.
+  Largest live use was 10,160 MiB / 868 MiB free; the GPU returned to its
+  855 MiB/0% baseline after cleanup.
+- Host draft-call time per verification round was 6.617 ms ordinary,
+  6.329 ms W8A8, and 6.661 ms W4A4. W8A8's small draft-cost reduction was
+  offset by its acceptance/round difference. W4A4 neither reduced this
+  per-round cost nor retained acceptance; rounds rose 3,400→6,710. The logged
+  acceptance-hook span does not measure total verifier latency.
 - Next: build/check the separate combined opt-in INT8/INT4 Tensor Core source
   `2d9712cde` on SM75, first exact probe/backend/model parity and then paired
   timing if those pass. Trace actual Q4_0/Q8_0 CUDA operator paths afterward.
