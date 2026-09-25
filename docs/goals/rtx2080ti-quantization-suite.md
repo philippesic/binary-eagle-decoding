@@ -408,3 +408,39 @@ Compare pooled rates and prompt/repetition spread against both anchors.
 - Next: run a full paired portable-versus-integrated-binary-MMA head matrix
   on this device; then build/check the combined W8A8/W4A4 branch and use the
   opt-in Q-format trace after sealed timing. Keep the one-GPU-owner rule.
+
+## Sealed binary-MMA head comparison
+
+- A separate supervised four-path run
+  `native-mma-head-full-supervisor-20260925` completed 240/240 measured
+  requests (12 prompts × five repetitions × target-only, ordinary EAGLE,
+  portable W1A1 head, integrated binary-MMA W1A1 head). It used the same F16
+  target, ordinary draft, frozen packed-head GGUF, context and prompts as the
+  production matrix. The isolated candidate llama.cpp revision was `9bb01a6`;
+  the runtime binary SHA256 was
+  `365edec352eb3cc57fa7649317ea3354410363a475afdeced0ea345d748355cf`.
+  Each portable request recorded selector `0`, each MMA request selector `1`,
+  and both CUDA dispatch markers were confirmed in all five repetitions.
+- Pooled request/decode rates were portable **70.388/74.591** tok/s and MMA
+  **70.523/74.720** tok/s. MMA/portable ratios were 1.0019 request and 1.0017
+  decode, with paired 95% bootstrap intervals 0.9966–1.0068 and
+  0.9973–1.0062. This experiment resolved no end-to-end MMA gain. Both paths
+  accepted the same 3,405/19,480 draft tokens, used 3,960 rounds, and emitted
+  identical text on all 60 paired requests. Each was about 0.91× ordinary
+  EAGLE decode rate on this candidate binary. Target-only differed by the
+  same stable `reasoning-02` formatting choice, so its ratios remain timing
+  observations.
+- The raw directory is
+  `/home/philip/binary-eagle-decoding/results/native-mma-head-full-run-20260925/`.
+  Manifest/report/records/analysis SHA256 values are
+  `ca7f6647b1731fcac8b6d6494cf3a7d0d348fb8e34bed7b2be17ce9cdb48b8a1`,
+  `0ee964ea70cc76ab7a479eea6291334bc783af370b36c8d07dabe1f12afba665`,
+  `ad53f8f9875b786117894e1dd54a637d7bea04976aead6609631a5746ef9ce3f`,
+  and `9a996f457fa5864166e920dd08f185596b80da75e1009585fc1f8d2b9ad229c2`.
+  GPU returned to 855 MiB/0% with no project process. Full commands and
+  variance are in the [experiment report](../../experiments/rtx2080ti-quantization-suite.md).
+- Next: the exclusive operator is building combined W8A8/W4A4 source
+  `d0724427b` in an isolated SM75 checkout, then will run exact backend
+  oracles, the standalone signed-I4 MMA probe, model dispatch/parity, and
+  only then optional paired timing. The parent gitlink remains the validated
+  production W1A1 revision `34e21b7` until the low-bit branch passes.
