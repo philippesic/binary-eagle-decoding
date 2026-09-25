@@ -513,3 +513,37 @@ Compare pooled rates and prompt/repetition spread against both anchors.
   These are a small functional/quality screen, not the frozen suite's
   acceptance conclusion or timing result. The operator is starting the
   12-prompt, five-repetition vector-path matrix to quantify both formats.
+
+## Sealed W8A8/W4A4 vector result
+
+- The isolated combined low-bit server at llama.cpp `d0724427b` completed
+  300/300 measured requests: target-only, ordinary EAGLE, portable W1A1 head,
+  genuine all-nine W8A8 default signed-INT8 dot, and genuine all-nine W4A4
+  default packed-nibble vector, each on 12 prompts × five repetitions. Both
+  MMA selectors were off. W8A8/W4A4 loader and CUDA dispatch gates held in
+  every repetition. The committed parent gitlink remained production
+  `34e21b7`; the temporary checkout used for manifest provenance was restored
+  to it after the run. The GPU returned idle with no server process.
+
+| Variant | Request tok/s | Decode tok/s | Decode ratio vs ordinary | Accepted drafts/round |
+| --- | ---: | ---: | ---: | ---: |
+| Target only | 58.67 | 60.60 | 0.748 | — |
+| Ordinary EAGLE | 76.01 | 80.99 | 1.000 | 1.168 |
+| Portable W1A1 head | 69.40 | 73.58 | 0.909 | — |
+| Native W8A8 vector | 75.14 | 80.18 | 0.990 | 1.127 |
+| Native W4A4 vector | 40.05 | 41.40 | 0.511 | 0.092 |
+
+- W8A8/ordinary request and decode ratios were 0.989 and 0.990, with paired
+  95% intervals 0.974–1.003 and 0.975–1.005: no rate difference was resolved.
+  W8A8 accepted 3,905/17,055 proposed drafts (22.90%) versus ordinary's
+  3,970/16,740 (23.72%). W4A4 accepted only 620/33,055 (1.88%); request and
+  decode ratios were 0.527 and 0.511, with paired intervals 0.484–0.575 and
+  0.466–0.561. Its quality loss dominates the default vector result.
+- All four speculative paths produced identical completion text on all 60
+  paired requests. Each differed from target-only only on the established
+  stable `reasoning-02` formatting prompt. Target-only ratios remain timing
+  observations. Raw run hashes, per-prompt spread, and memory peak are being
+  finalized in the operator's report; no missing value is inferred.
+- Next: build/check the separate combined opt-in INT8/INT4 Tensor Core source
+  `2d9712cde` on SM75, first exact probe/backend/model parity and then paired
+  timing if those pass. Trace actual Q4_0/Q8_0 CUDA operator paths afterward.

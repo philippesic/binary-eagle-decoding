@@ -24,9 +24,14 @@ A separate 240-request four-path comparison found integrated binary-MMA head
 W1A1 at 74.72 decode tok/s versus portable head W1A1 at 74.59, a 1.0017×
 ratio with paired 95% interval 0.9973–1.0062. Both paths emitted identical
 text on all 60 paired requests; no end-to-end MMA gain was resolved. The
-remaining active gates are SM75 correctness and timing for genuine W8A8/W4A4
-draft operators, an executed Q4_0/Q8_0 kernel trace, and a compact final
-synthesis. The goal file has exact commits, owners, raw hashes, and next action.
+genuine native W8A8/W4A4 300-request vector comparison has also finished
+with verified CUDA dispatch. W8A8 decoded at 80.18 tok/s versus ordinary
+EAGLE's 80.99 (0.990×; paired 95% interval 0.975–1.005), so no difference
+was resolved. W4A4 decoded at 41.40 tok/s (0.511×), with accepted drafts
+collapsing to 0.092/round versus ordinary's 1.168. The remaining gates are
+opt-in live INT8/INT4 Tensor Core correctness and timing, an executed
+Q4_0/Q8_0 kernel trace, and final synthesis. The goal file has exact
+commits, owners, raw hashes, and next action.
 
 ## RTX 5080 result
 
@@ -106,10 +111,10 @@ speed ratios. Local fake-server and analysis checks passed 15/15; the
 
 ## Next gate
 
-The nine-variant SM75 matrix and full four-path binary-MMA comparison are
-sealed with pinned source and raw hashes. The next gates are isolated
-W8A8/W4A4 SM75 build and execution checks and a short Q4_0/Q8_0 kernel
-trace. The [runbook](RTX2080TI_RUNBOOK.md) governs those runs.
+The nine-variant SM75 matrix, full binary-MMA comparison, and genuine
+W8A8/W4A4 vector comparison are complete. The next gates are opt-in live
+INT8/INT4 Tensor Core checks and a short Q4_0/Q8_0 kernel trace. The
+[runbook](RTX2080TI_RUNBOOK.md) governs those runs.
 The 5080 experiments are complete and sealed. Its remote checkout was restored
 to pinned `92bc706`; all supervised jobs exited, no project process remained,
 and repeated GPU samples showed 0% utilization. The repository checks pass
