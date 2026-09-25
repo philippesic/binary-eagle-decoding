@@ -124,7 +124,13 @@ speed ratios. Local fake-server and analysis checks passed 15/15; the
 
 ## Next research gate
 
-Follow the [QAT revisit plan](../experiments/qat-revisit-plan.md): audit
+First establish the [all-layer W1Ax activation-precision
+matrix](../experiments/w1ax-activation-precision-plan.md) on the 2080 Ti,
+including W1A16/W1A8/W1A4 and matched FP16, Q8_0, Q4_0, W1A1 anchors. The
+protocol separates acceptance, identical-input operator cost, complete EAGLE
+round cost, and end-to-end serving rate. It is planned, not yet implemented or
+run. Use its quality evidence to guide the [QAT revisit
+plan](../experiments/qat-revisit-plan.md): audit
 drafter-state/target-verifier alignment and target probability mass outside the
 draft vocabulary before training, then test one bounded target-aligned recipe
 on the frozen new development/final prompts. If acceptance improves, run native
