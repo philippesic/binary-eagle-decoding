@@ -4,7 +4,9 @@
 **Owner:** SM75 experiment operator  
 **Status:** Production W1A1 correctness gates and the frozen nine-variant paired matrix are complete on the RTX 2080 Ti. The integrated W1A1 MMA candidate also passed backend/SASS and short model parity gates. The separate W8A8/W4A4 branch gates remain pending; Q4_0/Q8_0 kernel/activation paths are source-inferred, not profiler-confirmed.
 
-## Host and execution context
+## Initial preflight (resolved below)
+
+The following host/probe/run-directory notes capture the first access checkpoint. At that point no remote supervisor run had been started and the absent system toolchain looked blocking. That was resolved through a user-space CUDA 12.8 environment, supervised model staging/conversion, and the successful SM75 builds and tests documented below; the early stop note is historical.
 
 - Host registry: `/Users/pippo/.config/binary-eagle-decoding/hosts.toml`, read via `python3 scripts/agent_env.py status`; `rtx2080ti` resolves to `philip@192.168.4.31:22`, workdir `~/binary-eagle-decoding`. Address is machine-local and is not committed.
 - GPU pause state: no `rtx2080ti` pause entry was present in the returned `gpu_control` map; the 5080 flag was false.
@@ -40,11 +42,11 @@ Final resource/process/toolchain check, issued via `mcp__tmux__execute_command` 
 ssh -o BatchMode=yes -o ConnectTimeout=8 philip@192.168.4.31 'printf "GPU\n"; /usr/lib/wsl/lib/nvidia-smi; printf "COMPUTE\n"; /usr/lib/wsl/lib/nvidia-smi --query-compute-apps=pid,process_name,used_gpu_memory --format=csv; printf "PROCESSES\n"; ps -eo pid,pgid,stat,etime,args | grep -E "remote_job.py|llama-(server|quantize)|test-backend-ops|sm75_mma_probe|nvcc|cmake --build" | grep -v grep || true; printf "RUNS\n"; ls -1 ~/binary-eagle-decoding/runs 2>/dev/null | tail -20 || true; printf "TOOLCHAIN\n"; for x in nvcc cmake ninja g++ curl; do printf "%s=" "$x"; command -v "$x" || true; done; df -h ~'
 ```
 
-Result: no matching job/build processes; no listed run directories; no `nvcc`, `cmake`, `ninja`, `g++`, or `curl` on `PATH`. WSL lacks an apparent build toolchain, and noninteractive sudo is unavailable. This prevents setting up/building the pinned CUDA backend and running the prescribed supervised correctness gates. Stop here pending environment provisioning; do not interpret the free GPU as a benchmark result.
+At that initial checkpoint there were no matching job/build processes or run directories; `nvcc`, `cmake`, `ninja`, and `g++` were absent from `PATH`, and noninteractive sudo was unavailable. This was an initial environment blocker only. The user-space bootstrap below resolved it, after which the build, correctness gates, conversions, and measured suite ran under supervision.
 
 ## Run directory and cleanup
 
-No `scripts/remote_job.py` run was launched, so there is no run ID or raw run directory. No project process was started and no GPU memory needs releasing. The tmux session was pre-existing and was left available; SSH commands completed, with no remote shell/job left running. Only the normal WSL Xwayland allocation remained.
+At this initial preflight only, no `scripts/remote_job.py` run had been launched, so there was no preflight run ID or raw run directory. No project process had been started. The tmux session was pre-existing and left available; SSH probes completed with no remote shell/job left running. Later supervised runs and final cleanup are recorded below.
 
 ## SM75 correctness gates completed
 
@@ -193,6 +195,21 @@ The pooled request rate is completion tokens / client request wall time, includi
 | W1A1 all | 44.649 | 46.305 | 385 / 34,195 (1.13%) | 6,940 | 0.055 | 42.08–46.52 | 43.89–47.71 |
 
 The table's per-prompt ranges pool the five repetitions for each prompt, then take the min/max over the 12 prompts. The separate category summaries in `analysis.json` show decode-rate ranges of 45.05–46.97 tok/s for W1A1 all, 46.39–50.62 for attention, 52.90–64.89 for FFN, 47.95–51.40 for fusion, and 64.31–86.18 for head. The corresponding accepted-per-round ranges across prose/code/reasoning prompts are 0.027–0.070, 0.166–0.278, 0.321–0.617, 0.234–0.325, and 0.597–1.153. Q4_0, Q8_0, and ordinary EAGLE category decode-rate ranges were 75.47–103.35, 71.32–101.22, and 66.82–95.08 tok/s.
+
+The server's cumulative EAGLE timing lines also yielded the following measured-only host timing decomposition. `begin_ms`, `draft_ms`, and `accept_ms` are from `common_speculative_impl`, not isolated GPU-kernel timings; draft ms/round divides the pooled draft-call time by the measured verification rounds.
+
+| Variant | begin ms | draft ms | accept ms | draft ms / verification round |
+|---|---:|---:|---:|---:|
+| Ordinary EAGLE | 0.087 | 22,001.561 | 4.151 | 6.471 |
+| Draft Q4_0 | 0.091 | 14,102.330 | 4.178 | 4.178 |
+| Draft Q8_0 | 0.089 | 16,981.566 | 4.110 | 4.995 |
+| W1A1 fusion | 0.087 | 37,109.169 | 6.988 | 6.420 |
+| W1A1 attention | 0.088 | 34,683.928 | 7.105 | 5.854 |
+| W1A1 FFN | 0.091 | 27,299.239 | 5.877 | 5.454 |
+| W1A1 head | 0.094 | 20,840.759 | 4.985 | 5.263 |
+| W1A1 all | 0.079 | 24,695.913 | 8.531 | 3.558 |
+
+Target-only has no EAGLE timing decomposition. These are available for all eight speculative variants; the native `draft_ms` measure is host wall time around draft calls and should not be read as standalone GPU kernel duration.
 
 Paired bootstrap intervals used 2,000 resamples with seed 42, resampling prompts and repetitions together. Representative 95% intervals for pooled candidate/ordinary-EAGLE rate ratios are:
 
