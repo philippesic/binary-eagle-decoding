@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-24–25  
 **Owner:** SM75 experiment operator  
-**Status:** The full W1A1, W8A8, W4A4, Q4_0/Q8_0, and opt-in Tensor Core comparisons are complete on the RTX 2080 Ti. The combined MMA candidate passed its SM75 backend/probe/model/SASS gates, then its full 12-prompt/five-repetition matrix measured both INT8 and INT4 MMA kernels slower than their same-format default paths with identical acceptance. A separate executed-path trace confirmed Q4_0/Q8_0 use Q8_1 activation quantization, MMVQ at one/two-token shapes, and MMQ at an observed 38-token shape. All raw matrices and the trace are hashed below.
+**Status:** The full W1A1, W8A8, W4A4, Q4_0/Q8_0, and opt-in Tensor Core comparisons are complete on the RTX 2080 Ti. The combined MMA candidate passed its SM75 backend/probe/model/SASS gates, then its full 12-prompt/five-repetition matrix measured both INT8 and INT4 MMA kernels slower than their same-format default paths with identical acceptance. The Q4_0/Q8_0 executed-path trace and separate packing-inclusive component profiles for W1A1 head/all, W8A8 DP4A/MMA, and W4A4 vector/MMA are also complete. All raw matrices and traces are hashed below.
 
 ## Initial preflight (resolved below)
 
@@ -88,7 +88,7 @@ Pinned target and draft source snapshots are staged under `models/hf/Qwen3-4B/` 
 
 ## Next action
 
-The production, W1A1 MMA, default W8A8/W4A4 vector, and opt-in W8A8/W4A4 MMA matrices and the Q4_0/Q8_0 path diagnostic are sealed with raw hashes below. Keep Q4_0/Q8_0 block-scale format labels distinct from the W8A8/W4A4 research contracts.
+The production, W1A1 MMA, default W8A8/W4A4 vector, opt-in W8A8/W4A4 MMA matrices, Q4_0/Q8_0 path diagnostic, and component profiles are sealed with raw hashes below. Keep Q4_0/Q8_0 block-scale format labels distinct from the W8A8/W4A4 research contracts.
 
 ## WSL user-space setup and build checkpoint
 
@@ -484,3 +484,93 @@ Raw smoke artifacts remain at `/home/philip/binary-eagle-decoding/results/native
 | `report.json` | `56d28fe2323d5f14747911c1c8a59aa7a84faaa5c0e976129a3ec7622698c411` |
 | `records.json` | `ca9566b44c74fa9cece3ca84122a0029a02cad88f8a691b46aa64c5bbb887f90` |
 | `prompts.jsonl` | `ddb4868a2717c813a852713a7c455c35438d784ed6e334c70b2ae2b93af68164` |
+
+## Packing-inclusive CUDA component profiles
+
+Nsight Systems was initially absent from WSL, with no CUPTI collector in the CUDA 12.8 user-space environment. NVIDIA's Linux x86_64 CLI-only `.deb` was downloaded from the [Nsight Systems download page](https://developer.nvidia.com/nsight-systems/get-started) and extracted under ignored `runs/toolchain-bootstrap/nsys/` with `dpkg-deb -x`; no system files or packages were changed and no sudo was used. The current [CUDA-on-WSL support table](https://docs.nvidia.com/cuda/wsl-user-guide/) lists Nsight Systems CLI/CUPTI trace support for Volta and later, including this Turing-class GPU. The [Nsight Systems user guide](https://docs.nvidia.com/nsight-systems/UserGuide/) documents `--trace=cuda-sw` for virtualized environments.
+
+The extracted profiler is Nsight Systems `2026.5.1.161-265138896106v0`. The downloaded package SHA256 is `61829db6392e5c293ada1319df86a97c3356bc810335a1975cb551fcfe3eca08`; extracted `nsys` binary SHA256 is `ccc5904771ce1cdbcd96a9ce29f75a0d6cbaa4e08d47a3439232afe387f5a6fd`. Installation was supervised by `bootstrap-nsys-cli-20260925`. A one-request smoke, supervised as `remote-nsys-profile-smoke-head-w1a1-20260925` using `profile_one_request.sh` (SHA256 `519ae4c66efdebf19d0c4a8ea782246ee7b4e91d0e0eb582263f6d6f61bbbd70`), captured a valid CUDA software trace without privilege errors: its `.nsys-rep` SHA256 is `16f3141b8b05cdf53762013cb21108f0315a972a0c2b9246a301021d589c3304`, SQLite SHA256 `33075c6f31de0b1ad4f19cdb2fcb07da639bf254cc2f2f9c6c6f1266061b21cb`, and kernel-summary SHA256 `5c4c246bc4c951bbb077149c8d45fbb40de67b2454bfb21629491787216f20a1`. That smoke already showed `w1a1_pack_activations` and `w1a1_xor_popc` in the trace.
+
+Profiling hardware was the NVIDIA GeForce RTX 2080 Ti (compute capability 7.5) under WSL2, driver 610.74; the existing user-space build uses CUDA 12.8.93. The F16 target was `Qwen3-4B-f16.gguf` (SHA256 `05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6`).
+
+Six repeated component profiles then ran, each in its own `scripts/remote_job.py` process group and separate ignored directory under `/home/philip/binary-eagle-decoding/runs/nsys-profiles/`. Each profile started one server, sent three sequential requests using the same `prose-01` prompt (38 input tokens), capped output at 24 tokens, used temperature 0, seed 42, context 2048, F16 target/KV, and then stopped the server before exporting kernel statistics. They are diagnostic captures with profiler overhead, not throughput benchmarks. Every run exited 0 and all 18 requests returned HTTP 200.
+
+| Profile | Supervisor run ID | Server binary SHA256 | Draft GGUF SHA256 | Selector |
+|---|---|---|---|---|
+| W1A1 head | `remote-nsys-w1a1-head-3req-20260925` | Production `0fd1f8f63291902f1f3545f5f9b3fb45a49b02fdd93d3982e3c5050db3e29f1b` | Head W1A1 `b2095130b5196574a9a08a88d2fb9a32ac1ea870ff3cf587ae7d6e7f64e7819f` | W1A1 MMA=0 |
+| W1A1 all groups | `remote-nsys-w1a1-all-3req-20260925` | Production `0fd1f8f63291902f1f3545f5f9b3fb45a49b02fdd93d3982e3c5050db3e29f1b` | All-group W1A1 `098e1ecbb299aa16e2c968663acc49e60c0fcf16b053766d9f558114f79d011c` | W1A1 MMA=0 |
+| W8A8 DP4A | `remote-nsys-w8a8-default-3req-20260925` | Candidate `07bb2339b000ba63f71cb4c5c7b74304a0816e466b5796d40f7e09712ff33b5a` | W8A8 `48d8c517253ee24278412efc18eaf38340d6e9eede4fc819f64ab268dab590d8` | W8A8 MMA=0 |
+| W8A8 MMA | `remote-nsys-w8a8-mma-3req-20260925` | Candidate `07bb2339b000ba63f71cb4c5c7b74304a0816e466b5796d40f7e09712ff33b5a` | W8A8 `48d8c517253ee24278412efc18eaf38340d6e9eede4fc819f64ab268dab590d8` | W8A8 MMA=1 |
+| W4A4 vector | `remote-nsys-w4a4-default-3req-20260925` | Candidate `07bb2339b000ba63f71cb4c5c7b74304a0816e466b5796d40f7e09712ff33b5a` | W4A4 `0471dd2a1ac7628ae97018dad5d24aaf08cbfc6a258758a975d4e60b0d40beed` | W4A4 MMA=0 |
+| W4A4 MMA | `remote-nsys-w4a4-mma-3req-20260925` | Candidate `07bb2339b000ba63f71cb4c5c7b74304a0816e466b5796d40f7e09712ff33b5a` | W4A4 `0471dd2a1ac7628ae97018dad5d24aaf08cbfc6a258758a975d4e60b0d40beed` | W4A4 MMA=1 |
+
+The production binary came from the committed llama.cpp gitlink `34e21b7d85c17e25d5a91ce2ab1074d4c18bfe39`. The W8A8/W4A4 candidate binary was built from llama.cpp `2d9712cde8d7808bb869e59e56a565e0e4fa2918`; the parent repo was `9fe5321c350bdea554935f2f28603c4e72e118da` with committed gitlink `34e21b7d85c17e25d5a91ce2ab1074d4c18bfe39`. W1A1 dispatch logs confirmed packed XOR/POPCOUNT; W8A8 logs confirmed DP4A vs signed INT8 MMA; W4A4 logs confirmed signed-nibble vector vs signed-I4 MMA. Thus each trace measured the intended path with opposite selectors disabled.
+
+The Nsight CLI was invoked through the reusable ignored helper `runs/nsys-profiler/profile_variant.sh`, SHA256 `b5efd9be2f3ff29a52026c767b69da2129400c1c55a9feaffc8f887f5bc5f124`; it used `nsys profile --trace=cuda-sw --sample=none --cpuctxsw=none --cuda-trace-scope=process-tree`. SQLite row extraction and grouping helpers are `sqlite_kernel_rows.py` (SHA256 `c9cb05f39c48bbbd3c66f0672eb7d25c79aefd605f07f3bda65d60818eb90674`) and `sqlite_pack_dot_summary.py` (SHA256 `8c0813b984d2c07e48ff07a7182ffafacc580f16ac14cfe6dad26ea0bb2a107c`). The latter grouped kernel launches by grid dimensions, paired each activation-pack launch with the following dot launch on the same CUDA stream, required the pack end timestamp to precede the dot start, and computed the median of per-pair sums. These paired spans were sequential on stream 15 in all six profiles; total pairs were 28 for W1A1 head-only, 293 for W1A1 all-groups, and 242 per W8A8/W4A4 trace. For vector/W1A1 paths, activation-pack `gridX` and dot `gridY` report N; for the MMA kernels, activation-pack `gridX` reports N while dot `gridY` is the MMA tile count. The output M groups are derived from dot `gridX` (four rows/CTA for W1A1/vector, eight for MMA) and were checked against the EAGLE tensor dimensions.
+
+Exact installation, initial smoke, and six repeated profile commands:
+
+```sh
+cd ~/binary-eagle-decoding
+python3 scripts/remote_job.py bootstrap-nsys-cli-20260925 -- bash -c 'set -eu; mkdir -p runs/toolchain-bootstrap/nsys/deb runs/toolchain-bootstrap/nsys/root; curl --fail --location --silent --show-error --retry 2 https://developer.nvidia.com/downloads/assets/tools/secure/nsight-systems/2026_5/nsightsystems-linux-cli-public-2026.5.1.161-3889610.deb --output runs/toolchain-bootstrap/nsys/deb/nsys-cli-2026.5.1.deb; sha256sum runs/toolchain-bootstrap/nsys/deb/nsys-cli-2026.5.1.deb; stat -c bytes=%s runs/toolchain-bootstrap/nsys/deb/nsys-cli-2026.5.1.deb; dpkg-deb -x runs/toolchain-bootstrap/nsys/deb/nsys-cli-2026.5.1.deb runs/toolchain-bootstrap/nsys/root'
+python3 scripts/remote_job.py remote-nsys-profile-smoke-head-w1a1-20260925 -- bash runs/nsys-profiler/profile_one_request.sh
+python3 scripts/remote_job.py remote-nsys-w1a1-head-3req-20260925 -- bash runs/nsys-profiler/profile_variant.sh w1a1-head build/llama-cuda/bin/llama-server models/gguf/Qwen3-4B-eagle3-head-w1a1.gguf 18091 0 0 0 24 3
+python3 scripts/remote_job.py remote-nsys-w1a1-all-3req-20260925 -- bash runs/nsys-profiler/profile_variant.sh w1a1-all build/llama-cuda/bin/llama-server models/gguf/Qwen3-4B-eagle3-all-w1a1.gguf 18092 0 0 0 24 3
+python3 scripts/remote_job.py remote-nsys-w8a8-default-3req-20260925 -- bash runs/nsys-profiler/profile_variant.sh w8a8-default build/llama-cuda-int-mma/bin/llama-server models/gguf/Qwen3-4B-eagle3-w8a8-d0724427b.gguf 18093 0 0 0 24 3
+python3 scripts/remote_job.py remote-nsys-w8a8-mma-3req-20260925 -- bash runs/nsys-profiler/profile_variant.sh w8a8-mma build/llama-cuda-int-mma/bin/llama-server models/gguf/Qwen3-4B-eagle3-w8a8-d0724427b.gguf 18094 0 1 0 24 3
+python3 scripts/remote_job.py remote-nsys-w4a4-default-3req-20260925 -- bash runs/nsys-profiler/profile_variant.sh w4a4-default build/llama-cuda-int-mma/bin/llama-server models/gguf/Qwen3-4B-eagle3-w4a4-d0724427b.gguf 18095 0 0 0 24 3
+python3 scripts/remote_job.py remote-nsys-w4a4-mma-3req-20260925 -- bash runs/nsys-profiler/profile_variant.sh w4a4-mma build/llama-cuda-int-mma/bin/llama-server models/gguf/Qwen3-4B-eagle3-w4a4-d0724427b.gguf 18096 0 0 1 24 3
+```
+
+W1A1 all-groups loader output showed the source tensor shapes: `fc.weight` K=7680/M=2560; `output.weight` K=2560/M=32000; `attn_q` K=5120/M=4096; `attn_k` and `attn_v` K=5120/M=1024; `attn_output` K=4096/M=2560; `ffn_gate` and `ffn_up` K=2560/M=9728; `ffn_down` K=9728/M=2560. The W8A8/W4A4 audited drafts have the same nine shapes. The M=2560 table row combines `fc`, `attn_output`, and `ffn_down`, because their separate K dimensions are not recoverable from the recorded gridX alone.
+
+All durations are medians in microseconds over the count of paired launches. Each cell is **pack / dot / packing-inclusive pair sum (pair count)**. The N=37 prefill shape is the representative larger prompt column count; a few M=2560 calls used N=38 and are separated below. The W1A1 dot kernel is `w1a1_xor_popc`; W8A8 dots are `w8a8_signed_dot`/`w8a8_signed_mma`; W4A4 dots are `w4a4_vector_dot`/`w4a4_sm75_mma_dot`.
+
+| W1A1 profile | N | M rows | Pack / dot / sum µs (pairs) |
+|---|---:|---:|---:|
+| Head-only | 1 | 32,000 | 4.896 / 26.529 / 31.426 (15) |
+| Head-only | 37 | 32,000 | 5.408 / 886.355 / 891.763 (3) |
+| All groups | 1 | 1,024 | 5.568 / 3.632 / 9.152 (36) |
+| All groups | 1 | 2,560 | 7.904 / 7.841 / 15.681 (39) |
+| All groups | 1 | 4,096 | 5.632 / 7.856 / 13.505 (18) |
+| All groups | 1 | 9,728 | 4.657 / 10.096 / 14.736 (36) |
+| All groups | 1 | 32,000 | 4.672 / 26.465 / 31.121 (18) |
+| All groups | 37 | 1,024 | 7.808 / 28.305 / 36.081 (6) |
+| All groups | 37 | 2,560 | 9.761 / 77.362 / 87.106 (6) |
+| All groups | 37 | 4,096 | 7.872 / 104.610 / 112.514 (3) |
+| All groups | 37 | 9,728 | 5.472 / 204.581 / 210.053 (6) |
+| All groups | 37 | 32,000 | 5.408 / 884.952 / 890.360 (3) |
+| All groups | 38 | 2,560 | 10.688 / 98.626 / 109.251 (3) |
+
+| N=1 | M rows | W8A8 DP4A pack / dot / sum µs (pairs) | W8A8 MMA pack / dot / sum µs (pairs) | W4A4 vector pack / dot / sum µs (pairs) | W4A4 MMA pack / dot / sum µs (pairs) |
+|---:|---:|---:|---:|---:|---:|
+| 1 | 1,024 | 7.851 / 12.958 / 20.905 (30) | 8.351 / 96.448 / 104.877 (30) | 9.576 / 14.662 / 24.078 (30) | 8.348 / 63.699 / 72.048 (30) |
+| 1 | 2,560 | 9.320 / 45.514 / 54.834 (33) | 9.375 / 165.028 / 174.370 (33) | 8.887 / 42.510 / 51.397 (33) | 8.776 / 112.223 / 120.968 (33) |
+| 1 | 4,096 | 6.543 / 45.769 / 52.376 (15) | 6.590 / 145.831 / 152.358 (15) | 7.250 / 44.499 / 51.653 (15) | 7.160 / 102.907 / 110.099 (15) |
+| 1 | 9,728 | 4.739 / 47.252 / 51.880 (30) | 5.071 / 174.946 / 180.513 (30) | 5.406 / 48.236 / 53.322 (30) | 4.626 / 124.262 / 128.999 (30) |
+| 1 | 32,000 | 3.958 / 145.444 / 149.433 (15) | 3.999 / 430.743 / 434.678 (15) | 3.882 / 148.768 / 152.650 (15) | 3.834 / 358.623 / 362.394 (15) |
+
+| Prefill N=37 | M rows | W8A8 DP4A pack / dot / sum µs (pairs) | W8A8 MMA pack / dot / sum µs (pairs) | W4A4 vector pack / dot / sum µs (pairs) | W4A4 MMA pack / dot / sum µs (pairs) |
+|---:|---:|---:|---:|---:|---:|
+| 37 | 1,024 | 9.559 / 212.150 / 221.501 (6) | 9.454 / 226.730 / 236.136 (6) | 10.139 / 331.801 / 341.908 (6) | 8.586 / 210.266 / 218.424 (6) |
+| 37 | 2,560 | 8.283 / 1,146.398 / 1,154.665 (6) | 8.863 / 709.511 / 718.405 (6) | 10.908 / 1,275.888 / 1,286.795 (6) | 9.410 / 645.039 / 654.449 (6) |
+| 37 | 4,096 | 6.607 / 1,345.095 / 1,351.701 (3) | 6.623 / 831.795 / 838.417 (3) | 7.411 / 1,327.622 / 1,335.033 (3) | 7.287 / 790.434 / 797.753 (3) |
+| 37 | 9,728 | 4.819 / 1,594.045 / 1,598.944 (6) | 5.215 / 948.287 / 953.549 (6) | 5.758 / 1,628.271 / 1,633.516 (6) | 4.864 / 910.909 / 915.884 (6) |
+| 37 | 32,000 | 3.989 / 5,231.775 / 5,235.764 (3) | 4.063 / 3,041.401 / 3,045.464 (3) | 3.946 / 5,354.827 / 5,358.741 (3) | 3.834 / 2,937.673 / 2,941.507 (3) |
+
+For the additional N=38/M=2,560 prefill launches, W8A8 DP4A was 9.415 / 1,317.519 / 1,326.903 µs (3 pairs), W8A8 MMA 9.470 / 773.308 / 782.778 µs (3), W4A4 vector 9.080 / 1,260.505 / 1,269.585 µs (3), and W4A4 MMA 8.903 / 735.686 / 744.589 µs (3). Larger-N component times reflect different grid dimensions and more GPU work; they should not be compared to decode-N=1 as per-token speeds.
+
+The component profile artifacts remain under `runs/nsys-profiles/<profile>/`. Each run's `.nsys-rep`, exported SQLite, and grouped component summary SHA256 values are:
+
+| Profile | `.nsys-rep` SHA256 | SQLite SHA256 | Pair-summary SHA256 |
+|---|---|---|---|
+| W1A1 head | `a3ffa5da3aaf076d64ad3f1dcbd6274c2a871ced38cec6c46b620dc15155bcd4` | `2fffd87a64071a67d37debf4247d87851013fc9cd767c622b7685d878b583a13` | `fa0631219cb4b348a6bf6437f458c74ab9828ceb794f2a068f901f9c754a828a` |
+| W1A1 all | `959b379f1067ff317d0186bd7520509f73c55566459af0bd4b78471926855f5b` | `427f0f204876f6e05d71f9abcc5f1673a04bafc182f86222a2f6ae338b5281f0` | `2e392a4f43753c873a4b84c3c4d4020dcda09b9d4e544a2ad36df2c22dabbcac` |
+| W8A8 DP4A | `03d43e944d7962930b6b9fb1ca6b4a1a1dfae4eb37ae7ec9a1f04f05c3961d4d` | `cba2daec4636cf4c8d9659f6828e4dca5b821322dc28d0e7aec66190d45a4cdc` | `c8f98e931f2a814a9f19d6265b910ebffa0c00f1dcabd47fbcfd4f265969f0d0` |
+| W8A8 MMA | `024f682af254c338ddbfadb161f85d81d8f68b2640be514c55f8e3849b4833ad` | `15418c4e17cf6755d25168fea28bf8ff6651e5125f6c82c292236e97d0cda4db` | `4cabc84a73e5c4ee4bcca0eb5ee70520cd07146719a5e4c64843997393d81cf6` |
+| W4A4 vector | `19dac4534a293100c5e6faaf4f981acd94c2b6b012e2e42d0cb4301a7bbf65a1` | `1b86b3ddce6a2c5246038129075cf227f384e6b27244c0cf72df21539cdc3122` | `520a40daa6032bd435a94ba62770208abd3b251066b707c904a4917870963148` |
+| W4A4 MMA | `5531d9c0f4ab30326316e5ef83f0e03aa1dfae6069a2441911b09f1ee7c465e4` | `ce4165f599e78bc486f8bd93ae9d178ed6e9be3c0eca88344b542ce2b3d07a51` | `19a769a1bf63552055ba2ef0489314541779693ac0d0b9d5690ca13d5e7ce240` |
+
+The kernel-summary hashes, respectively W1A1 head/all, W8A8 DP4A/MMA, and W4A4 vector/MMA, are `88dd9e5bcc5fff289677ab8e02c42d4e589c7154e8c027d3e8cba7508e5a6afc`, `ace3696f0099008d854cef2f6f0b9ca8f682a2d58b3ff07af210c2eb8f0de2e6`, `57cd552581e806e858776ccce65d795e06e1df63fcd188562a1748379ffce412`, `127e5cd68e97de62223ec595c33c0c86abde26a0bdca6637aaba352863294592`, `8599f6bd9913f082e9dac84822334c551969e0000d70fabede13102c3f8e7913`, and `f6b8e8beec080a1b7696dd32d423b62ef4293318a3466a5d6b0e2e6a69998239`.
+
+No project server or profiler session remained after the six jobs. The parent tree stayed clean, the production working submodule remained at committed gitlink `34e21b7`, and the RTX 2080 Ti returned to 855 MiB used / 10,173 MiB free at 0% utilization. These kernel durations are Nsight CUDA-software-trace measurements with profiler instrumentation; they are packing-inclusive component diagnostics, not benchmark-grade performance results.
