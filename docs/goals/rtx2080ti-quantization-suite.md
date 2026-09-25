@@ -488,3 +488,21 @@ Compare pooled rates and prompt/repetition spread against both anchors.
   local CPU W8A8 cases 5/5; no SM75 probe/production run yet. Both retain the
   validated default vector/DP4A paths and require exact instruction/model
   evidence before an end-to-end hardware claim.
+
+## Native low-bit model smoke milestone
+
+- A short one-prompt, five-repetition validation with the isolated combined
+  `d0724427b` server completed 25/25 requests over target-only, ordinary
+  EAGLE, portable W1A1 head, default W8A8, and default W4A4. Both W8A8/W4A4
+  model paths logged strict all-nine loader markers and their distinct CUDA
+  vector/dot dispatch markers; no CPU fallback or load failure was recorded.
+  All five paths matched target completion text 5/5 on `prose-01`; generated
+  token IDs were not returned. GPU returned to 855 MiB/0% with no project
+  process. Raw results are under ignored remote
+  `results/native-lowbit-model-smoke-d0724427b-20260925/`.
+- In this one-prompt smoke, ordinary EAGLE and W8A8 each accepted 230/1,960
+  draft tokens, or 0.575 per verification round; W4A4 accepted 45/2,875,
+  or 0.077/round; packed-head W1A1 accepted 180/2,200, or 0.400/round.
+  These are a small functional/quality screen, not the frozen suite's
+  acceptance conclusion or timing result. The operator is starting the
+  12-prompt, five-repetition vector-path matrix to quantify both formats.
