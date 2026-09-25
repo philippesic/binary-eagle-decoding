@@ -499,7 +499,14 @@ Compare pooled rates and prompt/repetition spread against both anchors.
   All five paths matched target completion text 5/5 on `prose-01`; generated
   token IDs were not returned. GPU returned to 855 MiB/0% with no project
   process. Raw results are under ignored remote
-  `results/native-lowbit-model-smoke-d0724427b-20260925/`.
+  `results/native-lowbit-model-smoke-d0724427b-20260925/`; supervisor
+  `sm75-eagle-int-lowbit-model-smoke-d0724427b-20260925` exited zero.
+  Manifest/report/records/prompt SHA256 values are
+  `e14a98240c09a7013dc1e8a9f6b92b57f790c6f560b4585d481c2c05ba898694`,
+  `d8cbc1a2b1a212c4c3ebdcb77a324e18ee2082768521d39c6c89cd081c985183`,
+  `a1d772d94f73b33177885dd823d676346184f59724137aefa3d0775d3d542693`,
+  and `ddb4868a2717c813a852713a7c455c35438d784ed6e334c70b2ae2b93af68164`.
+  The largest loaded GPU snapshot was 10,110 MiB.
 - In this one-prompt smoke, ordinary EAGLE and W8A8 each accepted 230/1,960
   draft tokens, or 0.575 per verification round; W4A4 accepted 45/2,875,
   or 0.077/round; packed-head W1A1 accepted 180/2,200, or 0.400/round.
