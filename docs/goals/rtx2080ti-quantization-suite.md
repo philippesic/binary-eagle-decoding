@@ -595,9 +595,7 @@ Compare pooled rates and prompt/repetition spread against both anchors.
   counts. Every path matched target text 5/5 on `prose-01`. This is a model
   parity gate, not a representative rate or quality result. The GPU returned
   to 855 MiB/0% after the smoke.
-- The full seven-path paired comparison is supervised as
-  `native-lowbit-mma-full-supervisor-2d9712cde-20260925`, writing ignored
-  results under `native-lowbit-mma-full-2d9712cde-20260925`. It uses the 12
+- The full seven-path paired comparison uses the 12
   frozen prompts, five repetitions, two warmups/server, one server at a time,
   and the same audited GGUF for each default/MMA pair. Its resolved config
   SHA256 is `9084a6e0059da4ac478a03c5096680f34102b712a67749f0b4a27bed4140f6e5`;
@@ -605,5 +603,10 @@ Compare pooled rates and prompt/repetition spread against both anchors.
   `07bb2339b000ba63f71cb4c5c7b74304a0816e466b5796d40f7e09712ff33b5a`.
   The actual candidate checkout is `2d9712cde8d7808bb869e59e56a565e0e4fa2918`;
   the parent committed gitlink remains `34e21b7`. Preflight found no project
-  process and 855 MiB GPU memory used/0% utilization. The run is active;
-  do not interpret partial rates.
+  process and 855 MiB GPU memory used/0% utilization. The first supervisor
+  `native-lowbit-mma-full-supervisor-2d9712cde-20260925` exited 1 before any
+  GPU work because its run ID reused the successful dry-run output directory;
+  that dry-run artifact is preserved. The timed run was relaunched cleanly
+  as supervisor `native-lowbit-mma-full-supervisor-timed-2d9712cde-20260925`
+  with fresh result ID `native-lowbit-mma-full-timed-2d9712cde-20260925`.
+  It is active; do not interpret partial rates.
