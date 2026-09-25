@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-24–25  
 **Owner:** SM75 experiment operator  
-**Status:** Production W1A1 correctness gates and the frozen nine-variant paired matrix are complete on the RTX 2080 Ti. The integrated W1A1 MMA candidate also passed backend/SASS and short model parity gates. The separate W8A8/W4A4 branch gates remain pending; Q4_0/Q8_0 kernel/activation paths are source-inferred, not profiler-confirmed.
+**Status:** Production W1A1 correctness gates, the frozen nine-variant matrix, and the full 12-prompt/five-repetition portable-versus-MMA head comparison are complete on the RTX 2080 Ti. MMA/portable decode-rate ratio was 1.0017 with 95% interval 0.9973–1.0062, so no resolved MMA gain was measured. The combined W8A8/W4A4 SM75 branch gates remain in progress; Q4_0/Q8_0 kernel/activation paths remain source-inferred, not profiler-confirmed.
 
 ## Initial preflight (resolved below)
 
@@ -88,7 +88,7 @@ Pinned target and draft source snapshots are staged under `models/hf/Qwen3-4B/` 
 
 ## Next action
 
-The production paired matrix is sealed and its raw outputs are hashed below. Continue with the separate integrated W1A1 MMA four-path matrix, then the published W8A8/W4A4 source correctness gates in isolated supervised runs. Keep weight-only Q4_0/Q8_0 timing labels distinct from the W8A8/W4A4 research contracts until an executed-kernel trace proves the path.
+Both paired timing matrices are sealed and their raw outputs are hashed below. Continue with isolated SM75 correctness for the combined W8A8/W4A4 source, then trace the real Q4_0/Q8_0 CUDA activation and operator paths. Keep weight-only timing labels distinct from the W8A8/W4A4 research contracts until an executed-kernel trace proves the path.
 
 ## WSL user-space setup and build checkpoint
 
