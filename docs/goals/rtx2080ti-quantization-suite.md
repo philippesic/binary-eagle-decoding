@@ -1,8 +1,8 @@
 # Goal: benchmark the RTX 2080 Ti quantization suite
 
 **Opened:** 2026-09-24
-**State:** final cleanup audit; measurement evidence complete
-**GPU owner:** SM75 operator until final release check
+**State:** complete 2026-09-25
+**GPU owner:** none; RTX 2080 Ti released
 
 ## Objective and scope
 
@@ -89,5 +89,11 @@ The parent main gitlink remains the published, SM75-tested production llama.cpp
 commit 34e21b7. Experimental low-bit and MMA commits remain published on the
 user's llama.cpp fork; no parent gitlink points to an unpublished commit.
 Weights, raw runs, and profiler captures remain ignored and outside Git.
-The local parent main checkout is clean and pushed. Final remote GPU/process
-and tmux-session release is being audited before marking the goal complete.
+The local parent main checkout is clean and pushed. The final WSL audit found
+all 79 supervised jobs finished, no project server/benchmark/profiler/build
+process and no compute app. GPU was idle at 0% with 855 MiB used and 10,173
+MiB free. The remote production checkout and committed gitlink both matched
+34e21b7; the operator closed its SSH panes. A pre-existing detached tmux
+session remains untouched, with no persistent SSH connection. The remote
+clone was clean at parent 11a25f5 during audit; later local commits were
+documentation-only and pushed to main.

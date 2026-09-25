@@ -1,6 +1,7 @@
 # Current project status
 
-**Active goal:** [benchmark the RTX 2080 Ti quantization suite](goals/rtx2080ti-quantization-suite.md).
+**Active goal:** none. The [RTX 2080 Ti quantization suite](goals/rtx2080ti-quantization-suite.md)
+completed on 2026-09-25.
 The prior [W1A1 EAGLE research goal](goals/full-w1a1-eagle-project.md) is
 checkpointed; its remaining Turing measurements are now tracked in the active
 benchmark goal. Ubuntu 24.04 WSL2 and SSH are reachable through the shared
@@ -36,7 +37,9 @@ each default/MMA pair. W8A8 MMA decoded at 0.821× its default DP4A path
 workload. A separate executed-path trace confirmed Q4_0/Q8_0 use Q8_1
 activation quantization with MMVQ during one/two-token work and MMQ during an
 observed 38-token operation. The goal file has exact commits, owners, and raw
-hashes; final synthesis and cleanup are in progress.
+hashes. The [final synthesis](../experiments/rtx2080ti-synthesis.md) and
+packing-inclusive CUDA traces are preserved; final cleanup confirmed all
+supervisors stopped and the GPU released.
 
 ## RTX 5080 result
 
@@ -117,9 +120,9 @@ speed ratios. Local fake-server and analysis checks passed 15/15; the
 ## Next gate
 
 The nine-variant SM75 matrix, binary-MMA comparison, native W8A8/W4A4
-default-versus-Tensor-Core comparisons, and Q4_0/Q8_0 path trace are complete.
-The remaining work is final synthesis and cleanup. The
-[runbook](RTX2080TI_RUNBOOK.md) records the completed hardware gates.
+default-versus-Tensor-Core comparisons, Q4_0/Q8_0 path trace, and actual
+CUDA component profiles are complete. The 2080 Ti is free. The
+[runbook](RTX2080TI_RUNBOOK.md) records the hardware gates.
 The 5080 experiments are complete and sealed. Its remote checkout was restored
 to pinned `92bc706`; all supervised jobs exited, no project process remained,
 and repeated GPU samples showed 0% utilization. The repository checks pass
