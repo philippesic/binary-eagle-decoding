@@ -196,7 +196,7 @@ The pooled request rate is completion tokens / client request wall time, includi
 
 The table's per-prompt ranges pool the five repetitions for each prompt, then take the min/max over the 12 prompts. The separate category summaries in `analysis.json` show decode-rate ranges of 45.05–46.97 tok/s for W1A1 all, 46.39–50.62 for attention, 52.90–64.89 for FFN, 47.95–51.40 for fusion, and 64.31–86.18 for head. The corresponding accepted-per-round ranges across prose/code/reasoning prompts are 0.027–0.070, 0.166–0.278, 0.321–0.617, 0.234–0.325, and 0.597–1.153. Q4_0, Q8_0, and ordinary EAGLE category decode-rate ranges were 75.47–103.35, 71.32–101.22, and 66.82–95.08 tok/s.
 
-The server's cumulative EAGLE timing lines also yielded the following measured-only host timing decomposition. `begin_ms`, `draft_ms`, and `accept_ms` are from `common_speculative_impl`, not isolated GPU-kernel timings; draft ms/round divides the pooled draft-call time by the measured verification rounds.
+The server's cumulative EAGLE timing lines also yielded the following measured-only host timing decomposition. `begin_ms`, `draft_ms`, and `accept_ms` are from `common_speculative_impl`, not isolated GPU-kernel timings; draft ms/round divides the pooled draft-call time by the measured verification rounds. `accept_ms` is the logged acceptance-hook span and is not total target-verification latency. The run does not expose an isolated verifier span, so that cost cannot be separated here.
 
 | Variant | begin ms | draft ms | accept ms | draft ms / verification round |
 |---|---:|---:|---:|---:|
@@ -210,6 +210,8 @@ The server's cumulative EAGLE timing lines also yielded the following measured-o
 | W1A1 all | 0.079 | 24,695.913 | 8.531 | 3.558 |
 
 Target-only has no EAGLE timing decomposition. These are available for all eight speculative variants; the native `draft_ms` measure is host wall time around draft calls and should not be read as standalone GPU kernel duration.
+
+For the all-group W1A1 draft, draft-call cost per verification round fell from 6.471 ms with ordinary EAGLE to 3.558 ms, while rounds increased from 3,400 to 6,940; pooled draft-call time therefore rose from 22.0 s to 24.7 s. Its aggregate acceptance rate was only 1.13%, so the shorter proposal call did not offset the additional rounds.
 
 Paired bootstrap intervals used 2,000 resamples with seed 42, resampling prompts and repetitions together. Representative 95% intervals for pooled candidate/ordinary-EAGLE rate ratios are:
 
