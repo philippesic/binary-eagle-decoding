@@ -351,3 +351,57 @@ Compare pooled rates and prompt/repetition spread against both anchors.
   actual MMVQ/MMQ/cuBLAS branch, activation format, and shapes. It is disabled
   by default and has not been compiled on CUDA or run during timed requests.
   A short isolated post-suite check will resolve the source-inferred labels.
+
+## Sealed nine-variant result
+
+- The supervised full matrix `native-nine-quantization-full-supervisor-20260924`
+  finished exit 0. Its ignored raw directory is
+  `/home/philip/binary-eagle-decoding/results/native-nine-quantization-full-run-20260924/`.
+  It pinned parent `f99affa`/llama.cpp `34e21b7`, the F16 target/KV and
+  2,048 context, 12 prompts, five alternating repetitions, two warmups/server,
+  and one server at a time. All 540/540 measured records are complete, 60 per
+  variant; all five W1A1 CUDA dispatch flags were true. The GPU returned to
+  its 855 MiB/0% desktop baseline and no project process remained. The largest
+  live memory reading was 10,160 MiB used / 868 MiB free.
+- The compact [experiment report](../../experiments/rtx2080ti-quantization-suite.md)
+  was committed/pushed at parent `d871064`. Raw manifest/report/records and
+  analysis SHA256 values are respectively
+  `8fe6358677f4891b71e78f0f6be7a23211979764a24ac6d915a8711d09333fd9`,
+  `54e4ba42f4130856000db25ce36cf1b93026bc66a76dc839339e9b5d0114d13f`,
+  `04c4a1a71244f8b8f18077e5d0a192455d36625d780c990a1742da6628507889`,
+  and `9e1a8b5b2f48394b927e6825927edb8f86d58bf2908eec52af8777f9d20d14a1`.
+  Its paired analysis used 2,000 prompt/repetition bootstrap resamples.
+
+| Variant | Request tok/s | Decode tok/s | Decode ratio vs ordinary | Accepted drafts/round |
+| --- | ---: | ---: | ---: | ---: |
+| Target only | 59.79 | 61.67 | 0.748 | — |
+| Ordinary EAGLE | 77.35 | 82.49 | 1.000 | 1.168 |
+| Q4_0 draft | 85.20 | 91.51 | 1.109 | 1.182 |
+| Q8_0 draft | 81.95 | 87.73 | 1.064 | 1.168 |
+| W1A1 fusion | 47.44 | 49.32 | 0.598 | 0.271 |
+| W1A1 attention | 47.31 | 49.17 | 0.596 | 0.238 |
+| W1A1 FFN | 56.32 | 59.05 | 0.716 | 0.472 |
+| W1A1 head | 70.51 | 74.81 | 0.907 | 0.860 |
+| W1A1 all | 44.65 | 46.31 | 0.561 | 0.055 |
+
+- Every speculative variant produced identical completion text to the others
+  on all 60 prompt/repetition pairs. Each differed from target-only only on
+  `reasoning-02`, consistently in all five repetitions, by a capitalization/
+  formatting choice beginning at character 440. Target-only output was stable
+  across repetitions. Request bodies, seed 42, greedy sampling, and output cap
+  matched; the server omitted generated token IDs. Compare speculative variants
+  directly; label target-only ratios as timing observations rather than strict
+  lossless speedups. Client TTFT is unavailable because responses were not
+  streamed, while server decode durations were positive for all records.
+- Q4_0 and Q8_0 are verified GGUF weight formats and showed 1.109× and
+  1.064× ordinary decode throughput respectively (paired 95% intervals
+  1.081–1.135 and 1.053–1.075). Their exact CUDA activation/operator path is
+  still source-inferred. All five native W1A1 scopes lost to ordinary; head
+  was 0.907× (0.869–0.946) and all-group 0.561× (0.511–0.617). The acceptance
+  collapse, especially all-group's 0.055 versus ordinary's 1.168 accepted
+  drafts/round, is the primary measured reason to investigate before any
+  speedup claim. Draft/verification component timing is being checked in the
+  preserved server logs; do not invent missing spans.
+- Next: run a full paired portable-versus-integrated-binary-MMA head matrix
+  on this device; then build/check the combined W8A8/W4A4 branch and use the
+  opt-in Q-format trace after sealed timing. Keep the one-GPU-owner rule.

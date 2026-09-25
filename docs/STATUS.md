@@ -3,36 +3,27 @@
 **Active goal:** [benchmark the RTX 2080 Ti quantization suite](goals/rtx2080ti-quantization-suite.md).
 The prior [W1A1 EAGLE research goal](goals/full-w1a1-eagle-project.md) is
 checkpointed; its remaining Turing measurements are now tracked in the active
-benchmark goal. This suite covers all five native W1A1 layer settings, the
-portable and binary-MMA paths, FP16 anchors, Q4_0/Q8_0 weight-only drafts,
-and genuinely native INT4/INT8 draft execution if correctness gates can be met.
-No RTX 2080 Ti result has been measured yet.
-The user supplied the RTX 2080 Ti address, which is recorded only in the shared
-local host registry. Ubuntu 24.04 WSL2 and SSH are now reachable. The host
-reports an RTX 2080 Ti (compute capability 7.5). A user-space CUDA 12.8.93
-production build completed, and the five-case native W1A1 CUDA backend gate
-passed with explicit XOR/POPCOUNT dispatch. A standalone SM75 binary-MMA probe
-matched 880 integer dots, and integrated portable/MMA selectors each passed
-8/8 backend cases. The full paired timing remains pending.
-The pinned model source files and target/ordinary/Q4_0/Q8_0 GGUFs are now
-hash-verified on WSL; all five W1A1 conversions passed source-row audits.
-A fixed runtime loads the FP16 target and draft within 11,264 MiB VRAM,
-with at least 1,154 MiB free in the short four-path smoke. The full
-five-repetition, 12-prompt comparison remains pending.
-The user requested same-device tests of ordinary EAGLE and all five W1A1
-coverage settings (fusion, attention, FFN, head, all groups), plus a fresh QAT
-investigation. The 5080-tested native runtime supported head-only W1A1;
-the expanded llama.cpp revision now supports all five settings. Local
-[conversion and CPU gates](../experiments/native-w1a1-groups-local.md) passed;
-SM75 CUDA correctness and timing remain unmeasured.
-Local [Q4_0/Q8_0 draft artifacts](../experiments/native-weight-only-draft-prep.md)
-are prepared and audited as weight-only comparisons; they have no 2080 Ti
-execution or timing result. A separate Q4_K_M target GGUF is prepared only as
-a memory-fit contingency and will define its own same-target comparison track
-if needed.
-The user delegated research choices and RTX 5080 access for an initial
-roughly 10-hour autonomous work window. The goal file has exact commits,
-owners, raw artifact hashes, and the next action.
+benchmark goal. Ubuntu 24.04 WSL2 and SSH are reachable through the shared
+host registry. The RTX 2080 Ti (SM75) passed five native W1A1 CUDA backend
+cases, a standalone 21-case/880-dot binary-MMA probe, and both integrated
+portable/MMA eight-case backend gates. All five W1A1 draft GGUFs passed
+source-row audits; the FP16 target track fits in 11,264 MiB VRAM.
+
+The full [nine-variant Turing comparison](../experiments/rtx2080ti-quantization-suite.md)
+completed 540/540 matched requests across 12 prompts and five repetitions.
+Ordinary EAGLE decoded at 82.49 tokens/s. Native head W1A1 reached 74.81
+(0.907× ordinary), and all-group W1A1 46.31 (0.561×). Q4_0 and Q8_0 draft
+controls reached 91.51 and 87.73 (1.109× and 1.064×). Fusion, attention,
+and FFN W1A1 also trailed ordinary. All eight speculative variants produced
+identical text on all 60 paired requests; each differed from target-only on
+one prompt. Ratios to target-only are timing observations, not strict
+lossless speedups. Q4_0/Q8_0 stored types are verified, while their exact
+decode kernel path remains source-inferred pending an opt-in trace.
+
+The remaining active gates are a full same-device portable-versus-binary-MMA
+head comparison, SM75 correctness and timing for genuine W8A8/W4A4 draft
+operators, and a compact final synthesis. The goal file has exact commits,
+owners, raw hashes, and the next action.
 
 ## RTX 5080 result
 
@@ -112,12 +103,10 @@ speed ratios. Local fake-server and analysis checks passed 15/15; the
 
 ## Next gate
 
-The RTX 2080 Ti address is present in the shared host registry (username
-`philip`), and WSL/SSH access is working. Native W1A1 and binary-MMA backend
-correctness have passed on SM75. All 18 pinned model source files are staged
-and hash-verified; conversion, model-level dispatch/parity, and matched
-same-device timing remain. The [runbook](RTX2080TI_RUNBOOK.md) governs those
-remaining gates.
+The nine-variant SM75 matrix is sealed with all 18 pinned model source files
+hash-verified. The next gates are the full four-path binary-MMA head comparison,
+isolated W8A8/W4A4 SM75 build and execution checks, and a short Q4_0/Q8_0
+kernel trace. The [runbook](RTX2080TI_RUNBOOK.md) governs those runs.
 The 5080 experiments are complete and sealed. Its remote checkout was restored
 to pinned `92bc706`; all supervised jobs exited, no project process remained,
 and repeated GPU samples showed 0% utilization. The repository checks pass
