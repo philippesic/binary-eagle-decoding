@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-24–25  
 **Owner:** SM75 experiment operator  
-**Status:** Production W1A1 correctness gates, the frozen nine-variant matrix, and the full 12-prompt/five-repetition portable-versus-MMA head comparison are complete on the RTX 2080 Ti. MMA/portable decode-rate ratio was 1.0017 with 95% interval 0.9973–1.0062, so no resolved MMA gain was measured. The combined W8A8/W4A4 SM75 branch gates remain in progress; Q4_0/Q8_0 kernel/activation paths remain source-inferred, not profiler-confirmed.
+**Status:** Production W1A1 correctness gates, the frozen nine-variant matrix, and the full 12-prompt/five-repetition portable-versus-MMA head comparison are complete on the RTX 2080 Ti. MMA/portable decode-rate ratio was 1.0017 with 95% interval 0.9973–1.0062, so no resolved MMA gain was measured. The combined d0724427b source passed an SM75 build, its registered W8A8/W4A4 backend cases, source audits, a standalone signed-I4 MMA probe, and one-prompt all-nine model-load/dispatch smoke. The matched W8A8/W4A4 vector matrix is now the next gate; broader shape coverage and the opt-in live W4 MMA candidate remain pending. Q4_0/Q8_0 kernel/activation paths remain source-inferred, not profiler-confirmed.
 
 ## Initial preflight (resolved below)
 
@@ -88,7 +88,7 @@ Pinned target and draft source snapshots are staged under `models/hf/Qwen3-4B/` 
 
 ## Next action
 
-Both paired timing matrices are sealed and their raw outputs are hashed below. Continue with isolated SM75 correctness for the combined W8A8/W4A4 source, then trace the real Q4_0/Q8_0 CUDA activation and operator paths. Keep weight-only timing labels distinct from the W8A8/W4A4 research contracts until an executed-kernel trace proves the path.
+The production and W1A1 MMA paired timing matrices are sealed and their raw outputs are hashed below. Run the matched five-repetition W8A8/W4A4 vector matrix, then validate the isolated live W4 MMA candidate and trace actual Q4_0/Q8_0 activation/operator paths. Keep weight-only timing labels distinct from the W8A8/W4A4 research contracts until an executed-kernel trace proves the path.
 
 ## WSL user-space setup and build checkpoint
 
