@@ -446,3 +446,41 @@ Raw artifacts remain under `/home/philip/binary-eagle-decoding/results/native-lo
 | `report.json` | `e51ce493b519aa5e6e6c37c23eb86aad836f98491015aa2b0ec97fd2b42a825d` |
 | `records.json` | `c254f858db9273054f71a24d3198dbcf0454f3da3792f4e1cb735df9198152e9` |
 | `analysis.json` | `92e77f518c32bfa575b5946306da1690e775d8c28beb1dd21fad8232c12eb632` |
+
+## Q4_0/Q8_0 CUDA dispatch trace
+
+To resolve the remaining weight-only execution labels, an isolated source worktree at llama.cpp commit `5c52067b71b5dc43854054506f555a6babe09150` was built against the production base `34e21b7d85c17e25d5a91ce2ab1074d4c18bfe39`. The trace change is opt-in and the production checkout/binary remained unchanged. The supervised build `sm75-qformat-trace-build-5c52067-20260925` compiled 356/356 Ninja targets for SM75 using CUDA 12.8.93 and GCC 13.4.0. Build stdout SHA256 is `cd78daf2ac677946776e934e453167e5b69ea0d169e499fa36eaea9c6b9b6c63`; the isolated `llama-server` binary SHA256 is `0fd2d394a5136526c0e5fce96e0d704a27d53a3445d0d0135386034c02425199`.
+
+The trace-only smoke used `GGML_CUDA_QFORMAT_DISPATCH_TRACE=1`, the same F16 target, ordinary draft, Q4_0 and Q8_0 drafts, F16 KV, context 2048, one `prose-01` prompt, one warmup, five measured repetitions, and a 32-token cap. The config is `runs/toolchain-bootstrap/qformat-trace-smoke.toml`, SHA256 `d8d5cd837a38388ea50794531aa61ae1143b6fdf0261a6bb29a71d15e4538fe6`. Supervised inference ID `native-qformat-dispatch-trace-supervisor-5c52067-20260925` completed with exit 0 at 2026-09-25 03:38:25 UTC. It produced 25/25 measured records (five each target, ordinary EAGLE, W1A1 head, Q4_0 and Q8_0), no failed requests, and stable completion text within each variant. This is a path diagnostic, not a timed quantization comparison.
+
+For both stored weight types, the trace selected MMVQ and MMQ, with Q8_1 as the internally quantized activation kernel type. The trace reports `src1=f32` because the activation tensor enters as F32; `activation_quantized=yes` records the actual conversion used by these operators. The logged shapes were:
+
+| Stored weight | CUDA family | K | M | N | Batch | Activation kernel | Other flags |
+|---|---|---:|---:|---:|---|---|---|
+| Q4_0 | MMVQ | 5120 | 4096 | 2 | 1×1 | Q8_1, quantized | no matmul IDs, not fused |
+| Q4_0 | MMQ | 7680 | 2560 | 38 | 1×1 | Q8_1, quantized | no matmul IDs, not fused |
+| Q4_0 | MMVQ | 4096 | 2560 | 1 | 1×1 | Q8_1, quantized | no matmul IDs, fused |
+| Q8_0 | MMVQ | 5120 | 4096 | 2 | 1×1 | Q8_1, quantized | no matmul IDs, not fused |
+| Q8_0 | MMQ | 7680 | 2560 | 38 | 1×1 | Q8_1, quantized | no matmul IDs, not fused |
+| Q8_0 | MMVQ | 4096 | 2560 | 1 | 1×1 | Q8_1, quantized | no matmul IDs, fused |
+
+Each format's trace logger emitted these three distinct records in every repetition (15 trace lines per format across five server processes). This confirms the N=38 MMQ prefill path and the N=1 fused MMVQ decode path; the N=2 nonfused MMVQ call was also observed. No cuBLAS Q4_0/Q8_0 dispatch was selected in this smoke. The trace identifies the GGML kernel family and activation conversion; instruction-level DP4A remains a source-backed property of the selected MMVQ implementation rather than an instruction trace from this run.
+
+The highest sampled live GPU use during the smoke was 9,090 MiB; after supervision ended, the GPU returned to 855 MiB used / 10,173 MiB free at 0%, with no `llama-server` process. The production submodule stayed at gitlink `34e21b7`, and the parent working tree remained clean.
+
+The exact build and inference commands were:
+
+```sh
+cd ~/binary-eagle-decoding
+python3 scripts/remote_job.py sm75-qformat-trace-build-5c52067-20260925 -- bash -c 'set -eu; env CC=$PWD/runs/toolchain-bootstrap/env/bin/x86_64-conda-linux-gnu-gcc CXX=$PWD/runs/toolchain-bootstrap/env/bin/x86_64-conda-linux-gnu-g++ CUDAHOSTCXX=$PWD/runs/toolchain-bootstrap/env/bin/x86_64-conda-linux-gnu-g++ runs/toolchain-bootstrap/bin/micromamba run -p runs/toolchain-bootstrap/env cmake -S runs/llama-sm75-qformat-trace-src -B build/llama-cuda-qformat-trace -G Ninja -DCMAKE_BUILD_TYPE=Release -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_TOOLS=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_BUILD_APP=OFF -DLLAMA_BUILD_UI=OFF -DLLAMA_OPENSSL=OFF -DGGML_CUDA=ON -DGGML_METAL=OFF -DCMAKE_CUDA_ARCHITECTURES=75; env CC=$PWD/runs/toolchain-bootstrap/env/bin/x86_64-conda-linux-gnu-gcc CXX=$PWD/runs/toolchain-bootstrap/env/bin/x86_64-conda-linux-gnu-g++ CUDAHOSTCXX=$PWD/runs/toolchain-bootstrap/env/bin/x86_64-conda-linux-gnu-g++ runs/toolchain-bootstrap/bin/micromamba run -p runs/toolchain-bootstrap/env cmake --build build/llama-cuda-qformat-trace --parallel 4 --target llama-server'
+python3 scripts/remote_job.py native-qformat-dispatch-trace-supervisor-5c52067-20260925 -- python3 scripts/benchmark_native_eagle.py --config runs/toolchain-bootstrap/qformat-trace-smoke.toml --run-id native-qformat-dispatch-trace-smoke-5c52067-20260925
+```
+
+Raw smoke artifacts remain at `/home/philip/binary-eagle-decoding/results/native-qformat-dispatch-trace-smoke-5c52067-20260925/`:
+
+| Artifact | SHA256 |
+|---|---|
+| `manifest.json` | `28c40fcf79cb570b349bab254e0b07f56db0672b513202a514fbac98952fc3d7` |
+| `report.json` | `56d28fe2323d5f14747911c1c8a59aa7a84faaa5c0e976129a3ec7622698c411` |
+| `records.json` | `ca9566b44c74fa9cece3ca84122a0029a02cad88f8a691b46aa64c5bbb887f90` |
+| `prompts.jsonl` | `ddb4868a2717c813a852713a7c455c35438d784ed6e334c70b2ae2b93af68164` |
