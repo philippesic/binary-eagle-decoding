@@ -24,3 +24,8 @@ audits, not new GPU measurements.
 The [primary-source cross-reference](research-cross-reference-2026-09-25.md)
 records literature-supported revisions to that review, with source versions,
 precision/hardware limits and retained local measurement gates.
+
+The [PrismML and quantization/QAT study](prism-quantization-research-2026-09-25.md)
+adds claim/artifact audits, full selected-weight geometry, a local Q1 conversion
+audit and bounded CPU regression evidence. It proposes representation recovery
+and deployment-aligned QAT controls, without changing the ongoing SM75 suite.

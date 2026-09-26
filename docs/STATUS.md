@@ -164,3 +164,16 @@ with matched DFlash control; hard CE and structured scales remain hypotheses;
 native sample-and-match is distinguished from probability-ratio verification.
 The current W1Ax goal, one-run QAT budget and sealed final set are unchanged.
 This literature review produced no new model or GPU result.
+
+## PrismML / quantization research (2026-09-25)
+
+The user-requested [PrismML research report](../experiments/prism-quantization-research-2026-09-25.md)
+separates ternary task-score claims from true binary-weight execution and our
+W1A1 acceptance objective. A full selected-weight geometry audit and a bounded
+local CPU Q1 control support investigating representation fitting and
+head/body adaptation before new kernel work. Existing Q1_0 support was verified;
+the naive grouped control is not an optimized Prism checkpoint.
+
+The active SM75 suite, its GPU owner, frozen protocol and reserved final prompts
+are unchanged. New fitting/QAT budgets and any practical weight-only branch
+remain proposals for the user, not additional experiments started by this review.
