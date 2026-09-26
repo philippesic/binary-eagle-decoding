@@ -1,6 +1,6 @@
 # All-layer W1Ax activation precision on RTX 2080 Ti
 
-**State:** historical matrix complete; development and diagnostic matrices in progress.
+**State:** historical and development matrices complete; diagnostics in progress.
 **Protocol:** [frozen W1Ax study](w1ax-activation-precision-plan.md).
 **Hardware:** NVIDIA RTX 2080 Ti, SM75, 11,264 MiB VRAM under Ubuntu 24.04 WSL2.
 
@@ -97,8 +97,7 @@ prompt/repetition requests. They differed from target-only on the same
 109. Ratios to target-only are timing observations, not strict lossless speedup
 claims. W1A16 preserves more activation precision than A8/A4/A1, yet accepts
 only 0.106 drafts/round versus FP16 EAGLE's 1.168. Its slow sign-add kernel
-also makes it the slowest W1Ax serving path. The held-out development matrix
-is the next quality check; the 24 QAT-final prompts remain reserved.
+also makes it the slowest W1Ax serving path. The development matrix below provides the next quality check; the 24 QAT-final prompts remain reserved.
 
 Historical raw artifacts reside on the 2080 Ti under ignored
 `runs/w1ax-project-src/results/w1ax-historical-matrix-20260925/`. The
@@ -113,9 +112,38 @@ model hashes and dispatch evidence are preserved in those files. The selected
 operator replay JSONL SHA256 is
 `a06654a31f000bacf5988cda91201a100b57575fbead9548b66d614093c1afe5`.
 
+## Development paired matrix
+
+The frozen 24 development prompts × five repetitions × eight paths completed
+960/960 requests with exit 0. All dispatch gates passed, and every speculative
+variant matched target-only raw token IDs on all 120 paired requests. Each
+request reached the 128-token cap. The primary build and policy were unchanged.
+
+| Draft | Decode tok/s | Request tok/s | Accepted drafts/round | Decode vs FP16 | Decode vs Q4_0 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Target-only | 60.45 | 58.58 | — | — | — |
+| FP16 EAGLE | 76.55 | 72.40 | 1.047 | 1.000× | 0.912× |
+| Q8_0 EAGLE | 81.56 | 76.94 | 1.046 | 1.065× | 0.972× |
+| Q4_0 EAGLE | 83.93 | 79.05 | 1.036 | 1.096× | 1.000× |
+| W1A16 | 29.86 | 29.20 | 0.117 | 0.390× | 0.356× |
+| W1A8 | 42.49 | 41.19 | 0.111 | 0.555× | 0.506× |
+| W1A4 | 44.68 | 43.26 | 0.047 | 0.584× | 0.532× |
+| W1A1 | 45.36 | 43.91 | 0.055 | 0.593× | 0.540× |
+
+The same acceptance loss persists with A16: restoring activation precision does
+not recover the all-layer binary draft's quality. None of the W1Ax paths
+approaches either throughput anchor on this development set.
+
+Raw artifacts: remote `runs/w1ax-project-src/results/w1ax-development-matrix-20260925/`.
+SHA256: `records.json`
+`a3ac1f91d249a3edd7c54d07ff69a457d49dbd0efaabb317a45a4c0149ab04f8`;
+`report.json` `f653acbb50bf490da3d589932d201f9d7f59bb4e795968eade0e9344de07e7ea`;
+2,000-resample `analysis.json`
+`f175094050ca1d807e2f3a6b963b44f97b14b8a7e2d39ab8d2eee5d2f49f9592`;
+`manifest.json` `e7c2c55fca7a609bce162fa348d37bc93da2181707b5eb24d21c0be6b7a22cab`.
+
 ## Outstanding measurements
 
-The frozen 24-prompt development matrix, identical-input FP16/Q8_0/Q4_0
-anchor replay, per-round trace, context/output-cap diagnostic, D/p_min policy
+Identical-input FP16/Q8_0/Q4_0 anchor replay, per-round trace, context/output-cap diagnostic, D/p_min policy
 grid, and separate CUDA stage profiles are pending. Do not treat the historical
 screen as a final trained-QAT result or use the reserved 24-prompt final set.

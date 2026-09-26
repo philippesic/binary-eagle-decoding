@@ -14,7 +14,7 @@ QAT run has begun.
 
 **Concurrent suite progress:** the latest [goal checkpoint](goals/w1ax-activation-precision-suite.md)
 records W1Ax implementation, 88-case SM75 gates, real-input replay and the
-historical eight-path matrix in progress. Consult that checkpoint for current
+completed historical (480 requests) and development (960 requests) eight-path matrices. Separate operator, round, context and policy diagnostics are in progress. Consult that checkpoint for current
 run ownership, paths and stop instructions. These records were preserved during
 integration of the literature review; its authors did not operate or revalidate
 that GPU run.
@@ -138,8 +138,8 @@ matrix](../experiments/w1ax-activation-precision-plan.md) on the 2080 Ti,
 including W1A16/W1A8/W1A4 and matched FP16, Q8_0, Q4_0, W1A1 anchors. The
 protocol separates acceptance, identical-input operator cost, complete EAGLE
 round cost, and end-to-end serving rate. Implementation and focused SM75 checks have since progressed in the
-linked goal checkpoint; the matched serving comparison and broader diagnostics
-remain to be completed and sealed by the suite owner. Use its quality evidence to guide the [QAT revisit
+linked goal checkpoint; the primary serving comparisons are sealed and broader diagnostics
+remain to be completed by the suite owner. Use its quality evidence to guide the [QAT revisit
 plan](../experiments/qat-revisit-plan.md): audit
 drafter-state/target-verifier alignment and target probability mass outside the
 draft vocabulary before training, then test one bounded target-aligned recipe
