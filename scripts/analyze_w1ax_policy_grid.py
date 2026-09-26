@@ -25,6 +25,7 @@ VARIANTS = (
 )
 W1AX = VARIANTS[4:]
 ANCHORS = {"fp16_eagle": "ordinary_eagle", "q4_0_eagle": "draft_q4_0"}
+OUTPUT_ANCHORS = {**ANCHORS, "target_only": "target_only"}
 # The suite generator hashes config inputs under their TOML table names. The
 # benchmark manifest hashes resolved models under their runtime variant names.
 MODEL_SOURCE_KEYS = {
@@ -164,6 +165,92 @@ def validate_records(records: Any, prompt_ids: list[str], key: str) -> list[dict
     return records
 
 
+def compare_outputs(
+    candidate_rows: list[dict[str, Any]],
+    reference_rows: list[dict[str, Any]],
+    candidate_source: dict[str, Any],
+    reference_source: dict[str, Any],
+) -> dict[str, Any]:
+    """Compare raw sequences without dropping a cell or attributing a mismatch's cause."""
+    indexes = []
+    for rows, source in ((candidate_rows, candidate_source), (reference_rows, reference_source)):
+        indexes.append(
+            {
+                (row["repetition"], row["prompt_id"]): row
+                for row in rows
+                if row["variant"] == source["variant"]
+            }
+        )
+    candidate, reference = indexes
+    check(candidate.keys() == reference.keys(), "output comparison has incomplete prompt pairs")
+    mismatches = []
+    for repetition, prompt_id in sorted(candidate):
+        a, b = candidate[repetition, prompt_id], reference[repetition, prompt_id]
+        a_ids, b_ids = a["generated_token_ids"], b["generated_token_ids"]
+        if a_ids == b_ids:
+            continue
+        common_length = min(len(a_ids), len(b_ids))
+        index = next((i for i in range(common_length) if a_ids[i] != b_ids[i]), common_length)
+        mismatches.append(
+            {
+                "repetition": repetition,
+                "prompt_id": prompt_id,
+                "first_difference": {
+                    "index": index,
+                    "candidate_token_id": a_ids[index] if index < len(a_ids) else None,
+                    "reference_token_id": b_ids[index] if index < len(b_ids) else None,
+                    "candidate_length": len(a_ids),
+                    "reference_length": len(b_ids),
+                },
+                "candidate_request_id": a["request_id"],
+                "reference_request_id": b["request_id"],
+                "candidate_token_ids_sha256": a["generated_token_ids_sha256"],
+                "reference_token_ids_sha256": b["generated_token_ids_sha256"],
+            }
+        )
+    return {
+        "candidate": candidate_source,
+        "reference": reference_source,
+        "paired_requests": len(candidate),
+        "matched_requests": len(candidate) - len(mismatches),
+        "mismatched_requests": len(mismatches),
+        "mismatched_prompt_count": len({row["prompt_id"] for row in mismatches}),
+        "all_observed_token_ids_match": not mismatches,
+        "mismatches": mismatches,
+        "first_difference_convention": "Zero-based index; null token ID means sequence ended.",
+        "timing_classification": (
+            "timing_observation_with_output_differences"
+            if mismatches
+            else "timing_observation_with_identical_observed_outputs"
+        ),
+        "strict_lossless_speedup_claim": False,
+        "interpretation": (
+            "Raw token IDs differ; rate ratios are timing observations, not strict lossless "
+            "speedups. No numerical or other cause is inferred from this mismatch."
+            if mismatches
+            else "Raw token IDs match on these development requests. This observed agreement "
+            "does not establish general losslessness or final-set performance."
+        ),
+    }
+
+
+def output_source(cell: dict[str, Any], key: str, variant: str) -> dict[str, Any]:
+    run = Path(cell["run_dir"])
+    return {
+        "cell": key,
+        "variant": variant,
+        "run_id": cell["run_id"],
+        "run_dir": str(run),
+        "records_path": str(run / "records.json"),
+        "records_sha256": cell["records_sha256"],
+        "manifest_path": str(run / "manifest.json"),
+        "manifest_sha256": cell["manifest_sha256"],
+        "report_path": str(run / "report.json"),
+        "report_sha256": cell["report_sha256"],
+        "config_sha256": cell["config_sha256"],
+    }
+
+
 def analyze(suite_path: Path, results_root: Path) -> dict[str, Any]:
     suite_path = suite_path.resolve()
     suite = read_object(suite_path)
@@ -229,6 +316,7 @@ def analyze(suite_path: Path, results_root: Path) -> dict[str, Any]:
     )
 
     cells: dict[str, Any] = {}
+    records_by_cell: dict[str, list[dict[str, Any]]] = {}
     for entry in policy_entries:
         depth, floor = entry["draft_depth"], entry["min_draft_probability"]
         key = cell_key(depth, floor)
@@ -361,6 +449,25 @@ def analyze(suite_path: Path, results_root: Path) -> dict[str, Any]:
             "records_sha256": sha256(run / "records.json"),
             "variants": by_variant,
         }
+        records_by_cell[key] = records
+        for variant, summary in by_variant.items():
+            summary["raw_output_vs"] = {
+                anchor_name: compare_outputs(
+                    records,
+                    records,
+                    output_source(cells[key], key, variant),
+                    output_source(cells[key], key, anchor),
+                )
+                for anchor_name, anchor in OUTPUT_ANCHORS.items()
+            }
+            for anchor_name in ANCHORS:
+                comparison = summary["raw_output_vs"][anchor_name]
+                summary["vs_anchors"][anchor_name].update(
+                    {
+                        "timing_classification": comparison["timing_classification"],
+                        "strict_lossless_speedup_claim": False,
+                    }
+                )
 
     ordered = sorted(
         cells, key=lambda key: (cells[key]["draft_depth"], cells[key]["min_draft_probability"])
@@ -379,7 +486,29 @@ def analyze(suite_path: Path, results_root: Path) -> dict[str, Any]:
             "cell": winner,
             "criterion": "max pooled decode tokens/s on development prompts",
             "decode_tokens_per_s": cells[winner]["variants"][variant]["decode_tokens_per_s"],
+            "selection_scope": "exploratory_development_only",
         }
+    for variant, selection in best.items():
+        winner = selection["cell"]
+        references = {
+            f"selected_{label}": (best[anchor]["cell"], anchor) for label, anchor in ANCHORS.items()
+        }
+        references["same_variant_fixed_d5_p0"] = (cell_key(5, 0.0), variant)
+        selection["raw_output_comparisons"] = {}
+        for label, (reference_cell, reference_variant) in references.items():
+            comparison = compare_outputs(
+                records_by_cell[winner],
+                records_by_cell[reference_cell],
+                output_source(cells[winner], winner, variant),
+                output_source(cells[reference_cell], reference_cell, reference_variant),
+            )
+            comparison["pooled_rate_ratios"] = {
+                metric: cells[winner]["variants"][variant][f"{metric}_tokens_per_s"]
+                / cells[reference_cell]["variants"][reference_variant][f"{metric}_tokens_per_s"]
+                for metric in ("decode", "request")
+            }
+            comparison["selection_scope"] = "exploratory_development_only"
+            selection["raw_output_comparisons"][label] = comparison
     return {
         "schema": "w1ax_policy_grid_analysis_v1",
         "source_suite": str(suite_path),
@@ -402,7 +531,9 @@ def analyze(suite_path: Path, results_root: Path) -> dict[str, Any]:
             "120 independent prompts. Policy selection is exploratory on the development set. "
             "No QAT-final prompt was read and no final-set performance claim is made. "
             "Decode rate pools completion tokens/server predicted decode seconds; request rate "
-            "pools completion tokens/full request wall seconds."
+            "pools completion tokens/full request wall seconds. Output differences are retained "
+            "with first-divergence evidence and are not assigned a numerical cause. Rate ratios "
+            "with output differences are timing observations, not strict lossless speedups."
         ),
     }
 

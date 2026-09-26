@@ -194,6 +194,22 @@ class PolicyGridTests(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
+    def replace_raw_ids(self, cell, variant, token_ids):
+        path = self.results / f"synthetic-{cell}" / "records.json"
+        rows = json.loads(path.read_text())
+        row = next(
+            row
+            for row in rows
+            if row["variant"] == variant
+            and row["repetition"] == 2
+            and row["prompt_id"] == self.ids[3]
+        )
+        row["generated_token_ids"] = token_ids
+        row["generated_token_ids_sha256"] = digest(json.dumps(token_ids, separators=(",", ":")))
+        row["completion_tokens"] = len(token_ids)
+        write_json(path, rows)
+        return row, path
+
     def test_all_cells_pool_rates_and_select_development_policy(self):
         report = ANALYSIS.analyze(self.suite_path, self.results)
         self.assertEqual(len(report["cells"]), 12)
@@ -206,6 +222,78 @@ class PolicyGridTests(unittest.TestCase):
         self.assertAlmostEqual(summary["vs_anchors"]["fp16_eagle"]["decode"], 2.0)
         self.assertEqual(summary["mean_proposal_length"], 2)
         self.assertEqual(report["fixed_primary_policy"]["cell"], "d5-pmin-0.0")
+        for comparison in summary["raw_output_vs"].values():
+            self.assertEqual(comparison["paired_requests"], 120)
+            self.assertEqual(comparison["matched_requests"], 120)
+            self.assertEqual(comparison["mismatches"], [])
+            self.assertTrue(comparison["all_observed_token_ids_match"])
+            self.assertFalse(comparison["strict_lossless_speedup_claim"])
+        selected = report["best_development_policy_by_variant"]["draft_w1a1"]
+        self.assertEqual(selected["selection_scope"], "exploratory_development_only")
+        self.assertEqual(len(selected["raw_output_comparisons"]), 3)
+        for comparison in selected["raw_output_comparisons"].values():
+            self.assertTrue(comparison["all_observed_token_ids_match"])
+            self.assertEqual(comparison["mismatches"], [])
+
+    def test_output_differences_preserve_cells_and_first_divergence_evidence(self):
+        changed, changed_path = self.replace_raw_ids("d2-pmin-0.0", "draft_w1a1", [101, 999, 103])
+        fixed, fixed_path = self.replace_raw_ids("d5-pmin-0.0", "draft_w1a1", [101, 999])
+        report = ANALYSIS.analyze(self.suite_path, self.results)
+        self.assertEqual(len(report["cells"]), 12)
+        summary = report["cells"]["d2-pmin-0.0"]["variants"]["draft_w1a1"]
+        for comparison in summary["raw_output_vs"].values():
+            self.assertEqual(comparison["matched_requests"], 119)
+            self.assertEqual(comparison["mismatched_requests"], 1)
+            self.assertEqual(comparison["mismatched_prompt_count"], 1)
+            mismatch = comparison["mismatches"][0]
+            self.assertEqual((mismatch["repetition"], mismatch["prompt_id"]), (2, self.ids[3]))
+            self.assertEqual(
+                mismatch["candidate_token_ids_sha256"], changed["generated_token_ids_sha256"]
+            )
+            self.assertEqual(
+                mismatch["first_difference"],
+                {
+                    "index": 1,
+                    "candidate_token_id": 999,
+                    "reference_token_id": 102,
+                    "candidate_length": 3,
+                    "reference_length": 2,
+                },
+            )
+            self.assertEqual(comparison["candidate"]["records_path"], str(changed_path.resolve()))
+            self.assertEqual(
+                comparison["candidate"]["records_sha256"], ANALYSIS.sha256(changed_path)
+            )
+            self.assertFalse(comparison["strict_lossless_speedup_claim"])
+            self.assertIn("No numerical or other cause", comparison["interpretation"])
+        for ratio in summary["vs_anchors"].values():
+            self.assertEqual(
+                ratio["timing_classification"], "timing_observation_with_output_differences"
+            )
+        selected = report["best_development_policy_by_variant"]["draft_w1a1"]
+        self.assertEqual(selected["cell"], "d2-pmin-0.0")
+        comparisons = selected["raw_output_comparisons"]
+        for label in ("selected_fp16_eagle", "selected_q4_0_eagle"):
+            comparison = comparisons[label]
+            self.assertEqual(comparison["reference"]["cell"], "d1-pmin-0.0")
+            self.assertEqual(comparison["mismatches"][0]["first_difference"]["index"], 1)
+            self.assertEqual(comparison["selection_scope"], "exploratory_development_only")
+        fixed_comparison = comparisons["same_variant_fixed_d5_p0"]
+        self.assertEqual(fixed_comparison["reference"]["records_path"], str(fixed_path.resolve()))
+        mismatch = fixed_comparison["mismatches"][0]
+        self.assertEqual(
+            mismatch["reference_token_ids_sha256"], fixed["generated_token_ids_sha256"]
+        )
+        self.assertEqual(
+            mismatch["first_difference"],
+            {
+                "index": 2,
+                "candidate_token_id": 103,
+                "reference_token_id": None,
+                "candidate_length": 3,
+                "reference_length": 2,
+            },
+        )
 
     def test_missing_grid_cell_rejected(self):
         suite = json.loads(self.suite_path.read_text())
