@@ -196,6 +196,42 @@ fused. Matching graph-disabled unprofiled replay showed median per-capture
 profiler wall overhead factors 1.010/1.123/1.157/1.079 for A16/A8/A4/A1.
 Do not substitute these traced times for the uninstrumented serving results.
 
+## CUDA packing and dot stages
+
+Each low-bit profile contains 1,176 validated adjacent same-stream packing/dot
+pairs, with zero unpaired launches. Kernel rescaling is fused into the dot.
+The head's launch grids are identified from the frozen replay's unique
+32,000-row tensor and the runtime grid formula; the trace itself does not carry
+capture or layer IDs. Median microseconds for these head launch shapes:
+
+| N | Mode | Packing/quantization | Dot + rescale | Paired kernel sum |
+| ---: | --- | ---: | ---: | ---: |
+| 2 | A8 | 5.40 | 310.01 | 315.35 |
+| 2 | A4 | 8.17 | 104.31 | 112.46 |
+| 2 | A1 | 7.53 | 67.45 | 74.97 |
+| 37 | A8 | 7.04 | 7,643.47 | 7,650.00 |
+| 37 | A4 | 8.46 | 1,863.28 | 1,871.69 |
+| 37 | A1 | 8.76 | 1,187.30 | 1,196.04 |
+
+Paired sums are medians of per-invocation sums, not sums of marginal medians.
+There are 24 pairs at N=2 and eight at N=37 per precision, pooling scalar-check,
+warmup and timing executions. Dot-only is an already-packed diagnostic. Host
+allocation/dispatch and inter-kernel gaps are excluded from these sums. The
+A16 fused cast/sign-add/rescale kernel measured 933.31µs at N=2 and
+30,327.11µs at N=37 in its separate profile. All four use CUDA graphs disabled
+and include profiling overhead; they must not be subtracted from serving time.
+
+The anchor profile confirms Q8_1 conversion plus MMVQ/MMQ for Q8_0/Q4_0;
+ordinary FP16 includes floating matmul and Turing FP16 GEMM kernels. Full
+symbols and unknown classifications remain preserved. Traces/SQLite exports:
+`runs/w1ax-nsys-a{16,8,4,1}-20260926/` and
+`runs/w1ax-nsys-anchors-20260926/`. Pair-analysis report SHA256s:
+
+- A16: `453641e3ca6fcdb28dedb23dc6626d4017b07a96079fceae96187600c7ff3389`
+- A8: `9ea1ae1ed79f046411deea26f07bbc03001b386b35969f7f658f1b7d25c53105`
+- A4: `7c8ee8d8bf8f6bc657d5dac7afc6f23a18b921e8c4369a25feb6443608a2d036`
+- A1: `05245e57db6ebf8854ab9b1fd814856b251d6569a899aa447a4833abbe2c7061`
+
 ## Outstanding measurements
 
 Per-round analysis, context/output-cap diagnostics, D/p_min policy grid,
