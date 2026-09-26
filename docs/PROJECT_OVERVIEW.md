@@ -17,7 +17,10 @@ held fixed. The Q4_0 control is a block-scaled draft weight format, not the
 separate whole-row/whole-token W4A4 research quantizer. After the completed
 2080 Ti suite, prioritize quantization-aware training (QAT) that recovers
 held-out draft acceptance. Consider alternative drafter architectures after
-this quality-focused phase; no non-EAGLE W1A1 result exists yet.
+this quality-focused phase; no non-EAGLE W1A1 result exists yet. The later
+[primary-source review](../experiments/research-cross-reference-2026-09-25.md)
+favors a paired released DSpark/DFlash screen, with DSpark as the lead
+normal-precision quality candidate; its W1A1 robustness remains untested.
 
 Treat this document as the project's overarching guidance. Update it when an
 experiment changes a major assumption, and record the evidence in `experiments/`.

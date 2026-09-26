@@ -20,3 +20,7 @@ A separate [seven-category local research review](research-review-2026-09-25.md)
 collects advisory analyses of QAT, architectures, throughput policies, graph
 optimizations, precision, data and evaluation. It contains proposals and source
 audits, not new GPU measurements.
+
+The [primary-source cross-reference](research-cross-reference-2026-09-25.md)
+records literature-supported revisions to that review, with source versions,
+precision/hardware limits and retained local measurement gates.

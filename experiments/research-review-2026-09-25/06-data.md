@@ -1,10 +1,12 @@
 # 6. Training data, state alignment, vocabulary support, and supervision
 
-Local-only source review, 2026-09-25. No web, GPU/SSH, training, or repository mutation. Recommendations are proposed experiments, not results. Existing final sets stay sealed for model selection. Optimizer and STE changes are outside this review.
+> **Primary-source revision, 2026-09-25:** The old compression proxy was legitimate but failed this pilot; causality is unresolved. Recurrent-state exposure, token-level on-policy data and cached-data refresh are distinct. Vocabulary literature strengthens the audit, not a presumption of local support failure. See [data cross-reference](../research-cross-reference-2026-09-25.md#6-data-distinguish-exposure-support-and-vocabulary-design). The original audit below was local-only; this update incorporates web research.
+
+Initial local-only source review, 2026-09-25. No web, GPU/SSH, training, or repository mutation. Recommendations are proposed experiments, not results. Existing final sets stay sealed for model selection. Optimizer and STE changes are outside this review.
 
 ## Main finding
 
-The failed pilot demonstrably trained the wrong *proxy for acceptance*: reconstruction of the original draft head on a frozen mixture of ordinary/binary rollout states. That proxy is legitimate compression training, but neither its teacher nor its checkpoint criterion is the target verifier. Lower KL therefore does not establish improved accepted prefixes. There is **no demonstrated off-by-one or vocabulary-map bug** in the existing implementation. There is a demonstrated lack of metadata needed to test target alignment, and a material train/deployment state-distribution mismatch (branching PyTorch trees versus native greedy chains).
+The failed pilot used a legitimate compression proxy that did not predict acceptance in this experiment: reconstruction of the original draft head on a frozen mixture of ordinary/binary rollout states. Neither its teacher nor its checkpoint criterion was the target verifier; the negative result does not prove that the teacher choice caused the loss. Lower KL therefore does not establish improved accepted prefixes. There is **no demonstrated off-by-one or vocabulary-map bug** in the existing implementation. There is a demonstrated lack of metadata needed to test target alignment, and a material train/deployment state-distribution mismatch (branching PyTorch trees versus native greedy chains).
 
 The highest-value next action is a bounded, labeled-state audit, followed by the already proposed target-aligned head experiment if the audit passes. Do not launch broader QAT or replace the vocabulary before measuring the recoverable error.
 

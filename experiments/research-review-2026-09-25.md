@@ -1,8 +1,10 @@
-# Local research review: improving binary speculative decoding
+# Research review: improving binary speculative decoding
 
 **Date:** 2026-09-25. **Type:** advisory source/evidence review, not a new experiment.
-**Scope:** seven independent `gpt-6-astra` agents at high reasoning, requested
-by the user; local files only, with no web search or new GPU runs.
+**Scope:** seven independent `gpt-6-astra` agents at high reasoning. The initial
+review used local files only; a user-requested primary-source web cross-reference
+was completed afterward on the same date. No new GPU runs were performed.
+**Evidence update:** [cross-reference, verdicts and source versions](research-cross-reference-2026-09-25.md). The seven reports below incorporate its corrections.
 **Baseline:** project `7ae1cc2`, inspected llama.cpp `34e21b7`; published same-device measurements remain
 authoritative. Proposed improvements below are hypotheses until tested.
 
@@ -22,13 +24,33 @@ change the frozen protocol, or establish new performance results.
 | Training data, alignment and vocabulary coverage | [Data](research-review-2026-09-25/06-data.md) |
 | Evaluation and experiment prioritization | [Evaluation](research-review-2026-09-25/07-evaluation.md) |
 
+## What the web cross-reference changed
+
+- **QAT:** replace the claim that the old compression proxy was inherently wrong
+  with the measured conclusion that it failed this pilot. Target-greedy CE is a
+  bounded hypothesis; clipped STE and recomputed scales are not demonstrated defects.
+- **Architectures:** DSpark now leads the later quality screen, with a matched
+  DFlash control. Neither establishes W1A1 robustness or single-request SM75 speed.
+- **Precision:** structured scales are a conditional candidate alongside thresholds,
+  not an established best remedy. W1A8, ternary-A8 and W1A16 successes do not
+  establish W1A1.
+- **Systems/evaluation:** keep the source-supported cleanup candidates, but qualify
+  K/V-only to eligible single-layer calls; measure context-dependent scheduling
+  rather than assuming batching helps or hurts. Distinguish target matching from
+  probability-ratio verification before importing an acceptance formula.
+
+The [primary-source review](research-cross-reference-2026-09-25.md) records
+what was kept, revised or rejected, with publication versions, implementation
+commits, precision and hardware limits. It strengthens the diagnosis-first
+sequence without changing the active goal or frozen experiment budget.
+
 ## Evidence that constrains the recommendations
 
 The [RTX 2080 Ti synthesis](rtx2080ti-synthesis.md) reports Q4_0 at 1.109×
 ordinary EAGLE decode throughput, head-only W1A1 at 0.907×, and all-nine
 W1A1 at 0.561× in their matched production comparison. All-nine W1A1
 shortened the measured draft call from 6.471 to 3.558 ms/round but lowered
-accepted drafts from 1.168 to 0.055/round. The kernel became cheaper while
+accepted drafts from 1.168 to 0.055/round. The measured draft call became cheaper while
 useful progress per verification round collapsed.
 
 The [first QAT pilot](qat-head-pilot-results.md) lowered cached validation
@@ -46,13 +68,13 @@ such a ceiling. Preserve the target-only equivalence caveat in all speed claims.
 
 | Area | Finding | Concrete next test |
 | --- | --- | --- |
-| QAT | The pilot reconstructed the old draft head; it had no target-verifier labels. Cached KL selected a worse live drafter. | Audit state/label joins, then the bounded target-aligned objective and online development selection. |
+| QAT | The pilot reconstructed the old draft head; it had no target-verifier labels. Cached KL selected a worse live drafter. | Audit state/label joins, then test the bounded target-aligned objective with online development selection; CE is not a proven optimal loss. |
 | Data | Capture lacks parent-path/verifier IDs, weights many off-path tree rows, and can retain a terminal tree never verified. The vocabulary table itself checks out. | Matched ordinary/binary trajectories on the same prompts; explicit valid/unsupported/unverified masks and depth counts. |
 | Scheduling | The native loop uses global maximum depth; per-sequence caps truncate afterward. Source predicts wasted proposals near caps. | Count computed versus returned tokens, then enforce caps before the next decode and test cache/output boundaries. |
 | Graph work | Logits-disabled cache catch-up still builds an output head and vocabulary expansion. Existing large-N head traces corroborate execution, but lack stage attribution. | Tag process/draft stages; skip unused head output first, then separately test single-layer K/V-only catch-up. |
 | Packing | Q/K/V share one input and FFN gate/up share another, but each custom operation packs separately. | Share codes/scales for identical graph values with exact numerical/lifetime checks; measure packing-inclusive benefit. |
 | Precision | Fusion joins three feature taps; Q/K/V join two normalized streams. One common activation scale may discard useful relative magnitudes. | Diagnose group energy/errors after W1Ax; screen one structured-scale contract if supported, accounting for every partial dot and scale. |
-| Alternative architectures | Local DFlash/DSpark paths exist; block generation changes available matrix columns. DSpark retains a sequential Markov head. | A later paired ordinary/W1A16/W1A1 quality screen before binary kernel work, including shared-head coverage and accepted-prefix survival. |
+| Alternative architectures | Local DFlash/DSpark paths exist; block generation changes available matrix columns. DSpark retains a sequential Markov head. | A later DSpark-led, matched-DFlash ordinary/W1A16/W1A1 quality screen before binary kernels, including head coverage and prefix survival. |
 | Evaluation | Native confidence can be normalized over only top-10 candidates, making a 0.1 floor potentially redundant. Full round accounting is incomplete. | Audit actual backend candidate normalization before any declared policy-grid amendment; preserve separate counts and timing boundaries. |
 
 These are source-supported mechanisms and proposed tests, not measured speedups.
@@ -79,18 +101,20 @@ match Q4_0. Those are arithmetic deficits, not predicted optimization gains.
    rejected suffixes are processed unnecessarily. Start with counters and a
    small isolated change. Require actual graph execution evidence, token/KV
    correctness, and matched complete-request timing.
-3. **Repair QAT supervision before tuning the optimizer.** Build new state-aligned
+3. **Test target-aligned supervision before tuning the optimizer.** Build new state-aligned
    captures that identify the parent path, target prefix and matching verifier
    row. Measure vocabulary support and the native-chain versus PyTorch-tree
    distribution difference. Select the bounded target-aligned head checkpoint
-   by online development acceptance, not cached reconstruction KL.
+   by online development acceptance, with cached reconstruction KL retained as a diagnostic.
+   Preserve target probabilities for analysis; do not silently add a loss sweep.
 4. **Use precision allocation as a measured decision.** Diagnose row/token
    outliers and group sensitivity; preserve the frozen W1Ax contract in the
    primary comparison. Block scales, learned thresholds and correction paths
-   are separate candidates with explicit packing/export and cost accounting.
+   are conditional candidates; literature does not identify an EAGLE winner. They need explicit packing/export and cost accounting.
 5. **Screen a non-EAGLE block drafter only after the quality gate or a user
    decision to change direction.** Local DFlash/DSpark support makes this more
-   concrete than a new foundation-model training project. First measure its
+   concrete than a new foundation-model training project. Lead with released
+   DSpark and matched DFlash as control; first measure their
    ordinary and simulated-binary quality/cost; architecture-matched low-bit
    controls must precede claims that one-bit arithmetic is responsible for a win.
 

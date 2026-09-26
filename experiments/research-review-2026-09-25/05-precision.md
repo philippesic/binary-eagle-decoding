@@ -1,12 +1,14 @@
 # Precision allocation: where practical one-bit benefit could remain
 
-Local-only analysis, 2026-09-25. No web, GPU, SSH, experiments, or repository edits. Inspected parent revision `7ae1cc2e4e5ce5f1e3070377722d679d15bc486e` and local llama.cpp `34e21b7d85c17e25d5a91ce2ab1074d4c18bfe39`. Statements about unmeasured designs below are hypotheses or mathematical consequences, not results. The active goal remains the frozen all-nine W1Ax study; this note does not amend its numerical contract or authorize another goal.
+> **Primary-source revision, 2026-09-25:** The review downgrades block scales from a presumed leading remedy to a capture-led candidate alongside thresholds. W1A8, ternary-A8 and W1A16 papers do not validate W1A1. See [precision contracts and counterevidence](../research-cross-reference-2026-09-25.md#5-precision-preserve-operand-distinctions-and-kernel-feasibility). The original audit below was local-only; this update incorporates web research.
+
+Initial local-only analysis, 2026-09-25. No web, GPU, SSH, experiments, or repository edits. Inspected parent revision `7ae1cc2e4e5ce5f1e3070377722d679d15bc486e` and local llama.cpp `34e21b7d85c17e25d5a91ce2ab1074d4c18bfe39`. Statements about unmeasured designs below are hypotheses or mathematical consequences, not results. The active goal remains the frozen all-nine W1Ax study; this note does not amend its numerical contract or authorize another goal.
 
 ## Assessment
 
 The strongest next precision experiment is already the active plan: hold binary weights byte-identical and measure A16/A8/A4/A1. Existing results establish that the current broad post-training W1A1 recipe destroys useful proposals, but do not establish whether binary weights, discarded activation magnitudes, or their interaction dominates. Successful Q4_0 versus failed whole-row/whole-token W4A4 also makes granularity and outlier sensitivity credible suspects; that comparison does not isolate them because both weight and activation formats and kernels differ.
 
-For preserving genuine one-bit arithmetic, the most promising bounded extensions after that result are structured block scales and narrow scale/threshold calibration, chosen from measured activation/error diagnostics. For practical compression regardless of purity, keeping sensitive fusion/attention operations at higher precision and testing a binary head on a Q4_0 body is a useful candidate, but the existing head-only result supplies a negative prior: the head already lost against FP16 and has not beaten Q4_0. Sparse or low-rank floating corrections are later escape routes with real integration and coverage costs, not free ways to claim all-W1A1.
+For preserving genuine one-bit arithmetic, structured block scales and narrow scale/threshold calibration remain conditional hypotheses selected by activation/error diagnostics. Existing research does not establish that finer groups or learned scales will improve this drafter, and their extra reductions can weaken packed-kernel efficiency. For practical compression regardless of purity, keeping sensitive fusion/attention operations at higher precision and testing a binary head on a Q4_0 body is a useful candidate, but the existing head-only result supplies a negative prior: the head already lost against FP16 and has not beaten Q4_0. Sparse or low-rank floating corrections are later escape routes with real integration and coverage costs, not free ways to claim all-W1A1.
 
 Do not run a large quantizer grid or silently replace absmax A4/A8, identical W1 weights, or the explicit A16 cast. The untouched 24 QAT-final prompts remain reserved for the eventual frozen trained candidate.
 
@@ -58,11 +60,13 @@ For each layer and input slice, record mean/RMS/mean-absolute/absmax, absmax-to-
 
 ### 2. Structured group scales, then one coarse block-size candidate
 
-**Priority: highest plausible new true-binary representation experiment after the sweep; moderate implementation cost.** First screen semantically natural activation partitions: fusion's three taps and Q/K/V's two streams. If error is concentrated within these partitions, use `sum_g α[row,g] β[token,g] dot(sign_w_g, sign_x_g)` for paired block weight/activation scaling; activation-only group scales can retain the existing row weight scale. Every dot remains genuinely packed W1A1, followed by normal-precision group scaling, but this is a new block-scaled W1A1 contract and no longer the frozen single-dot/row-token-scale format.
+**Priority: conditional follow-up after the sweep and a packing-inclusive cost screen; moderate implementation cost.** First screen semantically natural activation partitions: fusion's three taps and Q/K/V's two streams. If error is concentrated within these partitions, use `sum_g α[row,g] β[token,g] dot(sign_w_g, sign_x_g)` for paired block weight/activation scaling; activation-only group scales can retain the existing row weight scale. Every dot remains genuinely packed W1A1, followed by normal-precision group scaling, but this is a new block-scaled W1A1 contract and no longer the frozen single-dot/row-token-scale format.
 
 A coarse G=128 or 256 diagnostic is more credible as a first general block test than starting at G=32 everywhere. With one F32 scale per G binary weights, weight storage is `1 + 32/G` bits/weight before padding/metadata: G=32 gives 2.0, G=64 1.5, G=128 1.25, G=256 1.125. Activation block scales have the same overhead per packed activation, plus reduction/packing work. A scale per input channel would largely remove the compression advantage and, with both sides scaled, replace a single popcount dot by weighted terms.
 
 **Counterargument:** global mean-absolute scaling is already the least-squares optimal scalar for a fixed sign vector. Gains require heterogeneity the old scalar misses, not merely renaming it RMS. Finer blocks add output accumulations and metadata loads; small N may erase the arithmetic benefit. **Gate:** choose one partition from captures, require material development acceptance improvement and favorable complete-operator cost, and stop if only tensor reconstruction improves. Do not conduct all combinations of group sizes/layers.
+
+A separate W1Ax candidate is separable row/column scaling, motivated by [OneBit's W1A16 method](https://arxiv.org/html/2402.11295v3), not by W1A1 evidence. Positive channel scaling immediately followed by sign preserves A1 bits; retaining channel magnitudes requires grouped/weighted computation or another path. This is a shortlist addition, not an amendment to frozen signs/scales.
 
 ### 3. Protect sensitive groups; binary head with a quantized ordinary body
 
@@ -85,7 +89,7 @@ Selection should maximize full-round savings per acceptance loss, not number of 
 
 ### 5. Affine centering with explicit correction terms
 
-**Priority: conditional on measured sign imbalance/mean structure; medium-to-high contract cost.** A nonzero mean is not removed by RMSNorm. Simply subtracting means and discarding them changes the model; represent both binary codes and the correction explicitly. For scalar-per-row/token means, write `w≈μw+α sw`, `x≈μx+β sx`, giving
+**Priority: conditional on measured sign imbalance/mean structure; medium-to-high contract cost.** A nonzero mean is not removed by RMSNorm. A learned centered sign codebook may discard the mean as a deliberate new approximation. If the objective is to preserve an affine reconstruction, represent both binary codes and correction explicitly; these are different experiments. For scalar-per-row/token means, write `w≈μw+α sw`, `x≈μx+β sx`, giving
 
 `dot≈αβ dot(sw,sx) + α μx sum(sw) + β μw sum(sx) + K μw μx`.
 
