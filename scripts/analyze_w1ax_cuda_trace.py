@@ -31,12 +31,20 @@ CATEGORIES = (
     ("anchor_quantized_mulmat", r"mul_mat_vec_q|mul_mat_vec_q_moe|mul_mat_q|mul_mat_q_stream_k_fixup"),
     ("anchor_float_mulmat", r"mul_mat_vec_f"),
 )
+PACK_DOT_SYMBOLS = {
+    "w1a1_pack_activations": "w1a1_xor_popc",
+    "w1ax_quantize": "w1ax_integer_dot",
+}
+
+
+def matches_symbol(symbols: str, *names: str | None) -> bool:
+    return any(re.search(r"(?<![\w])(?:" + symbols + r")(?=[<(\s]|$)", name)
+               for name in names if name)
 
 
 def classify(*names: str | None) -> str:
     for category, symbols in CATEGORIES:
-        if any(re.search(r"(?<![\w])(?:" + symbols + r")(?=[<(\s]|$)", name)
-               for name in names if name):
+        if matches_symbol(symbols, *names):
             return category
     return "unclassified"
 
@@ -74,6 +82,65 @@ def interval_summary(rows: list[dict]) -> dict:
         "count": len(rows), "sum_ns": total, "union_ns": union,
         "overlap_excess_ns": total - union, "span_ns": span,
         "no_kernel_ns_within_span": span - union,
+    }
+
+
+def paired_kernel_summary(rows: list[dict]) -> dict:
+    """Pair only adjacent known pack/dot launches within a device and stream.
+
+    Launch adjacency and equal token grids are evidence for a candidate pair,
+    not proof of a shared tensor, capture, or layer. No launch is reused.
+    """
+    streams = defaultdict(list)
+    pack_count = dot_count = 0
+    for row in rows:
+        names = (row["demangled_name"], row["short_name"])
+        pack_count += any(matches_symbol(symbol, *names) for symbol in PACK_DOT_SYMBOLS)
+        dot_count += any(matches_symbol(symbol, *names) for symbol in PACK_DOT_SYMBOLS.values())
+        streams[row["deviceId"], row["streamId"]].append(row)
+    grouped = defaultdict(list)
+    all_pairs = []
+    for (device, stream), launches in sorted(streams.items()):
+        launches = sorted(launches, key=lambda row: (row["start"], row["end"]))
+        for pack, dot in zip(launches, launches[1:]):
+            pair_symbols = next(((packing, compute) for packing, compute in PACK_DOT_SYMBOLS.items()
+                                 if matches_symbol(packing, pack["demangled_name"], pack["short_name"])
+                                 and matches_symbol(compute, dot["demangled_name"], dot["short_name"])), None)
+            if pair_symbols is None or pack["gridX"] != dot["gridY"] or pack["end"] > dot["start"]:
+                continue
+            pack_grid = tuple(pack[f"grid{axis}"] for axis in "XYZ")
+            dot_grid = tuple(dot[f"grid{axis}"] for axis in "XYZ")
+            pack_block = tuple(pack[f"block{axis}"] for axis in "XYZ")
+            dot_block = tuple(dot[f"block{axis}"] for axis in "XYZ")
+            key = (device, stream, *pair_symbols, pack_grid, pack_block, dot_grid, dot_block)
+            values = {
+                "pack": pack["duration_ns"], "dot": dot["duration_ns"],
+                "kernel_sum": pack["duration_ns"] + dot["duration_ns"],
+                "elapsed": dot["end"] - pack["start"],
+                "gap": dot["start"] - pack["end"],
+            }
+            grouped[key].append(values)
+            all_pairs.append(values)
+
+    def timing(values: list[dict]) -> dict:
+        return {name: distribution([row[name] for row in values])
+                for name in ("pack", "dot", "kernel_sum", "elapsed", "gap")}
+
+    count = len(all_pairs)
+    return {
+        "pair_count": count,
+        "eligible_pack_count": pack_count, "eligible_dot_count": dot_count,
+        "unpaired_pack_count": pack_count - count,
+        "unpaired_dot_count": dot_count - count,
+        "unpaired_kernel_count": pack_count + dot_count - 2 * count,
+        "timing": timing(all_pairs),
+        "launch_configurations": [
+            {"device_id": key[0], "stream_id": key[1], "pack_symbol": key[2], "dot_symbol": key[3],
+             "pack_grid": list(key[4]), "pack_block": list(key[5]),
+             "dot_grid": list(key[6]), "dot_block": list(key[7]),
+             "pair_count": len(values), "timing": timing(values)}
+            for key, values in sorted(grouped.items())
+        ],
     }
 
 
@@ -166,6 +233,9 @@ def analyze(path: Path, act_bits: int | None = None) -> dict:
             "act_bits is caller-supplied metadata; W1A4 and W1A8 share symbols and cannot be distinguished from names alone.",
             "Union is time with at least one kernel active. Overlap excess is sum minus union, weighted by excess concurrency; gaps are not a measurement of CPU overhead.",
             "Overall union spans all devices on the export timeline; per-device unions are also reported. Only kernel activities are included.",
+            "Packing-inclusive pairs require adjacent matching pack/quantize then dot kernels on the same device and stream, pack.gridX == dot.gridY, and pack.end <= dot.start. Kernels on other streams may intervene.",
+            "Pair kernel_sum includes packing and fused dot/rescaling; elapsed also includes the observed inter-kernel gap. This kernel-only view excludes host allocation and is not full operator latency. Pair duration sums are not a union across pairs or streams.",
+            "Pairing is a launch-adjacency heuristic, with no per-capture or layer attribution. Unpaired counts cover eligible known pack and dot kernels only; A16 signadd is a single kernel and is not eligible.",
             "p95 uses linear interpolation at index 0.95*(count-1). Unknown symbols are retained as unclassified.",
         ],
         "overall": interval_summary(rows),
@@ -174,6 +244,7 @@ def analyze(path: Path, act_bits: int | None = None) -> dict:
         "categories": [{"category": category, **distribution(values)}
                        for category, values in sorted(categories.items())],
         "kernels": per_kernel,
+        "packing_inclusive_pairs": paired_kernel_summary(rows),
     }
 
 

@@ -90,6 +90,82 @@ class CudaTraceTests(unittest.TestCase):
         self.assertEqual(report["overall"]["overlap_excess_ns"], 40)
         self.assertEqual([d["overlap_excess_ns"] for d in report["devices"]], [20, 0])
 
+    def test_pairs_measure_sum_before_aggregation_and_keep_gaps(self):
+        self.create()
+        for start, pack_duration, dot_duration, gap in ((0, 10, 100, 5), (200, 100, 10, 10), (400, 20, 20, 0)):
+            self.add(start, start + pack_duration, "void w1ax_quantize(float*)", grid=(2, 1, 1))
+            dot_start = start + pack_duration + gap
+            self.add(dot_start, dot_start + dot_duration, "void w1ax_integer_dot(float*)", grid=(8000, 2, 1))
+        # Another stream's activity does not break same-stream adjacency.
+        self.add(11, 14, "unrelated", stream=8)
+        pairs = ANALYSIS.analyze(self.path, 4)["packing_inclusive_pairs"]
+        self.assertEqual(pairs["pair_count"], 3)
+        self.assertEqual(pairs["unpaired_kernel_count"], 0)
+        timing = pairs["timing"]
+        self.assertEqual(timing["pack"]["median_ns"], 20)
+        self.assertEqual(timing["dot"]["median_ns"], 20)
+        self.assertEqual(timing["kernel_sum"]["median_ns"], 110)
+        self.assertEqual(timing["elapsed"]["median_ns"], 115)
+        self.assertEqual(timing["gap"]["median_ns"], 5)
+        self.assertEqual(timing["elapsed"]["sum_ns"],
+                         timing["kernel_sum"]["sum_ns"] + timing["gap"]["sum_ns"])
+        group = pairs["launch_configurations"][0]
+        self.assertEqual(group["pair_count"], 3)
+        self.assertEqual(group["pack_grid"], [2, 1, 1])
+        self.assertEqual(group["dot_grid"], [8000, 2, 1])
+        self.assertEqual(group["timing"], timing)
+
+    def test_pairs_reject_grid_family_overlap_and_intervening_kernel(self):
+        self.create()
+        # Token grid mismatch.
+        self.add(0, 10, "w1ax_quantize", grid=(2, 1, 1))
+        self.add(10, 20, "w1ax_integer_dot", grid=(8, 3, 1))
+        # Wrong symbol family even though the grid matches.
+        self.add(30, 40, "w1ax_quantize", grid=(2, 1, 1))
+        self.add(40, 50, "w1a1_xor_popc", grid=(8, 2, 1))
+        # Overlap is not added as a sequential operator pair.
+        self.add(60, 80, "w1ax_quantize", grid=(2, 1, 1))
+        self.add(70, 90, "w1ax_integer_dot", grid=(8, 2, 1))
+        # Even an unclassified intervening kernel breaks adjacency.
+        self.add(100, 110, "w1ax_quantize", grid=(2, 1, 1))
+        self.add(110, 115, "unknown")
+        self.add(115, 125, "w1ax_integer_dot", grid=(8, 2, 1))
+        pairs = ANALYSIS.analyze(self.path)["packing_inclusive_pairs"]
+        self.assertEqual(pairs["pair_count"], 0)
+        self.assertEqual(pairs["unpaired_pack_count"], 4)
+        self.assertEqual(pairs["unpaired_dot_count"], 4)
+        self.assertEqual(pairs["unpaired_kernel_count"], 8)
+        self.assertIsNone(pairs["timing"]["kernel_sum"]["median_ns"])
+
+    def test_pairs_require_same_device_stream_and_do_not_reuse_launches(self):
+        self.create()
+        self.add(0, 10, "w1a1_pack_activations", device=0, stream=7)
+        self.add(10, 20, "w1a1_xor_popc", grid=(8, 2, 1), device=1, stream=7)
+        self.add(30, 40, "w1a1_pack_activations", device=0, stream=8)
+        self.add(40, 50, "w1a1_xor_popc", grid=(8, 2, 1), device=0, stream=9)
+        # A single pack can match only the immediate first dot.
+        self.add(60, 70, "w1a1_pack_activations", device=2, stream=7)
+        self.add(70, 90, "w1a1_xor_popc", grid=(8, 2, 1), device=2, stream=7)
+        self.add(90, 110, "w1a1_xor_popc", grid=(8, 2, 1), device=2, stream=7)
+        self.add(120, 150, "w1a16_signadd", device=2, stream=7)
+        pairs = ANALYSIS.analyze(self.path)["packing_inclusive_pairs"]
+        self.assertEqual(pairs["pair_count"], 1)
+        self.assertEqual(pairs["unpaired_pack_count"], 2)
+        self.assertEqual(pairs["unpaired_dot_count"], 3)
+        self.assertEqual(pairs["launch_configurations"][0]["pack_symbol"], "w1a1_pack_activations")
+        self.assertEqual(pairs["timing"]["kernel_sum"]["median_ns"], 30)
+
+    def test_pair_groups_separate_launch_shapes(self):
+        self.create()
+        self.add(0, 10, "w1ax_quantize", grid=(2, 1, 1))
+        self.add(10, 30, "w1ax_integer_dot", grid=(8, 2, 1))
+        self.add(40, 50, "w1ax_quantize", grid=(3, 1, 1))
+        self.add(50, 80, "w1ax_integer_dot", grid=(16, 3, 1))
+        pairs = ANALYSIS.analyze(self.path)["packing_inclusive_pairs"]
+        self.assertEqual(pairs["pair_count"], 2)
+        self.assertEqual([g["dot_grid"] for g in pairs["launch_configurations"]], [[8, 2, 1], [16, 3, 1]])
+        self.assertEqual([g["timing"]["kernel_sum"]["median_ns"] for g in pairs["launch_configurations"]], [30, 40])
+
     def test_empty_valid_export(self):
         self.create()
         report = ANALYSIS.analyze(self.path)
