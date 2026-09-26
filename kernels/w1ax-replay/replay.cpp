@@ -19,6 +19,7 @@
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace fs = std::filesystem;
@@ -165,6 +166,7 @@ static float reference(const capture & c, const std::vector<uint32_t> & w,
     }
     const int qmax = bits == 8 ? 127 : 7;
     const float inv = absmax == 0 ? 0 : float(qmax)/absmax;
+    if (bits == 4 || bits == 8) require(std::isfinite(inv), "activation absmax reciprocal overflow");
     int32_t dot = 0;
     float half_dot = 0.0f;
     for (size_t i = 0; i < c.k; ++i) {
@@ -242,6 +244,7 @@ static activation_diagnostics diagnose_activations(const capture & c, int bits) 
         }
         const int qmax = bits == 8 ? 127 : 7;
         const float inv = absmax == 0 ? 0 : float(qmax)/absmax;
+        if (bits == 4 || bits == 8) require(std::isfinite(inv), "activation absmax reciprocal overflow");
         const float scale = bits == 1 ? float(abs_sum/double(c.k)) : absmax/float(qmax);
         for (size_t i = 0; i < c.k; ++i) {
             if (x[i] == 0) ++d.source_zeros;
