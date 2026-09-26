@@ -75,6 +75,12 @@ every response included raw generated token IDs. The GPU was idle afterward.
 | W1A4 EAGLE | 44.44 | 42.89 | 0.041 | 0.551× | 0.495× |
 | W1A1 EAGLE | 45.39 | 43.74 | 0.055 | 0.563× | 0.506× |
 
+Paired prompt/repetition bootstrap 95% intervals for W1Ax decode rate versus
+Q4_0 were 0.304–0.354 (A16), 0.434–0.508 (A8), 0.454–0.541 (A4), and
+0.466–0.549 (A1), using 2,000 resamples. Repetitions estimate timing
+variation; the 12 prompts, not the 60 repeated requests, supply the quality
+examples.
+
 All speculative variants emitted identical raw IDs on all 60 paired
 prompt/repetition requests. They differed from target-only on the same
 `reasoning-02` request in each repetition, first at generated ID position
