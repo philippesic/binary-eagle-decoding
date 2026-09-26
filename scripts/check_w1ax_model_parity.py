@@ -226,6 +226,7 @@ def run_one(
             start_new_session=True,
         )
         base_url = f"http://{host}:{port}"
+        result = None
         try:
             wait_ready(process, base_url, startup_timeout)
             body = {
@@ -288,6 +289,10 @@ def run_one(
             return result
         finally:
             stop_server(process)
+            log.flush()
+            if result is not None:
+                result["server_log_sha256"] = sha256_file(log_path)
+                json_write(cell / "result.json", result)
 
 
 def run(args: argparse.Namespace) -> Path:

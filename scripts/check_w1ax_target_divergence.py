@@ -60,6 +60,52 @@ def sha256_bytes(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
 
 
+def inspect_verifier_trace(path: Path) -> dict[str, Any]:
+    if not path.is_file():
+        return {
+            "status": "unavailable",
+            "path": str(path),
+            "expected_schema": "w1ax_verify_logits_v1",
+            "reason": "server did not create the requested trace file",
+        }
+    raw = path.read_bytes()
+    nonempty_lines = [line for line in raw.splitlines() if line.strip()]
+    parsed_rows = []
+    malformed_lines = 0
+    for line in nonempty_lines:
+        try:
+            parsed_rows.append(json.loads(line))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            malformed_lines += 1
+    observed_schemas = sorted({
+        row.get("schema") for row in parsed_rows
+        if isinstance(row, dict) and isinstance(row.get("schema"), str)
+    })
+    return {
+        "status": "available" if nonempty_lines else "empty",
+        "path": str(path),
+        "expected_schema": "w1ax_verify_logits_v1",
+        "schema_confirmed": bool(parsed_rows) and malformed_lines == 0 and all(
+            isinstance(row, dict) and row.get("schema") == "w1ax_verify_logits_v1"
+            for row in parsed_rows
+        ),
+        "observed_schemas": observed_schemas,
+        "sha256": sha256_bytes(raw),
+        "bytes": len(raw),
+        "event_lines": len(nonempty_lines),
+        "parsed_rows": len(parsed_rows),
+        "malformed_lines": malformed_lines,
+        "requested_positions": [109],
+    }
+
+
+def verifier_trace_environment(cell: Path) -> dict[str, str]:
+    return {
+        "W1AX_VERIFY_TRACE_JSONL": str(cell / "verifier-trace.jsonl"),
+        "W1AX_VERIFY_TRACE_POSITIONS": "109",
+    }
+
+
 def first_difference(reference: list[int], candidate: list[int]) -> dict[str, Any] | None:
     for index, (left, right) in enumerate(zip(reference, candidate)):
         if left != right:
@@ -244,6 +290,9 @@ def execute_variant(
     environment.update(config.get("environment", {}))
     for selector in ("GGML_CUDA_W1A1_MMA", "GGML_CUDA_W8A8_MMA", "GGML_CUDA_W4A4_MMA", "GGML_W1AX_ACT_BITS", "GGML_W1AX_A4_KERNEL"):
         environment.pop(selector, None)
+    trace_environment = verifier_trace_environment(cell)
+    trace_path = Path(trace_environment["W1AX_VERIFY_TRACE_JSONL"])
+    environment.update(trace_environment)
     body = configure_request(config, prompt)
     json_write(cell / "request-with-logprobs.json", body)
     with log_path.open("wb") as log:
@@ -252,6 +301,8 @@ def execute_variant(
             start_new_session=True,
         )
         base_url = f"http://{server['host']}:{server['port']}"
+        result = None
+        trace_report = None
         try:
             BASE.wait_ready(process, base_url, server["startup_timeout_s"])
             status, raw = BASE.request_json(
@@ -295,10 +346,18 @@ def execute_variant(
                 "completion_content": ((parsed.get("choices") or [{}])[0].get("message") or {}).get("content"),
                 "parsed_response": parsed,
             }
-            json_write(cell / "result.json", {key: value for key, value in result.items() if key != "parsed_response"})
-            return result
         finally:
             BASE.stop_server(process)
+            trace_report = inspect_verifier_trace(trace_path)
+            trace_report["environment"] = trace_environment
+            json_write(cell / "verifier-trace-status.json", trace_report)
+        if result is None:
+            raise RuntimeError(f"{variant} produced no result")
+        log.flush()
+        result["server_log_sha256"] = sha256_file(log_path)
+        result["verifier_trace"] = trace_report
+        json_write(cell / "result.json", {key: value for key, value in result.items() if key != "parsed_response"})
+        return result
 
 
 def run(args: argparse.Namespace) -> Path:
@@ -357,6 +416,10 @@ def run(args: argparse.Namespace) -> Path:
         outcomes["target_only"]["parsed_response"],
         outcomes["ordinary_eagle"]["parsed_response"], prompt["id"],
     )
+    comparison["verifier_trace"] = {
+        variant: outcomes[variant]["verifier_trace"]
+        for variant in ("target_only", "ordinary_eagle")
+    }
     json_write(destination / "comparison.json", comparison)
     manifest = {
         "schema_version": 1,
@@ -373,7 +436,15 @@ def run(args: argparse.Namespace) -> Path:
         "settings": {"max_output_tokens": 128, "temperature": 0.0, "seed": evaluation["seed"], "thinking": False, "speculative_draft_length": 5, "min_draft_probability": 0.0, "variants_sequential": ["target_only", "ordinary_eagle"]},
         "raw": {"target_only": "target_only/response.json", "ordinary_eagle": "ordinary_eagle/response.json", "comparison": "comparison.json"},
         "comparison": comparison,
-        "raw_verifier_row_logits": {
+        "verifier_trace": {
+            "expected_schema": "w1ax_verify_logits_v1",
+            "raw_jsonl_by_variant": {
+                "target_only": "target_only/verifier-trace.jsonl",
+                "ordinary_eagle": "ordinary_eagle/verifier-trace.jsonl",
+            },
+            "status_by_variant": comparison["verifier_trace"],
+        },
+        "api_response_verifier_row_logits": {
             "status": "unavailable unless the endpoint supplies an explicitly named raw verifier-logits field",
             "api_logprobs_are_not_raw_verifier_logits": True,
         },

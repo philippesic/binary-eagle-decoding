@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import importlib.util
+import json
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -99,6 +101,31 @@ class W1AxTargetDivergenceTests(unittest.TestCase):
         shorter = diagnostic.comparison_record(response([1, 2]), response([1]), "other")
         self.assertEqual(shorter["first_mismatch"]["zero_based_position"], 1)
         self.assertIsNone(shorter["first_mismatch"]["ordinary_eagle_token_id"])
+
+    def test_verifier_trace_environment_and_artifact_status(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            cell = Path(temporary)
+            environment = diagnostic.verifier_trace_environment(cell)
+            self.assertEqual(environment["W1AX_VERIFY_TRACE_JSONL"], str(cell / "verifier-trace.jsonl"))
+            self.assertEqual(environment["W1AX_VERIFY_TRACE_POSITIONS"], "109")
+            trace_path = Path(environment["W1AX_VERIFY_TRACE_JSONL"])
+            missing = diagnostic.inspect_verifier_trace(trace_path)
+            self.assertEqual(missing["status"], "unavailable")
+
+            trace_path.write_text(json.dumps({
+                "schema": "w1ax_verify_logits_v1", "position": 109,
+                "sampled": True, "emitted": True, "top5": [],
+            }) + "\n")
+            available = diagnostic.inspect_verifier_trace(trace_path)
+            self.assertEqual(available["status"], "available")
+            self.assertTrue(available["schema_confirmed"])
+            self.assertEqual(available["event_lines"], 1)
+            self.assertEqual(len(available["sha256"]), 64)
+
+            trace_path.write_text('{"schema":"unexpected"}\n')
+            wrong_schema = diagnostic.inspect_verifier_trace(trace_path)
+            self.assertEqual(wrong_schema["status"], "available")
+            self.assertFalse(wrong_schema["schema_confirmed"])
 
 
 if __name__ == "__main__":
