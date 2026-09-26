@@ -74,6 +74,102 @@ class CudaTraceTests(unittest.TestCase):
                          grid=(2, 1, 1) if offset == 0 else (8, 2, 1), identity=identity)
         return run, manifest
 
+    def add_activity(self, kind, start, end, **fields):
+        columns = ("start", "end", "deviceId", "contextId", "greenContextId", "streamId", "correlationId", "globalPid")
+        columns += {
+            "GRAPH_TRACE": ("graphId", "graphExecId"),
+            "MEMCPY": ("bytes", "copyKind", "srcKind", "dstKind", "srcDeviceId", "srcContextId",
+                       "dstDeviceId", "dstContextId", "graphNodeId"),
+            "MEMSET": ("bytes", "value", "graphNodeId", "memKind"),
+        }[kind]
+        values = {"start": start, "end": end, "deviceId": 0, "streamId": 7, "contextId": 1,
+                  "globalPid": 1000, **fields}
+        with sqlite3.connect(self.path) as db:
+            table = "CUPTI_ACTIVITY_KIND_" + kind
+            db.execute(f"CREATE TABLE IF NOT EXISTS {table} (" + ",".join(f"{name} INTEGER" for name in columns) + ")")
+            db.execute(f"INSERT INTO {table} VALUES (" + ",".join("?" for _ in columns) + ")",
+                       [values.get(name) for name in columns])
+
+    def test_gpu_activity_union_does_not_add_nested_graph_children(self):
+        self.create(identity_columns=("globalPid", "contextId"))
+        self.add(20, 30, "standard_kernel", identity={"globalPid": 1000, "contextId": 1})
+        self.add_activity("GRAPH_TRACE", 0, 100, graphId=12, graphExecId=13)
+        self.add_activity("MEMCPY", 40, 60, bytes=1024, copyKind=1, srcContextId=1, dstContextId=2)
+        self.add_activity("MEMSET", 70, 80, bytes=2048, value=0, memKind=2)
+        report = ANALYSIS.analyze(self.path)
+        self.assertEqual(report["overall"]["union_ns"], 10)  # Kernel view preserved.
+        gpu = report["gpu_activities"]
+        self.assertEqual(gpu["combined"]["count"], 4)
+        self.assertEqual(gpu["combined"]["sum_ns"], 140)
+        self.assertEqual(gpu["combined"]["union_ns"], 100)
+        self.assertEqual(gpu["combined"]["overlap_excess_ns"], 40)
+        self.assertNotIn("no_kernel_ns_within_span", gpu["combined"])
+        by_kind = {row["activity_kind"]: row for row in gpu["by_activity_kind"]}
+        self.assertTrue(all(row["present"] for row in by_kind.values()))
+        self.assertEqual(by_kind["MEMCPY"]["bytes_sum"], 1024)
+        self.assertEqual(by_kind["MEMCPY"]["metadata_values"]["copyKind"], [1])
+        self.assertEqual(by_kind["GRAPH_TRACE"]["metadata_values"]["graphExecId"], [13])
+        self.assertEqual(gpu["graph_granularity"]["aggregate_graph_interval_count"], 1)
+        self.assertTrue(any("internal gaps" in note for note in gpu["notes"]))
+
+    def test_gpu_activity_partitions_preserve_process_and_context(self):
+        self.create(identity_columns=("globalPid", "contextId"))
+        self.add_activity("GRAPH_TRACE", 0, 100, globalPid=1000, contextId=1)
+        self.add_activity("GRAPH_TRACE", 20, 50, globalPid=1000, contextId=2)
+        self.add_activity("GRAPH_TRACE", 120, 150, globalPid=1001, contextId=1)
+        gpu = ANALYSIS.analyze(self.path)["gpu_activities"]
+        self.assertEqual([(p["global_pid"], p["context_id"], p["union_ns"]) for p in gpu["identity_partitions"]],
+                         [(1000, 1, 100), (1000, 2, 30), (1001, 1, 30)])
+        self.assertEqual(gpu["combined"]["union_ns"], 130)
+        self.assertEqual(gpu["combined"]["sum_ns"], 160)
+
+    def test_optional_gpu_activity_tables_absence_is_explicit(self):
+        self.create()
+        by_kind = {row["activity_kind"]: row for row in ANALYSIS.analyze(self.path)["gpu_activities"]["by_activity_kind"]}
+        self.assertTrue(by_kind["KERNEL"]["present"])
+        for kind in ("GRAPH_TRACE", "MEMCPY", "MEMSET"):
+            self.assertFalse(by_kind[kind]["present"])
+            self.assertEqual(by_kind[kind]["count"], 0)
+
+    def test_present_optional_table_must_have_valid_interval_schema(self):
+        self.create()
+        with sqlite3.connect(self.path) as db:
+            db.execute("CREATE TABLE CUPTI_ACTIVITY_KIND_GRAPH_TRACE (start INTEGER)")
+        with self.assertRaisesRegex(ValueError, "missing CUPTI_ACTIVITY_KIND_GRAPH_TRACE column"):
+            ANALYSIS.analyze(self.path)
+
+    def test_benchmark_boundaries_include_graph_and_transfer_tails(self):
+        run, _ = self.benchmark_fixture()
+        self.add_activity("GRAPH_TRACE", 20, 80, globalPid=1000)
+        self.add_activity("MEMCPY", 90, 95, globalPid=1000, bytes=512)
+        association = ANALYSIS.analyze(self.path, benchmark_run=run)["benchmark_association"]
+        self.assertEqual(association["status"], "available", association)
+        first = association["mappings"][0]
+        self.assertEqual(first["last_kernel_end_ns"], 5)
+        self.assertEqual(first["last_activity_end_ns"], 95)
+        self.assertEqual(first["kernel_durations"]["union_ns"], 5)
+        self.assertEqual(first["gpu_activities"]["combined"]["union_ns"], 70)
+        # A later replay from this PID invalidates seemingly separated kernels.
+        self.add_activity("GRAPH_TRACE", 96, 120, globalPid=1000)
+        association = ANALYSIS.analyze(self.path, benchmark_run=run)["benchmark_association"]
+        self.assertEqual(association["status"], "unavailable")
+        self.assertIn("interleave", association["reason"])
+        self.assertNotIn("mappings", association)
+
+    def test_benchmark_pid_count_includes_graph_only_process(self):
+        run, _ = self.benchmark_fixture()
+        self.add_activity("GRAPH_TRACE", 4100, 4120, globalPid=9000)
+        association = ANALYSIS.analyze(self.path, benchmark_run=run)["benchmark_association"]
+        self.assertEqual(association["status"], "unavailable")
+        self.assertIn("PID group count 41", association["reason"])
+
+    def test_benchmark_optional_activities_require_identity(self):
+        run, _ = self.benchmark_fixture()
+        self.add_activity("MEMSET", 20, 30, globalPid=None, bytes=256)
+        association = ANALYSIS.analyze(self.path, benchmark_run=run)["benchmark_association"]
+        self.assertEqual(association["status"], "unavailable")
+        self.assertIn("complete globalPid and contextId", association["reason"])
+
     def test_benchmark_schedule_valid_mapping_and_provenance(self):
         run, manifest = self.benchmark_fixture()
         # A second CUDA context in a process is preserved in its summary.

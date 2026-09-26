@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read-only pooled kernel timing analysis of an Nsight Systems SQLite export.
+"""Read-only kernel and GPU activity analysis of an Nsight Systems SQLite export.
 
 No NVTX/capture attribution is inferred. All durations are in nanoseconds.
 """
@@ -17,6 +17,7 @@ from statistics import median
 
 
 KERNEL_TABLE = "CUPTI_ACTIVITY_KIND_KERNEL"
+ACTIVITY_TABLES = {kind: f"CUPTI_ACTIVITY_KIND_{kind}" for kind in ("KERNEL", "GRAPH_TRACE", "MEMCPY", "MEMSET")}
 REQUIRED_COLUMNS = {
     "start", "end", "deviceId", "streamId", "gridX", "gridY", "gridZ",
     "blockX", "blockY", "blockZ",
@@ -214,8 +215,99 @@ def read_kernels(path: Path, *, schema: dict | None = None) -> list[dict]:
             row["demangled_name"] = demangled
             row["category"] = classify(demangled, short)
             row["duration_ns"] = row["end"] - row["start"]
+            row["activity_kind"] = "KERNEL"
             result.append(row)
         return result
+
+
+def read_optional_activities(path: Path) -> tuple[list[dict], dict]:
+    """Read aggregate graph and transfer intervals without inferring children."""
+    result = []
+    presence = {}
+    with sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True) as db:
+        db.row_factory = sqlite3.Row
+        tables = {row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        for kind, table in ACTIVITY_TABLES.items():
+            present = table in tables
+            presence[kind] = {"table": table, "present": present}
+            if not present:
+                continue
+            columns = {row[1] for row in db.execute(f"PRAGMA table_info({table})")}
+            presence[kind]["identity_columns"] = [name for name in OPTIONAL_IDENTITY_COLUMNS if name in columns]
+            if kind == "KERNEL":
+                continue
+            required = {"start", "end", "deviceId", "streamId"}
+            missing = required - columns
+            if missing:
+                raise ValueError(f"missing {table} column(s): {', '.join(sorted(missing))}")
+            for row_number, source in enumerate(db.execute(f"SELECT * FROM {table} ORDER BY start, end"), 1):
+                row = dict(source)
+                for name in required:
+                    if not isinstance(row[name], int):
+                        raise ValueError(f"{table} row {row_number}: {name} must be an integer")
+                for name in OPTIONAL_IDENTITY_COLUMNS:
+                    if row.get(name) is not None and not isinstance(row[name], int):
+                        raise ValueError(f"{table} row {row_number}: {name} must be an integer or NULL")
+                if row["end"] < row["start"]:
+                    raise ValueError(f"{table} row {row_number}: end precedes start")
+                if row.get("bytes") is not None and (not isinstance(row["bytes"], int) or row["bytes"] < 0):
+                    raise ValueError(f"{table} row {row_number}: bytes must be a nonnegative integer or NULL")
+                row["activity_kind"] = kind
+                row["duration_ns"] = row["end"] - row["start"]
+                result.append(row)
+    return result, presence
+
+
+def gpu_intervals(rows: list[dict]) -> dict:
+    summary = interval_summary(rows)
+    summary["no_activity_ns_within_span"] = summary.pop("no_kernel_ns_within_span")
+    return summary
+
+
+def gpu_activity_summary(rows: list[dict], presence: dict) -> dict:
+    by_kind = defaultdict(list)
+    by_identity = defaultdict(list)
+    by_device = defaultdict(list)
+    for row in rows:
+        kind = row["activity_kind"]
+        by_kind[kind].append(row)
+        by_identity[launch_identity(row), kind].append(row)
+        by_device[row["deviceId"]].append(row)
+
+    def details(activities: list[dict]) -> dict:
+        metadata = ("graphId", "graphExecId", "copyKind", "srcKind", "dstKind", "srcDeviceId",
+                    "srcContextId", "dstDeviceId", "dstContextId", "memKind", "value")
+        return {
+            **distribution([row["duration_ns"] for row in activities]), **gpu_intervals(activities),
+            "bytes_sum": sum(row.get("bytes") or 0 for row in activities),
+            "bytes_record_count": sum(row.get("bytes") is not None for row in activities),
+            "metadata_values": {
+                name: sorted({row[name] for row in activities if row.get(name) is not None})
+                for name in metadata if any(name in row for row in activities)
+            },
+        }
+
+    return {
+        "scope": "Collected KERNEL, GRAPH_TRACE, MEMCPY, and MEMSET GPU intervals only; no request/round/stage attribution.",
+        "notes": [
+            "GRAPH_TRACE rows are aggregate graph replay intervals; no kernel breakdown is inferred for their contents.",
+            "Combined sum_ns may count graph intervals and nested kernels/transfers more than once, as well as concurrent work. Use union_ns for observed covered timeline duration, not a naive additive GPU cost.",
+            "Combined union_ns is observed activity-span coverage, not physical GPU busy time. It includes internal gaps covered by aggregate graph intervals and is not a hardware utilization or kernel execution counter.",
+            "Missing optional tables mean not present in this export, not proof that the GPU performed no such work.",
+        ],
+        "combined": gpu_intervals(rows),
+        "devices": [{"device_id": device, **gpu_intervals(activities)} for device, activities in sorted(by_device.items())],
+        "by_activity_kind": [{"activity_kind": kind, **presence[kind], **details(by_kind[kind])} for kind in ACTIVITY_TABLES],
+        "identity_partitions": [
+            {**dict(key[0]), "activity_kind": key[1], **details(activities)}
+            for key, activities in sorted(by_identity.items(), key=launch_group_sort)
+        ],
+        "graph_granularity": {
+            "aggregate_graph_interval_count": len(by_kind["GRAPH_TRACE"]),
+            "kernel_rows_with_graph_node_id": sum(row.get("graphNodeId") is not None for row in by_kind["KERNEL"]),
+            "kernel_rows_without_graph_node_id": sum(row.get("graphNodeId") is None for row in by_kind["KERNEL"]),
+        },
+    }
 
 
 def kernel_summaries(rows: list[dict]) -> list[dict]:
@@ -250,14 +342,14 @@ def file_provenance(path: Path) -> dict:
     return {"path": str(path.resolve()), "sha256": digest.hexdigest()}
 
 
-def benchmark_association(rows: list[dict], database: Path, run: Path) -> dict:
+def benchmark_association(rows: list[dict], database: Path, run: Path, presence: dict) -> dict:
     """Strict, bounded 5x8 server schedule inference; never emit partial labels."""
     result = {
         "status": "unavailable", "label": "CHRONOLOGICAL SCHEDULE INFERENCE",
-        "scope": "All observed process kernels pooled across startup, warmups, and measurements; no exact request, round, or layer attribution.",
+        "scope": "All collected process GPU activity kinds pooled across startup, warmups, and measurements; no exact request, round, or layer attribution.",
         "limitations": [
             "The runner did not record raw PIDs. Chronology and signatures support inferred labels, not a proven PID-to-run join.",
-            "Nonoverlap is checked for observed first-to-last kernel spans, not OS process lifetimes or untraced work.",
+            "Nonoverlap is checked for observed first-to-last GPU activity spans including graph replays and transfers, not OS process lifetimes or untraced work.",
             "A4 and A8 share kernel symbols; their distinction depends on the schedule and available server mode logs.",
         ],
         "sources": {},
@@ -311,7 +403,7 @@ def benchmark_association(rows: list[dict], database: Path, run: Path) -> dict:
         for _, launches in ordered:
             start, end = min(row["start"] for row in launches), max(row["end"] for row in launches)
             if previous_end is not None and start <= previous_end:
-                raise ValueError("PID kernel spans interleave, overlap, or have ambiguous touching boundaries")
+                raise ValueError("PID GPU activity spans interleave, overlap, or have ambiguous touching boundaries")
             previous_end = end
         signatures = {
             "draft_w1a16": {"w1a16_signadd"},
@@ -328,8 +420,9 @@ def benchmark_association(rows: list[dict], database: Path, run: Path) -> dict:
         known = set().union(*signatures.values())
         mappings = []
         for (rep, variant), (pid, launches) in zip(schedule, ordered):
+            kernels = [row for row in launches if row["activity_kind"] == "KERNEL"]
             seen = {symbol for symbol in known if any(matches_symbol(symbol, row["demangled_name"], row["short_name"])
-                                                     for row in launches)}
+                                                     for row in kernels)}
             if seen != signatures.get(variant, set()):
                 raise ValueError(f"W1 kernel signature mismatch at rep-{rep:02d}/{variant}: {sorted(seen)}")
             log = run / f"rep-{rep:02d}" / variant / "server.log"
@@ -350,11 +443,14 @@ def benchmark_association(rows: list[dict], database: Path, run: Path) -> dict:
                 log_evidence = {"status": "consistent", "mode_bits": sorted(seen_modes), "dispatch_variants": sorted(seen_markers)}
             mappings.append({
                 "global_pid": pid, "repetition": rep, "variant": variant,
-                "first_kernel_start_ns": min(row["start"] for row in launches),
-                "last_kernel_end_ns": max(row["end"] for row in launches),
+                "first_activity_start_ns": min(row["start"] for row in launches),
+                "last_activity_end_ns": max(row["end"] for row in launches),
+                "first_kernel_start_ns": min((row["start"] for row in kernels), default=None),
+                "last_kernel_end_ns": max((row["end"] for row in kernels), default=None),
                 "observed_w1_symbols": sorted(seen), "server_log_evidence": log_evidence,
-                "kernel_durations": interval_summary(launches), "kernels": kernel_summaries(launches),
-                "packing_inclusive_pairs": paired_kernel_summary(launches),
+                "kernel_durations": interval_summary(kernels), "kernels": kernel_summaries(kernels),
+                "packing_inclusive_pairs": paired_kernel_summary(kernels),
+                "gpu_activities": gpu_activity_summary(launches, presence),
             })
         result.update(status="available", process_count=len(mappings), measured_record_count=len(records),
                       warmups_per_process=2, mappings=mappings)
@@ -368,6 +464,8 @@ def analyze(path: Path, act_bits: int | None = None, benchmark_run: Path | None 
         raise ValueError("act_bits must be 1, 4, 8, or 16")
     schema = {}
     rows = read_kernels(path, schema=schema)
+    optional_rows, presence = read_optional_activities(path)
+    all_activities = rows + optional_rows
     missing_identity = [name for name in ("globalPid", "contextId") if name not in schema["identity_columns"]]
     null_identity_rows = sum(any(name in row and row[name] is None for name in ("globalPid", "contextId"))
                              for row in rows)
@@ -406,9 +504,10 @@ def analyze(path: Path, act_bits: int | None = None, benchmark_run: Path | None 
                        for category, values in sorted(categories.items())],
         "kernels": kernel_summaries(rows),
         "packing_inclusive_pairs": paired_kernel_summary(rows),
+        "gpu_activities": gpu_activity_summary(all_activities, presence),
     }
     if benchmark_run is not None:
-        result["benchmark_association"] = benchmark_association(rows, path, benchmark_run)
+        result["benchmark_association"] = benchmark_association(all_activities, path, benchmark_run, presence)
     return result
 
 
