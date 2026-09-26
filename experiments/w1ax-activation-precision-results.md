@@ -27,6 +27,9 @@ decoding, two warmups, five measured repetitions, and one server at a time.
 Each run manifest preserves exact commands, model/binary/config hashes and GPU
 snapshots. Q8_0/Q4_0 name standard GGUF block weight formats; their live
 activation path is Q8_1, not the research W8A8/W4A4 format.
+Acceptance is the pinned native server's target-sample-and-match count, not
+classical probability-ratio/residual speculative sampling. All comparisons
+use that same verifier and its unchanged target sampling path.
 
 ## Correctness gates
 
