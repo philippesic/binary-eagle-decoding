@@ -1,7 +1,7 @@
 # Goal: all-layer W1Ax activation-precision suite on RTX 2080 Ti
 
 **Opened:** 2026-09-25
-**State:** active after user-authorized resume; six policy cells complete, D3/p0 running
+**State:** active after user-authorized resume; seven policy cells complete, D3/p0.1 running
 **GPU owner:** `/root/policy_operator`, under successor chat `01a0dbfc-6f9b-76e1-895d-1a617ad45e60`
 
 ## Objective
@@ -505,3 +505,10 @@ All experiment/analysis work is stopped. Resume only on explicit user request.
 - Output differences versus target-only among 120 paired requests: FP16/Q4_0 each10; Q8_0/A16/A8/A4 each5; A1 zero. These sets are not identical: FP16 and Q4_0 differ from each other on10 requests. A16/A8 each differ from both anchors on5; A4 differs from FP16/Q4_0 on15/5; A1 on10/10. Preserve first-divergence evidence; no causal or strict lossless-speedup claim.
 - D2/p0.3 decode rates A16/A8/A4/A1 are43.454/50.018/53.621/54.556 tok/s; FP16/Q4_0 are81.164/83.104 and target-only65.868. Final fixed-versus-selected comparisons still require the remaining grid.
 - D3/p0 a1 started automatically around20:21UTC and reached48 records at20:23UTC. Supervisor/launcher875/876, benchmark PGID10421, server PGID10833 at that snapshot; clean logs. Operator retains sole GPU ownership. Six policy cells are complete; all six D3/D5 cells remain, followed by final full-grid analysis/publication/cleanup.
+
+
+## D3/p0 complete — 2026-09-26 21:07 UTC
+
+- D3/p0 a1 completed 960/960. Five transfer hashes match; the local structural/hash/counter/policy/raw-output audit passed. Records SHA256 `f7080eded9f9cca4694cf47cb0c276ccfe89728fb28cbe4128c9cac664e8d29c`; local interim audit `b54e59bea1a762c353a39818afc5757f1fec108a9d914d6697544aa50a04fbe0`. All seven speculative paths match target-only and both anchors on all 120 paired requests.
+- Decode rates A16/A8/A4/A1 are 41.026/52.888/52.925/53.747 tok/s; FP16/Q4_0 are 92.184/98.068 and target-only 65.928. These are this cell's observed rates; selection remains pending all twelve configurations.
+- D3/p0.1 started automatically around 21:05 UTC and reached 32 records at 21:06 UTC. Supervisor/launcher875/876, benchmark PGID13287 and server PGID13647 at the snapshot, with clean logs. Operator retains sole GPU ownership. Seven cells are complete; D3/p0.1, D3/p0.3 and all three D5 cells remain, followed by final full-grid validation/reporting/cleanup.
