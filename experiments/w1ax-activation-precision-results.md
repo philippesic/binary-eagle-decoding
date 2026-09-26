@@ -250,6 +250,15 @@ symbols and unknown classifications remain preserved. Traces/SQLite exports:
 - A4: `7c8ee8d8bf8f6bc657d5dac7afc6f23a18b921e8c4369a25feb6443608a2d036`
 - A1: `05245e57db6ebf8854ab9b1fd814856b251d6569a899aa447a4833abbe2c7061`
 
+## Conditional secondary controls
+
+The plan's optional genuine W8A8/W4A4 same-run controls were unavailable in
+the frozen combined build. Their previously audited all-nine GGUFs exist, but
+W1Ax runtime `feba15698` lacks the W8A8/W4A4 loaders/operators from separate
+revision `d0724427b`, which is not its ancestor. Their historical results remain
+separate; they are not substituted for new measurements. FP16, Q8_0 and Q4_0
+mandatory controls are present throughout the primary and diagnostic matrices.
+
 ## Outstanding measurements
 
 Per-round analysis, context/output-cap diagnostics, D/p_min policy grid,
