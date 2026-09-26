@@ -104,28 +104,41 @@ def git_output(*args: str) -> str:
     ).stdout
 
 
+def executable_path(name: str) -> str | None:
+    """Resolve PATH tools, including the WSL GPU utility outside nonlogin PATH."""
+    found = shutil.which(name)
+    if found is not None:
+        return found
+    wsl_nvidia_smi = Path("/usr/lib/wsl/lib/nvidia-smi")
+    if name == "nvidia-smi" and wsl_nvidia_smi.is_file() and os.access(wsl_nvidia_smi, os.X_OK):
+        return str(wsl_nvidia_smi)
+    return None
+
+
 def gpu_snapshot() -> dict[str, Any]:
+    executable = executable_path("nvidia-smi")
     command = [
-        "nvidia-smi",
+        executable or "nvidia-smi",
         "--query-gpu=name,uuid,driver_version,memory.total,memory.used,clocks.sm,power.draw",
         "--format=csv,noheader",
     ]
-    if shutil.which(command[0]) is None:
-        return {"available": False, "command": command}
+    if executable is None:
+        return {"available": False, "command": command, "executable_path": None}
     try:
         completed = subprocess.run(command, capture_output=True, text=True, timeout=15)
     except (OSError, subprocess.TimeoutExpired) as error:
-        return {"available": True, "command": command, "error": str(error)}
+        return {"available": True, "command": command, "executable_path": executable, "error": str(error)}
     result = {
         "available": True,
         "command": command,
+        "executable_path": executable,
         "exit_code": completed.returncode,
         "stdout": completed.stdout,
         "stderr": completed.stderr,
     }
     if completed.returncode != 0:
         fallback = [
-            "nvidia-smi",
+            executable,
             "--query-gpu=name,memory.total,memory.used",
             "--format=csv,noheader",
         ]
@@ -143,15 +156,18 @@ def gpu_snapshot() -> dict[str, Any]:
 
 
 def command_snapshot(command: list[str], timeout: int = 15) -> dict[str, Any]:
-    if shutil.which(command[0]) is None:
-        return {"available": False, "command": command}
+    executable = executable_path(command[0])
+    if executable is None:
+        return {"available": False, "command": command, "executable_path": None}
+    command = [executable, *command[1:]]
     try:
         completed = subprocess.run(command, capture_output=True, text=True, timeout=timeout)
     except (OSError, subprocess.TimeoutExpired) as error:
-        return {"available": True, "command": command, "error": str(error)}
+        return {"available": True, "command": command, "executable_path": executable, "error": str(error)}
     return {
         "available": True,
         "command": command,
+        "executable_path": executable,
         "exit_code": completed.returncode,
         "stdout": completed.stdout,
         "stderr": completed.stderr,
@@ -251,6 +267,7 @@ def environment_manifest(binary: Path) -> dict[str, Any]:
                 "error": str(error),
             }
     return {
+        "nvidia_smi_path": full_query.get("executable_path"),
         "gpu_capability_query": capability,
         "nvidia_smi_q": full_query,
         "cuda_toolkit_nvcc": cuda_query,

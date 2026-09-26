@@ -137,6 +137,45 @@ class NativeBenchmarkTests(unittest.TestCase):
         self.assertEqual(result["exit_code"], 1)
         self.assertEqual(result["fallback"]["exit_code"], 0)
         self.assertIn("3050 MiB", result["fallback"]["stdout"])
+        self.assertEqual(result["command"][0], "/usr/bin/nvidia-smi")
+        self.assertEqual(result["fallback"]["command"][0], "/usr/bin/nvidia-smi")
+
+    def test_wsl_nvidia_smi_fallback_is_used_by_snapshot_and_environment(self):
+        wsl_path = "/usr/lib/wsl/lib/nvidia-smi"
+        completed = SimpleNamespace(returncode=0, stdout="RTX 2080 Ti", stderr="")
+        with (
+            patch.object(benchmark.shutil, "which", return_value=None),
+            patch.object(benchmark.Path, "is_file", autospec=True,
+                         side_effect=lambda path: str(path) == wsl_path),
+            patch.object(benchmark.os, "access", return_value=True),
+            patch.object(benchmark.subprocess, "run", return_value=completed) as run,
+        ):
+            snapshot = benchmark.gpu_snapshot()
+            environment = benchmark.environment_manifest(Path("/fake/build/bin/llama-server"))
+        self.assertTrue(snapshot["available"])
+        self.assertEqual(snapshot["executable_path"], wsl_path)
+        self.assertEqual(environment["nvidia_smi_path"], wsl_path)
+        for probe in (snapshot, environment["nvidia_smi_q"], environment["gpu_capability_query"]):
+            self.assertEqual(probe["command"][0], wsl_path)
+            self.assertEqual(probe["executable_path"], wsl_path)
+        self.assertEqual(len(run.call_args_list), 3)
+        self.assertTrue(all(call.args[0][0] == wsl_path for call in run.call_args_list))
+
+    def test_nvidia_smi_path_resolution_prefers_path_and_reports_missing(self):
+        with (
+            patch.object(benchmark.shutil, "which", return_value="/custom/bin/nvidia-smi"),
+            patch.object(benchmark.Path, "is_file") as is_file,
+        ):
+            self.assertEqual(benchmark.executable_path("nvidia-smi"), "/custom/bin/nvidia-smi")
+            is_file.assert_not_called()
+        with (
+            patch.object(benchmark.shutil, "which", return_value=None),
+            patch.object(benchmark.Path, "is_file", return_value=False),
+            patch.object(benchmark.subprocess, "run") as run,
+        ):
+            self.assertFalse(benchmark.gpu_snapshot()["available"])
+            self.assertFalse(benchmark.command_snapshot(["nvidia-smi", "-q"])["available"])
+            run.assert_not_called()
 
     def test_schedule_and_missing_counters(self):
         orders = benchmark.schedule(6)
