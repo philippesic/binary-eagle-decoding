@@ -87,6 +87,45 @@ class W1AxDiagnosticsTests(unittest.TestCase):
         self.assertEqual(head["top1_agreement_rate"], 0.5)
         self.assertEqual(head["topk_overlap_fraction"]["5"]["median"], 0.7)
 
+    def test_anchor_operator_rows_pair_to_w1ax_by_capture(self):
+        def row(record_type, capture, bits_or_format, samples):
+            base = {
+                "record_type": record_type, "capture": capture, "sequence": 2,
+                "K": 64, "M": 4, "N": 2, "name": "q_proj", "samples_us": samples,
+            }
+            if record_type == "operator_replay":
+                base.update(group="attention", replay_bits=bits_or_format)
+            else:
+                base.update(anchor_format=bits_or_format, group="attention")
+            return base
+
+        rows = [
+            row("operator_replay", "a.bin", 16, [10, 12, 14]),
+            row("operator_replay", "a.bin", 8, [5, 6, 7]),
+            row("operator_replay", "a.bin", 4, [2, 3, 4]),
+            row("anchor_operator_replay", "a.bin", "fp16", [20, 24, 28]),
+            row("anchor_operator_replay", "a.bin", "q4_0", [4, 4, 4]),
+            row("operator_replay", "b.bin", 16, [20, 22]),
+            row("operator_replay", "b.bin", 8, [10, 11]),
+            row("anchor_operator_replay", "b.bin", "fp16", [40, 44]),
+            row("anchor_operator_replay", "b.bin", "q4_0", [8, 8]),
+            {"record_type": "head_comparison", "capture": "a.bin", "sequence": 2,
+             "candidate_bits": 4, "top1_agree": True, "topk_set_overlap": {"1": 1},
+             "reference_top1_margin": 0.2, "candidate_top1_margin": 0.1},
+        ]
+        result = analysis.summarize_replay(rows)
+        self.assertEqual(result["anchor_rows"], 4)
+        anchor_shape = result["anchor_by_layer_shape"][0]
+        self.assertEqual(anchor_shape["captures"], 2)
+        self.assertEqual(anchor_shape["formats"]["fp16"]["median_us"], 28)
+        comparisons = result["w1ax_vs_anchors"][0]["w1ax_vs_anchor"]
+        self.assertEqual(comparisons["w1a8/fp16"]["paired_precision_ratio"], 0.25)
+        self.assertEqual(comparisons["w1a8/fp16"]["paired_samples"], 5)
+        self.assertEqual(comparisons["w1a8/q4_0"]["paired_precision_ratio"], 1.375)
+        self.assertEqual(comparisons["w1a4/fp16"]["paired_samples"], 3)
+        self.assertEqual(comparisons["w1a4/q4_0"]["paired_samples"], 3)
+        self.assertEqual(result["head_comparison"]["comparisons"], 1)
+
     def test_run_reads_records_and_variant_round_traces(self):
         with tempfile.TemporaryDirectory() as tmp:
             run_dir = Path(tmp)

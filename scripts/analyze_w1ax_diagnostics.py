@@ -157,12 +157,40 @@ def summarize_replay(rows: list[dict[str, Any]]) -> dict[str, Any]:
     shapes: dict[tuple[Any, ...], dict[int, list[float]]] = defaultdict(lambda: defaultdict(list))
     paired_by_shape: dict[tuple[Any, ...], dict[int, list[float]]] = defaultdict(lambda: defaultdict(list))
     capture_shapes: dict[tuple[Any, ...], set[tuple[Any, ...]]] = defaultdict(set)
+    anchor_captures: dict[tuple[Any, ...], dict[str, list[float]]] = defaultdict(dict)
+    anchor_shapes: dict[tuple[Any, ...], dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
+    anchor_capture_shapes: dict[tuple[Any, ...], set[tuple[Any, ...]]] = defaultdict(set)
+    w1ax_anchor_ratios: dict[tuple[Any, ...], dict[tuple[int, str], list[float]]] = defaultdict(lambda: defaultdict(list))
+    anchor_groups: dict[tuple[Any, ...], set[str]] = defaultdict(set)
     operator_rows = []
+    anchor_rows = []
     head_rows = []
     for i, row in enumerate(rows, 1):
         record_type = row.get("record_type", "operator_replay")
         if record_type == "head_comparison":
             head_rows.append(row)
+            continue
+        if record_type == "anchor_operator_replay":
+            for field in ("capture", "sequence", "K", "M", "N", "name", "anchor_format"):
+                if field not in row:
+                    raise ValueError(f"anchor operator replay row {i} missing {field}")
+            anchor_format = row["anchor_format"]
+            if anchor_format not in ("fp16", "q8_0", "q4_0"):
+                raise ValueError(f"anchor operator replay row {i}: unknown anchor_format {anchor_format!r}")
+            samples = _sample_summary(row.get("samples_us"), Path("operator replay JSONL"), i)
+            shape_key = (row["K"], row["M"], row["N"], row["name"])
+            capture_key = (
+                row.get("capture", "<legacy>"), row.get("sequence", 0), row["name"],
+                row["K"], row["M"], row["N"],
+            )
+            if anchor_format in anchor_captures[capture_key]:
+                raise ValueError(f"anchor operator replay row {i}: duplicate anchor_format for capture identity {capture_key} ({anchor_format})")
+            anchor_captures[capture_key][anchor_format] = samples
+            anchor_shapes[shape_key][anchor_format].extend(samples)
+            anchor_capture_shapes[shape_key].add(capture_key)
+            if isinstance(row.get("group"), str):
+                anchor_groups[shape_key].add(row["group"])
+            anchor_rows.append((shape_key, capture_key, anchor_format, samples))
             continue
         if record_type != "operator_replay":
             continue
@@ -186,6 +214,13 @@ def summarize_replay(rows: list[dict[str, Any]]) -> dict[str, Any]:
         operator_rows.append((shape_key, capture_key, bits, samples))
 
     for shape_key, capture_key, bits, samples in operator_rows:
+        for anchor_format, baseline in anchor_captures.get(capture_key, {}).items():
+            if len(baseline) != len(samples):
+                continue
+            ratios = [candidate / reference for candidate, reference in zip(samples, baseline) if reference > 0]
+            if len(ratios) == len(samples):
+                base_shape = shape_key[:4]
+                w1ax_anchor_ratios[base_shape][(bits, anchor_format)].extend(ratios)
         if bits == 16:
             continue
         baseline = captures[capture_key].get(16)
@@ -220,10 +255,52 @@ def summarize_replay(rows: list[dict[str, Any]]) -> dict[str, Any]:
             "K": key[0], "M": key[1], "N": key[2], "name": key[3], "group": key[4],
             "captures": len(capture_shapes[key]), "precision": precision, "paired_ratios": ratios,
         })
+    anchor_by_layer_shape = []
+    for key in sorted(anchor_shapes, key=lambda x: tuple(str(part) for part in x)):
+        anchor_by_layer_shape.append({
+            "K": key[0], "M": key[1], "N": key[2], "name": key[3],
+            "group": next(iter(anchor_groups[key])) if len(anchor_groups[key]) == 1 else None,
+            "captures": len(anchor_capture_shapes[key]),
+            "formats": {
+                anchor_format: {
+                    "samples": len(samples),
+                    "median_us": median(samples),
+                    "distribution_us": distribution(samples),
+                }
+                for anchor_format, samples in sorted(anchor_shapes[key].items())
+            },
+        })
+    w1ax_vs_anchors = []
+    cross_shapes = sorted(
+        {entry[0][:4] for entry in operator_rows} & set(anchor_shapes),
+        key=lambda x: tuple(str(part) for part in x),
+    )
+    for key in cross_shapes:
+        bits_present = sorted({entry[2] for entry in operator_rows if entry[0][:4] == key})
+        w1ax_vs_anchors.append({
+            "K": key[0], "M": key[1], "N": key[2], "name": key[3],
+            "w1ax_vs_anchor": {
+                f"w1a{bits}/{anchor_format}": {
+                    "paired_precision_ratio": (
+                        median(w1ax_anchor_ratios[key].get((bits, anchor_format), []))
+                        if w1ax_anchor_ratios[key].get((bits, anchor_format)) else None
+                    ),
+                    "paired_samples": len(w1ax_anchor_ratios[key].get((bits, anchor_format), [])),
+                    "paired_sample_ratios": w1ax_anchor_ratios[key].get((bits, anchor_format), []),
+                    "ratio_definition": "W1Ax sample_us / anchor sample_us; lower is faster",
+                }
+                for bits in bits_present
+                for anchor_format in ("fp16", "q8_0", "q4_0")
+                if anchor_format in anchor_shapes[key]
+            },
+        })
     return {
         "rows": len(operator_rows),
         "by_layer_shape": by_layer_shape,
         "pairing": "Rows are paired within capture/sequence/name/K/M/N and sample index; replay_bits=16 is the ratio baseline. Shape summaries pool repeated captures. The schema has no tensor hashes, so capture identity is trusted from the producer.",
+        "anchor_rows": len(anchor_rows),
+        "anchor_by_layer_shape": anchor_by_layer_shape,
+        "w1ax_vs_anchors": w1ax_vs_anchors,
         "head_comparison": _summarize_head_comparisons(head_rows),
     }
 
