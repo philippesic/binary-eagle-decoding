@@ -23,6 +23,9 @@ NATIVE_OPERAND_MMA_VARIANTS = ("draft_w8a8_mma", "draft_w4a4_mma")
 NATIVE_OPERAND_MMA_DEFAULTS = dict(
     zip(NATIVE_OPERAND_MMA_VARIANTS, NATIVE_OPERAND_VARIANTS, strict=True)
 )
+W1AX_VARIANTS = ("draft_w1a16", "draft_w1a8", "draft_w1a4", "draft_w1a1")
+W1AX_MATRIX_VARIANTS = ("target_only", "ordinary_eagle", "draft_q8_0", "draft_q4_0", *W1AX_VARIANTS)
+W1AX_BITS = dict(zip(W1AX_VARIANTS, (16, 8, 4, 1), strict=True))
 METRICS = ("request", "decode")
 
 
@@ -36,6 +39,10 @@ def sha256(path: Path) -> str:
 
 def selected_variants(records: list[dict], reported: list[str] | None = None) -> tuple[str, ...]:
     observed = {row["variant"] for row in records}
+    if observed == set(W1AX_MATRIX_VARIANTS):
+        if reported is not None and tuple(reported) != W1AX_MATRIX_VARIANTS:
+            raise ValueError("benchmark variants are incomplete or unknown")
+        return W1AX_MATRIX_VARIANTS
     weight_only = tuple(variant for variant in WEIGHT_ONLY_VARIANTS if variant in observed)
     native_operand = tuple(variant for variant in NATIVE_OPERAND_VARIANTS if variant in observed)
     native_mma = tuple(variant for variant in NATIVE_OPERAND_MMA_VARIANTS if variant in observed)
@@ -195,6 +202,17 @@ def analyze(run_dir: Path, samples: int, seed: int) -> dict:
     if report.get("status") != "complete" or report.get("records") != len(records):
         raise ValueError("benchmark run is incomplete or records count differs")
     variants = selected_variants(records, report.get("variants"))
+    w1ax = tuple(variant for variant in variants if variant in W1AX_VARIANTS)
+    if w1ax:
+        dispatch = report.get("w1ax_dispatch_confirmed_by_variant", {})
+        if any(dispatch.get(variant) is not True for variant in w1ax):
+            raise ValueError("W1Ax runtime dispatch is unconfirmed")
+        for row in records:
+            if not isinstance(row.get("generated_token_ids"), list):
+                raise ValueError("W1Ax matrix requires raw generated token IDs for every request")
+            expected = str(W1AX_BITS[row["variant"]]) if row["variant"] in W1AX_BITS else None
+            if row.get("w1ax_activation_bits_selector") != expected:
+                raise ValueError("W1Ax activation selector differs from benchmark variant")
     native_operand = tuple(
         variant
         for variant in variants
@@ -217,6 +235,7 @@ def analyze(run_dir: Path, samples: int, seed: int) -> dict:
     categories = {row["id"]: row["category"] for row in prompt_rows}
     if set(categories) != set(prompts):
         raise ValueError("benchmark prompts differ from paired records")
+    primary_candidate = "draft_w1a1" if w1ax else "packed_head_w1a1"
     packed_speedups = {
         variant: {
             f"{anchor}/{metric}": pooled_speedup(records, anchor, metric, variant)
@@ -226,8 +245,16 @@ def analyze(run_dir: Path, samples: int, seed: int) -> dict:
         for variant in variants
         if variant.startswith(("packed_", "draft_q", "draft_w"))
     }
+    w1ax_dual_anchor_speedups = {
+        variant: {
+            f"{anchor}/{metric}": pooled_speedup(records, anchor, metric, variant)
+            for anchor in ("ordinary_eagle", "draft_q4_0")
+            for metric in METRICS
+        }
+        for variant in w1ax
+    }
     portable_speedups = {
-        f"{anchor}/{metric}": pooled_speedup(records, anchor, metric)
+        f"{anchor}/{metric}": pooled_speedup(records, anchor, metric, primary_candidate)
         for anchor in VARIANTS[:2]
         for metric in METRICS
     }
@@ -245,7 +272,11 @@ def analyze(run_dir: Path, samples: int, seed: int) -> dict:
         "pooled_packed_speedup": portable_speedups,
         "pooled_variant_speedups": packed_speedups,
         "native_operand_variant_specs": report.get("native_operand_variant_specs", {}),
-        "paired_prompt_repetition_bootstrap_95pct": paired_bootstrap(records, samples, seed),
+        "w1ax_variant_specs": report.get("w1ax_variant_specs", {}),
+        "pooled_w1ax_speedup_vs_fp16_and_q4_0": w1ax_dual_anchor_speedups,
+        "paired_prompt_repetition_bootstrap_95pct": paired_bootstrap(
+            records, samples, seed, primary_candidate
+        ),
         "category_summary": category_summary(records, categories),
         "interpretation": (
             f"Resample prompt IDs and repetitions with replacement, preserving all {len(variants)} "
@@ -257,6 +288,16 @@ def analyze(run_dir: Path, samples: int, seed: int) -> dict:
         variant: paired_bootstrap(records, samples, seed, variant)
         for variant in variants
         if variant.startswith(("packed_", "draft_q", "draft_w")) and variant != MMA_VARIANT
+    }
+    result["paired_w1ax_bootstrap_95pct_vs_fp16_and_q4_0"] = {
+        variant: {
+            f"{anchor}/{metric}": result["paired_variant_bootstrap_95pct"][variant][
+                f"{anchor}/{metric}"
+            ]
+            for anchor in ("ordinary_eagle", "draft_q4_0")
+            for metric in METRICS
+        }
+        for variant in w1ax
     }
     result["pooled_native_mma_speedup_vs_default"] = {
         mma: {metric: pooled_speedup(records, default, metric, mma) for metric in METRICS}

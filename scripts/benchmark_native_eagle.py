@@ -38,6 +38,16 @@ GROUP_VARIANTS = (
 GROUP_NAMES = ("fusion", "attention", "ffn", "head", "all")
 WEIGHT_ONLY_VARIANTS = ("draft_q4_0", "draft_q8_0")
 WEIGHT_ONLY_NAMES = ("q4_0", "q8_0")
+W1AX_VARIANTS = ("draft_w1a16", "draft_w1a8", "draft_w1a4", "draft_w1a1")
+W1AX_BITS = dict(zip(W1AX_VARIANTS, (16, 8, 4, 1), strict=True))
+W1AX_LOADER_MARKER = "EAGLE3 W1A1 active groups: fusion,attention,ffn,head (9 tensors)"
+W1AX_A4_CONVENTIONAL_MARKER = "CUDA packed W1A4 CONVENTIONAL dispatch"
+W1AX_CUDA_MARKERS = {
+    "16": "CUDA packed W1A16 FP16 SIGNADD dispatch",
+    "8": "CUDA packed W1A8 INT8 dispatch",
+    "4": "CUDA packed W1A4 BITSERIAL dispatch",
+    "1": "CUDA packed W1A1 XOR/POPCOUNT dispatch",
+}
 NATIVE_OPERAND_VARIANTS = ("draft_w8a8", "draft_w4a4")
 NATIVE_OPERAND_NAMES = ("w8a8", "w4a4")
 NATIVE_OPERAND_MMA_VARIANTS = ("draft_w8a8_mma", "draft_w4a4_mma")
@@ -303,6 +313,17 @@ def load_prompts(path: Path) -> list[dict[str, Any]]:
 
 
 def selected_variants(evaluation: dict[str, Any]) -> tuple[str, ...]:
+    w1ax_matrix = evaluation.get("w1ax_matrix", False)
+    if not isinstance(w1ax_matrix, bool):
+        raise ValueError("evaluation.w1ax_matrix must be a boolean")
+    if w1ax_matrix:
+        incompatible = (
+            "binary_mma", "group_matrix", "weight_only_matrix", "native_operand_matrix",
+            "native_operand_variants", "native_operand_mma_variants",
+        )
+        if any(evaluation.get(key) for key in incompatible):
+            raise ValueError("evaluation.w1ax_matrix cannot be combined with other matrices")
+        return ("target_only", "ordinary_eagle", "draft_q8_0", "draft_q4_0", *W1AX_VARIANTS)
     enabled = evaluation.get("binary_mma", False)
     group_matrix = evaluation.get("group_matrix", False)
     weight_only_matrix = evaluation.get("weight_only_matrix", False)
@@ -437,6 +458,35 @@ def weight_only_specs(
             "backend_precision": spec["backend_precision"],
         }
     return specs
+
+
+def w1ax_specs(config: dict[str, Any], variants: tuple[str, ...]) -> dict[str, dict[str, Any]]:
+    if not any(variant in variants for variant in W1AX_VARIANTS):
+        return {}
+    raw = config.get("w1ax")
+    if not isinstance(raw, dict) or set(raw) != {"draft", "expected_loader_marker", "expected_cuda_markers"}:
+        raise ValueError("W1Ax matrix requires [w1ax] draft, loader marker, and CUDA markers")
+    if not isinstance(raw["draft"], str) or not raw["draft"].strip():
+        raise ValueError("w1ax.draft must be a nonempty string")
+    if raw["expected_loader_marker"] != W1AX_LOADER_MARKER:
+        raise ValueError("w1ax.expected_loader_marker must prove all nine W1A1 projections")
+    markers = raw["expected_cuda_markers"]
+    if markers != W1AX_CUDA_MARKERS:
+        raise ValueError("w1ax.expected_cuda_markers must match the four runtime dispatch markers")
+    return {
+        variant: {
+            "draft": raw["draft"],
+            "activation_bits": bits,
+            "weight_format": "W1 packed i32 plus F32 row scale",
+            "weight_coverage": "all nine draft linears",
+            "activation_coverage": "all nine draft linears",
+            "activation_precision": f"A{bits}",
+            "expected_loader_marker": raw["expected_loader_marker"],
+            "expected_graph_marker": f"EAGLE3 W1Ax activation bits: {bits}",
+            "expected_cuda_marker": markers[str(bits)],
+        }
+        for variant, bits in W1AX_BITS.items()
+    }
 
 
 def native_operand_specs(
@@ -730,6 +780,37 @@ def native_operand_dispatch_evidence(server_log: str, spec: dict[str, Any]) -> d
     }
 
 
+def w1ax_dispatch_evidence(
+    server_log: str, spec: dict[str, Any], all_specs: dict[str, dict[str, Any]]
+) -> dict[str, Any]:
+    """Require all-nine loading, selected graph precision, and exclusive CUDA op dispatch."""
+    loader_seen = spec["expected_loader_marker"] in server_log
+    def graph_marker_seen(marker: str) -> bool:
+        return re.search(re.escape(marker) + r"(?!\d)", server_log) is not None
+
+    graph_seen = graph_marker_seen(spec["expected_graph_marker"])
+    dispatch_seen = spec["expected_cuda_marker"] in server_log
+    other_graph_markers = [
+        other["expected_graph_marker"] for other in all_specs.values() if other is not spec
+    ]
+    other_dispatch_markers = [
+        other["expected_cuda_marker"] for other in all_specs.values() if other is not spec
+    ]
+    wrong_mode_seen = any(graph_marker_seen(marker) for marker in other_graph_markers) or any(
+        marker in server_log for marker in (*other_dispatch_markers, W1AX_A4_CONVENTIONAL_MARKER)
+    )
+    return {
+        "expected_loader_marker": spec["expected_loader_marker"],
+        "expected_loader_marker_seen": loader_seen,
+        "expected_graph_marker": spec["expected_graph_marker"],
+        "expected_graph_marker_seen": graph_seen,
+        "expected_cuda_marker": spec["expected_cuda_marker"],
+        "expected_cuda_marker_seen": dispatch_seen,
+        "wrong_mode_marker_seen": wrong_mode_seen,
+        "cuda_w1ax_dispatch_confirmed": loader_seen and graph_seen and dispatch_seen and not wrong_mode_seen,
+    }
+
+
 def speculative_timing(
     server_log: str, variant: str, warmup_requests: int, measured_requests: int
 ) -> dict[str, Any]:
@@ -804,6 +885,7 @@ def command_for(config: dict[str, Any], paths: dict[str, Path], variant: str) ->
         MMA_VARIANT,
         *GROUP_VARIANTS,
         *WEIGHT_ONLY_VARIANTS,
+        *W1AX_VARIANTS,
         *NATIVE_OPERAND_VARIANTS,
         *NATIVE_OPERAND_MMA_VARIANTS,
     ):
@@ -820,6 +902,7 @@ def command_for(config: dict[str, Any], paths: dict[str, Path], variant: str) ->
             draft_key = variant
         elif variant in (
             *WEIGHT_ONLY_VARIANTS,
+            *W1AX_VARIANTS,
             *NATIVE_OPERAND_VARIANTS,
             *NATIVE_OPERAND_MMA_VARIANTS,
         ):
@@ -840,6 +923,10 @@ def command_for(config: dict[str, Any], paths: dict[str, Path], variant: str) ->
             "--spec-draft-type-v",
             "f16",
         ]
+        if config["evaluation"].get("w1ax_matrix", False):
+            command += [
+                "--spec-draft-p-min", str(config["evaluation"]["min_draft_probability"])
+            ]
     command += list(config["server"]["common_args"])
     command += ["--host", config["server"]["host"], "--port", str(config["server"]["port"])]
     return command
@@ -866,6 +953,9 @@ def request_body(config: dict[str, Any], prompt: dict[str, Any]) -> dict[str, An
 def generated_token_ids(response: dict[str, Any]) -> list[int] | None:
     """Extract server-returned generated IDs across supported response layouts."""
     candidates: list[Any] = [response.get("generated_token_ids"), response.get("token_ids")]
+    verbose = response.get("__verbose")
+    if isinstance(verbose, dict):
+        candidates.append(verbose.get("tokens"))
     choices = response.get("choices") or []
     if choices:
         first = choices[0]
@@ -917,6 +1007,7 @@ def extract_record(
     content = choices[0].get("message", {}).get("content") if choices else None
     token_ids = generated_token_ids(response)
     return {
+        "server_response_id": response.get("id"),
         "request_wall_s": elapsed_s,
         "completion_tokens": tokens,
         "prompt_tokens": usage.get("prompt_tokens"),
@@ -1119,12 +1210,15 @@ def generated_token_id_matches(
 def relative_speedups(aggregated: dict[str, Any]) -> dict[str, Any]:
     """Compute legacy head ratios plus every packed/anchor pooled-rate ratio."""
     result = {anchor: {} for anchor in ("target_only", "ordinary_eagle")}
+    anchors = ("target_only", "ordinary_eagle") + (
+        ("draft_q4_0",) if "draft_q4_0" in aggregated else ()
+    )
     by_variant = {}
     for variant, packed in aggregated.items():
         if not (variant.startswith("packed_") or variant.startswith(("draft_q", "draft_w"))):
             continue
         by_variant[variant] = {}
-        for anchor in ("target_only", "ordinary_eagle"):
+        for anchor in anchors:
             baseline = aggregated[anchor]
             by_variant[variant][anchor] = {}
             for metric in ("request_tokens_per_s", "decode_tokens_per_s"):
@@ -1274,6 +1368,15 @@ def all_native_operand_dispatches_confirmed(
     )
 
 
+def all_w1ax_dispatches_confirmed(destination: Path, repetitions: int, variant: str) -> bool:
+    return all(
+        json.loads(
+            (destination / f"rep-{rep:02d}" / variant / "dispatch-evidence.json").read_text()
+        )["cuda_w1ax_dispatch_confirmed"]
+        for rep in range(repetitions)
+    )
+
+
 def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,79}", run_id):
         raise ValueError("run ID must be a safe, relative name")
@@ -1285,14 +1388,26 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
     orders = schedule(evaluation["repetitions"], variants)
     group_specs = packed_specs(config, variants)
     weight_specs = weight_only_specs(config, variants)
+    ax_specs = w1ax_specs(config, variants)
     native_specs = native_operand_specs(config, variants)
     if evaluation["warmup_requests"] < 0 or evaluation["max_output_tokens"] <= 0:
         raise ValueError("invalid warmup or max output setting")
+    if ax_specs and (
+        evaluation["max_draft_tokens"] != 5
+        or evaluation.get("min_draft_probability") != 0.0
+        or evaluation["warmup_requests"] < 2
+    ):
+        raise ValueError("W1Ax primary matrix requires D=5, p_min=0.0 and two warmups")
+    if not isinstance(evaluation.get("round_trace", False), bool):
+        raise ValueError("evaluation.round_trace must be a boolean")
     if config["server"]["host"] not in ("127.0.0.1", "localhost"):
         raise ValueError("server must bind loopback for this local harness")
     model_paths = dict(config["models"])
+    if ax_specs:
+        model_paths.pop("packed_head_draft", None)
     model_paths.update({variant: spec["draft"] for variant, spec in group_specs.items()})
     model_paths.update({variant: spec["draft"] for variant, spec in weight_specs.items()})
+    model_paths.update({variant: spec["draft"] for variant, spec in ax_specs.items()})
     model_paths.update({variant: spec["draft"] for variant, spec in native_specs.items()})
     paths = {
         name: resolve(ROOT, value)
@@ -1315,7 +1430,7 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
         shutil.copy2(paths["prompt_file"], destination / "prompts.jsonl")
         env = {key: os.environ[key] for key in SAFE_INHERITED_ENV if key in os.environ}
         env.update(config.get("environment", {}))
-        for selector in ("GGML_CUDA_W1A1_MMA", "GGML_CUDA_W8A8_MMA", "GGML_CUDA_W4A4_MMA"):
+        for selector in ("GGML_CUDA_W1A1_MMA", "GGML_CUDA_W8A8_MMA", "GGML_CUDA_W4A4_MMA", "GGML_W1AX_ACT_BITS", "GGML_W1AX_A4_KERNEL", "W1AX_ROUND_TRACE_JSONL"):
             env.pop(selector, None)
         variant_environments = {
             variant: {
@@ -1323,6 +1438,8 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                 "GGML_CUDA_W1A1_MMA": "1" if variant == MMA_VARIANT else "0",
                 "GGML_CUDA_W8A8_MMA": "1" if variant == "draft_w8a8_mma" else "0",
                 "GGML_CUDA_W4A4_MMA": "1" if variant == "draft_w4a4_mma" else "0",
+                **({"GGML_W1AX_ACT_BITS": str(W1AX_BITS[variant])} if variant in ax_specs else {}),
+                **({"GGML_W1AX_A4_KERNEL": "bitserial"} if variant == "draft_w1a4" else {}),
             }
             for variant in variants
         }
@@ -1347,6 +1464,14 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
             },
             "environment": env,
             "variant_environments": variant_environments,
+            "round_trace_enabled": evaluation.get("round_trace", False),
+            "round_trace_path_template": "rep-{repetition:02d}/{variant}/round-trace.jsonl",
+            "round_trace_schema": "w1ax_eagle_round_v1",
+            "round_trace_request_mapping": (
+                "Concurrency is one; server_request_index counts warmups then measured calls "
+                "in order within each server process. Trace task_id is server-internal. "
+                "Exclude checkpoint_replay rows from accepted-per-round quality aggregates."
+            ),
             "variants": list(variants),
             "variant_specs": {
                 **{
@@ -1381,6 +1506,14 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                     }
                     for variant in native_specs
                 },
+                **{
+                    variant: {
+                        **ax_specs[variant],
+                        "draft_model_path": str(paths[variant]),
+                        "draft_model_sha256": sha256(paths[variant]),
+                    }
+                    for variant in ax_specs
+                },
             },
             "orders": orders,
             "commands": {variant: command_for(config, paths, variant) for variant in variants},
@@ -1413,7 +1546,7 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                 draft_hashes[variant] = None
             elif variant == "ordinary_eagle":
                 draft_hashes[variant] = manifest["files"]["ordinary_draft"]["sha256"]
-            elif variant in group_specs or variant in weight_specs or variant in native_specs:
+            elif variant in group_specs or variant in weight_specs or variant in native_specs or variant in ax_specs:
                 draft_hashes[variant] = manifest["files"][variant]["sha256"]
             else:
                 draft_hashes[variant] = manifest["files"]["packed_head_draft"]["sha256"]
@@ -1429,6 +1562,11 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                     json_write(server_dir / "gpu-before.json", gpu_snapshot())
                     command = manifest["commands"][variant]
                     variant_env = variant_environments[variant]
+                    if evaluation.get("round_trace", False):
+                        variant_env = {
+                            **variant_env,
+                            "W1AX_ROUND_TRACE_JSONL": str(server_dir / "round-trace.jsonl"),
+                        }
                     json_write(server_dir / "environment.json", variant_env)
                     with (server_dir / "server.log").open("wb") as log:
                         process = subprocess.Popen(
@@ -1453,7 +1591,7 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                                     config["server"]["request_timeout_s"],
                                     server_dir / "warmup" / f"request-{index:02d}",
                                 )
-                            for prompt in prompts:
+                            for prompt_index, prompt in enumerate(prompts):
                                 measurement = execute_request(
                                     base_url,
                                     request_body(config, prompt),
@@ -1465,22 +1603,29 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                                         "repetition": repetition,
                                         "variant": variant,
                                         "prompt_id": prompt["id"],
+                                        "request_id": f"rep-{repetition:02d}/{variant}/{prompt['id']}",
+                                        "server_request_index": evaluation["warmup_requests"] + prompt_index,
+                                        "w1ax_activation_bits_selector": variant_env.get("GGML_W1AX_ACT_BITS"),
+                                        "round_trace_path": variant_env.get("W1AX_ROUND_TRACE_JSONL"),
                                         "w1a1_mma_selector": variant_env["GGML_CUDA_W1A1_MMA"],
                                         "w8a8_mma_selector": variant_env["GGML_CUDA_W8A8_MMA"],
                                         "w4a4_mma_selector": variant_env["GGML_CUDA_W4A4_MMA"],
                                         "weight_coverage": group_specs.get(variant, {}).get(
                                             "weight_coverage"
                                         )
-                                        or native_specs.get(variant, {}).get("weight_coverage"),
+                                        or native_specs.get(variant, {}).get("weight_coverage")
+                                        or ax_specs.get(variant, {}).get("weight_coverage"),
                                         "activation_coverage": group_specs.get(variant, {}).get(
                                             "activation_coverage"
                                         )
-                                        or native_specs.get(variant, {}).get("activation_coverage"),
+                                        or native_specs.get(variant, {}).get("activation_coverage")
+                                        or ax_specs.get(variant, {}).get("activation_coverage"),
                                         "weight_format": group_specs.get(variant, {}).get(
                                             "weight_format"
                                         )
                                         or weight_specs.get(variant, {}).get("weight_format")
-                                        or native_specs.get(variant, {}).get("weight_format"),
+                                        or native_specs.get(variant, {}).get("weight_format")
+                                        or ax_specs.get(variant, {}).get("weight_format"),
                                         "operator": native_specs.get(variant, {}).get("operator"),
                                         "activation_precision": group_specs.get(variant, {}).get(
                                             "activation_precision"
@@ -1488,16 +1633,22 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                                         or weight_specs.get(variant, {}).get("activation_precision")
                                         or native_specs.get(variant, {}).get(
                                             "activation_precision"
-                                        ),
+                                        ) or ax_specs.get(variant, {}).get("activation_precision"),
                                         "backend_precision": group_specs.get(variant, {}).get(
                                             "backend_precision"
                                         )
                                         or weight_specs.get(variant, {}).get("backend_precision")
-                                        or native_specs.get(variant, {}).get("backend_precision"),
+                                        or native_specs.get(variant, {}).get("backend_precision")
+                                        or ax_specs.get(variant, {}).get("expected_cuda_marker"),
                                         "draft_model_sha256": draft_hashes[variant],
                                     }
                                 )
-                                if variant in native_specs:
+                                json_write(server_dir / "measured" / prompt["id"] / "measurement.json", measurement)
+                                if ax_specs and measurement["generated_token_ids"] is None:
+                                    raise RuntimeError(
+                                        f"{variant}/{prompt['id']}: server omitted raw generated token IDs"
+                                    )
+                                if variant in native_specs or variant in ax_specs:
                                     pending_native_records.append(measurement)
                                 else:
                                     records.append(measurement)
@@ -1515,6 +1666,11 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                                 evidence = native_operand_dispatch_evidence(
                                     (server_dir / "server.log").read_text(errors="replace"),
                                     native_specs[variant],
+                                )
+                            if variant in ax_specs:
+                                evidence = w1ax_dispatch_evidence(
+                                    (server_dir / "server.log").read_text(errors="replace"),
+                                    ax_specs[variant], ax_specs,
                                 )
                             json_write(server_dir / "dispatch-evidence.json", evidence)
                             timing = speculative_timing(
@@ -1535,6 +1691,11 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                         raise RuntimeError(
                             f"{variant}: expected draft load and CUDA operand dispatch "
                             "markers were not both observed"
+                        )
+                    if variant in ax_specs and not evidence["cuda_w1ax_dispatch_confirmed"]:
+                        raise RuntimeError(
+                            f"{variant}: all-nine W1Ax load, selected graph and CUDA dispatch "
+                            "markers were not confirmed"
                         )
                     if pending_native_records:
                         records.extend(pending_native_records)
@@ -1571,6 +1732,16 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                     )
                     for variant in native_specs
                 },
+                "w1ax_dispatch_confirmed_by_variant": {
+                    variant: all_w1ax_dispatches_confirmed(
+                        destination, evaluation["repetitions"], variant
+                    )
+                    for variant in ax_specs
+                },
+                "w1ax_variant_specs": {
+                    variant: manifest["variant_specs"][variant] for variant in ax_specs
+                },
+                "round_trace_enabled": evaluation.get("round_trace", False),
                 "native_operand_variant_specs": {
                     variant: manifest["variant_specs"][variant] for variant in native_specs
                 },

@@ -1,0 +1,65 @@
+# Eight-path SM75 precision matrix. Replace paths with verified artifacts before launch.
+schema_version = 1
+
+[server]
+binary = "build/llama-cuda/bin/llama-server"
+host = "127.0.0.1"
+port = 18080
+startup_timeout_s = 300
+request_timeout_s = 180
+common_args = [
+  "--n-gpu-layers", "all", "--ctx-size", "2048", "--parallel", "1",
+  "--fit", "off", "--cache-type-k", "f16", "--cache-type-v", "f16",
+  "--jinja", "--metrics", "--perf", "-lv", "4",
+]
+
+[models]
+target = "models/gguf/Qwen3-4B-f16.gguf"
+ordinary_draft = "models/gguf/Qwen3-4B-eagle3-f16.gguf"
+
+[weight_only_variants.q8_0]
+draft = "models/gguf/Qwen3-4B-eagle3-q8_0.gguf"
+weight_format = "Q8_0"
+activation_precision = "CUDA Q8_1 conversion at matmul"
+backend_precision = "Q8_0 weights with Q8_1 activation conversion"
+
+[weight_only_variants.q4_0]
+draft = "models/gguf/Qwen3-4B-eagle3-q4_0.gguf"
+weight_format = "Q4_0"
+activation_precision = "CUDA Q8_1 conversion at matmul"
+backend_precision = "Q4_0 weights with Q8_1 activation conversion"
+
+[w1ax]
+draft = "models/gguf/Qwen3-4B-eagle3-all-w1a1.gguf"
+expected_loader_marker = "EAGLE3 W1A1 active groups: fusion,attention,ffn,head (9 tensors)"
+
+[w1ax.expected_cuda_markers]
+"16" = "CUDA packed W1A16 FP16 SIGNADD dispatch"
+"8" = "CUDA packed W1A8 INT8 dispatch"
+"4" = "CUDA packed W1A4 BITSERIAL dispatch"
+"1" = "CUDA packed W1A1 XOR/POPCOUNT dispatch"
+
+[precision]
+target_weights = "f16"
+target_kv = "f16"
+ordinary_draft_weights = "f16"
+w1ax_weights = "packed W1 signs plus F32 row scales, same GGUF for all four modes"
+w1ax_activations = "runtime A16/A8/A4/A1 selected by GGML_W1AX_ACT_BITS"
+draft_kv = "f16"
+
+[evaluation]
+w1ax_matrix = true
+prompt_file = "configs/acceptance_prompts.jsonl"
+warmup_requests = 2
+repetitions = 5
+max_output_tokens = 128
+temperature = 0.0
+seed = 42
+max_draft_tokens = 5
+min_draft_probability = 0.0
+# For a separate trace diagnostic run; leave disabled for throughput trials.
+round_trace = false
+enable_thinking = false
+
+[environment]
+CUDA_VISIBLE_DEVICES = "0"
