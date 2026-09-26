@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import math
+import random
 import sys
 from pathlib import Path
 from typing import Any
@@ -90,8 +91,8 @@ def pooled(rows: list[dict[str, Any]], variant: str) -> dict[str, Any]:
         )
         check(totals["accepted"] <= totals["proposed"], f"{variant}: accepted exceeds proposed")
         check(
-            totals["rounds"] > 0 and totals["proposed"] > 0,
-            f"{variant}: no speculative rounds/proposals",
+            totals["rounds"] > 0 or totals["proposed"] == totals["accepted"] == 0,
+            f"{variant}: proposals/acceptances without speculative rounds",
         )
     rounds = totals["rounds"]
     return {
@@ -110,6 +111,94 @@ def pooled(rows: list[dict[str, Any]], variant: str) -> dict[str, Any]:
         if rounds and totals["accepted"] is not None
         else None,
     }
+
+
+def paired_bootstrap(
+    candidate_rows: list[dict[str, Any]],
+    reference_rows: list[dict[str, Any]],
+    samples: int,
+    seed: int,
+) -> dict[str, Any]:
+    """Crossed prompt/repetition resampling, paired across both supplied sources.
+
+    As in analyze_native_benchmark, draw prompts and repetitions independently
+    with replacement, then take their Cartesian product. Preserve the same draw
+    for both sources and pool token/time totals before taking rate ratios.
+    Sources may be different cells or the same variant; selection is held fixed.
+    """
+    check(type(samples) is int and samples >= 100, "at least 100 bootstrap samples are required")
+    indexes = []
+    for rows in (candidate_rows, reference_rows):
+        index = {}
+        for row in rows:
+            key = (row["repetition"], row["prompt_id"])
+            check(key not in index, "bootstrap has duplicate prompt/repetition pair")
+            values = (row["completion_tokens"], row["request_wall_s"], row["server_predicted_ms"])
+            check(all(number(value, positive=True) for value in values), "invalid bootstrap token/time")
+            index[key] = values
+        indexes.append(index)
+    candidate, reference = indexes
+    check(candidate and candidate.keys() == reference.keys(), "bootstrap has incomplete prompt pairs")
+    repetitions = sorted({key[0] for key in candidate})
+    prompts = sorted({key[1] for key in candidate})
+    check(
+        len(candidate) == len(repetitions) * len(prompts),
+        "bootstrap requires a complete prompt/repetition rectangle",
+    )
+    rng = random.Random(seed)
+    draws: dict[str, list[float]] = {"request": [], "decode": []}
+    for _ in range(samples):
+        reps = rng.choices(repetitions, k=len(repetitions))
+        ids = rng.choices(prompts, k=len(prompts))
+        pairs = [(rep, prompt) for rep in reps for prompt in ids]
+        a = [candidate[pair] for pair in pairs]
+        b = [reference[pair] for pair in pairs]
+        token_ratio = sum(row[0] for row in a) / sum(row[0] for row in b)
+        for index, metric in ((1, "request"), (2, "decode")):
+            draws[metric].append(
+                token_ratio * sum(row[index] for row in b) / sum(row[index] for row in a)
+            )
+    result = {}
+    for metric, values in draws.items():
+        values.sort()
+        interval = {}
+        for label, fraction in (("p2_5", 0.025), ("median", 0.5), ("p97_5", 0.975)):
+            position = fraction * (len(values) - 1)
+            low = int(position)
+            high = min(low + 1, len(values) - 1)
+            interval[label] = values[low] + (values[high] - values[low]) * (position - low)
+        result[metric] = interval
+    return result
+
+
+def grouped_summaries(
+    records: list[dict[str, Any]], categories: dict[str, str]
+) -> dict[str, Any]:
+    """Expose pooled distributions without averaging individual rate ratios."""
+    result = {}
+    for dimension, value_for in (
+        ("prompt", lambda row: row["prompt_id"]),
+        ("category", lambda row: categories[row["prompt_id"]]),
+        ("repetition", lambda row: str(row["repetition"])),
+    ):
+        groups: dict[str, list[dict[str, Any]]] = {}
+        for row in records:
+            groups.setdefault(value_for(row), []).append(row)
+        summaries = {}
+        for group, rows in sorted(groups.items()):
+            variants = {variant: pooled(rows, variant) for variant in VARIANTS}
+            for summary in variants.values():
+                summary["vs_anchors"] = {
+                    label: {
+                        metric: summary[f"{metric}_tokens_per_s"]
+                        / variants[anchor][f"{metric}_tokens_per_s"]
+                        for metric in ("request", "decode")
+                    }
+                    for label, anchor in ANCHORS.items()
+                }
+            summaries[group] = variants
+        result[dimension] = summaries
+    return result
 
 
 def validate_records(records: Any, prompt_ids: list[str], key: str) -> list[dict[str, Any]]:
@@ -251,7 +340,13 @@ def output_source(cell: dict[str, Any], key: str, variant: str) -> dict[str, Any
     }
 
 
-def analyze(suite_path: Path, results_root: Path) -> dict[str, Any]:
+def analyze(
+    suite_path: Path, results_root: Path, *, samples: int = 0, seed: int = 42
+) -> dict[str, Any]:
+    check(
+        type(samples) is int and (samples == 0 or samples >= 100),
+        "bootstrap samples must be zero or at least 100",
+    )
     suite_path = suite_path.resolve()
     suite = read_object(suite_path)
     progress = read_object(suite_path.parent / "progress.json")
@@ -368,6 +463,18 @@ def analyze(suite_path: Path, results_root: Path) -> dict[str, Any]:
             and manifest.get("files", {}).get("prompt_file", {}).get("sha256") == prompt["sha256"],
             f"{key}: development prompt IDs/content changed",
         )
+        prompt_rows = [
+            json.loads(line)
+            for line in (run / "prompts.jsonl").read_text().splitlines()
+            if line.strip()
+        ]
+        check(
+            len(prompt_rows) == len(prompt_ids)
+            and {row.get("id") for row in prompt_rows} == set(prompt_ids),
+            f"{key}: prompt metadata IDs changed",
+        )
+        categories = {row["id"]: row.get("category") or "unspecified" for row in prompt_rows}
+        check(all(isinstance(value, str) for value in categories.values()), f"{key}: invalid category")
         files = manifest.get("files", {})
         expected_hashes = {
             model: model_hashes[source_key] for model, source_key in MODEL_SOURCE_KEYS.items()
@@ -448,9 +555,20 @@ def analyze(suite_path: Path, results_root: Path) -> dict[str, Any]:
             "report_sha256": sha256(run / "report.json"),
             "records_sha256": sha256(run / "records.json"),
             "variants": by_variant,
+            "grouped_summaries": grouped_summaries(records, categories),
         }
         records_by_cell[key] = records
         for variant, summary in by_variant.items():
+            if samples and variant in W1AX:
+                summary["paired_bootstrap_vs_anchors"] = {
+                    label: paired_bootstrap(
+                        [row for row in records if row["variant"] == variant],
+                        [row for row in records if row["variant"] == anchor],
+                        samples,
+                        seed,
+                    )
+                    for label, anchor in ANCHORS.items()
+                }
             summary["raw_output_vs"] = {
                 anchor_name: compare_outputs(
                     records,
@@ -487,6 +605,11 @@ def analyze(suite_path: Path, results_root: Path) -> dict[str, Any]:
             "criterion": "max pooled decode tokens/s on development prompts",
             "decode_tokens_per_s": cells[winner]["variants"][variant]["decode_tokens_per_s"],
             "selection_scope": "exploratory_development_only",
+            "selection_interpretation": (
+                "Fastest repeated target-only control cell; draft policy is inoperative."
+                if variant == "target_only"
+                else "Development-selected draft policy; selection is held fixed in uncertainty estimates."
+            ),
         }
     for variant, selection in best.items():
         winner = selection["cell"]
@@ -508,6 +631,17 @@ def analyze(suite_path: Path, results_root: Path) -> dict[str, Any]:
                 for metric in ("decode", "request")
             }
             comparison["selection_scope"] = "exploratory_development_only"
+            if samples:
+                comparison["paired_bootstrap_95pct"] = paired_bootstrap(
+                    [row for row in records_by_cell[winner] if row["variant"] == variant],
+                    [
+                        row for row in records_by_cell[reference_cell]
+                        if row["variant"] == reference_variant
+                    ],
+                    samples,
+                    seed,
+                )
+                comparison["uncertainty_scope"] = "descriptive_conditional_on_development_selection"
             selection["raw_output_comparisons"][label] = comparison
     return {
         "schema": "w1ax_policy_grid_analysis_v1",
@@ -518,6 +652,23 @@ def analyze(suite_path: Path, results_root: Path) -> dict[str, Any]:
         "prompt_ids": prompt_ids,
         "prompt_file_sha256": prompt["sha256"],
         "repetitions": 5,
+        "bootstrap": {
+            "samples": samples,
+            "seed": seed,
+            "interval": "95% percentile interval",
+            "method": "paired crossed prompt/repetition bootstrap of pooled token/time rate ratios",
+            "selection_scope": "descriptive_conditional_on_development_selection",
+            "interpretation": (
+                "Prompts and repetitions are independently resampled with replacement; the same "
+                "Cartesian-product draw is used for candidate and reference. Selected policies "
+                "are held fixed, not reselected in each draw. Intervals are descriptive on these "
+                "development prompts, not holdout estimates, selection-corrected intervals, or "
+                "simultaneous bounds across the grid. Cross-cell repetition pairing matches "
+                "repetition labels, not simultaneous timing measurements. Output differences "
+                "remain included; intervals do not establish losslessness. "
+                "Zero samples disables intervals."
+            ),
+        },
         "variants": list(VARIANTS),
         "cells": {key: cells[key] for key in ordered},
         "best_development_policy_by_variant": best,
@@ -548,10 +699,14 @@ def main() -> int:
         help="directory containing benchmark run directories",
     )
     parser.add_argument("--output", type=Path, help="JSON report path (default beside suite.json)")
+    parser.add_argument(
+        "--bootstrap-samples", type=int, default=0, help="zero (default) or at least 100"
+    )
+    parser.add_argument("--seed", type=int, default=42, help="deterministic bootstrap seed")
     args = parser.parse_args()
     output = args.output or args.suite.parent / "policy-grid-report.json"
     try:
-        result = analyze(args.suite, args.results_root)
+        result = analyze(args.suite, args.results_root, samples=args.bootstrap_samples, seed=args.seed)
         output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
     except (FileNotFoundError, ValueError, KeyError, TypeError) as error:
         print(f"W1Ax policy grid analysis failed: {error}", file=sys.stderr)

@@ -1,5 +1,6 @@
 """Synthetic offline checks for the 12-cell W1Ax development policy grid."""
 
+import copy
 import hashlib
 import importlib.util
 import json
@@ -36,7 +37,10 @@ class PolicyGridTests(unittest.TestCase):
         self.results.mkdir()
         self.ids = [f"dev-{index:02d}" for index in range(24)]
         self.prompts_text = "".join(
-            json.dumps({"id": value, "messages": []}) + "\n" for value in self.ids
+            json.dumps({
+                "id": value, "category": ("prose", "code", "reasoning")[i % 3], "messages": []
+            }) + "\n"
+            for i, value in enumerate(self.ids)
         )
         self.prompt_hash = digest(self.prompts_text)
         self.models = tuple(ANALYSIS.MODEL_SOURCE_KEYS)
@@ -235,6 +239,55 @@ class PolicyGridTests(unittest.TestCase):
             self.assertTrue(comparison["all_observed_token_ids_match"])
             self.assertEqual(comparison["mismatches"], [])
 
+    def test_optional_intervals_cover_fixed_and_selected_comparisons(self):
+        report = ANALYSIS.analyze(self.suite_path, self.results, samples=100, seed=7)
+        summary = report["cells"]["d2-pmin-0.0"]["variants"]["draft_w1a1"]
+        for anchor in ("fp16_eagle", "q4_0_eagle"):
+            self.assertEqual(
+                summary["paired_bootstrap_vs_anchors"][anchor]["decode"],
+                {"p2_5": 2.0, "median": 2.0, "p97_5": 2.0},
+            )
+        selected = report["best_development_policy_by_variant"]["draft_w1a1"]
+        self.assertEqual(selected["cell"], "d2-pmin-0.0")
+        for comparison in selected["raw_output_comparisons"].values():
+            self.assertEqual(comparison["paired_bootstrap_95pct"]["decode"]["median"], 2)
+            self.assertEqual(
+                comparison["uncertainty_scope"], "descriptive_conditional_on_development_selection"
+            )
+        self.assertIn("held fixed", report["bootstrap"]["interpretation"])
+        self.assertIn(
+            "inoperative",
+            report["best_development_policy_by_variant"]["target_only"]["selection_interpretation"],
+        )
+        with self.assertRaisesRegex(ValueError, "zero or at least 100"):
+            ANALYSIS.analyze(self.suite_path, self.results, samples=99)
+
+    def test_grouped_summaries_pool_tokens_and_time_and_default_skips_intervals(self):
+        path = self.results / "synthetic-d2-pmin-0.0" / "records.json"
+        rows = json.loads(path.read_text())
+        for row in rows:
+            if row["variant"] == "draft_w1a1" and row["prompt_id"] == self.ids[0]:
+                row["server_predicted_ms"] = 300
+                row["speculative"] = {"accepted": 0, "proposed": 0, "rounds": 0}
+        write_json(path, rows)
+        report = ANALYSIS.analyze(self.suite_path, self.results)
+        cell = report["cells"]["d2-pmin-0.0"]
+        self.assertNotIn("paired_bootstrap_vs_anchors", cell["variants"]["draft_w1a1"])
+        groups = cell["grouped_summaries"]
+        self.assertEqual(
+            (len(groups["prompt"]), len(groups["category"]), len(groups["repetition"])), (24, 3, 5)
+        )
+        zero = groups["prompt"][self.ids[0]]["draft_w1a1"]
+        self.assertEqual(zero["speculative"], {"accepted": 0, "proposed": 0, "rounds": 0})
+        for field in ("acceptance_rate", "mean_proposal_length", "mean_accepted_length"):
+            self.assertIsNone(zero[field])
+        prose = groups["category"]["prose"]["draft_w1a1"]
+        self.assertEqual(prose["requests"], 40)
+        self.assertAlmostEqual(prose["decode_tokens_per_s"], 80 / 5)
+        self.assertAlmostEqual(prose["vs_anchors"]["fp16_eagle"]["decode"], 1.6)
+        self.assertAlmostEqual(zero["decode_tokens_per_s"], 20 / 3)
+        self.assertAlmostEqual(groups["repetition"]["0"]["draft_w1a1"]["decode_tokens_per_s"], 48 / 2.6)
+
     def test_output_differences_preserve_cells_and_first_divergence_evidence(self):
         changed, changed_path = self.replace_raw_ids("d2-pmin-0.0", "draft_w1a1", [101, 999, 103])
         fixed, fixed_path = self.replace_raw_ids("d5-pmin-0.0", "draft_w1a1", [101, 999])
@@ -373,6 +426,81 @@ max_output_tokens = 128
                 frozen["model_server_hashes"][source_key],
             )
         self.assertNotIn("model:draft_w1a1", frozen["input_files"])
+
+
+class PairedBootstrapTests(unittest.TestCase):
+    def rows(self):
+        candidate, reference = [], []
+        # Prompt rates and repetition timing effects vary drastically. Pairing
+        # must share BOTH resampled dimensions and must pool before division.
+        for rep, scale in enumerate((1, 10, 100, 1000, 10000)):
+            for prompt, tokens, candidate_ms, reference_ms in (("a", 1, 1, 2), ("b", 9, 9, 1)):
+                common = {"repetition": rep, "prompt_id": prompt, "completion_tokens": tokens}
+                candidate.append({
+                    **common, "server_predicted_ms": candidate_ms * scale,
+                    "request_wall_s": tokens * scale,
+                })
+                reference.append({
+                    **common, "server_predicted_ms": reference_ms * scale,
+                    "request_wall_s": 2 * tokens * scale,
+                })
+        return candidate, reference
+
+    def test_crossed_pairing_pools_rates_and_keeps_shared_timing_effects(self):
+        candidate, reference = self.rows()
+        result = ANALYSIS.paired_bootstrap(candidate, reference, 1000, 42)
+        # Two equiprobable prompts give bootstrap ratios 2, 3/10, and 1/9.
+        # Averaging the prompt ratios would incorrectly yield 19/18 at the median.
+        self.assertAlmostEqual(result["decode"]["p2_5"], 1 / 9)
+        self.assertAlmostEqual(result["decode"]["median"], 0.3)
+        self.assertAlmostEqual(result["decode"]["p97_5"], 2)
+        # Common prompt/repetition noise cancels exactly only when paired.
+        self.assertEqual(result["request"], {"p2_5": 2, "median": 2, "p97_5": 2})
+        self.assertEqual(result, ANALYSIS.paired_bootstrap(candidate[::-1], reference[::-1], 1000, 42))
+
+    def test_seed_reproducibility_and_self_comparison(self):
+        candidate, reference = self.rows()
+        for i, row in enumerate(reference):
+            row["server_predicted_ms"] *= i + 1
+        first = ANALYSIS.paired_bootstrap(candidate, reference, 100, 13)
+        self.assertEqual(first, ANALYSIS.paired_bootstrap(candidate, reference, 100, 13))
+        self.assertNotEqual(first, ANALYSIS.paired_bootstrap(candidate, reference, 100, 14))
+        self.assertEqual(
+            ANALYSIS.paired_bootstrap(candidate, candidate, 100, 13)["decode"],
+            {"p2_5": 1, "median": 1, "p97_5": 1},
+        )
+
+    def test_zero_proposal_counters_remain_valid_but_inconsistent_or_missing_fail(self):
+        candidate, _ = self.rows()
+        for row in candidate:
+            row.update(variant="draft_w1a1", speculative={"accepted": 0, "proposed": 0, "rounds": 0})
+        result = ANALYSIS.pooled(candidate, "draft_w1a1")
+        self.assertIsNone(result["acceptance_rate"])
+        self.assertIsNone(result["mean_proposal_length"])
+        candidate[0]["speculative"]["proposed"] = 1
+        with self.assertRaisesRegex(ValueError, "without speculative rounds"):
+            ANALYSIS.pooled(candidate, "draft_w1a1")
+        candidate[0]["speculative"]["proposed"] = None
+        with self.assertRaisesRegex(ValueError, "missing speculative counters"):
+            ANALYSIS.pooled(candidate, "draft_w1a1")
+
+    def test_incomplete_duplicate_and_nonrectangular_pairs_fail(self):
+        candidate, reference = self.rows()
+        with self.assertRaisesRegex(ValueError, "incomplete prompt pairs"):
+            ANALYSIS.paired_bootstrap(candidate, reference[:-1], 100, 1)
+        with self.assertRaisesRegex(ValueError, "duplicate"):
+            ANALYSIS.paired_bootstrap(candidate + candidate[:1], reference, 100, 1)
+        with self.assertRaisesRegex(ValueError, "rectangle"):
+            ANALYSIS.paired_bootstrap(candidate[:-1], reference[:-1], 100, 1)
+        with self.assertRaisesRegex(ValueError, "incomplete prompt pairs"):
+            ANALYSIS.paired_bootstrap([], [], 100, 1)
+        for value in (0, -1, float("nan"), float("inf"), True):
+            invalid = copy.deepcopy(candidate)
+            invalid[0]["server_predicted_ms"] = value
+            with self.assertRaisesRegex(ValueError, "invalid bootstrap token/time"):
+                ANALYSIS.paired_bootstrap(invalid, reference, 100, 1)
+        with self.assertRaisesRegex(ValueError, "at least 100"):
+            ANALYSIS.paired_bootstrap(candidate, reference, 99, 1)
 
 
 if __name__ == "__main__":

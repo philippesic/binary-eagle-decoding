@@ -1,6 +1,6 @@
 # All-layer W1Ax activation precision on RTX 2080 Ti
 
-**State:** historical and development matrices complete; diagnostics in progress.
+**State:** primary matrices, operator/round/profile/streaming/context diagnostics complete; twelve-cell development policy sweep in progress.
 **Protocol:** [frozen W1Ax study](w1ax-activation-precision-plan.md).
 **Hardware:** NVIDIA RTX 2080 Ti, SM75, 11,264 MiB VRAM under Ubuntu 24.04 WSL2.
 
@@ -31,7 +31,7 @@ dispatch were independently verified by the SM75 gates and explicit WSL GPU
 queries. A separate full device snapshot is preserved in
 `runs/w1ax-device-manifest-20260925/` (stdout SHA256
 `bd87139e8ce478aef42c4b17fda2345891be9cd1c4ad02b826c47dee417af0c8`).
-The probe is being corrected for separate telemetry diagnostics; primary
+The separate streaming diagnostic below records explicit WSL telemetry; primary
 per-variant peak-memory/clock claims are not made. Q8_0/Q4_0 name standard GGUF block weight formats; their live
 activation path is Q8_1, not the research W8A8/W4A4 format.
 Acceptance is the pinned native server's target-sample-and-match count, not
