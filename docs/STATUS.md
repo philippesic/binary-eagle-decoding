@@ -140,3 +140,13 @@ same-device end-to-end comparisons against **both** FP16 EAGLE and Q4_0 EAGLE.
 Later, screen non-EAGLE drafters such as block-parallel DFlash/DSpark before
 investing in their W1A1 kernels. The completed 2080 Ti and 5080 experiments
 are sealed, and the GPUs were released after their runs.
+
+## Local research review (2026-09-25)
+
+Seven Astra-high local-only analyses are collected in the
+[ranked synthesis](../experiments/research-review-2026-09-25.md). They identify
+target-aligned QAT capture, unused native cache-catch-up graph work, genuine
+early draft caps, shared activation packing, structured scales, and a later
+DFlash/DSpark quality screen as bounded opportunities. These are advisory
+findings, not new performance results or changes to the active W1Ax protocol.
+No GPU work or web search was performed.

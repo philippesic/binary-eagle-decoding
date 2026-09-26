@@ -32,3 +32,29 @@ changes the tradeoff. Routine implementation choices belong in commits.
 | 2026-09-24 | Keep the target-aligned QAT treatment of out-of-draft-vocabulary labels pending until a mapped-mass audit. | Pinned AngelSlim uses offset-form `d2t`: draft ID `i` maps to target ID `i + d2t[i]`. A direct checkpoint audit verified 32,000 unique absolute IDs and a matching 32,000-true `t2d` mask over 151,936 target IDs; the GGUF mapping matched exactly. The current cached-head capture still lacks parent tree-node identity and matching verifier logits. A 32,000-class head cannot directly represent every target-vocabulary label. | Capture aligned verifier rows and measure unmapped-label frequency and target probability mass, then freeze a documented loss rule before any new QAT run. |
 | 2026-09-23 | Rotate a long Codex task after its second compaction, using a written checkpoint. | Context drift in previous long runs; hooks can inject post-compact instructions but cannot launch a successor. | Handoff fails in practice or hook behavior changes. |
 | 2026-09-25 | Before new QAT training, establish an all-nine-linear W1A16/W1A8/W1A4 activation-precision sweep on the 2080 Ti, rerunning FP16, Q8_0, Q4_0, and W1A1 in the same timing matrix. Measure quality, identical-input operator cost, complete round cost, and serving throughput separately. | The user requested these formats and a durable measurement list. Existing FP16/Q8_0/Q4_0/W1A1 `draft()` times are known, but they omit EAGLE `process()` and isolated verification; matched FP16/Q4_0 component traces are missing. Binary weights must be held identical across W1Ax to identify the activation-precision effect. See the [study plan](../experiments/w1ax-activation-precision-plan.md). | Numerical/dispatch gates fail, memory prevents the matched matrix, or the development-prompt acceptance screen rules out a format before native timing. |
+
+## Pending options from the local research review (2026-09-25)
+
+The user requested seven independent Astra-high analyses. The
+[review synthesis](../experiments/research-review-2026-09-25.md) preserves all
+reports and the evidence for these options; no new research direction has been
+selected and the active W1Ax goal remains unchanged.
+
+- **Native work elimination:** stage-tag and test unused-head removal during
+  cache catch-up, then separately evaluate K/V-only reconstruction, genuine
+  per-sequence draft caps and accepted-prefix deferral. Local source supports
+  these opportunities; full-round savings and cache correctness are unmeasured.
+  Apply shared optimizations fairly to FP16 and Q4_0 anchors.
+- **QAT supervision and support:** first audit state/parent/verifier joins,
+  native-chain versus PyTorch-tree sampling and unsupported target labels.
+  Preserve the bounded target-aligned head pilot before considering an extra
+  reconstruction-control arm, refreshed states or wider recurrent training.
+  The optional arms in the advisory report do not amend the frozen budget.
+- **Precision versus architecture:** use common-weight W1Ax evidence to choose
+  whether one structured-scale/mixed-precision follow-up has merit. DFlash/DSpark
+  is the strongest later non-EAGLE screen in the review, with no local W1A1
+  result yet; an architecture pivot remains the user's decision.
+- **Policy diagnostic budget:** audit top-10 confidence normalization before
+  running potentially redundant `p_min=0.1` trials. The full Cartesian policy
+  grid is costly; any scope or grid amendment must be recorded before selection,
+  not silently substituted for the requested primary matrix.
