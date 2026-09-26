@@ -1,8 +1,8 @@
 # Goal: all-layer W1Ax activation-precision suite on RTX 2080 Ti
 
 **Opened:** 2026-09-25
-**State:** active; protocol and implementation review
-**GPU owner:** this goal; no remote job started yet
+**State:** active; implementation in progress
+**GPU owner:** orchestrator in this task; no remote job started yet
 
 ## Objective
 
@@ -12,8 +12,37 @@ Implement, validate, and run the full [W1Ax activation-precision study](../../ex
 
 - Native Codex Goal opened in this task on 2026-09-25.
 - The frozen study protocol already exists. No new W1A16/W1A8/W1A4 artifact or measurement exists yet.
-- Local `main` was clean at goal start. Shared host registry points to `192.168.4.29` for the RTX 2080 Ti, but SSH through tmux MCP timed out during banner exchange on 2026-09-25. The user has been asked for a current reachable address or WSL/SSH startup. GPU availability and process state remain unverified; no run has started.
+- Local `main` was clean at goal start and the goal checkpoint was pushed as `7ae1cc2`. A managed worktree at `/Users/pippo/.codex/worktrees/w1ax-suite/binary-eagle-decoding` holds the `w1ax-suite` branch.
+- Shared host registry points to `192.168.4.29`. The first SSH attempt through tmux MCP timed out during banner exchange; the user's requested retry connected. The actual RTX 2080 Ti (SM75) was idle at 0% with 672 MiB used and 10,356 MiB free, and the project process scan found no active supervisor/server/benchmark. Remote project parent was `11a25f5` and its llama.cpp checkout `34e21b7`. No new run has started.
+- Bounded workers own native W1Ax runtime, eight-path benchmark runner, and opt-in round tracing in separate files. The orchestrator owns GPU operations and integration. Workers are not to commit or use the GPU.
 - Keep the RTX 2080 Ti to one supervised experiment at a time. Use `scripts/remote_job.py` and unique run directories. Do not use the 24 QAT-final prompts in this untrained screen.
+- A supervised preflight on the actual RTX 2080 Ti (`runs/w1ax-preflight-w1a1-20260925/`) passed the existing W1A1 CUDA backend gate 5/5, including K=31/32/33/2560 and strided K=33. The supervisor ended with exit 0 and the GPU returned to 0% / 672 MiB used.
+- The separate nine-prompt context diagnostic was generated under remote `runs/w1ax-context-20260925/` from committed script `e2ad359`; manifest SHA256 `5653cfe7599e5dd4ae44e057df27b816221f8ee89635056bc0fb24b9f44a21a3`. Qwen3-4B chat-template tokenization with thinking disabled passed all planned bins: short 195–207, medium 521–543, long 1131–1171 tokens. Audit JSON SHA256 `ff23798a72f3a782821008fba4ff43dcbe8a9e86e307fd77aa313b64585e4173`; supervised audit `runs/w1ax-context-audit-final-20260925/` exited 0. The audit script is committed as `69d29d4`. These prompts are a context/latency diagnostic, separate from the QAT development and final sets.
+- Frozen QAT-revisit manifests were generated in remote `data/qat-revisit/` by supervised `runs/w1ax-qat-prompts-20260925/` (exit 0). The 24-prompt development manifest SHA256 is `a3b97d942a99f1bddd5bb97216c32a9920aaa50788baa5bdb92354842547e885` (8 prose, 8 code, 8 reasoning). The 24-prompt final manifest was generated and sealed; it has not been used in this study.
+- The reused all-nine W1A1 GGUF SHA256 is `098e1ecbb299aa16e2c968663acc49e60c0fcf16b053766d9f558114f79d011c`, matching the prior all-row source audit. The fixed FP16 target GGUF SHA256 is `05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6`.
+- Native W1Ax runtime commits `45b76c033`, `4c8767e4e`, `73caaa8ab`, and `3792aa79c` are published on the user's llama.cpp fork branch `w1ax-suite`. Local CPU operator gate passed 88/88; Mac `llama-server` with round tracing compiled. Parent runner, replay harness, and diagnostic analysis commits are on the parent `w1ax-suite` branch. The latest parent gitlink will be updated to `3792aa79c` before a sealed GPU run.
+- Remote CUDA source worktree `runs/llama-w1ax-src/` started from published commit `4c8767e4e`, and remote parent runner worktree `runs/w1ax-project-src/` started at parent `b16d72e`; later updates are recorded below. Resolved historical/development configs are under ignored run paths. Only this orchestrator uses the GPU.
+
+## SM75 correctness milestone
+
+- The initial CUDA build completed 358/358 targets with exit 0 under `runs/w1ax-sm75-build-20260925/`. The source worktree was then updated to published llama.cpp `3792aa79c`; incremental `runs/w1ax-sm75-build-final-20260925/` rebuilt 33 targets and exited 0. This is an actual CUDA 12.8/SM75 build, not a cross-compile.
+- Supervised CUDA backend gate `runs/w1ax-sm75-op-gate-20260925/` used `GGML_W1AX_ASSERT_INT_DOT=1` and passed 88/88 test cases, including distinct W1A1/W1A4 bit-serial/W1A8/W1A16 dispatch. The independent raw INT32 dot assertion was active for A4/A8. The conventional A4 comparator gate `runs/w1ax-sm75-a4-conventional-gate-20260925/` also passed 88/88 with its own dispatch marker and raw-dot assertion. Both exited 0; GPU returned to 0% / 672 MiB used.
+- The eight-path historical dry run under remote parent worktree `runs/w1ax-project-src/` exited 0. Its manifest records target-only, FP16, Q8_0, Q4_0, W1A16, W1A8, W1A4, W1A1 with D=5, p_min=0, five repetitions, and a matching published llama.cpp gitlink. The dry-run artifact is `results/w1ax-historical-full-20260925/`; use a different run ID for actual measurements.
+- Remote runner worktree was updated to parent commit `19c3064` and submodule `3792aa79c`. A bounded three-prompt all-nine activation capture is starting under `runs/w1ax-activation-capture-20260925/`; it must finish before operator replay or the timed matrix.
+
+## Real-input operator milestone
+
+- Supervised all-nine capture `runs/w1ax-activation-capture-20260925/` completed three historical requests with raw token IDs, all required loader/graph/CUDA markers, and clean server shutdown. It preserved 4,203 actual W1A1 activations across all nine packed linears; observed token-row counts include N=1, 2, and 34–38. The GPU returned idle. Capture synchronizes the stream and has no timing claim.
+- Deterministic selector `runs/w1ax-capture-selection-20260925/selected/` preserved the full 73-row `(tensor,K,M,N,bits)` invocation histogram and symlinked 147 representative captures covering all nine linears and observed shapes. Its manifest SHA256 is `a923844dc8be80240c6b08ffda8499fa468291be6d9960e03a69b33c436c45c8`.
+- Linked the native replay harness against the final `3792aa79c` CUDA libraries under supervised `runs/w1ax-replay-link-final-20260925/`. A one-capture SM75 smoke passed scalar parity for all four activation modes. Full selected-input replay `runs/w1ax-operator-replay-20260925/` completed with exit 0: 588 operator records (147 captured inputs × four modes), 435 full 32,000-row head comparisons, and all-nine coverage. It used two warmups and five synchronized samples per operator. The extracted JSONL SHA256 is `a06654a31f000bacf5988cda91201a100b57575fbead9548b66d614093c1afe5`.
+- A separate real-input exact INT32 dot check initially failed because CUDA graph capture disallows its diagnostic stream synchronization; this was a diagnostic configuration error, not a dot mismatch. Retry `runs/w1ax-operator-real-dot-gate-retry-20260925/` disabled CUDA graphs, enabled `GGML_W1AX_ASSERT_INT_DOT=1`, replayed all 147 inputs through all four modes, and exited 0. These assertion runs are excluded from timing.
+- CPU wall replay includes quantization/packing and output, while CUDA pack/dot substages remain to be traced separately. Capture files do not contain request/round IDs; the operator replay is linked by sequence and tensor/shape, not a proven per-request mapping.
+- Replay-only analysis `runs/w1ax-project-src/runs/w1ax-replay-summary-20260925/summary.json` exited 0, SHA256 `e2ec2c6844642380dcbedda22492468068f8d7010d394abb979ce98b23200dc4`. On 145 selected head token rows from 16 captures, same-binary-weight W1A16 top-1 agreement was 97.2% for A8, 72.4% for A4, and 33.1% for A1. These are correlated operator inputs, not independent prompt acceptance. At observed head N=2, full synchronized operator medians were A16 978.7 µs, A8 331.4 µs, A4 117.8 µs, A1 94.8 µs; at N=37, 29,443/5,470/1,637/919 µs respectively. These totals include ggml graph dispatch and synchronization and are not isolated CUDA kernel events or serving rates.
+- A CPU-draft versus CUDA-draft model parity check initially discovered that `--spec-draft-ngl 0` alone still selected CUDA for the custom op. The driver was corrected to use `--spec-draft-device none` for CPU and `CUDA0` for GPU. Supervised retry `runs/w1ax-model-parity-retry-supervisor-20260925/` exited 0; all four precisions emitted exactly the same 32 raw greedy token IDs on the frozen historical `prose-01` prompt between CPU and CUDA placement. The target was offloaded 37/37 layers to the GPU in both paths; the CPU draft showed no CUDA W1Ax dispatch, and each GPU draft showed its mode-specific dispatch. GPU returned idle afterward. This is one-prompt model parity, with full paired serving measurement still pending.
+
+## Active serving run
+
+- The matched eight-path historical matrix is running on the RTX 2080 Ti under tmux MCP session `w1ax-2080ti` and remote supervisor `runs/w1ax-project-src/runs/w1ax-historical-matrix-supervisor-20260925/` (child PID/PGID `25881` at the start). Raw results are `runs/w1ax-project-src/results/w1ax-historical-matrix-20260925/`. Its resolved config has 12 frozen historical prompts, two warmups, five repetitions, 128 output tokens, D=5, p_min=0, one server/GPU owner at a time, and the same FP16 target. The project checkout for the run is `dc4ccdd` with published llama.cpp `3792aa79c`. Monitor `state.json` and `records.json`; on a pause request interrupt the supervisor through tmux MCP, wait for `state.json` to stop, inspect the recorded process group and `nvidia-smi` before reporting the GPU free.
 
 ## Next actions
 
@@ -22,32 +51,10 @@ Implement, validate, and run the full [W1Ax activation-precision study](../../ex
 3. Run the frozen full matrix, operator replay, round tracing, and context/policy diagnostics; analyze both FP16 and Q4_0 comparisons.
 4. Write a compact report with raw artifact hashes, update this checkpoint and status, integrate tested code into `main`, and push.
 
-## Research review checkpoint (2026-09-25)
+## Native runtime worker checkpoint
 
-The user requested seven independent local-only deep analyses using Astra high:
-QAT execution, non-EAGLE one-bit architectures, end-to-end drafting policies,
-draft graph/kernel optimizations, precision allocation, training data and
-vocabulary coverage, and evaluation/experiment design. These are advisory
-reviews under the current goal, not a replacement goal or authorization for
-new GPU runs. Agents read the shared checkout without modifying it; reports
-are staged separately for synthesis. No web search or remote execution is
-part of this review. Major research choices remain with the user.
-
-Review agent ownership: `/root/qat_execution`, `/root/non_eagle_architectures`,
-`/root/throughput_policies`, `/root/draft_pipeline_optimization`,
-`/root/precision_allocation`, `/root/data_alignment`, and
-`/root/evaluation_strategy`. All use `gpt-6-astra`, high reasoning.
-The precision review was retried once after a transient model-capacity error.
-Integration worktree: `/tmp/binary-eagle-deep-analysis-20260925`, branch
-`research/deep-analysis-20260925`; per-category report staging:
-`/tmp/binary-eagle-analysis-reports-20260925/`.
-
-Review complete: all seven reports are preserved under
-`experiments/research-review-2026-09-25/`, with the ranked synthesis at
-[research-review-2026-09-25.md](../../experiments/research-review-2026-09-25.md).
-The agents finished their assignments without repository code edits or remote
-runs. Cross-review resolved a metadata-count discrepancy: development has nine
-topic families and final has ten. Advisory findings and pending options are
-recorded in `docs/DECISIONS.md`; the frozen primary study, QAT budget, final-set
-reservation and next actions above remain unchanged. No new GPU state was
-verified. Documentation link/whitespace checks precede integration into main.
+- Extended the existing packed-weight GGML operator with activation modes 1, 4, 8, and 16 selected by `GGML_W1AX_ACT_BITS` at EAGLE graph build. Default 1 preserves the old W1A1 path. All modes load the same nine packed signs and F32 row scales, with no dense selected-weight shadow.
+- A16 casts each F32 activation to FP16 at the operator boundary, accumulates signed values in F32, then multiplies the row scale. A8/A4 use per-token F32 absmax scales, signed ranges ±127/±7, nearest-even rounding, exact integer dot accumulation, then row-scale and activation-scale multiplication. CUDA A4 defaults to a four-plane bit-serial dot; `GGML_W1AX_A4_KERNEL=conventional` selects a real quantized-code comparator.
+- CPU build succeeded locally on Apple M3 Max; focused backend operator tests passed 88/88 across odd K, 32-bit boundaries, dirty tails, N=1/2/3, all-zero activations, negative zero, and strided views. This is a CPU correctness check, not an SM75 performance result. Python conversion tests were not run because the local environment lacks PyTorch.
+- CUDA code is written but awaits CUDA compilation and actual 2080 Ti exact-dot/dispatch validation. Operator replay, all-nine real activation capture, full-model logits/IDs, and matched benchmark remain required gates. No GPU was used by this worker.
+- Opt-in diagnostic capture: set `GGML_W1AX_CAPTURE_DIR` to an existing directory and disable CUDA graphs. Each `op-%012llu.bin` stores magic `W1AXACT1`, LE uint64 sequence/K/M/N, LE uint32 bits, a 128-byte NUL-padded packed tensor name, then N×K F32 activations. Capture synchronizes the CUDA stream and is excluded from timing.
