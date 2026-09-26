@@ -168,8 +168,36 @@ probability mass, nor does it establish acceptance. The ignored raw report is
 `runs/w1ax-vocab-coverage-20260926/report.json`, SHA256
 `c341f882579b85b116c93e57d5b436a58565940eb17e0b69cf232a9846a7e922`.
 
+## Matched operator controls
+
+The extended same-input replay completed all 147 captures against all four
+W1Ax modes and native FP16/Q8_0/Q4_0 operators. An explicit FP16 activation
+roundtrip changed none of the ordinary FP16 operator outputs on these inputs;
+all 145 head token rows retained identical top-1 and top-5. This bounds the
+cast's observed effect on these captured inputs, not every possible state.
+
+Representative head synchronized full-operation medians, microseconds:
+
+| N | FP16 | Q8_0 | Q4_0 | W1A16 | W1A8 | W1A4 bit-serial | W1A1 |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 331.3 | 199.3 | 140.7 | 470.5 | 246.6 | 103.1 | 70.8 |
+| 2 | 513.2 | 258.2 | 188.8 | 1,376.1 | 594.2 | 188.1 | 125.5 |
+| 37 | 524.6 | 275.7 | 225.1 | 31,192.1 | 5,730.1 | 1,687.3 | 966.4 |
+
+These are paired operator inputs with differing weight formats, not model
+trajectory comparisons. A separate conventional-A4 replay measured
+196.0/347.1/7,636.8µs at N=1/2/37; that run is a separate timing batch.
+Raw operator JSONL SHA256:
+`208b2e8f9caa526aeab4e9d66bfb88d0a375b14b1afbf7f95c864bc0f042f8cb`.
+
+Separate CUDA software profiles preserve packing/quantization and dot kernels.
+The profiles pool correctness, warmup and sampled launches; dot rescaling is
+fused. Matching graph-disabled unprofiled replay showed median per-capture
+profiler wall overhead factors 1.010/1.123/1.157/1.079 for A16/A8/A4/A1.
+Do not substitute these traced times for the uninstrumented serving results.
+
 ## Outstanding measurements
 
-Identical-input FP16/Q8_0/Q4_0 anchor replay, per-round trace, context/output-cap diagnostic, D/p_min policy
-grid, and separate CUDA stage profiles are pending. Do not treat the historical
+Per-round analysis, context/output-cap diagnostics, D/p_min policy grid,
+streaming latency/telemetry and full-server CUDA profiles remain in progress. Do not treat the historical
 screen as a final trained-QAT result or use the reserved 24-prompt final set.
