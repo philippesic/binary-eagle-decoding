@@ -310,6 +310,58 @@ Artifacts and SHA256:
 - `runs/w1ax-round-analysis-20260926/report.json`: `7d7186cdb14d6aeffd153142328d5d3d0c418a7bcfde189585e12db1d0e3b2f3`
 - `runs/w1ax-break-even-analysis-20260926/report.json`: `166790c62ccff4b6eb1d18a8e161a4d4078dd477d75415a796b22c07adeb3bad`
 
+## Full-server CUDA profile
+
+A separate three-prompt, 32-token diagnostic ran all eight paths for five
+repetitions, both unprofiled and under Nsight (120 measured requests each, two
+warmups/server). All 120 profiled raw output sequences match their unprofiled
+partners. Observed profiled/unprofiled decode-time ratios were:
+
+| Path | Decode-time ratio |
+| --- | ---: |
+| Target-only | 1.0084× |
+| FP16 EAGLE | 1.0309× |
+| Q8_0 | 1.0304× |
+| Q4_0 | 1.0179× |
+| W1A16 | 1.0053× |
+| W1A8 | 1.0186× |
+| W1A4 | 1.0198× |
+| W1A1 | 1.0209× |
+
+These descriptive ratios include timing variability; they are not a pure
+hardware-independent instrumentation tax. The primary throughput trials remain
+uninstrumented. Both short diagnostic runs retain CPU round tracing.
+
+The verified export contains 813,285 kernel activities and 29,470 aggregate
+CUDA graph activities across 40 server PIDs, plus transfer/memset activities.
+All 40 processes associate with the recorded five-by-eight serial schedule
+under noninterleaving activity-span and mode-signature checks. This is
+**chronological schedule inference**, supported by per-server mode logs; the
+runner did not directly record server PIDs. It gives process-level pooling, not
+exact request/round/layer CUDA attribution.
+
+Graphs remain enabled. Replays are recorded at whole-graph granularity; there
+are no replay-node kernel rows. The separate graph-disabled operator profiles
+supply individual packing/dot breakdowns. Combined activity intervals are
+unioned so graph envelopes and child activities are not naively added. Their
+coverage includes possible gaps inside graphs and is not physical GPU busy
+time. Kernel-only summaries remain separate.
+
+The first profile attempt had valid request records but no CUDA activity:
+the server environment filter removed profiler injection variables. That
+attempt is preserved and excluded from profiling claims. A tested profile-only
+wrapper adds exactly the observed Nsight variables to a fresh configuration,
+validates library paths, and records hashes without editing the measured runner.
+A two-request smoke confirmed kernels and aggregate graph activity; the full
+retry explicitly requested graph granularity.
+
+Verified raw profile/SQLite:
+`runs/w1ax-project-src/runs/w1ax-server-nsys-retry-supervisor-20260926/`.
+Paired request directories: `results/w1ax-server-profile-baseline-20260926/`
+and `results/w1ax-server-nsys-retry-20260926/` within the runner worktree.
+Combined analysis: `runs/w1ax-server-cuda-analysis-20260926/report.json`, SHA256
+`1be5bdef18d1356ccf300ea29d23e1027c78c121d17a1381495eb6bee365b37b`.
+
 ## Conditional secondary controls
 
 The plan's optional genuine W8A8/W4A4 same-run controls were unavailable in
@@ -321,6 +373,6 @@ mandatory controls are present throughout the primary and diagnostic matrices.
 
 ## Outstanding measurements
 
-Context/output-cap diagnostics, D/p_min policy grid, streaming latency/telemetry
-and full-server CUDA profiles remain in progress. Do not treat the historical
+Context/output-cap diagnostics, D/p_min policy grid and streaming latency/telemetry
+remain in progress. Do not treat the historical
 screen as a final trained-QAT result or use the reserved 24-prompt final set.
