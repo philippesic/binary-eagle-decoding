@@ -1,8 +1,8 @@
 # Goal: all-layer W1Ax activation-precision suite on RTX 2080 Ti
 
 **Opened:** 2026-09-25
-**State:** active; implementation in progress
-**GPU owner:** orchestrator in this task; development eight-path matrix running
+**State:** active; primary matrices sealed, diagnostics in progress
+**GPU owner:** orchestrator; bounded diagnostic build/gate delegated to `/root/gpu_monitor`
 
 ## Objective
 
@@ -124,3 +124,9 @@ Integration preserved concurrent suite checkpoint commits `3f1b917` and
 review did not inspect, interrupt, or assume ownership of the recorded GPU run.
 Its source/performance baseline remains explicit, pending the suite owner's
 sealed result.
+
+## Development completion (2026-09-26 UTC)
+
+- The development matrix finished 960/960 requests with exit 0 at 01:53:03 UTC. All four W1Ax dispatch gates passed; all seven speculative variants matched target-only raw IDs on all 120 paired requests. Rates and hashes are in the linked result report. PGID 29140 was empty afterward and the GPU was at 0% with 687 MiB allocated.
+- Exact primary binaries and all dependent libraries were copied to remote `runs/w1ax-primary-binaries-3792aa79c/bin/`; its `SHA256SUMS` contains ten file hashes. Primary measurements retain runtime `3792aa79c` and project `dc4ccdd`.
+- `/root/gpu_monitor` has bounded exclusive GPU ownership for the diagnostic rebuild to published runtime `feba15698` and the 88-case CUDA gate only. New supervisors are `runs/w1ax-diagnostic-build-20260926/` and `runs/w1ax-diagnostic-op-gate-20260926/`. The runtime adds opt-in capture attribution and raw verifier logits; numerical kernels are unchanged. Root will resume ownership after the worker verifies stopped processes and idle GPU. No QAT-final evaluation or training has occurred.
