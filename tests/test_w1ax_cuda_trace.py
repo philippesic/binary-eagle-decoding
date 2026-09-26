@@ -1,6 +1,7 @@
 """Synthetic SQLite tests; these do not validate CUDA hardware performance."""
 
 import importlib.util
+import hashlib
 import json
 import sqlite3
 import subprocess
@@ -42,6 +43,119 @@ class CudaTraceTests(unittest.TestCase):
                       *((identity or {}).get(column) for column in self.identity_columns)]
             db.execute("INSERT INTO CUPTI_ACTIVITY_KIND_KERNEL VALUES ("
                        + ",".join("?" for _ in values) + ")", values)
+
+    def benchmark_fixture(self):
+        self.create(identity_columns=("globalPid", "contextId"))
+        run = Path(self.tmp.name) / "benchmark"
+        run.mkdir()
+        variants = ["target_only", "ordinary_eagle", "draft_q4_0", "draft_q8_0",
+                    "draft_w1a16", "draft_w1a8", "draft_w1a4", "draft_w1a1"]
+        orders = [variants[index:] + variants[:index] for index in range(5)]
+        prompts = ["one", "two", "three"]
+        manifest = {"orders": orders, "variants": variants, "prompt_ids": prompts,
+                    "commands": {variant: ["llama-server", "-np", "1"] for variant in variants},
+                    "policy": {"warmup_requests": 2, "repetitions": 5}}
+        records = [{"repetition": rep, "variant": variant, "prompt_id": prompt}
+                   for rep, order in enumerate(orders) for variant in order for prompt in prompts]
+        for name, data in (("manifest", manifest), ("records", records),
+                           ("report", {"status": "complete", "records": 120, "variants": variants})):
+            (run / f"{name}.json").write_text(json.dumps(data))
+        for index, (rep, variant) in enumerate((rep, variant) for rep, order in enumerate(orders) for variant in order):
+            identity = {"globalPid": 1000 + index, "contextId": 1}
+            start = 100 * index
+            symbols = {
+                "draft_w1a16": ["w1a16_signadd"],
+                "draft_w1a8": ["w1ax_quantize", "w1ax_integer_dot"],
+                "draft_w1a4": ["w1ax_quantize", "w1ax_integer_dot"],
+                "draft_w1a1": ["w1a1_pack_activations", "w1a1_xor_popc"],
+            }.get(variant, ["standard_kernel"])
+            for offset, symbol in enumerate(symbols):
+                self.add(start + offset * 10, start + offset * 10 + 5, symbol,
+                         grid=(2, 1, 1) if offset == 0 else (8, 2, 1), identity=identity)
+        return run, manifest
+
+    def test_benchmark_schedule_valid_mapping_and_provenance(self):
+        run, manifest = self.benchmark_fixture()
+        # A second CUDA context in a process is preserved in its summary.
+        self.add(20, 25, "standard_kernel", identity={"globalPid": 1000, "contextId": 2})
+        log = run / "rep-00/draft_w1a8/server.log"
+        log.parent.mkdir(parents=True)
+        log.write_text("EAGLE3 W1Ax activation bits: 8\nCUDA packed W1A8 INT8 dispatch\n")
+        report = ANALYSIS.analyze(self.path, benchmark_run=run)
+        association = report["benchmark_association"]
+        self.assertEqual(association["status"], "available", association)
+        self.assertEqual(association["label"], "CHRONOLOGICAL SCHEDULE INFERENCE")
+        self.assertEqual(association["process_count"], 40)
+        self.assertEqual([(m["repetition"], m["variant"]) for m in association["mappings"]],
+                         [(rep, variant) for rep, order in enumerate(manifest["orders"]) for variant in order])
+        first = association["mappings"][0]
+        self.assertEqual(first["global_pid"], 1000)
+        self.assertEqual(first["kernel_durations"]["union_ns"], 10)
+        self.assertEqual([g["context_id"] for g in first["kernels"][0]["launch_configurations"]], [1, 2])
+        self.assertEqual(association["sources"]["manifest"]["sha256"],
+                         hashlib.sha256((run / "manifest.json").read_bytes()).hexdigest())
+        self.assertEqual(association["sources"]["database"]["sha256"], hashlib.sha256(self.path.read_bytes()).hexdigest())
+        self.assertEqual(association["mappings"][5]["server_log_evidence"]["status"], "consistent")
+        # Replay-only use does not add any association or require run files.
+        self.assertNotIn("benchmark_association", ANALYSIS.analyze(self.path))
+        output = Path(self.tmp.name) / "associated.json"
+        cli = subprocess.run([sys.executable, str(SCRIPT), str(self.path), "--benchmark-run", str(run),
+                              "--output", str(output)], capture_output=True, text=True)
+        self.assertEqual(cli.returncode, 0, cli.stderr)
+        self.assertEqual(json.loads(output.read_text())["benchmark_association"]["status"], "available")
+
+    def test_benchmark_schedule_rejects_missing_pid_group(self):
+        run, _ = self.benchmark_fixture()
+        with sqlite3.connect(self.path) as db:
+            db.execute("DELETE FROM CUPTI_ACTIVITY_KIND_KERNEL WHERE globalPid=1001")
+        association = ANALYSIS.analyze(self.path, benchmark_run=run)["benchmark_association"]
+        self.assertEqual(association["status"], "unavailable")
+        self.assertIn("PID group count 39", association["reason"])
+        self.assertNotIn("mappings", association)
+
+    def test_benchmark_schedule_rejects_interleaving(self):
+        run, _ = self.benchmark_fixture()
+        self.add(120, 125, "standard_kernel", identity={"globalPid": 1000, "contextId": 1})
+        association = ANALYSIS.analyze(self.path, benchmark_run=run)["benchmark_association"]
+        self.assertEqual(association["status"], "unavailable")
+        self.assertIn("interleave", association["reason"])
+        self.assertNotIn("mappings", association)
+
+    def test_benchmark_schedule_rejects_incomplete_records_and_report(self):
+        run, _ = self.benchmark_fixture()
+        records_path = run / "records.json"
+        records = json.loads(records_path.read_text())
+        records[-1] = records[-2]  # Count alone cannot establish complete pairs.
+        records_path.write_text(json.dumps(records))
+        association = ANALYSIS.analyze(self.path, benchmark_run=run)["benchmark_association"]
+        self.assertEqual(association["status"], "unavailable")
+        self.assertIn("completed records", association["reason"])
+        (run / "report.json").write_text('{"status":"running"}')
+        association = ANALYSIS.analyze(self.path, benchmark_run=run)["benchmark_association"]
+        self.assertIn("not complete", association["reason"])
+
+    def test_benchmark_schedule_rejects_wrong_signature_and_a4_a8_log_swap(self):
+        run, _ = self.benchmark_fixture()
+        # The shared A4/A8 symbol family does not disambiguate precision.
+        log = run / "rep-00/draft_w1a8/server.log"
+        log.parent.mkdir(parents=True)
+        log.write_text("EAGLE3 W1Ax activation bits: 4\nCUDA packed W1A4 BITSERIAL dispatch\n")
+        association = ANALYSIS.analyze(self.path, benchmark_run=run)["benchmark_association"]
+        self.assertEqual(association["status"], "unavailable")
+        self.assertIn("mode marker mismatch", association["reason"])
+        self.assertNotIn("mappings", association)
+        log.unlink()
+        self.add(25, 30, "w1a16_signadd", identity={"globalPid": 1000, "contextId": 1})
+        association = ANALYSIS.analyze(self.path, benchmark_run=run)["benchmark_association"]
+        self.assertIn("kernel signature mismatch", association["reason"])
+
+    def test_benchmark_schedule_requires_complete_identity(self):
+        run, _ = self.benchmark_fixture()
+        with sqlite3.connect(self.path) as db:
+            db.execute("UPDATE CUPTI_ACTIVITY_KIND_KERNEL SET contextId=NULL WHERE globalPid=1000")
+        association = ANALYSIS.analyze(self.path, benchmark_run=run)["benchmark_association"]
+        self.assertEqual(association["status"], "unavailable")
+        self.assertIn("complete globalPid and contextId", association["reason"])
 
     def test_statistics_overlap_and_shapes(self):
         self.create()

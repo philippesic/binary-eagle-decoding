@@ -7,6 +7,7 @@ No NVTX/capture attribution is inferred. All durations are in nanoseconds.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import sqlite3
@@ -217,21 +218,10 @@ def read_kernels(path: Path, *, schema: dict | None = None) -> list[dict]:
         return result
 
 
-def analyze(path: Path, act_bits: int | None = None) -> dict:
-    if act_bits is not None and act_bits not in (1, 4, 8, 16):
-        raise ValueError("act_bits must be 1, 4, 8, or 16")
-    schema = {}
-    rows = read_kernels(path, schema=schema)
-    missing_identity = [name for name in ("globalPid", "contextId") if name not in schema["identity_columns"]]
-    null_identity_rows = sum(any(name in row and row[name] is None for name in ("globalPid", "contextId"))
-                             for row in rows)
+def kernel_summaries(rows: list[dict]) -> list[dict]:
     kernels = defaultdict(list)
-    categories = defaultdict(list)
-    devices = defaultdict(list)
     for row in rows:
         kernels[row["symbol"]].append(row)
-        categories[row["category"]].append(row["duration_ns"])
-        devices[row["deviceId"]].append(row)
     per_kernel = []
     for symbol, launches in sorted(kernels.items()):
         shapes = defaultdict(list)
@@ -249,7 +239,144 @@ def analyze(path: Path, act_bits: int | None = None) -> dict:
                 for key, values in sorted(shapes.items(), key=launch_group_sort)
             ],
         })
-    return {
+    return per_kernel
+
+
+def file_provenance(path: Path) -> dict:
+    digest = hashlib.sha256()
+    with path.open("rb") as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return {"path": str(path.resolve()), "sha256": digest.hexdigest()}
+
+
+def benchmark_association(rows: list[dict], database: Path, run: Path) -> dict:
+    """Strict, bounded 5x8 server schedule inference; never emit partial labels."""
+    result = {
+        "status": "unavailable", "label": "CHRONOLOGICAL SCHEDULE INFERENCE",
+        "scope": "All observed process kernels pooled across startup, warmups, and measurements; no exact request, round, or layer attribution.",
+        "limitations": [
+            "The runner did not record raw PIDs. Chronology and signatures support inferred labels, not a proven PID-to-run join.",
+            "Nonoverlap is checked for observed first-to-last kernel spans, not OS process lifetimes or untraced work.",
+            "A4 and A8 share kernel symbols; their distinction depends on the schedule and available server mode logs.",
+        ],
+        "sources": {},
+    }
+    try:
+        loaded = {}
+        for name in ("manifest", "report", "records"):
+            path = run / f"{name}.json"
+            data = path.read_bytes()
+            result["sources"][name] = {"path": str(path.resolve()), "sha256": hashlib.sha256(data).hexdigest()}
+            loaded[name] = json.loads(data)
+        result["sources"]["database"] = file_provenance(database)
+        result["sources"]["analyzer"] = file_provenance(Path(__file__))
+        manifest, report, records = (loaded[name] for name in ("manifest", "report", "records"))
+        if not isinstance(manifest, dict) or not isinstance(report, dict) or not isinstance(records, list):
+            raise ValueError("manifest/report must be objects and records must be a list")
+        if report.get("status") != "complete":
+            raise ValueError("benchmark report is not complete")
+        variants = {"target_only", "ordinary_eagle", "draft_q4_0", "draft_q8_0",
+                    "draft_w1a16", "draft_w1a8", "draft_w1a4", "draft_w1a1"}
+        orders = manifest["orders"]
+        if (not isinstance(orders, list) or len(orders) != 5
+                or any(not isinstance(order, list) or len(order) != 8 or set(order) != variants for order in orders)):
+            raise ValueError("association requires the bounded five-repetition, eight-variant schedule")
+        schedule = [(rep, variant) for rep, order in enumerate(orders) for variant in order]
+        if set(manifest["variants"]) != variants or set(report["variants"]) != variants:
+            raise ValueError("manifest/report variants disagree with schedule")
+        if not isinstance(manifest["commands"], dict) or not isinstance(manifest["policy"], dict):
+            raise ValueError("manifest commands and policy must be objects")
+        if any(not isinstance(manifest["commands"].get(variant), list) or not manifest["commands"][variant]
+               for variant in variants):
+            raise ValueError("missing server command for a scheduled variant")
+        if manifest["policy"].get("warmup_requests") != 2 or manifest["policy"].get("repetitions") != 5:
+            raise ValueError("policy must record two warmups and five repetitions")
+        prompts = manifest["prompt_ids"]
+        if len(prompts) != 3 or len(set(prompts)) != 3:
+            raise ValueError("association requires three distinct measured prompts")
+        expected = {(rep, variant, prompt) for rep, variant in schedule for prompt in prompts}
+        observed = [(row["repetition"], row["variant"], row["prompt_id"]) for row in records]
+        if len(observed) != 120 or set(observed) != expected or report["records"] != len(observed):
+            raise ValueError("completed records do not exactly cover every scheduled repetition/variant/prompt")
+        if not rows or any(row.get("globalPid") is None or row.get("contextId") is None for row in rows):
+            raise ValueError("complete globalPid and contextId identities are required")
+        pids = defaultdict(list)
+        for row in rows:
+            pids[row["globalPid"]].append(row)
+        if len(pids) != len(schedule):
+            raise ValueError(f"PID group count {len(pids)} does not match {len(schedule)} scheduled servers")
+        ordered = sorted(pids.items(), key=lambda item: min(row["start"] for row in item[1]))
+        previous_end = None
+        for _, launches in ordered:
+            start, end = min(row["start"] for row in launches), max(row["end"] for row in launches)
+            if previous_end is not None and start <= previous_end:
+                raise ValueError("PID kernel spans interleave, overlap, or have ambiguous touching boundaries")
+            previous_end = end
+        signatures = {
+            "draft_w1a16": {"w1a16_signadd"},
+            "draft_w1a8": {"w1ax_quantize", "w1ax_integer_dot"},
+            "draft_w1a4": {"w1ax_quantize", "w1ax_integer_dot"},
+            "draft_w1a1": {"w1a1_pack_activations", "w1a1_xor_popc"},
+        }
+        markers = {
+            "draft_w1a16": "CUDA packed W1A16 FP16 SIGNADD dispatch",
+            "draft_w1a8": "CUDA packed W1A8 INT8 dispatch",
+            "draft_w1a4": "CUDA packed W1A4 BITSERIAL dispatch",
+            "draft_w1a1": "CUDA packed W1A1 XOR/POPCOUNT dispatch",
+        }
+        known = set().union(*signatures.values())
+        mappings = []
+        for (rep, variant), (pid, launches) in zip(schedule, ordered):
+            seen = {symbol for symbol in known if any(matches_symbol(symbol, row["demangled_name"], row["short_name"])
+                                                     for row in launches)}
+            if seen != signatures.get(variant, set()):
+                raise ValueError(f"W1 kernel signature mismatch at rep-{rep:02d}/{variant}: {sorted(seen)}")
+            log = run / f"rep-{rep:02d}" / variant / "server.log"
+            log_evidence = {"status": "unavailable", "reason": "server.log absent"}
+            if log.exists():
+                data = log.read_bytes()
+                content = data.decode(errors="replace")
+                result["sources"][f"server_log:rep-{rep:02d}/{variant}"] = {
+                    "path": str(log.resolve()), "sha256": hashlib.sha256(data).hexdigest(),
+                }
+                seen_modes = set(re.findall(r"EAGLE3 W1Ax activation bits: (\d+)\b", content))
+                expected_modes = {variant.removeprefix("draft_w1a")} if variant in markers else set()
+                seen_markers = {name for name, marker in markers.items() if marker in content}
+                expected_markers = {variant} if variant in markers else set()
+                if (seen_markers != expected_markers or seen_modes != expected_modes
+                        or "CUDA packed W1A4 CONVENTIONAL dispatch" in content):
+                    raise ValueError(f"server mode marker mismatch at rep-{rep:02d}/{variant}")
+                log_evidence = {"status": "consistent", "mode_bits": sorted(seen_modes), "dispatch_variants": sorted(seen_markers)}
+            mappings.append({
+                "global_pid": pid, "repetition": rep, "variant": variant,
+                "first_kernel_start_ns": min(row["start"] for row in launches),
+                "last_kernel_end_ns": max(row["end"] for row in launches),
+                "observed_w1_symbols": sorted(seen), "server_log_evidence": log_evidence,
+                "kernel_durations": interval_summary(launches), "kernels": kernel_summaries(launches),
+                "packing_inclusive_pairs": paired_kernel_summary(launches),
+            })
+        result.update(status="available", process_count=len(mappings), measured_record_count=len(records),
+                      warmups_per_process=2, mappings=mappings)
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        result["reason"] = str(exc)
+    return result
+
+
+def analyze(path: Path, act_bits: int | None = None, benchmark_run: Path | None = None) -> dict:
+    if act_bits is not None and act_bits not in (1, 4, 8, 16):
+        raise ValueError("act_bits must be 1, 4, 8, or 16")
+    schema = {}
+    rows = read_kernels(path, schema=schema)
+    missing_identity = [name for name in ("globalPid", "contextId") if name not in schema["identity_columns"]]
+    null_identity_rows = sum(any(name in row and row[name] is None for name in ("globalPid", "contextId"))
+                             for row in rows)
+    categories = defaultdict(list)
+    devices = defaultdict(list)
+    for row in rows:
+        categories[row["category"]].append(row["duration_ns"])
+        devices[row["deviceId"]].append(row)
+    result = {
         "schema": "w1ax_cuda_trace_v1", "input": str(path.resolve()),
         "act_bits_annotation": act_bits, "duration_unit": "ns",
         "notes": [
@@ -277,9 +404,12 @@ def analyze(path: Path, act_bits: int | None = None) -> dict:
                     for device, launches in sorted(devices.items())],
         "categories": [{"category": category, **distribution(values)}
                        for category, values in sorted(categories.items())],
-        "kernels": per_kernel,
+        "kernels": kernel_summaries(rows),
         "packing_inclusive_pairs": paired_kernel_summary(rows),
     }
+    if benchmark_run is not None:
+        result["benchmark_association"] = benchmark_association(rows, path, benchmark_run)
+    return result
 
 
 def main() -> None:
@@ -287,13 +417,14 @@ def main() -> None:
     parser.add_argument("database", type=Path)
     parser.add_argument("--act-bits", type=int, choices=(1, 4, 8, 16))
     parser.add_argument("--output", type=Path, help="JSON report (default: stdout)")
+    parser.add_argument("--benchmark-run", type=Path, help="Completed 5x8 server run directory for conservative chronological schedule inference")
     args = parser.parse_args()
     if args.output and (args.output.resolve() == args.database.resolve()
                         or (args.output.exists() and args.database.exists()
                             and args.output.samefile(args.database))):
         parser.error("output must not overwrite the input database")
     try:
-        report = analyze(args.database, args.act_bits)
+        report = analyze(args.database, args.act_bits, args.benchmark_run)
     except (sqlite3.Error, ValueError, OSError) as exc:
         parser.error(str(exc))
     text = json.dumps(report, indent=2) + "\n"
