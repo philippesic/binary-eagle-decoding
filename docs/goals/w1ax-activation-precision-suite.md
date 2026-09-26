@@ -1,8 +1,8 @@
 # Goal: all-layer W1Ax activation-precision suite on RTX 2080 Ti
 
 **Opened:** 2026-09-25
-**State:** paused by user; three policy cells complete, fourth interrupted with saved progress
-**GPU owner:** none; user-requested shutdown verified, all owned groups stopped
+**State:** resumption authorized; awaiting host access, three policy cells complete and fourth preserved
+**GPU owner:** root for resume preflight only; no new job or operator has started
 
 ## Objective
 
@@ -462,3 +462,12 @@ All experiment/analysis work is stopped. Resume only on explicit user request.
 - Three D1 policy cells and both context cells remain complete. Interrupted attempt: `w1ax-diagnostic-suite-20260926-development-d2-pmin-0p0-a1`; raw files, suite/progress, supervisors, tmux panes and frozen source remain intact. Completed-cell mirrors, transfer hashes and local audits remain under ignored main-checkout `runs/w1ax-analysis-mirror/`. No artifact, worktree or branch was deleted.
 - Published work through `5ac1348` is preserved on main and w1ax-suite; this pause checkpoint is being committed and pushed to both. The existing w1ax-suite worktree remains available. No QAT training or reserved-final evaluation occurred.
 - If resumed, recheck host registry/pause state and GPU, inspect the interrupted attempt and frozen suite progress, and use a fresh supervisor/attempt without overwriting the preserved partial data. Nine policy cells remain unfinished, followed by final full-grid analysis/reporting and cleanup. Do not start these while paused.
+
+
+## Resume authorized; host unavailable — 2026-09-26 17:54 UTC
+
+- User said “Continue,” clicked Resume for the native Goal, then asked to check GPU access. Native Goal is active again; this supersedes the earlier user pause authorization. The research objective and frozen protocol are unchanged.
+- Current host registry was read. Through tmux MCP, two SSH checks of rtx2080ti timed out; one check of rtx5080 also timed out. No remote command or GPU observation succeeded, and no new job was started. User was asked whether the 2080 Ti PC/WSL/SSH is running or its address changed. Do not guess a replacement address.
+- Local main and w1ax-suite were clean at `4702e45`; preserved data and worktree remain untouched. Local GPU pause flag remains set until a successful resource preflight, to prevent accidental launches while access is unresolved. Root owns that preflight; the prior operator remains completed.
+- Once access returns, verify frozen project `2f6ab14`, runtime `feba15698`, suite fingerprint and interrupted D2/p0-a1 data (120 saved records), then confirm no project processes and available GPU resources. Clear the local rtx2080ti flag using `agent_env.py resume` and launch the same suite under a fresh unique supervisor. The frozen launcher skips five succeeded context/D1 cells and creates D2/p0 attempt-a2 without overwriting attempt-a1. Do not edit the frozen runner or reuse the old supervisor directory.
+- The official final policy analyzer supports multiple attempts and requires one successful attempt per cell. The ignored local interim audit wrapper currently restricts names to a1; permit later attempt numbers before using it on resumed cells. Nine policy cells plus final analysis/publication/cleanup remain required.

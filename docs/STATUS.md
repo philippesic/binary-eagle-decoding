@@ -1,6 +1,6 @@
 # Current project status
 
-**Active goal (paused by user):** [all-layer W1Ax activation-precision suite on RTX 2080 Ti](goals/w1ax-activation-precision-suite.md),
+**Active goal:** [all-layer W1Ax activation-precision suite on RTX 2080 Ti](goals/w1ax-activation-precision-suite.md),
 opened 2026-09-25. The [RTX 2080 Ti quantization
 suite](goals/rtx2080ti-quantization-suite.md) completed on 2026-09-25.
 The prior [W1A1 EAGLE research goal](goals/full-w1a1-eagle-project.md) is
@@ -14,7 +14,7 @@ QAT run has begun.
 
 **Concurrent suite progress:** the latest [goal checkpoint](goals/w1ax-activation-precision-suite.md)
 records W1Ax implementation, 88-case SM75 gates, real-input replay and the
-completed historical (480 requests) and development (960 requests) eight-path matrices. Matched operator replay and the 480-request round trace are also complete. Full-server profiling and streaming diagnostics are complete. The 720-request context matrix is complete; three of twelve development policy cells are complete. The user paused the sweep during D2/p0; 120 partial requests are preserved, all owned processes are stopped, and the GPU is idle. The goal file’s successor handoff records the live job, completed worker transfer, exact next actions and stop procedure. Consult that checkpoint for current
+completed historical (480 requests) and development (960 requests) eight-path matrices. Matched operator replay and the 480-request round trace are also complete. Full-server profiling and streaming diagnostics are complete. The 720-request context matrix is complete; three of twelve development policy cells are complete. The pause preserved 120 partial D2/p0 requests. The user authorized resumption on 2026-09-26, but the registered GPU hosts currently time out over SSH; no experiment has restarted. The last verified shutdown was idle, not a current resource observation. The goal file’s successor handoff records the live job, completed worker transfer, exact next actions and stop procedure. Consult that checkpoint for current
 run ownership, paths and stop instructions. These records were preserved during
 integration of the literature review; its authors did not operate or revalidate
 that GPU run.
