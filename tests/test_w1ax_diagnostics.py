@@ -2,6 +2,8 @@
 
 import importlib.util
 import json
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -95,6 +97,28 @@ class W1AxDiagnosticsTests(unittest.TestCase):
             result = analysis.analyze_run(run_dir)
             self.assertEqual(result["variants"]["draft_w1a8"]["accepted"], 1)
             self.assertIn("Unavailable", result["variants"]["draft_w1a8"]["request_mapping"])
+
+    def test_replay_only_cli_needs_no_benchmark_run(self):
+        replay_rows = [
+            {"record_type": "operator_replay", "capture": "cap.bin", "sequence": 3, "K": 8, "M": 4, "N": 2, "name": "q_proj", "group": "attention", "replay_bits": 16, "samples_us": [8, 10]},
+            {"record_type": "operator_replay", "capture": "cap.bin", "sequence": 3, "K": 8, "M": 4, "N": 2, "name": "q_proj", "group": "attention", "replay_bits": 8, "samples_us": [4, 5]},
+            {"record_type": "head_comparison", "capture": "cap.bin", "sequence": 3, "token": 0, "candidate_bits": 8, "top1_agree": True, "topk_set_overlap": {"1": 1, "5": 4}, "reference_top1_margin": 0.3, "candidate_top1_margin": 0.2},
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            replay_path = Path(tmp) / "operator-records.jsonl"
+            output_path = Path(tmp) / "summary.json"
+            replay_path.write_text("".join(json.dumps(row) + "\n" for row in replay_rows))
+            completed = subprocess.run(
+                [sys.executable, str(SCRIPT), "--replay-only", str(replay_path), "--output", str(output_path)],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(completed.stdout, "")
+            report = json.loads(output_path.read_text())
+            self.assertEqual(report["operator_replay"]["rows"], 2)
+            self.assertEqual(report["operator_replay"]["by_layer_shape"][0]["paired_ratios"]["8"]["paired_precision_ratio_vs_16"], 0.5)
+            self.assertEqual(report["operator_replay"]["head_comparison"]["comparisons"], 1)
 
     def test_replay_requires_valid_samples(self):
         row = {"K": 1, "M": 1, "N": 1, "name": "x", "group": "g", "replay_bits": 16, "samples_us": []}

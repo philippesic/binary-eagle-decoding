@@ -307,11 +307,22 @@ def analyze_run(run_dir: Path, replay_path: Path | None = None) -> dict[str, Any
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("run_dir", type=Path, help="benchmark run directory containing records.json and rep-*/variant/round-trace.jsonl")
+    parser.add_argument("run_dir", type=Path, nargs="?", help="benchmark run directory containing records.json and rep-*/variant/round-trace.jsonl")
     parser.add_argument("--operator-replay", type=Path, help="JSONL rows with K/M/N/name/group/replay_bits/samples_us")
+    parser.add_argument("--replay-only", type=Path, help="analyze operator/head replay JSONL without a benchmark run directory")
     parser.add_argument("--output", type=Path, help="write report JSON here; defaults to stdout")
     args = parser.parse_args()
-    result = analyze_run(args.run_dir, args.operator_replay)
+    if args.replay_only is not None:
+        if args.run_dir is not None or args.operator_replay is not None:
+            parser.error("--replay-only cannot be combined with run_dir or --operator-replay")
+        result = {
+            "source": str(args.replay_only),
+            "operator_replay": summarize_replay(read_jsonl(args.replay_only)),
+        }
+    else:
+        if args.run_dir is None:
+            parser.error("run_dir is required unless --replay-only is used")
+        result = analyze_run(args.run_dir, args.operator_replay)
     rendered = json.dumps(result, indent=2, sort_keys=True) + "\n"
     if args.output:
         args.output.write_text(rendered)
