@@ -213,6 +213,7 @@ struct options {
     fs::path fp16_gguf, q8_gguf, q4_gguf;
     std::string backend = "gpu";
     int warmups = 2, samples = 5;
+    int act_bits = 0; // zero selects the default four-mode matrix
     size_t check_rows = 8, limit = 0;
     bool require_nine = false;
     bool fp16_cast_control = false;
@@ -232,6 +233,11 @@ static options parse(int argc, char ** argv) {
         else if (arg == "--q4-gguf") o.q4_gguf = value;
         else if (arg == "--capture-dir") o.captures = value;
         else if (arg == "--backend") o.backend = value;
+        else if (arg == "--act-bits") {
+            require(value == "1" || value == "4" || value == "8" || value == "16",
+                    "--act-bits must be one of 1, 4, 8, 16");
+            o.act_bits = std::stoi(value);
+        }
         else if (arg == "--warmups") o.warmups = std::stoi(value);
         else if (arg == "--samples") o.samples = std::stoi(value);
         else if (arg == "--check-rows") o.check_rows = std::stoull(value);
@@ -247,6 +253,10 @@ static options parse(int argc, char ** argv) {
     require(!o.fp16_cast_control || !o.fp16_gguf.empty(), "--fp16-cast-control requires --fp16-gguf");
     require(o.warmups >= 0 && o.samples > 0 && o.samples <= 10000, "invalid warmups or samples");
     return o;
+}
+
+static std::string requested_bits_json(const options & opt) {
+    return opt.act_bits ? "[" + std::to_string(opt.act_bits) + "]" : "[16,8,4,1]";
 }
 
 static std::string group_of(const std::string & name) {
@@ -363,6 +373,9 @@ static std::vector<float> replay(const capture & c, const std::vector<uint32_t> 
               << "\",\"sequence\":" << c.sequence << ",\"name\":\"" << escape_json(c.name)
               << "\",\"group\":\"" << group_of(c.name) << "\",\"K\":" << c.k << ",\"M\":" << c.m
               << ",\"N\":" << c.n << ",\"source_bits\":" << c.source_bits << ",\"replay_bits\":" << bits
+              << ",\"requested_act_bits\":" << requested_bits_json(opt)
+              << ",\"w1ax_head_comparison_available\":"
+              << (!opt.act_bits && c.name == "output.w1a1_packed" ? "true" : "false")
               << ",\"backend_type\":\"" << opt.backend
               << "\",\"backend\":\"" << escape_json(ggml_backend_dev_description(ggml_backend_get_device(backend)))
               << "\",\"timing\":\"synchronized_host_wall_full_ggml_graph_us\",\"checked_rows\":" << rows.size()
@@ -421,6 +434,7 @@ static void compare_head(const capture & c, const std::array<std::vector<float>,
                       << escape_json(c.path.filename().string()) << "\",\"sequence\":" << c.sequence
                       << ",\"token\":" << token << ",\"rows\":" << c.m
                       << ",\"reference_bits\":16,\"candidate_bits\":" << bits[mode]
+                      << ",\"requested_act_bits\":[16,8,4,1]"
                       << ",\"reference\":\"same_binary_weights_w1a16\",\"top1_agree\":"
                       << (ref_top[0] == candidate_top[0] ? "true" : "false")
                       << ",\"topk_set_overlap\":{\"1\":" << overlap(1)
@@ -439,7 +453,7 @@ static void compare_head(const capture & c, const std::array<std::vector<float>,
 }
 
 static void report_fp16_cast_control(const capture & c, const std::vector<float> & original,
-        const std::vector<float> & casted) {
+        const std::vector<float> & casted, const options & opt) {
     require(original.size() == size_t(c.m*c.n) && casted.size() == original.size(),
             "FP16 cast control output shape mismatch");
     double absolute_sum = 0, max_abs = 0;
@@ -453,6 +467,7 @@ static void report_fp16_cast_control(const capture & c, const std::vector<float>
               << escape_json(c.path.filename().string()) << "\",\"sequence\":" << c.sequence
               << ",\"name\":\"" << escape_json(c.name) << "\",\"group\":\"" << group_of(c.name)
               << "\",\"K\":" << c.k << ",\"M\":" << c.m << ",\"N\":" << c.n
+              << ",\"requested_act_bits\":" << requested_bits_json(opt)
               << ",\"weight_format\":\"fp16\",\"reference_activation\":\"captured_f32\""
               << ",\"cast_activation\":\"f32_to_fp16_to_f32\",\"outputs\":" << original.size()
               << ",\"mean_abs_output_difference\":" << absolute_sum/double(original.size())
@@ -472,6 +487,7 @@ static void report_fp16_cast_control(const capture & c, const std::vector<float>
         std::cout << std::setprecision(9) << "{\"record_type\":\"fp16_cast_head_comparison\",\"capture\":\""
                   << escape_json(c.path.filename().string()) << "\",\"sequence\":" << c.sequence
                   << ",\"token\":" << token << ",\"rows\":" << c.m
+                  << ",\"requested_act_bits\":" << requested_bits_json(opt)
                   << ",\"reference_activation\":\"captured_f32\",\"cast_activation\":\"f32_to_fp16_to_f32\""
                   << ",\"top1_agree\":" << (ref_top[0] == alt_top[0] ? "true" : "false")
                   << ",\"top5_set_overlap\":" << overlap
@@ -539,7 +555,7 @@ static void replay_anchor(const capture & c, const std::vector<uint8_t> & weight
         compute();
         std::vector<float> cast_output(actual.size());
         ggml_backend_tensor_get(out, cast_output.data(), 0, cast_output.size()*sizeof(float));
-        report_fp16_cast_control(c, actual, cast_output);
+        report_fp16_cast_control(c, actual, cast_output, opt);
         ggml_backend_tensor_set(at, c.activations.data(), 0, c.activations.size()*sizeof(float));
     }
 
@@ -559,6 +575,7 @@ static void replay_anchor(const capture & c, const std::vector<uint8_t> & weight
               << escape_json(c.path.filename().string()) << "\",\"sequence\":" << c.sequence
               << ",\"name\":\"" << escape_json(c.name) << "\",\"group\":\"" << group_of(c.name)
               << "\",\"K\":" << c.k << ",\"M\":" << c.m << ",\"N\":" << c.n
+              << ",\"requested_act_bits\":" << requested_bits_json(opt)
               << ",\"source_bits\":" << c.source_bits << ",\"anchor_format\":\"" << format
               << "\",\"weight_type\":\"" << ggml_type_name(type) << "\",\"backend_type\":\"" << opt.backend
               << "\",\"backend\":\"" << escape_json(ggml_backend_dev_description(ggml_backend_get_device(backend)))
@@ -604,9 +621,10 @@ int main(int argc, char ** argv) {
             std::array<std::vector<float>, 4> head_outputs;
             size_t mode = 0;
             for (int bits : {16, 8, 4, 1}) {
+                if (opt.act_bits && opt.act_bits != bits) { ++mode; continue; }
                 head_outputs[mode++] = replay(c, weights, scales, backend.get(), bits, opt);
             }
-            if (c.name == "output.w1a1_packed") compare_head(c, head_outputs);
+            if (c.name == "output.w1a1_packed" && !opt.act_bits) compare_head(c, head_outputs);
             if (fp16_anchor) replay_anchor(c, fp16_anchor->load_anchor(c, GGML_TYPE_F16), GGML_TYPE_F16,
                     "fp16", backend.get(), opt);
             if (q8_anchor) replay_anchor(c, q8_anchor->load_anchor(c, GGML_TYPE_Q8_0), GGML_TYPE_Q8_0,

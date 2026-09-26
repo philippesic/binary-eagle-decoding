@@ -63,6 +63,36 @@ the stream; keep collection separate from timing and unset
 nine selected layers. Preserve raw files and GGUF
 hashes in the experiment manifest.
 
+`--act-bits 1`, `4`, `8`, or `16` replays only that W1Ax mode. Omitting it
+preserves the default 16/8/4/1 matrix. Every JSONL record includes
+`requested_act_bits` (`[16,8,4,1]` by default, or a one-element array), while
+operator records retain their actual `replay_bits`. Single-mode runs omit
+W1Ax-to-W1A16 head comparisons because the other outputs were not computed;
+`w1ax_head_comparison_available` makes that explicit on operator records.
+Optional anchors and the ordinary FP16 cast control still execute normally.
+
+For separate CUDA software traces that disambiguate the shared A8/A4 kernel
+symbols, omit anchors from each profiling run. For example, after obtaining GPU
+ownership and using the project's remote supervisor:
+
+```sh
+nsys profile --trace=cuda --sample=none --cpuctxsw=none \
+  -o runs/<id>/operator-w1a4 \
+  build/w1ax-replay/w1ax_operator_replay \
+  --gguf models/gguf/Qwen3-4B-eagle3-all-w1a1.gguf \
+  --capture-dir runs/<capture-id>/captures --backend gpu --act-bits 4 \
+  --warmups 2 --samples 5 --require-nine \
+  > runs/<id>/operator-w1a4.jsonl
+```
+
+Run A8 separately with `--act-bits 8` and a distinct report/output name. Unset
+`GGML_W1AX_CAPTURE_DIR` first. This traces CUDA API calls and GPU work without
+requesting CPU sampling, scheduling traces, or GPU hardware counters (see the
+[Nsight Systems CLI guide](https://docs.nvidia.com/nsight-systems/UserGuide/)).
+The trace includes correctness calls and warmups as well as timed samples;
+keep those invocations separate when analyzing kernel counts. Profiled timings
+are diagnostics and do not replace uninstrumented throughput measurements.
+
 The three anchor flags are optional and independent. For each supplied GGUF,
 the replay maps `fc.w1a1_packed` to `fc.weight`, and likewise for the other
 eight names. It requires the captured K and M, no batch dimensions, and exact
