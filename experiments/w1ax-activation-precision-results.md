@@ -250,6 +250,66 @@ symbols and unknown classifications remain preserved. Traces/SQLite exports:
 - A4: `7c8ee8d8bf8f6bc657d5dac7afc6f23a18b921e8c4369a25feb6443608a2d036`
 - A1: `05245e57db6ebf8854ab9b1fd814856b251d6569a899aa447a4833abbe2c7061`
 
+## Complete round trace and conditional limits
+
+The separate 480-request historical trace completed with all 480 output-ID
+sequences matching their corresponding uninstrumented primary requests. All
+420 speculative measured requests were mapped to task groups, with two warmups
+per server excluded. The trace contains 37,695 measured round events and omits
+exactly one leading output token per request. Native accepted/proposed/verified-
+round counters reconcile exactly. Full trace counts additionally include
+`no_proposal` events: 20 for FP16/Q8_0, 15 for Q4_0, and 55 per W1Ax mode.
+The primary tables' acceptance denominators are native verification rounds.
+FP16 and Q8_0 each accepted five tokens that were not emitted at stopping
+boundaries; counterfactuals use accepted tokens actually emitted.
+
+All spans passed bounds, union, overlap and unclamped-residual checks: zero
+invalid, nested, overlapping, out-of-bounds or clamped-residual rows. Mean CPU
+wall milliseconds over complete traced round events:
+
+| Draft | Round mean | Round p95 | draft() | Target decode + sync | process() |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| FP16 | 26.827 | 28.872 | 6.730 | 18.138 | 1.076 |
+| Q8_0 | 25.273 | 27.480 | 5.238 | 18.083 | 1.055 |
+| Q4_0 | 24.542 | 26.632 | 4.435 | 18.152 | 1.047 |
+| W1A16 | 37.603 | 38.668 | 17.447 | 18.138 | 1.466 |
+| W1A8 | 26.398 | 27.516 | 6.546 | 18.075 | 1.230 |
+| W1A4 | 23.585 | 24.948 | 3.961 | 18.043 | 1.054 |
+| W1A1 | 23.441 | 24.708 | 3.815 | 18.061 | 1.034 |
+
+The remaining means include proposal checking (0.340–0.703ms), residual host
+work (0.172–0.190ms), checkpoints, repair and the accept hook. `begin` is
+outside the round and retained separately in raw summaries. These CPU spans
+are distinct from CUDA kernel events and from uninstrumented request timing.
+
+For a deliberately fixed trace trajectory, remove only exclusive `draft()`
+spans, retaining `process()` and every other measured cost. Let C be total
+round time, D those removable spans, E traced emitted IDs, A accepted drafts
+actually emitted, P proposed drafts, and B=E−A. The span-removal proxy is
+E/(C−D). At fixed C, the acceptance threshold against primary rate R is
+A_required=R×C−B. All times in these formulas use seconds.
+
+| W1Ax | Rate after removing draft() spans | Required accepted/trace round vs FP16 | vs Q4_0 |
+| --- | ---: | ---: | ---: |
+| A16 | 54.85 tok/s | 2.033 | 2.374 |
+| A8 | 55.44 tok/s | 1.129 | 1.369 |
+| A4 | 53.04 tok/s | 0.903 | 1.116 |
+| A1 | 53.76 tok/s | 0.891 | 1.103 |
+
+Both primary anchors (80.67/89.73 tok/s) exceed these removal proxies. This
+indicates that optimizing the recorded draft() region alone is insufficient
+under this fixed trajectory. **These are neither measured speedups nor
+uninstrumented bounds:** the seed, begin/inter-round work and prefill lie
+outside C; process/catch-up work remains; changing acceptance changes round
+counts, batch shapes, stopping and costs. The report also preserves raw
+thresholds for C−D and fixed-proposal ceilings without clamping.
+
+Artifacts and SHA256:
+
+- `runs/w1ax-project-src/results/w1ax-round-matrix-20260926/records.json`: `a6c0c458c2cf86807cd3e7cc6f9965eae337b4d72e75504ad17e1c853fa079a3`
+- `runs/w1ax-round-analysis-20260926/report.json`: `7d7186cdb14d6aeffd153142328d5d3d0c418a7bcfde189585e12db1d0e3b2f3`
+- `runs/w1ax-break-even-analysis-20260926/report.json`: `166790c62ccff4b6eb1d18a8e161a4d4078dd477d75415a796b22c07adeb3bad`
+
 ## Conditional secondary controls
 
 The plan's optional genuine W8A8/W4A4 same-run controls were unavailable in
@@ -261,6 +321,6 @@ mandatory controls are present throughout the primary and diagnostic matrices.
 
 ## Outstanding measurements
 
-Per-round analysis, context/output-cap diagnostics, D/p_min policy grid,
-streaming latency/telemetry and full-server CUDA profiles remain in progress. Do not treat the historical
+Context/output-cap diagnostics, D/p_min policy grid, streaming latency/telemetry
+and full-server CUDA profiles remain in progress. Do not treat the historical
 screen as a final trained-QAT result or use the reserved 24-prompt final set.
