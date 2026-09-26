@@ -24,8 +24,15 @@ matching the prior all-row source audit. The benchmark uses published llama.cpp
 fork commit `3792aa79c` and project checkout `dc4ccdd`, CUDA 12.8 on SM75,
 F16 KV, context 2048, concurrency one, D=5, confidence floor zero, greedy
 decoding, two warmups, five measured repetitions, and one server at a time.
-Each run manifest preserves exact commands, model/binary/config hashes and GPU
-snapshots. Q8_0/Q4_0 name standard GGUF block weight formats; their live
+Each run manifest preserves exact commands and model/binary/config hashes.
+The primary runner's GPU snapshots were unavailable because its nonlogin WSL
+PATH omitted `nvidia-smi`; they are not zero-valued measurements. Hardware and
+dispatch were independently verified by the SM75 gates and explicit WSL GPU
+queries. A separate full device snapshot is preserved in
+`runs/w1ax-device-manifest-20260925/` (stdout SHA256
+`bd87139e8ce478aef42c4b17fda2345891be9cd1c4ad02b826c47dee417af0c8`).
+The probe is being corrected for separate telemetry diagnostics; primary
+per-variant peak-memory/clock claims are not made. Q8_0/Q4_0 name standard GGUF block weight formats; their live
 activation path is Q8_1, not the research W8A8/W4A4 format.
 Acceptance is the pinned native server's target-sample-and-match count, not
 classical probability-ratio/residual speculative sampling. All comparisons
