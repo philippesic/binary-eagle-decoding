@@ -23,6 +23,7 @@ import tomllib
 import urllib.error
 import urllib.request
 from datetime import UTC, datetime
+from math import ceil
 from pathlib import Path
 from statistics import median
 from typing import Any
@@ -232,6 +233,21 @@ def selected_prompts(path: Path) -> list[dict[str, Any]]:
     return selected
 
 
+def latency_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """Nearest-rank p95 is the observed maximum with five repetitions."""
+    if not rows:
+        raise ValueError("cannot summarize an empty latency sample")
+    summary: dict[str, Any] = {"sample_count": len(rows)}
+    for input_key, prefix in (("ttft_s", "ttft"), ("request_wall_s", "request_wall")):
+        values = sorted(row[input_key] for row in rows)
+        summary.update({
+            f"{prefix}_median_s": median(values),
+            f"{prefix}_p95_s": values[ceil(0.95 * len(values)) - 1],
+            f"{prefix}_max_s": values[-1],
+        })
+    return summary
+
+
 def run(config_path: Path, run_id: str, prompt_file: Path, *, dry_run: bool = False) -> Path:
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,79}", run_id):
         raise ValueError("run ID must be a safe relative name")
@@ -368,11 +384,12 @@ def run(config_path: Path, run_id: str, prompt_file: Path, *, dry_run: bool = Fa
         summary = {
             "status": "complete", "schema": "w1ax_streaming_summary_v1", "requests": len(records),
             "metrics": "streaming TTFT and full HTTP wall only; not decode tokens/s",
+            "p95_method": "nearest rank: sorted sample at ceil(0.95 * n), one-based",
+            "tail_resolution_note": "Five repetitions per cap/bin/variant provide limited tail resolution; nearest-rank p95 equals the observed maximum and is not a reliable population tail estimate.",
             "by_cap_bin_variant": [
                 {
                     "cap": cap, "context_bin": prompt["context_bin"], "variant": variant,
-                    "ttft_median_s": median(row["ttft_s"] for row in records if row["cap"] == cap and row["prompt_id"] == prompt["id"] and row["variant"] == variant),
-                    "request_wall_median_s": median(row["request_wall_s"] for row in records if row["cap"] == cap and row["prompt_id"] == prompt["id"] and row["variant"] == variant),
+                    **latency_summary([row for row in records if row["cap"] == cap and row["prompt_id"] == prompt["id"] and row["variant"] == variant]),
                 }
                 for cap in CAPS for prompt in prompts for variant in variants
             ],

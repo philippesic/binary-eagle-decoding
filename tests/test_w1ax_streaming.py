@@ -104,6 +104,21 @@ class ConfigTests(unittest.TestCase):
     def setUp(self):
         self.config = tomllib.loads((ROOT / "configs/native_benchmark_w1ax.toml").read_text())
 
+    def test_latency_summary_counts_and_nearest_rank_p95(self):
+        rows = [{"ttft_s": value, "request_wall_s": 2 * value} for value in (5, 1, 4, 2, 3)]
+        summary = streaming.latency_summary(rows)
+        self.assertEqual(summary, {
+            "sample_count": 5,
+            "ttft_median_s": 3,
+            "ttft_p95_s": 5,
+            "ttft_max_s": 5,
+            "request_wall_median_s": 6,
+            "request_wall_p95_s": 10,
+            "request_wall_max_s": 10,
+        })
+        with self.assertRaisesRegex(ValueError, "empty latency sample"):
+            streaming.latency_summary([])
+
     def test_frozen_matrix_selectors_and_prompts(self):
         variants, specs = streaming.validate_config(self.config)
         self.assertEqual(len(variants), 8)
