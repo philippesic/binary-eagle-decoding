@@ -548,8 +548,8 @@ these are timing observations with output differences. Raw records SHA256:
 runner `results/w1ax-diagnostic-suite-20260926-development-d1-pmin-0p3-a1/`.
 
 Confidence filtering also changes the denominator of accepted drafts per native
-verification round. For D1 W1A1, floor0 accepted 805/14,320 proposed drafts;
-floor0.3 accepted 395/4,145. The conditional ratio rises from0.056 to0.095 while
+verification round. For D1 W1A1, floor 0 accepted 805/14,320 proposed drafts;
+floor 0.3 accepted 395/4,145. The conditional ratio rises from 0.056 to 0.095 while
 total accepted drafts falls. No-proposal iterations are outside that native
 round denominator, so this ratio alone does not demonstrate better serving
 quality or throughput. Final policy conclusions still await the complete grid.
