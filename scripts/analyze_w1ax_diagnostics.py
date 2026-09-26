@@ -153,9 +153,19 @@ def _sample_summary(samples: Any, path: Path, line: int) -> list[float]:
 
 
 def summarize_replay(rows: list[dict[str, Any]]) -> dict[str, Any]:
-    grouped: dict[tuple[Any, ...], list[tuple[int, list[float]]]] = defaultdict(list)
-    normalized = []
+    captures: dict[tuple[Any, ...], dict[int, list[float]]] = defaultdict(dict)
+    shapes: dict[tuple[Any, ...], dict[int, list[float]]] = defaultdict(lambda: defaultdict(list))
+    paired_by_shape: dict[tuple[Any, ...], dict[int, list[float]]] = defaultdict(lambda: defaultdict(list))
+    capture_shapes: dict[tuple[Any, ...], set[tuple[Any, ...]]] = defaultdict(set)
+    operator_rows = []
+    head_rows = []
     for i, row in enumerate(rows, 1):
+        record_type = row.get("record_type", "operator_replay")
+        if record_type == "head_comparison":
+            head_rows.append(row)
+            continue
+        if record_type != "operator_replay":
+            continue
         for field in ("K", "M", "N", "name", "group", "replay_bits"):
             if field not in row:
                 raise ValueError(f"operator replay row {i} missing {field}")
@@ -163,45 +173,100 @@ def summarize_replay(rows: list[dict[str, Any]]) -> dict[str, Any]:
         if not isinstance(bits, int) or isinstance(bits, bool) or bits <= 0:
             raise ValueError(f"operator replay row {i}: replay_bits must be a positive integer")
         samples = _sample_summary(row.get("samples_us"), Path("operator replay JSONL"), i)
-        key = (row["K"], row["M"], row["N"], row["name"], row["group"])
-        if any(existing_bits == bits for existing_bits, _ in grouped[key]):
-            raise ValueError(f"operator replay row {i}: duplicate precision row for layer/shape key {key} ({bits} bits)")
-        grouped[key].append((bits, samples))
-        normalized.append((key, bits, samples))
+        shape_key = (row["K"], row["M"], row["N"], row["name"], row["group"])
+        capture_key = (
+            row.get("capture", "<legacy>"), row.get("sequence", 0), row["name"],
+            row["K"], row["M"], row["N"],
+        )
+        if bits in captures[capture_key]:
+            raise ValueError(f"operator replay row {i}: duplicate precision row for capture identity {capture_key} ({bits} bits)")
+        captures[capture_key][bits] = samples
+        shapes[shape_key][bits].extend(samples)
+        capture_shapes[shape_key].add(capture_key)
+        operator_rows.append((shape_key, capture_key, bits, samples))
+
+    for shape_key, capture_key, bits, samples in operator_rows:
+        if bits == 16:
+            continue
+        baseline = captures[capture_key].get(16)
+        if baseline is None or len(baseline) != len(samples):
+            continue
+        ratios = [candidate / reference for candidate, reference in zip(samples, baseline) if reference > 0]
+        if len(ratios) == len(samples):
+            paired_by_shape[shape_key][bits].extend(ratios)
 
     by_layer_shape = []
-    for key in sorted(grouped, key=lambda x: tuple(str(part) for part in x)):
-        entries = grouped[key]
+    for key in sorted(shapes, key=lambda x: tuple(str(part) for part in x)):
+        entries = shapes[key]
         precision = {}
-        for bits, samples in sorted(entries, key=lambda x: x[0]):
+        for bits, samples in sorted(entries.items()):
             precision[str(bits)] = {
                 "samples": len(samples),
                 "median_us": median(samples),
                 "distribution_us": distribution(samples),
             }
         ratios = {}
-        baselines = {bits: samples for bits, samples in entries if bits == 16}
-        baseline = baselines[16] if len(baselines) == 1 else None
-        for bits, samples in sorted(entries, key=lambda x: x[0]):
+        for bits in sorted(entries):
             if bits == 16:
                 continue
-            if baseline is None or len(baseline) != len(samples):
-                ratios[str(bits)] = {"paired_precision_ratio_vs_16": None, "reason": "missing unique 16-bit baseline or unequal paired sample count"}
-                continue
-            paired = [low / high for low, high in zip(samples, baseline) if high > 0]
+            paired = paired_by_shape[key].get(bits, [])
             ratios[str(bits)] = {
-                "paired_precision_ratio_vs_16": median(paired) if len(paired) == len(samples) else None,
+                "paired_precision_ratio_vs_16": median(paired) if paired else None,
                 "paired_sample_ratios": paired,
+                "paired_samples": len(paired),
+                "reason": None if paired else "no capture has a matching 16-bit baseline and sample count",
             }
         by_layer_shape.append({
             "K": key[0], "M": key[1], "N": key[2], "name": key[3], "group": key[4],
-            "precision": precision, "paired_ratios": ratios,
+            "captures": len(capture_shapes[key]), "precision": precision, "paired_ratios": ratios,
         })
     return {
-        "rows": len(rows),
+        "rows": len(operator_rows),
         "by_layer_shape": by_layer_shape,
-        "pairing": "Rows are paired by K/M/N/name/group and sample index; replay_bits=16 is the ratio baseline. This assumes input identity from the operator replay producer; no tensor hashes are present in this schema.",
+        "pairing": "Rows are paired within capture/sequence/name/K/M/N and sample index; replay_bits=16 is the ratio baseline. Shape summaries pool repeated captures. The schema has no tensor hashes, so capture identity is trusted from the producer.",
+        "head_comparison": _summarize_head_comparisons(head_rows),
     }
+
+
+def _summarize_head_comparisons(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    by_bits: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    for index, row in enumerate(rows, 1):
+        bits = row.get("candidate_bits")
+        overlap = row.get("topk_set_overlap")
+        if not isinstance(bits, int) or isinstance(bits, bool) or bits <= 0:
+            raise ValueError(f"head comparison row {index}: candidate_bits must be a positive integer")
+        if not isinstance(overlap, dict):
+            raise ValueError(f"head comparison row {index}: topk_set_overlap must be an object")
+        by_bits[bits].append(row)
+    result = {}
+    for bits, selected in sorted(by_bits.items()):
+        ks = sorted({str(k) for row in selected for k in row["topk_set_overlap"]}, key=int)
+        overlap_summary = {}
+        for k in ks:
+            values = [
+                row["topk_set_overlap"][k] / int(k)
+                for row in selected
+                if _nonnegative_number(row["topk_set_overlap"].get(k))
+            ]
+            overlap_summary[k] = distribution(values)
+        result[str(bits)] = {
+            "comparisons": len(selected),
+            "captures": len({(row.get("capture"), row.get("sequence")) for row in selected}),
+            "top1_agreement_rate": (
+                sum(row["top1_agree"] is True for row in selected) / len(selected)
+                if all(isinstance(row.get("top1_agree"), bool) for row in selected) else None
+            ),
+            "topk_overlap_fraction": overlap_summary,
+            "reference_top1_margin": distribution([
+                float(row["reference_top1_margin"]) for row in selected
+                if _nonnegative_number(row.get("reference_top1_margin"))
+            ]),
+            "candidate_top1_margin": distribution([
+                float(row["candidate_top1_margin"]) for row in selected
+                if _nonnegative_number(row.get("candidate_top1_margin"))
+            ]),
+        }
+    return {"comparisons": len(rows), "by_candidate_bits": result}
 
 
 def analyze_run(run_dir: Path, replay_path: Path | None = None) -> dict[str, Any]:

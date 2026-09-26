@@ -64,15 +64,26 @@ class W1AxDiagnosticsTests(unittest.TestCase):
 
     def test_identical_input_replay_pairs_per_sample_by_layer_shape(self):
         rows = [
-            {"K": 4096, "M": 8, "N": 2, "name": "q_proj", "group": "attention", "replay_bits": 16, "samples_us": [10, 12, 14]},
-            {"K": 4096, "M": 8, "N": 2, "name": "q_proj", "group": "attention", "replay_bits": 8, "samples_us": [5, 6, 7]},
-            {"K": 4096, "M": 8, "N": 2, "name": "q_proj", "group": "attention", "replay_bits": 4, "samples_us": [2, 3, 4]},
+            {"record_type": "operator_replay", "capture": "capture-a.bin", "sequence": 7, "K": 4096, "M": 8, "N": 2, "name": "q_proj", "group": "attention", "replay_bits": 16, "samples_us": [10, 12, 14]},
+            {"record_type": "operator_replay", "capture": "capture-a.bin", "sequence": 7, "K": 4096, "M": 8, "N": 2, "name": "q_proj", "group": "attention", "replay_bits": 8, "samples_us": [5, 6, 7]},
+            {"record_type": "operator_replay", "capture": "capture-a.bin", "sequence": 7, "K": 4096, "M": 8, "N": 2, "name": "q_proj", "group": "attention", "replay_bits": 4, "samples_us": [2, 3, 4]},
+            {"record_type": "operator_replay", "capture": "capture-b.bin", "sequence": 7, "K": 4096, "M": 8, "N": 2, "name": "q_proj", "group": "attention", "replay_bits": 16, "samples_us": [20, 22]},
+            {"record_type": "operator_replay", "capture": "capture-b.bin", "sequence": 7, "K": 4096, "M": 8, "N": 2, "name": "q_proj", "group": "attention", "replay_bits": 8, "samples_us": [10, 11]},
+            {"record_type": "head_comparison", "capture": "capture-a.bin", "sequence": 7, "token": 0, "candidate_bits": 8, "top1_agree": True, "topk_set_overlap": {"1": 1, "5": 4, "10": 8}, "reference_top1_margin": 0.4, "candidate_top1_margin": 0.3},
+            {"record_type": "head_comparison", "capture": "capture-b.bin", "sequence": 7, "token": 1, "candidate_bits": 8, "top1_agree": False, "topk_set_overlap": {"1": 0, "5": 3, "10": 7}, "reference_top1_margin": 0.2, "candidate_top1_margin": 0.1},
         ]
         result = analysis.summarize_replay(rows)
         shape = result["by_layer_shape"][0]
-        self.assertEqual(shape["precision"]["16"]["median_us"], 12)
+        self.assertEqual(result["rows"], 5)
+        self.assertEqual(shape["captures"], 2)
+        self.assertEqual(shape["precision"]["16"]["samples"], 5)
         self.assertEqual(shape["paired_ratios"]["8"]["paired_precision_ratio_vs_16"], 0.5)
-        self.assertEqual(shape["paired_ratios"]["4"]["paired_sample_ratios"], [0.2, 0.25, 4 / 14])
+        self.assertEqual(shape["paired_ratios"]["8"]["paired_samples"], 5)
+        self.assertEqual(shape["paired_ratios"]["4"]["paired_samples"], 3)
+        head = result["head_comparison"]["by_candidate_bits"]["8"]
+        self.assertEqual(head["comparisons"], 2)
+        self.assertEqual(head["top1_agreement_rate"], 0.5)
+        self.assertEqual(head["topk_overlap_fraction"]["5"]["median"], 0.7)
 
     def test_run_reads_records_and_variant_round_traces(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -91,7 +102,7 @@ class W1AxDiagnosticsTests(unittest.TestCase):
             analysis.summarize_replay([row])
 
     def test_replay_rejects_ambiguous_duplicate_precision(self):
-        row = {"K": 1, "M": 1, "N": 1, "name": "x", "group": "g", "replay_bits": 16, "samples_us": [1]}
+        row = {"record_type": "operator_replay", "capture": "same.bin", "sequence": 0, "K": 1, "M": 1, "N": 1, "name": "x", "group": "g", "replay_bits": 16, "samples_us": [1]}
         with self.assertRaisesRegex(ValueError, "duplicate precision row"):
             analysis.summarize_replay([row, dict(row)])
 
