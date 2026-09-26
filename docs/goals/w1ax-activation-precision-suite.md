@@ -2,7 +2,7 @@
 
 **Opened:** 2026-09-25
 **State:** active; primary matrices sealed, diagnostics in progress
-**GPU owner:** transferring from the original chat and `/root/gpu_monitor` to the successor chat at the rotation checkpoint below; the supervised remote pipeline continues without interruption
+**GPU owner:** successor chat `01a0dbfc-6f9b-76e1-895d-1a617ad45e60`, with bounded operator `/root/policy_operator`; the supervised remote pipeline continues without interruption
 
 ## Objective
 
@@ -401,3 +401,12 @@ Successor Codex chat created: `01a0dbfc-6f9b-76e1-895d-1a617ad45e60`
 (local project, title `Continue W1Ax full suite`). It received this checkpoint,
 the unchanged running-job details, and the instruction to verify/adopt sole
 supervision before continuing. Original chat performs no further GPU actions.
+
+
+## Successor adopted supervision — 2026-09-26 04:33 UTC
+
+- Successor chat `01a0dbfc-6f9b-76e1-895d-1a617ad45e60` verified the live supervisor, progress and process tree through tmux MCP and opened its own active native Goal for the same written objective. Original chat performs no further GPU actions. No process was interrupted or restarted.
+- Bounded Luna operator `/root/policy_operator` owns GPU supervision through the first policy-cell completion and next-cell transition, then returns ownership to root. Monitor pane `%23` and launch pane `%20` remain intact. First verified progress was 579/960; subsequent operator snapshot reached 600/960. Both context cells remain complete. Groups: outer 54155, benchmark 60216, changing server 62892 at the latest snapshot. No error matches were observed.
+- The remote runner remains frozen at project `2f6ab14` / runtime `feba15698`; all twelve predeclared policy cells remain required. No training, final-set evaluation or research fork was started.
+- Root owns documentation and integration in the existing `w1ax-suite` worktree. Bounded Sol worker `/root/policy_uncertainty` owns only the policy analyzer and its tests, adding optional paired descriptive intervals required by the frozen protocol. Selection remains exploratory development-only; intervals do not correct for policy selection. This CPU-only work does not modify the running source or measurements.
+- Next: finish all twelve policy cells, run the validated standalone helper after GPU timing ends, preserve fixed and individually selected policy results with both anchors/raw-ID comparisons, publish final report and verify all process groups stopped/GPU idle.
