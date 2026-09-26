@@ -1,7 +1,7 @@
 # Goal: all-layer W1Ax activation-precision suite on RTX 2080 Ti
 
 **Opened:** 2026-09-25
-**State:** active after user-authorized resume; four policy cells complete, D2/p0.1 running
+**State:** active after user-authorized resume; five policy cells complete, D2/p0.3 running
 **GPU owner:** `/root/policy_operator`, under successor chat `01a0dbfc-6f9b-76e1-895d-1a617ad45e60`
 
 ## Objective
@@ -489,3 +489,11 @@ All experiment/analysis work is stopped. Resume only on explicit user request.
 - All seven speculative paths agree with FP16/Q4_0 on all 120 paired requests. All differ from target-only on the same five repeated code-search-and-order-02 requests, first at index 9 (22990 versus 11424). This is a new measured output difference; its cause remains unestablished.
 - Decode rates A16/A8/A4/A1 are 41.708/49.224/48.274/48.732 tok/s, versus FP16 82.327 and Q4_0 85.304. Target-only is 65.882 tok/s, 1.090 times the pre-pause D1/p0 control. Request settings, precision, platform and numerical variant environments are unchanged; only TMPDIR differs between those environment records. Record this observed timing-epoch shift when interpreting exploratory cross-policy selections; do not infer its cause or attribute all absolute changes to D.
 - D2/p0.1 started automatically and had 15 records at 18:50 UTC. Supervisor/launcher remains 875/876; benchmark PGID4415 and server PGID4507 at that snapshot. Operator retains sole GPU ownership, with clean logs. Four policy cells are complete; eight remain, followed by full-grid analysis/publication and final process/GPU cleanup.
+
+
+## D2/p0.1 complete — 2026-09-26 19:40 UTC
+
+- D2/p0.1 a1 completed 960/960. Records SHA256 `b56fd3ba367e38bdf57d5ad8df471b178001a81d60aa1851e78a2dc9feb34f5d`; local interim audit `19dcdefcd4d581cb1f8ce45ef92af4f84fd886dabbd8dc0b54067cbd043582f9`. Structural/hash/counter/policy checks passed. All seven speculative paths agree with each other; each retains the five target-only differences on code-search-and-order-02 described for D2/p0.
+- Direct D2/p0-a2 versus D2/p0.1-a1 comparison found zero raw-ID or per-request speculative-counter differences across all 960 paired requests. This independently reproduces the effective equivalence of floors 0 and 0.1 under the frozen top-10 draft sampler. Rates differ descriptively; no policy benefit is inferred from those timing differences.
+- A transfer-verification bookkeeping error was caught before local analysis: terminal output truncation shifted positional filename/hash assignment. Operator reread filename-keyed remote hashes and corrected the verification JSON; root checked all five remote/local/local-file hashes match. Result data were unchanged. Future verification must use filename keys, not terminal line position.
+- D2/p0.3 is running, with 72 records at 19:39 UTC. Supervisor/launcher remains 875/876, benchmark PGID7440 and server PGID7977 at the snapshot. Logs clean; operator retains sole GPU ownership. Five policy cells are complete, seven unfinished; final full-grid validation/publication/cleanup still pending.

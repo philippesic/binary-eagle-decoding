@@ -1,6 +1,6 @@
 # All-layer W1Ax activation precision on RTX 2080 Ti
 
-**State:** primary matrices, operator/round/profile/streaming/context diagnostics complete; development policy sweep resumed after a user pause, with four cells complete.
+**State:** primary matrices, operator/round/profile/streaming/context diagnostics complete; development policy sweep resumed after a user pause, with five cells complete.
 **Protocol:** [frozen W1Ax study](w1ax-activation-precision-plan.md).
 **Hardware:** NVIDIA RTX 2080 Ti, SM75, 11,264 MiB VRAM under Ubuntu 24.04 WSL2.
 
@@ -532,9 +532,9 @@ is at least 0.1, so floors 0 and 0.1 do not reject it; floor 0.3 remains distinc
 The implementation is in `common/speculative.cpp` (sampler setup and draft
 selection), `common/sampling.cpp` and `src/llama-sampler.cpp` of that runtime.
 
-The completed D1/p0 and D1/p0.1 cells have identical raw IDs and speculative
-counter dictionaries for all 960 paired requests, consistent with this sampler
-contract. Their timing differences do not establish a benefit from changing
+The completed D1 and D2 comparisons of p0 versus p0.1 each have identical raw
+IDs and speculative counter dictionaries for all 960 paired requests, consistent
+with this sampler contract. Their timing differences do not establish a benefit from changing
 that floor. All twelve predeclared configurations are retained; final policy
 selection remains pending the full grid. Individual candidate confidence values
 were not inspected in these uninstrumented cells.
@@ -587,5 +587,5 @@ probability mass. No trained-QAT or reserved-final result is claimed.
 
 ## Outstanding measurements
 
-The twelve-setting D/p_min development policy grid has four complete cells. D2/p0 completed as attempt 2; the interrupted attempt retains 120 saved requests and is excluded from complete-cell comparisons. Do not treat the historical
+The twelve-setting D/p_min development policy grid has five complete cells. D2/p0 completed as attempt 2; the interrupted attempt retains 120 saved requests and is excluded from complete-cell comparisons. Do not treat the historical
 screen as a final trained-QAT result or use the reserved 24-prompt final set.
