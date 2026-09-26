@@ -6,7 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 from statistics import median
 from typing import Any
@@ -832,6 +832,164 @@ def map_measured_trace_rows(
     }
 
 
+def _counter_field(record: dict[str, Any], field: str) -> int | None:
+    value = (record.get("speculative") or {}).get(field)
+    return value if isinstance(value, int) and not isinstance(value, bool) and value >= 0 else None
+
+
+def _safe_ratio(numerator: int, denominator: int) -> float | None:
+    return numerator / denominator if denominator > 0 else None
+
+
+def summarize_counter_reconciliation(
+    measured_trace_rows: list[dict[str, Any]], records: list[dict[str, Any]]
+) -> dict[str, Any]:
+    """Compare mapped trace counters with request-local metrics without assuming equality."""
+    trace_by_request: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in measured_trace_rows:
+        request_id = row.get("request_id")
+        if not isinstance(request_id, str) or not request_id:
+            raise ValueError("mapped trace row lacks request_id for counter reconciliation")
+        trace_by_request[request_id].append(row)
+
+    per_request = []
+    statuses = Counter()
+    trace_totals = {
+        "accepted": 0, "accepted_actually_emitted": 0, "emitted": 0,
+        "proposed_quality": 0, "proposed_attempts": 0,
+        "quality_trace_rows": 0, "verified_rounds": 0,
+        "proposal_positive_rounds": 0, "proposal_zero_rounds": 0,
+        "accepted_not_emitted": 0,
+    }
+    native_values: dict[str, list[int]] = {key: [] for key in ("accepted", "proposed", "rounds")}
+    native_missing = {key: 0 for key in native_values}
+    response_token_counts: list[int] = []
+    response_tokens_missing = 0
+    completion_token_counts: list[int] = []
+    completion_tokens_missing = 0
+    for record in sorted(records, key=lambda r: (r.get("repetition", -1), r.get("server_request_index", -1))):
+        request_id = record.get("request_id")
+        rows = trace_by_request.get(request_id, [])
+        if not rows:
+            raise ValueError(f"mapped request {request_id!r} has no trace rows for counter reconciliation")
+        row_statuses = Counter(row.get("status") for row in rows)
+        statuses.update(row_statuses)
+        quality = [row for row in rows if row.get("status") != "checkpoint_replay"]
+        accepted = sum(row.get("n_accepted", 0) for row in quality)
+        emitted = sum(row.get("n_emitted", 0) for row in quality)
+        accepted_emitted = sum(min(row.get("n_accepted", 0), row.get("n_emitted", 0)) for row in quality)
+        proposed_quality = sum(row.get("n_proposed", 0) for row in quality)
+        proposed_attempts = sum(row.get("n_proposed", 0) for row in rows)
+        verified_rounds = sum(row.get("status") not in ("checkpoint_replay", "no_proposal") for row in rows)
+        positive = sum(row.get("n_proposed", 0) > 0 for row in quality)
+        zero = sum(row.get("n_proposed", 0) == 0 for row in quality)
+        accepted_after_stop = sum(max(0, row.get("n_accepted", 0) - row.get("n_emitted", 0)) for row in quality)
+        native = {field: _counter_field(record, field) for field in native_values}
+        for field, value in native.items():
+            if value is None:
+                native_missing[field] += 1
+            else:
+                native_values[field].append(value)
+        generated_ids = record.get("generated_token_ids")
+        if isinstance(generated_ids, list) and all(isinstance(token, int) and not isinstance(token, bool) for token in generated_ids):
+            response_token_counts.append(len(generated_ids))
+            response_count = len(generated_ids)
+        else:
+            response_tokens_missing += 1
+            response_count = None
+        completion_count = record.get("completion_tokens")
+        if isinstance(completion_count, int) and not isinstance(completion_count, bool) and completion_count >= 0:
+            completion_token_counts.append(completion_count)
+        else:
+            completion_tokens_missing += 1
+            completion_count = None
+        differences = {
+            "accepted_quality_trace_minus_api_native": accepted - native["accepted"] if native["accepted"] is not None else None,
+            "proposed_quality_trace_minus_api_native": proposed_quality - native["proposed"] if native["proposed"] is not None else None,
+            "proposed_all_attempt_trace_minus_api_native": proposed_attempts - native["proposed"] if native["proposed"] is not None else None,
+            "quality_trace_rows_minus_api_native_rounds": len(quality) - native["rounds"] if native["rounds"] is not None else None,
+            "verified_trace_rounds_minus_api_native_rounds": verified_rounds - native["rounds"] if native["rounds"] is not None else None,
+            "accepted_actually_emitted_minus_api_native": accepted_emitted - native["accepted"] if native["accepted"] is not None else None,
+            "trace_emitted_minus_response_generated_token_ids": emitted - response_count if response_count is not None else None,
+            "trace_emitted_minus_api_completion_tokens": emitted - completion_count if completion_count is not None else None,
+        }
+        per_request.append({
+            "repetition": record.get("repetition"), "variant": record.get("variant"),
+            "prompt_id": record.get("prompt_id"), "request_id": request_id,
+            "response_generated_token_ids": response_count,
+            "api_completion_tokens": completion_count,
+            "status_counts": dict(row_statuses),
+            "trace": {
+                "accepted_quality": accepted, "accepted_actually_emitted": accepted_emitted,
+                "accepted_quality_not_emitted": accepted_after_stop,
+                "emitted": emitted, "proposed_quality": proposed_quality,
+                "proposed_all_attempts": proposed_attempts,
+                "quality_trace_rows": len(quality), "verified_rounds": verified_rounds,
+                "proposal_positive_rounds": positive, "proposal_zero_rounds": zero,
+                "accepted_per_proposed_quality": _safe_ratio(accepted, proposed_quality),
+                "accepted_per_verified_round": _safe_ratio(accepted, verified_rounds),
+            },
+            "api_native": native,
+            "differences": differences,
+        })
+        trace_totals["accepted"] += accepted
+        trace_totals["accepted_actually_emitted"] += accepted_emitted
+        trace_totals["emitted"] += emitted
+        trace_totals["proposed_quality"] += proposed_quality
+        trace_totals["proposed_attempts"] += proposed_attempts
+        trace_totals["quality_trace_rows"] += len(quality)
+        trace_totals["verified_rounds"] += verified_rounds
+        trace_totals["proposal_positive_rounds"] += positive
+        trace_totals["proposal_zero_rounds"] += zero
+        trace_totals["accepted_not_emitted"] += accepted_after_stop
+
+    native_totals = {
+        key: sum(values) if native_missing[key] == 0 and len(per_request) else None
+        for key, values in native_values.items()
+    }
+    response_tokens_total = sum(response_token_counts) if response_tokens_missing == 0 else None
+    completion_tokens_total = sum(completion_token_counts) if completion_tokens_missing == 0 else None
+    differences = {
+        "accepted_quality_trace_minus_api_native": trace_totals["accepted"] - native_totals["accepted"] if native_totals["accepted"] is not None else None,
+        "proposed_quality_trace_minus_api_native": trace_totals["proposed_quality"] - native_totals["proposed"] if native_totals["proposed"] is not None else None,
+        "proposed_all_attempt_trace_minus_api_native": trace_totals["proposed_attempts"] - native_totals["proposed"] if native_totals["proposed"] is not None else None,
+        "quality_trace_rows_minus_api_native_rounds": trace_totals["quality_trace_rows"] - native_totals["rounds"] if native_totals["rounds"] is not None else None,
+        "verified_trace_rounds_minus_api_native_rounds": trace_totals["verified_rounds"] - native_totals["rounds"] if native_totals["rounds"] is not None else None,
+        "accepted_actually_emitted_minus_api_native": trace_totals["accepted_actually_emitted"] - native_totals["accepted"] if native_totals["accepted"] is not None else None,
+        "trace_emitted_minus_response_generated_token_ids": trace_totals["emitted"] - response_tokens_total if response_tokens_total is not None else None,
+        "trace_emitted_minus_api_completion_tokens": trace_totals["emitted"] - completion_tokens_total if completion_tokens_total is not None else None,
+    }
+    trace_totals["accepted_per_proposed_quality"] = _safe_ratio(trace_totals["accepted"], trace_totals["proposed_quality"])
+    trace_totals["accepted_per_verified_round"] = _safe_ratio(trace_totals["accepted"], trace_totals["verified_rounds"])
+    trace_totals["accepted_per_quality_trace_row"] = _safe_ratio(trace_totals["accepted"], trace_totals["quality_trace_rows"])
+    native_rates = {
+        "accepted_per_proposed": _safe_ratio(native_totals["accepted"], native_totals["proposed"]) if all(native_totals[k] is not None for k in native_totals) else None,
+        "accepted_per_round": _safe_ratio(native_totals["accepted"], native_totals["rounds"]) if all(native_totals[k] is not None for k in native_totals) else None,
+    }
+    return {
+        "requests": len(per_request),
+        "per_request": per_request,
+        "pooled": {
+            "trace": trace_totals,
+            "api_native": {"totals": native_totals, "missing_request_counts": native_missing, "rates": native_rates},
+            "api_output": {
+                "generated_token_ids_total": response_tokens_total,
+                "generated_token_ids_missing_requests": response_tokens_missing,
+                "completion_tokens_total": completion_tokens_total,
+                "completion_tokens_missing_requests": completion_tokens_missing,
+            },
+            "status_counts": dict(statuses),
+            "differences": differences,
+        },
+        "semantics": {
+            "accepted": "Trace accepted sums n_accepted from non-checkpoint_replay rows. Runtime increments n_draft_accepted after final verifier acceptance and before emitting accepted tokens; accepted_actually_emitted counts the accepted prefix bounded by each row's n_emitted.",
+            "proposed": "Runtime increments n_draft_tokens by draft.size() before verification. The API native counter can include a draft attempt later discarded by checkpoint restoration; proposed_all_attempts includes every trace row, while proposed_quality excludes checkpoint_replay rows.",
+            "rounds": "Runtime increments n_draft_verif_steps after a successful final verification. `complete` trace rows count verified rounds; `no_proposal` rows are round events without a verifier step. Checkpoint replay rows are excluded from quality counts.",
+            "comparison": "Differences are reported, not constrained to zero. Per-request API counters are metrics deltas; trace counters are reconstructed from mapped task rows.",
+        },
+    }
+
+
 def analyze_run(run_dir: Path, replay_path: Path | None = None) -> dict[str, Any]:
     records_path = run_dir / "records.json"
     if not records_path.is_file():
@@ -906,6 +1064,11 @@ def analyze_run(run_dir: Path, replay_path: Path | None = None) -> dict[str, Any
             "warmup_requests_per_server": warmups if trace_enabled else None,
             "by_repetition": mapping_reports,
         }
+        if trace_enabled and variant != "target_only":
+            variant_records = [record for record in records if record.get("variant") == variant]
+            summary["counter_reconciliation"] = summarize_counter_reconciliation(trace_rows, variant_records)
+        else:
+            summary["counter_reconciliation"] = {"status": "not_applicable_or_unavailable"}
         variant_results[variant] = summary
     report: dict[str, Any] = {
         "source": str(run_dir),

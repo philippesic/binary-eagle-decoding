@@ -182,6 +182,42 @@ class W1AxDiagnosticsTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "equal positive K\*N"):
             analysis.summarize_replay([row])
 
+    def test_counter_reconciliation_separates_quality_attempts_and_native_rounds(self):
+        mapped_rows = [
+            {"request_id": "req0", "status": "checkpoint_replay", "n_accepted": 1,
+             "n_proposed": 2, "n_emitted": 0},
+            {"request_id": "req0", "status": "complete", "n_accepted": 3,
+             "n_proposed": 3, "n_emitted": 2},
+            {"request_id": "req1", "status": "no_proposal", "n_accepted": 0,
+             "n_proposed": 0, "n_emitted": 1},
+        ]
+        records = [
+            {"request_id": "req0", "repetition": 0, "server_request_index": 0,
+             "prompt_id": "p0", "generated_token_ids": [1, 2, 3], "completion_tokens": 3,
+             "speculative": {"accepted": 3, "proposed": 5, "rounds": 1}},
+            {"request_id": "req1", "repetition": 0, "server_request_index": 1,
+             "prompt_id": "p1", "generated_token_ids": [4, 5], "completion_tokens": 2,
+             "speculative": {"accepted": 0, "proposed": 0, "rounds": 0}},
+        ]
+        result = analysis.summarize_counter_reconciliation(mapped_rows, records)
+        pooled = result["pooled"]
+        self.assertEqual(pooled["status_counts"], {"checkpoint_replay": 1, "complete": 1, "no_proposal": 1})
+        self.assertEqual(pooled["trace"]["accepted"], 3)
+        self.assertEqual(pooled["trace"]["accepted_actually_emitted"], 2)
+        self.assertEqual(pooled["trace"]["accepted_not_emitted"], 1)
+        self.assertEqual(pooled["trace"]["proposed_quality"], 3)
+        self.assertEqual(pooled["trace"]["proposed_attempts"], 5)
+        self.assertEqual(pooled["trace"]["proposal_positive_rounds"], 1)
+        self.assertEqual(pooled["trace"]["proposal_zero_rounds"], 1)
+        self.assertEqual(pooled["api_output"]["generated_token_ids_total"], 5)
+        self.assertEqual(pooled["api_output"]["completion_tokens_total"], 5)
+        self.assertEqual(pooled["differences"]["trace_emitted_minus_response_generated_token_ids"], -2)
+        self.assertEqual(pooled["api_native"]["totals"], {"accepted": 3, "proposed": 5, "rounds": 1})
+        self.assertEqual(pooled["differences"]["proposed_quality_trace_minus_api_native"], -2)
+        self.assertEqual(pooled["differences"]["proposed_all_attempt_trace_minus_api_native"], 0)
+        self.assertEqual(pooled["differences"]["quality_trace_rows_minus_api_native_rounds"], 1)
+        self.assertEqual(pooled["differences"]["verified_trace_rounds_minus_api_native_rounds"], 0)
+
     def test_anchor_operator_rows_pair_to_w1ax_by_capture(self):
         def row(record_type, capture, bits_or_format, samples):
             base = {
