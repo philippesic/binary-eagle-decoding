@@ -2,7 +2,7 @@
 
 **Opened:** 2026-09-25
 **State:** active; implementation in progress
-**GPU owner:** orchestrator in this task; no remote job started yet
+**GPU owner:** orchestrator in this task; historical eight-path matrix running
 
 ## Objective
 
@@ -58,3 +58,32 @@ Implement, validate, and run the full [W1Ax activation-precision study](../../ex
 - CPU build succeeded locally on Apple M3 Max; focused backend operator tests passed 88/88 across odd K, 32-bit boundaries, dirty tails, N=1/2/3, all-zero activations, negative zero, and strided views. This is a CPU correctness check, not an SM75 performance result. Python conversion tests were not run because the local environment lacks PyTorch.
 - CUDA code is written but awaits CUDA compilation and actual 2080 Ti exact-dot/dispatch validation. Operator replay, all-nine real activation capture, full-model logits/IDs, and matched benchmark remain required gates. No GPU was used by this worker.
 - Opt-in diagnostic capture: set `GGML_W1AX_CAPTURE_DIR` to an existing directory and disable CUDA graphs. Each `op-%012llu.bin` stores magic `W1AXACT1`, LE uint64 sequence/K/M/N, LE uint32 bits, a 128-byte NUL-padded packed tensor name, then N×K F32 activations. Capture synchronizes the CUDA stream and is excluded from timing.
+## Research review checkpoint (2026-09-25)
+
+The user requested seven independent local-only deep analyses using Astra high:
+QAT execution, non-EAGLE one-bit architectures, end-to-end drafting policies,
+draft graph/kernel optimizations, precision allocation, training data and
+vocabulary coverage, and evaluation/experiment design. These are advisory
+reviews under the current goal, not a replacement goal or authorization for
+new GPU runs. Agents read the shared checkout without modifying it; reports
+are staged separately for synthesis. No web search or remote execution is
+part of this review. Major research choices remain with the user.
+
+Review agent ownership: `/root/qat_execution`, `/root/non_eagle_architectures`,
+`/root/throughput_policies`, `/root/draft_pipeline_optimization`,
+`/root/precision_allocation`, `/root/data_alignment`, and
+`/root/evaluation_strategy`. All use `gpt-6-astra`, high reasoning.
+The precision review was retried once after a transient model-capacity error.
+Integration worktree: `/tmp/binary-eagle-deep-analysis-20260925`, branch
+`research/deep-analysis-20260925`; per-category report staging:
+`/tmp/binary-eagle-analysis-reports-20260925/`.
+
+Review complete: all seven reports are preserved under
+`experiments/research-review-2026-09-25/`, with the ranked synthesis at
+[research-review-2026-09-25.md](../../experiments/research-review-2026-09-25.md).
+The agents finished their assignments without repository code edits or remote
+runs. Cross-review resolved a metadata-count discrepancy: development has nine
+topic families and final has ten. Advisory findings and pending options are
+recorded in `docs/DECISIONS.md`; the frozen primary study, QAT budget, final-set
+reservation and next actions above remain unchanged. No new GPU state was
+verified. Documentation link/whitespace checks precede integration into main.
