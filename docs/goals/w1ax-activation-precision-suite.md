@@ -1,7 +1,7 @@
 # Goal: all-layer W1Ax activation-precision suite on RTX 2080 Ti
 
 **Opened:** 2026-09-25
-**State:** active after user-authorized resume; eight policy cells complete, D3/p0.3 running
+**State:** active after user-authorized resume; nine policy cells complete, D5/p0 running
 **GPU owner:** `/root/policy_operator`, under successor chat `01a0dbfc-6f9b-76e1-895d-1a617ad45e60`
 
 ## Objective
@@ -519,3 +519,11 @@ All experiment/analysis work is stopped. Resume only on explicit user request.
 - D3/p0.1 a1 completed 960/960, with all five transfer hashes matching and local structural/hash/counter/policy/raw-ID validation passing. Records SHA256 `2d00eaea2fdf3fb4eee02fa0dab49c5d8780b15ea84047a98a83b0cffcec922e`; interim audit `deac35824451e0acc17490a3b8a611503d345e1bad0df1fe1da457b178dd0f90`. All speculative paths match target-only and both anchors on all 120 paired requests.
 - Direct D3/p0 versus D3/p0.1 comparison found zero raw-ID or per-request counter differences on all 960 pairs. Together with D1/D2, this confirms the observed floor equivalence across all three completed depth pairs; timing changes alone are not a floor benefit.
 - D3/p0.3 started automatically around21:48UTC and reached26 records at21:49UTC. Supervisor/launcher875/876, benchmark PGID16158 and server PGID16518 at the snapshot; logs clean. Operator retains sole GPU ownership. Eight cells are complete; D3/p0.3 and all three D5 cells remain, followed by final full-grid validation/reporting/cleanup.
+
+
+## D3 policy group complete — 2026-09-26 22:34 UTC
+
+- D3/p0.3 a1 completed 960/960. Five transfer hashes match; local structural/hash/counter/policy/raw-ID checks passed. Records SHA256 `042d29583645cdad233e3e884262b40e65cdce89330959835006a0154b2375f5`; interim audit `4b818e06912e7104c7abf110c9a27ccfc7aaab30955a051e0943ef5488f29823`.
+- Target-only differences among 120 paired requests: FP16/Q8_0/A8/A1 each5, A16 ten, Q4_0/A4 zero. Detailed comparisons against each anchor and first-divergence records remain in the audit; causes are unestablished and mismatching ratios remain timing observations.
+- Decode rates A16/A8/A4/A1 are 42.483/50.781/54.087/55.315 tok/s, versus FP16/Q4_0 87.158/91.495 and target-only65.831. No policy selection is finalized yet.
+- D5/p0 a1 started automatically and reached14 records at22:33UTC. Supervisor/launcher875/876, benchmark PGID19105 and server PGID19196 at the snapshot; clean logs. Operator retains sole GPU ownership. Nine cells are complete; only the three D5 cells remain before full-grid analysis, final publication and verified GPU release.
