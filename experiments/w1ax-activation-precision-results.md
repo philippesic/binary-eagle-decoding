@@ -1,6 +1,6 @@
 # All-layer W1Ax activation precision on RTX 2080 Ti
 
-**State:** primary matrices, operator/round/profile/streaming/context diagnostics complete; development policy sweep resumed after a user pause, with nine cells complete.
+**State:** primary matrices, operator/round/profile/streaming/context diagnostics complete; development policy sweep resumed after a user pause, with ten cells complete.
 **Protocol:** [frozen W1Ax study](w1ax-activation-precision-plan.md).
 **Hardware:** NVIDIA RTX 2080 Ti, SM75, 11,264 MiB VRAM under Ubuntu 24.04 WSL2.
 
@@ -564,7 +564,7 @@ SHA256 `58a8802c57065d9b20aa8f0a7a5990a9547ac87067e4abb11cbb82abf4bdf107`.
 Their causes remain unestablished; these ratios are timing observations with
 different outputs.
 
-## Timing epochs after the pause
+## Control timing variation across cells
 
 D2/p0 attempt 2 completed after the user pause and host reconnection. Its
 speculative paths agree with each other on all 120 paired requests, but all
@@ -578,7 +578,13 @@ Its target-only decode rate is 65.882 tok/s versus 60.440 in pre-pause D1/p0,
 an observed 1.090× shift even though draft policy is inoperative for that
 control. Model/binary hashes, target request settings, precision, platform and
 numerical environment selectors match; the recorded temporary directory differs.
-The cause of the timing shift is not established. Within-cell FP16/Q4_0 ratios
+D5/p0 later returned to 60.489 tok/s, so a simple persistent pre/post-pause
+explanation is unsupported. A four-depth audit found identical target-only
+command arrays and request settings; the frozen harness sends draft-depth and
+confidence flags only when a draft is enabled. All 120 paired target-only raw
+sequences and completion lengths match. No direct depth/configuration confound
+was found; the cause of control timing variation remains unestablished.
+Within-cell FP16/Q4_0 ratios
 remain matched comparisons. Cross-cell absolute rates and development-selected
 policies span distinct timing epochs and do not isolate policy effects; paired
 bootstrap intervals do not account for unmeasured systematic epoch changes.
@@ -605,5 +611,5 @@ probability mass. No trained-QAT or reserved-final result is claimed.
 
 ## Outstanding measurements
 
-The twelve-setting D/p_min development policy grid has nine complete cells. D2/p0 completed as attempt 2; the interrupted attempt retains 120 saved requests and is excluded from complete-cell comparisons. Do not treat the historical
+The twelve-setting D/p_min development policy grid has ten complete cells. D2/p0 completed as attempt 2; the interrupted attempt retains 120 saved requests and is excluded from complete-cell comparisons. Do not treat the historical
 screen as a final trained-QAT result or use the reserved 24-prompt final set.

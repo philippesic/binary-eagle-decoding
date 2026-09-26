@@ -1,7 +1,7 @@
 # Goal: all-layer W1Ax activation-precision suite on RTX 2080 Ti
 
 **Opened:** 2026-09-25
-**State:** active after user-authorized resume; nine policy cells complete, D5/p0 running
+**State:** active after user-authorized resume; ten policy cells complete, D5/p0.1 running
 **GPU owner:** `/root/policy_operator`, under successor chat `01a0dbfc-6f9b-76e1-895d-1a617ad45e60`
 
 ## Objective
@@ -535,3 +535,11 @@ All experiment/analysis work is stopped. Resume only on explicit user request.
 - The standalone policy analyzer now labels comparisons within/cross cell and its central 95% percentile output as descriptive resampling ranges. Metadata explicitly states that timing-epoch changes are unmodeled, repetition-label pairing imposes unverified covariance, and selected-versus-fixed/selected-anchor ratios cannot isolate policy effects. Winners remain fixed during resampling; selection uncertainty/bias are not corrected. These are interpretation metadata changes, not numeric or measurement changes.
 - The report now distinguishes accepted/proposed from accepted/native verification round. Their denominators happen to coincide for the cited D1 examples, but are separate metrics. Final fixed D5/p0 comparisons must refer to the policy-grid cell, not silently reuse the earlier primary measurement.
 - All 14 focused policy-analyzer tests and whitespace checks passed. Use the latest published helper for final full-grid analysis; do not copy any update into the running frozen source. No GPU experiment or final-prompt use was added. Operator's latest 22:37 UTC check: D5/p0 at96/960, supervisor876, benchmark19105, server19660, clean logs.
+
+
+## Fixed grid policy complete; control audit — 2026-09-26 23:26 UTC
+
+- D5/p0 a1 completed 960/960. Five transfer hashes match; local structural/hash/counter/policy/raw-ID audit passed. Records SHA256 `38dad0c9f9d8e9b592380b931c00ba5599fd7f90bb05600760057f5b0f50ac61`; interim audit `973bbc0cd5b8254f2a7cdb57c0643c40efda076f245ad655359f194dedf5a8ea`. All seven speculative paths match target-only and both anchors on all 120 paired requests. This is the policy-grid fixed D5/p0 reference for final selection comparisons.
+- Decode rates A16/A8/A4/A1 are29.985/42.680/44.847/45.500 tok/s; FP16/Q4_0 are76.829/84.583 and target-only60.489. The target-only rate returned near the pre-pause D1 level, despite D2/D3 controls being65.7–65.9 after resumption. A simple persistent pre/post-pause explanation is therefore unsupported.
+- Read-only audit by `/root/policy_uncertainty` found no direct D/config confound: configs differ only in evaluation.max_draft_tokens; target-only command arrays, request settings, warmups/order, models/binary/harness hashes and numerical environments match (only D1 TMPDIR differs). Frozen harness SHA256 `1ca8eb8aaa4b958982cb1f8488ae41e4949b81f3e78d7f3d0e19be01b35f6675`. In frozen benchmark lines950–951 target-only uses spec-type none; draft flags occur only in lines968–985; request body991–1006 has no depth/confidence; depth in record1655–1663 is postmeasurement metadata. All120 target-only raw sequences and completion lengths match across audited depth cells. The cause of control timing variation remains unestablished.
+- D5/p0.1 started automatically at23:20UTC and reached45 records at23:22UTC. Supervisor/launcher875/876, benchmark PGID22015 and server PGID22195 at the snapshot; clean logs. Operator retains sole GPU ownership. Only D5/p0.1 and D5/p0.3 remain before the official full-grid analysis. Latest published helper is `c64e260`; keep it separate from the frozen measured runner.
