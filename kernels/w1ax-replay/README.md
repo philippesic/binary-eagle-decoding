@@ -43,6 +43,7 @@ cmake -S kernels/w1ax-replay -B build/w1ax-replay -DGGML_CUDA=ON -DCMAKE_CUDA_AR
 cmake --build build/w1ax-replay -j 8
 build/w1ax-replay/w1ax_operator_replay --gguf models/gguf/Qwen3-4B-eagle3-all-w1a1.gguf \
   --fp16-gguf models/gguf/Qwen3-4B-eagle3-F16.gguf \
+  --fp16-cast-control \
   --q8-gguf models/gguf/Qwen3-4B-eagle3-Q8_0.gguf \
   --q4-gguf models/gguf/Qwen3-4B-eagle3-Q4_0.gguf \
   --capture-dir runs/<id>/captures --backend gpu --warmups 2 --samples 5 \
@@ -83,6 +84,20 @@ not match an F32-activation scalar dot. The `validation` field says
 The anchors share capture identity and shape with W1Ax rows for later pairing,
 but their GGUF weights differ. They establish matched operator input, not
 identical decoding trajectory or numerical equivalence of models.
+
+`--fp16-cast-control` requires `--fp16-gguf`. It runs the ordinary FP16-weight
+operator twice on each capture: once with the original captured F32 input, and
+once after an explicit F32→FP16→F32 activation cast. Both outputs are computed
+and compared outside timed samples. The original F32 input is restored before
+the ordinary FP16 anchor's warmups and timing. A `fp16_cast_control` record
+contains capture identity, layer/group/K/M/N, the two activation contracts,
+output count, and mean/max **absolute** output difference. For the full
+32,000-row head, `fp16_cast_head_comparison` adds one record per token with
+top-1 agreement, top-5 set overlap count, both top-1 token IDs, top-1 minus
+top-2 margins, and rank-5 minus rank-6 cutoff margins. These head outputs are
+ordinary draft logits; the other layers' values are intermediate activations.
+Every cast record has `serving_acceptance_metric: false`: it isolates the
+operator-boundary cast and does not measure acceptance or decode trajectory.
 
 The scalar check validates final F32 values and independently computes integer
 dots for A1/A4/A8; it cannot directly inspect the native kernel's hidden

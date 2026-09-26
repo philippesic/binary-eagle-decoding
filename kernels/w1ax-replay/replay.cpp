@@ -215,6 +215,7 @@ struct options {
     int warmups = 2, samples = 5;
     size_t check_rows = 8, limit = 0;
     bool require_nine = false;
+    bool fp16_cast_control = false;
 };
 
 static options parse(int argc, char ** argv) {
@@ -222,6 +223,7 @@ static options parse(int argc, char ** argv) {
     for (int i = 1; i < argc; ++i) {
         const std::string arg = argv[i];
         if (arg == "--require-nine") { o.require_nine = true; continue; }
+        if (arg == "--fp16-cast-control") { o.fp16_cast_control = true; continue; }
         require(i+1 < argc, "missing value after " + arg);
         const std::string value = argv[++i];
         if (arg == "--gguf") o.gguf = value;
@@ -242,6 +244,7 @@ static options parse(int argc, char ** argv) {
     for (const auto & path : {o.fp16_gguf, o.q8_gguf, o.q4_gguf}) {
         require(path.empty() || fs::is_regular_file(path), "anchor GGUF path does not exist: " + path.string());
     }
+    require(!o.fp16_cast_control || !o.fp16_gguf.empty(), "--fp16-cast-control requires --fp16-gguf");
     require(o.warmups >= 0 && o.samples > 0 && o.samples <= 10000, "invalid warmups or samples");
     return o;
 }
@@ -435,6 +438,52 @@ static void compare_head(const capture & c, const std::array<std::vector<float>,
     }
 }
 
+static void report_fp16_cast_control(const capture & c, const std::vector<float> & original,
+        const std::vector<float> & casted) {
+    require(original.size() == size_t(c.m*c.n) && casted.size() == original.size(),
+            "FP16 cast control output shape mismatch");
+    double absolute_sum = 0, max_abs = 0;
+    for (size_t i = 0; i < original.size(); ++i) {
+        require(std::isfinite(original[i]) && std::isfinite(casted[i]), "FP16 cast control has nonfinite output");
+        const double difference = std::abs(double(original[i])-double(casted[i]));
+        absolute_sum += difference;
+        max_abs = std::max(max_abs, difference);
+    }
+    std::cout << std::setprecision(9) << "{\"record_type\":\"fp16_cast_control\",\"capture\":\""
+              << escape_json(c.path.filename().string()) << "\",\"sequence\":" << c.sequence
+              << ",\"name\":\"" << escape_json(c.name) << "\",\"group\":\"" << group_of(c.name)
+              << "\",\"K\":" << c.k << ",\"M\":" << c.m << ",\"N\":" << c.n
+              << ",\"weight_format\":\"fp16\",\"reference_activation\":\"captured_f32\""
+              << ",\"cast_activation\":\"f32_to_fp16_to_f32\",\"outputs\":" << original.size()
+              << ",\"mean_abs_output_difference\":" << absolute_sum/double(original.size())
+              << ",\"max_abs_output_difference\":" << max_abs
+              << ",\"serving_acceptance_metric\":false}" << std::endl;
+    if (c.name != "output.w1a1_packed") return;
+    require(c.m == 32000, "FP16 cast head comparison requires all 32,000 output rows");
+    for (size_t token = 0; token < c.n; ++token) {
+        const float * ref = original.data()+token*c.m;
+        const float * alt = casted.data()+token*c.m;
+        const auto ref_top = top_indices(ref, size_t(c.m), 6);
+        const auto alt_top = top_indices(alt, size_t(c.m), 6);
+        size_t overlap = 0;
+        for (size_t i = 0; i < 5; ++i) {
+            if (std::find(alt_top.begin(), alt_top.begin()+5, ref_top[i]) != alt_top.begin()+5) ++overlap;
+        }
+        std::cout << std::setprecision(9) << "{\"record_type\":\"fp16_cast_head_comparison\",\"capture\":\""
+                  << escape_json(c.path.filename().string()) << "\",\"sequence\":" << c.sequence
+                  << ",\"token\":" << token << ",\"rows\":" << c.m
+                  << ",\"reference_activation\":\"captured_f32\",\"cast_activation\":\"f32_to_fp16_to_f32\""
+                  << ",\"top1_agree\":" << (ref_top[0] == alt_top[0] ? "true" : "false")
+                  << ",\"top5_set_overlap\":" << overlap
+                  << ",\"reference_top1_id\":" << ref_top[0] << ",\"cast_top1_id\":" << alt_top[0]
+                  << ",\"reference_top1_margin\":" << double(ref[ref_top[0]])-ref[ref_top[1]]
+                  << ",\"cast_top1_margin\":" << double(alt[alt_top[0]])-alt[alt_top[1]]
+                  << ",\"reference_top5_cutoff_margin\":" << double(ref[ref_top[4]])-ref[ref_top[5]]
+                  << ",\"cast_top5_cutoff_margin\":" << double(alt[alt_top[4]])-alt[alt_top[5]]
+                  << ",\"serving_acceptance_metric\":false}" << std::endl;
+    }
+}
+
 static void replay_anchor(const capture & c, const std::vector<uint8_t> & weights,
         ggml_type type, const char * format, ggml_backend_t backend, const options & opt) {
     ggml_init_params params = {2*1024*1024, nullptr, true};
@@ -480,6 +529,18 @@ static void replay_anchor(const capture & c, const std::vector<uint8_t> & weight
             ref_max_abs = std::max(ref_max_abs, delta);
             ref_max_rel = std::max(ref_max_rel, delta/(1+std::abs(sum)));
         }
+    }
+
+    if (type == GGML_TYPE_F16 && opt.fp16_cast_control) {
+        std::vector<float> cast_activations = c.activations;
+        for (float & value : cast_activations) value = ggml_fp16_to_fp32(ggml_fp32_to_fp16(value));
+        for (float value : cast_activations) require(std::isfinite(value), "FP16 cast activation overflow");
+        ggml_backend_tensor_set(at, cast_activations.data(), 0, cast_activations.size()*sizeof(float));
+        compute();
+        std::vector<float> cast_output(actual.size());
+        ggml_backend_tensor_get(out, cast_output.data(), 0, cast_output.size()*sizeof(float));
+        report_fp16_cast_control(c, actual, cast_output);
+        ggml_backend_tensor_set(at, c.activations.data(), 0, c.activations.size()*sizeof(float));
     }
 
     for (int i = 0; i < opt.warmups; ++i) compute();
