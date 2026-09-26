@@ -94,6 +94,37 @@ class W1AxMatrixTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "five"):
             bench.schedule(4, variants)
 
+    def test_primary_policy_is_frozen_and_diagnostic_grid_is_distinct(self):
+        primary = bench.w1ax_policy(self.config["evaluation"], True)
+        self.assertEqual(primary["mode"], "primary_matrix")
+        self.assertEqual(primary["max_draft_tokens"], 5)
+        self.assertEqual(primary["min_draft_probability"], 0.0)
+        for draft_length in (1, 2, 3, 5):
+            for floor in (0.0, 0.1, 0.3):
+                diagnostic = {
+                    **self.config["evaluation"],
+                    "w1ax_policy_diagnostic": True,
+                    "prompt_set": "qat_development",
+                    "max_draft_tokens": draft_length,
+                    "min_draft_probability": floor,
+                    "warmup_requests": 1,
+                    "repetitions": 6,
+                }
+                policy = bench.w1ax_policy(diagnostic, True)
+                self.assertEqual(policy["mode"], "policy_diagnostic")
+                self.assertEqual((policy["max_draft_tokens"], policy["min_draft_probability"]),
+                                 (draft_length, floor))
+                self.assertEqual((policy["warmup_requests"], policy["repetitions"]), (1, 6))
+                self.assertEqual(bench.selected_variants(diagnostic), analysis.W1AX_MATRIX_VARIANTS)
+        with self.assertRaisesRegex(ValueError, "primary matrix"):
+            bench.w1ax_policy({**self.config["evaluation"], "max_draft_tokens": 3}, True)
+        with self.assertRaisesRegex(ValueError, "predeclared"):
+            bench.w1ax_policy({**diagnostic, "min_draft_probability": 0.2}, True)
+        with self.assertRaisesRegex(ValueError, "prompt_set"):
+            bench.w1ax_policy({**diagnostic, "prompt_set": "qat_final"}, True)
+        with self.assertRaisesRegex(ValueError, "requires w1ax_matrix"):
+            bench.selected_variants({"w1ax_policy_diagnostic": True})
+
     def test_dry_run_manifest_has_shared_gguf_and_mode_selectors(self):
         source = (ROOT / "configs/native_benchmark_w1ax.toml").read_text()
         replacements = {
@@ -140,6 +171,42 @@ class W1AxMatrixTests(unittest.TestCase):
                 "bitserial",
             )
             self.assertNotIn("GGML_W1AX_ACT_BITS", manifest["variant_environments"]["ordinary_eagle"])
+            diagnostic_config = source.replace("max_draft_tokens = 5", "max_draft_tokens = 2")
+            diagnostic_config = diagnostic_config.replace(
+                "min_draft_probability = 0.0", "min_draft_probability = 0.1"
+            ).replace("warmup_requests = 2", "warmup_requests = 1").replace(
+                "repetitions = 5", "repetitions = 6"
+            ).replace(
+                "round_trace = false", 'round_trace = false\nw1ax_policy_diagnostic = true\nprompt_set = "qat_development"'
+            )
+            (directory / "diagnostic.toml").write_text(diagnostic_config)
+            (directory / "prompts.jsonl").write_text("".join(
+                json.dumps({"id": f"dev-{index:02d}", "messages": [
+                    {"role": "user", "content": "Hi"}
+                ]}) + "\n"
+                for index in range(24)
+            ))
+            with (
+                patch.object(bench, "ROOT", directory),
+                patch.object(bench, "available_port", return_value=True),
+                patch.object(bench, "gpu_snapshot", return_value={"available": False}),
+                patch.object(bench, "environment_manifest", return_value={}),
+                patch.object(bench, "git_output", side_effect=lambda *args: (
+                    "160000 commit abc\tthird_party/llama.cpp\n"
+                    if args == ("ls-tree", "HEAD", "third_party/llama.cpp") else "abc\n"
+                )),
+            ):
+                diagnostic_output = bench.run(directory / "diagnostic.toml", "diagnostic", dry_run=True)
+            diagnostic_manifest = json.loads((diagnostic_output / "manifest.json").read_text())
+            self.assertEqual(diagnostic_manifest["policy"]["mode"], "policy_diagnostic")
+            self.assertEqual(diagnostic_manifest["policy"]["max_draft_tokens"], 2)
+            self.assertEqual(diagnostic_manifest["policy"]["min_draft_probability"], 0.1)
+            self.assertEqual(len(diagnostic_manifest["orders"]), 6)
+            self.assertEqual(len(diagnostic_manifest["prompt_ids"]), 24)
+            for variant in bench.W1AX_VARIANTS:
+                command = diagnostic_manifest["commands"][variant]
+                self.assertEqual(command[command.index("--spec-draft-n-max") + 1], "2")
+                self.assertEqual(command[command.index("--spec-draft-p-min") + 1], "0.1")
 
     def test_analysis_requires_dispatch_and_dual_anchors(self):
         rows = []

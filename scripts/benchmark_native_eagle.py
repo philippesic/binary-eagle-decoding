@@ -48,6 +48,8 @@ W1AX_CUDA_MARKERS = {
     "4": "CUDA packed W1A4 BITSERIAL dispatch",
     "1": "CUDA packed W1A1 XOR/POPCOUNT dispatch",
 }
+W1AX_DIAGNOSTIC_DRAFT_LENGTHS = (1, 2, 3, 5)
+W1AX_DIAGNOSTIC_CONFIDENCE_FLOORS = (0.0, 0.1, 0.3)
 NATIVE_OPERAND_VARIANTS = ("draft_w8a8", "draft_w4a4")
 NATIVE_OPERAND_NAMES = ("w8a8", "w4a4")
 NATIVE_OPERAND_MMA_VARIANTS = ("draft_w8a8_mma", "draft_w4a4_mma")
@@ -314,8 +316,13 @@ def load_prompts(path: Path) -> list[dict[str, Any]]:
 
 def selected_variants(evaluation: dict[str, Any]) -> tuple[str, ...]:
     w1ax_matrix = evaluation.get("w1ax_matrix", False)
+    policy_diagnostic = evaluation.get("w1ax_policy_diagnostic", False)
     if not isinstance(w1ax_matrix, bool):
         raise ValueError("evaluation.w1ax_matrix must be a boolean")
+    if not isinstance(policy_diagnostic, bool):
+        raise ValueError("evaluation.w1ax_policy_diagnostic must be a boolean")
+    if policy_diagnostic and not w1ax_matrix:
+        raise ValueError("evaluation.w1ax_policy_diagnostic requires w1ax_matrix")
     if w1ax_matrix:
         incompatible = (
             "binary_mma", "group_matrix", "weight_only_matrix", "native_operand_matrix",
@@ -388,6 +395,38 @@ def selected_variants(evaluation: dict[str, Any]) -> tuple[str, ...]:
         if name in native_mma_names
     )
     return (*base, *selected_native, *selected_mma)
+
+
+def w1ax_policy(evaluation: dict[str, Any], enabled: bool) -> dict[str, Any] | None:
+    """Keep the primary comparison frozen while allowing declared development-grid cells."""
+    if not enabled:
+        return None
+    diagnostic = evaluation.get("w1ax_policy_diagnostic", False)
+    draft_length = evaluation.get("max_draft_tokens")
+    confidence_floor = evaluation.get("min_draft_probability")
+    if type(draft_length) is not int or type(confidence_floor) not in (int, float):
+        raise ValueError("W1Ax policy requires numeric D and p_min")
+    if diagnostic:
+        if (
+            draft_length not in W1AX_DIAGNOSTIC_DRAFT_LENGTHS
+            or confidence_floor not in W1AX_DIAGNOSTIC_CONFIDENCE_FLOORS
+        ):
+            raise ValueError("W1Ax policy diagnostic must use the predeclared D/p_min grid")
+        if evaluation.get("prompt_set") != "qat_development":
+            raise ValueError("W1Ax policy diagnostic requires prompt_set = qat_development")
+        mode = "policy_diagnostic"
+    else:
+        if draft_length != 5 or confidence_floor != 0.0 or evaluation["warmup_requests"] < 2:
+            raise ValueError("W1Ax primary matrix requires D=5, p_min=0.0 and two warmups")
+        mode = "primary_matrix"
+    return {
+        "mode": mode,
+        "prompt_set": evaluation.get("prompt_set", "unspecified"),
+        "max_draft_tokens": draft_length,
+        "min_draft_probability": confidence_floor,
+        "warmup_requests": evaluation["warmup_requests"],
+        "repetitions": evaluation["repetitions"],
+    }
 
 
 def packed_specs(config: dict[str, Any], variants: tuple[str, ...]) -> dict[str, dict[str, Any]]:
@@ -1392,12 +1431,7 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
     native_specs = native_operand_specs(config, variants)
     if evaluation["warmup_requests"] < 0 or evaluation["max_output_tokens"] <= 0:
         raise ValueError("invalid warmup or max output setting")
-    if ax_specs and (
-        evaluation["max_draft_tokens"] != 5
-        or evaluation.get("min_draft_probability") != 0.0
-        or evaluation["warmup_requests"] < 2
-    ):
-        raise ValueError("W1Ax primary matrix requires D=5, p_min=0.0 and two warmups")
+    policy = w1ax_policy(evaluation, bool(ax_specs))
     if not isinstance(evaluation.get("round_trace", False), bool):
         raise ValueError("evaluation.round_trace must be a boolean")
     if config["server"]["host"] not in ("127.0.0.1", "localhost"):
@@ -1421,6 +1455,8 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
         if not path.is_file():
             raise FileNotFoundError(f"{name}: {path}")
     prompts = load_prompts(paths["prompt_file"])
+    if policy and policy["mode"] == "policy_diagnostic" and len(prompts) != 24:
+        raise ValueError("W1Ax policy diagnostic requires 24 QAT-development prompts")
     if not available_port(config["server"]["host"], config["server"]["port"]):
         raise RuntimeError("configured server port is already occupied")
     destination = ROOT / "results" / run_id
@@ -1473,6 +1509,7 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                 "Exclude checkpoint_replay rows from accepted-per-round quality aggregates."
             ),
             "variants": list(variants),
+            "policy": policy,
             "variant_specs": {
                 **{
                     variant: {
@@ -1604,6 +1641,9 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
                                         "variant": variant,
                                         "prompt_id": prompt["id"],
                                         "request_id": f"rep-{repetition:02d}/{variant}/{prompt['id']}",
+                                        "policy_mode": policy["mode"] if policy else None,
+                                        "max_draft_tokens": policy["max_draft_tokens"] if policy else None,
+                                        "min_draft_probability": policy["min_draft_probability"] if policy else None,
                                         "server_request_index": evaluation["warmup_requests"] + prompt_index,
                                         "w1ax_activation_bits_selector": variant_env.get("GGML_W1AX_ACT_BITS"),
                                         "round_trace_path": variant_env.get("W1AX_ROUND_TRACE_JSONL"),
@@ -1705,6 +1745,7 @@ def run(config_path: Path, run_id: str, *, dry_run: bool = False) -> Path:
             report = {
                 "status": "complete",
                 "variants": list(variants),
+                "policy": policy,
                 "aggregation": aggregated,
                 "packed_speedup_vs": relative_speedups(aggregated),
                 "repetitions": repetition_summaries(records, variants),
