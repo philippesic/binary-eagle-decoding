@@ -196,6 +196,24 @@ fused. Matching graph-disabled unprofiled replay showed median per-capture
 profiler wall overhead factors 1.010/1.123/1.157/1.079 for A16/A8/A4/A1.
 Do not substitute these traced times for the uninstrumented serving results.
 
+## Activation error on captured inputs
+
+All 588 W1Ax replay rows have validated element counts and activation
+diagnostics. Element-weighted summaries are preserved for each of the nine
+linears and each observed shape. A4 zero-code rates range from 29.99% at
+attention output to 98.31% at fusion; FFN-down is 88.88%. Fusion's A8
+zero-code rate is 63.57%. At the head, A8/A4 zero-code rates are 2.22%/37.43%,
+and activation RMSE is 0.000291/0.022248/0.402891/0.866936 for A16/A8/A4/A1.
+A1 has sign codes, so a zero-code rate does not apply.
+
+Clipping was zero for A16/A8/A4 on these inputs; absmax quantization can
+produce substantial rounding-to-zero error while avoiding clipping. These
+statistics weight the selected, correlated capture elements, not live operator
+invocation frequency or independent prompts. They do not isolate the cause of
+whole-model acceptance loss. Full report:
+`runs/w1ax-activation-error-analysis-20260926/report.json`, SHA256
+`b0917ab80e0c4418e4a381466031e018edbabc8e69db0f34206c225095bf1580`.
+
 ## CUDA packing and dot stages
 
 Each low-bit profile contains 1,176 validated adjacent same-stream packing/dot
