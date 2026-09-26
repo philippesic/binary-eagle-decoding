@@ -181,7 +181,7 @@ class W1AxDiagnosticsTests(unittest.TestCase):
             record = {
                 "repetition": 0, "variant": "draft_w1a8", "prompt_id": "p0",
                 "request_id": "rep-00/draft_w1a8/p0", "server_request_index": 1,
-                "generated_token_ids": [1, 2],
+                "generated_token_ids": [0, 1, 2],
             }
             (run_dir / "records.json").write_text(json.dumps([record]))
             (run_dir / "manifest.json").write_text(json.dumps({
@@ -208,8 +208,11 @@ class W1AxDiagnosticsTests(unittest.TestCase):
             self.assertEqual(variant["rounds"], 1)
             self.assertEqual(variant["request_mapping"]["by_repetition"][0]["warmup_tasks_excluded"], 1)
             self.assertEqual(variant["request_mapping"]["by_repetition"][0]["measured_requests_mapped"], 1)
+            self.assertEqual(variant["request_mapping"]["by_repetition"][0]["untraced_leading_tokens_total"], 1)
+            self.assertEqual(variant["request_mapping"]["by_repetition"][0]["response_generated_tokens_total"], 3)
+            self.assertEqual(variant["request_mapping"]["by_repetition"][0]["trace_emitted_tokens_total"], 2)
             self.assertEqual(variant["trace_span_accounting"]["rows_with_round_bounds"], 2)
-            self.assertIn("warmup task groups were mapped and excluded", variant["quality_scope"])
+            self.assertIn("one leading output token", variant["quality_scope"])
 
     def test_trace_request_mapping_rejects_token_id_mismatch(self):
         row = trace([1], 0)
@@ -219,8 +222,32 @@ class W1AxDiagnosticsTests(unittest.TestCase):
         record = {"repetition": 0, "variant": "draft_w1a8", "server_request_index": 0, "prompt_id": "p0",
                   "request_id": "req0", "generated_token_ids": [9]}
         manifest = {"commands": {"draft_w1a8": ["server", "--parallel", "1"]}, "prompt_ids": ["p0"]}
-        with self.assertRaisesRegex(ValueError, "do not exactly match"):
+        with self.assertRaisesRegex(ValueError, "do not match the full record"):
             analysis.map_measured_trace_rows([row], [record], 0, "draft_w1a8", 0, manifest)
+
+    def test_trace_request_mapping_accepts_only_consistent_leading_omission(self):
+        rows = []
+        for task_id, start, emitted in ((3, 10, [2, 3]), (4, 30, [5, 6])):
+            row = trace(emitted, 0)
+            row.update({"task_id": task_id, "parent_task_id": -1, "round_index": 0,
+                        "round_start_us": start, "round_end_us": start + 10,
+                        "emitted_token_ids": emitted, "n_emitted": len(emitted)})
+            rows.append(row)
+        records = [
+            {"repetition": 0, "variant": "draft_w1a8", "server_request_index": 0,
+             "prompt_id": "p0", "request_id": "req0", "generated_token_ids": [1, 2, 3]},
+            {"repetition": 0, "variant": "draft_w1a8", "server_request_index": 1,
+             "prompt_id": "p1", "request_id": "req1", "generated_token_ids": [4, 5, 6]},
+        ]
+        manifest = {"commands": {"draft_w1a8": ["server", "--parallel", "1"]},
+                    "prompt_ids": ["p0", "p1"]}
+        _, mapping = analysis.map_measured_trace_rows(rows, records, 0, "draft_w1a8", 0, manifest)
+        self.assertEqual(mapping["untraced_leading_tokens_per_measured_request"], 1)
+        self.assertEqual(mapping["task_mappings"][0]["trace_emission_alignment"], "one_untraced_leading_token")
+        rows[1]["emitted_token_ids"] = [4, 5, 6]
+        rows[1]["n_emitted"] = 3
+        with self.assertRaisesRegex(ValueError, "inconsistent leading-token omission"):
+            analysis.map_measured_trace_rows(rows, records, 0, "draft_w1a8", 0, manifest)
 
     def test_trace_request_mapping_rejects_parallel_or_missing_task_groups(self):
         row = trace([1], 0)

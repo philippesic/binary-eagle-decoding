@@ -651,6 +651,10 @@ def map_measured_trace_rows(
 
     mapping = []
     measured_rows = []
+    prefix_omissions = set()
+    response_generated_tokens_total = 0
+    trace_emitted_tokens_total = 0
+    untraced_leading_tokens_total = 0
     for task_position, block in enumerate(blocks):
         task_id = block[0]["task_id"]
         parent_ids = {row.get("parent_task_id") for row in block}
@@ -678,21 +682,44 @@ def map_measured_trace_rows(
         if not isinstance(expected_ids, list) or any(not isinstance(token, int) or isinstance(token, bool) for token in expected_ids):
             raise ValueError(f"{variant}/rep-{repetition:02d}: record at server_request_index {request_index} lacks raw generated token IDs")
         if emitted != expected_ids:
-            raise ValueError(
-                f"{variant}/rep-{repetition:02d}: task {task_id} emitted IDs do not exactly match "
-                f"record {record.get('request_id', request_index)} at server_request_index {request_index}"
-            )
+            if len(expected_ids) > 0 and emitted == expected_ids[1:]:
+                prefix_omissions.add(1)
+                alignment = "one_untraced_leading_token"
+                omitted_count = 1
+            else:
+                raise ValueError(
+                    f"{variant}/rep-{repetition:02d}: task {task_id} emitted IDs do not match the full "
+                    f"record or its one-token-leading-omission form for "
+                    f"{record.get('request_id', request_index)} at server_request_index {request_index}"
+                )
+        else:
+            prefix_omissions.add(0)
+            omitted_count = 0
+            alignment = "full_sequence"
+        response_generated_tokens_total += len(expected_ids)
+        trace_emitted_tokens_total += len(emitted)
+        untraced_leading_tokens_total += omitted_count
         measured_rows.extend({**row, "request_id": record.get("request_id"), "prompt_id": record.get("prompt_id")} for row in block)
         mapping.append({
             "task_id": task_id, "request_kind": "measured", "server_request_index": request_index,
             "request_id": record.get("request_id"), "prompt_id": record.get("prompt_id"),
             "emitted_token_ids_match": True,
+            "trace_emission_alignment": alignment,
+            "response_generated_token_count": len(expected_ids),
+            "trace_emitted_token_count": len(emitted),
+            "untraced_leading_token_count": omitted_count,
         })
+    if len(prefix_omissions) > 1:
+        raise ValueError(f"{variant}/rep-{repetition:02d}: inconsistent leading-token omission across measured task groups")
     return measured_rows, {
         "status": "validated",
-        "method": "serial chronological task groups aligned to runner server_request_index; measured matches require exact equality of concatenated non-checkpoint-replay emitted_token_ids and records.generated_token_ids",
+        "method": "serial chronological task groups aligned to runner server_request_index; measured matches require equality of concatenated non-checkpoint-replay emitted_token_ids to records.generated_token_ids, allowing either exact equality or a uniform one-token leading omission",
         "warmup_tasks_excluded": warmup_requests,
         "measured_requests_mapped": len(measured),
+        "untraced_leading_tokens_per_measured_request": next(iter(prefix_omissions)) if prefix_omissions else None,
+        "response_generated_tokens_total": response_generated_tokens_total,
+        "trace_emitted_tokens_total": trace_emitted_tokens_total,
+        "untraced_leading_tokens_total": untraced_leading_tokens_total,
         "task_mappings": mapping,
     }
 
@@ -741,11 +768,24 @@ def analyze_run(run_dir: Path, replay_path: Path | None = None) -> dict[str, Any
             )
             trace_rows.extend(measured_rows)
             mapping_reports.append({"repetition": repetition, **mapping})
+        mapped_offsets = {
+            item.get("untraced_leading_tokens_per_measured_request")
+            for item in mapping_reports
+            if item.get("status") == "validated"
+        }
+        if len(mapped_offsets) > 1:
+            raise ValueError(f"{variant}: trace-emission prefix coverage differs across repetitions")
+        if mapped_offsets == {1}:
+            emission_scope = "trace emissions omit one leading output token per measured request; this pre-round seed is outside round-level emitted-token counts"
+        elif mapped_offsets == {0}:
+            emission_scope = "trace emissions exactly cover measured request output token IDs"
+        else:
+            emission_scope = "no validated trace-emission mapping is available"
         summary = summarize_variant(
             trace_rows,
             trace_scope=(
                 "validated measured-request task groups only; warmup task groups were mapped and excluded; "
-                "checkpoint_replay rows are excluded from quality totals"
+                f"checkpoint_replay rows are excluded from quality totals; {emission_scope}"
                 if trace_enabled and variant != "target_only"
                 else "no mapped speculative rows; mapping unavailable or not applicable"
             ),
