@@ -2,7 +2,7 @@
 
 **Opened:** 2026-09-25
 **State:** active; implementation in progress
-**GPU owner:** orchestrator in this task; historical eight-path matrix running
+**GPU owner:** orchestrator in this task; development eight-path matrix running
 
 ## Objective
 
@@ -40,9 +40,10 @@ Implement, validate, and run the full [W1Ax activation-precision study](../../ex
 - Replay-only analysis `runs/w1ax-project-src/runs/w1ax-replay-summary-20260925/summary.json` exited 0, SHA256 `e2ec2c6844642380dcbedda22492468068f8d7010d394abb979ce98b23200dc4`. On 145 selected head token rows from 16 captures, same-binary-weight W1A16 top-1 agreement was 97.2% for A8, 72.4% for A4, and 33.1% for A1. These are correlated operator inputs, not independent prompt acceptance. At observed head N=2, full synchronized operator medians were A16 978.7 µs, A8 331.4 µs, A4 117.8 µs, A1 94.8 µs; at N=37, 29,443/5,470/1,637/919 µs respectively. These totals include ggml graph dispatch and synchronization and are not isolated CUDA kernel events or serving rates.
 - A CPU-draft versus CUDA-draft model parity check initially discovered that `--spec-draft-ngl 0` alone still selected CUDA for the custom op. The driver was corrected to use `--spec-draft-device none` for CPU and `CUDA0` for GPU. Supervised retry `runs/w1ax-model-parity-retry-supervisor-20260925/` exited 0; all four precisions emitted exactly the same 32 raw greedy token IDs on the frozen historical `prose-01` prompt between CPU and CUDA placement. The target was offloaded 37/37 layers to the GPU in both paths; the CPU draft showed no CUDA W1Ax dispatch, and each GPU draft showed its mode-specific dispatch. GPU returned idle afterward. This is one-prompt model parity, with full paired serving measurement still pending.
 
-## Active serving run
+## Serving checkpoint
 
-- The matched eight-path historical matrix is running on the RTX 2080 Ti under tmux MCP session `w1ax-2080ti` and remote supervisor `runs/w1ax-project-src/runs/w1ax-historical-matrix-supervisor-20260925/` (child PID/PGID `25881` at the start). Raw results are `runs/w1ax-project-src/results/w1ax-historical-matrix-20260925/`. Its resolved config has 12 frozen historical prompts, two warmups, five repetitions, 128 output tokens, D=5, p_min=0, one server/GPU owner at a time, and the same FP16 target. The project checkout for the run is `dc4ccdd` with published llama.cpp `3792aa79c`. Monitor `state.json` and `records.json`; on a pause request interrupt the supervisor through tmux MCP, wait for `state.json` to stop, inspect the recorded process group and `nvidia-smi` before reporting the GPU free.
+- The matched eight-path historical matrix `runs/w1ax-project-src/results/w1ax-historical-matrix-20260925/` completed 480/480 requests with exit 0 and all four W1Ax dispatch gates confirmed. It used the same FP16 target, 12 frozen prompts, two warmups, five repetitions, 128 output tokens, D=5, p_min=0, project `dc4ccdd`, and published llama.cpp `3792aa79c`. All speculative variants emitted identical raw IDs on all 60 paired requests; target-only differed on the same `reasoning-02` prompt in each repetition. See the [interim result report](../../experiments/w1ax-activation-precision-results.md) for rates, raw artifact hashes and limits. The four W1Ax decode rates were 29.43/42.12/44.44/45.39 tok/s for A16/A8/A4/A1, versus 80.67 FP16 EAGLE and 89.73 Q4_0 EAGLE. Accepted drafts/round fell to 0.106/0.102/0.041/0.055 versus ordinary 1.168. GPU returned idle after the historical matrix.
+- The development dry run verified the frozen 24-prompt manifest SHA256 `a3b97d942a99f1bddd5bb97216c32a9920aaa50788baa5bdb92354842547e885`, the same model/gitlink hashes and D=5/p_min=0 policy. The full eight-path development matrix is running under tmux MCP session `w1ax-2080ti` and remote supervisor `runs/w1ax-project-src/runs/w1ax-development-matrix-supervisor-20260925/` (child PID/PGID `29140` at start). Raw results are `runs/w1ax-project-src/results/w1ax-development-matrix-20260925/`. It has 24 prompts × five repetitions × eight paths, 960 expected requests. Monitor `state.json` and `records.json`; on a pause request interrupt the supervisor through tmux MCP, wait for `state.json` to stop, inspect the recorded process group and `nvidia-smi` before reporting the GPU free. The reserved 24 QAT-final prompts have not been evaluated.
 
 ## Next actions
 
