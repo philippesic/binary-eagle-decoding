@@ -24,9 +24,19 @@ matching the prior all-row source audit. The benchmark uses published llama.cpp
 fork commit `3792aa79c` and project checkout `dc4ccdd`, CUDA 12.8 on SM75,
 F16 KV, context 2048, concurrency one, D=5, confidence floor zero, greedy
 decoding, two warmups, five measured repetitions, and one server at a time.
-Each run manifest preserves exact commands, model/binary/config hashes and GPU
-snapshots. Q8_0/Q4_0 name standard GGUF block weight formats; their live
+Each run manifest preserves exact commands and model/binary/config hashes.
+The primary runner's GPU snapshots were unavailable because its nonlogin WSL
+PATH omitted `nvidia-smi`; they are not zero-valued measurements. Hardware and
+dispatch were independently verified by the SM75 gates and explicit WSL GPU
+queries. A separate full device snapshot is preserved in
+`runs/w1ax-device-manifest-20260925/` (stdout SHA256
+`bd87139e8ce478aef42c4b17fda2345891be9cd1c4ad02b826c47dee417af0c8`).
+The probe is being corrected for separate telemetry diagnostics; primary
+per-variant peak-memory/clock claims are not made. Q8_0/Q4_0 name standard GGUF block weight formats; their live
 activation path is Q8_1, not the research W8A8/W4A4 format.
+Acceptance is the pinned native server's target-sample-and-match count, not
+classical probability-ratio/residual speculative sampling. All comparisons
+use that same verifier and its unchanged target sampling path.
 
 ## Correctness gates
 
@@ -74,6 +84,12 @@ every response included raw generated token IDs. The GPU was idle afterward.
 | W1A8 EAGLE | 42.12 | 40.70 | 0.102 | 0.522× | 0.469× |
 | W1A4 EAGLE | 44.44 | 42.89 | 0.041 | 0.551× | 0.495× |
 | W1A1 EAGLE | 45.39 | 43.74 | 0.055 | 0.563× | 0.506× |
+
+Paired prompt/repetition bootstrap 95% intervals for W1Ax decode rate versus
+Q4_0 were 0.304–0.354 (A16), 0.434–0.508 (A8), 0.454–0.541 (A4), and
+0.466–0.549 (A1), using 2,000 resamples. Repetitions estimate timing
+variation; the 12 prompts, not the 60 repeated requests, supply the quality
+examples.
 
 All speculative variants emitted identical raw IDs on all 60 paired
 prompt/repetition requests. They differed from target-only on the same
