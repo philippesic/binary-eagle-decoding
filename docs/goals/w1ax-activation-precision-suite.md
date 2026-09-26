@@ -2,7 +2,7 @@
 
 **Opened:** 2026-09-25
 **State:** active; primary matrices sealed, diagnostics in progress
-**GPU owner:** `/root/gpu_monitor` supervises the authorized sequential diagnostic pipeline; root owns analysis/integration
+**GPU owner:** transferring from the original chat and `/root/gpu_monitor` to the successor chat at the rotation checkpoint below; the supervised remote pipeline continues without interruption
 
 ## Objective
 
@@ -240,3 +240,159 @@ ownership; no new project goal or training experiment was opened.
 - Both context cells finished 360/360, with matching binary/model hashes and source revisions. Native lengths remain within all frozen bins. All within-cap raw-ID comparisons match; all cross-cap common prefixes match. Local paired analysis with 2,000 resamples passed; exact hashes and six-cell dual-anchor request-rate table are in the result report. Every W1Ax mode has lower pooled request throughput than FP16 and Q4_0 in these cells.
 - Local context analyzer `4d348cb` passed 12 tests and actual paired data validation. Analysis artifact is ignored local `runs/w1ax-analysis-mirror/context-matrix-analysis.json`, SHA256 `c84fe5d970168afae89930f7afaee2df9c4919456255f10e9c11ccb0197d51ba`. Remote completed data stay unchanged.
 - First policy config `development-d1-pmin-0p0` is active, last check 234/960 requests. Outer PID/PGID 54155 remains constant; active benchmark group is 60216, with changing server descendants in the timestamped process snapshot. All twelve cells remain predeclared; no QAT-final evaluation or training is authorized by this study.
+
+
+## Successor handoff — 2026-09-26 04:30 UTC
+
+This section supersedes earlier live-state and next-action snapshots. The second
+compaction hook requires a fresh Codex task. The original chat is
+`01a0daf7-0c08-7310-8697-523744f96c71`. The successor continues this existing
+user-authorized goal; it must not create a second research objective or restart
+completed experiments. Read this section, `docs/AGENT_OPERATIONS.md`, and the
+[result report](../../experiments/w1ax-activation-precision-results.md) first.
+The full frozen protocol is in `experiments/w1ax-activation-precision-plan.md`.
+
+### Objective and completed work
+
+Complete the full all-nine-linear W1Ax study on the actual RTX 2080 Ti, comparing
+A16/A8/A4/A1 against target-only and FP16/Q8_0/Q4_0 EAGLE with identical models,
+prompts and verifier settings. Implementation and all primary runs are done:
+historical 480, development 960, round instrumentation 480, matched real-input
+replay and CUDA profiles, full server profile 120 with paired unprofiled 120,
+streaming 240, and two context matrices totaling 720. Correctness includes
+88-case SM75 gates for default and conventional A4, independent exact INT32
+assertions on actual captured inputs, and all-nine dispatch checks. Raw artifacts,
+hashes, commands, limitations and numeric results are in the report.
+
+Primary development W1Ax decode rates A16/A8/A4/A1 are
+29.86/42.49/44.68/45.36 tokens/s versus FP16 76.55 and Q4_0 83.93. All 120
+paired development raw sequences match target-only. All context raw sequences
+match within each cap, and common prefixes match across caps. The historical
+reasoning-02 mismatch is a measured target ranking reversal at token 109; its
+underlying numerical cause remains unproven. No new QAT training or final-set
+evaluation has occurred. Conditional W8A8/W4A4 controls are unavailable in the
+frozen runtime and are explicitly excluded, not silently substituted.
+
+### Checkout, commits and tests
+
+- Main checkout: `/Users/pippo/github/binary-eagle-decoding`.
+- Reuse the active managed worktree
+  `/Users/pippo/.codex/worktrees/w1ax-suite/binary-eagle-decoding`, branch
+  `w1ax-suite`; do not retire it while the successor needs it. No other worker
+  has pending edits. Preserve concurrent literature/Prism research sections.
+- Before handoff main was `4d348cb`; feature was `a81d507` (sealed context
+  results). The handoff commit will be integrated and pushed to both. Inspect
+  current Git history rather than resetting to those old hashes.
+- Published llama.cpp gitlink is `feba1569848e74996651a42a9751f8afa5958b1d`,
+  under `third_party/llama.cpp`, pushed to the user's fork branch `w1ax-suite`.
+  Primary measurements retain runtime `3792aa79c` and project `dc4ccdd`.
+- Latest important helpers: policy analyzer `6392327`, context analyzer
+  `4d348cb`, CUDA analyzer `5f60909`, profile wrapper `b6453bc`.
+- Prior integrated checks: 87 W1Ax Python tests and 38 native benchmark tests.
+  Later focused checks: context 12, policy 8, CUDA 31, profile wrapper 9,
+  diagnostics 16. Actual completed data passed their corresponding analyzers.
+  Do not sum overlapping counts or repeat GPU correctness without a new risk.
+
+### Live remote pipeline and ownership transfer
+
+The original `/root/gpu_monitor` is completing a final read-only snapshot and
+relinquishing authority. Its subagent cannot transfer into the new chat. The
+successor must inspect/adopt the already-running supervised pipeline and may
+assign a new Luna experiment operator as sole GPU owner. All other original
+subagent assignments are finished. No process is stopped for this rotation.
+
+Read `~/.config/binary-eagle-decoding/hosts.toml` before connecting. All SSH/scp
+must use tmux MCP, never ordinary shell tools. Host currently RTX2080Ti,
+`philip@192.168.4.29:22`, project `/home/philip/binary-eagle-decoding`.
+Existing local tmux session `w1ax-2080ti` (`$4`) has root spare panes `%12`,
+`%13`, `%14`; inspect them before reusing. The operator's final pane and process
+snapshot are recorded below. Do not touch unrelated preexisting sessions.
+
+Frozen running checkout:
+`/home/philip/binary-eagle-decoding/runs/w1ax-project-src`, project
+`2f6ab1469fa8efe34d15e0028d1e3980e67132f6`, runtime `feba15698`.
+**Do not fetch/checkout/rebuild this runner while the matrix runs.** Additional
+CPU helper scripts may be extracted with `git show` into separate ignored
+main-root `runs/w1ax-analysis-src/`. Keep heavyweight analysis off the timed host.
+
+Relative to the frozen runner:
+
+- Outer supervisor: `runs/w1ax-context-policy-supervisor-20260926/`;
+  inspect `state.json`, `stdout.log`, and `process_snapshot.json`.
+- Child launcher PID/PGID **54155**, started 03:36:36 UTC. It runs
+  `python3 scripts/run_w1ax_diagnostics.py runs/w1ax-diagnostic-suite-20260926/suite.json`.
+- Suite `runs/w1ax-diagnostic-suite-20260926/suite.json`, fingerprint
+  `264fd3dc87b201a975ea1ee78c6b7c4a7575d8730e2ea8698450d11365aafc80`.
+  Its sibling `progress.json` records configs, commands, attempts and result
+  run IDs, **not child PIDs**. Use the actual live process tree for signals.
+- Both context cells succeeded (360 each). First policy config
+  `development-d1-pmin-0p0` last reported **456/960**, benchmark group **60216**,
+  server group **62395**; server changes between variants. Completed repetition
+  zero had all 192 rows/24 prompts and every speculative raw-ID sequence
+  matched target-only. This is a correctness check, not a policy conclusion.
+- Twelve policy cells: D in 1,2,3,5 crossed with p_min in 0,0.1,0.3;
+  each 24 development prompts × 5 repetitions × 8 paths = 960 requests.
+  All 12 must finish. No early stop based on the negative primary result.
+- Results are `results/<run_id>/` under the runner. Discover exact IDs from
+  progress; current convention is
+  `w1ax-diagnostic-suite-20260926-development-d1-pmin-0p0-a1`.
+
+Pause: mark local `python3 scripts/agent_env.py pause rtx2080ti`, interrupt
+active supervisor through tmux MCP, verify supervisor stopped and inspect
+launcher/benchmark/server process groups. Graceful forwarding should stop the
+child server, but verify it. Use `/usr/lib/wsl/lib/nvidia-smi` explicitly before
+reporting GPU free. User pause takes precedence over all new work.
+
+### Exact next actions
+
+1. Verify visibility of the live supervisor, suite progress and process tree;
+   take GPU ownership explicitly. Preserve the running pipeline and frozen
+   sources. Supervise until all twelve policy cells finish or a real failure
+   needs recovery. Keep user updates short and at milestones.
+2. After completion, copy/extract the latest policy helper separately and run:
+   `python3 /home/philip/binary-eagle-decoding/runs/w1ax-analysis-src/analyze_w1ax_policy_grid.py /home/philip/binary-eagle-decoding/runs/w1ax-project-src/runs/w1ax-diagnostic-suite-20260926/suite.json --results-root /home/philip/binary-eagle-decoding/runs/w1ax-project-src/results --output <fresh-report-path>`.
+   Source suite/progress contains absolute Linux paths; running on the original
+   host avoids invalidating provenance. Run analysis through a unique
+   `scripts/remote_job.py` supervisor after GPU timing finishes. The latest
+   helper may need its local imports copied alongside it; inspect first.
+3. Preserve all 12 cells, compare fixed D5/p0 against separately selected
+   development policies, report both FP16 and Q4_0 anchors. Analyzer checks
+   complete pairing, hashes and dispatch and reports raw-ID divergences
+   nonfatally. Different outputs are timing observations, not strict lossless
+   speedups. New divergences have no established cause; investigate only if
+   concrete evidence requires it. Existing raw verifier hook is generic, but
+   its original driver hardcodes position109 and target-only/ordinary paths.
+4. Update the result report, STATUS and goal, with exact hashes and limitations.
+   Integrate/push coherent tested progress into main, preserving other docs.
+   Keep model/data/raw runs out of Git. Verify all owned groups stopped and GPU
+   idle before declaring it free. Retire worktrees only when genuinely safe;
+   desktop archive does not support initialized submodules.
+5. Mark the goal complete only after final policy results and reproducible
+   report are finished. No final prompt evaluation, training or new research
+   fork is part of this authorization.
+
+Small completed context files are already mirrored under ignored local
+`/Users/pippo/github/binary-eagle-decoding/runs/w1ax-analysis-mirror/`.
+Paired context report `context-matrix-analysis.json` has SHA256
+`c84fe5d970168afae89930f7afaee2df9c4919456255f10e9c11ccb0197d51ba`.
+Use these for local CPU analysis; preserve remote originals.
+
+### Unresolved user decisions and app state
+
+No user decision blocks completion of the frozen suite. Future QAT, new
+quantizer fitting and alternative drafter architectures remain user-owned
+proposals in `docs/DECISIONS.md`. Native Goal in the original chat still reads
+`paused` after the first interrupted connection; the user explicitly requested
+retry and authorized work continued. This is not a GPU pause. The old tool has
+no resume action; an async request to click Resume is pending. Per project
+operations, the successor should create its own native Goal for this same
+written objective and continue; do not claim the old Goal is active or complete.
+
+Final original-operator snapshot at rotation: first policy cell 504/960;
+both context cells 360/360; no error/exception/failed/traceback matches in the
+outer or launcher logs. Live groups: 54155 (outer child, PPID54154), 60216
+(benchmark, PPID54155), 62574 (server, PPID60216). Tmux session `$4`
+`w1ax-2080ti`: launch pane `%20`, window `@20` `matrix-supervision`; monitor
+pane `%23`, window `@23` `server-profile-monitor`. Worker `/root/gpu_monitor`
+explicitly relinquished authority and completed its assignment, leaving all
+panes, files and the running job intact. Successor is the next sole owner.
