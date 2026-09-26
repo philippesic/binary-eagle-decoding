@@ -124,6 +124,27 @@ public:
         for (float scale : scales) require(std::isfinite(scale), "nonfinite GGUF row scale");
     }
 
+    std::vector<uint8_t> load_anchor(const capture & c, ggml_type expected_type) {
+        const std::string suffix = ".w1a1_packed";
+        require(c.name.size() > suffix.size() && c.name.compare(c.name.size()-suffix.size(), suffix.size(), suffix) == 0,
+                "capture name is not a packed W1A1 tensor: " + c.name);
+        const std::string dense_name = c.name.substr(0, c.name.size()-suffix.size()) + ".weight";
+        const auto id = gguf_find_tensor(meta_.get(), dense_name.c_str());
+        require(id >= 0, "anchor GGUF missing tensor: " + dense_name);
+        const auto type = gguf_get_tensor_type(meta_.get(), id);
+        require(type == expected_type, "anchor GGUF type mismatch for " + dense_name + ": expected " +
+                ggml_type_name(expected_type) + ", got " + ggml_type_name(type));
+        const int64_t * shape = gguf_get_tensor_ne(meta_.get(), id);
+        require(shape[0] == int64_t(c.k) && shape[1] == int64_t(c.m) && shape[2] == 1 && shape[3] == 1,
+                "anchor GGUF shape mismatch: " + dense_name);
+        require(c.k % ggml_blck_size(type) == 0, "anchor K is not divisible by its quantization block size");
+        const size_t row_bytes = ggml_row_size(type, int64_t(c.k));
+        require(c.m <= SIZE_MAX/row_bytes, "anchor tensor size overflow");
+        std::vector<uint8_t> data(size_t(c.m)*row_bytes);
+        read_tensor(id, data.data(), data.size());
+        return data;
+    }
+
 private:
     void read_tensor(int64_t id, void * data, size_t bytes) {
         require(gguf_get_tensor_size(meta_.get(), id) == bytes, "GGUF tensor byte size mismatch");
@@ -189,6 +210,7 @@ static float reference(const capture & c, const std::vector<uint32_t> & w,
 
 struct options {
     fs::path gguf, captures;
+    fs::path fp16_gguf, q8_gguf, q4_gguf;
     std::string backend = "gpu";
     int warmups = 2, samples = 5;
     size_t check_rows = 8, limit = 0;
@@ -203,6 +225,9 @@ static options parse(int argc, char ** argv) {
         require(i+1 < argc, "missing value after " + arg);
         const std::string value = argv[++i];
         if (arg == "--gguf") o.gguf = value;
+        else if (arg == "--fp16-gguf") o.fp16_gguf = value;
+        else if (arg == "--q8-gguf") o.q8_gguf = value;
+        else if (arg == "--q4-gguf") o.q4_gguf = value;
         else if (arg == "--capture-dir") o.captures = value;
         else if (arg == "--backend") o.backend = value;
         else if (arg == "--warmups") o.warmups = std::stoi(value);
@@ -214,6 +239,9 @@ static options parse(int argc, char ** argv) {
     require(!o.gguf.empty() && !o.captures.empty() && fs::is_regular_file(o.gguf) && fs::is_directory(o.captures),
             "supply existing --gguf and --capture-dir");
     require(o.backend == "cpu" || o.backend == "gpu", "--backend must be cpu or gpu");
+    for (const auto & path : {o.fp16_gguf, o.q8_gguf, o.q4_gguf}) {
+        require(path.empty() || fs::is_regular_file(path), "anchor GGUF path does not exist: " + path.string());
+    }
     require(o.warmups >= 0 && o.samples > 0 && o.samples <= 10000, "invalid warmups or samples");
     return o;
 }
@@ -407,6 +435,82 @@ static void compare_head(const capture & c, const std::array<std::vector<float>,
     }
 }
 
+static void replay_anchor(const capture & c, const std::vector<uint8_t> & weights,
+        ggml_type type, const char * format, ggml_backend_t backend, const options & opt) {
+    ggml_init_params params = {2*1024*1024, nullptr, true};
+    std::unique_ptr<ggml_context, ggml_deleter> ctx(ggml_init(params));
+    require(bool(ctx), "ggml context allocation failed");
+    auto * wt = ggml_new_tensor_2d(ctx.get(), type, c.k, c.m);
+    auto * at = ggml_new_tensor_2d(ctx.get(), GGML_TYPE_F32, c.k, c.n);
+    auto * out = ggml_mul_mat(ctx.get(), wt, at);
+    auto * graph = ggml_new_graph(ctx.get());
+    ggml_build_forward_expand(graph, out);
+    std::unique_ptr<ggml_backend_buffer, buffer_deleter> buffer(ggml_backend_alloc_ctx_tensors(ctx.get(), backend));
+    require(bool(buffer), "anchor backend tensor allocation failed");
+    require(ggml_nbytes(wt) == weights.size(), "anchor GGUF/backend tensor byte size mismatch");
+    ggml_backend_tensor_set(wt, weights.data(), 0, weights.size());
+    ggml_backend_tensor_set(at, c.activations.data(), 0, c.activations.size()*sizeof(float));
+    auto compute = [&]() {
+        require(ggml_backend_graph_compute(backend, graph) == GGML_STATUS_SUCCESS, "native anchor ggml graph failed");
+        ggml_backend_synchronize(backend);
+    };
+    compute();
+    std::vector<float> actual(size_t(c.m*c.n));
+    ggml_backend_tensor_get(out, actual.data(), 0, actual.size()*sizeof(float));
+    for (float value : actual) require(std::isfinite(value), "anchor output contains nonfinite values");
+
+    // This is a diagnostic reference, not a parity gate: quantized ggml CUDA
+    // matmul may quantize F32 activations to Q8_1, whereas this uses the exact
+    // captured F32 inputs and dequantized *weight rows* outside the timed span.
+    const auto * traits = ggml_get_type_traits(type);
+    require(traits && traits->to_float, "anchor type lacks a row dequantizer");
+    const size_t row_bytes = ggml_row_size(type, int64_t(c.k));
+    std::vector<float> dense_row(size_t(c.k));
+    const auto rows = sample_rows(size_t(c.m), opt.check_rows);
+    double ref_max_abs = 0, ref_max_rel = 0;
+    for (size_t row : rows) {
+        traits->to_float(weights.data()+row*row_bytes, dense_row.data(), int64_t(c.k));
+        for (float value : dense_row) require(std::isfinite(value), "anchor dequantized weight contains nonfinite value");
+        for (size_t token = 0; token < c.n; ++token) {
+            const float * activation = c.activations.data()+token*c.k;
+            double sum = 0;
+            for (size_t i = 0; i < c.k; ++i) sum += double(dense_row[i])*double(activation[i]);
+            require(std::isfinite(sum), "anchor scalar reference contains nonfinite value");
+            const double delta = std::abs(double(actual[token*c.m+row])-sum);
+            ref_max_abs = std::max(ref_max_abs, delta);
+            ref_max_rel = std::max(ref_max_rel, delta/(1+std::abs(sum)));
+        }
+    }
+
+    for (int i = 0; i < opt.warmups; ++i) compute();
+    std::vector<double> us;
+    us.reserve(opt.samples);
+    for (int i = 0; i < opt.samples; ++i) {
+        const auto start = std::chrono::steady_clock::now();
+        compute();
+        const auto end = std::chrono::steady_clock::now();
+        us.push_back(std::chrono::duration<double, std::micro>(end-start).count());
+    }
+    std::vector<double> sorted = us;
+    std::sort(sorted.begin(), sorted.end());
+    const auto percentile = [&](double p) { return sorted[size_t(std::ceil(p*(sorted.size()-1)))]; };
+    std::cout << std::setprecision(9) << "{\"record_type\":\"anchor_operator_replay\",\"capture\":\""
+              << escape_json(c.path.filename().string()) << "\",\"sequence\":" << c.sequence
+              << ",\"name\":\"" << escape_json(c.name) << "\",\"group\":\"" << group_of(c.name)
+              << "\",\"K\":" << c.k << ",\"M\":" << c.m << ",\"N\":" << c.n
+              << ",\"source_bits\":" << c.source_bits << ",\"anchor_format\":\"" << format
+              << "\",\"weight_type\":\"" << ggml_type_name(type) << "\",\"backend_type\":\"" << opt.backend
+              << "\",\"backend\":\"" << escape_json(ggml_backend_dev_description(ggml_backend_get_device(backend)))
+              << "\",\"timing\":\"synchronized_host_wall_full_ggml_graph_us\",\"finite_outputs\":" << actual.size()
+              << ",\"validation\":\"finite_output_gate_with_sampled_f32_activation_reference_non_gate\""
+              << ",\"reference_rows\":" << rows.size() << ",\"reference_outputs\":" << rows.size()*c.n
+              << ",\"reference_max_abs_error\":" << ref_max_abs << ",\"reference_max_rel_error\":" << ref_max_rel
+              << ",\"min_us\":" << sorted.front() << ",\"median_us\":" << percentile(0.5)
+              << ",\"p95_us\":" << percentile(0.95) << ",\"samples_us\":[";
+    for (size_t i = 0; i < us.size(); ++i) std::cout << (i ? "," : "") << us[i];
+    std::cout << "]}" << std::endl;
+}
+
 int main(int argc, char ** argv) {
     try {
         const options opt = parse(argc, argv);
@@ -417,6 +521,10 @@ int main(int argc, char ** argv) {
                 ggml_backend_init_by_type(opt.backend == "gpu" ? GGML_BACKEND_DEVICE_TYPE_GPU : GGML_BACKEND_DEVICE_TYPE_CPU, nullptr));
         require(bool(backend), "requested ggml backend unavailable");
         weight_file gguf(opt.gguf);
+        std::unique_ptr<weight_file> fp16_anchor, q8_anchor, q4_anchor;
+        if (!opt.fp16_gguf.empty()) fp16_anchor = std::make_unique<weight_file>(opt.fp16_gguf);
+        if (!opt.q8_gguf.empty()) q8_anchor = std::make_unique<weight_file>(opt.q8_gguf);
+        if (!opt.q4_gguf.empty()) q4_anchor = std::make_unique<weight_file>(opt.q4_gguf);
         std::vector<fs::path> paths;
         for (const auto & entry : fs::directory_iterator(opt.captures)) {
             if (entry.is_regular_file() && entry.path().extension() == ".bin" &&
@@ -438,6 +546,12 @@ int main(int argc, char ** argv) {
                 head_outputs[mode++] = replay(c, weights, scales, backend.get(), bits, opt);
             }
             if (c.name == "output.w1a1_packed") compare_head(c, head_outputs);
+            if (fp16_anchor) replay_anchor(c, fp16_anchor->load_anchor(c, GGML_TYPE_F16), GGML_TYPE_F16,
+                    "fp16", backend.get(), opt);
+            if (q8_anchor) replay_anchor(c, q8_anchor->load_anchor(c, GGML_TYPE_Q8_0), GGML_TYPE_Q8_0,
+                    "q8_0", backend.get(), opt);
+            if (q4_anchor) replay_anchor(c, q4_anchor->load_anchor(c, GGML_TYPE_Q4_0), GGML_TYPE_Q4_0,
+                    "q4_0", backend.get(), opt);
         }
         if (opt.require_nine) {
             const std::set<std::string> expected = {

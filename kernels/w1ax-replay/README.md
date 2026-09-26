@@ -33,7 +33,8 @@ IDs, each top-1 minus top-2 score margin, both top-1 scores, and cross-scores
 at the other mode's top-1 ID. Ties rank by lower token ID. These are draft-head
 scores, not target/verifier logits. There is no ordinary FP16 head in the packed
 GGUF, so this comparison does **not** estimate agreement with ordinary FP16
-EAGLE; that requires a separate matched dense-head replay.
+EAGLE. Optional anchor GGUF files provide separate same-input operator records,
+not a decoded-trajectory comparison.
 
 Build against the current checkout (on the 2080 Ti set the CUDA architecture):
 
@@ -41,6 +42,9 @@ Build against the current checkout (on the 2080 Ti set the CUDA architecture):
 cmake -S kernels/w1ax-replay -B build/w1ax-replay -DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=75 -DGGML_METAL=OFF
 cmake --build build/w1ax-replay -j 8
 build/w1ax-replay/w1ax_operator_replay --gguf models/gguf/Qwen3-4B-eagle3-all-w1a1.gguf \
+  --fp16-gguf models/gguf/Qwen3-4B-eagle3-F16.gguf \
+  --q8-gguf models/gguf/Qwen3-4B-eagle3-Q8_0.gguf \
+  --q4-gguf models/gguf/Qwen3-4B-eagle3-Q4_0.gguf \
   --capture-dir runs/<id>/captures --backend gpu --warmups 2 --samples 5 \
   --require-nine \
   > runs/<id>/operator-replay.jsonl
@@ -57,6 +61,28 @@ the stream; keep collection separate from timing and unset
 `GGML_W1AX_CAPTURE_DIR` before replay. `--require-nine` checks coverage of the
 nine selected layers. Preserve raw files and GGUF
 hashes in the experiment manifest.
+
+The three anchor flags are optional and independent. For each supplied GGUF,
+the replay maps `fc.w1a1_packed` to `fc.weight`, and likewise for the other
+eight names. It requires the captured K and M, no batch dimensions, and exact
+weight type F16, Q8_0, or Q4_0. It invokes native `ggml_mul_mat` with F32
+captured activations on the selected backend. It never substitutes a dense
+dequantized matmul for timing. Every `anchor_operator_replay` JSONL record
+contains the same `capture`, `sequence`, `name`, `group`, K/M/N, `source_bits`,
+backend, synchronized full-graph timing label, `min_us`, `median_us`, `p95_us`,
+and raw `samples_us` as W1Ax records; `anchor_format` and `weight_type` keep
+anchors distinct from `replay_bits`. All output values must be finite.
+`finite_outputs` counts the checked M×N values. A sampled reference separately
+dequantizes weight rows **outside** timing and dots them with the captured F32
+activations; `reference_rows`, `reference_outputs`, and
+`reference_max_abs_error`/`reference_max_rel_error` describe that check. This
+reference is deliberately **non-gating**: ggml's native quantized CUDA path
+can quantize activations (for example Q8_1) before the dot, so its output need
+not match an F32-activation scalar dot. The `validation` field says
+`finite_output_gate_with_sampled_f32_activation_reference_non_gate`.
+The anchors share capture identity and shape with W1Ax rows for later pairing,
+but their GGUF weights differ. They establish matched operator input, not
+identical decoding trajectory or numerical equivalence of models.
 
 The scalar check validates final F32 values and independently computes integer
 dots for A1/A4/A8; it cannot directly inspect the native kernel's hidden
