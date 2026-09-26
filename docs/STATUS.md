@@ -14,7 +14,7 @@ QAT run has begun.
 
 **Concurrent suite progress:** the latest [goal checkpoint](goals/w1ax-activation-precision-suite.md)
 records W1Ax implementation, 88-case SM75 gates, real-input replay and the
-completed historical (480 requests) and development (960 requests) eight-path matrices. Matched operator replay and the 480-request round trace are also complete. Full-server profiling and streaming diagnostics are complete. The 720-request context matrix is complete; two of twelve development policy cells are complete, and the sweep continues under successor supervision. The goal file’s successor handoff records the live job, completed worker transfer, exact next actions and stop procedure. Consult that checkpoint for current
+completed historical (480 requests) and development (960 requests) eight-path matrices. Matched operator replay and the 480-request round trace are also complete. Full-server profiling and streaming diagnostics are complete. The 720-request context matrix is complete; three of twelve development policy cells are complete, and the sweep continues under successor supervision. The goal file’s successor handoff records the live job, completed worker transfer, exact next actions and stop procedure. Consult that checkpoint for current
 run ownership, paths and stop instructions. These records were preserved during
 integration of the literature review; its authors did not operate or revalidate
 that GPU run.

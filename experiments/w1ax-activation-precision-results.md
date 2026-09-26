@@ -539,6 +539,21 @@ that floor. All twelve predeclared configurations are retained; final policy
 selection remains pending the full grid. Individual candidate confidence values
 were not inspected in these uninstrumented cells.
 
+D1/p0.3 changes proposal counts and some outputs. W1A16 differs from target-only
+on 10/120 paired requests (two prompts), and W1A8 on 15/120 (three prompts);
+FP16/Q8_0/Q4_0/W1A4/W1A1 match target-only. The first differences occur at
+zero-based positions 9, 66 and, for A8 only, 87. Their cause is unestablished;
+these are timing observations with output differences. Raw records SHA256:
+`8e5b18ab0a3ef66a53ae27ce4788ec83dd068ccada193559f7e70c96465226c8`,
+runner `results/w1ax-diagnostic-suite-20260926-development-d1-pmin-0p3-a1/`.
+
+Confidence filtering also changes the denominator of accepted drafts per native
+verification round. For D1 W1A1, floor0 accepted 805/14,320 proposed drafts;
+floor0.3 accepted 395/4,145. The conditional ratio rises from0.056 to0.095 while
+total accepted drafts falls. No-proposal iterations are outside that native
+round denominator, so this ratio alone does not demonstrate better serving
+quality or throughput. Final policy conclusions still await the complete grid.
+
 ## Measurement limits
 
 Round-level proposal IDs, emissions and confidence-stop decisions are available
