@@ -18,6 +18,7 @@ data.
 from __future__ import annotations
 
 import argparse
+import collections
 import hashlib
 import json
 import os
@@ -123,6 +124,202 @@ def file_inventory(directory: Path) -> dict[str, dict[str, Any]]:
     }
 
 
+def read_jsonl(path: Path) -> list[dict[str, Any]]:
+    if not path.exists():
+        return []
+    rows = []
+    for line_number, line in enumerate(path.read_text().splitlines(), 1):
+        if not line.strip():
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError as error:
+            raise ValueError(f"{path}:{line_number}: invalid JSONL: {error}") from error
+        if not isinstance(row, dict):
+            raise ValueError(f"{path}:{line_number}: expected a JSON object")
+        rows.append(row)
+    return rows
+
+
+def capture_inventory(capture_dir: Path) -> dict[str, Any]:
+    """Take a cheap per-request snapshot without hashing large activation tensors."""
+    files = {
+        path.name: {"bytes": path.stat().st_size, "mtime_ns": path.stat().st_mtime_ns}
+        for path in sorted(capture_dir.glob("op-*.bin"))
+        if path.is_file()
+    }
+    rows = read_jsonl(capture_dir / "captures.jsonl")
+    return {
+        "files": files,
+        "sequences": sorted(
+            row["sequence"]
+            for row in rows
+            if isinstance(row.get("sequence"), int) and not isinstance(row.get("sequence"), bool)
+        ),
+        "sidecar_rows": rows,
+    }
+
+
+def trace_inventory(path: Path) -> list[dict[str, Any]]:
+    return read_jsonl(path)
+
+
+def validate_capture_sidecar_row(row: dict[str, Any]) -> None:
+    if row.get("schema_version") != 1:
+        raise ValueError("unsupported captures.jsonl schema_version")
+    sequence = row.get("sequence")
+    if type(sequence) is not int or sequence < 0:
+        raise ValueError("capture sidecar row has invalid sequence")
+    expected_file = f"op-{sequence:012d}.bin"
+    if row.get("file") != expected_file:
+        raise ValueError(f"capture sidecar sequence {sequence} must name {expected_file}")
+    if not isinstance(row.get("weight_tensor"), str) or not row["weight_tensor"]:
+        raise ValueError(f"capture sidecar row {sequence} has no weight_tensor")
+    for field in ("k", "m", "n", "bits", "timestamp_us", "capture_start_us", "capture_end_us"):
+        if type(row.get(field)) is not int:
+            raise ValueError(f"capture sidecar row {sequence} has invalid {field}")
+    if row["capture_end_us"] < row["capture_start_us"]:
+        raise ValueError(f"capture sidecar row {sequence} has a negative capture span")
+
+
+def validate_round_trace_rows(rows: list[dict[str, Any]]) -> None:
+    if not rows:
+        raise ValueError("round-trace.jsonl is empty; no EAGLE round evidence was recorded")
+    for index, row in enumerate(rows):
+        if row.get("schema") != "w1ax_eagle_round_v1":
+            raise ValueError(f"round-trace row {index} has unsupported schema")
+        if type(row.get("round_start_us")) is not int or type(row.get("round_end_us")) is not int:
+            raise ValueError(f"round-trace row {index} has invalid round bounds")
+        if row["round_end_us"] < row["round_start_us"]:
+            raise ValueError(f"round-trace row {index} has a negative round span")
+
+
+def validate_request_capture_delta(delta: dict[str, Any]) -> None:
+    rows = delta["capture_events"]
+    filenames = delta["new_filenames"]
+    if not filenames:
+        raise ValueError("request produced no activation captures")
+    for row in rows:
+        validate_capture_sidecar_row(row)
+    file_counts = collections.Counter(filenames)
+    row_counts = collections.Counter(row.get("file") for row in rows)
+    if file_counts != row_counts:
+        missing_rows = sorted((file_counts - row_counts).elements())
+        missing_files = sorted((row_counts - file_counts).elements())
+        raise ValueError(
+            "request capture files and sidecar rows differ "
+            f"(files without rows={missing_rows}, rows without files={missing_files})"
+        )
+    sequences = [row["sequence"] for row in rows]
+    if len(sequences) != len(set(sequences)):
+        raise ValueError("request has duplicate capture sidecar sequences")
+
+
+def validate_capture_run(
+    capture_dir: Path,
+    round_trace_path: Path,
+    requests: list[dict[str, Any]],
+) -> None:
+    sidecar_path = capture_dir / "captures.jsonl"
+    if not sidecar_path.is_file():
+        raise ValueError(
+            "captures.jsonl is missing; selected runtime did not emit capture metadata"
+        )
+    snapshot = capture_inventory(capture_dir)
+    rows = snapshot["sidecar_rows"]
+    if not rows:
+        raise ValueError("captures.jsonl contains no activation records")
+    for row in rows:
+        validate_capture_sidecar_row(row)
+    sequences = sorted(row["sequence"] for row in rows)
+    if sequences != list(range(len(rows))):
+        raise ValueError("captures.jsonl sequences are incomplete or duplicated")
+    file_counts = collections.Counter(snapshot["files"].keys())
+    row_counts = collections.Counter(row["file"] for row in rows)
+    if file_counts != row_counts:
+        raise ValueError("capture binary files and captures.jsonl rows do not match one-to-one")
+    if not round_trace_path.is_file():
+        raise ValueError("round-trace.jsonl is missing")
+    round_rows = read_jsonl(round_trace_path)
+    validate_round_trace_rows(round_rows)
+    round_capture_count = sum(
+        event.get("phase") == "round"
+        for request in requests
+        for event in request.get("capture", {}).get("capture_events", [])
+    )
+    if round_capture_count == 0:
+        raise ValueError("no activation capture span overlaps an EAGLE round")
+
+
+def request_capture_delta(
+    before: dict[str, Any],
+    after: dict[str, Any],
+    trace_rows: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Join new capture sidecar records to round spans by their shared ggml clock."""
+    prior_rows = before["sidecar_rows"]
+    prior_counts: dict[str, int] = {}
+    for row in prior_rows:
+        key = json.dumps(row, sort_keys=True, separators=(",", ":"))
+        prior_counts[key] = prior_counts.get(key, 0) + 1
+    new_rows = []
+    for row in after["sidecar_rows"]:
+        key = json.dumps(row, sort_keys=True, separators=(",", ":"))
+        count = prior_counts.get(key, 0)
+        if count:
+            prior_counts[key] = count - 1
+        else:
+            new_rows.append(row)
+    new_files = sorted(set(after["files"]) - set(before["files"]))
+    intervals = [
+        row
+        for row in trace_rows
+        if isinstance(row.get("round_start_us"), int) and isinstance(row.get("round_end_us"), int)
+    ]
+    enriched_rows = []
+    for row in sorted(new_rows, key=lambda item: (item.get("sequence", -1), item.get("file", ""))):
+        capture_start = row.get("capture_start_us", row.get("timestamp_us"))
+        capture_end = row.get("capture_end_us", capture_start)
+        overlaps = [
+            trace
+            for trace in intervals
+            if isinstance(capture_start, int)
+            and isinstance(capture_end, int)
+            and capture_start <= trace["round_end_us"]
+            and capture_end >= trace["round_start_us"]
+        ]
+        enriched_rows.append(
+            {
+                **row,
+                "phase": "round" if overlaps else "prefill_or_outside_round",
+                "round_indices": [trace.get("round_index") for trace in overlaps],
+                "round_task_ids": [trace.get("task_id") for trace in overlaps],
+            }
+        )
+    sequences = [row.get("sequence") for row in new_rows if isinstance(row.get("sequence"), int)]
+    new_filenames_sorted = sorted(new_files)
+    return {
+        "files_before": before["files"],
+        "files_after": after["files"],
+        "sequences_before": before["sequences"],
+        "sequences_after": after["sequences"],
+        "sidecar_rows_before": len(before["sidecar_rows"]),
+        "sidecar_rows_after": len(after["sidecar_rows"]),
+        "new_filenames": new_files,
+        "filename_range": (
+            [new_filenames_sorted[0], new_filenames_sorted[-1]] if new_filenames_sorted else None
+        ),
+        "sequence_range": [min(sequences), max(sequences)] if sequences else None,
+        "new_sequences": sorted(sequences),
+        "capture_events": enriched_rows,
+        "round_trace_rows": trace_rows,
+        "round_trace_rows_added": len(trace_rows),
+        "prefill_or_outside_round_count": sum(
+            event["phase"] == "prefill_or_outside_round" for event in enriched_rows
+        ),
+    }
+
+
 def server_command(config: dict[str, Any], binary: Path, target: Path, draft: Path) -> list[str]:
     server = config["server"]
     common_args = list(server["common_args"])
@@ -171,6 +368,10 @@ def request_body(prompt: dict[str, Any], evaluation: dict[str, Any]) -> dict[str
         "return_tokens": True,
         "verbose": True,
     }
+
+
+def benchmark_request_id(prompt_id: str) -> str:
+    return f"rep-00/draft_w1a1/{prompt_id}"
 
 
 def http_json(url: str, value: dict[str, Any] | None = None, timeout: float = 10) -> dict[str, Any]:
@@ -248,6 +449,10 @@ def run(args: argparse.Namespace) -> Path:
     # The CUDA hook requires an existing path at process start. Create it here,
     # before setting GGML_W1AX_CAPTURE_DIR, and never clear existing contents.
     capture_dir.mkdir(parents=True, exist_ok=True)
+    if (capture_dir / "captures.jsonl").exists() or any(capture_dir.glob("op-*.bin")):
+        raise ValueError(
+            "capture directory already contains W1Ax output; use a fresh run-specific directory"
+        )
     for label, path in (
         ("server binary", binary),
         ("target GGUF", target),
@@ -271,6 +476,11 @@ def run(args: argparse.Namespace) -> Path:
             json.dumps(row, ensure_ascii=False, separators=(",", ":")) + "\n" for row in prompts
         )
     )
+    round_trace_path = run_dir / "round-trace.jsonl"
+    if round_trace_path.exists():
+        raise ValueError(
+            f"round trace already exists; use a fresh run directory: {round_trace_path}"
+        )
     before_capture = file_inventory(capture_dir)
     env = os.environ.copy()
     env.update(
@@ -278,6 +488,7 @@ def run(args: argparse.Namespace) -> Path:
             "GGML_W1AX_ACT_BITS": "1",
             "GGML_W1AX_CAPTURE_DIR": str(capture_dir),
             "GGML_CUDA_DISABLE_GRAPHS": "1",
+            "W1AX_ROUND_TRACE_JSONL": str(round_trace_path),
         }
     )
     env["CUDA_VISIBLE_DEVICES"] = config.get("environment", {}).get(
@@ -308,6 +519,7 @@ def run(args: argparse.Namespace) -> Path:
                 "GGML_W1AX_ACT_BITS",
                 "GGML_W1AX_CAPTURE_DIR",
                 "GGML_CUDA_DISABLE_GRAPHS",
+                "W1AX_ROUND_TRACE_JSONL",
                 "CUDA_VISIBLE_DEVICES",
             )
         },
@@ -344,36 +556,62 @@ def run(args: argparse.Namespace) -> Path:
             wait_ready(base_url, process, args.startup_timeout)
             for index, prompt in enumerate(prompts):
                 body = request_body(prompt, config["evaluation"])
+                request_id = benchmark_request_id(prompt["id"])
                 request_path = run_dir / f"request-{index + 1:02d}.json"
                 response_path = run_dir / f"response-{index + 1:02d}.json"
                 write_json(request_path, body)
+                request_capture_before = capture_inventory(capture_dir)
+                request_trace_before = trace_inventory(round_trace_path)
                 started = time.monotonic()
                 response = http_json(
                     f"{base_url}/v1/chat/completions", body, timeout=args.request_timeout
                 )
                 elapsed = time.monotonic() - started
                 write_json(response_path, response)
+                request_capture_after = capture_inventory(capture_dir)
+                request_trace_after = trace_inventory(round_trace_path)
+                old_trace_counts: dict[str, int] = {}
+                for trace_row in request_trace_before:
+                    key = json.dumps(trace_row, sort_keys=True, separators=(",", ":"))
+                    old_trace_counts[key] = old_trace_counts.get(key, 0) + 1
+                request_trace_delta = []
+                for trace_row in request_trace_after:
+                    key = json.dumps(trace_row, sort_keys=True, separators=(",", ":"))
+                    count = old_trace_counts.get(key, 0)
+                    if count:
+                        old_trace_counts[key] = count - 1
+                    else:
+                        request_trace_delta.append(trace_row)
+                capture_delta = request_capture_delta(
+                    request_capture_before, request_capture_after, request_trace_delta
+                )
                 ids = generated_token_ids(response)
+                manifest["requests"].append(
+                    {
+                        "prompt_id": prompt["id"],
+                        "benchmark_request_id": request_id,
+                        "request": {"path": str(request_path), "sha256": sha256(request_path)},
+                        "response": {"path": str(response_path), "sha256": sha256(response_path)},
+                        "generated_token_ids": ids,
+                        "generated_token_ids_sha256": hashlib.sha256(
+                            json.dumps(ids, separators=(",", ":")).encode()
+                        ).hexdigest()
+                        if ids is not None
+                        else None,
+                        "generated_token_count": len(ids) if ids is not None else None,
+                        "client_elapsed_s": elapsed,
+                        "capture": capture_delta,
+                    }
+                )
+                validate_request_capture_delta(capture_delta)
                 if ids is None:
                     raise RuntimeError(f"{prompt['id']}: server omitted raw generated token IDs")
                 if len(ids) > MAX_OUTPUT_TOKENS:
                     raise RuntimeError(
                         f"{prompt['id']}: server returned more than {MAX_OUTPUT_TOKENS} token IDs"
                     )
-                manifest["requests"].append(
-                    {
-                        "prompt_id": prompt["id"],
-                        "request": {"path": str(request_path), "sha256": sha256(request_path)},
-                        "response": {"path": str(response_path), "sha256": sha256(response_path)},
-                        "generated_token_ids": ids,
-                        "generated_token_ids_sha256": hashlib.sha256(
-                            json.dumps(ids, separators=(",", ":")).encode()
-                        ).hexdigest(),
-                        "generated_token_count": len(ids),
-                        "client_elapsed_s": elapsed,
-                    }
-                )
         manifest["server_stop"] = stop_server(process)
+        validate_capture_run(capture_dir, round_trace_path, manifest["requests"])
         log_text = server_log.read_text(errors="replace")
         marker_evidence = {
             "all_nine_loader": LOADER_MARKER in log_text,
@@ -401,6 +639,27 @@ def run(args: argparse.Namespace) -> Path:
         manifest["server_log"] = (
             {"path": str(server_log), "sha256": sha256(server_log)} if server_log.exists() else None
         )
+        manifest["captures_sidecar"] = (
+            {
+                "path": str(capture_dir / "captures.jsonl"),
+                "sha256": sha256(capture_dir / "captures.jsonl"),
+            }
+            if (capture_dir / "captures.jsonl").is_file()
+            else None
+        )
+        try:
+            round_trace_rows = len(read_jsonl(round_trace_path))
+            round_trace_error = None
+        except Exception as exc:
+            round_trace_rows = None
+            round_trace_error = f"{type(exc).__name__}: {exc}"
+        manifest["round_trace"] = {
+            "path": str(round_trace_path),
+            "sha256": sha256(round_trace_path) if round_trace_path.is_file() else None,
+            "rows": round_trace_rows,
+            "schema": "w1ax_eagle_round_v1",
+            "parse_error": round_trace_error,
+        }
         manifest["error"] = error
         write_json(run_dir / "manifest.json", manifest)
     if error:
