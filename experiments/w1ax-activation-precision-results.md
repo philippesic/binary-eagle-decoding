@@ -147,6 +147,27 @@ SHA256: `records.json`
 `f175094050ca1d807e2f3a6b963b44f97b14b8a7e2d39ab8d2eee5d2f49f9592`;
 `manifest.json` `e7c2c55fca7a609bce162fa348d37bc93da2181707b5eb24d21c0be6b7a22cab`.
 
+## Correctness and vocabulary diagnostics
+
+A separate diagnostic runtime (`feba15698`, 88/88 SM75 gate passed) preserves
+raw target logits before sampling. On historical `reasoning-02` at zero-based
+position 109, target-only ranks token 12 first by 0.00348663 logit units; the
+emitted speculative verifier row ranks 29208 first by 0.00539780. Its draft
+29208 is accepted because it matches the target verifier. A preceding
+hypothetical row was neither sampled nor emitted. The output difference is
+therefore supported by a target-logit ranking reversal; the underlying
+numerical cause remains unproven. These instrumented requests are excluded
+from throughput. Raw traces and comparison are under
+`runs/w1ax-project-src/results/w1ax-verifier-divergence-20260926/`.
+
+Across both primary sets, 22,460/22,800 target-only emitted IDs (98.51%) lie
+in the 32,000-entry draft vocabulary. The category fractions are 97.79% code,
+99.13% prose and 98.63% reasoning. Repetitions are repeated trajectories, not
+independent quality samples. This coverage audit does not measure target
+probability mass, nor does it establish acceptance. The ignored raw report is
+`runs/w1ax-vocab-coverage-20260926/report.json`, SHA256
+`c341f882579b85b116c93e57d5b436a58565940eb17e0b69cf232a9846a7e922`.
+
 ## Outstanding measurements
 
 Identical-input FP16/Q8_0/Q4_0 anchor replay, per-round trace, context/output-cap diagnostic, D/p_min policy
