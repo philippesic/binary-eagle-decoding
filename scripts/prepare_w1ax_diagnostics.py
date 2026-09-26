@@ -159,6 +159,17 @@ def prepare(
             "w1ax_policy_diagnostic": parsed["evaluation"]["w1ax_policy_diagnostic"],
         })
 
+    for cap in CONTEXT_CAPS:
+        emit(
+            f"context-cap-{cap}.toml",
+            "context_diagnostic",
+            {
+                "w1ax_matrix": True,
+                "max_draft_tokens": 5,
+                "min_draft_probability": 0.0,
+                "max_output_tokens": cap,
+            },
+        )
     for depth in POLICY_DEPTHS:
         for floor in POLICY_FLOORS:
             floor_tag = str(floor).replace(".", "p")
@@ -171,17 +182,6 @@ def prepare(
                     "max_output_tokens": evaluation["max_output_tokens"],
                 },
             )
-    for cap in CONTEXT_CAPS:
-        emit(
-            f"context-cap-{cap}.toml",
-            "context_diagnostic",
-            {
-                "w1ax_matrix": True,
-                "max_draft_tokens": 5,
-                "min_draft_probability": 0.0,
-                "max_output_tokens": cap,
-            },
-        )
 
     input_hashes = {"primary_config": source_hash}
     input_files: dict[str, dict[str, Any]] = {}

@@ -98,6 +98,10 @@ w1ax_matrix = true
         suite_path = self.make_suite()
         suite = json.loads(suite_path.read_text())
         self.assertEqual(len(suite["configs"]), 14)
+        self.assertEqual(
+            [entry["name"] for entry in suite["configs"][:2]],
+            ["context-cap-32.toml", "context-cap-128.toml"],
+        )
         base = tomllib.loads(self.config.read_text())
         policy = [entry for entry in suite["configs"] if entry["prompt_set"] == "qat_development"]
         contexts = [entry for entry in suite["configs"] if entry["prompt_set"] == "context_diagnostic"]
@@ -148,15 +152,16 @@ w1ax_matrix = true
         state = json.loads(state_path.read_text())
         self.assertEqual(state["status"], "failed")
         self.assertEqual(len(state["configs"]), 2)
-        self.assertEqual([row["status"] for row in state["configs"].values()], ["succeeded", "failed"])
+        self.assertEqual(state["configs"]["context-cap-32.toml"]["status"], "succeeded")
+        self.assertEqual(state["configs"]["context-cap-128.toml"]["status"], "failed")
         FakeProcess.next_codes = [0] * 13
         with mock.patch.object(launcher.subprocess, "Popen", FakeProcess):
             code = launcher.run_suite(suite_path, root=self.root, python="python3")
         self.assertEqual(code, 0)
         resumed = json.loads(state_path.read_text())
         self.assertEqual([row["status"] for row in resumed["configs"].values()], ["succeeded"] * 14)
-        self.assertEqual(len(resumed["configs"]["development-d1-pmin-0p0.toml"]["attempts"]), 1)
-        attempts = resumed["configs"]["development-d1-pmin-0p1.toml"]["attempts"]
+        self.assertEqual(len(resumed["configs"]["context-cap-32.toml"]["attempts"]), 1)
+        attempts = resumed["configs"]["context-cap-128.toml"]["attempts"]
         self.assertEqual(len(attempts), 2)
         self.assertNotEqual(attempts[0]["run_id"], attempts[1]["run_id"])
 
