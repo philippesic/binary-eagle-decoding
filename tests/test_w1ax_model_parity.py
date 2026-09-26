@@ -34,6 +34,8 @@ class W1AxModelParityTests(unittest.TestCase):
         self.assertEqual(cpu[cpu.index("--n-gpu-layers") + 1], "all")
         self.assertEqual(cpu[cpu.index("--spec-draft-ngl") + 1], "0")
         self.assertEqual(cuda[cuda.index("--spec-draft-ngl") + 1], "all")
+        self.assertEqual(cpu[cpu.index("--spec-draft-device") + 1], "none")
+        self.assertEqual(cuda[cuda.index("--spec-draft-device") + 1], "CUDA0")
         self.assertEqual(cpu[cpu.index("--spec-draft-n-max") + 1], "5")
         self.assertEqual(cpu[cpu.index("--spec-draft-p-min") + 1], "0")
 

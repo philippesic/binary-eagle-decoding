@@ -107,18 +107,23 @@ def mode_evidence(bits: int, mode: str, server_command: list[str], server_log: s
     draft_ngl_index = server_command.index("--spec-draft-ngl") + 1
     actual_ngl = server_command[draft_ngl_index]
     expected_ngl = "0" if mode == "cpu" else "all"
+    draft_device_index = server_command.index("--spec-draft-device") + 1
+    actual_device = server_command[draft_device_index]
+    expected_device = "none" if mode == "cpu" else "CUDA0"
     target_gpu_marker_seen = re.search(
         r"offloaded\s+[1-9]\d*/\d+ layers to GPU", server_log
     ) is not None
     if mode == "cuda":
-        placement_seen = actual_ngl == expected_ngl and cuda_seen
+        placement_seen = actual_ngl == expected_ngl and actual_device == expected_device and cuda_seen
     else:
-        placement_seen = actual_ngl == expected_ngl and not cuda_seen
+        placement_seen = actual_ngl == expected_ngl and actual_device == expected_device and not cuda_seen
     return {
         "mode": mode,
         "target_gpu_offload_marker_seen": target_gpu_marker_seen,
         "spec_draft_ngl": actual_ngl,
         "expected_spec_draft_ngl": expected_ngl,
+        "spec_draft_device": actual_device,
+        "expected_spec_draft_device": expected_device,
         "all_nine_loader_marker": LOADER_MARKER,
         "all_nine_loader_confirmed": loader_seen,
         "activation_marker": graph_marker,
@@ -136,10 +141,12 @@ def mode_evidence(bits: int, mode: str, server_command: list[str], server_log: s
 def build_server_command(
     binary: Path, target: Path, draft: Path, host: str, port: int, draft_ngl: str
 ) -> list[str]:
+    draft_device = "none" if draft_ngl == "0" else "CUDA0"
     return [
         str(binary), "-m", str(target), "-md", str(draft),
         "--spec-type", "draft-eagle3", "--spec-draft-n-max", "5",
-        "--spec-draft-p-min", "0", "--spec-draft-ngl", draft_ngl,
+        "--spec-draft-p-min", "0", "--spec-draft-device", draft_device,
+        "--spec-draft-ngl", draft_ngl,
         "--spec-draft-type-k", "f16", "--spec-draft-type-v", "f16",
         "--n-gpu-layers", "all", "--ctx-size", "2048", "--parallel", "1",
         "--fit", "off", "--cache-type-k", "f16", "--cache-type-v", "f16",
