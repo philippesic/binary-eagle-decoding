@@ -21,23 +21,25 @@ class CudaTraceTests(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
         self.path = Path(self.tmp.name) / "trace with spaces.sqlite"
 
-    def create(self, name_columns=("shortName", "demangledName")):
+    def create(self, name_columns=("shortName", "demangledName"), identity_columns=()):
+        self.identity_columns = identity_columns
         with sqlite3.connect(self.path) as db:
             db.execute("CREATE TABLE StringIds (id INTEGER PRIMARY KEY, value TEXT)")
             db.execute("CREATE TABLE CUPTI_ACTIVITY_KIND_KERNEL ("
                        "start INTEGER, end INTEGER, deviceId INTEGER, streamId INTEGER, "
                        "gridX INTEGER, gridY INTEGER, gridZ INTEGER, "
                        "blockX INTEGER, blockY INTEGER, blockZ INTEGER"
-                       + "".join(f", {column} INTEGER" for column in name_columns) + ")")
+                       + "".join(f", {column} INTEGER" for column in (*name_columns, *identity_columns)) + ")")
 
     def add(self, start, end, symbol, *, stream=7, device=0, grid=(2, 1, 1),
-            short=None, name_columns=("shortName", "demangledName")):
+            short=None, name_columns=("shortName", "demangledName"), identity=None):
         with sqlite3.connect(self.path) as db:
             name_ids = []
             for column in name_columns:
                 value = short if column == "shortName" and short else symbol
                 name_ids.append(db.execute("INSERT INTO StringIds(value) VALUES (?)", (value,)).lastrowid)
-            values = [start, end, device, stream, *grid, 32, 4, 1, *name_ids]
+            values = [start, end, device, stream, *grid, 32, 4, 1, *name_ids,
+                      *((identity or {}).get(column) for column in self.identity_columns)]
             db.execute("INSERT INTO CUPTI_ACTIVITY_KIND_KERNEL VALUES ("
                        + ",".join("?" for _ in values) + ")", values)
 
@@ -166,12 +168,69 @@ class CudaTraceTests(unittest.TestCase):
         self.assertEqual([g["dot_grid"] for g in pairs["launch_configurations"]], [[8, 2, 1], [16, 3, 1]])
         self.assertEqual([g["timing"]["kernel_sum"]["median_ns"] for g in pairs["launch_configurations"]], [30, 40])
 
+    def test_pairs_do_not_cross_process_or_context(self):
+        self.create(identity_columns=("globalPid", "contextId", "greenContextId"))
+        for offset, first, second in (
+            (0, {"globalPid": 100, "contextId": 1}, {"globalPid": 101, "contextId": 1}),
+            (40, {"globalPid": 200, "contextId": 1}, {"globalPid": 200, "contextId": 2}),
+        ):
+            self.add(offset, offset + 10, "w1ax_quantize", identity=first)
+            self.add(offset + 10, offset + 30, "w1ax_integer_dot", grid=(8, 2, 1), identity=second)
+        report = ANALYSIS.analyze(self.path)
+        pairs = report["packing_inclusive_pairs"]
+        self.assertEqual(pairs["pair_count"], 0)
+        self.assertEqual(pairs["unpaired_kernel_count"], 4)
+        self.assertFalse(report["identity_attribution"]["limited"])
+
+    def test_matching_context_pairs_preserve_identity_in_launch_summaries(self):
+        self.create(identity_columns=("globalPid", "contextId", "greenContextId"))
+        identities = [
+            {"globalPid": 100, "contextId": 1, "greenContextId": None},
+            {"globalPid": 100, "contextId": 2, "greenContextId": None},
+            {"globalPid": 101, "contextId": 1, "greenContextId": 0},
+        ]
+        for index, identity in enumerate(identities):
+            start = 40 * index
+            self.add(start, start + 10, "w1ax_quantize", identity=identity)
+            self.add(start + 10, start + 30, "w1ax_integer_dot", grid=(8, 2, 1), identity=identity)
+        report = ANALYSIS.analyze(self.path)
+        pairs = report["packing_inclusive_pairs"]
+        self.assertEqual(pairs["pair_count"], 3)
+        groups = pairs["launch_configurations"]
+        self.assertEqual([(g["global_pid"], g["context_id"], g["green_context_id"]) for g in groups],
+                         [(100, 1, None), (100, 2, None), (101, 1, 0)])
+        self.assertEqual([g["pair_count"] for g in groups], [1, 1, 1])
+        for kernel in report["kernels"]:
+            self.assertEqual(len(kernel["launch_configurations"]), 3)
+            self.assertEqual([g["context_id"] for g in kernel["launch_configurations"]], [1, 2, 1])
+
+    def test_present_null_process_context_ids_are_not_paired(self):
+        self.create(identity_columns=("globalPid", "contextId"))
+        identity = {"globalPid": 100, "contextId": None}
+        self.add(0, 10, "w1ax_quantize", identity=identity)
+        self.add(10, 30, "w1ax_integer_dot", grid=(8, 2, 1), identity=identity)
+        report = ANALYSIS.analyze(self.path)
+        self.assertEqual(report["packing_inclusive_pairs"]["pair_count"], 0)
+        self.assertEqual(report["identity_attribution"]["null_process_context_row_count"], 2)
+        self.assertTrue(report["identity_attribution"]["limited"])
+
+    def test_legacy_identity_limit_and_partial_context_partition(self):
+        self.create(identity_columns=("contextId",))
+        self.add(0, 10, "w1ax_quantize", identity={"contextId": 1})
+        self.add(10, 30, "w1ax_integer_dot", grid=(8, 2, 1), identity={"contextId": 2})
+        report = ANALYSIS.analyze(self.path)
+        self.assertEqual(report["packing_inclusive_pairs"]["pair_count"], 0)
+        self.assertEqual(report["identity_attribution"]["missing_process_context_columns"], ["globalPid"])
+        self.assertTrue(report["identity_attribution"]["limited"])
+
     def test_empty_valid_export(self):
         self.create()
         report = ANALYSIS.analyze(self.path)
         self.assertEqual(report["overall"]["count"], 0)
         self.assertEqual(report["overall"]["union_ns"], 0)
         self.assertEqual(report["kernels"], [])
+        self.assertTrue(report["identity_attribution"]["limited"])
+        self.assertEqual(report["identity_attribution"]["missing_process_context_columns"], ["globalPid", "contextId"])
 
     def test_short_name_only_and_unresolved_id(self):
         self.create(("shortName",))

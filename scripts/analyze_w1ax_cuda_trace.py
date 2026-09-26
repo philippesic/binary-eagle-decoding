@@ -35,6 +35,22 @@ PACK_DOT_SYMBOLS = {
     "w1a1_pack_activations": "w1a1_xor_popc",
     "w1ax_quantize": "w1ax_integer_dot",
 }
+OPTIONAL_IDENTITY_COLUMNS = {
+    "globalPid": "global_pid", "contextId": "context_id", "greenContextId": "green_context_id",
+}
+
+
+def launch_identity(row: dict) -> tuple:
+    """Preserve every available process/context identifier in grouping keys."""
+    return (("device_id", row["deviceId"]),
+            *((output, row[column]) for column, output in OPTIONAL_IDENTITY_COLUMNS.items() if column in row),
+            ("stream_id", row["streamId"]))
+
+
+def launch_group_sort(item: tuple) -> tuple:
+    key = item[0]
+    # Optional SQLite IDs may be NULL; retain them without comparing None/int.
+    return (tuple((name, value is not None, value or 0) for name, value in key[0]), *key[1:])
 
 
 def matches_symbol(symbols: str, *names: str | None) -> bool:
@@ -86,7 +102,7 @@ def interval_summary(rows: list[dict]) -> dict:
 
 
 def paired_kernel_summary(rows: list[dict]) -> dict:
-    """Pair only adjacent known pack/dot launches within a device and stream.
+    """Pair adjacent known pack/dot launches within each process/context stream.
 
     Launch adjacency and equal token grids are evidence for a candidate pair,
     not proof of a shared tensor, capture, or layer. No launch is reused.
@@ -97,10 +113,14 @@ def paired_kernel_summary(rows: list[dict]) -> dict:
         names = (row["demangled_name"], row["short_name"])
         pack_count += any(matches_symbol(symbol, *names) for symbol in PACK_DOT_SYMBOLS)
         dot_count += any(matches_symbol(symbol, *names) for symbol in PACK_DOT_SYMBOLS.values())
-        streams[row["deviceId"], row["streamId"]].append(row)
+        streams[launch_identity(row)].append(row)
     grouped = defaultdict(list)
     all_pairs = []
-    for (device, stream), launches in sorted(streams.items()):
+    for identity, launches in streams.items():
+        # NULL process/context values do not prove identity. Missing columns
+        # retain legacy behavior, with an explicit report-level limitation.
+        if any(name in ("global_pid", "context_id") and value is None for name, value in identity):
+            continue
         launches = sorted(launches, key=lambda row: (row["start"], row["end"]))
         for pack, dot in zip(launches, launches[1:]):
             pair_symbols = next(((packing, compute) for packing, compute in PACK_DOT_SYMBOLS.items()
@@ -112,7 +132,7 @@ def paired_kernel_summary(rows: list[dict]) -> dict:
             dot_grid = tuple(dot[f"grid{axis}"] for axis in "XYZ")
             pack_block = tuple(pack[f"block{axis}"] for axis in "XYZ")
             dot_block = tuple(dot[f"block{axis}"] for axis in "XYZ")
-            key = (device, stream, *pair_symbols, pack_grid, pack_block, dot_grid, dot_block)
+            key = (identity, *pair_symbols, pack_grid, pack_block, dot_grid, dot_block)
             values = {
                 "pack": pack["duration_ns"], "dot": dot["duration_ns"],
                 "kernel_sum": pack["duration_ns"] + dot["duration_ns"],
@@ -135,16 +155,16 @@ def paired_kernel_summary(rows: list[dict]) -> dict:
         "unpaired_kernel_count": pack_count + dot_count - 2 * count,
         "timing": timing(all_pairs),
         "launch_configurations": [
-            {"device_id": key[0], "stream_id": key[1], "pack_symbol": key[2], "dot_symbol": key[3],
-             "pack_grid": list(key[4]), "pack_block": list(key[5]),
-             "dot_grid": list(key[6]), "dot_block": list(key[7]),
+            {**dict(key[0]), "pack_symbol": key[1], "dot_symbol": key[2],
+             "pack_grid": list(key[3]), "pack_block": list(key[4]),
+             "dot_grid": list(key[5]), "dot_block": list(key[6]),
              "pair_count": len(values), "timing": timing(values)}
-            for key, values in sorted(grouped.items())
+            for key, values in sorted(grouped.items(), key=launch_group_sort)
         ],
     }
 
 
-def read_kernels(path: Path) -> list[dict]:
+def read_kernels(path: Path, *, schema: dict | None = None) -> list[dict]:
     # URI mode=ro both prevents creation of missing files and disallows writes.
     with sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True) as db:
         db.row_factory = sqlite3.Row
@@ -153,6 +173,8 @@ def read_kernels(path: Path) -> list[dict]:
         if missing:
             raise ValueError("missing required SQLite table(s): " + ", ".join(sorted(missing)))
         columns = {row[1] for row in db.execute(f"PRAGMA table_info({KERNEL_TABLE})")}
+        if schema is not None:
+            schema["identity_columns"] = [name for name in OPTIONAL_IDENTITY_COLUMNS if name in columns]
         missing = REQUIRED_COLUMNS - columns
         if missing:
             raise ValueError("missing kernel column(s): " + ", ".join(sorted(missing)))
@@ -174,6 +196,9 @@ def read_kernels(path: Path) -> list[dict]:
             for name in REQUIRED_COLUMNS:
                 if not isinstance(row[name], int):
                     raise ValueError(f"kernel row {row_number}: {name} must be an integer")
+            for name in OPTIONAL_IDENTITY_COLUMNS:
+                if row.get(name) is not None and not isinstance(row[name], int):
+                    raise ValueError(f"kernel row {row_number}: {name} must be an integer or NULL")
             if row["end"] < row["start"]:
                 raise ValueError(f"kernel row {row_number}: end precedes start")
             if any(row[name] <= 0 for name in REQUIRED_COLUMNS if name.startswith(("grid", "block"))):
@@ -195,7 +220,11 @@ def read_kernels(path: Path) -> list[dict]:
 def analyze(path: Path, act_bits: int | None = None) -> dict:
     if act_bits is not None and act_bits not in (1, 4, 8, 16):
         raise ValueError("act_bits must be 1, 4, 8, or 16")
-    rows = read_kernels(path)
+    schema = {}
+    rows = read_kernels(path, schema=schema)
+    missing_identity = [name for name in ("globalPid", "contextId") if name not in schema["identity_columns"]]
+    null_identity_rows = sum(any(name in row and row[name] is None for name in ("globalPid", "contextId"))
+                             for row in rows)
     kernels = defaultdict(list)
     categories = defaultdict(list)
     devices = defaultdict(list)
@@ -207,9 +236,8 @@ def analyze(path: Path, act_bits: int | None = None) -> dict:
     for symbol, launches in sorted(kernels.items()):
         shapes = defaultdict(list)
         for row in launches:
-            key = (row["deviceId"], row["streamId"],
-                   *(row[f"grid{axis}"] for axis in "XYZ"),
-                   *(row[f"block{axis}"] for axis in "XYZ"))
+            key = (launch_identity(row), tuple(row[f"grid{axis}"] for axis in "XYZ"),
+                   tuple(row[f"block{axis}"] for axis in "XYZ"))
             shapes[key].append(row["duration_ns"])
         per_kernel.append({
             "symbol": symbol, "short_name": launches[0]["short_name"],
@@ -217,9 +245,8 @@ def analyze(path: Path, act_bits: int | None = None) -> dict:
             "category": launches[0]["category"],
             **distribution([row["duration_ns"] for row in launches]),
             "launch_configurations": [
-                {"device_id": key[0], "stream_id": key[1], "grid": list(key[2:5]),
-                 "block": list(key[5:8]), **distribution(values)}
-                for key, values in sorted(shapes.items())
+                {**dict(key[0]), "grid": list(key[1]), "block": list(key[2]), **distribution(values)}
+                for key, values in sorted(shapes.items(), key=launch_group_sort)
             ],
         })
     return {
@@ -233,12 +260,19 @@ def analyze(path: Path, act_bits: int | None = None) -> dict:
             "act_bits is caller-supplied metadata; W1A4 and W1A8 share symbols and cannot be distinguished from names alone.",
             "Union is time with at least one kernel active. Overlap excess is sum minus union, weighted by excess concurrency; gaps are not a measurement of CPU overhead.",
             "Overall union spans all devices on the export timeline; per-device unions are also reported. Only kernel activities are included.",
-            "Packing-inclusive pairs require adjacent matching pack/quantize then dot kernels on the same device and stream, pack.gridX == dot.gridY, and pack.end <= dot.start. Kernels on other streams may intervene.",
+            "Packing-inclusive pairs require adjacent matching pack/quantize then dot kernels on the same device, process, CUDA context, green context (when available), and stream, pack.gridX == dot.gridY, and pack.end <= dot.start. Kernels in other identity partitions may intervene.",
+            "Missing globalPid/contextId columns permit legacy single-process pairing but cannot establish cross-process/context isolation. NULL values in present process/context columns are never paired; identity_attribution records these limits.",
             "Pair kernel_sum includes packing and fused dot/rescaling; elapsed also includes the observed inter-kernel gap. This kernel-only view excludes host allocation and is not full operator latency. Pair duration sums are not a union across pairs or streams.",
             "Pairing is a launch-adjacency heuristic, with no per-capture or layer attribution. Unpaired counts cover eligible known pack and dot kernels only; A16 signadd is a single kernel and is not eligible.",
             "p95 uses linear interpolation at index 0.95*(count-1). Unknown symbols are retained as unclassified.",
         ],
         "overall": interval_summary(rows),
+        "identity_attribution": {
+            "available_columns": schema["identity_columns"],
+            "missing_process_context_columns": missing_identity,
+            "null_process_context_row_count": null_identity_rows,
+            "limited": bool(missing_identity or null_identity_rows),
+        },
         "devices": [{"device_id": device, **interval_summary(launches)}
                     for device, launches in sorted(devices.items())],
         "categories": [{"category": category, **distribution(values)}
