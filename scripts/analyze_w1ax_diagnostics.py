@@ -22,6 +22,9 @@ STAGES = (
     "accept_hook_us",
     "residual_us",
 )
+TRACE_SPAN_STAGES = (
+    "draft", "checkpoint", "target_decode_sync", "process", "check", "kv_repair", "accept_hook",
+)
 
 
 def _percentile(values: list[float], p: float) -> float | None:
@@ -64,6 +67,138 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
 
 def _nonnegative_number(value: Any) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value) and value >= 0
+
+
+def _trace_span_accounting(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    union_values: list[float] = []
+    overlap_values: list[float] = []
+    outside_values: list[float] = []
+    unclamped_residual_values: list[float] = []
+    union_residual_values: list[float] = []
+    begin_values: list[float] = []
+    details = []
+    totals = {"invalid_spans": 0, "out_of_bounds_spans": 0, "overlap_rows": 0, "nested_pairs": 0, "clamped_runtime_residual_rows": 0, "runtime_residual_mismatch_rows": 0}
+
+    for row in rows:
+        if row.get("schema") != TRACE_SCHEMA:
+            continue
+        start, end = row.get("round_start_us"), row.get("round_end_us")
+        problems = []
+        if not _nonnegative_number(start) or not _nonnegative_number(end) or end < start:
+            details.append({"task_id": row.get("task_id"), "round_index": row.get("round_index"), "status": "invalid_round_bounds", "flags": ["invalid_round_bounds"]})
+            totals["invalid_spans"] += 1
+            continue
+        duration = end - start
+        span_map = row.get("spans_us")
+        if not isinstance(span_map, dict):
+            details.append({"task_id": row.get("task_id"), "round_index": row.get("round_index"), "status": "missing_spans", "flags": ["missing_spans"]})
+            continue
+
+        # begin is a separate pre-round operation by contract and is measured, not attributed to round_us.
+        begin_interval = span_map.get("begin")
+        if isinstance(begin_interval, list) and len(begin_interval) == 2 and all(_nonnegative_number(v) for v in begin_interval) and begin_interval[1] >= begin_interval[0]:
+            begin_values.append(float(begin_interval[1] - begin_interval[0]))
+
+        intervals = []
+        outside_by_stage = {}
+        invalid_stages = []
+        for stage in TRACE_SPAN_STAGES:
+            interval = span_map.get(stage)
+            if interval is None or interval == [0, 0]:
+                continue
+            if not isinstance(interval, list) or len(interval) != 2 or not all(_nonnegative_number(v) for v in interval):
+                invalid_stages.append(stage)
+                continue
+            span_start, span_end = interval
+            if span_end < span_start:
+                invalid_stages.append(stage)
+                continue
+            if span_start == 0 and span_end == 0:
+                continue
+            clipped_start = max(float(start), float(span_start))
+            clipped_end = min(float(end), float(span_end))
+            in_round_duration = max(0.0, clipped_end - clipped_start)
+            outside = (span_end - span_start) - in_round_duration
+            if outside > 0:
+                outside_by_stage[stage] = outside
+            if clipped_end > clipped_start:
+                intervals.append((clipped_start, clipped_end, stage))
+
+        sorted_intervals = sorted(intervals)
+        attributed_duration = sum(right - left for left, right, _ in sorted_intervals)
+        merged = []
+        nested_pairs = []
+        for i, (left, right, stage) in enumerate(sorted_intervals):
+            for other_left, other_right, other_stage in sorted_intervals[i + 1:]:
+                if other_left >= right:
+                    break
+                if other_left >= left and other_right <= right:
+                    nested_pairs.append([stage, other_stage])
+                elif left >= other_left and right <= other_right:
+                    nested_pairs.append([other_stage, stage])
+            if not merged or left > merged[-1][1]:
+                merged.append([left, right])
+            else:
+                merged[-1][1] = max(merged[-1][1], right)
+        union_duration = sum(right - left for left, right in merged)
+        overlap = attributed_duration - union_duration
+        outside_total = sum(outside_by_stage.values())
+        unclamped = duration - attributed_duration
+        union_residual = duration - union_duration
+        runtime_residual = row.get("residual_us")
+        if invalid_stages:
+            problems.append("invalid_spans")
+            totals["invalid_spans"] += len(invalid_stages)
+        if outside_by_stage:
+            problems.append("out_of_bounds_spans")
+            totals["out_of_bounds_spans"] += len(outside_by_stage)
+        if overlap > 0:
+            problems.append("overlapping_spans")
+            totals["overlap_rows"] += 1
+        if nested_pairs:
+            problems.append("nested_spans")
+            totals["nested_pairs"] += len(nested_pairs)
+        if unclamped < 0 and _nonnegative_number(runtime_residual) and runtime_residual == 0:
+            problems.append("runtime_residual_was_clamped")
+            totals["clamped_runtime_residual_rows"] += 1
+        expected_runtime_residual = max(0.0, duration - attributed_duration)
+        if _nonnegative_number(runtime_residual) and abs(runtime_residual - expected_runtime_residual) > 1.0:
+            problems.append("runtime_residual_mismatch")
+            totals["runtime_residual_mismatch_rows"] += 1
+        runtime_round = row.get("round_us")
+        round_delta = runtime_round - duration if _nonnegative_number(runtime_round) else None
+        if round_delta is not None and abs(round_delta) > 1.0:
+            problems.append("runtime_round_duration_mismatch")
+        union_values.append(union_duration)
+        overlap_values.append(overlap)
+        outside_values.append(outside_total)
+        unclamped_residual_values.append(unclamped)
+        union_residual_values.append(union_residual)
+        details.append({
+            "task_id": row.get("task_id"), "round_index": row.get("round_index"),
+            "round_duration_us": duration, "attributed_union_us": union_duration,
+            "runtime_round_us": runtime_round, "runtime_round_duration_delta_us": round_delta,
+            "overlap_us": overlap, "outside_round_us": outside_total,
+            "outside_by_stage_us": outside_by_stage,
+            "unclamped_residual_us": unclamped, "union_unattributed_us": union_residual,
+            "nested_stage_pairs": nested_pairs, "invalid_stages": invalid_stages,
+            "runtime_residual_us": runtime_residual, "flags": problems,
+        })
+
+    return {
+        "rows_with_round_bounds": len(details),
+        "totals": totals,
+        "distributions_us": {
+            "attributed_union": distribution(union_values),
+            "overlap": distribution(overlap_values),
+            "outside_round": distribution(outside_values),
+            "unclamped_residual": distribution(unclamped_residual_values),
+            "union_unattributed": distribution(union_residual_values),
+            "begin_outside_round": distribution(begin_values),
+        },
+        "per_round": details,
+        "definitions": "Union uses clipped non-begin spans inside [round_start_us, round_end_us]. overlap_us is summed in-round span duration minus interval union. unclamped_residual_us is round duration minus summed in-round span duration and can be negative. begin is reported separately and excluded from round accounting.",
+    }
 
 
 def summarize_variant(rows: list[dict[str, Any]]) -> dict[str, Any]:
@@ -135,11 +270,13 @@ def summarize_variant(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "accepted_per_round": accepted / len(quality) if accepted is not None and quality else None,
         "actual_proposal_lengths": distribution([float(v) for v in lengths]),
         "conditional_acceptance_by_depth": rounds_by_depth,
+        "quality_scope": "All quality-eligible rows in the per-server trace file, including warmup task groups; not measured-request-only because task-ID/request mapping is not validated.",
+        "trace_span_accounting": _trace_span_accounting(rows),
         "cpu_wall_us": {
             "round": distribution(round_values),
             "begin_outside_round": distribution(begin_values),
             "stages": {stage: distribution(values) for stage, values in stage_values.items()},
-            "note": "CPU wall spans; named spans may overlap. residual_us is the server-reported unattributed remainder. No CUDA event data is present.",
+            "note": "CPU wall spans across all trace rows, including warmup task groups; named spans may overlap. residual_us is the server-reported remainder and is separately audited in trace_span_accounting. No CUDA event data is present.",
         },
     }
 
@@ -374,6 +511,7 @@ def analyze_run(run_dir: Path, replay_path: Path | None = None) -> dict[str, Any
         "limitations": [
             "Round-trace data is CPU wall timing and does not include CUDA event timings.",
             "Trace schema does not carry benchmark request IDs; per-request round association is unavailable.",
+            "Per-server traces include warmup task groups; aggregates are not measured-request-only until task-ID/request mapping is validated.",
             "Benchmark records may contain aggregate quality values; round quality below is computed from trace rows and excludes checkpoint_replay status.",
         ],
     }

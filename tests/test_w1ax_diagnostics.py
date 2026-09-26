@@ -64,6 +64,37 @@ class W1AxDiagnosticsTests(unittest.TestCase):
         self.assertEqual(wall["stages"]["residual_us"]["median"], 19)
         self.assertIn("No CUDA event data", wall["note"])
 
+    def test_trace_span_accounting_flags_overlap_bounds_and_clamped_residual(self):
+        row = trace([1, 2], 1, 100)
+        row.update({
+            "task_id": 19, "round_index": 2,
+            "round_start_us": 100, "round_end_us": 200,
+            "residual_us": 0,
+            "spans_us": {
+                "begin": [80, 95],
+                "draft": [90, 150],
+                "checkpoint": [120, 160],
+                "process": [125, 140],
+                "target_decode_sync": [170, 210],
+                "accept_hook": [220, 225],
+                "check": [0, 0], "kv_repair": [0, 0],
+            },
+        })
+        result = analysis.summarize_variant([row])
+        accounting = result["trace_span_accounting"]
+        detail = accounting["per_round"][0]
+        self.assertEqual(detail["attributed_union_us"], 90)
+        self.assertEqual(detail["overlap_us"], 45)
+        self.assertEqual(detail["outside_round_us"], 25)
+        self.assertEqual(detail["unclamped_residual_us"], -35)
+        self.assertEqual(detail["union_unattributed_us"], 10)
+        self.assertEqual(detail["nested_stage_pairs"], [["draft", "process"], ["checkpoint", "process"]])
+        self.assertIn("out_of_bounds_spans", detail["flags"])
+        self.assertIn("runtime_residual_was_clamped", detail["flags"])
+        self.assertEqual(detail["runtime_residual_us"], 0)
+        self.assertEqual(accounting["distributions_us"]["begin_outside_round"]["median"], 15)
+        self.assertIn("warmup task groups", result["quality_scope"])
+
     def test_identical_input_replay_pairs_per_sample_by_layer_shape(self):
         rows = [
             {"record_type": "operator_replay", "capture": "capture-a.bin", "sequence": 7, "K": 4096, "M": 8, "N": 2, "name": "q_proj", "group": "attention", "replay_bits": 16, "samples_us": [10, 12, 14]},
