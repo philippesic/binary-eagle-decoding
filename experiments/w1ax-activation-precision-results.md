@@ -1,6 +1,6 @@
 # All-layer W1Ax activation precision on RTX 2080 Ti
 
-**State:** primary matrices, operator/round/profile/streaming/context diagnostics complete; twelve-cell development policy sweep in progress.
+**State:** primary matrices, operator/round/profile/streaming/context diagnostics complete; development policy sweep paused by user after three complete cells.
 **Protocol:** [frozen W1Ax study](w1ax-activation-precision-plan.md).
 **Hardware:** NVIDIA RTX 2080 Ti, SM75, 11,264 MiB VRAM under Ubuntu 24.04 WSL2.
 
@@ -568,5 +568,5 @@ probability mass. No trained-QAT or reserved-final result is claimed.
 
 ## Outstanding measurements
 
-The twelve-setting D/p_min development policy grid remains in progress. Do not treat the historical
+The twelve-setting D/p_min development policy grid is paused by user after three complete cells; the interrupted D2/p0 attempt retains 120 saved requests. Do not treat the historical
 screen as a final trained-QAT result or use the reserved 24-prompt final set.

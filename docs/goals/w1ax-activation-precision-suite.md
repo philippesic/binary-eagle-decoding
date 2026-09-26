@@ -1,8 +1,8 @@
 # Goal: all-layer W1Ax activation-precision suite on RTX 2080 Ti
 
 **Opened:** 2026-09-25
-**State:** active; primary matrices sealed, diagnostics in progress
-**GPU owner:** successor chat `01a0dbfc-6f9b-76e1-895d-1a617ad45e60`, with bounded operator `/root/policy_operator`; the supervised remote pipeline continues without interruption
+**State:** paused by user; three policy cells complete, fourth interrupted with saved progress
+**GPU owner:** none; user-requested shutdown verified, all owned groups stopped
 
 ## Objective
 
@@ -450,3 +450,15 @@ supervision before continuing. Original chat performs no further GPU actions.
 - First new development output differences: A16 differs from target-only/FP16/Q4_0 on10/120 requests (two prompts), A8 on15/120 (three prompts); every other path matches. Repetition-zero first differences: code-search-and-order-02 index9 (22990 versus11424), code-resource-management-01 index66 (2504 versus11320), plus A8 code-search-and-order-01 index87 (95069 versus11162). Each recurs over all five repetitions. Cause is not established; preserve these timing observations without lossless-speedup claims. No diagnostic GPU interruption or new experiment was added.
 - Floor0.3 is operative. W1A1 accepted/proposed totals drop from805/14320 at floor0 to395/4145; the higher conditional accepted-per-round ratio excludes many no-proposal iterations and is not by itself a serving gain. Report records this denominator limitation. All12 predeclared cells still run.
 - D2/p_min=0 started automatically,24/960 at06:13UTC. Groups54155/70171/70533 at operator snapshot; logs clean. `/root/policy_operator` retains sole GPU ownership and per-cell mirroring. Three policy cells plus both context cells are complete; nine policy cells and final analysis/publication/cleanup remain.
+
+
+## User pause — 2026-09-26 06:18 UTC
+
+The user requested “Pause gpu work now” and “Stop now just don't lose work.”
+All experiment/analysis work is stopped. Resume only on explicit user request.
+
+- Local rtx2080ti pause flag was set at06:18:00UTC. Operator sent SIGINT to supervisor54154 through tmux MCP. Supervisor state is `interrupted`, exit143, ended06:18:25.227835UTC. The D2/p0 attempt is interrupted with exit-2 and120 saved request records. Do not treat that partial cell as completed.
+- Verified no remaining groups54154/54155/70171/70855 and no project launcher, benchmark or llama-server processes. RTX2080Ti:0% utilization,687MiB/11264MiB baseline allocation, no compute apps. `/root/policy_operator` completed and relinquished ownership. Root's concurrent read-only check found the launcher absent and sent no additional signal.
+- Three D1 policy cells and both context cells remain complete. Interrupted attempt: `w1ax-diagnostic-suite-20260926-development-d2-pmin-0p0-a1`; raw files, suite/progress, supervisors, tmux panes and frozen source remain intact. Completed-cell mirrors, transfer hashes and local audits remain under ignored main-checkout `runs/w1ax-analysis-mirror/`. No artifact, worktree or branch was deleted.
+- Published work through `5ac1348` is preserved on main and w1ax-suite; this pause checkpoint is being committed and pushed to both. The existing w1ax-suite worktree remains available. No QAT training or reserved-final evaluation occurred.
+- If resumed, recheck host registry/pause state and GPU, inspect the interrupted attempt and frozen suite progress, and use a fresh supervisor/attempt without overwriting the preserved partial data. Nine policy cells remain unfinished, followed by final full-grid analysis/reporting and cleanup. Do not start these while paused.
