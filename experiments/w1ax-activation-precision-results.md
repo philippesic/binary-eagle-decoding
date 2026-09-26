@@ -520,6 +520,25 @@ revision `d0724427b`, which is not its ancestor. Their historical results remain
 separate; they are not substituted for new measurements. FP16, Q8_0 and Q4_0
 mandatory controls are present throughout the primary and diagnostic matrices.
 
+## Confidence-threshold interpretation
+
+In frozen diagnostic runtime `feba15698`, the EAGLE3 draft sampler retains
+at most ten candidates, normalizes their probabilities, chooses the highest
+candidate and rejects it only when its probability is strictly below p_min.
+This is top-10-normalized confidence, not full-vocabulary probability. The
+target's greedy temperature does not set this separate draft probability to one.
+For finite valid logits, the maximum probability among at most ten candidates
+is at least 0.1, so floors 0 and 0.1 do not reject it; floor 0.3 remains distinct.
+The implementation is in `common/speculative.cpp` (sampler setup and draft
+selection), `common/sampling.cpp` and `src/llama-sampler.cpp` of that runtime.
+
+The completed D1/p0 and D1/p0.1 cells have identical raw IDs and speculative
+counter dictionaries for all 960 paired requests, consistent with this sampler
+contract. Their timing differences do not establish a benefit from changing
+that floor. All twelve predeclared configurations are retained; final policy
+selection remains pending the full grid. Individual candidate confidence values
+were not inspected in these uninstrumented cells.
+
 ## Measurement limits
 
 Round-level proposal IDs, emissions and confidence-stop decisions are available
