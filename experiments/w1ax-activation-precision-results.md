@@ -49,7 +49,8 @@ use that same verifier and its unchanged target sampling path.
   observed tensor/shape group; its full invocation histogram has 73 rows.
   Identical-input replay completed 147 × 4 native W1Ax operators with scalar
   output parity, and a separate assertion run passed exact A8/A4 INT32 dots
-  on those real inputs. The diagnostic assertion requires CUDA graphs disabled;
+  on those real inputs. A later conventional-A4 assertion pass also covered all
+  147 real captures and every raw integer output. The diagnostic assertion requires CUDA graphs disabled;
   it is excluded from timing.
 - One frozen 32-token request per mode gave identical raw CPU-draft and
   CUDA-draft token IDs for A1/A4/A8/A16, with the FP16 target on GPU in both
