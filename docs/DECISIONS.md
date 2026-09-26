@@ -58,3 +58,21 @@ selected and the active W1Ax goal remains unchanged.
   running potentially redundant `p_min=0.1` trials. The full Cartesian policy
   grid is costly; any scope or grid amendment must be recorded before selection,
   not silently substituted for the requested primary matrix.
+
+## Literature adjustments (2026-09-25)
+
+The [primary-source cross-reference](../experiments/research-cross-reference-2026-09-25.md)
+updates the advice above without opening a new goal or changing the frozen
+protocol. Favor paired released **DSpark with DFlash control** if a later
+architecture screen is chosen. Treat target-greedy CE as a bounded hypothesis,
+not a proven optimum; the failed draft-KL pilot does not establish its cause.
+Structured scales and learned thresholds remain alternative representation
+candidates whose kernel costs must be measured. Preserve the single 500-step /
+45-minute QAT run; optional objective-control or refresh arms remain unapproved
+additional scope, not an existing training budget.
+
+Full-round instrumentation, alignment/support audits, same-device FP16/Q4_0
+anchors and source-supported graph/cap experiments retain priority. Any later
+policy must account for context and batch cost, and any stochastic theory must
+match the actual native target-sample-and-match verifier. Literature supports
+these checks; it supplies no local W1A1 speedup or missing timing measurements.

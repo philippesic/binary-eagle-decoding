@@ -131,3 +131,22 @@ context and both ordinary FP16 EAGLE and Q4_0 EAGLE draft anchors for throughput
 The Q4_0 anchor must use the same FP16 target and verifier as the trained
 candidate. Compare portable and SM75 binary-MMA dispatch only after both pass
 correctness on the actual 2080 Ti.
+
+## Primary-source clarification (2026-09-25)
+
+The [literature cross-reference](research-cross-reference-2026-09-25.md) retains
+this single 500-step/45-minute pilot. The original-draft KL objective was a
+legitimate compression proxy that failed the observed acceptance gate; its
+causal contribution is unmeasured. Target-argmax CE plus a fixed regularizer
+is a deliberately simple greedy diagnostic, not an established best loss.
+Capture target probabilities/support mass for diagnostics without adding a
+loss search. A future extra hard-versus-soft target arm or training-state
+refresh requires its own scoped decision; advisory alternatives do not expand
+this budget.
+
+For any later body QAT, EAGLE-3 motivates predicted-state recurrence with
+matching masks/positions, not mandatory target-feature regression. Do not
+interpret the earlier phrase “recurrent/alignment loss” as requiring target
+hidden-state MSE. The actual pinned training path needs an implementation audit.
+Keep the forward rule, STE and exporter fixed in the first supervision test;
+clipped gradients and recomputed scales are not established causes of failure.

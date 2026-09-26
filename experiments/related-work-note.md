@@ -1,6 +1,6 @@
 # Focused related-work check
 
-**Date:** 2026-09-24. This is a bounded review of primary papers and official
+**Date:** 2026-09-24; cross-reference corrected 2026-09-25. This is a bounded review of primary papers and official
 project artifacts, not an exhaustive novelty or patent search.
 
 The defensible project claim is specific: evaluate an EAGLE-3 drafter with
@@ -26,8 +26,8 @@ Prior work sets important boundaries:
   EAGLE drafter is quantized. Our observed loss has precedent, though our
   target/drafter and W1A1 coverage differ.
 - [Speculative Decoding Meets
-  Quantization](https://arxiv.org/html/2505.22179v1) implements optimized
-  quantization kernels for EAGLE and discusses the verification cost of trees.
+  Quantization](https://arxiv.org/html/2505.22179v1) evaluates a quantized **target with an FP16 EAGLE draft** (§3.1), not a
+  quantized EAGLE drafter, and discusses the verification cost of trees.
   Our comparisons must include verifier time and committed tokens, not only
   draft-kernel latency.
 - [XNOR-Net](https://arxiv.org/abs/1603.05279) establishes binary
@@ -45,6 +45,14 @@ its entire codebase, so novelty remains provisional.
 
 Practical implications: preserve target precision within each comparison;
 report accepted draft tokens/round separately from total emitted tokens/round;
-and label native operand precision explicitly. When hardware access permits,
-an actual W4A16 drafter baseline would complement the project's W4A4/W8A8
-numerical simulations, which are not native INT4/INT8 timings.
+and label native operand precision explicitly. The later RTX 2080 Ti suite now includes native W4A4/W8A8 and Q4_0/Q8_0
+controls; see the [measured synthesis](rtx2080ti-synthesis.md). They retain
+distinct numeric contracts and must not be conflated with these papers'
+quantized-target settings.
+
+The [2026-09-25 cross-reference](research-cross-reference-2026-09-25.md)
+updates the seven-category recommendations using primary sources and versioned
+implementation checks. It distinguishes DSpark/DFlash reference quality from
+one-bit robustness, W1A8/W1A16/ternary literature from W1A1, and native target
+matching from classical rejection correction. No literature result substitutes
+for the current same-device acceptance and complete-round gates.

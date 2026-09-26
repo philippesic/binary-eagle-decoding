@@ -94,3 +94,21 @@ manifest, exact commands, prompt manifest, counts, and timing data. These files
 are ignored by Git. Put compact reports and links to preserved raw artifacts in
 `experiments/`; record storage locations and hashes when moving artifacts.
 Never substitute missing measurements with zero or fabricated estimates.
+
+## Verifier and service-metric clarification
+
+The [primary-source audit](../experiments/research-cross-reference-2026-09-25.md#7-evaluation-name-the-actual-verifier-and-service-metric)
+distinguishes classical probability-ratio/residual sampling from the pinned
+native server's target-sample-and-match path. At a reached prefix, a deterministic
+draft token d matches a target draw with probability p(d); independent draft
+sampling from q gives sum(p*q). The overlap sum(min(p,q)) belongs to the
+ratio/residual algorithm. These are different acceptance quantities; specify
+which rule an evaluator uses before applying a training objective or formula.
+Algorithmic target-distribution preservation assumes correct conditional rows,
+state and randomness, and does not resolve the local floating-point parity issue.
+
+Concurrency-one request/decode token rates are not maximum online serving
+capacity. Any later capacity claim needs fixed arrival/load assumptions, latency
+tails and resource accounting. Context and batch size jointly affect the cost
+tradeoff; no universal “more batching helps/hurts speculation” rule is assumed.
+The current study's workload and mandatory measurements remain unchanged.

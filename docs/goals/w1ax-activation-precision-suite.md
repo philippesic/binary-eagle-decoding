@@ -87,3 +87,38 @@ topic families and final has ten. Advisory findings and pending options are
 recorded in `docs/DECISIONS.md`; the frozen primary study, QAT budget, final-set
 reservation and next actions above remain unchanged. No new GPU state was
 verified. Documentation link/whitespace checks precede integration into main.
+
+## Research cross-reference checkpoint (2026-09-25)
+
+The user now requests web research to cross-reference and revise the seven
+local analyses. Reuse the seven Astra-high reviewers for bounded primary-source
+checks; they write only isolated staging reports. The orchestrator owns
+document integration in `/tmp/binary-eagle-cross-reference-20260925`, branch
+`research/cross-reference-20260925`. Compare literature's actual precision,
+architecture, verifier and hardware with this project; do not treat external
+speedups as local measurements. Preserve the active W1Ax goal and frozen
+protocol pending any explicit later research decision. No GPU run is planned.
+
+Cross-reference complete: all seven reviewers returned primary-source checks.
+The consolidated [evidence/revision record](../../experiments/research-cross-reference-2026-09-25.md)
+and seven original reports now distinguish supported advice, narrowed claims
+and rejected inferences. The original local review was integrated/pushed as
+`b7ea617`; its temporary worktree and branch were removed. This follow-up is
+documentation-only; no experiment, model, runtime gitlink or frozen protocol
+changed. Development/final prompt contents were not used for new selection.
+The next project action remains suite execution/analysis under the current
+owner and run checkpoint above.
+Review-stage notes remain under `/tmp/binary-eagle-cross-reference-reports-20260925/`;
+all decision-bearing evidence and source versions are preserved in the repository.
+
+Validation completed: 17 Markdown files, 75 local links and eight section
+anchors checked; `git diff --check` passed. Architecture and evaluation
+reviewers checked the integrated revisions; their concrete wording corrections
+were applied. All seven review assignments are complete. Integration is
+documentation-only; no model tests or GPU checks were run.
+
+Integration preserved concurrent suite checkpoint commits `3f1b917` and
+`57ea68b` by rebasing the documentation branch onto current main. The literature
+review did not inspect, interrupt, or assume ownership of the recorded GPU run.
+Its source/performance baseline remains explicit, pending the suite owner's
+sealed result.

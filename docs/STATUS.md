@@ -12,6 +12,13 @@ both ordinary FP16 EAGLE and Q4_0 EAGLE drafts under the same target/verifier;
 alternative drafter architectures are a later research direction. No new
 QAT run has begun.
 
+**Concurrent suite progress:** the latest [goal checkpoint](goals/w1ax-activation-precision-suite.md)
+records W1Ax implementation, 88-case SM75 gates, real-input replay and the
+historical eight-path matrix in progress. Consult that checkpoint for current
+run ownership, paths and stop instructions. These records were preserved during
+integration of the literature review; its authors did not operate or revalidate
+that GPU run.
+
 Ubuntu 24.04 WSL2 and SSH are reachable through the shared host registry. The
 RTX 2080 Ti (SM75) passed five native W1A1 CUDA backend
 cases, a standalone 21-case/880-dot binary-MMA probe, and both integrated
@@ -130,8 +137,9 @@ First establish the [all-layer W1Ax activation-precision
 matrix](../experiments/w1ax-activation-precision-plan.md) on the 2080 Ti,
 including W1A16/W1A8/W1A4 and matched FP16, Q8_0, Q4_0, W1A1 anchors. The
 protocol separates acceptance, identical-input operator cost, complete EAGLE
-round cost, and end-to-end serving rate. It is planned, not yet implemented or
-run. Use its quality evidence to guide the [QAT revisit
+round cost, and end-to-end serving rate. Implementation and focused SM75 checks have since progressed in the
+linked goal checkpoint; the matched serving comparison and broader diagnostics
+remain to be completed and sealed by the suite owner. Use its quality evidence to guide the [QAT revisit
 plan](../experiments/qat-revisit-plan.md): audit
 drafter-state/target-verifier alignment and target probability mass outside the
 draft vocabulary before training, then test one bounded target-aligned recipe
@@ -149,4 +157,10 @@ target-aligned QAT capture, unused native cache-catch-up graph work, genuine
 early draft caps, shared activation packing, structured scales, and a later
 DFlash/DSpark quality screen as bounded opportunities. These are advisory
 findings, not new performance results or changes to the active W1Ax protocol.
-No GPU work or web search was performed.
+The initial review performed no GPU work or web search. A subsequent
+[primary-source cross-reference](../experiments/research-cross-reference-2026-09-25.md)
+revised the seven reports: DSpark becomes the lead later architecture candidate
+with matched DFlash control; hard CE and structured scales remain hypotheses;
+native sample-and-match is distinguished from probability-ratio verification.
+The current W1Ax goal, one-run QAT budget and sealed final set are unchanged.
+This literature review produced no new model or GPU result.
