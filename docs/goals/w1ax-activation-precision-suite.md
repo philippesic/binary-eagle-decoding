@@ -1,7 +1,7 @@
 # Goal: all-layer W1Ax activation-precision suite on RTX 2080 Ti
 
 **Opened:** 2026-09-25
-**State:** active after user-authorized resume; three policy cells complete, D2/p0 attempt 2 running
+**State:** active after user-authorized resume; four policy cells complete, D2/p0.1 running
 **GPU owner:** `/root/policy_operator`, under successor chat `01a0dbfc-6f9b-76e1-895d-1a617ad45e60`
 
 ## Objective
@@ -481,3 +481,11 @@ All experiment/analysis work is stopped. Resume only on explicit user request.
 - Resume environment snapshot `resume-environment.json` is in the local pre-resume checkpoint and new remote supervisor directory. Idle snapshot: driver610.74, GPU P8,11264MiB total,10454MiB free/574MiB used,300MHz clocks,18.04W/300W; WSL kernel6.18.33.2. This is a distinct run epoch after the user pause. The lower idle allocation is not a measured model-memory improvement.
 - Continue all nine unfinished policy cells with the same frozen runner. Operator mirrors five completed artifacts and transfer hashes at each boundary. Local `runs/w1ax-analysis-mirror/audit_policy_cell_resume.py` accepts later attempt numbers; original interim wrapper remains intact. After timing ends, run the published official full-grid helper separately with2000 resamples/seed42; it selects the successful a2 and excludes interrupted a1. Preserve output differences and dual-anchor/fixed-versus-selected comparisons.
 - Pause procedure remains immediate local pause flag, interrupt verified remote_job supervisor, verify launcher/benchmark/server groups stop, then query explicit WSL nvidia-smi. No QAT training or reserved-final evaluation is authorized or started.
+
+
+## Resumed D2/p0 complete — 2026-09-26 18:53 UTC
+
+- D2/p0 attempt 2 completed 960/960 with a complete report; interrupted a1 remains separate at 120 records. Five completed artifacts have matching remote/local hashes and saved transfer verification. Records SHA256 `2a125f417f0d50a00265cca54670e572bf0017056ad40dfa8f4def7322f3461d`; local `interim-audit-v2.json` SHA256 `817ff54dbe47fb0e9ac1ef909fc37da7defb5f4f5cafbda1843953fb5c579399`. The resume-aware local wrapper passed pairing, hash, counter, policy and report-dispatch checks.
+- All seven speculative paths agree with FP16/Q4_0 on all 120 paired requests. All differ from target-only on the same five repeated code-search-and-order-02 requests, first at index 9 (22990 versus 11424). This is a new measured output difference; its cause remains unestablished.
+- Decode rates A16/A8/A4/A1 are 41.708/49.224/48.274/48.732 tok/s, versus FP16 82.327 and Q4_0 85.304. Target-only is 65.882 tok/s, 1.090 times the pre-pause D1/p0 control. Request settings, precision, platform and numerical variant environments are unchanged; only TMPDIR differs between those environment records. Record this observed timing-epoch shift when interpreting exploratory cross-policy selections; do not infer its cause or attribute all absolute changes to D.
+- D2/p0.1 started automatically and had 15 records at 18:50 UTC. Supervisor/launcher remains 875/876; benchmark PGID4415 and server PGID4507 at that snapshot. Operator retains sole GPU ownership, with clean logs. Four policy cells are complete; eight remain, followed by full-grid analysis/publication and final process/GPU cleanup.

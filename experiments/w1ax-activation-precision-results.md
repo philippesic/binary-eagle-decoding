@@ -1,6 +1,6 @@
 # All-layer W1Ax activation precision on RTX 2080 Ti
 
-**State:** primary matrices, operator/round/profile/streaming/context diagnostics complete; development policy sweep resumed after a user pause, with three cells complete.
+**State:** primary matrices, operator/round/profile/streaming/context diagnostics complete; development policy sweep resumed after a user pause, with four cells complete.
 **Protocol:** [frozen W1Ax study](w1ax-activation-precision-plan.md).
 **Hardware:** NVIDIA RTX 2080 Ti, SM75, 11,264 MiB VRAM under Ubuntu 24.04 WSL2.
 
@@ -554,6 +554,25 @@ total accepted drafts falls. No-proposal iterations are outside that native
 round denominator, so this ratio alone does not demonstrate better serving
 quality or throughput. Final policy conclusions still await the complete grid.
 
+## Timing epochs after the pause
+
+D2/p0 attempt 2 completed after the user pause and host reconnection. Its
+speculative paths agree with each other on all 120 paired requests, but all
+seven differ from target-only on code-search-and-order-02 at position 9 in
+each repetition (22990 versus 11424). The cause is unestablished. Records:
+`results/w1ax-diagnostic-suite-20260926-development-d2-pmin-0p0-a2/records.json`
+within the runner, SHA256
+`2a125f417f0d50a00265cca54670e572bf0017056ad40dfa8f4def7322f3461d`.
+
+Its target-only decode rate is 65.882 tok/s versus 60.440 in pre-pause D1/p0,
+an observed 1.090× shift even though draft policy is inoperative for that
+control. Model/binary hashes, target request settings, precision, platform and
+numerical environment selectors match; the recorded temporary directory differs.
+The cause of the timing shift is not established. Within-cell FP16/Q4_0 ratios
+remain matched comparisons. Cross-cell absolute rates and development-selected
+policies span distinct timing epochs and do not isolate policy effects; paired
+bootstrap intervals do not account for unmeasured systematic epoch changes.
+
 ## Measurement limits
 
 Round-level proposal IDs, emissions and confidence-stop decisions are available
@@ -568,5 +587,5 @@ probability mass. No trained-QAT or reserved-final result is claimed.
 
 ## Outstanding measurements
 
-The twelve-setting D/p_min development policy grid resumed after three complete cells. D2/p0 runs as attempt 2; the interrupted attempt retains 120 saved requests and is excluded from complete-cell comparisons. Do not treat the historical
+The twelve-setting D/p_min development policy grid has four complete cells. D2/p0 completed as attempt 2; the interrupted attempt retains 120 saved requests and is excluded from complete-cell comparisons. Do not treat the historical
 screen as a final trained-QAT result or use the reserved 24-prompt final set.
