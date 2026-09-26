@@ -15,3 +15,8 @@ runtime comparisons on each relevant GPU.
 The completed [RTX 2080 Ti synthesis](rtx2080ti-synthesis.md) summarizes
 the full precision suite; [detailed provenance](rtx2080ti-quantization-suite.md)
 preserves paired rates, acceptance, commands, raw hashes, and execution paths.
+
+A separate [seven-category local research review](research-review-2026-09-25.md)
+collects advisory analyses of QAT, architectures, throughput policies, graph
+optimizations, precision, data and evaluation. It contains proposals and source
+audits, not new GPU measurements.
