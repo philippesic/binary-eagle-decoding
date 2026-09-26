@@ -20,7 +20,7 @@ The FP16 target GGUF SHA256 is
 `05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6`.
 The shared all-nine W1A1 draft GGUF SHA256 is
 `098e1ecbb299aa16e2c968663acc49e60c0fcf16b053766d9f558114f79d011c`,
-matching the prior all-row source audit. The benchmark uses published llama.cpp
+matching the prior all-row source audit. The primary benchmark uses published llama.cpp
 fork commit `3792aa79c` and project checkout `dc4ccdd`, CUDA 12.8 on SM75,
 F16 KV, context 2048, concurrency one, D=5, confidence floor zero, greedy
 decoding, two warmups, five measured repetitions, and one server at a time.
@@ -58,6 +58,16 @@ use that same verifier and its unchanged target sampling path.
   request. `--spec-draft-device none` was required to keep the reference
   draft on CPU; setting its GPU layer count to zero alone still dispatched the
   custom operation on CUDA.
+
+The original 147 replay inputs retain tensor, shape and sequence provenance;
+their request/round attribution is unavailable. A later separate three-request
+capture preserved 4,195 request-associated operator events: 4,168 overlap one
+recorded CPU round interval each, and 27 fall outside rounds. Its 88 round rows
+reproduce each response after one leading pre-round token. This validates the
+later capture's timestamp-based association, not retrospective attribution of
+the original replay inputs or exact CUDA activity attribution. The attributed
+manifest is `runs/w1ax-project-src/runs/w1ax-attributed-capture-20260926/manifest.json`,
+SHA256 `282e840860a58dd64928d8a00825a6cd88404cb300365b202d662dfa4472b34b`.
 
 Real-input replay measured the complete ggml operation, including activation
 quantization/packing, native dot, output, graph dispatch and synchronization.
@@ -197,6 +207,22 @@ fused. Matching graph-disabled unprofiled replay showed median per-capture
 profiler wall overhead factors 1.010/1.123/1.157/1.079 for A16/A8/A4/A1.
 Do not substitute these traced times for the uninstrumented serving results.
 
+The preserved 435 head comparisons also report top-k overlap and logit margins
+on the same 145 correlated head rows per candidate. Top-k overlap is the set
+intersection size divided by k, relative to same-binary-weight A16:
+
+| Candidate | Mean top-5 overlap | Mean top-10 overlap | Median top-1 logit gap |
+| --- | ---: | ---: | ---: |
+| A8 | 98.21% | 98.28% | 0.4980 |
+| A4 | 75.45% | 75.86% | 0.4865 |
+| A1 | 38.48% | 38.69% | 0.2872 |
+
+The top-1 logit gap is the largest minus second-largest logit. The A16
+reference's median gap is 0.4637. A larger candidate gap does not
+establish correct ranking or whole-model acceptance. Full nonempty distributions
+are in `runs/w1ax-anchor-analysis-20260926/report.json`, SHA256
+`721708f3a669b0a935c8ad04223269da9b88212bf241b257a3bb0e2da62f0186`.
+
 ## Activation error on captured inputs
 
 All 588 W1Ax replay rows have validated element counts and activation
@@ -263,6 +289,26 @@ round counters reconcile exactly. Full trace counts additionally include
 The primary tables' acceptance denominators are native verification rounds.
 FP16 and Q8_0 each accepted five tokens that were not emitted at stopping
 boundaries; counterfactuals use accepted tokens actually emitted.
+
+The historical trace also preserves actual proposal-length distributions and
+accepted-prefix depth counts. In the table below, depth d means
+P(accepted prefix length >= d | proposed length >= d), not next-token acceptance
+given that the previous d-1 proposals were accepted. Mean proposal lengths
+include the legitimate no-proposal trace events:
+
+| Draft | Mean proposal length | Prefix reaches depth 1 | Depth 2 | Depth 3 |
+| --- | ---: | ---: | ---: | ---: |
+| FP16 | 4.895 | 59.265% | 33.284% | 15.546% |
+| Q4_0 | 4.901 | 60.148% | 34.873% | 15.813% |
+| W1A16 | 4.891 | 10.574% | 0.076% | 0% |
+| W1A8 | 4.891 | 10.000% | 0.151% | 0% |
+| W1A4 | 4.892 | 4.051% | 0.072% | 0% |
+| W1A1 | 4.888 | 5.403% | 0.145% | 0% |
+
+All four W1Ax modes also had zero accepted prefixes reaching depths four/five.
+Exact eligible/accepted counts, emitted totals and all eight paths remain in the
+round-analysis artifact below. These summaries concern the instrumented
+historical requests; they do not supply per-round development/policy traces.
 
 All spans passed bounds, union, overlap and unclamped-residual checks: zero
 invalid, nested, overlapping, out-of-bounds or clamped-residual rows. Mean CPU
@@ -405,6 +451,26 @@ Raw SSE and telemetry: runner `results/w1ax-streaming-20260926/`. SHA256:
 `records.json` `25da039225bc9c39499d898645f7bb2e88ec0b402319cdc0f451e0e26df4351d`;
 `manifest.json` `e23f299df5206120a5d82943972348d20f78d01da38fe6cd8c6f2d32502883ec`.
 
+Separate allocation records are available from the completed D1/p0 cell,
+repetition zero. Its server logs report a common CUDA target model buffer of
+7,672.62 MiB and the following draft model buffers:
+
+| Draft | GGUF file bytes | CUDA draft model buffer MiB |
+| --- | ---: | ---: |
+| FP16 | 442,700,800 | 416.29 |
+| Q8_0 | 238,105,600 | 221.17 |
+| Q4_0 | 128,988,160 | 117.11 |
+| W1Ax (each mode) | 33,774,784 | 26.30 |
+
+All speculative paths log CUDA compute-buffer reservations of 77.01, 371.50,
+604.08 and 92.01 MiB in chronological order; target-only logs 77.01 MiB.
+These rounded reservation records do not establish simultaneous allocations
+to sum, per-operator scratch measurements or allocator high-water marks. Raw source:
+runner `results/w1ax-diagnostic-suite-20260926-development-d1-pmin-0p0-a1/rep-00/<variant>/server.log`.
+Local preserved extraction `runs/w1ax-analysis-mirror/completion-audit/preserved-diagnostics-audit.json`
+contains all source-log hashes and allocation lines, SHA256
+`9e421ae35e0beee8dfdce9b0a4161d944f212f12663aba873dc64c4d4308445d`.
+
 ## Full context/output-cap matrix
 
 Both context cells completed 360/360 requests (720 total): nine frozen prompts,
@@ -453,6 +519,18 @@ W1Ax runtime `feba15698` lacks the W8A8/W4A4 loaders/operators from separate
 revision `d0724427b`, which is not its ancestor. Their historical results remain
 separate; they are not substituted for new measurements. FP16, Q8_0 and Q4_0
 mandatory controls are present throughout the primary and diagnostic matrices.
+
+## Measurement limits
+
+Round-level proposal IDs, emissions and confidence-stop decisions are available
+from instrumented diagnostics. Uninstrumented requests preserve aggregate
+counters and raw response IDs; configured p_min and short proposal totals do
+not identify individual stop causes. Exact per-round CUDA attribution,
+per-operator scratch high-water marks and primary per-variant clock/power
+telemetry were not obtained. Later capture/profile/memory diagnostics retain
+the specific scope limits above and do not recover those missing measurements.
+The emitted-vocabulary audit measures observed ID coverage, not target
+probability mass. No trained-QAT or reserved-final result is claimed.
 
 ## Outstanding measurements
 
