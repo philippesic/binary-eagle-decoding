@@ -130,6 +130,11 @@ request reached the 128-token cap. The primary build and policy were unchanged.
 | W1A4 | 44.68 | 43.26 | 0.047 | 0.584× | 0.532× |
 | W1A1 | 45.36 | 43.91 | 0.055 | 0.593× | 0.540× |
 
+Paired prompt/repetition bootstrap 95% decode-ratio intervals versus Q4_0
+were A16 0.343–0.368, A8 0.488–0.523, A4 0.509–0.555, and A1 0.520–0.559.
+Against FP16 they were 0.375–0.404, 0.534–0.575, 0.558–0.608, and
+0.570–0.613, respectively (2,000 resamples, seed 42).
+
 The same acceptance loss persists with A16: restoring activation precision does
 not recover the all-layer binary draft's quality. None of the W1Ax paths
 approaches either throughput anchor on this development set.
