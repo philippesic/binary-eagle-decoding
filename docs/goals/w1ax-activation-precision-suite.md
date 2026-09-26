@@ -2,7 +2,7 @@
 
 **Opened:** 2026-09-25
 **State:** active; primary matrices sealed, diagnostics in progress
-**GPU owner:** orchestrator; bounded diagnostic build/gate delegated to `/root/gpu_monitor`
+**GPU owner:** orchestrator; attributed capture diagnostic running
 
 ## Objective
 
@@ -130,3 +130,10 @@ sealed result.
 - The development matrix finished 960/960 requests with exit 0 at 01:53:03 UTC. All four W1Ax dispatch gates passed; all seven speculative variants matched target-only raw IDs on all 120 paired requests. Rates and hashes are in the linked result report. PGID 29140 was empty afterward and the GPU was at 0% with 687 MiB allocated.
 - Exact primary binaries and all dependent libraries were copied to remote `runs/w1ax-primary-binaries-3792aa79c/bin/`; its `SHA256SUMS` contains ten file hashes. Primary measurements retain runtime `3792aa79c` and project `dc4ccdd`.
 - `/root/gpu_monitor` has bounded exclusive GPU ownership for the diagnostic rebuild to published runtime `feba15698` and the 88-case CUDA gate only. New supervisors are `runs/w1ax-diagnostic-build-20260926/` and `runs/w1ax-diagnostic-op-gate-20260926/`. The runtime adds opt-in capture attribution and raw verifier logits; numerical kernels are unchanged. Root will resume ownership after the worker verifies stopped processes and idle GPU. No QAT-final evaluation or training has occurred.
+
+## Diagnostic runtime checkpoint
+
+- Published runtime `feba1569848e74996651a42a9751f8afa5958b1d` built successfully; `runs/w1ax-diagnostic-op-gate-20260926/` passed 88/88 CUDA cases with exact-dot assertion and exit 0. Both worker process groups stopped and ownership returned to root. The ten-file preserved primary checksum manifest verified. Parent gitlink is published in `019aa0c`.
+- Supervised `runs/w1ax-project-src/runs/w1ax-verifier-divergence-supervisor-20260926/` exited 0. At historical reasoning-02 position 109, target-only raw logits favor token 12 over 29208 by 0.00348663; the emitted speculative verifier row favors 29208 over 12 by 0.00539780. The draft token is accepted because it matches the target verifier's own top choice. A preceding hypothetical row is explicitly not sampled and not emitted. This identifies a target ranking reversal, not its underlying numerical cause.
+- CPU-only vocabulary audit `runs/w1ax-vocab-coverage-20260926/` exited 0: 22,460 of 22,800 target-only emitted IDs across historical/development requests are in the 32,000-entry draft vocabulary (98.51%). This is emitted-ID coverage, not target probability mass or acceptance. Report SHA256 `c341f882579b85b116c93e57d5b436a58565940eb17e0b69cf232a9846a7e922`.
+- Root started `runs/w1ax-project-src/runs/w1ax-attributed-capture-20260926/` via tmux MCP `%12`; three short historical requests collect capture timestamps, per-request file inventories and round association. Do not run another GPU job until it stops. The extended replay harness built under `runs/w1ax-replay-anchor-build-20260926/` with exit 0; matched FP16/Q8/Q4/cast replay is next.
