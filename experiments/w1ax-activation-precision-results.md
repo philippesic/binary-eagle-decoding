@@ -1,6 +1,6 @@
 # All-layer W1Ax activation precision on RTX 2080 Ti
 
-**State:** primary matrices, operator/round/profile/streaming/context diagnostics complete; development policy sweep resumed after a user pause, with five cells complete.
+**State:** primary matrices, operator/round/profile/streaming/context diagnostics complete; development policy sweep resumed after a user pause, with six cells complete.
 **Protocol:** [frozen W1Ax study](w1ax-activation-precision-plan.md).
 **Hardware:** NVIDIA RTX 2080 Ti, SM75, 11,264 MiB VRAM under Ubuntu 24.04 WSL2.
 
@@ -554,6 +554,15 @@ total accepted drafts falls. No-proposal iterations are outside that native
 round denominator, so this ratio alone does not demonstrate better serving
 quality or throughput. Final policy conclusions still await the complete grid.
 
+D2/p0.3 also produces differences between the throughput anchors: FP16 and
+Q4_0 disagree on 10/120 paired requests. W1A1 matches target-only in that cell
+but differs from each anchor on 10/120; the other W1Ax modes also have
+anchor differences. Full first-divergence records are retained under runner
+`results/w1ax-diagnostic-suite-20260926-development-d2-pmin-0p3-a1/`, records
+SHA256 `58a8802c57065d9b20aa8f0a7a5990a9547ac87067e4abb11cbb82abf4bdf107`.
+Their causes remain unestablished; these ratios are timing observations with
+different outputs.
+
 ## Timing epochs after the pause
 
 D2/p0 attempt 2 completed after the user pause and host reconnection. Its
@@ -587,5 +596,5 @@ probability mass. No trained-QAT or reserved-final result is claimed.
 
 ## Outstanding measurements
 
-The twelve-setting D/p_min development policy grid has five complete cells. D2/p0 completed as attempt 2; the interrupted attempt retains 120 saved requests and is excluded from complete-cell comparisons. Do not treat the historical
+The twelve-setting D/p_min development policy grid has six complete cells. D2/p0 completed as attempt 2; the interrupted attempt retains 120 saved requests and is excluded from complete-cell comparisons. Do not treat the historical
 screen as a final trained-QAT result or use the reserved 24-prompt final set.

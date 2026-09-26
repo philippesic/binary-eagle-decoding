@@ -1,7 +1,7 @@
 # Goal: all-layer W1Ax activation-precision suite on RTX 2080 Ti
 
 **Opened:** 2026-09-25
-**State:** active after user-authorized resume; five policy cells complete, D2/p0.3 running
+**State:** active after user-authorized resume; six policy cells complete, D3/p0 running
 **GPU owner:** `/root/policy_operator`, under successor chat `01a0dbfc-6f9b-76e1-895d-1a617ad45e60`
 
 ## Objective
@@ -497,3 +497,11 @@ All experiment/analysis work is stopped. Resume only on explicit user request.
 - Direct D2/p0-a2 versus D2/p0.1-a1 comparison found zero raw-ID or per-request speculative-counter differences across all 960 paired requests. This independently reproduces the effective equivalence of floors 0 and 0.1 under the frozen top-10 draft sampler. Rates differ descriptively; no policy benefit is inferred from those timing differences.
 - A transfer-verification bookkeeping error was caught before local analysis: terminal output truncation shifted positional filename/hash assignment. Operator reread filename-keyed remote hashes and corrected the verification JSON; root checked all five remote/local/local-file hashes match. Result data were unchanged. Future verification must use filename keys, not terminal line position.
 - D2/p0.3 is running, with 72 records at 19:39 UTC. Supervisor/launcher remains 875/876, benchmark PGID7440 and server PGID7977 at the snapshot. Logs clean; operator retains sole GPU ownership. Five policy cells are complete, seven unfinished; final full-grid validation/publication/cleanup still pending.
+
+
+## D2 policy group complete — 2026-09-26 20:24 UTC
+
+- D2/p0.3 a1 completed 960/960. All five filename-keyed transfer hashes matched and the local structural/counter/policy/raw-ID audit passed. Records SHA256 `58a8802c57065d9b20aa8f0a7a5990a9547ac87067e4abb11cbb82abf4bdf107`; local interim audit `ba52c247602ce6c4119395d0be69cdbdaf3cea454b592adb0c9c4c3dfb50e879`.
+- Output differences versus target-only among 120 paired requests: FP16/Q4_0 each10; Q8_0/A16/A8/A4 each5; A1 zero. These sets are not identical: FP16 and Q4_0 differ from each other on10 requests. A16/A8 each differ from both anchors on5; A4 differs from FP16/Q4_0 on15/5; A1 on10/10. Preserve first-divergence evidence; no causal or strict lossless-speedup claim.
+- D2/p0.3 decode rates A16/A8/A4/A1 are43.454/50.018/53.621/54.556 tok/s; FP16/Q4_0 are81.164/83.104 and target-only65.868. Final fixed-versus-selected comparisons still require the remaining grid.
+- D3/p0 a1 started automatically around20:21UTC and reached48 records at20:23UTC. Supervisor/launcher875/876, benchmark PGID10421, server PGID10833 at that snapshot; clean logs. Operator retains sole GPU ownership. Six policy cells are complete; all six D3/D5 cells remain, followed by final full-grid analysis/publication/cleanup.
