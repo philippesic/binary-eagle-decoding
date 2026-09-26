@@ -405,6 +405,46 @@ Raw SSE and telemetry: runner `results/w1ax-streaming-20260926/`. SHA256:
 `records.json` `25da039225bc9c39499d898645f7bb2e88ec0b402319cdc0f451e0e26df4351d`;
 `manifest.json` `e23f299df5206120a5d82943972348d20f78d01da38fe6cd8c6f2d32502883ec`.
 
+## Full context/output-cap matrix
+
+Both context cells completed 360/360 requests (720 total): nine frozen prompts,
+three content categories in each of three context bins, five repetitions and
+eight paths. Native prompt lengths independently confirm the bins: 195–207,
+521–543 and 1131–1171 tokens. Server binary, project/runtime commits and model
+hashes match across caps 32/128. All within-cap comparisons against FP16, Q4_0
+and target-only have identical raw IDs; all cross-cap common prefixes match.
+Cross-cap response lengths differ as expected, so only common prefixes are
+compared there.
+
+Pooled full-request results, including prefill. Each W1Ax ratio pair is versus
+FP16 / Q4_0; the anchor column gives FP16 / Q4_0 request tokens/s:
+
+| Output cap | Context | Anchor request tok/s | W1A16 ratios | W1A8 ratios | W1A4 ratios | W1A1 ratios |
+| ---: | --- | --- | --- | --- | --- | --- |
+| 32 | Short | 52.57 / 54.17 | 0.393 / 0.381 | 0.581 / 0.563 | 0.640 / 0.622 | 0.655 / 0.636 |
+| 32 | Medium | 59.12 / 62.20 | 0.280 / 0.266 | 0.483 / 0.459 | 0.590 / 0.560 | 0.601 / 0.571 |
+| 32 | Long | 44.99 / 47.14 | 0.241 / 0.230 | 0.465 / 0.444 | 0.629 / 0.601 | 0.671 / 0.641 |
+| 128 | Short | 67.93 / 72.36 | 0.376 / 0.353 | 0.539 / 0.506 | 0.584 / 0.548 | 0.593 / 0.556 |
+| 128 | Medium | 71.67 / 77.19 | 0.323 / 0.300 | 0.498 / 0.463 | 0.556 / 0.516 | 0.570 / 0.529 |
+| 128 | Long | 63.41 / 69.40 | 0.295 / 0.269 | 0.488 / 0.445 | 0.581 / 0.531 | 0.602 / 0.550 |
+
+Every W1Ax mode had lower pooled request throughput than both anchors in all
+six cells. This is a small frozen diagnostic workload, not a universal context
+scaling claim. The analysis retains all eight variants, decode rates, native
+prefill durations, HTTP wall distributions, exact output comparisons and
+2,000-resample paired descriptive intervals; only three prompts represent each
+bin.
+
+Remote run IDs within the runner's results directory:
+`w1ax-diagnostic-suite-20260926-context-cap-32-a1` and
+`w1ax-diagnostic-suite-20260926-context-cap-128-a1`. Record SHA256s are
+`d4a8616c1dc8470cc8e1baac2d827a27c567c3a6a82e092a91a842887260d8fe` and
+`30bd817433b3398380665b7c4064e8cd93d56ee1959b6a8604b76d68d3e698d3`.
+Local ignored mirror analysis `runs/w1ax-analysis-mirror/context-matrix-analysis.json`
+uses analyzer revision `4d348cb`; SHA256
+`c84fe5d970168afae89930f7afaee2df9c4919456255f10e9c11ccb0197d51ba`.
+CPU analysis ran locally so it did not compete with the continuing GPU trials.
+
 ## Conditional secondary controls
 
 The plan's optional genuine W8A8/W4A4 same-run controls were unavailable in
@@ -416,6 +456,5 @@ mandatory controls are present throughout the primary and diagnostic matrices.
 
 ## Outstanding measurements
 
-The full nine-prompt context/output-cap matrix and the D/p_min development
-policy grid remain in progress. Do not treat the historical
+The twelve-setting D/p_min development policy grid remains in progress. Do not treat the historical
 screen as a final trained-QAT result or use the reserved 24-prompt final set.
