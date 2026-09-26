@@ -201,7 +201,10 @@ def _trace_span_accounting(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def summarize_variant(rows: list[dict[str, Any]]) -> dict[str, Any]:
+def summarize_variant(
+    rows: list[dict[str, Any]],
+    trace_scope: str = "All provided trace rows; may include warmup task groups because request mapping has not been applied.",
+) -> dict[str, Any]:
     quality = [r for r in rows if r.get("status") != "checkpoint_replay"]
     accepted_values = [r.get("n_accepted") for r in quality]
     proposed_values = [r.get("n_proposed") for r in quality]
@@ -270,13 +273,13 @@ def summarize_variant(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "accepted_per_round": accepted / len(quality) if accepted is not None and quality else None,
         "actual_proposal_lengths": distribution([float(v) for v in lengths]),
         "conditional_acceptance_by_depth": rounds_by_depth,
-        "quality_scope": "All quality-eligible rows in the per-server trace file, including warmup task groups; not measured-request-only because task-ID/request mapping is not validated.",
+        "quality_scope": trace_scope,
         "trace_span_accounting": _trace_span_accounting(rows),
         "cpu_wall_us": {
             "round": distribution(round_values),
             "begin_outside_round": distribution(begin_values),
             "stages": {stage: distribution(values) for stage, values in stage_values.items()},
-            "note": "CPU wall spans across all trace rows, including warmup task groups; named spans may overlap. residual_us is the server-reported remainder and is separately audited in trace_span_accounting. No CUDA event data is present.",
+            "note": f"CPU wall spans across {trace_scope.lower()} Named spans may overlap. residual_us is the server-reported remainder and is separately audited in trace_span_accounting. No CUDA event data is present.",
         },
     }
 
@@ -302,10 +305,18 @@ def summarize_replay(rows: list[dict[str, Any]]) -> dict[str, Any]:
     operator_rows = []
     anchor_rows = []
     head_rows = []
+    fp16_cast_rows = []
+    fp16_cast_head_rows = []
     for i, row in enumerate(rows, 1):
         record_type = row.get("record_type", "operator_replay")
         if record_type == "head_comparison":
             head_rows.append(row)
+            continue
+        if record_type == "fp16_cast_control":
+            fp16_cast_rows.append(row)
+            continue
+        if record_type == "fp16_cast_head_comparison":
+            fp16_cast_head_rows.append(row)
             continue
         if record_type == "anchor_operator_replay":
             for field in ("capture", "sequence", "K", "M", "N", "name", "anchor_format"):
@@ -439,6 +450,8 @@ def summarize_replay(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "anchor_by_layer_shape": anchor_by_layer_shape,
         "w1ax_vs_anchors": w1ax_vs_anchors,
         "head_comparison": _summarize_head_comparisons(head_rows),
+        "fp16_cast_control": _summarize_fp16_cast_controls(fp16_cast_rows),
+        "fp16_cast_head_comparison": _summarize_fp16_cast_heads(fp16_cast_head_rows),
     }
 
 
@@ -483,6 +496,207 @@ def _summarize_head_comparisons(rows: list[dict[str, Any]]) -> dict[str, Any]:
     return {"comparisons": len(rows), "by_candidate_bits": result}
 
 
+def _summarize_fp16_cast_controls(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    groups: dict[tuple[Any, ...], list[dict[str, Any]]] = defaultdict(list)
+    for index, row in enumerate(rows, 1):
+        for field in ("K", "M", "N", "name", "mean_abs_output_difference", "max_abs_output_difference"):
+            if field not in row:
+                raise ValueError(f"fp16 cast control row {index} missing {field}")
+        key = (row["K"], row["M"], row["N"], row["name"], row.get("group"))
+        groups[key].append(row)
+    return {
+        "records": len(rows),
+        "by_layer_shape": [
+            {
+                "K": key[0], "M": key[1], "N": key[2], "name": key[3], "group": key[4],
+                "captures": len({(row.get("capture"), row.get("sequence")) for row in selected}),
+                "mean_abs_output_difference": distribution([
+                    float(row["mean_abs_output_difference"]) for row in selected
+                    if _nonnegative_number(row.get("mean_abs_output_difference"))
+                ]),
+                "max_abs_output_difference": distribution([
+                    float(row["max_abs_output_difference"]) for row in selected
+                    if _nonnegative_number(row.get("max_abs_output_difference"))
+                ]),
+            }
+            for key, selected in sorted(groups.items(), key=lambda item: tuple(str(v) for v in item[0]))
+        ],
+        "scope": "Diagnostic numerical comparison only; not a serving acceptance or throughput metric.",
+    }
+
+
+def _summarize_fp16_cast_heads(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    for index, row in enumerate(rows, 1):
+        if not isinstance(row.get("top1_agree"), bool) or not _nonnegative_number(row.get("top5_set_overlap")):
+            raise ValueError(f"fp16 cast head comparison row {index} has invalid top-k fields")
+        if row["top5_set_overlap"] > 5:
+            raise ValueError(f"fp16 cast head comparison row {index}: top5_set_overlap exceeds 5")
+    return {
+        "comparisons": len(rows),
+        "captures": len({(row.get("capture"), row.get("sequence")) for row in rows}),
+        "top1_agreement_rate": sum(row["top1_agree"] for row in rows) / len(rows) if rows else None,
+        "top5_overlap_fraction": distribution([row["top5_set_overlap"] / 5 for row in rows]),
+        "reference_top1_margin": distribution([
+            float(row["reference_top1_margin"]) for row in rows
+            if _nonnegative_number(row.get("reference_top1_margin"))
+        ]),
+        "cast_top1_margin": distribution([
+            float(row["cast_top1_margin"]) for row in rows
+            if _nonnegative_number(row.get("cast_top1_margin"))
+        ]),
+        "reference_top5_cutoff_margin": distribution([
+            float(row["reference_top5_cutoff_margin"]) for row in rows
+            if _nonnegative_number(row.get("reference_top5_cutoff_margin"))
+        ]),
+        "cast_top5_cutoff_margin": distribution([
+            float(row["cast_top5_cutoff_margin"]) for row in rows
+            if _nonnegative_number(row.get("cast_top5_cutoff_margin"))
+        ]),
+        "scope": "Diagnostic numerical comparison only; not a serving acceptance or throughput metric.",
+    }
+
+
+def _single_server_parallelism(manifest: dict[str, Any], variant: str) -> int:
+    command = manifest.get("commands", {}).get(variant)
+    if not isinstance(command, list) or any(not isinstance(arg, str) for arg in command):
+        raise ValueError(f"cannot validate task mapping for {variant}: manifest command is missing")
+    values = []
+    for index, arg in enumerate(command):
+        if arg in ("--parallel", "-np"):
+            if index + 1 >= len(command):
+                raise ValueError(f"cannot validate task mapping for {variant}: {arg} has no value")
+            values.append(command[index + 1])
+        elif arg.startswith("--parallel="):
+            values.append(arg.split("=", 1)[1])
+    if not values or any(value != "1" for value in values):
+        raise ValueError(f"cannot validate task mapping for {variant}: server concurrency is not explicitly one")
+    return 1
+
+
+def map_measured_trace_rows(
+    trace_rows: list[dict[str, Any]],
+    records: list[dict[str, Any]],
+    repetition: int,
+    variant: str,
+    warmup_requests: int,
+    manifest: dict[str, Any],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Map serial task groups to measured requests, proving each match by raw token IDs."""
+    _single_server_parallelism(manifest, variant)
+    if not isinstance(warmup_requests, int) or isinstance(warmup_requests, bool) or warmup_requests < 0:
+        raise ValueError("manifest policy warmup_requests must be a non-negative integer")
+    selected = [r for r in records if r.get("repetition") == repetition and r.get("variant") == variant]
+    indexed = {}
+    for record in selected:
+        request_index = record.get("server_request_index")
+        if not isinstance(request_index, int) or isinstance(request_index, bool):
+            raise ValueError(f"{variant}/rep-{repetition:02d}: measured record lacks server_request_index")
+        if request_index in indexed:
+            raise ValueError(f"{variant}/rep-{repetition:02d}: duplicate server_request_index {request_index}")
+        indexed[request_index] = record
+    expected_indices = list(range(warmup_requests, warmup_requests + len(selected)))
+    if sorted(indexed) != expected_indices:
+        raise ValueError(
+            f"{variant}/rep-{repetition:02d}: measured server_request_index values do not match "
+            f"warmup offset {warmup_requests} and {len(selected)} records"
+        )
+    measured = [indexed[index] for index in expected_indices]
+    prompt_ids = manifest.get("prompt_ids")
+    if not isinstance(prompt_ids, list) or len(prompt_ids) != len(measured):
+        raise ValueError(f"{variant}/rep-{repetition:02d}: manifest prompt_ids do not match measured record count")
+    for offset, (record, prompt_id) in enumerate(zip(measured, prompt_ids)):
+        if record.get("prompt_id") != prompt_id:
+            raise ValueError(
+                f"{variant}/rep-{repetition:02d}: record order at server_request_index "
+                f"{warmup_requests + offset} disagrees with manifest prompt_ids"
+            )
+
+    if not trace_rows:
+        raise ValueError(f"{variant}/rep-{repetition:02d}: round trace is empty; task mapping cannot be validated")
+    blocks: list[list[dict[str, Any]]] = []
+    seen_task_ids = set()
+    last_start = None
+    last_task_id = None
+    previous_round_end = None
+    for row in trace_rows:
+        if row.get("schema") != TRACE_SCHEMA:
+            raise ValueError(f"{variant}/rep-{repetition:02d}: unexpected trace schema {row.get('schema')!r}")
+        task_id = row.get("task_id")
+        if not isinstance(task_id, int) or isinstance(task_id, bool) or task_id < 0:
+            raise ValueError(f"{variant}/rep-{repetition:02d}: invalid task_id in round trace")
+        start = row.get("round_start_us")
+        end = row.get("round_end_us")
+        if not _nonnegative_number(start) or not _nonnegative_number(end) or end <= start:
+            raise ValueError(f"{variant}/rep-{repetition:02d}: task {task_id} lacks a valid round_start_us")
+        if last_start is not None and start <= last_start:
+            raise ValueError(f"{variant}/rep-{repetition:02d}: trace rows are not chronological")
+        if previous_round_end is not None and start < previous_round_end:
+            raise ValueError(f"{variant}/rep-{repetition:02d}: trace round intervals overlap or interleave")
+        last_start = start
+        previous_round_end = end
+        if task_id != last_task_id:
+            if task_id in seen_task_ids:
+                raise ValueError(f"{variant}/rep-{repetition:02d}: task groups are interleaved")
+            blocks.append([])
+            seen_task_ids.add(task_id)
+            last_task_id = task_id
+        blocks[-1].append(row)
+
+    expected_task_count = warmup_requests + len(measured)
+    if len(blocks) != expected_task_count:
+        raise ValueError(
+            f"{variant}/rep-{repetition:02d}: found {len(blocks)} chronological task groups; "
+            f"expected {warmup_requests} warmups + {len(measured)} measured requests"
+        )
+
+    mapping = []
+    measured_rows = []
+    for task_position, block in enumerate(blocks):
+        task_id = block[0]["task_id"]
+        parent_ids = {row.get("parent_task_id") for row in block}
+        if len(parent_ids) != 1:
+            raise ValueError(f"{variant}/rep-{repetition:02d}: task {task_id} changes parent_task_id")
+        round_indices = [row.get("round_index") for row in block]
+        if round_indices != list(range(len(block))):
+            raise ValueError(f"{variant}/rep-{repetition:02d}: task {task_id} round_index is not contiguous from zero")
+        emitted = []
+        for row in block:
+            token_ids = row.get("emitted_token_ids")
+            if not isinstance(token_ids, list) or any(not isinstance(token, int) or isinstance(token, bool) for token in token_ids):
+                raise ValueError(f"{variant}/rep-{repetition:02d}: task {task_id} has invalid emitted_token_ids")
+            if row.get("n_emitted") != len(token_ids):
+                raise ValueError(f"{variant}/rep-{repetition:02d}: task {task_id} n_emitted disagrees with emitted_token_ids")
+            if row.get("status") != "checkpoint_replay":
+                emitted.extend(token_ids)
+
+        if task_position < warmup_requests:
+            mapping.append({"task_id": task_id, "request_kind": "warmup", "server_request_index": task_position})
+            continue
+        request_index = expected_indices[task_position - warmup_requests]
+        record = indexed[request_index]
+        expected_ids = record.get("generated_token_ids")
+        if not isinstance(expected_ids, list) or any(not isinstance(token, int) or isinstance(token, bool) for token in expected_ids):
+            raise ValueError(f"{variant}/rep-{repetition:02d}: record at server_request_index {request_index} lacks raw generated token IDs")
+        if emitted != expected_ids:
+            raise ValueError(
+                f"{variant}/rep-{repetition:02d}: task {task_id} emitted IDs do not exactly match "
+                f"record {record.get('request_id', request_index)} at server_request_index {request_index}"
+            )
+        measured_rows.extend({**row, "request_id": record.get("request_id"), "prompt_id": record.get("prompt_id")} for row in block)
+        mapping.append({
+            "task_id": task_id, "request_kind": "measured", "server_request_index": request_index,
+            "request_id": record.get("request_id"), "prompt_id": record.get("prompt_id"),
+            "emitted_token_ids_match": True,
+        })
+    return measured_rows, {
+        "status": "validated",
+        "method": "serial chronological task groups aligned to runner server_request_index; measured matches require exact equality of concatenated non-checkpoint-replay emitted_token_ids and records.generated_token_ids",
+        "warmup_tasks_excluded": warmup_requests,
+        "measured_requests_mapped": len(measured),
+        "task_mappings": mapping,
+    }
+
+
 def analyze_run(run_dir: Path, replay_path: Path | None = None) -> dict[str, Any]:
     records_path = run_dir / "records.json"
     if not records_path.is_file():
@@ -490,19 +704,60 @@ def analyze_run(run_dir: Path, replay_path: Path | None = None) -> dict[str, Any
     records = json.loads(records_path.read_text())
     if not isinstance(records, list):
         raise ValueError("records.json must contain an array")
+    manifest_path = run_dir / "manifest.json"
+    manifest = json.loads(manifest_path.read_text()) if manifest_path.is_file() else None
+    if manifest is not None and not isinstance(manifest, dict):
+        raise ValueError("manifest.json must contain an object")
+    trace_enabled = bool(manifest and manifest.get("round_trace_enabled") is True)
+    policy = manifest.get("policy") if isinstance(manifest, dict) else None
+    warmups = policy.get("warmup_requests") if isinstance(policy, dict) else None
     variants = sorted({row.get("variant") for row in records if isinstance(row, dict) and row.get("variant")})
     variant_results = {}
     for variant in variants:
         trace_rows = []
         paths = sorted(run_dir.glob(f"rep-*/{variant}/round-trace.jsonl"))
-        for path in paths:
-            trace_rows.extend(read_jsonl(path))
-        bad = [r for r in trace_rows if r.get("schema") != TRACE_SCHEMA]
-        if bad:
-            raise ValueError(f"unexpected trace schema in {variant}: {bad[0].get('schema')}")
-        summary = summarize_variant(trace_rows)
+        mapping_reports = []
+        repetitions = sorted({row.get("repetition") for row in records if row.get("variant") == variant})
+        for repetition in repetitions:
+            if not isinstance(repetition, int) or isinstance(repetition, bool):
+                raise ValueError(f"{variant}: invalid repetition value in records")
+            path = run_dir / f"rep-{repetition:02d}" / variant / "round-trace.jsonl"
+            if not trace_enabled:
+                if path.is_file() and read_jsonl(path):
+                    raise ValueError(f"{variant}/rep-{repetition:02d}: trace rows exist but manifest does not enable round tracing")
+                continue
+            raw_rows = read_jsonl(path) if path.is_file() else []
+            if variant == "target_only":
+                if raw_rows:
+                    raise ValueError("target_only unexpectedly has speculative round trace rows")
+                mapping_reports.append({"repetition": repetition, "status": "not_applicable_target_only"})
+                continue
+            if manifest is None:
+                raise ValueError("manifest.json is required to validate chronological trace task mapping")
+            if warmups is None:
+                raise ValueError("manifest policy.warmup_requests is required to exclude warmup trace groups")
+            measured_rows, mapping = map_measured_trace_rows(
+                raw_rows, records, repetition, variant, warmups, manifest
+            )
+            trace_rows.extend(measured_rows)
+            mapping_reports.append({"repetition": repetition, **mapping})
+        summary = summarize_variant(
+            trace_rows,
+            trace_scope=(
+                "validated measured-request task groups only; warmup task groups were mapped and excluded; "
+                "checkpoint_replay rows are excluded from quality totals"
+                if trace_enabled and variant != "target_only"
+                else "no mapped speculative rows; mapping unavailable or not applicable"
+            ),
+        )
         summary["round_trace_files"] = len(paths)
-        summary["request_mapping"] = "Unavailable: trace rows have server-internal task_id but no benchmark request_id; manifest order mapping is not enough to prove attribution. Aggregates remain per variant."
+        summary["request_mapping"] = {
+            "status": "validated" if trace_enabled and variant != "target_only" else (
+                "not_applicable_target_only" if variant == "target_only" else "unavailable_trace_disabled"
+            ),
+            "warmup_requests_per_server": warmups if trace_enabled else None,
+            "by_repetition": mapping_reports,
+        }
         variant_results[variant] = summary
     report: dict[str, Any] = {
         "source": str(run_dir),
@@ -510,8 +765,7 @@ def analyze_run(run_dir: Path, replay_path: Path | None = None) -> dict[str, Any
         "variants": variant_results,
         "limitations": [
             "Round-trace data is CPU wall timing and does not include CUDA event timings.",
-            "Trace schema does not carry benchmark request IDs; per-request round association is unavailable.",
-            "Per-server traces include warmup task groups; aggregates are not measured-request-only until task-ID/request mapping is validated.",
+            "Runtime trace rows do not carry benchmark request IDs; per-request mapping is established from explicit single-server concurrency, chronological task groups, runner server_request_index ordering, and exact emitted token ID equality.",
             "Benchmark records may contain aggregate quality values; round quality below is computed from trace rows and excludes checkpoint_replay status.",
         ],
     }

@@ -157,16 +157,84 @@ class W1AxDiagnosticsTests(unittest.TestCase):
         self.assertEqual(comparisons["w1a4/q4_0"]["paired_samples"], 3)
         self.assertEqual(result["head_comparison"]["comparisons"], 1)
 
+    def test_fp16_cast_control_and_head_rows_are_summarized_separately(self):
+        rows = [
+            {"record_type": "fp16_cast_control", "capture": "cap.bin", "sequence": 4,
+             "name": "output.w1a1_packed", "group": "head", "K": 64, "M": 32000, "N": 2,
+             "mean_abs_output_difference": 0.01, "max_abs_output_difference": 0.08},
+            {"record_type": "fp16_cast_head_comparison", "capture": "cap.bin", "sequence": 4,
+             "token": 0, "top1_agree": True, "top5_set_overlap": 4,
+             "reference_top1_margin": 0.3, "cast_top1_margin": 0.29,
+             "reference_top5_cutoff_margin": 0.01, "cast_top5_cutoff_margin": 0.009},
+        ]
+        result = analysis.summarize_replay(rows)
+        control = result["fp16_cast_control"]["by_layer_shape"][0]
+        self.assertEqual(control["mean_abs_output_difference"]["median"], 0.01)
+        head = result["fp16_cast_head_comparison"]
+        self.assertEqual(head["top1_agreement_rate"], 1.0)
+        self.assertEqual(head["top5_overlap_fraction"]["median"], 0.8)
+        self.assertIn("not a serving", head["scope"])
+
     def test_run_reads_records_and_variant_round_traces(self):
         with tempfile.TemporaryDirectory() as tmp:
             run_dir = Path(tmp)
-            (run_dir / "records.json").write_text(json.dumps([{"variant": "draft_w1a8"}]))
+            record = {
+                "repetition": 0, "variant": "draft_w1a8", "prompt_id": "p0",
+                "request_id": "rep-00/draft_w1a8/p0", "server_request_index": 1,
+                "generated_token_ids": [1, 2],
+            }
+            (run_dir / "records.json").write_text(json.dumps([record]))
+            (run_dir / "manifest.json").write_text(json.dumps({
+                "round_trace_enabled": True,
+                "policy": {"warmup_requests": 1},
+                "prompt_ids": ["p0"],
+                "commands": {"draft_w1a8": ["llama-server", "--parallel", "1"]},
+            }))
             trace_path = run_dir / "rep-00" / "draft_w1a8" / "round-trace.jsonl"
             trace_path.parent.mkdir(parents=True)
-            trace_path.write_text(json.dumps(trace([1, 2], 1)) + "\n")
+            warmup = trace([8], 0)
+            warmup.update({"task_id": 10, "parent_task_id": -1, "round_index": 0,
+                           "round_start_us": 100, "round_end_us": 150, "emitted_token_ids": [8], "n_emitted": 1})
+            replay = trace([3], 1, status="checkpoint_replay")
+            replay.update({"task_id": 11, "parent_task_id": -1, "round_index": 0,
+                           "round_start_us": 200, "round_end_us": 250, "emitted_token_ids": [], "n_emitted": 0})
+            measured = trace([1, 2], 1)
+            measured.update({"task_id": 11, "parent_task_id": -1, "round_index": 1,
+                             "round_start_us": 300, "round_end_us": 350, "emitted_token_ids": [1, 2], "n_emitted": 2})
+            trace_path.write_text("".join(json.dumps(row) + "\n" for row in (warmup, replay, measured)))
             result = analysis.analyze_run(run_dir)
-            self.assertEqual(result["variants"]["draft_w1a8"]["accepted"], 1)
-            self.assertIn("Unavailable", result["variants"]["draft_w1a8"]["request_mapping"])
+            variant = result["variants"]["draft_w1a8"]
+            self.assertEqual(variant["accepted"], 1)
+            self.assertEqual(variant["rounds"], 1)
+            self.assertEqual(variant["request_mapping"]["by_repetition"][0]["warmup_tasks_excluded"], 1)
+            self.assertEqual(variant["request_mapping"]["by_repetition"][0]["measured_requests_mapped"], 1)
+            self.assertEqual(variant["trace_span_accounting"]["rows_with_round_bounds"], 2)
+            self.assertIn("warmup task groups were mapped and excluded", variant["quality_scope"])
+
+    def test_trace_request_mapping_rejects_token_id_mismatch(self):
+        row = trace([1], 0)
+        row.update({"task_id": 3, "parent_task_id": -1, "round_index": 0,
+                    "round_start_us": 10, "round_end_us": 20,
+                    "emitted_token_ids": [8], "n_emitted": 1})
+        record = {"repetition": 0, "variant": "draft_w1a8", "server_request_index": 0, "prompt_id": "p0",
+                  "request_id": "req0", "generated_token_ids": [9]}
+        manifest = {"commands": {"draft_w1a8": ["server", "--parallel", "1"]}, "prompt_ids": ["p0"]}
+        with self.assertRaisesRegex(ValueError, "do not exactly match"):
+            analysis.map_measured_trace_rows([row], [record], 0, "draft_w1a8", 0, manifest)
+
+    def test_trace_request_mapping_rejects_parallel_or_missing_task_groups(self):
+        row = trace([1], 0)
+        row.update({"task_id": 3, "parent_task_id": -1, "round_index": 0,
+                    "round_start_us": 10, "round_end_us": 20,
+                    "emitted_token_ids": [1], "n_emitted": 1})
+        record = {"repetition": 0, "variant": "draft_w1a8", "server_request_index": 1,
+                  "prompt_id": "p0", "generated_token_ids": [1]}
+        parallel_manifest = {"commands": {"draft_w1a8": ["server", "--parallel", "2"]}, "prompt_ids": ["p0"]}
+        with self.assertRaisesRegex(ValueError, "concurrency is not explicitly one"):
+            analysis.map_measured_trace_rows([row], [record], 0, "draft_w1a8", 1, parallel_manifest)
+        serial_manifest = {"commands": {"draft_w1a8": ["server", "--parallel", "1"]}, "prompt_ids": ["p0"]}
+        with self.assertRaisesRegex(ValueError, "chronological task groups"):
+            analysis.map_measured_trace_rows([row], [record], 0, "draft_w1a8", 1, serial_manifest)
 
     def test_replay_only_cli_needs_no_benchmark_run(self):
         replay_rows = [
