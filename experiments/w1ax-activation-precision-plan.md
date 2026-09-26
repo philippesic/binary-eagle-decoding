@@ -1,6 +1,6 @@
 # All-layer W1Ax activation-precision study on RTX 2080 Ti
 
-**State:** measurement protocol; no W1A16/W1A8/W1A4 artifact or run exists yet.
+**State:** frozen measurement protocol; implementation and primary matrices complete, broader diagnostics in progress. See the [running result report](w1ax-activation-precision-results.md).
 **Purpose:** separate the quality effect of activation precision from the cost of
 executing the same binary weights, then judge end-to-end performance against
 both ordinary FP16 EAGLE and Q4_0 EAGLE. This is a pre-QAT baseline study;
