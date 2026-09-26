@@ -363,6 +363,48 @@ and `results/w1ax-server-nsys-retry-20260926/` within the runner worktree.
 Combined analysis: `runs/w1ax-server-cuda-analysis-20260926/report.json`, SHA256
 `1be5bdef18d1356ccf300ea29d23e1027c78c121d17a1381495eb6bee365b37b`.
 
+## Streaming latency and sampled memory
+
+All 240 streaming requests completed: three frozen examples (prose-short,
+code-medium, reasoning-long), output caps 32/128, five repetitions and eight
+paths. One prompt represents each bin, so content category also varies across
+bins. Every speculative completion-text hash matched its target-only partner.
+The stream exposes neither raw token IDs nor usage here; no raw-ID parity or
+streaming decode-rate claim is made.
+
+TTFT means HTTP request start to the first complete SSE event with nonempty
+content; request wall ends at HTTP EOF and includes prefill/generation/transfer.
+For output cap 128, median TTFT and long-example HTTP wall times in seconds:
+
+| Path | TTFT short / medium / long | Long wall median / p95 | Loaded / sampled peak MiB |
+| --- | --- | --- | --- |
+| Target-only | 0.175 / 0.183 / 0.307 | 2.351 / 2.361 | 8906 / 8938 |
+| FP16 EAGLE | 0.170 / 0.215 / 0.387 | 1.702 / 1.704 | 9942 / 10038 |
+| Q8_0 | 0.169 / 0.213 / 0.388 | 1.605 / 1.620 | 9746 / 9806 |
+| Q4_0 | 0.166 / 0.212 / 0.388 | 1.511 / 1.527 | 9642 / 9702 |
+| W1A16 | 0.182 / 0.925 / 1.801 | 6.199 / 6.228 | 9552 / 9606 |
+| W1A8 | 0.175 / 0.426 / 0.810 | 3.845 / 3.868 | 9552 / 9608 |
+| W1A4 | 0.168 / 0.261 / 0.464 | 3.308 / 3.318 | 9552 / 9610 |
+| W1A1 | 0.170 / 0.235 / 0.433 | 3.183 / 3.191 | 9552 / 9606 |
+
+The cap is a maximum, not an assertion that every response generated 128
+tokens. With five samples per stratum, nearest-rank p95 equals the observed
+maximum and is a limited tail diagnostic, not a reliable population tail.
+All cap/bin/variant median/p95/max values remain in the raw summary.
+
+All 80 server telemetry logs completed, each with at least seven samples and
+no missing loaded/peak memory values. Loaded values above are medians across
+ten server instances/variant; peaks are maximum one-second samples across both
+caps, including startup, warmups, requests and shutdown. This is whole-GPU
+usage (including other baseline allocations), not allocator high-water or
+model-only memory; brief peaks may be missed. W1Ax saves 390MiB loaded versus
+FP16 EAGLE, and 90MiB versus Q4_0, in this diagnostic.
+
+Raw SSE and telemetry: runner `results/w1ax-streaming-20260926/`. SHA256:
+`summary.json` `485aca394981faf884bf710796b5a0e007954906729e7d4098147e0f1721f48a`;
+`records.json` `25da039225bc9c39499d898645f7bb2e88ec0b402319cdc0f451e0e26df4351d`;
+`manifest.json` `e23f299df5206120a5d82943972348d20f78d01da38fe6cd8c6f2d32502883ec`.
+
 ## Conditional secondary controls
 
 The plan's optional genuine W8A8/W4A4 same-run controls were unavailable in
@@ -374,6 +416,6 @@ mandatory controls are present throughout the primary and diagnostic matrices.
 
 ## Outstanding measurements
 
-Context/output-cap diagnostics, D/p_min policy grid and streaming latency/telemetry
-remain in progress. Do not treat the historical
+The full nine-prompt context/output-cap matrix and the D/p_min development
+policy grid remain in progress. Do not treat the historical
 screen as a final trained-QAT result or use the reserved 24-prompt final set.
