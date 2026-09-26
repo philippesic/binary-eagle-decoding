@@ -76,3 +76,22 @@ anchors and source-supported graph/cap experiments retain priority. Any later
 policy must account for context and batch cost, and any stochastic theory must
 match the actual native target-sample-and-match verifier. Literature supports
 these checks; it supplies no local W1A1 speedup or missing timing measurements.
+
+## Pending quantization recovery choice after PrismML review (2026-09-25)
+
+The [45-minute research report](../experiments/prism-quantization-research-2026-09-25.md)
+recommends an ordinary/cast-only/dense-binary/packed-binary graph bridge, followed
+by a small row/group × mean-absolute/output-fitted scale comparison on designated
+training captures. A fitted readout is a diagnostic for body/head incompatibility
+before escalating to full recurrent QAT. Existing Q1_0 export/runtime support
+removes an immediate kernel-port prerequisite.
+
+The checked 98.2% external claim is ternary aggregate benchmark retention, not
+W1A1 or token agreement. Released binary codes differ from naive signs in a
+bounded artifact sample, but the checkpoint-producing recipe remains undisclosed.
+Neither literature nor the local CPU diagnostics establishes a native SM75 win.
+
+User choices still pending: which representation and training scope to advance;
+any replacement for the existing one-run QAT budget; whether practical one-bit
+weights are a separate deployment track before returning to A1. The original
+W1A1 objective, current suite and FP16/Q4_0 comparison anchors remain intact.

@@ -131,6 +131,41 @@ sealed result.
 - Exact primary binaries and all dependent libraries were copied to remote `runs/w1ax-primary-binaries-3792aa79c/bin/`; its `SHA256SUMS` contains ten file hashes. Primary measurements retain runtime `3792aa79c` and project `dc4ccdd`.
 - `/root/gpu_monitor` has bounded exclusive GPU ownership for the diagnostic rebuild to published runtime `feba15698` and the 88-case CUDA gate only. New supervisors are `runs/w1ax-diagnostic-build-20260926/` and `runs/w1ax-diagnostic-op-gate-20260926/`. The runtime adds opt-in capture attribution and raw verifier logits; numerical kernels are unchanged. Root will resume ownership after the worker verifies stopped processes and idle GPU. No QAT-final evaluation or training has occurred.
 
+## PrismML and quantization research session (2026-09-25)
+
+The user requested 45 minutes of agent-led deep research into PrismML's
+near-BF16 low-bit quality and implications for our quantizer/QAT. Start:
+2026-09-26 01:22:50 UTC; intended research window ends at 02:07:50 UTC.
+This advisory session verifies claims/artifacts, audits our quantizer against
+weight-only methods, challenges causal explanations and proposes a bounded
+redesign. It does not take GPU ownership or modify the active suite's frozen
+protocol. At session start the main checkout had a concurrent uncommitted goal update;
+it was preserved and its later committed progress is retained above. Reports stage in `/tmp/binary-eagle-prism-reports-20260925/`; integration
+worktree `/tmp/binary-eagle-prism-qat-20260925`, branch
+`research/prism-qat-20260925`.
+
+Research milestones: seven primary-source/artifact analyses and cross-challenge
+rounds completed; full BF16 selected-weight geometry (218,234,880 values),
+Q1_0 export with exhaustive source-row audit, and ten total bounded local CPU
+regression requests completed. The CPU tests used historical prompts only,
+explicit CPU placement and the older `92bc706` binary; no SM75 result is claimed
+from them. All owned local server processes/ports were verified stopped/closed.
+Raw data and the 36,920,320-byte Q1 artifact are preserved under ignored
+`results/prism-research-20260925/`. Report:
+[PrismML and quantization/QAT](../../experiments/prism-quantization-research-2026-09-25.md).
+
+The late-session concurrent commit `7ac0dd2` sealed development results; the
+research report incorporates its A16 acceptance evidence while preserving the
+current diagnostic owner and frozen protocol. New calibration/training budgets
+remain proposed decisions, and no final-prompt evaluation or QAT was performed.
+
+Research session completed at 2026-09-26 02:08:04 UTC: 45 minutes 14 seconds
+from the recorded start, followed by publication. All seven reviewers completed
+their work; claim, math, causal and CPU-result checks passed after corrections.
+The report and two reproducible CPU audit scripts were checked for syntax,
+links and whitespace. Integration preserves `7ac0dd2` and its diagnostic GPU
+ownership; no new project goal or training experiment was opened.
+
 ## Diagnostic runtime checkpoint
 
 - Published runtime `feba1569848e74996651a42a9751f8afa5958b1d` built successfully; `runs/w1ax-diagnostic-op-gate-20260926/` passed 88/88 CUDA cases with exact-dot assertion and exit 0. Both worker process groups stopped and ownership returned to root. The ten-file preserved primary checksum manifest verified. Parent gitlink is published in `019aa0c`.

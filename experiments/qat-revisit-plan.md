@@ -150,3 +150,14 @@ interpret the earlier phrase “recurrent/alignment loss” as requiring target
 hidden-state MSE. The actual pinned training path needs an implementation audit.
 Keep the forward rule, STE and exporter fixed in the first supervision test;
 clipped gradients and recomputed scales are not established causes of failure.
+
+## PrismML study follow-up (2026-09-25)
+
+The [extended research report](prism-quantization-research-2026-09-25.md) adds
+representation/cast checks and conditional scale/readout diagnostics before
+broader QAT. Fitting these parameters is training and must use the designated
+training split, not historical/development captures merely because those files
+already exist. New exposure budgets and larger trainable scope are proposed
+research decisions; they do not amend this frozen 500-step/45-minute pilot.
+A trained latent head's ordinary-precision regression is diagnostic only; QAT
+optimizes its quantized forward, whose online acceptance remains the gate.

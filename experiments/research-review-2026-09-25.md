@@ -148,3 +148,12 @@ prompts for selection, and keep the 24 final prompts sealed until both the
 trained candidate and policy are frozen. Five timing repetitions are not five
 independent quality samples. Every practical W1A1 speed claim must beat both
 FP16 EAGLE and Q4_0 EAGLE on the same hardware and target/verifier track.
+
+## Subsequent PrismML-focused investigation
+
+The [extended report](prism-quantization-research-2026-09-25.md) incorporates the
+new W1Ax historical result and deeper artifact/quantizer audits. It narrows the
+next recommendation to graph/cast parity, output-aware scale fitting and
+head/body adaptation. It also corrects an interpretation of the earlier pilot:
+worse ordinary execution of trained latent weights is a diagnostic, not an
+independent QAT failure criterion; the quantized path is the deployed endpoint.
