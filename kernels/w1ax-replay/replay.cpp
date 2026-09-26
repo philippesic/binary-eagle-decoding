@@ -224,7 +224,58 @@ static std::string group_of(const std::string & name) {
     return "unknown";
 }
 
-static void replay(const capture & c, const std::vector<uint32_t> & w, const std::vector<float> & scales,
+struct activation_diagnostics {
+    size_t source_zeros = 0, code_zeros = 0, clipped = 0, saturated = 0;
+    double mae = 0, rmse = 0, max_abs_error = 0;
+};
+
+static activation_diagnostics diagnose_activations(const capture & c, int bits) {
+    activation_diagnostics d;
+    double error_sum = 0, error_squared_sum = 0;
+    for (size_t token = 0; token < c.n; ++token) {
+        const float * x = c.activations.data() + token*c.k;
+        double abs_sum = 0;
+        float absmax = 0;
+        for (size_t i = 0; i < c.k; ++i) {
+            abs_sum += std::abs(double(x[i]));
+            absmax = std::max(absmax, std::abs(x[i]));
+        }
+        const int qmax = bits == 8 ? 127 : 7;
+        const float inv = absmax == 0 ? 0 : float(qmax)/absmax;
+        const float scale = bits == 1 ? float(abs_sum/double(c.k)) : absmax/float(qmax);
+        for (size_t i = 0; i < c.k; ++i) {
+            if (x[i] == 0) ++d.source_zeros;
+            float reconstructed;
+            if (bits == 16) {
+                reconstructed = ggml_fp16_to_fp32(ggml_fp32_to_fp16(x[i]));
+                if (!std::isfinite(reconstructed)) ++d.clipped;
+                if (reconstructed == 0) ++d.code_zeros;
+            } else if (bits == 1) {
+                reconstructed = (x[i] >= 0 ? 1.0f : -1.0f)*scale;
+            } else {
+                const int raw = int(std::nearbyint(x[i]*inv));
+                if (raw < -qmax || raw > qmax) ++d.clipped;
+                const int code = std::max(-qmax, std::min(qmax, raw));
+                if (code == 0) ++d.code_zeros;
+                if (std::abs(code) == qmax) ++d.saturated;
+                reconstructed = float(code)*scale;
+            }
+            // An overflowing FP16 cast is a distinct clipping failure; it
+            // cannot yield a meaningful finite reconstruction error.
+            if (!std::isfinite(reconstructed)) continue;
+            const double error = std::abs(double(reconstructed)-double(x[i]));
+            error_sum += error;
+            error_squared_sum += error*error;
+            d.max_abs_error = std::max(d.max_abs_error, error);
+        }
+    }
+    const double count = double(c.k*c.n);
+    d.mae = error_sum/count;
+    d.rmse = std::sqrt(error_squared_sum/count);
+    return d;
+}
+
+static std::vector<float> replay(const capture & c, const std::vector<uint32_t> & w, const std::vector<float> & scales,
         ggml_backend_t backend, int bits, const options & opt) {
     ggml_init_params params = {2*1024*1024, nullptr, true};
     std::unique_ptr<ggml_context, ggml_deleter> ctx(ggml_init(params));
@@ -260,6 +311,7 @@ static void replay(const capture & c, const std::vector<uint32_t> & w, const std
         if (!std::isfinite(got) || delta > 0.003 + 0.0002*std::abs(double(expected))) ++failures;
     }
     require(failures == 0, "scalar parity failed for " + c.path.string() + " bits=" + std::to_string(bits));
+    const activation_diagnostics diagnostic = diagnose_activations(c, bits);
     for (int i = 0; i < opt.warmups; ++i) compute();
     std::vector<double> us;
     us.reserve(opt.samples);
@@ -272,7 +324,8 @@ static void replay(const capture & c, const std::vector<uint32_t> & w, const std
     std::vector<double> sorted = us;
     std::sort(sorted.begin(), sorted.end());
     const auto percentile = [&](double p) { return sorted[size_t(std::ceil(p*(sorted.size()-1)))]; };
-    std::cout << std::setprecision(9) << "{\"capture\":\"" << escape_json(c.path.filename().string())
+    const double activation_count = double(c.k*c.n);
+    std::cout << std::setprecision(9) << "{\"record_type\":\"operator_replay\",\"capture\":\"" << escape_json(c.path.filename().string())
               << "\",\"sequence\":" << c.sequence << ",\"name\":\"" << escape_json(c.name)
               << "\",\"group\":\"" << group_of(c.name) << "\",\"K\":" << c.k << ",\"M\":" << c.m
               << ",\"N\":" << c.n << ",\"source_bits\":" << c.source_bits << ",\"replay_bits\":" << bits
@@ -281,9 +334,74 @@ static void replay(const capture & c, const std::vector<uint32_t> & w, const std
               << "\",\"timing\":\"synchronized_host_wall_full_ggml_graph_us\",\"checked_rows\":" << rows.size()
               << ",\"checked_outputs\":" << rows.size()*c.n << ",\"max_abs_error\":" << max_abs
               << ",\"max_rel_error\":" << max_rel << ",\"min_us\":" << sorted.front()
-              << ",\"median_us\":" << percentile(0.5) << ",\"p95_us\":" << percentile(0.95) << ",\"samples_us\":[";
+              << ",\"median_us\":" << percentile(0.5) << ",\"p95_us\":" << percentile(0.95)
+              << ",\"activation\":{\"elements\":" << size_t(c.k*c.n)
+              << ",\"source_zero_rate\":" << diagnostic.source_zeros/activation_count
+              << ",\"code_zero_rate\":";
+    if (bits == 1) std::cout << "null";
+    else std::cout << diagnostic.code_zeros/activation_count;
+    std::cout << ",\"clip_rate\":";
+    if (bits == 1) std::cout << "null";
+    else std::cout << diagnostic.clipped/activation_count;
+    std::cout << ",\"saturation_rate\":";
+    if (bits == 1 || bits == 16) std::cout << "null";
+    else std::cout << diagnostic.saturated/activation_count;
+    std::cout << ",\"mae\":" << diagnostic.mae << ",\"rmse\":" << diagnostic.rmse
+              << ",\"max_abs_error\":" << diagnostic.max_abs_error << "},\"samples_us\":[";
     for (size_t i = 0; i < us.size(); ++i) std::cout << (i ? "," : "") << us[i];
     std::cout << "]}" << std::endl;
+    return c.name == "output.w1a1_packed" ? std::move(actual) : std::vector<float>{};
+}
+
+static std::vector<size_t> top_indices(const float * scores, size_t rows, size_t count) {
+    std::vector<size_t> indices(rows);
+    std::iota(indices.begin(), indices.end(), 0);
+    std::partial_sort(indices.begin(), indices.begin()+count, indices.end(), [&](size_t a, size_t b) {
+        return scores[a] == scores[b] ? a < b : scores[a] > scores[b];
+    });
+    indices.resize(count);
+    return indices;
+}
+
+static void compare_head(const capture & c, const std::array<std::vector<float>, 4> & outputs) {
+    require(c.m == 32000, "head comparison requires the full 32,000-row output tensor");
+    for (const auto & output : outputs) {
+        require(output.size() == size_t(c.m*c.n), "incomplete head output vector");
+        for (float score : output) require(std::isfinite(score), "nonfinite head score");
+    }
+    constexpr std::array<int, 4> bits = {16, 8, 4, 1};
+    for (size_t token = 0; token < c.n; ++token) {
+        const float * reference = outputs[0].data() + token*c.m;
+        const auto ref_top = top_indices(reference, size_t(c.m), 10);
+        for (size_t mode = 1; mode < bits.size(); ++mode) {
+            const float * candidate = outputs[mode].data() + token*c.m;
+            const auto candidate_top = top_indices(candidate, size_t(c.m), 10);
+            const auto overlap = [&](size_t k) {
+                size_t matches = 0;
+                for (size_t i = 0; i < k; ++i) {
+                    if (std::find(candidate_top.begin(), candidate_top.begin()+k, ref_top[i]) != candidate_top.begin()+k) ++matches;
+                }
+                return matches;
+            };
+            std::cout << std::setprecision(9) << "{\"record_type\":\"head_comparison\",\"capture\":\""
+                      << escape_json(c.path.filename().string()) << "\",\"sequence\":" << c.sequence
+                      << ",\"token\":" << token << ",\"rows\":" << c.m
+                      << ",\"reference_bits\":16,\"candidate_bits\":" << bits[mode]
+                      << ",\"reference\":\"same_binary_weights_w1a16\",\"top1_agree\":"
+                      << (ref_top[0] == candidate_top[0] ? "true" : "false")
+                      << ",\"topk_set_overlap\":{\"1\":" << overlap(1)
+                      << ",\"5\":" << overlap(5) << ",\"10\":" << overlap(10)
+                      << "},\"reference_top1_id\":" << ref_top[0]
+                      << ",\"candidate_top1_id\":" << candidate_top[0]
+                      << ",\"reference_top1_margin\":" << double(reference[ref_top[0]])-reference[ref_top[1]]
+                      << ",\"candidate_top1_margin\":" << double(candidate[candidate_top[0]])-candidate[candidate_top[1]]
+                      << ",\"reference_top1_score\":" << reference[ref_top[0]]
+                      << ",\"candidate_score_at_reference_top1\":" << candidate[ref_top[0]]
+                      << ",\"candidate_top1_score\":" << candidate[candidate_top[0]]
+                      << ",\"reference_score_at_candidate_top1\":" << reference[candidate_top[0]]
+                      << "}" << std::endl;
+        }
+    }
 }
 
 int main(int argc, char ** argv) {
@@ -311,7 +429,12 @@ int main(int argc, char ** argv) {
             std::vector<uint32_t> weights;
             std::vector<float> scales;
             gguf.load(c, weights, scales);
-            for (int bits : {16, 8, 4, 1}) replay(c, weights, scales, backend.get(), bits, opt);
+            std::array<std::vector<float>, 4> head_outputs;
+            size_t mode = 0;
+            for (int bits : {16, 8, 4, 1}) {
+                head_outputs[mode++] = replay(c, weights, scales, backend.get(), bits, opt);
+            }
+            if (c.name == "output.w1a1_packed") compare_head(c, head_outputs);
         }
         if (opt.require_nine) {
             const std::set<std::string> expected = {
