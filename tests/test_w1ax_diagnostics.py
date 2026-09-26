@@ -118,6 +118,70 @@ class W1AxDiagnosticsTests(unittest.TestCase):
         self.assertEqual(head["top1_agreement_rate"], 0.5)
         self.assertEqual(head["topk_overlap_fraction"]["5"]["median"], 0.7)
 
+    def test_activation_diagnostics_weight_by_elements_and_rmse_by_mse(self):
+        def operator(capture, sequence, k, n, bits, activation=None):
+            row = {
+                "record_type": "operator_replay", "capture": capture, "sequence": sequence,
+                "K": k, "M": 8, "N": n, "name": "q_proj", "group": "attention",
+                "replay_bits": bits, "samples_us": [10.0],
+            }
+            if activation is not None:
+                row["activation"] = activation
+            return row
+
+        rows = [
+            operator("cap-a.bin", 0, 2, 1, 8, {
+                "elements": 2, "source_zero_rate": 0.5, "code_zero_rate": 0.5,
+                "clip_rate": 0.0, "saturation_rate": 0.5, "mae": 1.0, "rmse": 2.0,
+                "max_abs_error": 3.0,
+            }),
+            operator("cap-b.bin", 0, 3, 2, 8, {
+                "elements": 6, "source_zero_rate": 1 / 6, "code_zero_rate": 0.0,
+                "clip_rate": 0.5, "saturation_rate": 1 / 3, "mae": 3.0, "rmse": 4.0,
+                "max_abs_error": 7.0,
+            }),
+            operator("cap-c.bin", 0, 2, 1, 1, {
+                "elements": 2, "source_zero_rate": 0.0, "code_zero_rate": None,
+                "clip_rate": None, "saturation_rate": None, "mae": 0.2, "rmse": 0.4,
+                "max_abs_error": 1.0,
+            }),
+            operator("cap-legacy.bin", 0, 2, 1, 16),
+        ]
+        result = analysis.summarize_replay(rows)
+        layer = result["activation_diagnostics"]["by_layer"][0]
+        weighted = layer["by_replay_bits"]["8"]
+        self.assertEqual(weighted["activation_elements"], 8)
+        self.assertAlmostEqual(weighted["metrics"]["source_zero_rate"]["value"], 0.25)
+        self.assertAlmostEqual(weighted["metrics"]["code_zero_rate"]["value"], 0.125)
+        self.assertAlmostEqual(weighted["metrics"]["mae"]["value"], 2.5)
+        self.assertAlmostEqual(weighted["metrics"]["rmse"]["value"], 13 ** 0.5)
+        self.assertEqual(weighted["metrics"]["max_abs_error"]["value"], 7.0)
+        one_bit = layer["by_replay_bits"]["1"]["metrics"]["code_zero_rate"]
+        self.assertIsNone(one_bit["value"])
+        self.assertEqual(one_bit["not_applicable_captures"], 1)
+        old = layer["by_replay_bits"]["16"]["metrics"]["mae"]
+        self.assertEqual(old["missing_activation_captures"], 1)
+        self.assertIsNone(old["value"])
+        shape = next(item for item in result["by_layer_shape"] if item["K"] == 2 and item["N"] == 1)
+        self.assertEqual(shape["precision"]["8"]["activation"]["captures"], 1)
+        self.assertIn("selected correlated capture rows", result["activation_diagnostics"]["weighting"])
+
+    def test_activation_diagnostics_reject_malformed_and_nonfinite_fields(self):
+        row = {
+            "record_type": "operator_replay", "capture": "bad.bin", "sequence": 0,
+            "K": 2, "M": 2, "N": 1, "name": "q_proj", "group": "attention",
+            "replay_bits": 8, "samples_us": [1.0],
+            "activation": {"elements": 2, "source_zero_rate": float("nan"), "code_zero_rate": 0.0,
+                           "clip_rate": 0.0, "saturation_rate": 0.0, "mae": 0.0, "rmse": 0.0,
+                           "max_abs_error": 0.0},
+        }
+        with self.assertRaisesRegex(ValueError, "finite in \[0, 1\]"):
+            analysis.summarize_replay([row])
+        row["activation"]["source_zero_rate"] = 0.0
+        row["activation"]["elements"] = 3
+        with self.assertRaisesRegex(ValueError, "equal positive K\*N"):
+            analysis.summarize_replay([row])
+
     def test_anchor_operator_rows_pair_to_w1ax_by_capture(self):
         def row(record_type, capture, bits_or_format, samples):
             base = {

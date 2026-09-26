@@ -292,6 +292,90 @@ def _sample_summary(samples: Any, path: Path, line: int) -> list[float]:
     return [float(v) for v in samples]
 
 
+ACTIVATION_RATE_FIELDS = ("source_zero_rate", "code_zero_rate", "clip_rate", "saturation_rate")
+ACTIVATION_ERROR_FIELDS = ("mae", "rmse", "max_abs_error")
+
+
+def _validate_activation_diagnostics(row: dict[str, Any], bits: int, row_number: int) -> dict[str, Any] | None:
+    if "activation" not in row:
+        return None  # Older replay logs predate per-activation diagnostics.
+    activation = row["activation"]
+    if not isinstance(activation, dict):
+        raise ValueError(f"operator replay row {row_number}: activation must be an object or absent")
+    for field in ("elements", *ACTIVATION_RATE_FIELDS, *ACTIVATION_ERROR_FIELDS):
+        if field not in activation:
+            raise ValueError(f"operator replay row {row_number}: activation missing {field}")
+    elements = activation["elements"]
+    k, n = row.get("K"), row.get("N")
+    if (
+        not isinstance(elements, int) or isinstance(elements, bool) or elements <= 0
+        or not isinstance(k, int) or isinstance(k, bool) or k <= 0
+        or not isinstance(n, int) or isinstance(n, bool) or n <= 0
+        or elements != k * n
+    ):
+        raise ValueError(f"operator replay row {row_number}: activation.elements must equal positive K*N")
+    values = {"elements": elements}
+    nullable = {
+        "source_zero_rate": False,
+        "code_zero_rate": bits == 1,
+        "clip_rate": bits == 1,
+        "saturation_rate": bits in (1, 16),
+    }
+    for field in ACTIVATION_RATE_FIELDS:
+        value = activation[field]
+        if value is None:
+            if not nullable[field]:
+                raise ValueError(f"operator replay row {row_number}: activation.{field} unexpectedly null for {bits} bits")
+            values[field] = None
+        elif not _nonnegative_number(value) or value > 1:
+            raise ValueError(f"operator replay row {row_number}: activation.{field} must be finite in [0, 1]")
+        else:
+            values[field] = float(value)
+    for field in ACTIVATION_ERROR_FIELDS:
+        value = activation[field]
+        if not _nonnegative_number(value):
+            raise ValueError(f"operator replay row {row_number}: activation.{field} must be finite and non-negative")
+        values[field] = float(value)
+    return values
+
+
+def _aggregate_activation_rows(rows: list[dict[str, Any] | None]) -> dict[str, Any]:
+    present = [row for row in rows if row is not None]
+    result: dict[str, Any] = {
+        "captures": len(rows),
+        "captures_with_activation": len(present),
+        "captures_without_activation": len(rows) - len(present),
+        "activation_elements": sum(row["elements"] for row in present),
+        "weighting": "Capture-weighted by activation.elements (K*N); selected correlated captures, not live-invocation weighted.",
+        "metrics": {},
+    }
+    for field in (*ACTIVATION_RATE_FIELDS, *ACTIVATION_ERROR_FIELDS):
+        available = [row for row in present if row[field] is not None]
+        elements = sum(row["elements"] for row in available)
+        unavailable_present = len(present) - len(available)
+        metric = {
+            "captures_with_value": len(available),
+            "captures_without_value": len(rows) - len(available),
+            "not_applicable_captures": unavailable_present,
+            "missing_activation_captures": len(rows) - len(present),
+            "element_count": elements,
+        }
+        if not available:
+            metric["value"] = None
+        elif field == "max_abs_error":
+            metric["value"] = max(row[field] for row in available)
+        elif field == "rmse":
+            metric["value"] = math.hypot(*[
+                row[field] * math.sqrt(row["elements"] / elements) for row in available
+            ])
+        else:
+            metric["value"] = math.fsum(row[field] * (row["elements"] / elements) for row in available)
+        if metric["value"] is not None and not math.isfinite(metric["value"]):
+            raise ValueError(f"activation aggregate {field} is non-finite")
+        result["metrics"][field] = metric
+    return result
+
+
 def summarize_replay(rows: list[dict[str, Any]]) -> dict[str, Any]:
     captures: dict[tuple[Any, ...], dict[int, list[float]]] = defaultdict(dict)
     shapes: dict[tuple[Any, ...], dict[int, list[float]]] = defaultdict(lambda: defaultdict(list))
@@ -303,6 +387,9 @@ def summarize_replay(rows: list[dict[str, Any]]) -> dict[str, Any]:
     w1ax_anchor_ratios: dict[tuple[Any, ...], dict[tuple[int, str], list[float]]] = defaultdict(lambda: defaultdict(list))
     anchor_groups: dict[tuple[Any, ...], set[str]] = defaultdict(set)
     operator_rows = []
+    activation_shape_rows: dict[tuple[Any, ...], dict[int, list[dict[str, Any] | None]]] = defaultdict(lambda: defaultdict(list))
+    activation_layer_rows: dict[tuple[Any, ...], dict[int, list[dict[str, Any] | None]]] = defaultdict(lambda: defaultdict(list))
+    activation_layer_shapes: dict[tuple[Any, ...], set[tuple[Any, ...]]] = defaultdict(set)
     anchor_rows = []
     head_rows = []
     fp16_cast_rows = []
@@ -350,6 +437,7 @@ def summarize_replay(rows: list[dict[str, Any]]) -> dict[str, Any]:
             raise ValueError(f"operator replay row {i}: replay_bits must be a positive integer")
         samples = _sample_summary(row.get("samples_us"), Path("operator replay JSONL"), i)
         shape_key = (row["K"], row["M"], row["N"], row["name"], row["group"])
+        activation_diagnostics = _validate_activation_diagnostics(row, bits, i)
         capture_key = (
             row.get("capture", "<legacy>"), row.get("sequence", 0), row["name"],
             row["K"], row["M"], row["N"],
@@ -359,6 +447,10 @@ def summarize_replay(rows: list[dict[str, Any]]) -> dict[str, Any]:
         captures[capture_key][bits] = samples
         shapes[shape_key][bits].extend(samples)
         capture_shapes[shape_key].add(capture_key)
+        activation_shape_rows[shape_key][bits].append(activation_diagnostics)
+        layer_key = (row["name"], row["group"])
+        activation_layer_rows[layer_key][bits].append(activation_diagnostics)
+        activation_layer_shapes[layer_key].add(shape_key)
         operator_rows.append((shape_key, capture_key, bits, samples))
 
     for shape_key, capture_key, bits, samples in operator_rows:
@@ -387,6 +479,7 @@ def summarize_replay(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 "samples": len(samples),
                 "median_us": median(samples),
                 "distribution_us": distribution(samples),
+                "activation": _aggregate_activation_rows(activation_shape_rows[key][bits]),
             }
         ratios = {}
         for bits in sorted(entries):
@@ -402,6 +495,15 @@ def summarize_replay(rows: list[dict[str, Any]]) -> dict[str, Any]:
         by_layer_shape.append({
             "K": key[0], "M": key[1], "N": key[2], "name": key[3], "group": key[4],
             "captures": len(capture_shapes[key]), "precision": precision, "paired_ratios": ratios,
+        })
+    activation_by_layer = []
+    for key in sorted(activation_layer_rows, key=lambda x: tuple(str(part) for part in x)):
+        activation_by_layer.append({
+            "name": key[0], "group": key[1], "shapes": len(activation_layer_shapes[key]),
+            "by_replay_bits": {
+                str(bits): _aggregate_activation_rows(activation_layer_rows[key][bits])
+                for bits in sorted(activation_layer_rows[key])
+            },
         })
     anchor_by_layer_shape = []
     for key in sorted(anchor_shapes, key=lambda x: tuple(str(part) for part in x)):
@@ -446,6 +548,12 @@ def summarize_replay(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "rows": len(operator_rows),
         "by_layer_shape": by_layer_shape,
         "pairing": "Rows are paired within capture/sequence/name/K/M/N and sample index; replay_bits=16 is the ratio baseline. Shape summaries pool repeated captures. The schema has no tensor hashes, so capture identity is trusted from the producer.",
+        "activation_diagnostics": {
+            "by_layer": activation_by_layer,
+            "weighting": "Per-row activation.elements equals K*N. Rates and MAE are weighted by elements; RMSE is sqrt(weighted mean squared RMSE); max_abs_error is the maximum across captures. These summarize selected correlated capture rows, not live-invocation weighted distributions.",
+            "producer_denominator": "The replay producer divides source/code/clip/saturation counts, MAE numerator, and squared-error numerator by K*N. On FP16 cast overflow, it increments clip_rate and skips that element's error numerator while retaining K*N as the MAE/RMSE denominator.",
+            "legacy_missing_activation": "Rows without an activation object remain in capture counts and are explicitly counted as captures_without_activation; no diagnostic values are imputed.",
+        },
         "anchor_rows": len(anchor_rows),
         "anchor_by_layer_shape": anchor_by_layer_shape,
         "w1ax_vs_anchors": w1ax_vs_anchors,
