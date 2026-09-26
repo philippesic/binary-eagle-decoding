@@ -602,7 +602,7 @@ def analyze(
         )
         best[variant] = {
             "cell": winner,
-            "criterion": "max pooled decode tokens/s on development prompts",
+            "criterion": "highest observed pooled decode tokens/s on development prompts",
             "decode_tokens_per_s": cells[winner]["variants"][variant]["decode_tokens_per_s"],
             "selection_scope": "exploratory_development_only",
             "selection_interpretation": (
@@ -631,6 +631,9 @@ def analyze(
                 for metric in ("decode", "request")
             }
             comparison["selection_scope"] = "exploratory_development_only"
+            comparison["comparison_scope"] = (
+                "within_cell" if winner == reference_cell else "cross_cell"
+            )
             if samples:
                 comparison["paired_bootstrap_95pct"] = paired_bootstrap(
                     [row for row in records_by_cell[winner] if row["variant"] == variant],
@@ -655,16 +658,23 @@ def analyze(
         "bootstrap": {
             "samples": samples,
             "seed": seed,
-            "interval": "95% percentile interval",
+            "interval": "central 95% descriptive percentile resampling range",
             "method": "paired crossed prompt/repetition bootstrap of pooled token/time rate ratios",
             "selection_scope": "descriptive_conditional_on_development_selection",
+            "timing_epoch_changes_modeled": False,
+            "confidence_bound_for_policy_benefit": False,
             "interpretation": (
                 "Prompts and repetitions are independently resampled with replacement; the same "
                 "Cartesian-product draw is used for candidate and reference. Selected policies "
                 "are held fixed, not reselected in each draw. Intervals are descriptive on these "
                 "development prompts, not holdout estimates, selection-corrected intervals, or "
                 "simultaneous bounds across the grid. Cross-cell repetition pairing matches "
-                "repetition labels, not simultaneous timing measurements. Output differences "
+                "repetition labels, not simultaneous timing measurements; the covariance imposed "
+                "by that pairing is not experimentally established and can affect range width. "
+                "Cross-cell ranges are not confidence bounds for a policy benefit. Systematic "
+                "timing-epoch changes, including any shift across a pause/resume, are not "
+                "modeled; selected-versus-fixed or independently selected-anchor ratios cannot "
+                "isolate policy effects. Output differences "
                 "remain included; intervals do not establish losslessness. "
                 "Zero samples disables intervals."
             ),

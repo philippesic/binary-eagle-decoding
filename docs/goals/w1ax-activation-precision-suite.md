@@ -527,3 +527,11 @@ All experiment/analysis work is stopped. Resume only on explicit user request.
 - Target-only differences among 120 paired requests: FP16/Q8_0/A8/A1 each5, A16 ten, Q4_0/A4 zero. Detailed comparisons against each anchor and first-divergence records remain in the audit; causes are unestablished and mismatching ratios remain timing observations.
 - Decode rates A16/A8/A4/A1 are 42.483/50.781/54.087/55.315 tok/s, versus FP16/Q4_0 87.158/91.495 and target-only65.831. No policy selection is finalized yet.
 - D5/p0 a1 started automatically and reached14 records at22:33UTC. Supervisor/launcher875/876, benchmark PGID19105 and server PGID19196 at the snapshot; clean logs. Operator retains sole GPU ownership. Nine cells are complete; only the three D5 cells remain before full-grid analysis, final publication and verified GPU release.
+
+
+## Final statistical interpretation review — 2026-09-26 22:38 UTC
+
+- Astra reviewer `/root/completion_audit` found no arithmetic bug in pooled ratios, winner selection or resampling. The frozen grid and highest-observed-development-rate criterion remain unchanged.
+- The standalone policy analyzer now labels comparisons within/cross cell and its central 95% percentile output as descriptive resampling ranges. Metadata explicitly states that timing-epoch changes are unmodeled, repetition-label pairing imposes unverified covariance, and selected-versus-fixed/selected-anchor ratios cannot isolate policy effects. Winners remain fixed during resampling; selection uncertainty/bias are not corrected. These are interpretation metadata changes, not numeric or measurement changes.
+- The report now distinguishes accepted/proposed from accepted/native verification round. Their denominators happen to coincide for the cited D1 examples, but are separate metrics. Final fixed D5/p0 comparisons must refer to the policy-grid cell, not silently reuse the earlier primary measurement.
+- All 14 focused policy-analyzer tests and whitespace checks passed. Use the latest published helper for final full-grid analysis; do not copy any update into the running frozen source. No GPU experiment or final-prompt use was added. Operator's latest 22:37 UTC check: D5/p0 at96/960, supervisor876, benchmark19105, server19660, clean logs.

@@ -547,12 +547,13 @@ these are timing observations with output differences. Raw records SHA256:
 `8e5b18ab0a3ef66a53ae27ce4788ec83dd068ccada193559f7e70c96465226c8`,
 runner `results/w1ax-diagnostic-suite-20260926-development-d1-pmin-0p3-a1/`.
 
-Confidence filtering also changes the denominator of accepted drafts per native
-verification round. For D1 W1A1, floor 0 accepted 805/14,320 proposed drafts;
-floor 0.3 accepted 395/4,145. The conditional ratio rises from 0.056 to 0.095 while
-total accepted drafts falls. No-proposal iterations are outside that native
-round denominator, so this ratio alone does not demonstrate better serving
-quality or throughput. Final policy conclusions still await the complete grid.
+For D1 W1A1, the accepted/proposed fraction rises from 805/14,320 at floor 0
+to 395/4,145 at floor 0.3: 0.056 to 0.095 despite fewer total accepted drafts.
+Accepted drafts per native verification round is a separate metric. The counts
+happen to coincide here because D1 proposes one token per such round;
+no-proposal iterations are outside that round denominator. Neither conditional
+ratio alone demonstrates better serving quality or throughput. Final policy
+conclusions still await the complete grid.
 
 D2/p0.3 also produces differences between the throughput anchors: FP16 and
 Q4_0 disagree on 10/120 paired requests. W1A1 matches target-only in that cell
@@ -581,6 +582,14 @@ The cause of the timing shift is not established. Within-cell FP16/Q4_0 ratios
 remain matched comparisons. Cross-cell absolute rates and development-selected
 policies span distinct timing epochs and do not isolate policy effects; paired
 bootstrap intervals do not account for unmeasured systematic epoch changes.
+Selected-versus-fixed and independently selected-anchor comparisons retain the
+policies with the highest observed development decode rates, not proven optimal
+policies. Winners are held fixed during resampling, so their selection uncertainty
+and selection bias are not captured. Cross-cell resampling pairs nominal
+repetition labels rather than matched timing blocks, imposing unverified
+covariance. Those central 95% ranges are descriptive resampling ranges, not
+confidence bounds for a policy benefit. The fixed D5/p0 reference in this
+analysis is the policy-grid cell, distinct from the earlier primary matrix.
 
 ## Measurement limits
 
