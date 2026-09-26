@@ -10,6 +10,7 @@ Run under scripts/remote_job.py on the RTX 2080 Ti; --dry-run uses no GPU.
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import json
 import os
@@ -42,6 +43,16 @@ REPETITIONS = 5
 EXPECTED_CONTEXT_SHA256 = "5653cfe7599e5dd4ae44e057df27b816221f8ee89635056bc0fb24b9f44a21a3"
 EXPECTED_TARGET_SHA256 = "05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6"
 EXPECTED_W1AX_SHA256 = "098e1ecbb299aa16e2c968663acc49e60c0fcf16b053766d9f558114f79d011c"
+GPU_SAMPLE_FIELDS = (
+    "timestamp", "uuid", "name", "memory.total", "memory.used",
+    "temperature.gpu", "power.draw", "clocks.sm", "clocks.mem",
+)
+GPU_SAMPLE_INTERVAL_S = 1
+GPU_PEAK_SEMANTICS = (
+    "Peak memory is the maximum sampled whole-GPU memory.used during server startup, "
+    "warmups, measured requests and shutdown. It is not an allocator high-water mark "
+    "or server-only allocation; one-second polling can miss short peaks."
+)
 
 
 def now() -> str:
@@ -53,6 +64,145 @@ def write_json(path: Path, value: Any) -> None:
     temporary = path.with_suffix(path.suffix + ".tmp")
     temporary.write_text(json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False) + "\n")
     temporary.replace(path)
+
+
+def numeric_gpu_value(value: str | None) -> float | None:
+    if value is None:
+        return None
+    match = re.fullmatch(r"\s*([0-9]+(?:\.[0-9]+)?)(?:\s+\S+)?\s*", value)
+    return float(match[1]) if match else None
+
+
+def gpu_csv_rows(raw: str, fields: tuple[str, ...]) -> tuple[list[dict[str, str]], int]:
+    rows = []
+    rejected = 0
+    for values in csv.reader(raw.splitlines()):
+        if not values:
+            continue
+        if len(values) != len(fields):
+            rejected += 1
+            continue
+        rows.append(dict(zip(fields, (value.strip() for value in values), strict=True)))
+    return rows, rejected
+
+
+def summarize_gpu_telemetry(raw: str, loaded_snapshot: dict[str, Any] | None) -> dict[str, Any]:
+    rows, rejected = gpu_csv_rows(raw, GPU_SAMPLE_FIELDS)
+    loaded = []
+    snapshot = loaded_snapshot or {}
+    if snapshot.get("exit_code") != 0:
+        snapshot = snapshot.get("fallback", {})
+    if snapshot.get("exit_code") == 0:
+        query = next((arg for arg in snapshot.get("command", []) if arg.startswith("--query-gpu=")), "")
+        if query:
+            loaded, _ = gpu_csv_rows(snapshot.get("stdout", ""), tuple(query.split("=", 1)[1].split(",")))
+    devices = []
+    for uuid in sorted({row["uuid"] for row in rows}):
+        device_rows = [row for row in rows if row["uuid"] == uuid]
+        name = device_rows[0]["name"]
+        loaded_row = next((row for row in loaded if row.get("uuid") == uuid), None)
+        if loaded_row is None:
+            names = [row for row in loaded if row.get("name") == name]
+            loaded_row = names[0] if len(names) == 1 else {}
+        device: dict[str, Any] = {
+            "uuid": uuid, "name": name, "sample_count": len(device_rows),
+            "loaded_memory_used_mib": numeric_gpu_value(loaded_row.get("memory.used")),
+        }
+        for field, label in (
+            ("memory.used", "memory_used_mib"),
+            ("temperature.gpu", "temperature_c"),
+            ("power.draw", "power_w"),
+            ("clocks.sm", "sm_clock_mhz"),
+            ("clocks.mem", "memory_clock_mhz"),
+        ):
+            values = [value for row in device_rows if (value := numeric_gpu_value(row[field])) is not None]
+            device[label] = {
+                "available_samples": len(values),
+                "sampled_min": min(values) if values else None,
+                "sampled_max": max(values) if values else None,
+            }
+        device["memory_used_sampled_peak_mib"] = device["memory_used_mib"]["sampled_max"]
+        devices.append(device)
+    return {
+        "sample_count": len(rows), "rejected_raw_lines": rejected,
+        "devices": devices, "peak_semantics": GPU_PEAK_SEMANTICS,
+        "unavailable_fields": "N/A and unsupported values remain null; raw output is retained",
+    }
+
+
+class GPUSampler:
+    """Own one nvidia-smi polling child and stop its process group on every exit."""
+
+    def __init__(self, directory: Path) -> None:
+        self.directory = directory
+        self.process: subprocess.Popen[bytes] | None = None
+        self.output = None
+        self.errors = None
+        self.loaded_snapshot: dict[str, Any] | None = None
+        self.summary: dict[str, Any] = {}
+        self.metadata: dict[str, Any] = {}
+
+    def __enter__(self) -> GPUSampler:
+        executable = base.executable_path("nvidia-smi")
+        command = [
+            executable or "nvidia-smi",
+            "--query-gpu=" + ",".join(GPU_SAMPLE_FIELDS),
+            "--format=csv,noheader,nounits", f"--loop={GPU_SAMPLE_INTERVAL_S}",
+        ]
+        self.metadata = {
+            "schema": "w1ax_streaming_gpu_telemetry_v1", "started_utc": now(),
+            "command": command, "interval_s": GPU_SAMPLE_INTERVAL_S,
+            "raw_csv_path": str(self.directory / "gpu-telemetry.csv"),
+            "stderr_path": str(self.directory / "gpu-telemetry.stderr.log"),
+            "status": "unavailable" if executable is None else "running",
+            "timing_note": "Polling runs only in this streaming diagnostic and may add small observation overhead.",
+        }
+        try:
+            self.output = (self.directory / "gpu-telemetry.csv").open("wb")
+            self.errors = (self.directory / "gpu-telemetry.stderr.log").open("wb")
+            if executable is not None:
+                self.process = subprocess.Popen(
+                    command, stdout=self.output, stderr=self.errors,
+                    start_new_session=os.name == "posix",
+                )
+                self.metadata["pid"] = self.process.pid
+            write_json(self.directory / "gpu-telemetry.json", self.metadata)
+        except BaseException:
+            self.stop()
+            raise
+        return self
+
+    def stop(self) -> None:
+        if self.summary:
+            return
+        exited_before_stop = self.process.poll() if self.process is not None else None
+        try:
+            if self.process is not None:
+                base.stop_server(self.process)
+        finally:
+            for stream in (self.output, self.errors):
+                if stream is not None:
+                    stream.close()
+        raw_path = self.directory / "gpu-telemetry.csv"
+        self.summary = summarize_gpu_telemetry(raw_path.read_text(errors="replace") if raw_path.exists() else "", self.loaded_snapshot)
+        if self.process is None:
+            status = "unavailable"
+        elif exited_before_stop is not None:
+            status = "poller_exited_early"
+        else:
+            status = "complete" if self.summary["sample_count"] else "no_samples"
+        self.metadata.update({
+            "status": status, "ended_utc": now(),
+            "exit_code_before_stop": exited_before_stop,
+            "exit_code_after_stop": self.process.returncode if self.process is not None else None,
+        })
+        self.summary.update(self.metadata)
+        write_json(self.directory / "gpu-telemetry.json", self.metadata)
+        write_json(self.directory / "gpu-telemetry-summary.json", self.summary)
+
+    def __exit__(self, *_args: Any) -> bool:
+        self.stop()
+        return False
 
 
 def content_text(delta: dict[str, Any]) -> str:
@@ -323,6 +473,7 @@ def run(config_path: Path, run_id: str, prompt_file: Path, *, dry_run: bool = Fa
         "llama_gitlink": llama_gitlink,
         "llama_checkout_commit": llama_checkout_commit,
         "measurement": "streaming TTFT and full request wall; not nonstreaming decode throughput",
+        "gpu_telemetry": {"interval_s": GPU_SAMPLE_INTERVAL_S, "fields": list(GPU_SAMPLE_FIELDS), "peak_semantics": GPU_PEAK_SEMANTICS},
         "token_parity": "stream chunks may omit token IDs; no raw-ID parity claim",
     }
     write_json(destination / "manifest.json", manifest)
@@ -330,6 +481,7 @@ def run(config_path: Path, run_id: str, prompt_file: Path, *, dry_run: bool = Fa
         return destination
     base_url = f"http://{config['server']['host']}:{config['server']['port']}"
     records: list[dict[str, Any]] = []
+    telemetry_summaries: list[dict[str, Any]] = []
     try:
         for cap in CAPS:
             for repetition, order in enumerate(orders):
@@ -338,7 +490,7 @@ def run(config_path: Path, run_id: str, prompt_file: Path, *, dry_run: bool = Fa
                     server_dir.mkdir(parents=True)
                     write_json(server_dir / "gpu-before.json", base.gpu_snapshot())
                     write_json(server_dir / "environment.json", variant_envs[variant])
-                    with (server_dir / "server.log").open("wb") as log:
+                    with (server_dir / "server.log").open("wb") as log, GPUSampler(server_dir) as telemetry:
                         process = subprocess.Popen(
                             manifest["commands"][variant], cwd=ROOT, env=variant_envs[variant],
                             stdout=log, stderr=subprocess.STDOUT,
@@ -350,7 +502,8 @@ def run(config_path: Path, run_id: str, prompt_file: Path, *, dry_run: bool = Fa
                             (server_dir / "props.json").write_text(raw_props)
                             if status != 200:
                                 raise RuntimeError(f"/props returned HTTP {status}")
-                            write_json(server_dir / "gpu-loaded.json", base.gpu_snapshot())
+                            telemetry.loaded_snapshot = base.gpu_snapshot()
+                            write_json(server_dir / "gpu-loaded.json", telemetry.loaded_snapshot)
                             for index in range(WARMUPS):
                                 prompt = prompts[index % len(prompts)]
                                 body = {**base.request_body(config, prompt), "max_tokens": cap, "stream": True}
@@ -376,6 +529,7 @@ def run(config_path: Path, run_id: str, prompt_file: Path, *, dry_run: bool = Fa
                             evidence = base.w1ax_dispatch_evidence(server_log, specs[variant], specs) if variant in specs else {"status": "not_w1ax_variant"}
                             write_json(server_dir / "dispatch-evidence.json", evidence)
                             write_json(server_dir / "gpu-after.json", base.gpu_snapshot())
+                    telemetry_summaries.append({"cap": cap, "repetition": repetition, "variant": variant, **telemetry.summary})
                     if variant in specs and not evidence["cuda_w1ax_dispatch_confirmed"]:
                         raise RuntimeError(f"{variant}: all-nine loader, graph, or CUDA dispatch marker missing")
         expected = len(CAPS) * REPETITIONS * len(variants) * len(prompts)
@@ -394,6 +548,7 @@ def run(config_path: Path, run_id: str, prompt_file: Path, *, dry_run: bool = Fa
                 for cap in CAPS for prompt in prompts for variant in variants
             ],
             "final_gpu_snapshot": base.gpu_snapshot(),
+            "gpu_telemetry_by_server": telemetry_summaries,
         }
         write_json(destination / "summary.json", summary)
     except BaseException as error:

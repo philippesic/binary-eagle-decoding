@@ -6,7 +6,7 @@ import tempfile
 import tomllib
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -150,6 +150,89 @@ class ConfigTests(unittest.TestCase):
         bad = {**self.config, "server": {**self.config["server"], "common_args": ["--parallel", "2"]}}
         with self.assertRaisesRegex(ValueError, "concurrency one"):
             streaming.validate_config(bad)
+
+
+class GPUTelemetryTests(unittest.TestCase):
+    raw = (
+        "2026/09/25 12:00:00.000, GPU-one, RTX 2080 Ti, 11264, 8000, 62, 190.5, 1710, 7000\n"
+        "2026/09/25 12:00:01.000, GPU-one, RTX 2080 Ti, 11264, 8100, 65, 200.0, 1695, 7000\n"
+        "2026/09/25 12:00:02.000, GPU-one, RTX 2080 Ti, 11264, 8050, N/A, [Not Supported], 1700, 7000\n"
+    )
+    loaded = {
+        "exit_code": 0,
+        "command": ["nvidia-smi", "--query-gpu=name,uuid,driver_version,memory.total,memory.used,clocks.sm,power.draw"],
+        "stdout": "RTX 2080 Ti, GPU-one, 999, 11264 MiB, 7900 MiB, 1710 MHz, 190 W\n",
+    }
+
+    def test_sampled_peak_loaded_memory_and_unavailable_values(self):
+        result = streaming.summarize_gpu_telemetry(self.raw + "diagnostic text\n", self.loaded)
+        self.assertEqual(result["sample_count"], 3)
+        self.assertEqual(result["rejected_raw_lines"], 1)
+        device = result["devices"][0]
+        self.assertEqual(device["loaded_memory_used_mib"], 7900)
+        self.assertEqual(device["memory_used_sampled_peak_mib"], 8100)
+        self.assertEqual(device["temperature_c"], {"available_samples": 2, "sampled_min": 62, "sampled_max": 65})
+        self.assertEqual(device["power_w"]["sampled_max"], 200)
+        self.assertEqual(device["sm_clock_mhz"]["sampled_min"], 1695)
+        self.assertIn("not an allocator high-water", result["peak_semantics"])
+        self.assertIsNone(streaming.numeric_gpu_value("N/A"))
+
+    def test_poller_stops_on_success_and_exception_with_wsl_executable(self):
+        for fail in (False, True):
+            with self.subTest(fail=fail), tempfile.TemporaryDirectory() as temporary:
+                directory = Path(temporary)
+                child = Mock(pid=123, returncode=-15)
+                child.poll.return_value = None
+
+                def start_child(_command, **kwargs):
+                    kwargs["stdout"].write(self.raw.encode())
+                    return child
+
+                with patch.object(streaming.base, "executable_path", return_value="/usr/lib/wsl/lib/nvidia-smi"), patch.object(
+                    streaming.subprocess, "Popen", side_effect=start_child
+                ) as popen, patch.object(streaming.base, "stop_server") as stop:
+                    try:
+                        with streaming.GPUSampler(directory) as sampler:
+                            sampler.loaded_snapshot = self.loaded
+                            if fail:
+                                raise RuntimeError("synthetic request failure")
+                    except RuntimeError:
+                        self.assertTrue(fail)
+                    stop.assert_called_once_with(child)
+                    sampler.stop()  # idempotent cleanup must not signal a reused PID
+                    stop.assert_called_once_with(child)
+                    self.assertTrue(sampler.output.closed)
+                    self.assertTrue(sampler.errors.closed)
+                    self.assertEqual(popen.call_args.args[0][0], "/usr/lib/wsl/lib/nvidia-smi")
+                    self.assertIn("--loop=1", popen.call_args.args[0])
+                    self.assertTrue(popen.call_args.kwargs["start_new_session"])
+                summary = json.loads((directory / "gpu-telemetry-summary.json").read_text())
+                self.assertEqual(summary["status"], "complete")
+                self.assertEqual(summary["sample_count"], 3)
+                self.assertEqual((directory / "gpu-telemetry.csv").read_text(), self.raw)
+
+    def test_missing_utility_and_early_exit_are_explicit(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            with patch.object(streaming.base, "executable_path", return_value=None), patch.object(
+                streaming.subprocess, "Popen"
+            ) as popen:
+                with streaming.GPUSampler(directory) as sampler:
+                    pass
+                popen.assert_not_called()
+            self.assertEqual(sampler.summary["status"], "unavailable")
+            self.assertEqual(sampler.summary["sample_count"], 0)
+        with tempfile.TemporaryDirectory() as temporary:
+            child = Mock(pid=123, returncode=1)
+            child.poll.return_value = 1
+            with patch.object(streaming.base, "executable_path", return_value="nvidia-smi"), patch.object(
+                streaming.subprocess, "Popen", return_value=child
+            ), patch.object(streaming.base, "stop_server") as stop:
+                with streaming.GPUSampler(Path(temporary)) as sampler:
+                    pass
+                stop.assert_called_once_with(child)
+            self.assertEqual(sampler.summary["status"], "poller_exited_early")
+            self.assertEqual(sampler.summary["exit_code_before_stop"], 1)
 
 
 if __name__ == "__main__":
