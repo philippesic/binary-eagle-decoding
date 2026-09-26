@@ -14,7 +14,7 @@ QAT run has begun.
 
 **Concurrent suite progress:** the latest [goal checkpoint](goals/w1ax-activation-precision-suite.md)
 records W1Ax implementation, 88-case SM75 gates, real-input replay and the
-completed historical (480 requests) and development (960 requests) eight-path matrices. Matched operator replay and the 480-request round trace are also complete. Full-server profiling and streaming diagnostics are complete. The 720-request context matrix is complete; three of twelve development policy cells are complete. The pause preserved 120 partial D2/p0 requests. The user authorized resumption on 2026-09-26, but the registered GPU hosts currently time out over SSH; no experiment has restarted. The last verified shutdown was idle, not a current resource observation. The goal file’s successor handoff records the live job, completed worker transfer, exact next actions and stop procedure. Consult that checkpoint for current
+completed historical (480 requests) and development (960 requests) eight-path matrices. Matched operator replay and the 480-request round trace are also complete. Full-server profiling and streaming diagnostics are complete. The 720-request context matrix is complete; three of twelve development policy cells are complete. The suite resumed on 2026-09-26 at 18:00 UTC under a fresh supervisor. D2/p0 attempt 2 is running; the interrupted attempt and its 120 requests remain preserved. The goal file’s successor handoff records the live job, completed worker transfer, exact next actions and stop procedure. Consult that checkpoint for current
 run ownership, paths and stop instructions. These records were preserved during
 integration of the literature review; its authors did not operate or revalidate
 that GPU run.

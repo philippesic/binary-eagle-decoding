@@ -1,8 +1,8 @@
 # Goal: all-layer W1Ax activation-precision suite on RTX 2080 Ti
 
 **Opened:** 2026-09-25
-**State:** resumption authorized; awaiting host access, three policy cells complete and fourth preserved
-**GPU owner:** root for resume preflight only; no new job or operator has started
+**State:** active after user-authorized resume; three policy cells complete, D2/p0 attempt 2 running
+**GPU owner:** `/root/policy_operator`, under successor chat `01a0dbfc-6f9b-76e1-895d-1a617ad45e60`
 
 ## Objective
 
@@ -471,3 +471,13 @@ All experiment/analysis work is stopped. Resume only on explicit user request.
 - Local main and w1ax-suite were clean at `4702e45`; preserved data and worktree remain untouched. Local GPU pause flag remains set until a successful resource preflight, to prevent accidental launches while access is unresolved. Root owns that preflight; the prior operator remains completed.
 - Once access returns, verify frozen project `2f6ab14`, runtime `feba15698`, suite fingerprint and interrupted D2/p0-a1 data (120 saved records), then confirm no project processes and available GPU resources. Clear the local rtx2080ti flag using `agent_env.py resume` and launch the same suite under a fresh unique supervisor. The frozen launcher skips five succeeded context/D1 cells and creates D2/p0 attempt-a2 without overwriting attempt-a1. Do not edit the frozen runner or reuse the old supervisor directory.
 - The official final policy analyzer supports multiple attempts and requires one successful attempt per cell. The ignored local interim audit wrapper currently restricts names to a1; permit later attempt numbers before using it on resumed cells. Nine policy cells plus final analysis/publication/cleanup remain required.
+
+
+## Supervised suite resumed — 2026-09-26 18:04 UTC
+
+- User's “Try now” restored access at the unchanged registered address. Fresh preflight verified RTX2080Ti, no compute apps/project processes, clean frozen project `2f6ab1469fa8efe34d15e0028d1e3980e67132f6`, runtime `feba1569848e74996651a42a9751f8afa5958b1d` and original suite fingerprint. Root cleared the local rtx2080ti pause flag at17:57:59UTC. Native Goal is active; prior pause and host-unavailable checkpoints are superseded.
+- Operator `/root/policy_operator` again owns the GPU. Pre-resume suite/progress/partial records and verified transfer hashes are preserved under ignored local `runs/w1ax-analysis-mirror/pre-resume-20260926/`. Old D2/p0-a1 still has120 records, SHA256 `9a8b06a449232518e2b77458cc1e7375f39c29f7a2e3395abf3a96d8b89c3de7`. No completed cell was rerun and no old result was overwritten.
+- New supervisor: frozen runner `runs/w1ax-policy-resume-supervisor-20260926/`, started18:00:48.311977UTC, remote_job PID875 and launcher PID/PGID876. It validated frozen inputs, skipped both completed context cells and all three D1 cells, then created `w1ax-diagnostic-suite-20260926-development-d2-pmin-0p0-a2`. At18:04UTC, a2 was running with18 records; benchmark PGID1088 and server PGID1175. GPU89%/8835MiB. IDs change; inspect the live tree before signaling. Launch pane%20 and monitor%23 remain in tmux session `w1ax-2080ti`; root spare pane%12 is read-only.
+- Resume environment snapshot `resume-environment.json` is in the local pre-resume checkpoint and new remote supervisor directory. Idle snapshot: driver610.74, GPU P8,11264MiB total,10454MiB free/574MiB used,300MHz clocks,18.04W/300W; WSL kernel6.18.33.2. This is a distinct run epoch after the user pause. The lower idle allocation is not a measured model-memory improvement.
+- Continue all nine unfinished policy cells with the same frozen runner. Operator mirrors five completed artifacts and transfer hashes at each boundary. Local `runs/w1ax-analysis-mirror/audit_policy_cell_resume.py` accepts later attempt numbers; original interim wrapper remains intact. After timing ends, run the published official full-grid helper separately with2000 resamples/seed42; it selects the successful a2 and excludes interrupted a1. Preserve output differences and dual-anchor/fixed-versus-selected comparisons.
+- Pause procedure remains immediate local pause flag, interrupt verified remote_job supervisor, verify launcher/benchmark/server groups stop, then query explicit WSL nvidia-smi. No QAT training or reserved-final evaluation is authorized or started.
