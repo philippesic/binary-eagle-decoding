@@ -93,6 +93,47 @@ incompatible direct fallbacks. Binary/mixed blocks report custom-operation graph
 launches. Counters include setup and warmups; capture/recapture costs and direct
 warmups are retained. They do not alone establish per-projection kernel timing.
 
+The final runtime's opt-in CUDA dispatch audit observed all nine drafter
+projections for each path. Q4_0 executes Q4_0 matrix paths with Q8_1 activation
+conversion; D/C execute custom group/row A16 sign-add paths; each Q8 rescue
+executes MMVQ/MMQ only for its declared subset. The original and fitted dense
+heads execute FP16 MMVF/MMF/cuBLAS as shape dictates. The audit records the
+actual weight name/type, logical shape, activation operand, accumulation and
+fused gate/up sharing; it is an inventory at graph construction, not a graph
+replay counter. Full records and per-server logs are retained locally and on
+the RTX 5080 host.
+
+Nsight Systems 2025.5.2 captured real CUDA graph nodes and kernels on three
+historical prompts plus two warmups for each path. Exact process-PID joins
+separate the twelve sequential servers. **Summed GPU kernel duration over the
+whole diagnostic server lifetime** was:
+
+| Path | Kernel sum (s) | Custom A16 subset (s) |
+| --- | ---: | ---: |
+| Q4_0 | 3.785 | — |
+| D | 11.044 | 5.916 |
+| C | 8.682 | 3.073 |
+| D + attention Q8 | 7.180 | 2.621 |
+| D + fusion Q8 | 10.094 | — |
+| D + FFN-down Q8 | 9.618 | 4.696 |
+| D + head Q8 | 9.522 | 4.558 |
+| D + original FP16 head | 9.708 | — |
+| Attention + fusion Q8 | 6.657 | 2.351 |
+| D + fitted FP16 head | 9.527 | — |
+| FP16 EAGLE | 4.330 | — |
+| Target only | 6.492 | — |
+
+Subset times marked — await final tabulation; they are not zero. For the
+observed one-token binary-head kernel shape, D group128 scales had a 206 µs
+median over 2307 launches versus 76 µs over 2545 launches for C row scales.
+The 32,000-row head attribution uses its unique grid shape in this frozen
+model, not a runtime tensor ID. Standard Q4_0's Q8_1 pack kernels summed
+24.9 ms and its quantized matmul kernels 275.2 ms over its whole trace.
+These per-path sums have different round trajectories and include startup and
+warmups; they are not request latency or paired speed ratios. CUDA kernel
+interval unions, observed grids, graph-node IDs and ambiguity limits are in
+the preserved per-process analysis. No GPU and CPU span sums are combined.
+
 ## Common-history body/head diagnostic
 
 All 144 requests completed: canonical Q4 recording plus five forced arms across
