@@ -49,3 +49,30 @@ Finish runtime/capture design; freeze practical calibration/solver budget;
 implement and test bounded reference extensions; capture training activations,
 fit and evaluate the four variants plus matched controls. Publish coherent
 progress regularly, including the submodule before its parent gitlink.
+
+## Frozen calibration and solver protocol (before any fit)
+
+Capture ordinary native drafter with explicit F32→F16→F32 boundaries at all
+nine selected linears, greedy D=5/p_min=0, 32 generated tokens on every one of
+96 train prompts. Use at most32 evenly spaced rows over each layer/prompt's
+complete capture stream (prefill and recurrent), at most3072 rows/layer.
+Capture values remain uncentered. Compare source BF16→F32 weights in canonical
+GGUF Q/K row order; audit BF16→F16 source cast errors and sign differences.
+
+F32 scales throughout. Row NNLS uses exact scalar constrained ridge solution.
+Group128 uses feasible projected accelerated gradient, output-row batches32,
+maximum512 iterations, relative projected-gradient tolerance1e-6. Per-row ridge
+lambda=1e-4 times mean diagonal of ZᵀZ/N, centered at mean-absolute anchor.
+No sweep. Record convergence residuals and iteration counts. Each fitted row
+falls back to its baseline if direct unregularized reconstruction SSE worsens.
+Freeze signs, inputs, source, grouping, regularizer and budget for all variants.
+Native reference arithmetic: F16-cast X promoted F32, ordered F32 signed sums,
+F32 scale multiplication, and F32 sum across groups. This is a quality reference,
+not an optimized kernel or throughput claim. Audit fitting-versus-native
+reduction-order error explicitly.
+
+Development uses unchanged128 maximum output tokens (EOS honored), one pass
+on all24 development prompts, D5/p_min0, temperature0, seed42, no thinking,
+context2048, concurrency1, target/draft F16 KV. Same pinned runtime and target
+for target-only, FP16, Q4_0, A, B, C, D. Capture/trace diagnostics have no timing
+interpretation. Include zero-, partial-, full-accept transitions in parity gates.
