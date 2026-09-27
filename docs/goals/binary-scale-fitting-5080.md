@@ -112,3 +112,11 @@ acceptance, per-prompt state slices, missing capture failures and child cleanup.
 Runtime CUDA build: runs/scale-build-reference-20260927, started09:22UTC,
 currently running. Baseline build3 finished successfully09:21:32UTC.
 Parent main published through0258aac. No GPU inference/fitting yet.
+
+09:26UTC: RTX5080 CUDA gate112/112 passed, backendCUDA0; run
+scale-cuda-operators-20260927 finished exit0 and supervisor cleaned its group.
+Native graph cast diagnostic running: scale-cast-gate-20260927,
+results/scale-cast-gate,3 historical prompts (prose-01/code-01/reasoning-01),
+128tokens each, ordinary versus A16cast-only, both capture all9 layers/state.
+This is diagnostic data only, never calibration fitting. Live owner parent,
+pane%26; inspect via%27. Next verify state/cast gate then96train capture.
