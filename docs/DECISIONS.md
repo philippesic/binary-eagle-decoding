@@ -120,3 +120,27 @@ adaptation; separately choose any training-scope/budget amendment. The existing
 500-step/45-minute head pilot is a narrower proposal, not authorization for
 all-body QAT. Mixed precision and a DSpark/DFlash architecture screen remain
 later alternatives. No new goal, GPU run, training or final-set use began.
+
+
+## After the approved scale screen (2026-09-27)
+
+The user approved and the team completed the bounded four-way fixed-sign A16
+scale experiment on RTX 5080. [Results](../experiments/binary-scale-fitting-5080.md):
+row mean 0.119, group mean 0.161, fitted row 0.290, fitted group D 0.425 accepted
+drafts/round, versus FP16 1.037 and Q4_0 1.042. D wins over A/B/C on all 24
+prompts but loses to both controls on all 24. All output IDs match target-only.
+Final prompts remain sealed. This completes that authorization.
+
+Recommended next choice: use D as the binary reference for a bounded forced
+common-history body/head factorial, then a training-only regularized readout
+on frozen D-body states if the user approves. This would diagnose whether a
+head/interface correction can use the remaining body information. Current
+own-history acceptance does not locate the defect. Do not promote this quality
+reference into kernel/performance work as if control-level acceptance recovered.
+
+Alternative: separately authorize more scale-only fitting, acknowledging that
+fusion's 2,560 group rows exhausted the frozen 512-iteration budget (maximum
+relative projected-gradient residual 1.76e-5, tolerance 1e-6). The present result
+is not a proof that all scale solutions are exhausted. No budget extension,
+sign training, readout fitting, broader QAT, A1 change or architecture pivot is
+automatically authorized. The next scope and budget remain user-owned.

@@ -1,15 +1,10 @@
 # Current project status
 
-**Active goal:** [binary scale fitting on RTX 5080](goals/binary-scale-fitting-5080.md).
-The approved four-way A16 row/group × mean/fitted quality screen is underway;
-96 training and 24 development prompts only, with reserved-final prompts sealed.
-**Latest completed goal:** [all-layer W1Ax activation-precision
-suite on RTX 2080 Ti](goals/w1ax-activation-precision-suite.md), completed
-2026-09-27 UTC. The [RTX 2080 Ti quantization suite](goals/rtx2080ti-quantization-suite.md)
-completed on 2026-09-25. The prior [W1A1 EAGLE research goal](goals/full-w1a1-eagle-project.md)
-remains checkpointed. The next research choice is user-owned; no new QAT run or
-reserved-final prompt evaluation has begun. Future native W1A1/QAT throughput
-comparisons must retain both FP16 EAGLE and Q4_0 EAGLE under the same target/verifier.
+**Active goal:** none. **Latest completed goal:** [binary scale fitting on RTX 5080](goals/binary-scale-fitting-5080.md), completed 2026-09-27 UTC.
+
+The approved four-way A16 screen completed all **168 requests** (7 paths × 24 development prompts). A/B/C/D accepted **0.119 / 0.161 / 0.290 / 0.425 drafts per round**, versus **1.037 FP16** and **1.042 Q4_0**. Fitted group scales improved 3.585× over row-mean A, closing 33.35% of the FP16 gap. D beat all other binary candidates on every prompt but trailed both controls on every prompt. All seven paths matched target-only raw IDs on all 24 prompts. See the [report](../experiments/binary-scale-fitting-5080.md) for counts, depth survival, calibration, artifacts and limitations.
+
+The recommendation is to retain D as the reference for a proposed common-history body/readout diagnostic. No follow-up fit, QAT, A1/kernel work or final-set evaluation was started. The RTX 5080 was released. The [all-layer W1Ax suite](goals/w1ax-activation-precision-suite.md) and [RTX 2080 Ti quantization suite](goals/rtx2080ti-quantization-suite.md) remain completed and sealed; the prior [W1A1 research goal](goals/full-w1a1-eagle-project.md) remains checkpointed. The next scope/budget choice is user-owned.
 
 **Final W1Ax result:** the twelve-cell development policy grid completed and
 validated all **11,520 requests**, alongside the sealed historical/development,
@@ -143,9 +138,9 @@ updates the earlier agent brainstorms using the completed policy and round
 measurements. It recommends recovering useful binary weights with wider
 activations first: finish missing graph/state parity checks, then a train-only
 fixed-sign row/group scale-fitting screen, with readout/body adaptation
-conditional on its result. W1A1 remains the research endpoint. This is a
-recommendation awaiting a research scope choice, not a new active goal or an
-expanded training budget; no GPU work or reserved-final evaluation was started.
+conditional on its result. W1A1 remains the research endpoint. The subsequently approved scale-fitting screen is now complete (report above).
+Body/readout adaptation and any expanded training budget remain user-owned;
+reserved-final evaluation has not begun.
 
 The [all-layer W1Ax study](../experiments/w1ax-activation-precision-results.md)
 is complete, including the predeclared policy grid. Its report separates

@@ -1,6 +1,13 @@
 # Binary scale fitting on RTX 5080
 
-Status: active, 2026-09-27 UTC. User-approved bounded experiment.
+Status: complete, 2026-09-27 UTC. User-approved bounded experiment finished.
+
+Final report: [binary scale fitting on RTX 5080](../../experiments/binary-scale-fitting-5080.md).
+All 168 development requests completed. A/B/C/D accepted 0.119/0.161/0.290/0.425
+drafts per round versus FP16 1.037 and Q4_0 1.042. D improved 3.585× over A
+and closed 33.35% of the FP16 gap; it remains below both controls on every
+prompt. All seven paths matched target-only raw IDs on all 24 prompts.
+No final prompts or follow-up research were used. No live GPU job remains.
 
 ## Objective and scope
 
@@ -43,7 +50,7 @@ request false. SSH via tmux MCP and wsl.exe -e /usr/lib/wsl/lib/nvidia-smi.
 Read evaluation protocol, operations, next-step consolidation and scale-fitting
 research section. Existing historical studies remain sealed.
 
-## Next action
+## Initial next action (completed)
 
 Finish runtime/capture design; freeze practical calibration/solver budget;
 implement and test bounded reference extensions; capture training activations,
@@ -151,7 +158,7 @@ Q4 control all9 selected tensors audited Q4_0. Fixed real replay set16captures
 covering9layers, firstsingle/multi invocation where present in firsttrainprompt.
 09:36:40UTC scale-real-replay-20260927 finished exit0: all4 native references
 passed,430sampled outputs each. Separate BLAS discrepancy recorded peroutput;
-maximum seen normalized error about1.31e-5 (not full fit-batch equivalence).
+maximum seen normalized error1.37680e-5 (not full fit-batch equivalence).
 Legacy-v2 row parity scale-row-gate-20260927 currently running pane%26 on same
 3historical prompts at128tokens, outputs results/scale-row-gate. Next full24dev
 one-pass7-way screen; no reserved-final use or follow-up optimization.
@@ -163,3 +170,32 @@ scale-development-20260927 nowrunning on%26:168requests =7paths×24devprompts,
 No calibration edits or recipe adjustments after fitting. Parent main through
 e32319b; new checkpoint docs are parent-owned. Raw validation archive copied to
 main checkout results/binary-scale-fitting-5080/validation.tar.gz via tmuxSSH.
+
+
+## Completion checkpoint
+
+Development run finished 2026-09-27 09:46:13 UTC, exit0. Independent recount
+from per-request round/response/state files verified all counts and all24 raw-ID
+matches per path. No replay rows or accepted-but-unemitted tokens occurred.
+All144 speculative per-prompt boundary audits passed. D wins accepted/round on
+24/24 prompts against each A/B/C, loses24/24 against FP16 and Q4_0. Recommended
+next choice is a user-approved common-history body/readout diagnostic using D;
+no follow-up was started. Fusion group fitting remains explicitly approximate.
+Final report reviewed with no blockers; changed Python Ruff and16 focused tests
+passed. Native GPU/CPU operator112-case gates and1,720 real-output checks passed.
+
+All owned supervisors/servers stopped. Final09:53UTC RTX5080 check:0% utilization,
+no compute processes,2,115MiB noncompute allocation. No2080Ti contact occurred.
+The remote experiment worktree was removed after moving4.4GB of all raw results,
+training captures, fitted artifacts, native binaries and logs to:
+`/home/philip/binary-eagle-decoding/runs/binary-scale-fitting-5080-artifacts-20260927`.
+The first removal refused the submodule; after deinitialization, explicit Git
+worktree removal completed. Source/target models remain in the parent models
+store. Local complete screen/fit/replay copy and relocation/hash index:
+`/Users/pippo/github/binary-eagle-decoding/results/binary-scale-fitting-5080/artifact-index.json`.
+Raw manifests preserve original execution paths; the index maps relocations.
+
+No further work is authorized in this goal. Publish final documentation, retire
+the completed local managed worktree and close the owned tmux session. The
+runtime commit2e8d2e8 remains published on the fork’s scale-reference-a16 branch;
+keep that published reference for the parent gitlink. Parent integration is main.
