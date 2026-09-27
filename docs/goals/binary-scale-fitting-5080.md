@@ -140,3 +140,18 @@ or hyperparameter changes. CPU-only pureQ4_0 control conversion running under
 %27 (CUDA_VISIBLE_DEVICES=-1), scale-q4-control-20260927; target unchanged.
 Native library hashes and environment saved results/scale-native-hashes.txt
 and results/scale-environment.json. Replay executable built successfully.
+
+09:34:03UTC fit finished exit0. All9 layers got3072 examples; all4 artifacts
+passed exact sign/scale/nonselected export audit. All65280 row fits and62720/65280
+group fits met tolerance; fusion2560group rows reached512iterations with maximum
+relative projected-gradient residual1.76374e-5. No fallback rows. Source BF16→F16
+maxerror2.9802322387695312e-8,141sign-at-zero changes in dense F16 cast; allbinary
+candidates retain originalBF16 signs. Group zeros are permitted NNLS solutions.
+Q4 control all9 selected tensors audited Q4_0. Fixed real replay set16captures
+covering9layers, firstsingle/multi invocation where present in firsttrainprompt.
+09:36:40UTC scale-real-replay-20260927 finished exit0: all4 native references
+passed,430sampled outputs each. Separate BLAS discrepancy recorded peroutput;
+maximum seen normalized error about1.31e-5 (not full fit-batch equivalence).
+Legacy-v2 row parity scale-row-gate-20260927 currently running pane%26 on same
+3historical prompts at128tokens, outputs results/scale-row-gate. Next full24dev
+one-pass7-way screen; no reserved-final use or follow-up optimization.
