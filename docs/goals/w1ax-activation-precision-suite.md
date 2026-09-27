@@ -1,7 +1,7 @@
 # Goal: all-layer W1Ax activation-precision suite on RTX 2080 Ti
 
 **Opened:** 2026-09-25
-**State:** active after user-authorized resume; ten policy cells complete, D5/p0.1 running
+**State:** active after user-authorized resume; eleven policy cells complete, D5/p0.3 running
 **GPU owner:** `/root/policy_operator`, under successor chat `01a0dbfc-6f9b-76e1-895d-1a617ad45e60`
 
 ## Objective
@@ -543,3 +543,11 @@ All experiment/analysis work is stopped. Resume only on explicit user request.
 - Decode rates A16/A8/A4/A1 are29.985/42.680/44.847/45.500 tok/s; FP16/Q4_0 are76.829/84.583 and target-only60.489. The target-only rate returned near the pre-pause D1 level, despite D2/D3 controls being65.7–65.9 after resumption. A simple persistent pre/post-pause explanation is therefore unsupported.
 - Read-only audit by `/root/policy_uncertainty` found no direct D/config confound: configs differ only in evaluation.max_draft_tokens; target-only command arrays, request settings, warmups/order, models/binary/harness hashes and numerical environments match (only D1 TMPDIR differs). Frozen harness SHA256 `1ca8eb8aaa4b958982cb1f8488ae41e4949b81f3e78d7f3d0e19be01b35f6675`. In frozen benchmark lines950–951 target-only uses spec-type none; draft flags occur only in lines968–985; request body991–1006 has no depth/confidence; depth in record1655–1663 is postmeasurement metadata. All120 target-only raw sequences and completion lengths match across audited depth cells. The cause of control timing variation remains unestablished.
 - D5/p0.1 started automatically at23:20UTC and reached45 records at23:22UTC. Supervisor/launcher875/876, benchmark PGID22015 and server PGID22195 at the snapshot; clean logs. Operator retains sole GPU ownership. Only D5/p0.1 and D5/p0.3 remain before the official full-grid analysis. Latest published helper is `c64e260`; keep it separate from the frozen measured runner.
+
+
+## Eleventh policy cell complete — 2026-09-27 00:11 UTC
+
+- D5/p0.1 a1 completed 960/960. Five transfer hashes match; local structural/hash/counter/policy/raw-ID validation passed. Records SHA256 `873e384c34b8aa1543851f26e65af14bf6df37e3c30aa95ac5f80b566722d12b`; interim audit `be11c54f17b8e7ce6c12167030e55d0a0efbf9693c68ee98aad1867c87b91599`. Every speculative path matches target-only and both anchors on all 120 paired requests.
+- D5/p0 versus p0.1 has zero raw-ID or per-request counter differences across all 960 pairs. This completes that observed equivalence check at all four depths; each result is consistent with the frozen top-10-normalized confidence contract. No floor-0.1 performance benefit is inferred from timing noise.
+- Final cell D5/p0.3 started automatically around00:08UTC on2026-09-27, reaching26 records at00:09UTC. Supervisor/launcher875/876, benchmark PGID24885 and server PGID25212 at the snapshot; clean logs. Operator retains sole GPU ownership through final stopped-group/GPU-idle checks and mirroring.
+- After this last cell, root must run the latest separate published policy helper (`c64e260`) against original Linux suite/progress/results with2000 resamples/seed42, preserve all12 successful cells and interrupted-a1 exclusion, finalize fixed/selected dual-anchor tables and raw-output comparisons, review/push final report/status/goal, then mark the native Goal complete only after all owned jobs are stopped.
