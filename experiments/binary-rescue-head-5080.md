@@ -267,6 +267,13 @@ artifacts, target, prompt manifest and policy were used throughout. Each of the
 60 server blocks reported actual CUDA graph launches (912,625 in aggregate),
 with no disabled or incompatible direct fallback. Graph recaptures and direct
 warmup work remain included in the observed serving behavior.
+An independent local audit compared all 1,440 measured requests: each path's
+raw IDs matched the Q4_0 path for the same prompt, and all five repetitions
+within each path/prompt matched stable proposal/output digests and native
+accepted/proposed/round counters. The proposal digest is noncryptographic
+equality evidence; raw output ID comparison is exact. Task IDs and completion
+ordinals are server-specific and were excluded from digest equality. The audit
+is retained beside the compact timing manifest.
 
 Client throughput divides 15,360 emitted tokens per path by the sum of its
 120 full request wall times; server decode throughput uses the server's decode
