@@ -114,16 +114,16 @@ whole diagnostic server lifetime** was:
 | D | 11.044 | 5.916 |
 | C | 8.682 | 3.073 |
 | D + attention Q8 | 7.180 | 2.621 |
-| D + fusion Q8 | 10.094 | — |
+| D + fusion Q8 | 10.094 | 5.328 |
 | D + FFN-down Q8 | 9.618 | 4.696 |
 | D + head Q8 | 9.522 | 4.558 |
-| D + original FP16 head | 9.708 | — |
+| D + original FP16 head | 9.708 | 4.536 |
 | Attention + fusion Q8 | 6.657 | 2.351 |
-| D + fitted FP16 head | 9.527 | — |
+| D + fitted FP16 head | 9.527 | 4.460 |
 | FP16 EAGLE | 4.330 | — |
 | Target only | 6.492 | — |
 
-Subset times marked — await final tabulation; they are not zero. For the
+A dash means the path has no custom binary A16 operation. For the
 observed one-token binary-head kernel shape, D group128 scales had a 206 µs
 median over 2307 launches versus 76 µs over 2545 launches for C row scales.
 The 32,000-row head attribution uses its unique grid shape in this frozen
