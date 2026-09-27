@@ -409,5 +409,8 @@ supervisor states. Primary quality run: `rescue-quality-20260927`, directory
 `rescue-instrumented-primary-20260927` and is excluded from completed results.
 Local ignored evidence is under `results/binary-rescue-head-5080`, including
 the clean 34 MiB timing manifest, Nsight SQLite and per-process kernel analysis.
+The partial local artifact index hashes 14 current evidence files (644,203,716
+bytes in total) and identifies the preserved remote project; it will be
+extended after the remaining diagnostics and raw archive are complete.
 The remote checkout and all raw artifacts remain preserved for resumption;
 the final archive/index and remaining diagnostic results are pending.
