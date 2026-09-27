@@ -97,6 +97,22 @@ class StreamTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "without DONE"):
             parser.result(0.5)
 
+    def test_utf8_tail_retained_in_final_ids_without_invented_itl(self):
+        parser = runner.StreamParser()
+        for event in (
+            {"tokens": [10]},
+            {"tokens": [11]},
+            {"generated_token_ids": [10, 11, 12], "usage": {"completion_tokens": 3}},
+        ):
+            for line in frame(event).splitlines(keepends=True):
+                parser.feed(line, 0.1)
+        parser.feed(b"data: [DONE]\n", 0.2)
+        parser.feed(b"\n", 0.2)
+        row = parser.result(0.3)
+        self.assertEqual(row["generated_token_ids"], [10, 11, 12])
+        self.assertEqual(row["inter_token_s"], [])
+        self.assertIn("unavailable", row["inter_token_status"])
+
     def test_real_http_fake_server(self):
         body = b"".join(frame(e) for e in events()) + b"data: [DONE]\n\n"
 

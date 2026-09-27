@@ -197,14 +197,22 @@ class StreamParser:
                 "stream lacks raw IDs; runtime must expose per-event tokens or "
                 "final generated_token_ids"
             )
-        if self.final_ids is not None and self.token_ids and self.token_ids != self.final_ids:
+        if (
+            self.final_ids is not None
+            and self.token_ids
+            and self.token_ids != self.final_ids[: len(self.token_ids)]
+        ):
             raise ValueError("stream chunk IDs disagree with final IDs")
         tokens = self.usage.get("completion_tokens", self.timings.get("predicted_n", len(ids)))
         if tokens != len(ids):
             raise ValueError(f"raw IDs/completion count mismatch: {len(ids)} != {tokens}")
         arrival_times = [r["received_s"] for r in self.arrivals]
         # Per-token intervals only when the entire stream has one ID per arrival.
-        token_stream = bool(self.arrivals) and all(r["token_count"] == 1 for r in self.arrivals)
+        token_stream = (
+            bool(self.arrivals)
+            and len(self.token_ids) == len(ids)
+            and all(r["token_count"] == 1 for r in self.arrivals)
+        )
         times = arrival_times if arrival_times else self.content_arrivals
         if not times:
             raise ValueError("stream has no token or content arrivals")
