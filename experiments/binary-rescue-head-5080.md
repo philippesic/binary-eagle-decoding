@@ -74,6 +74,14 @@ Standard Q8_0's Q8_1 activation conversion differs from D's F16-cast activation
 path: these are practical mixed-path interventions, not isolated weight-bit tests.
 Per-projection executed-kernel profiling remains pending.
 
+The admitted attention+fusion combination retains 71.77% binary selected
+weights, uses 3.2965 selected payload bits/weight, and has a 91.71 MiB GGUF.
+The selected fitted-FP16-head model retains 62.46% binary selected weights but
+uses 6.7868 selected payload bits/weight and 182.51 MiB on disk. The unchanged
+D and Q4_0 draft files are 38.47 and 123.01 MiB respectively. These are draft
+file footprints; the shared FP16 target dominates total loaded memory. The
+dense fitted head exceeds Q4_0's entire draft file size and is diagnostic.
+
 ## Correctness and graph gates
 
 - 112/112 binary operator cases passed on actual RTX5080 CUDA, plus CPU gates.
