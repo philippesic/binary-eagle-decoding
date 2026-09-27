@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "binary": "build/llama-cuda/bin/llama-server",
+  "target": "models/gguf/Qwen3-4B-f16.gguf",
+  "prompts": "data/qat-revisit/development.jsonl",
+  "q4_variant": "q4_0",
+  "warmups": 2,
+  "repetitions": 5,
+  "port": 18091,
+  "graph_env": {
+    "GGML_CUDA_GRAPH_STATS": "1"
+  },
+  "graph_required_markers": [
+    "CUDA_GRAPH_STATS"
+  ],
+  "variants": {
+    "q4_0": {
+      "draft": "results/scale-archive/scale-models/Qwen3-4B-eagle3-q4_0.gguf"
+    },
+    "D_attention_fusion_q8": {
+      "draft": "results/rescue-models/D-attention-fusion-q8.gguf",
+      "env": {
+        "GGML_W1AX_ACT_BITS": "16"
+      }
+    },
+    "head_fit": {
+      "draft": "results/rescue-models/D-head-step-0500.gguf",
+      "env": {
+        "GGML_W1AX_ACT_BITS": "16"
+      }
+    }
+  },
+  "instrumented_env": {
+    "EAGLE_DRAFT_STAGE_JSONL": "{output}/draft-stages.jsonl",
+    "GGML_CUDA_MATMUL_AUDIT": "1"
+  },
+  "diagnostic": {
+    "label": "frozen-six-development-long-context",
+    "prompts": "data/rescue-long-context.jsonl",
+    "prompts_sha256": "a03bc4469eb7bedd75048e4fa538a0404f5801ccdb14dd6aa9f4623d8b113966",
+    "policy": {
+      "tokens": 256,
+      "draft_length": 5,
+      "p_min": 0,
+      "context": 2048
+    }
+  }
+}
