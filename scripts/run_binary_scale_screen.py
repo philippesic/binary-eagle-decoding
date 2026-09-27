@@ -102,7 +102,7 @@ def run(args):
         env.update(spec.get("env", {}))
         if args.capture:
             env["GGML_W1AX_CAPTURE_DIR"] = str(cap)
-            env["GGML_EAGLE_DENSE_A16"] = "1"
+            env.setdefault("GGML_EAGLE_DENSE_A16", "1")
         cmd = [
             str(args.binary.resolve()),
             "-m",

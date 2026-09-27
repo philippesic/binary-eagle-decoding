@@ -1,0 +1,4 @@
+{
+  "ordinary": {"draft": "models/gguf/Qwen3-4B-eagle3-f16.gguf", "env": {"GGML_EAGLE_DENSE_A16": "0"}},
+  "cast_only": {"draft": "models/gguf/Qwen3-4B-eagle3-f16.gguf", "env": {"GGML_EAGLE_DENSE_A16": "1"}}
+}
