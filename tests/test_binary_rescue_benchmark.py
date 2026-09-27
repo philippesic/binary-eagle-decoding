@@ -392,7 +392,47 @@ class AnalysisTests(unittest.TestCase):
         self.assertEqual(result["client_request_tok_s_ratio"], 2)
         self.assertEqual(result["client_request_tok_s_ratio_ci95"], [2, 2])
         self.assertAlmostEqual(analysis.aggregate(reference)["client_request_tok_s"], 100 / 15)
-        self.assertEqual(analysis.aggregate(reference)["speculative"]["accepted_per_round"], 0.5)
+        self.assertEqual(
+            analysis.aggregate(reference)["speculative"]["accepted_per_proposal_round"], 0.5
+        )
+        self.assertIsNone(analysis.aggregate(reference)["speculative"]["accepted_per_round"])
+
+    def test_complete_round_denominator_calibration(self):
+        rows = self.rows()[:1]
+        rows[0].update(
+            variant="D",
+            quality={"rounds": 6, "no_proposal_rounds": 2, "accepted": 2},
+            request_digest={"rounds": 4, "no_proposal": 3},
+        )
+        trace = {
+            "mode": "quality",
+            "status": "complete",
+            "records": rows,
+            "policy": {"draft_length": 5},
+            "workload": "dev",
+            "prompt_sha256": "p",
+            "q4_variant": "q4_0",
+            "hashes": {"binary": "b", "target": "t", "drafts": {"D": "d"}},
+        }
+        quality_stats = analysis.aggregate(rows)["speculative"]
+        self.assertEqual(quality_stats["proposal_rounds"], 4)
+        self.assertEqual(quality_stats["complete_rounds"], 6)
+        self.assertAlmostEqual(quality_stats["accepted_per_round"], 2 / 6)
+        timed = {
+            **trace,
+            "mode": "timed",
+            "records": [{k: v for k, v in rows[0].items() if k != "quality"}],
+        }
+        calibrated, certificate = analysis.apply_round_calibration(timed, trace)
+        self.assertEqual(certificate["validated_requests"], 1)
+        self.assertEqual(calibrated["records"][0]["verified_complete_rounds"], 6)
+        self.assertAlmostEqual(
+            analysis.aggregate(calibrated["records"])["speculative"]["accepted_per_round"], 2 / 6
+        )
+        self.assertIsNone(analysis.aggregate(timed["records"])["speculative"]["accepted_per_round"])
+        rows[0]["quality"]["rounds"] = 7
+        with self.assertRaisesRegex(ValueError, "calibration mismatch"):
+            analysis.apply_round_calibration(timed, trace)
 
     def test_duplicate_pair_and_missing_timings(self):
         rows = self.rows()

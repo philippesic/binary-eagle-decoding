@@ -42,10 +42,33 @@ def aggregate(rows):
         values = [r.get("speculative", {}).get(key) for r in rows]
         counters[key] = sum(values) if values and all(v is not None for v in values) else None
     a, p, n = (counters[k] for k in ("accepted", "proposed", "rounds"))
+    quality_available = bool(rows) and all(isinstance(r.get("quality"), dict) for r in rows)
+    complete = [
+        r["quality"].get("rounds") if quality_available else r.get("verified_complete_rounds")
+        for r in rows
+    ]
+    complete_n = (
+        sum(complete) if complete and all(type(v) is int and v >= 0 for v in complete) else None
+    )
+    round_accepted = sum(r["quality"]["accepted"] for r in rows) if quality_available else a
     counters.update(
         {
+            "rounds_semantics": (
+                "raw native proposal verification rounds; excludes no-proposal rounds"
+            ),
+            "proposal_rounds": n,
+            "complete_rounds": complete_n,
+            "complete_rounds_source": "quality trace"
+            if quality_available
+            else "validated digest calibration"
+            if complete_n is not None
+            else "unavailable",
             "accepted_fraction": a / p if a is not None and p else None,
-            "accepted_per_round": a / n if a is not None and n else None,
+            "accepted_per_proposal_round": a / n if a is not None and n else None,
+            "accepted_drafts_for_complete_round_rate": round_accepted,
+            "accepted_per_round": round_accepted / complete_n
+            if round_accepted is not None and complete_n
+            else None,
         }
     )
     return {
@@ -242,7 +265,109 @@ def behavior_compare(primary, diagnostic):
     }
 
 
-def analyze(manifest):
+def calibrate_complete_rounds(trace_manifest):
+    """Validate the leading-seed correction on every speculative trace request."""
+    if (
+        trace_manifest.get("mode") not in ("quality", "instrumented")
+        or trace_manifest.get("status") != "complete"
+    ):
+        raise ValueError("round denominator calibration requires a complete traced run")
+    checks = []
+    seen = set()
+    variants = set()
+    drafts = trace_manifest["hashes"]["drafts"]
+    for row in trace_manifest["records"]:
+        if row.get("warmup") or drafts.get(row["variant"]) is None:
+            continue
+        identity = row["variant"], row["prompt_id"], row["repetition"]
+        if identity in seen:
+            raise ValueError("duplicate denominator calibration request")
+        seen.add(identity)
+        quality, digest, native = (
+            row.get("quality", {}),
+            row.get("request_digest", {}),
+            row.get("speculative", {}),
+        )
+        values = [
+            quality.get("rounds"),
+            quality.get("no_proposal_rounds"),
+            quality.get("accepted"),
+            digest.get("rounds"),
+            digest.get("no_proposal"),
+            native.get("rounds"),
+            native.get("accepted"),
+        ]
+        if any(type(v) is not int or v < 0 for v in values) or digest["no_proposal"] < 1:
+            raise ValueError(f"missing/invalid denominator calibration counts: {identity}")
+        derived = digest["rounds"] + digest["no_proposal"] - 1
+        if (
+            derived != quality["rounds"]
+            or digest["no_proposal"] - 1 != quality["no_proposal_rounds"]
+            or digest["rounds"] != native["rounds"]
+            or quality["accepted"] != native["accepted"]
+        ):
+            raise ValueError(f"complete-round denominator calibration mismatch: {identity}")
+        variants.add(row["variant"])
+        checks.append(
+            {
+                "variant": row["variant"],
+                "prompt_id": row["prompt_id"],
+                "repetition": row["repetition"],
+                "quality_complete_rounds": quality["rounds"],
+                "native_proposal_rounds": native["rounds"],
+                "digest_no_proposal_events": digest["no_proposal"],
+                "derived_complete_rounds": derived,
+                "accepted_count_matches": True,
+            }
+        )
+    if not checks:
+        raise ValueError("no speculative requests for denominator calibration")
+    return {
+        "validated_requests": len(checks),
+        "variants": sorted(variants),
+        "per_request": checks,
+        "formula": "digest.rounds + digest.no_proposal - 1",
+        "subtracted_event": "one initial prefill target token outside the complete-round trace",
+        "raw_native_rounds_semantics": "proposal verification rounds only",
+        "status": "all_traced_requests_validated",
+    }
+
+
+def apply_round_calibration(manifest, traced):
+    certificate = calibrate_complete_rounds(traced)
+    for field in ("policy", "prompt_sha256", "workload", "q4_variant"):
+        if manifest.get(field) != traced.get(field):
+            raise ValueError(f"denominator calibration mismatched {field}")
+    for field in ("binary", "target"):
+        if manifest["hashes"][field] != traced["hashes"][field]:
+            raise ValueError(f"denominator calibration mismatched {field} hash")
+    for variant in certificate["variants"]:
+        if manifest["hashes"]["drafts"].get(variant) != traced["hashes"]["drafts"][variant]:
+            raise ValueError(f"denominator calibration mismatched draft hash: {variant}")
+    known_prompts = {(r["variant"], r["prompt_id"]) for r in certificate["per_request"]}
+    rows = []
+    for row in manifest["records"]:
+        enriched = dict(row)
+        if manifest["hashes"]["drafts"].get(row["variant"]) is not None and not row.get("warmup"):
+            if (row["variant"], row["prompt_id"]) not in known_prompts:
+                raise ValueError("timed request lacks matched traced denominator calibration")
+            digest, native = row.get("request_digest", {}), row.get("speculative", {})
+            values = [digest.get("rounds"), digest.get("no_proposal"), native.get("rounds")]
+            if any(type(v) is not int or v < 0 for v in values) or digest["no_proposal"] < 1:
+                raise ValueError("timed request lacks valid digest denominator counts")
+            if digest["rounds"] != native["rounds"]:
+                raise ValueError("timed proposal digest/native counters disagree")
+            enriched["verified_complete_rounds"] = digest["rounds"] + digest["no_proposal"] - 1
+        rows.append(enriched)
+    return {**manifest, "records": rows}, certificate
+
+
+def analyze(manifest, traced_denominators=None):
+    certificate = None
+    if traced_denominators is not None:
+        manifest, certificate = apply_round_calibration(manifest, traced_denominators)
+    elif manifest["mode"] in ("quality", "instrumented"):
+        certificate = calibrate_complete_rounds(manifest)
     rows = [r for r in manifest["records"] if not r.get("warmup")]
     grouped = defaultdict(list)
     for row in rows:
@@ -256,6 +381,7 @@ def analyze(manifest):
         "run_status": manifest["status"],
         "q4_variant": q4,
         "policy": manifest["policy"],
+        "round_denominator_calibration": certificate,
         "variants": {},
         "limitations": [
             "Concurrency-one streaming benchmark, not saturated serving capacity.",
@@ -302,11 +428,17 @@ def main():
     parser.add_argument("manifest", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--compare-instrumented", type=Path)
+    parser.add_argument(
+        "--quality-manifest",
+        type=Path,
+        help="Matched trace manifest for complete-round denominator calibration",
+    )
     args = parser.parse_args()
     manifest = json.loads(args.manifest.read_text())
-    result = analyze(manifest)
+    other = json.loads(args.compare_instrumented.read_text()) if args.compare_instrumented else None
+    calibration = json.loads(args.quality_manifest.read_text()) if args.quality_manifest else other
+    result = analyze(manifest, calibration)
     if args.compare_instrumented:
-        other = json.loads(args.compare_instrumented.read_text())
         for field in ("policy", "prompt_sha256", "hashes", "workload"):
             if manifest[field] != other[field]:
                 raise ValueError(f"behavior comparison has mismatched {field}")
