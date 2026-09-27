@@ -366,6 +366,8 @@ class ProtocolTests(unittest.TestCase):
                 },
             )
             proc = mock.Mock()
+            proc.pid = 12345
+            proc.returncode = 0
             sampler = mock.MagicMock()
             sampler.__enter__.return_value = sampler
             sampler.summary = {}

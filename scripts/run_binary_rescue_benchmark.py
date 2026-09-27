@@ -625,6 +625,9 @@ def run(config: dict, mode: str, output: Path, diagnostic: bool = False) -> None
                         start_new_session=True,
                     )
                     try:
+                        block["server_pid"] = proc.pid
+                        block["server_started_unix_ns"] = time.time_ns()
+                        write(cell / "manifest.json", block)
                         base.wait_ready(proc, url, 300)
                         sampler.loaded_snapshot = base.gpu_snapshot()
                         # Reverse prompt traversal with each repetition; pairing uses stable IDs.
@@ -690,6 +693,7 @@ def run(config: dict, mode: str, output: Path, diagnostic: bool = False) -> None
                             )
                     finally:
                         block["server_stop"] = base.stop_server(proc)
+                        block["server_exit_code"] = proc.returncode
                         write(cell / "manifest.json", block)
                 text = (cell / "server.log").read_text(errors="replace")
                 attach_digests(text, block_records)
