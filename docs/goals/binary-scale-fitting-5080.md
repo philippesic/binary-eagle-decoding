@@ -131,3 +131,12 @@ noncompute use, pause false. Training capture scale-train-capture-20260927 is
 now running under pane%26, results/scale-train-capture. CPU-only replay build
 scale-replay-build-20260927 under%27. Replay extension8b81c53 published on main,
 CPU fixture checks441outputs exact scalar parity, independent review passed.
+
+09:29:58UTC training capture96/96 finished exit0, all9 layers/request checked,
+2.4GB raw preserved. Refreshed GPU/pause check before fitting: no compute jobs,
+0% utilization,2115MiB noncompute use, pausefalse. scale-fit-20260927 running
+under%26: existing frozen fitter on CUDA, outputs results/scale-fit. No solver
+or hyperparameter changes. CPU-only pureQ4_0 control conversion running under
+%27 (CUDA_VISIBLE_DEVICES=-1), scale-q4-control-20260927; target unchanged.
+Native library hashes and environment saved results/scale-native-hashes.txt
+and results/scale-environment.json. Replay executable built successfully.
