@@ -28,7 +28,8 @@
       "env": {
         "GGML_W1AX_ACT_BITS": "16"
       }
-    }
+    },
+    "target_only": {}
   },
   "instrumented_env": {
     "EAGLE_DRAFT_STAGE_JSONL": "{output}/draft-stages.jsonl",
