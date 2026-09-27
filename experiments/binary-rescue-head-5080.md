@@ -3,7 +3,7 @@
 Status: **paused at user request**. Quality, body/head diagnosis, the bounded
 head fit, profiling and clean repeated primary performance are complete.
 Full-prompt round attribution, the frozen longer-context diagnostic and final
-artifact handoff remain pending. No promotion decision yet.
+artifact handoff remain pending. No candidate has been promoted.
 
 ## Frozen comparison
 
@@ -50,6 +50,30 @@ Their one combined rescue reached 1251/1797 = **0.6962 accepted drafts/round**
 Both used verified CUDA graphs. The combination remains below the frozen 80%
 Q4 quality threshold for admitting an extra depth screen.
 The original FP16 head's0.5112 is the untrained control the fitted head must beat.
+Each path emitted 3,072 output IDs. That is 2.058 emitted tokens per complete
+round for Q4_0, 1.436 for D and 1.709 for the combined rescue, counting the
+target token as an emission but never as an accepted draft. Accepted/proposed
+draft fractions are 21.24%, 8.70% and 14.20% respectively. These fractions
+and accepted/round answer different questions: the latter also reflects extra
+verification rounds caused by early rejection and no-proposal behavior.
+
+Later drafts remain the main quality deficit. Conditional acceptance is the
+number surviving a depth divided by the number actually reached at that depth;
+terminal-censored positions and rounds without proposals are not counted as
+failures at later depths. The selected fitted head uses its separately audited
+24-prompt selection pass.
+
+| Path | Depth 2, survived/reached | Depth 3, survived/reached | Zero-accept rounds | No-proposal rounds |
+| --- | ---: | ---: | ---: | ---: |
+| Q4_0 | 431/860 (50.1%) | 179/425 (42.1%) | 628 | 11 |
+| D | 159/720 (22.1%) | 21/157 (13.4%) | 1,412 | 15 |
+| D + attention Q8_0 | 266/807 (33.0%) | 61/263 (23.2%) | 1,081 | 14 |
+| D + fusion Q8_0 | 205/815 (25.2%) | 28/203 (13.8%) | 1,165 | 14 |
+| D + fitted FP16 head | 234/769 (30.4%) | 62/231 (26.8%) | 1,185 | 13 |
+
+The full quality manifests retain every proposal-length and depth numerator,
+including eligible but unreached positions; these conditional figures must not
+be interpreted as unconditional five-token survival.
 
 ## Storage and precision audit
 
@@ -292,11 +316,91 @@ RTX 5080 host resources and is excluded from final cost calibration. The frozen
 longer-context diagnostic has not started. Neither can replace the clean
 primary timings.
 
+Whole-device telemetry was sampled once per second during each server block,
+including setup, warmups, measured requests and shutdown. “Loaded” is the
+post-load snapshot, identical across the five blocks for each path; “peak” is
+the largest sampled memory use, not an allocator high-water mark. Utilization,
+power and SM clock are medians of each block's median across the five blocks.
+
+| Path | Loaded / sampled peak VRAM (MiB) | GPU utilization | Power (W) | SM clock (MHz) |
+| --- | ---: | ---: | ---: | ---: |
+| Q4_0 | 11,182 / 11,306 | 81% | 138.4 | 2,921 |
+| Target only | 10,446 / 10,548 | 95% | 178.7 | 2,917 |
+| FP16 EAGLE | 11,482 / 11,700 | 80% | 147.5 | 2,917 |
+| D | 11,098 / 11,220 | 91% | 147.4 | 2,917 |
+| C | 11,092 / 11,214 | 88% | 143.2 | 2,917 |
+| D + attention Q8_0 | 11,134 / 11,258 | 88% | 151.2 | 2,917 |
+| D + fusion Q8_0 | 11,114 / 11,238 | 91% | 146.3 | 2,917 |
+| D + FFN-down Q8_0 | 11,120 / 11,244 | 90% | 147.8 | 2,917 |
+| D + output-head Q8_0 | 11,168 / 11,292 | 90% | 142.5 | 2,917 |
+| D + original FP16 head | 11,242 / 11,460 | 90% | 144.3 | 2,917 |
+| D + attention/fusion Q8_0 | 11,150 / 11,274 | 88% | 141.3 | 2,917 |
+| D + fitted FP16 head | 11,242 / 11,460 | 90% | 142.7 | 2,917 |
+
+The pre-load whole-device baseline was about 2,115 MiB. Sampling includes
+other graph and runtime allocations; subtracting one row from another does
+not isolate draft weight storage, and one-second polling can miss short peaks.
+The 2,048-token logical FP16 KV allocation is 288 MiB for the 36-layer target
+and 8 MiB for the one-layer drafter. The file payload comparison above is the
+more direct drafter storage measure.
+
+## Interim assessment
+
+Neither tested endpoint merits promotion as a Q4_0 replacement on the
+development workload: both accept fewer drafts, run slower end to end, and
+trail target-only despite matching its raw output IDs. The head fit's positive
+gain over its untrained dense-head control does not erase the body gap. The
+common-history intervention associates about 19.8 points of first-position
+agreement loss with the D body under Q4 head, versus 5.9 points with the D
+head under Q4 body. A future bounded target-aligned recurrent body-plus-head
+adaptation with fixed binary/A16 deployment and native Q4_0 gates is therefore
+the most directly motivated research option. Its quality and speed remain
+unproven; the observed A16 execution cost is a separate obstacle. This
+recommendation starts no new training or GPU work. The longer-context and
+full-prompt round diagnostics must still be completed before closing this
+goal; reserved-final evaluation requires a separate user decision.
+
 ## Reproducibility checkpoint
 
-Quality runtime `a38e9d428218fa5f845363eb25499e1a51a274ca`, parent `1cb78ed`.
-Remote project `/home/philip/binary-eagle-decoding/rescue-head-20260927` retains
-all raw outputs, source/config/model hashes, failed gates and repaired gates.
-Primary quality run `rescue-quality-20260927`; results `results/rescue-quality`.
-Local compact evidence is under `results/binary-rescue-head-5080` in the main
-checkout. Final artifact index, repeated timing and recommendation are pending.
+The frozen primary development file is SHA-256
+`a3b97d942a99f1bddd5bb97216c32a9920aaa50788baa5bdb92354842547e885`;
+the 96-prompt training file is
+`80e365bbc6d2caf4abd5e216e53d72ce62d80f9cf1a668e6862efb845a185e74`.
+The deterministic six-prompt long-context file was independently regenerated
+locally at
+`a03bc4469eb7bedd75048e4fa538a0404f5801ccdb14dd6aa9f4623d8b113966`.
+Reserved-final prompts were not loaded or evaluated.
+
+The clean primary run used published llama.cpp runtime revision
+`70ec890961cf368cb6657a7859ac4122c72b778a` and parent source revision
+`0c796ea`; subsequent parent revisions update analysis and reporting without
+changing the benchmark binary. The executable wrapper SHA-256 was
+`d541495500448f909de505fc36b58528c4c22422d66dc3c15970a4867eb96631`.
+The target GGUF was
+`05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6`;
+Q4_0 draft
+`2db40f99d27e404298b80b2865671b9fd0136060ffb503007cb2ae23759e7280`,
+D draft
+`10e8e98e616480b25ff7600f195ba7ea3e0fd7c24832765013f960783c7609cf`,
+combined rescue
+`da36b46ee38469680c90ac4760fc79cd797f081e135ecc5427164b0b77bc331f`,
+and fitted-head draft
+`a5b35de1ed2bce7606cc5be41872a0ed08b94110261436ef49d4e36d6ff4e795`.
+The primary manifest retains hashes for every other draft and exact block order.
+The measured GPU was an RTX 5080 (compute capability 12.0, 16,303 MiB) under
+WSL with driver/KMD 616.92 and CUDA user-mode driver 13.4. No RTX 2080 Ti
+performance is inferred.
+
+Quality runtime `a38e9d428218fa5f845363eb25499e1a51a274ca`, parent
+`1cb78ed`. Remote project
+`/home/philip/binary-eagle-decoding/rescue-head-20260927` retains raw outputs,
+source/config/model hashes, failed and repaired gates, benchmark logs, and
+supervisor states. Primary quality run: `rescue-quality-20260927`, directory
+`results/rescue-quality`. Clean timing run:
+`rescue-timed-primary-clean-20260927`, directory
+`results/timed-primary-clean`. The interrupted full-prompt instrumented run is
+`rescue-instrumented-primary-20260927` and is excluded from completed results.
+Local ignored evidence is under `results/binary-rescue-head-5080`, including
+the clean 34 MiB timing manifest, Nsight SQLite and per-process kernel analysis.
+The remote checkout and all raw artifacts remain preserved for resumption;
+the final archive/index and remaining diagnostic results are pending.
