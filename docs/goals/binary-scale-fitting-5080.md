@@ -155,3 +155,11 @@ maximum seen normalized error about1.31e-5 (not full fit-batch equivalence).
 Legacy-v2 row parity scale-row-gate-20260927 currently running pane%26 on same
 3historical prompts at128tokens, outputs results/scale-row-gate. Next full24dev
 one-pass7-way screen; no reserved-final use or follow-up optimization.
+
+09:38UTC row gate complete: A_legacy and A exact output/round/state match all3
+historical prompts, each32accepted/349rounds. Refreshed GPUfree/pausefalse.
+scale-development-20260927 nowrunning on%26:168requests =7paths×24devprompts,
+128max tokens, onepass, unchanged settings. Output results/scale-development.
+No calibration edits or recipe adjustments after fitting. Parent main through
+e32319b; new checkpoint docs are parent-owned. Raw validation archive copied to
+main checkout results/binary-scale-fitting-5080/validation.tar.gz via tmuxSSH.
