@@ -1,6 +1,9 @@
 # Current project status
 
-**Active goal:** none. **Latest completed goal:** [all-layer W1Ax activation-precision
+**Active goal:** [binary scale fitting on RTX 5080](goals/binary-scale-fitting-5080.md).
+The approved four-way A16 row/group × mean/fitted quality screen is underway;
+96 training and 24 development prompts only, with reserved-final prompts sealed.
+**Latest completed goal:** [all-layer W1Ax activation-precision
 suite on RTX 2080 Ti](goals/w1ax-activation-precision-suite.md), completed
 2026-09-27 UTC. The [RTX 2080 Ti quantization suite](goals/rtx2080ti-quantization-suite.md)
 completed on 2026-09-25. The prior [W1A1 EAGLE research goal](goals/full-w1a1-eagle-project.md)
