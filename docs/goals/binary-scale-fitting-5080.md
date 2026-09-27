@@ -103,3 +103,12 @@ This trace does not claim full cached K/V numerical parity.
 Remote baseline build3 running with verified existing CUDA/glibc header patch,
 SHA25613256b220d400a5665cde8bc87c21b0188944390c6a945a7fffa2827254b305a.
 Build2 failed the known rsqrt exception declaration conflict, before any GPU run.
+
+Fitter/exporter0258aac independently reviewed and8CPU tests passed. Original
+source dtype must beBF16, F16 canonical GGUF weights must match exact cast,
+exported scales finite/nonnegative. Legacy CPUtorch row mean reduction preserved.
+Runner/analyzer15fa0e4 plus b984a4e passed8CPU tests, including raw IDs, terminal
+acceptance, per-prompt state slices, missing capture failures and child cleanup.
+Runtime CUDA build: runs/scale-build-reference-20260927, started09:22UTC,
+currently running. Baseline build3 finished successfully09:21:32UTC.
+Parent main published through0258aac. No GPU inference/fitting yet.
