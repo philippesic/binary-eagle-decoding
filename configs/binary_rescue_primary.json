@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "binary": "build/llama-cuda/bin/llama-server",
+  "target": "models/gguf/Qwen3-4B-f16.gguf",
+  "prompts": "data/qat-revisit/development.jsonl",
+  "q4_variant": "q4_0",
+  "warmups": 2,
+  "repetitions": 5,
+  "port": 18091,
+  "graph_env": {
+    "GGML_CUDA_GRAPH_STATS": "1"
+  },
+  "graph_required_markers": [
+    "CUDA_GRAPH_STATS"
+  ],
+  "variants": {
+    "q4_0": {
+      "draft": "results/scale-archive/scale-models/Qwen3-4B-eagle3-q4_0.gguf"
+    },
+    "D": {
+      "draft": "results/scale-archive/scale-fit/D.gguf",
+      "env": {
+        "GGML_W1AX_ACT_BITS": "16"
+      }
+    },
+    "C": {
+      "draft": "results/scale-archive/scale-fit/C.gguf",
+      "env": {
+        "GGML_W1AX_ACT_BITS": "16"
+      }
+    },
+    "D_fusion_q8": {
+      "draft": "results/rescue-models/D-fusion-q8.gguf",
+      "env": {
+        "GGML_W1AX_ACT_BITS": "16"
+      }
+    },
+    "D_attention_q8": {
+      "draft": "results/rescue-models/D-attention-q8.gguf",
+      "env": {
+        "GGML_W1AX_ACT_BITS": "16"
+      }
+    },
+    "D_down_q8": {
+      "draft": "results/rescue-models/D-ffn_down-q8.gguf",
+      "env": {
+        "GGML_W1AX_ACT_BITS": "16"
+      }
+    },
+    "D_head_q8": {
+      "draft": "results/rescue-models/D-head-q8.gguf",
+      "env": {
+        "GGML_W1AX_ACT_BITS": "16"
+      }
+    },
+    "D_f16_head": {
+      "draft": "results/rescue-models/D-head-f16.gguf",
+      "env": {
+        "GGML_W1AX_ACT_BITS": "16"
+      }
+    },
+    "fp16": {
+      "draft": "models/gguf/Qwen3-4B-eagle3-f16.gguf"
+    },
+    "target_only": {}
+  }
+}

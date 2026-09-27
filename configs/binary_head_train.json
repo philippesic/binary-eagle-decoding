@@ -1,0 +1,10 @@
+{
+  "d_d": {
+    "body": "D",
+    "head": "D",
+    "draft": "results/scale-archive/scale-fit/D.gguf",
+    "env": {
+      "GGML_W1AX_ACT_BITS": "16"
+    }
+  }
+}

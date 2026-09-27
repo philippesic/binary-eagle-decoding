@@ -1,0 +1,40 @@
+{
+  "q4_q4": {
+    "body": "Q4_0",
+    "head": "Q4_0",
+    "draft": "results/scale-archive/scale-models/Qwen3-4B-eagle3-q4_0.gguf",
+    "env": {}
+  },
+  "d_d": {
+    "body": "D",
+    "head": "D",
+    "draft": "results/scale-archive/scale-fit/D.gguf",
+    "env": {
+      "GGML_W1AX_ACT_BITS": "16"
+    }
+  },
+  "q4_d": {
+    "body": "Q4_0",
+    "head": "D",
+    "draft": "results/rescue-models/Q4-head-D.gguf",
+    "env": {
+      "GGML_W1AX_ACT_BITS": "16"
+    }
+  },
+  "d_q4": {
+    "body": "D",
+    "head": "Q4_0",
+    "draft": "results/rescue-models/D-head-q4.gguf",
+    "env": {
+      "GGML_W1AX_ACT_BITS": "16"
+    }
+  },
+  "d_f16": {
+    "body": "D",
+    "head": "FP16",
+    "draft": "results/rescue-models/D-head-f16.gguf",
+    "env": {
+      "GGML_W1AX_ACT_BITS": "16"
+    }
+  }
+}
