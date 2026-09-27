@@ -52,6 +52,8 @@ struct capture {
     uint64_t sequence, k, m, n;
     uint32_t source_bits;
     std::string name;
+    uint64_t source_n;
+    std::vector<size_t> token_indices;
     std::vector<float> activations;
 };
 
@@ -74,9 +76,15 @@ static capture read_capture(const fs::path & path) {
     input.read(name, sizeof(name));
     require(bool(input) && std::memchr(name, 0, sizeof(name)), "invalid capture weight name");
     c.name = name;
+    if (c.name.size() > 7 && c.name.compare(c.name.size()-7, 7, ".weight") == 0) {
+        c.name = c.name.substr(0, c.name.size()-7) + ".w1a1_packed";
+    }
     require(c.k > 0 && c.m > 0 && c.n > 0 && c.k <= 1000000 && c.m <= 1000000 && c.n <= 65535,
             "invalid capture dimensions");
-    require(c.source_bits == 1 || c.source_bits == 4 || c.source_bits == 8 || c.source_bits == 16,
+    c.source_n = c.n;
+    c.token_indices.resize(c.n);
+    std::iota(c.token_indices.begin(), c.token_indices.end(), 0);
+    require(c.source_bits == 1 || c.source_bits == 4 || c.source_bits == 8 || c.source_bits == 16 || c.source_bits == 32,
             "invalid source precision");
     require(c.n <= SIZE_MAX / c.k / sizeof(float), "capture activation size overflow");
     const size_t bytes = size_t(c.n*c.k*sizeof(float));
@@ -100,7 +108,7 @@ public:
         require(bool(input_) && bool(meta_), "cannot read GGUF: " + path.string());
     }
 
-    void load(const capture & c, std::vector<uint32_t> & words, std::vector<float> & scales) {
+    int load(const capture & c, std::vector<uint32_t> & words, std::vector<float> & scales) {
         const auto packed_id = gguf_find_tensor(meta_.get(), c.name.c_str());
         require(packed_id >= 0 && gguf_get_tensor_type(meta_.get(), packed_id) == GGML_TYPE_I32,
                 "missing I32 packed tensor: " + c.name);
@@ -114,14 +122,17 @@ public:
         const int64_t * wne = gguf_get_tensor_ne(meta_.get(), packed_id);
         const int64_t * sne = gguf_get_tensor_ne(meta_.get(), scale_id);
         const uint64_t count = (c.k + 31)/32;
+        const bool grouped = sne[0] != int64_t(c.m) || sne[1] != 1;
+        const uint64_t groups = grouped ? (c.k+127)/128 : 1;
         require(wne[0] == int64_t(count) && wne[1] == int64_t(c.m) && wne[2] == 1 && wne[3] == 1 &&
-                sne[0] == int64_t(c.m) && sne[1] == 1 && sne[2] == 1 && sne[3] == 1,
+                sne[0] == int64_t(grouped ? groups : c.m) && sne[1] == int64_t(grouped ? c.m : 1) && sne[2] == 1 && sne[3] == 1,
                 "capture/GGUF tensor shape mismatch: " + c.name);
         words.resize(size_t(count*c.m));
-        scales.resize(size_t(c.m));
+        scales.resize(size_t(c.m*groups));
         read_tensor(packed_id, words.data(), words.size()*sizeof(uint32_t));
         read_tensor(scale_id, scales.data(), scales.size()*sizeof(float));
-        for (float scale : scales) require(std::isfinite(scale), "nonfinite GGUF row scale");
+        for (float scale : scales) require(std::isfinite(scale), "nonfinite GGUF scale");
+        return grouped ? 128 : 0;
     }
 
     std::vector<uint8_t> load_anchor(const capture & c, ggml_type expected_type) {
@@ -176,9 +187,24 @@ static std::vector<size_t> sample_rows(size_t m, size_t requested) {
 }
 
 static float reference(const capture & c, const std::vector<uint32_t> & w,
-        const std::vector<float> & scales, int bits, size_t token, size_t row) {
+        const std::vector<float> & scales, int bits, size_t token, size_t row, int scale_group_size) {
     const size_t words = (c.k+31)/32;
     const float * x = c.activations.data() + token*c.k;
+    if (scale_group_size) {
+        require(bits == 16, "group128 scales require --act-bits 16");
+        const size_t groups = (c.k+127)/128;
+        float total = 0.0f;
+        for (size_t group = 0; group < groups; ++group) {
+            float dot = 0.0f;
+            for (size_t i = group*128; i < std::min<size_t>(c.k, (group+1)*128); ++i) {
+                const float h = ggml_fp16_to_fp32(ggml_fp32_to_fp16(x[i]));
+                dot += (w[row*words + i/32] & (uint32_t(1) << (i%32))) ? h : -h;
+            }
+            volatile float product = dot * scales[row*groups+group];
+            total += product;
+        }
+        return total;
+    }
     double abs_sum = 0.0;
     float absmax = 0.0f;
     for (size_t i = 0; i < c.k; ++i) {
@@ -214,7 +240,8 @@ struct options {
     std::string backend = "gpu";
     int warmups = 2, samples = 5;
     int act_bits = 0; // zero selects the default four-mode matrix
-    size_t check_rows = 8, limit = 0;
+    size_t check_rows = 8, limit = 0, max_tokens = 0;
+    bool first_per_layer = false, emit_reference_values = false;
     bool require_nine = false;
     bool fp16_cast_control = false;
 };
@@ -223,6 +250,8 @@ static options parse(int argc, char ** argv) {
     options o;
     for (int i = 1; i < argc; ++i) {
         const std::string arg = argv[i];
+        if (arg == "--first-per-layer") { o.first_per_layer = true; continue; }
+        if (arg == "--emit-reference-values") { o.emit_reference_values = true; continue; }
         if (arg == "--require-nine") { o.require_nine = true; continue; }
         if (arg == "--fp16-cast-control") { o.fp16_cast_control = true; continue; }
         require(i+1 < argc, "missing value after " + arg);
@@ -242,6 +271,7 @@ static options parse(int argc, char ** argv) {
         else if (arg == "--samples") o.samples = std::stoi(value);
         else if (arg == "--check-rows") o.check_rows = std::stoull(value);
         else if (arg == "--limit") o.limit = std::stoull(value);
+        else if (arg == "--max-tokens") o.max_tokens = std::stoull(value);
         else throw std::runtime_error("unknown argument: " + arg);
     }
     require(!o.gguf.empty() && !o.captures.empty() && fs::is_regular_file(o.gguf) && fs::is_directory(o.captures),
@@ -251,6 +281,7 @@ static options parse(int argc, char ** argv) {
         require(path.empty() || fs::is_regular_file(path), "anchor GGUF path does not exist: " + path.string());
     }
     require(!o.fp16_cast_control || !o.fp16_gguf.empty(), "--fp16-cast-control requires --fp16-gguf");
+    require(!o.emit_reference_values || o.act_bits == 16, "--emit-reference-values requires --act-bits 16");
     require(o.warmups >= 0 && o.samples > 0 && o.samples <= 10000, "invalid warmups or samples");
     return o;
 }
@@ -320,12 +351,13 @@ static activation_diagnostics diagnose_activations(const capture & c, int bits) 
 }
 
 static std::vector<float> replay(const capture & c, const std::vector<uint32_t> & w, const std::vector<float> & scales,
-        ggml_backend_t backend, int bits, const options & opt) {
+        ggml_backend_t backend, int bits, const options & opt, int scale_group_size) {
     ggml_init_params params = {2*1024*1024, nullptr, true};
     std::unique_ptr<ggml_context, ggml_deleter> ctx(ggml_init(params));
     require(bool(ctx), "ggml context allocation failed");
     auto * wt = ggml_new_tensor_2d(ctx.get(), GGML_TYPE_I32, (c.k+31)/32, c.m);
-    auto * st = ggml_new_tensor_1d(ctx.get(), GGML_TYPE_F32, c.m);
+    auto * st = scale_group_size ? ggml_new_tensor_2d(ctx.get(), GGML_TYPE_F32, (c.k+127)/128, c.m) :
+        ggml_new_tensor_1d(ctx.get(), GGML_TYPE_F32, c.m);
     auto * at = ggml_new_tensor_2d(ctx.get(), GGML_TYPE_F32, c.k, c.n);
     ggml_set_name(wt, c.name.c_str());
     auto * out = ggml_w1ax_mul_mat(ctx.get(), wt, st, at, c.k, bits);
@@ -347,13 +379,15 @@ static std::vector<float> replay(const capture & c, const std::vector<uint32_t> 
     double max_abs = 0, max_rel = 0;
     size_t failures = 0;
     for (size_t token = 0; token < c.n; ++token) for (size_t row : rows) {
-        const float expected = reference(c, w, scales, bits, token, row);
+        const float expected = reference(c, w, scales, bits, token, row, scale_group_size);
         const float got = actual[token*c.m + row];
         const double delta = std::abs(double(got)-double(expected));
         max_abs = std::max(max_abs, delta);
         max_rel = std::max(max_rel, delta/(1+std::abs(double(expected))));
-        if (!std::isfinite(got) || delta > 0.003 + 0.0002*std::abs(double(expected))) ++failures;
+        const double tolerance = bits == 16 ? 1e-5 + 1e-6*std::abs(double(expected)) : 0.003 + 0.0002*std::abs(double(expected));
+        if (!std::isfinite(got) || delta > tolerance) ++failures;
     }
+    for (float value : actual) require(std::isfinite(value), "native output contains nonfinite values");
     require(failures == 0, "scalar parity failed for " + c.path.string() + " bits=" + std::to_string(bits));
     const activation_diagnostics diagnostic = diagnose_activations(c, bits);
     for (int i = 0; i < opt.warmups; ++i) compute();
@@ -373,6 +407,7 @@ static std::vector<float> replay(const capture & c, const std::vector<uint32_t> 
               << "\",\"sequence\":" << c.sequence << ",\"name\":\"" << escape_json(c.name)
               << "\",\"group\":\"" << group_of(c.name) << "\",\"K\":" << c.k << ",\"M\":" << c.m
               << ",\"N\":" << c.n << ",\"source_bits\":" << c.source_bits << ",\"replay_bits\":" << bits
+              << ",\"scale_group_size\":" << scale_group_size
               << ",\"requested_act_bits\":" << requested_bits_json(opt)
               << ",\"w1ax_head_comparison_available\":"
               << (!opt.act_bits && c.name == "output.w1a1_packed" ? "true" : "false")
@@ -396,7 +431,19 @@ static std::vector<float> replay(const capture & c, const std::vector<uint32_t> 
     std::cout << ",\"mae\":" << diagnostic.mae << ",\"rmse\":" << diagnostic.rmse
               << ",\"max_abs_error\":" << diagnostic.max_abs_error << "},\"samples_us\":[";
     for (size_t i = 0; i < us.size(); ++i) std::cout << (i ? "," : "") << us[i];
-    std::cout << "]}" << std::endl;
+    std::cout << "]";
+    if (opt.emit_reference_values) {
+        std::cout << ",\"source_N\":" << c.source_n << ",\"token_indices\":[";
+        for (size_t i = 0; i < c.token_indices.size(); ++i) std::cout << (i ? "," : "") << c.token_indices[i];
+        std::cout << "],\"row_indices\":[";
+        for (size_t i = 0; i < rows.size(); ++i) std::cout << (i ? "," : "") << rows[i];
+        std::cout << "],\"sampled_native_outputs\":[";
+        for (size_t token = 0; token < c.n; ++token) for (size_t i = 0; i < rows.size(); ++i) {
+            std::cout << (token || i ? "," : "") << actual[token*c.m+rows[i]];
+        }
+        std::cout << "]";
+    }
+    std::cout << "}" << std::endl;
     return c.name == "output.w1a1_packed" ? std::move(actual) : std::vector<float>{};
 }
 
@@ -613,16 +660,30 @@ int main(int argc, char ** argv) {
         if (opt.limit && paths.size() > opt.limit) paths.resize(opt.limit);
         std::set<std::string> seen_names;
         for (const auto & path : paths) {
-            const capture c = read_capture(path);
+            capture c = read_capture(path);
+            if (opt.first_per_layer && seen_names.count(c.name)) continue;
             seen_names.insert(c.name);
+            if (opt.max_tokens && c.n > opt.max_tokens) {
+                std::vector<float> selected;
+                c.token_indices.resize(opt.max_tokens);
+                for (size_t i = 0; i < opt.max_tokens; ++i) {
+                    c.token_indices[i] = i*(c.n-1)/std::max<size_t>(1, opt.max_tokens-1);
+                }
+                for (size_t token : c.token_indices) {
+                    selected.insert(selected.end(), c.activations.begin()+token*c.k, c.activations.begin()+(token+1)*c.k);
+                }
+                c.n = c.token_indices.size();
+                c.activations = std::move(selected);
+            }
             std::vector<uint32_t> weights;
             std::vector<float> scales;
-            gguf.load(c, weights, scales);
+            const int scale_group_size = gguf.load(c, weights, scales);
+            require(!scale_group_size || opt.act_bits == 16, "group128 models require --act-bits 16");
             std::array<std::vector<float>, 4> head_outputs;
             size_t mode = 0;
             for (int bits : {16, 8, 4, 1}) {
                 if (opt.act_bits && opt.act_bits != bits) { ++mode; continue; }
-                head_outputs[mode++] = replay(c, weights, scales, backend.get(), bits, opt);
+                head_outputs[mode++] = replay(c, weights, scales, backend.get(), bits, opt, scale_group_size);
             }
             if (c.name == "output.w1a1_packed" && !opt.act_bits) compare_head(c, head_outputs);
             if (fp16_anchor) replay_anchor(c, fp16_anchor->load_anchor(c, GGML_TYPE_F16), GGML_TYPE_F16,

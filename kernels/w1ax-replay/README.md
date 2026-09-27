@@ -135,3 +135,57 @@ integer accumulator. The existing backend operation tests are the exact-dot
 gate. This tool currently measures the complete operator only. Substage CUDA
 events and already-packed timing require additional instrumentation inside the
 CUDA op; do not infer a breakdown from this total.
+
+## Fixed-scale A16 references
+
+The replay accepts ordinary `.weight` capture names (normalized to the matching
+packed tensor) and source precision 32 as well as 16. It loads either F32 row
+scales `[M]` or group-128 scales `[M,ceil(K/128)]`. Group scales require
+`--act-bits 16`. The independent scalar gate casts each input to FP16, adds
+signed inputs sequentially in F32 within each group, then separately rounds
+the scale product and outer sum. The row path retains its full-K reduction.
+A16 checks use `1e-5 + 1e-6*abs(reference)` tolerance; every native output must
+be finite. Lower-precision legacy tolerances remain unchanged.
+
+For a bounded quality-only audit, use one fixed selected directory for all
+four artifacts A/B/C/D. A directory containing the first N=1 and first N>1
+capture per layer gives at most 18 operators. `--first-per-layer` can instead
+select only the first filename per layer. `--max-tokens 4` uses deterministic
+endpoint-spaced original token indices and limits each operator to four rows.
+These options do not select development prompts or modify any original file.
+
+When a CUDA ggml build already exists, link against it without rebuilding ggml:
+
+```sh
+g++ -std=c++17 -O2 -Ithird_party/llama.cpp/ggml/include \
+  kernels/w1ax-replay/replay.cpp -Lbuild/llama-cuda/ggml/src \
+  -Wl,-rpath,"$PWD/build/llama-cuda/ggml/src" -lggml -lggml-base \
+  -o build/w1ax_operator_replay
+```
+
+The existing build must include the version-2 group-scale runtime and its CUDA
+backend. Use the actual configured build directory if it differs. On RTX 5080,
+a standalone CMake build can use `-DCMAKE_CUDA_ARCHITECTURES=120`.
+Run each of A/B/C/D under the remote supervisor with distinct output files:
+
+```sh
+build/w1ax_operator_replay --gguf <variant.gguf> \
+  --capture-dir <fixed-selected-captures> --backend gpu --act-bits 16 \
+  --check-rows 10 --max-tokens 4 --emit-reference-values \
+  --warmups 0 --samples 1 --require-nine > <variant-replay.jsonl>
+python3 kernels/w1ax-replay/check_scale_blas.py --gguf <variant.gguf> \
+  --capture-dir <fixed-selected-captures> --replay-jsonl <variant-replay.jsonl> \
+  --device cuda > <variant-blas.jsonl>
+```
+
+`--emit-reference-values` records sampled native outputs in token-major order,
+original `source_N`, `token_indices`, `row_indices`, and `scale_group_size`.
+The Python companion uses the fitter's F32 matmul/bmm formulas with TF32 disabled
+and compares those same native outputs. It preserves counts, both output vectors,
+errors, input/model hashes, hardware and Torch version. This is a **non-gating
+arithmetic diagnostic**: matrix shape affects BLAS reduction and the bounded
+subset does not prove identical errors for every full calibration matrix.
+It does not estimate serving acceptance. Native parity remains the independent
+sequential scalar gate. A single timing sample is incidental diagnostic output,
+not a throughput benchmark. CPU smoke is available using `--backend cpu` and
+`--device cpu`.
