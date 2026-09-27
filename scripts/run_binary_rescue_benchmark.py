@@ -15,6 +15,7 @@ import hashlib
 import json
 import os
 import re
+import signal
 import subprocess
 import time
 import urllib.request
@@ -23,6 +24,7 @@ from pathlib import Path
 
 import benchmark_native_eagle as base
 import benchmark_w1ax_streaming as streaming
+from capture_w1ax_activations import handle_stop_signal
 
 ROOT = Path(__file__).resolve().parents[1]
 DEV_SHA256 = "a3b97d942a99f1bddd5bb97216c32a9920aaa50788baa5bdb92354842547e885"
@@ -733,6 +735,8 @@ def main():
         "--diagnostic", action="store_true", help="use separately frozen config.diagnostic workload"
     )
     args = parser.parse_args()
+    for signum in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
+        signal.signal(signum, handle_stop_signal)
     run(json.loads(args.config.read_text()), args.mode, args.output, args.diagnostic)
 
 
