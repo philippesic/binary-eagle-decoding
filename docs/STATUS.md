@@ -1,23 +1,25 @@
 # Current project status
 
-**Active goal:** [all-layer W1Ax activation-precision suite on RTX 2080 Ti](goals/w1ax-activation-precision-suite.md),
-opened 2026-09-25. The [RTX 2080 Ti quantization
-suite](goals/rtx2080ti-quantization-suite.md) completed on 2026-09-25.
-The prior [W1A1 EAGLE research goal](goals/full-w1a1-eagle-project.md) is
-checkpointed, and its Turing measurements are complete. **Current research
-priority:** run the W1Ax activation-precision study, then revisit W1A1
-quantization-aware training (QAT) to recover held-out draft acceptance. Every
-future native W1A1 throughput comparison must include
-both ordinary FP16 EAGLE and Q4_0 EAGLE drafts under the same target/verifier;
-alternative drafter architectures are a later research direction. No new
-QAT run has begun.
+**Active goal:** none. **Latest completed goal:** [all-layer W1Ax activation-precision
+suite on RTX 2080 Ti](goals/w1ax-activation-precision-suite.md), completed
+2026-09-27 UTC. The [RTX 2080 Ti quantization suite](goals/rtx2080ti-quantization-suite.md)
+completed on 2026-09-25. The prior [W1A1 EAGLE research goal](goals/full-w1a1-eagle-project.md)
+remains checkpointed. The next research choice is user-owned; no new QAT run or
+reserved-final prompt evaluation has begun. Future native W1A1/QAT throughput
+comparisons must retain both FP16 EAGLE and Q4_0 EAGLE under the same target/verifier.
 
-**Concurrent suite progress:** the latest [goal checkpoint](goals/w1ax-activation-precision-suite.md)
-records W1Ax implementation, 88-case SM75 gates, real-input replay and the
-completed historical (480 requests) and development (960 requests) eight-path matrices. Matched operator replay and the 480-request round trace are also complete. Full-server profiling and streaming diagnostics are complete. The 720-request context matrix is complete; eleven of twelve development policy cells are complete. The suite resumed on 2026-09-26 at 18:00 UTC under a fresh supervisor. The D1/D2/D3 groups and D5/p0/p0.1 are complete; D5/p0.3 is running, and the interrupted attempt and its 120 requests remain preserved. The goal file’s successor handoff records the live job, completed worker transfer, exact next actions and stop procedure. Consult that checkpoint for current
-run ownership, paths and stop instructions. These records were preserved during
-integration of the literature review; its authors did not operate or revalidate
-that GPU run.
+**Final W1Ax result:** the twelve-cell development policy grid completed and
+validated all **11,520 requests**, alongside the sealed historical/development,
+operator, round, profiling, streaming and 720-request context measurements.
+Every W1Ax path had lower pooled decode and full-request throughput than both
+same-cell anchors. The largest observed decode ratios were 0.707× FP16 and
+0.684× Q4_0. The [main report](../experiments/w1ax-activation-precision-results.md)
+and [complete policy appendix](../experiments/w1ax-policy-grid-results.md) retain
+fixed versus development-selected policies, raw-output differences, timing-control
+variation and measurement limits. The interrupted 120-request attempt remains
+preserved and excluded from completed-cell rates. Final verification found no
+owned jobs or GPU compute apps; the 2080 Ti was idle. The goal file records exact
+artifacts, hashes, checks and completion evidence.
 
 Ubuntu 24.04 WSL2 and SSH are reachable through the shared host registry. The
 RTX 2080 Ti (SM75) passed five native W1A1 CUDA backend
@@ -133,13 +135,10 @@ speed ratios. Local fake-server and analysis checks passed 15/15; the
 
 ## Next research gate
 
-First establish the [all-layer W1Ax activation-precision
-matrix](../experiments/w1ax-activation-precision-plan.md) on the 2080 Ti,
-including W1A16/W1A8/W1A4 and matched FP16, Q8_0, Q4_0, W1A1 anchors. The
-protocol separates acceptance, identical-input operator cost, complete EAGLE
-round cost, and end-to-end serving rate. Implementation and focused SM75 checks have since progressed in the
-linked goal checkpoint; the primary serving comparisons are sealed and broader diagnostics
-remain to be completed by the suite owner. Use its quality evidence to guide the [QAT revisit
+The [all-layer W1Ax study](../experiments/w1ax-activation-precision-results.md)
+is complete, including the predeclared policy grid. Its report separates
+acceptance, identical-input operator cost, complete round timing and serving
+rates, with explicit measurement limits. Use its quality evidence to guide the [QAT revisit
 plan](../experiments/qat-revisit-plan.md): audit
 drafter-state/target-verifier alignment and target probability mass outside the
 draft vocabulary before training, then test one bounded target-aligned recipe

@@ -1,8 +1,15 @@
 # All-layer W1Ax activation precision on RTX 2080 Ti
 
-**State:** primary matrices, operator/round/profile/streaming/context diagnostics complete; development policy sweep resumed after a user pause, with eleven cells complete.
+**State:** complete; all twelve policy cells validated and analyzed.
 **Protocol:** [frozen W1Ax study](w1ax-activation-precision-plan.md).
 **Hardware:** NVIDIA RTX 2080 Ti, SM75, 11,264 MiB VRAM under Ubuntu 24.04 WSL2.
+
+The full policy grid completed **11,520 measured requests**. Every W1Ax mode
+had lower pooled decode and full-request throughput than both matched FP16 and
+Q4_0 anchors in every cell. The largest within-cell decode ratios were 0.707×
+FP16 and 0.684× Q4_0. These are workload-specific timing observations; output
+differences and control-timing variation are retained below. No QAT training or
+reserved-final prompt evaluation was performed.
 
 ## Frozen comparison
 
@@ -520,6 +527,56 @@ revision `d0724427b`, which is not its ancestor. Their historical results remain
 separate; they are not substituted for new measurements. FP16, Q8_0 and Q4_0
 mandatory controls are present throughout the primary and diagnostic matrices.
 
+## Complete development policy grid
+
+All twelve predeclared configurations completed: D={1,2,3,5} crossed with
+p_min={0,0.1,0.3}, each with 24 development prompts, five repetitions and eight
+paths (960 requests/cell). The interrupted D2/p0 attempt remains preserved at
+120 records; its complete second attempt supplies that cell. The analyzer
+validated complete pairing, frozen prompt/model/binary/config hashes, all
+per-repetition W1Ax dispatch files and raw token-ID hashes. No incomplete attempt
+was pooled into a completed cell.
+
+Fixed and development-selected results below are separate. “Fixed” is the
+**policy-grid D5/p0 cell**, not the earlier primary matrix. Selection means the
+highest observed pooled development decode rate, with the declared tie-break;
+it does not establish an optimal or held-out policy. FP16 and Q4_0 both select
+D3/p0, at 92.184 and 98.068 decode tok/s respectively (Q8_0: 95.946).
+
+| W1Ax | Fixed D5/p0 decode tok/s | Selected D / p_min | Selected decode tok/s | Selected / own fixed | vs selected FP16 | vs selected Q4_0 |
+| --- | ---: | --- | ---: | ---: | ---: | ---: |
+| A16 | 29.985 | 1 / 0.0 | 48.862 | 1.630× | 0.530× | 0.498× |
+| A8 | 42.680 | 1 / 0.0 | 55.506 | 1.301× | 0.602× | 0.566× |
+| A4 | 44.847 | 3 / 0.3 | 54.087 | 1.206× | 0.587× | 0.552× |
+| A1 | 45.500 | 3 / 0.3 | 55.315 | 1.216× | 0.600× | 0.564× |
+
+Central 95% **descriptive resampling ranges** for the selected decode ratios,
+using 2,000 crossed prompt/repetition draws, seed 42:
+
+| W1Ax | vs selected FP16 | vs selected Q4_0 |
+| --- | --- | --- |
+| A16 | 0.512–0.547 | 0.480–0.516 |
+| A8 | 0.581–0.622 | 0.545–0.586 |
+| A4 | 0.564–0.608 | 0.530–0.573 |
+| A1 | 0.577–0.622 | 0.542–0.586 |
+
+These cross-cell ranges hold the selected cells fixed, pair nominal repetition
+labels and omit selection uncertainty and unmeasured systematic timing changes.
+They are not confidence bounds for a policy benefit. Selected A16/A8/A4 match
+the selected anchors and their own fixed-policy outputs on all 120 pairs.
+Selected A1 differs on 5/120 pairs against each selected anchor and its own
+fixed policy; those ratios remain timing observations with different outputs.
+No numerical cause is assigned. Five repetitions are not 120 independent
+quality examples.
+
+The [policy-grid appendix](w1ax-policy-grid-results.md) preserves all twelve
+cells, all eight paths, decode/request rates, both anchors, fixed/selected
+comparisons, mismatch counts and reproduction details. Full validated JSON:
+remote `runs/w1ax-policy-grid-analysis-20260927/report.json`, SHA256
+`9d742f355c41ea5d23d12db39fadca24843fcab03fa42a229ad6857634c7c499`.
+It uses helper revision `c64e260`, source SHA256
+`f628b5babcfe875f3a62a1b87ab8e5d280d91043b44dae070acc5fe7403ba9db`.
+
 ## Confidence-threshold interpretation
 
 In frozen diagnostic runtime `feba15698`, the EAGLE3 draft sampler retains
@@ -535,8 +592,7 @@ selection), `common/sampling.cpp` and `src/llama-sampler.cpp` of that runtime.
 At all four depths, the completed p0 versus p0.1 comparisons have identical raw
 IDs and speculative counter dictionaries for all 960 paired requests, consistent
 with this sampler contract. Their timing differences do not establish a benefit from changing
-that floor. All twelve predeclared configurations are retained; final policy
-selection remains pending the full grid. Individual candidate confidence values
+that floor. All twelve predeclared configurations are retained in the final analysis. Individual candidate confidence values
 were not inspected in these uninstrumented cells.
 
 D1/p0.3 changes proposal counts and some outputs. W1A16 differs from target-only
@@ -552,8 +608,7 @@ to 395/4,145 at floor 0.3: 0.056 to 0.095 despite fewer total accepted drafts.
 Accepted drafts per native verification round is a separate metric. The counts
 happen to coincide here because D1 proposes one token per such round;
 no-proposal iterations are outside that round denominator. Neither conditional
-ratio alone demonstrates better serving quality or throughput. Final policy
-conclusions still await the complete grid.
+ratio alone demonstrates better serving quality or throughput. All twelve configurations remain represented in the final analysis.
 
 D2/p0.3 also produces differences between the throughput anchors: FP16 and
 Q4_0 disagree on 10/120 paired requests. W1A1 matches target-only in that cell
@@ -609,7 +664,11 @@ the specific scope limits above and do not recover those missing measurements.
 The emitted-vocabulary audit measures observed ID coverage, not target
 probability mass. No trained-QAT or reserved-final result is claimed.
 
-## Outstanding measurements
+## Completion record
 
-The twelve-setting D/p_min development policy grid has eleven complete cells. D2/p0 completed as attempt 2; the interrupted attempt retains 120 saved requests and is excluded from complete-cell comparisons. Do not treat the historical
-screen as a final trained-QAT result or use the reserved 24-prompt final set.
+All scheduled matrices and the available diagnostics are complete, subject to
+the measurement limits above. The 12-cell policy analysis passed without dropping
+output divergences or the fixed-policy comparison. The 120 interrupted D2/p0
+records remain preserved and excluded from completed-cell rates. Reproduction
+paths, hashes and the final process/GPU verification are recorded in the
+[goal checkpoint](../docs/goals/w1ax-activation-precision-suite.md).

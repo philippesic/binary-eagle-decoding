@@ -1,8 +1,8 @@
 # Goal: all-layer W1Ax activation-precision suite on RTX 2080 Ti
 
 **Opened:** 2026-09-25
-**State:** active after user-authorized resume; eleven policy cells complete, D5/p0.3 running
-**GPU owner:** `/root/policy_operator`, under successor chat `01a0dbfc-6f9b-76e1-895d-1a617ad45e60`
+**State:** complete; all twelve policy cells analyzed, final reports reviewed, GPU released
+**GPU owner:** none; experiment and analysis processes stopped
 
 ## Objective
 
@@ -302,8 +302,7 @@ assign a new Luna experiment operator as sole GPU owner. All other original
 subagent assignments are finished. No process is stopped for this rotation.
 
 Read `~/.config/binary-eagle-decoding/hosts.toml` before connecting. All SSH/scp
-must use tmux MCP, never ordinary shell tools. Host currently RTX2080Ti,
-`philip@192.168.4.29:22`, project `/home/philip/binary-eagle-decoding`.
+must use tmux MCP, never ordinary shell tools. Use the `rtx2080ti` registry entry, project `/home/philip/binary-eagle-decoding`.
 Existing local tmux session `w1ax-2080ti` (`$4`) has root spare panes `%12`,
 `%13`, `%14`; inspect them before reusing. The operator's final pane and process
 snapshot are recorded below. Do not touch unrelated preexisting sessions.
@@ -551,3 +550,50 @@ All experiment/analysis work is stopped. Resume only on explicit user request.
 - D5/p0 versus p0.1 has zero raw-ID or per-request counter differences across all 960 pairs. This completes that observed equivalence check at all four depths; each result is consistent with the frozen top-10-normalized confidence contract. No floor-0.1 performance benefit is inferred from timing noise.
 - Final cell D5/p0.3 started automatically around00:08UTC on2026-09-27, reaching26 records at00:09UTC. Supervisor/launcher875/876, benchmark PGID24885 and server PGID25212 at the snapshot; clean logs. Operator retains sole GPU ownership through final stopped-group/GPU-idle checks and mirroring.
 - After this last cell, root must run the latest separate published policy helper (`c64e260`) against original Linux suite/progress/results with2000 resamples/seed42, preserve all12 successful cells and interrupted-a1 exclusion, finalize fixed/selected dual-anchor tables and raw-output comparisons, review/push final report/status/goal, then mark the native Goal complete only after all owned jobs are stopped.
+
+
+## Final completion and audit — 2026-09-27 01:10 UTC
+
+The original study objective is complete. This supersedes all earlier running,
+paused and pending-analysis snapshots. No new research goal has been opened.
+
+### Final execution and artifacts
+
+- All 14 frozen configs succeeded: two context cells and all 12 policy cells. The policy grid contains 11,520 complete measured requests. D2/p0 uses successful attempt a2; interrupted a1 remains intact at 120 requests and is excluded. Final progress SHA256 `344365061b682d9c3798cc2fa738252c5b87c8c29eb6991d5635ec1fed7be67d`.
+- The measurement supervisor finished at 2026-09-27 00:52:51.744395 UTC with exit 0. Final D5/p0.3 records SHA256 `cc864b8e51cc55ce204e994b40e881c2fa51c46f7f80bce6a2e8a89b13d7d481`; its local interim audit passed. All completed-cell mirrors passed filename-keyed remote/local hash verification.
+- Separate CPU supervisor `runs/w1ax-policy-grid-analysis-20260927/` finished at 00:56:18.122832 UTC with exit 0, PGID28075. It used published helper `c64e260`, SHA256 `f628b5babcfe875f3a62a1b87ab8e5d280d91043b44dae070acc5fe7403ba9db`, 2,000 resamples and seed42. Full report SHA256 `9d742f355c41ea5d23d12db39fadca24843fcab03fa42a229ad6857634c7c499`; analysis state SHA256 `75785dd03044209c4f48fd0baee371261b0621355d9fbba0f5796628c3814660`. Local mirror: main checkout `runs/w1ax-analysis-mirror/final-policy/`. Original Linux suite/results paths remain authoritative.
+- Frozen measured project `2f6ab14` and runtime `feba15698` were not changed. The final Git check confirms runtime `feba1569848e74996651a42a9751f8afa5958b1d` remains published on the user's fork branch `w1ax-suite`. Raw runs, models, captures and datasets remain outside Git.
+
+### Requirement-by-requirement completion audit
+
+| Requirement | Final evidence |
+| --- | --- |
+| Preserve the existing suite and pause/resume work | Original running job adopted without restart; user pause stopped owned groups; fresh resume supervisor preserved 120 interrupted rows and reused all completed cells. |
+| Complete every predeclared policy cell | Final progress is complete with all 14 configs succeeded; official analyzer accepted 12 policy cells and 11,520 paired records. |
+| Validate provenance, pairing and dispatch | Final analyzer checked config/prompt/model/binary identities, raw-ID hashes, complete five-by-24-by-eight pairing and every per-repetition W1Ax dispatch file. |
+| Retain raw-ID comparisons and both anchors | Full JSON and policy appendix preserve all within-cell comparisons against FP16/Q4_0/target-only and selected-versus-selected/fixed comparisons, including first divergences. No mismatching cell was discarded. |
+| Separate fixed and selected policies | Reports identify the grid D5/p0 reference, highest-observed development selections, both anchors and descriptive ranges; selection and timing-control limitations remain explicit. |
+| Complete the accepted earlier diagnostics | Sealed primary, operator, round, profile, streaming and context work is retained with its documented limits; seven prior compact artifact hashes were rechecked against the published report. No completed measurement was rerun to erase a limitation. |
+| Preserve reproducible deliverables | Main report plus policy appendix include versions, hashes, all twelve-cell rates, mismatch counts, and a fresh-output reproduction command. Interrupted data and pre-resume checkpoint remain intact. |
+| Validate implementation and final reporting | Latest policy helper passed 14 focused tests; full actual-data analysis passed. Independent appendix checks recomputed 192 rates, 312 mismatch counts, eight selected maxima and 48 source hashes. Astra review verified the final numeric tables, uncertainty wording and claim scope. |
+| Stop owned jobs and release GPU | Final verification at 01:01:43 UTC found PIDs875/876/28075 and analysis PGID28075 absent, no llama-server or compute apps, and RTX2080Ti at0% /601MiB of11264MiB. No subsequent GPU work occurred. |
+| Respect research boundaries | No QAT training or reserved-final prompt evaluation was performed; future research choices remain with the user. |
+
+Every W1Ax configuration had lower decode and full-request throughput than both
+same-cell anchors. Highest observed W1Ax decode rates A16/A8/A4/A1 were
+48.862/55.506/54.087/55.315 tok/s; selected FP16/Q4_0 were92.184/98.068. These
+are descriptive development results, with output differences and control-timing
+variation preserved, not causal policy benefits or strict lossless speedup claims.
+
+Final verification JSON SHA256 `8f0dd54b02c98bd59bd96aaeb88f70e0515ef43821ceb0fcce6bdc1f17c8aea7`
+is stored in the local final-policy mirror. A one-character transcription error
+in its initial development-records digest was corrected by a direct remote SHA256
+calculation; the published report's original digest was correct and raw data
+were unchanged. The initial audit JSON is preserved separately. The operator
+record is `runs/w1ax-analysis-mirror/resume-operator-record-20260926.md`.
+
+All worker assignments are finished. Final reviewed documentation is integrated
+and pushed to main and w1ax-suite in the completion commit. The existing local
+worktree is retained for reuse: this chat exposes no managed archive attachment,
+and the initialized submodule is unsupported by desktop archival. No unmerged
+work or active process depends on it; no files or branches were deleted.
