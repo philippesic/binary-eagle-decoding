@@ -4,7 +4,7 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-**Active goal:** none. **Latest completed goal:** [binary scale fitting on RTX 5080](goals/binary-scale-fitting-5080.md), completed 2026-09-27 UTC.
+**Active goal:** [mixed precision rescue and frozen-body head adaptation on RTX 5080](goals/binary-rescue-head-5080.md), established 2026-09-27 UTC. Both workstreams and repeated native performance evaluation are user-approved; the orchestrator is the sole RTX 5080 owner. **Latest completed goal:** [binary scale fitting on RTX 5080](goals/binary-scale-fitting-5080.md), completed 2026-09-27 UTC.
 
 The approved four-way A16 screen completed all **168 requests** (7 paths × 24 development prompts). A/B/C/D accepted **0.119 / 0.161 / 0.290 / 0.425 drafts per round**, versus **1.037 FP16** and **1.042 Q4_0**. Fitted group scales improved 3.585× over row-mean A, closing 33.20% of the Q4_0 gap. D beat all other binary candidates on every prompt but trailed both controls on every prompt. All seven paths matched target-only raw IDs on all 24 prompts. See the [report](../experiments/binary-scale-fitting-5080.md) for counts, depth survival, calibration, artifacts and limitations.
 

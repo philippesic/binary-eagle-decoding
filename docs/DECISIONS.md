@@ -154,3 +154,10 @@ latency and total model throughput. FP16 remains a secondary diagnostic control.
 This does not authorize changing the target/verifier model precision, reopening
 completed goals, or starting a new GPU experiment. Historical measured values
 remain unchanged; future summaries should lead with Q4_0.
+
+
+## Approved rescue and readout follow-up (2026-09-27)
+
+The user approved BOTH four independent Q8_0 subset rescues of fitted-group D and one bounded true-verifier-aligned FP16 head fit on frozen D body, followed by graph-enabled repeated native performance measurements on RTX 5080 only. The [active protocol](goals/binary-rescue-head-5080.md) freezes comparison, combination admission, data boundaries and budgets. Q4_0 remains primary; original FP16-head swap is an essential control. Final prompts stay sealed. Necessary bounded runtime/graph/capture work is authorized.
+
+Pending larger decisions remain user-owned: head rebinarization, body QAT, changed signs/scales/A1, expanded training/search budgets, architecture change, deployment promotion and final-set evaluation. Evidence from this exploratory goal will recommend one next choice, not start it automatically.
