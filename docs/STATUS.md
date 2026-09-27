@@ -135,6 +135,15 @@ speed ratios. Local fake-server and analysis checks passed 15/15; the
 
 ## Next research gate
 
+The [post-suite consolidation](../experiments/one-bit-next-steps-2026-09-27.md)
+updates the earlier agent brainstorms using the completed policy and round
+measurements. It recommends recovering useful binary weights with wider
+activations first: finish missing graph/state parity checks, then a train-only
+fixed-sign row/group scale-fitting screen, with readout/body adaptation
+conditional on its result. W1A1 remains the research endpoint. This is a
+recommendation awaiting a research scope choice, not a new active goal or an
+expanded training budget; no GPU work or reserved-final evaluation was started.
+
 The [all-layer W1Ax study](../experiments/w1ax-activation-precision-results.md)
 is complete, including the predeclared policy grid. Its report separates
 acceptance, identical-input operator cost, complete round timing and serving

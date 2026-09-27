@@ -95,3 +95,28 @@ User choices still pending: which representation and training scope to advance;
 any replacement for the existing one-run QAT budget; whether practical one-bit
 weights are a separate deployment track before returning to A1. The original
 W1A1 objective, current suite and FP16/Q4_0 comparison anchors remain intact.
+
+## Post-suite recovery recommendation (2026-09-27)
+
+The user requested a consolidation of next steps after the completed W1Ax
+suite. The [consolidated recommendation](../experiments/one-bit-next-steps-2026-09-27.md)
+supersedes earlier advice to finish the suite or try the same policy grid.
+Every tested W1Ax policy loses to both same-cell anchors, and restoring A16
+still leaves development acceptance at 0.117 versus FP16's 1.047 drafts/round.
+The historical fixed-trajectory removal of draft() spans is insufficient to
+reach either anchor. Representation/quality recovery therefore takes priority
+over another kernel or policy sweep of the unchanged model.
+
+Recommended next bounded experiment: reuse completed operator gates, finish
+missing graph/state parity checks, and test row/group-128 × mean-absolute/
+output-fitted scales with fixed signs and A16 on designated training captures.
+Use online development acceptance, not reconstruction error, as the gate.
+A fitted readout on frozen binary-body states is a conditional diagnostic
+before choosing head/interface or wider recurrent training.
+
+Pending user-owned choice: adopt useful W1 weights with wider activations as
+an intermediate milestone toward W1A1, or prioritize immediate joint W1A1
+adaptation; separately choose any training-scope/budget amendment. The existing
+500-step/45-minute head pilot is a narrower proposal, not authorization for
+all-body QAT. Mixed precision and a DSpark/DFlash architecture screen remain
+later alternatives. No new goal, GPU run, training or final-set use began.
