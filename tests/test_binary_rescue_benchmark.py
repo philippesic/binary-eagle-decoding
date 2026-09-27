@@ -179,6 +179,24 @@ class ProtocolTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             runner.validate_config(config)
 
+    def test_draft_stage_trace_is_instrumented_only(self):
+        config = self.config()
+        env = {"EAGLE_DRAFT_STAGE_JSONL": "{output}/draft-stages.jsonl"}
+        config["variants"]["D"]["env"].update(env)
+        with self.assertRaises(ValueError):
+            runner.validate_config(config)
+        config = self.config() | {"graph_env": env}
+        with self.assertRaises(ValueError):
+            runner.validate_config(config)
+        config = self.config() | {"instrumented_env": env}
+        runner.validate_config(config)
+        timed = runner.server_env(config, config["variants"]["D"], "timed", Path("/tmp/block"))
+        self.assertNotIn("EAGLE_DRAFT_STAGE_JSONL", timed)
+        traced = runner.server_env(
+            config, config["variants"]["D"], "instrumented", Path("/tmp/block")
+        )
+        self.assertEqual(traced["EAGLE_DRAFT_STAGE_JSONL"], "/tmp/block/draft-stages.jsonl")
+
     def test_orders_balance_full_cycle(self):
         names = ["a", "b", "c", "d"]
         schedule = runner.orders(names, 8)

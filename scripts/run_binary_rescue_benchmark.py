@@ -30,7 +30,7 @@ TARGET_SHA256 = "05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a
 PRIMARY = {"tokens": 128, "draft_length": 5, "p_min": 0, "context": 2048}
 # Clear ambient experimental switches; variants explicitly own their dispatch.
 CLEAR_PREFIXES = ("GGML_W1", "GGML_EAGLE", "W1AX_", "EAGLE_", "GGML_CUDA_")
-HEAVY = ("CAPTURE", "DUMP", "STATE_TRACE", "ROUND_TRACE", "PROFILE", "REPLAY")
+HEAVY = ("CAPTURE", "DUMP", "STATE_TRACE", "ROUND_TRACE", "DRAFT_STAGE", "PROFILE", "REPLAY")
 write = streaming.write_json
 
 
