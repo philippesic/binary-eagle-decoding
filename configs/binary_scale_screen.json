@@ -1,0 +1,9 @@
+{
+  "target_only": {},
+  "fp16": {"draft": "models/gguf/Qwen3-4B-eagle3-f16.gguf"},
+  "q4_0": {"draft": "results/scale-models/Qwen3-4B-eagle3-q4_0.gguf"},
+  "A": {"draft": "results/scale-fit/A.gguf", "env": {"GGML_W1AX_ACT_BITS": "16"}},
+  "B": {"draft": "results/scale-fit/B.gguf", "env": {"GGML_W1AX_ACT_BITS": "16"}},
+  "C": {"draft": "results/scale-fit/C.gguf", "env": {"GGML_W1AX_ACT_BITS": "16"}},
+  "D": {"draft": "results/scale-fit/D.gguf", "env": {"GGML_W1AX_ACT_BITS": "16"}}
+}

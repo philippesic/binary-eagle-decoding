@@ -37,7 +37,7 @@ implementation, without GPU access. Parent owns this checkpoint and reporting.
 
 ## Checks and evidence
 
-2026-09-27 02:11 UTC preflight: RTX 5080, 16,303 MiB total / 1,940 MiB used,
+2026-09-27 09:11 UTC preflight (nvidia-smi displayed local02:11): RTX 5080, 16,303 MiB total / 1,940 MiB used,
 0% utilization, no reported compute processes, driver 615.71.08. Local pause
 request false. SSH via tmux MCP and wsl.exe -e /usr/lib/wsl/lib/nvidia-smi.
 Read evaluation protocol, operations, next-step consolidation and scale-fitting
@@ -76,3 +76,30 @@ on all24 development prompts, D5/p_min0, temperature0, seed42, no thinking,
 context2048, concurrency1, target/draft F16 KV. Same pinned runtime and target
 for target-only, FP16, Q4_0, A, B, C, D. Capture/trace diagnostics have no timing
 interpretation. Include zero-, partial-, full-accept transitions in parity gates.
+
+## Implementation checkpoint
+
+Remote isolated checkout: /home/philip/binary-eagle-decoding/scale-fitting-20260927.
+Source/target files are shared read-only via models symlinks to the host project.
+Training/development manifests regenerated from the pinned deterministic generator;
+train SHA25680e365bbc6d2caf4abd5e216e53d72ce62d80f9cf1a668e6862efb845a185e74,
+development SHA256a3b97d942a99f1bddd5bb97216c32a9920aaa50788baa5bdb92354842547e885.
+Final manifest generated but not evaluated or used for selection.
+Remote environment: torch2.14.0+cu130, CUDA compiler13.1, compute targetSM120.
+Baseline build run scale-build-base-20260927 exited2 (cmake absent from default
+PATH); retry scale-build-base2-20260927 uses existing .venv tool PATH.
+No GPU inference has started. A second tmux pane%27 is for status inspection.
+Source worker owns only submodule; solver worker owns fitter/export tests;
+Luna worker owns screen-runner tests. Astra review requires post-cast/source
+checks and native boundary-state assertions; implementation includes them.
+
+Runtime published: llama.cpp2e8d2e8dac6354798037e4e9aca455cd898bf06f,
+branch scale-reference-a16. CPU-only local build and112/112 W1A1_MUL_MAT
+operator cases passed (88 legacy,24 grouped). CUDA validation pending.
+Version2 row/group scales preserve existing version1 default. Dense capture
+GGML_EAGLE_DENSE_A16=1 and GGML_W1AX_CAPTURE_DIR; EAGLE_STATE_TRACE_JSONL
+records boundary feature hash, accepted-row position and cache truncation extent.
+This trace does not claim full cached K/V numerical parity.
+Remote baseline build3 running with verified existing CUDA/glibc header patch,
+SHA25613256b220d400a5665cde8bc87c21b0188944390c6a945a7fffa2827254b305a.
+Build2 failed the known rsqrt exception declaration conflict, before any GPU run.
