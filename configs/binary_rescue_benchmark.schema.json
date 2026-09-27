@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Binary rescue benchmark configuration",
+  "type": "object",
+  "required": ["schema_version", "binary", "target", "prompts", "variants"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": 1},
+    "binary": {"type": "string"},
+    "target": {"type": "string", "description": "Frozen FP16 target, SHA256 checked by runner"},
+    "prompts": {"type": "string", "description": "Frozen 24 development prompts, SHA256 checked by runner"},
+    "q4_variant": {"type": "string", "default": "q4_0"},
+    "warmups": {"type": "integer", "minimum": 2, "default": 2},
+    "repetitions": {"type": "integer", "minimum": 5, "default": 5},
+    "port": {"type": "integer", "minimum": 1024, "maximum": 65535},
+    "cuda_visible_devices": {"type": "string", "default": "0"},
+    "graph_env": {"$ref": "#/$defs/env"},
+    "graph_required_markers": {"type": "array", "items": {"type": "string"}, "description": "Actual execution markers, not merely graph support initialization; omitted => graph status unverified"},
+    "instrumented_env": {"$ref": "#/$defs/env"},
+    "policy": {"const": {"tokens": 128, "draft_length": 5, "p_min": 0, "context": 2048}},
+    "variants": {
+      "type": "object", "minProperties": 1,
+      "additionalProperties": {
+        "type": "object", "additionalProperties": false,
+        "properties": {
+          "draft": {"type": ["string", "null"]},
+          "env": {"$ref": "#/$defs/env"},
+          "required_markers": {"type": "array", "items": {"type": "string"}},
+          "precision": {"type": "object", "description": "Per-projection stored types, operand precision, execution, payload bytes, scales and exceptions"}
+        }
+      }
+    },
+    "diagnostic": {
+      "type": "object", "additionalProperties": false,
+      "required": ["label", "prompts", "prompts_sha256", "policy"],
+      "description": "Optional separately frozen workload; use --diagnostic. Final prompts prohibited. Record before inspecting selection results.",
+      "properties": {
+        "label": {"type": "string"},
+        "prompts": {"type": "string"},
+        "prompts_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "policy": {"type": "object", "additionalProperties": false, "properties": {
+          "tokens": {"enum": [128, 256]}, "context": {"enum": [2048, 4096]},
+          "draft_length": {"enum": [1, 3, 5]}, "p_min": {"const": 0}
+        }}
+      }
+    }
+  },
+  "$defs": {"env": {"type": "object", "additionalProperties": {"type": "string"}, "description": "Explicit runtime environment; {output} expands to per-server block directory. Graph-disable settings prohibited."}}
+}
