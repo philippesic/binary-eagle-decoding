@@ -120,3 +120,14 @@ results/scale-cast-gate,3 historical prompts (prose-01/code-01/reasoning-01),
 128tokens each, ordinary versus A16cast-only, both capture all9 layers/state.
 This is diagnostic data only, never calibration fitting. Live owner parent,
 pane%26; inspect via%27. Next verify state/cast gate then96train capture.
+
+09:28UTC cast gate complete: ordinary and cast_only exact output IDs, proposals,
+accept counts and state-event records on all3 prompts. Each path accepted199
+in182 rounds. All6 per-prompt state audits passed; each path completed75zero,
+100partial and3full accept→seed transitions, plus3 initial seeds. Saved local
+compact copy results/binary-scale-fitting-5080/cast-analysis.json in main checkout.
+GPU released after gate; refreshed preflight0%/no compute processes,2115MiB
+noncompute use, pause false. Training capture scale-train-capture-20260927 is
+now running under pane%26, results/scale-train-capture. CPU-only replay build
+scale-replay-build-20260927 under%27. Replay extension8b81c53 published on main,
+CPU fixture checks441outputs exact scalar parity, independent review passed.
