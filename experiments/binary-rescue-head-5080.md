@@ -63,6 +63,29 @@ All four artifacts passed reference-quantization and serialized-type audits.
 | FFN down | 11.411% | 88.589% | 2.077 | 2.306 |
 | Vocabulary head | 37.537% | 62.463% | 3.971 | 4.200 |
 
+Each named projection has the following logical shape and tensor payload.
+All D entries store packed signs with F32 group128 scales and run the custom
+F16-input/F32-sign-add path; Q8 entries, only where tested, include standard
+block scales and run Q8_1 conversion plus MMVQ/MMQ. Payloads are measured GGUF
+tensor bytes rather than a percentage-based runtime estimate.
+
+| Projection | Output × input | Rescue subset | D MiB | Q8 MiB |
+| --- | ---: | --- | ---: | ---: |
+| Fusion `fc` | 2,560 × 7,680 | Fusion | 2.930 | 19.922 |
+| Attention Q | 4,096 × 5,120 | Attention | 3.125 | 21.250 |
+| Attention K | 1,024 × 5,120 | Attention | 0.781 | 5.312 |
+| Attention V | 1,024 × 5,120 | Attention | 0.781 | 5.312 |
+| Attention output | 2,560 × 4,096 | Attention | 1.562 | 10.625 |
+| FFN gate | 9,728 × 2,560 | None | 3.711 | — |
+| FFN up | 9,728 × 2,560 | None | 3.711 | — |
+| FFN down | 2,560 × 9,728 | FFN down | 3.711 | 25.234 |
+| Vocabulary output | 32,000 × 2,560 | Head | 12.207 | 83.008 |
+
+Gate and up stayed D in every rescue; — is an untested replacement, not a
+zero-cost tensor. The FP16 head uses 156.25 MiB for its 81.92M weights; its
+native one-token MMVF has FP16 partial and F32 final reduction, while larger
+shapes can use MMF or cuBLAS with separately audited accumulation.
+
 Selected-weight denominators are218,234,880 logical matrix weights. Binary
 payload includes packed signs plus F32 scales (1.25bits/weight); Q8_0 includes
 block scales (8.5bits/weight). Norms remain F32 and d2t I64. Full-file figures
@@ -91,8 +114,9 @@ dense fitted head exceeds Q4_0's entire draft file size and is diagnostic.
   digests; canonical Q4 self-replay and all five crossed arms passed exact round,
   verifier-label and output checks. Same-body cross-head states matched by bytes.
 - Initial FP16-head export roundtrip matched raw IDs and captured body states.
-- 32 real FP16-head states /1,024,000 logits gave max absolute surrogate error
-  0.0035923, p95 0.0012449 and no argmax mismatch. The training computation uses
+- 32 real FP16-head states /1,024,000 logits gave max absolute error 0.0035923
+  and p95 0.0012449 when compared with a CPU F32 surrogate; no argmax mismatch.
+  The training computation uses
   F16-rounded inputs/weights with F32 accumulation; native MMVF uses half2
   partial accumulation and F32 reduction. It is an audited approximation.
 
@@ -166,17 +190,20 @@ conditional prefix survival. At position 1, supported-label median ranks are
 are +0.745, +0.236, -1.482, -0.978 and -0.980 logits. Full per-depth ranks,
 margins, validity/support denominators and off-policy prefix records are saved.
 
-The larger loss follows the D body: swapping a D head onto Q4 body costs about
-5.9 percentage points at position 1, while swapping D body under Q4 head costs
-19.8 points. Later-position deterioration also persists under a dense head.
-This motivates the bounded compensation fit; it does not prove irrecoverable
-information loss or predict the fitted head's live-chain result.
+Under this canonical Q4 forced-prefix distribution, the larger loss follows
+the D body, which includes fusion and its own recurrent cache: swapping a D
+head onto Q4 body costs about 5.9 percentage points at position 1, while
+swapping D body under Q4 head costs 19.8 points. Later-position deterioration
+also persists under a dense head. These are controlled interventions, not an
+additive decomposition or live acceptance estimate. They do not prove
+irrecoverable information loss or predict the fitted head's live-chain result.
 
 ## Head fit and performance
 
 The one approved fit completed 500 steps in 19.83 optimizer seconds. It used
-8,160 states selected evenly from 40,815 aligned training states; 1,110 labels
-were unsupported and excluded from CE while retained in coverage denominators.
+8,160 supported states selected evenly from 40,815 aligned training states;
+1,110 source labels were unsupported and excluded from CE while retained in
+coverage denominators. No selected state had an unsupported label.
 There were 31,904 state presentations (3.9098 effective passes; each selected
 state appeared three or four times). All optimization/export checks were finite.
 CUDA native/surrogate parity passed with max error 0.003593 and no argmax change
