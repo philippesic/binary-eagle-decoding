@@ -1,7 +1,9 @@
 # Binary rescue and frozen-body head adaptation on RTX 5080
 
-Status: **in progress**. Quality, body/head diagnosis and the bounded head fit are complete; repeated
-performance measurements remain pending. No promotion decision yet.
+Status: **paused at user request**. Quality, body/head diagnosis, the bounded
+head fit, profiling and clean repeated primary performance are complete.
+Full-prompt round attribution, the frozen longer-context diagnostic and final
+artifact handoff remain pending. No promotion decision yet.
 
 ## Frozen comparison
 
@@ -231,11 +233,64 @@ CE and a fixed initialization regularizer. Only supported valid states from the
 8160 selected states and500 steps/45 optimizer minutes. Native development
 acceptance selects among0/100/250/500 (plus a finite time-cap endpoint).
 
-Repeated performance will use matched graph-enabled builds, warmups, at least
-five alternating repetitions, client wall latency/TTFT/stream arrivals, server
-prefill/decode, paired distributions and uncertainty against Q4_0. Heavy state
-and round dumps remain outside primary timed runs. Separate behavior-matched
-round/kernel traces will support cost and conditional headroom interpretation.
+## Five-repetition native performance
+
+The clean primary matrix completed 1,440 measured requests: 12 paths × 24
+development prompts × five balanced, alternating repetitions, with 120 separate
+warmups. Every response emitted 128 raw token IDs; all 120 measured outputs per
+path match Q4_0 and target-only. The same RTX 5080, final CUDA binary, model
+artifacts, target, prompt manifest and policy were used throughout. Each of the
+60 server blocks reported actual CUDA graph launches (912,625 in aggregate),
+with no disabled or incompatible direct fallback. Graph recaptures and direct
+warmup work remain included in the observed serving behavior.
+
+Client throughput divides 15,360 emitted tokens per path by the sum of its
+120 full request wall times; server decode throughput uses the server's decode
+time only. The ratio interval is a paired 95% bootstrap over 24 prompt IDs,
+retaining all five repetitions within each sampled prompt. It describes this
+selected development workload, not uncertainty over new prompts or a
+reserved-final result.
+
+| Path | Client tok/s | Client / Q4_0 (95% interval) | Server decode tok/s | Request p50 / p95 (s) | TTFT p50 / p95 (s) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| **Q4_0** | **135.1** | **1.000** | **142.1** | **0.935 / 1.111** | 0.031 / 0.109 |
+| Target only | 97.7 | 0.723 (0.700–0.748) | 100.0 | 1.310 / 1.315 | 0.029 / 0.035 |
+| FP16 EAGLE | 121.6 | 0.900 (0.891–0.910) | 127.2 | 1.053 / 1.222 | 0.031 / 0.107 |
+| D unchanged | 53.8 | 0.398 (0.387–0.408) | 54.9 | 2.409 / 2.568 | 0.033 / 0.113 |
+| C row scales | 65.3 | 0.483 (0.468–0.498) | 66.9 | 1.954 / 2.089 | 0.032 / 0.110 |
+| D + attention Q8_0 | 77.3 | 0.572 (0.557–0.585) | 79.6 | 1.673 / 1.835 | 0.033 / 0.111 |
+| D + fusion Q8_0 | 58.6 | 0.434 (0.425–0.443) | 59.9 | 2.219 / 2.410 | 0.031 / 0.105 |
+| D + FFN-down Q8_0 | 60.1 | 0.445 (0.433–0.455) | 61.5 | 2.149 / 2.271 | 0.033 / 0.109 |
+| D + output-head Q8_0 | 59.9 | 0.443 (0.431–0.455) | 61.3 | 2.112 / 2.385 | 0.033 / 0.109 |
+| D + original FP16 head | 59.1 | 0.437 (0.424–0.449) | 60.4 | 2.139 / 2.421 | 0.033 / 0.111 |
+| D + attention/fusion Q8_0 | 83.3 | 0.616 (0.602–0.631) | 85.9 | 1.542 / 1.721 | 0.031 / 0.106 |
+| D + fitted FP16 head | 60.8 | 0.450 (0.437–0.462) | 62.2 | 2.154 / 2.406 | 0.033 / 0.107 |
+
+The admitted mixed rescue is the fastest binary-body candidate, but its full
+request throughput is 0.616× Q4_0 and 0.852× target-only. The selected fitted
+head reaches 0.450× Q4_0 and 0.622× target-only. Neither candidate wins against
+Q4_0 on any of the 24 paired prompt IDs; their prompt-level client ratios span
+0.535–0.747 and 0.399–0.511 respectively. The Q4_0 advantage is therefore
+larger than the observed repetition and prompt variation in this workload.
+
+Streaming per-token intervals are available for 85/120 requests per path
+(17/24 prompts × five repetitions); seven code prompts have batched or absent
+per-event raw IDs and are excluded from that interval statistic. All 120
+requests/path have inter-chunk intervals, which are not equivalent to per-token
+latency when chunks contain multiple tokens. On the valid subset, Q4_0's
+inter-token p50/p95 were 0.289/14.755 ms, versus 19.505/20.164 ms for the
+combined rescue and 24.931/25.573 ms for the fitted head. Q4_0 often emits
+accepted drafts in a burst, making its median very low; the p95 captures
+slower verification cycles. Full-request wall time, server decode time and
+stream intervals have different boundaries and cannot be added.
+
+The first timing attempt was interrupted after a simultaneous CPU-only Nsight
+SQLite export overlapped its initial Q4_0 block. All its results were excluded;
+the clean 60-block matrix above ran without that competing export. Separate
+full-prompt round instrumentation was interrupted at the user's request for all
+RTX 5080 host resources and is excluded from final cost calibration. The frozen
+longer-context diagnostic has not started. Neither can replace the clean
+primary timings.
 
 ## Reproducibility checkpoint
 
