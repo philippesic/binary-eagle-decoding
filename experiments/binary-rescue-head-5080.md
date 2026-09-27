@@ -72,7 +72,7 @@ the unchanged target embeddings remain shared higher-precision inputs, and the
 fixed FP16 target is included in total serving memory and end-to-end timing.
 Standard Q8_0's Q8_1 activation conversion differs from D's F16-cast activation
 path: these are practical mixed-path interventions, not isolated weight-bit tests.
-Per-projection executed-kernel profiling remains pending.
+Actual per-projection execution paths and selective kernel costs are detailed below.
 
 The admitted attention+fusion combination retains 71.77% binary selected
 weights, uses 3.2965 selected payload bits/weight, and has a 91.71 MiB GGUF.
