@@ -43,7 +43,10 @@ Q4_0, D and C reproduce the sealed earlier development acceptance counts exactly
 The frozen combination rule admits at most two subsets whose individual gains
 are at least10% over D and improve at least16/24 prompts, choosing the two largest
 pooled gains. Attention improves43.37% and fusion25.47%, each on24/24 prompts.
-Their one combined rescue is admitted for testing; no combination result yet.
+Their one combined rescue reached 1251/1797 = **0.6962 accepted drafts/round**
+(24 prompts), versus a repeated same-run Q4 control of 1555/1493 = 1.0415.
+Both used verified CUDA graphs. The combination remains below the frozen 80%
+Q4 quality threshold for admitting an extra depth screen.
 The original FP16 head's0.5112 is the untrained control the fitted head must beat.
 
 ## Storage and precision audit
@@ -71,14 +74,14 @@ Per-projection executed-kernel profiling remains pending.
 
 ## Correctness and graph gates
 
--112/112 binary operator cases passed on actual RTX5080 CUDA, plus CPU gates.
+- 112/112 binary operator cases passed on actual RTX5080 CUDA, plus CPU gates.
 - Native loader fixtures accepted valid v2/v3 models and rejected wrong types,
   overlapping/omitted coverage and packed/dense shadow tensors.
 - Historical3-prompt Q4/D capture off/on gates matched raw IDs and proposal
   digests; canonical Q4 self-replay and all five crossed arms passed exact round,
   verifier-label and output checks. Same-body cross-head states matched by bytes.
 - Initial FP16-head export roundtrip matched raw IDs and captured body states.
--32 real FP16-head states /1,024,000 logits gave max absolute surrogate error
+- 32 real FP16-head states /1,024,000 logits gave max absolute surrogate error
   0.0035923, p95 0.0012449 and no argmax mismatch. The training computation uses
   F16-rounded inputs/weights with F32 accumulation; native MMVF uses half2
   partial accumulation and F32 reduction. It is an audited approximation.
@@ -87,6 +90,36 @@ All ten quality blocks report actual CUDA graph launches, with zero disabled or
 incompatible direct fallbacks. Binary/mixed blocks report custom-operation graph
 launches. Counters include setup and warmups; capture/recapture costs and direct
 warmups are retained. They do not alone establish per-projection kernel timing.
+
+## Common-history body/head diagnostic
+
+All 144 requests completed: canonical Q4 recording plus five forced arms across
+24 development prompts. Each arm scored 7,320 identical proposal prefixes and
+round boundaries, preserving its own body recurrence and cache progression.
+Every same-body cross-head state comparison was byte-identical; forced outputs,
+accept counts and reached cloned-verifier labels matched exactly. The target
+label was unsupported by the draft vocabulary for 148/7,320 states (2.02%).
+Those labels remain failures in unconditional agreement below.
+
+| Body / head | Position 1 agreement | Position 2 | Position 3 | Position 4 | Position 5 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Q4 / Q4 | 58.37% | 43.15% | 29.44% | 20.29% | 14.38% |
+| Q4 / D | 52.43% | 36.91% | 25.55% | 18.02% | 12.03% |
+| D / D | 33.60% | 19.88% | 12.30% | 10.39% | 8.37% |
+| D / Q4 | 38.60% | 23.07% | 13.93% | 9.70% | 8.23% |
+| D / original FP16 | 38.46% | 23.81% | 13.52% | 9.97% | 8.23% |
+
+These are per-position predictions on forced histories, not live acceptance or
+conditional prefix survival. At position 1, supported-label median ranks are
+1, 1, 3, 2 and 2 respectively; mean signed margins (label minus best other)
+are +0.745, +0.236, -1.482, -0.978 and -0.980 logits. Full per-depth ranks,
+margins, validity/support denominators and off-policy prefix records are saved.
+
+The larger loss follows the D body: swapping a D head onto Q4 body costs about
+5.9 percentage points at position 1, while swapping D body under Q4 head costs
+19.8 points. Later-position deterioration also persists under a dense head.
+This motivates the bounded compensation fit; it does not prove irrecoverable
+information loss or predict the fitted head's live-chain result.
 
 ## Head fit and performance
 
