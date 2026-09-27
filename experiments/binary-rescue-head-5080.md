@@ -185,10 +185,20 @@ Those labels remain failures in unconditional agreement below.
 | D / original FP16 | 38.46% | 23.81% | 13.52% | 9.97% | 8.23% |
 
 These are per-position predictions on forced histories, not live acceptance or
-conditional prefix survival. At position 1, supported-label median ranks are
-1, 1, 3, 2 and 2 respectively; mean signed margins (label minus best other)
-are +0.745, +0.236, -1.482, -0.978 and -0.980 logits. Full per-depth ranks,
-margins, validity/support denominators and off-policy prefix records are saved.
+conditional prefix survival. The verifier-token rank and signed margin
+(`logit(label) − max(other logits)`) among supported labels deteriorate with
+depth; off-policy proposal prefixes are included:
+
+| Body / head | Median rank at positions 1 / 3 / 5 | Mean margin at positions 1 / 3 / 5 |
+| --- | ---: | ---: |
+| Q4 / Q4 | 1 / 3 / 8 | +0.745 / −1.938 / −3.902 |
+| Q4 / D | 1 / 4 / 10 | +0.236 / −2.288 / −4.041 |
+| D / D | 3 / 16 / 37 | −1.482 / −3.879 / −4.916 |
+| D / Q4 | 2 / 12 / 26 | −0.978 / −3.475 / −4.580 |
+| D / original FP16 | 2 / 12 / 26 | −0.980 / −3.473 / −4.596 |
+
+Full per-depth ranks, margins, validity/support denominators and prefix
+records are saved.
 
 Under this canonical Q4 forced-prefix distribution, the larger loss follows
 the D body, which includes fusion and its own recurrent cache: swapping a D
