@@ -1,6 +1,7 @@
 """Synthetic trace gates only; no GPU performance claims."""
 
 import hashlib
+import json
 from pathlib import Path
 import sqlite3
 import subprocess
@@ -110,6 +111,63 @@ class BinaryRescueKernelTests(unittest.TestCase):
         self.assertEqual(report["binary_head_shape_inference"]["status"], "unavailable")
         self.assertEqual(report["overall_kernels"]["count"], 0)
         self.assertEqual(report["gpu_activities"]["combined"]["union_ns"], 100)
+
+    def test_exact_global_pid_filters_all_gpu_activities_and_api_scope(self):
+        raw_pid = 281474976715656
+        self.add_kernel("w1a16_signadd", 10, 20, pid=raw_pid, node=5)
+        self.add_kernel("w1a16_signadd", 200, 230, pid=5000, node=6)
+        with sqlite3.connect(self.path) as db:
+            for kind in ("GRAPH_TRACE", "MEMCPY", "MEMSET"):
+                db.execute(f"CREATE TABLE CUPTI_ACTIVITY_KIND_{kind}(start INTEGER,end INTEGER,deviceId INTEGER,streamId INTEGER,globalPid INTEGER)")
+                db.executemany(f"INSERT INTO CUPTI_ACTIVITY_KIND_{kind} VALUES(?,?,?,?,?)", [(0,100,0,7,raw_pid), (200,300,0,7,5000)])
+            name_id = db.execute("INSERT INTO StringIds(value) VALUES('cudaGraphLaunch')").lastrowid
+            db.execute("CREATE TABLE CUPTI_ACTIVITY_KIND_RUNTIME(start INTEGER,end INTEGER,nameId INTEGER,globalTid INTEGER)")
+            db.execute("INSERT INTO CUPTI_ACTIVITY_KIND_RUNTIME VALUES(0,2,?,?)", (name_id,raw_pid))
+            db.execute("CREATE TABLE CUPTI_ACTIVITY_KIND_DRIVER(start INTEGER,end INTEGER,nameId INTEGER,globalPid INTEGER)")
+            db.executemany("INSERT INTO CUPTI_ACTIVITY_KIND_DRIVER VALUES(?,?,?,?)", [(0,2,name_id,raw_pid), (200,202,name_id,5000)])
+            db.execute("CREATE TABLE CUDA_GRAPH_NODE_EVENTS(graphNodeId INTEGER)")
+            db.executemany("INSERT INTO CUDA_GRAPH_NODE_EVENTS VALUES(?)", [(5,), (6,)])
+        report = analysis.analyze(self.path, "D", global_pid=raw_pid)
+        self.assertEqual(report["selection"]["global_pid"], raw_pid)
+        self.assertEqual(report["overall_kernels"]["count"], 1)
+        self.assertEqual(report["overall_kernels"]["union_ns"], 10)
+        self.assertEqual(report["gpu_activities"]["combined"]["union_ns"], 100)
+        self.assertTrue(all(row["selected_row_count"] == 1 for row in report["selection"]["activities"]))
+        self.assertEqual(report["graph_evidence"]["kernel_rows_with_nonzero_graph_node_id"], 1)
+        runtime, driver = report["graph_evidence"]["api_tables"]
+        self.assertEqual(runtime["scope"], "omitted_without_globalPid")
+        self.assertEqual(runtime["calls"], [])
+        self.assertEqual(driver["scope"], "exact_global_pid")
+        self.assertEqual(driver["calls"][0]["count"], 1)
+        tables = {row["table"]: row for row in report["graph_evidence"]["graph_tables"]}
+        self.assertEqual(tables["CUPTI_ACTIVITY_KIND_GRAPH_TRACE"]["row_count"], 1)
+        self.assertEqual(tables["CUDA_GRAPH_NODE_EVENTS"]["scope"], "unfiltered_full_export")
+        self.assertEqual(tables["CUDA_GRAPH_NODE_EVENTS"]["row_count"], 2)
+        output = Path(self.temp.name) / "filtered.json"
+        subprocess.run([sys.executable, str(ROOT / "scripts" / "analyze_binary_rescue_kernels.py"),
+                        str(self.path), "--global-pid", str(raw_pid), "--output", str(output)], check=True)
+        self.assertEqual(json.loads(output.read_text())["selection"]["global_pid"], raw_pid)
+
+    def test_global_pid_filter_rejects_unavailable_columns(self):
+        self.add_kernel("w1a16_signadd", 0, 1)
+        with sqlite3.connect(self.path) as db:
+            db.execute("CREATE TABLE CUPTI_ACTIVITY_KIND_MEMCPY(start INTEGER,end INTEGER,deviceId INTEGER,streamId INTEGER)")
+        with self.assertRaisesRegex(ValueError, "unavailable.*MEMCPY"):
+            analysis.analyze(self.path, global_pid=1000)
+        with sqlite3.connect(self.path) as db:
+            db.execute("DROP TABLE CUPTI_ACTIVITY_KIND_MEMCPY")
+            db.execute("ALTER TABLE CUPTI_ACTIVITY_KIND_KERNEL DROP COLUMN globalPid")
+        with self.assertRaisesRegex(ValueError, "unavailable.*KERNEL"):
+            analysis.analyze(self.path, global_pid=1000)
+        self.assertEqual(analysis.analyze(self.path)["overall_kernels"]["count"], 1)
+
+    def test_global_pid_no_match_is_empty_not_decoded(self):
+        self.add_kernel("w1a16_signadd", 0, 1, pid=281474976715656)
+        report = analysis.analyze(self.path, global_pid=5000)
+        self.assertEqual(report["overall_kernels"]["count"], 0)
+        self.assertEqual(report["selection"]["activities"][0]["export_row_count"], 1)
+        with self.assertRaisesRegex(ValueError, "integer"):
+            analysis.analyze(self.path, global_pid=True)
 
     def test_analysis_readonly_and_cli_rejects_input_overwrite(self):
         self.add_kernel("w1a16_signadd", 0, 1)

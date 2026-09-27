@@ -43,10 +43,11 @@ def quote_identifier(value: str) -> str:
     return '"' + value.replace('"', '""') + '"'
 
 
-def graph_evidence(path: Path, kernels: list[dict]) -> dict:
+def graph_evidence(path: Path, kernels: list[dict], global_pid: int | None = None) -> dict:
     """Retain available graph tables and API calls without inventing graph children."""
     result = {
         "api_tables": [], "graph_tables": [],
+        "kernel_scope": "exact_global_pid" if global_pid is not None else "full_export",
         "kernel_rows_with_nonzero_graph_node_id": sum(row.get("graphNodeId") not in (None, 0) for row in kernels),
         "kernel_rows_with_zero_graph_node_id": sum(row.get("graphNodeId") == 0 for row in kernels),
         "kernel_rows_with_missing_graph_node_id": sum(row.get("graphNodeId") is None for row in kernels),
@@ -64,12 +65,15 @@ def graph_evidence(path: Path, kernels: list[dict]) -> dict:
             if "GRAPH" in table.upper():
                 quoted = quote_identifier(table)
                 columns = [row[1] for row in db.execute(f"PRAGMA table_info({quoted})")]
+                filtered = global_pid is not None and "globalPid" in columns
+                query = f"SELECT COUNT(*) FROM {quoted}" + (" WHERE globalPid=?" if filtered else "")
                 result["graph_tables"].append({
                     "table": table, "columns": columns,
-                    "row_count": db.execute(f"SELECT COUNT(*) FROM {quoted}").fetchone()[0],
+                    "scope": "exact_global_pid" if filtered else "unfiltered_full_export",
+                    "row_count": db.execute(query, (global_pid,) if filtered else ()).fetchone()[0],
                 })
         for table in ("CUPTI_ACTIVITY_KIND_RUNTIME", "CUPTI_ACTIVITY_KIND_DRIVER"):
-            info = {"table": table, "present": table in tables, "calls": []}
+            info = {"table": table, "present": table in tables, "calls": [], "scope": "full_export"}
             result["api_tables"].append(info)
             if table not in tables:
                 continue
@@ -77,11 +81,19 @@ def graph_evidence(path: Path, kernels: list[dict]) -> dict:
                 info["unavailable_reason"] = "StringIds table is absent; API names cannot be resolved"
                 continue
             columns = {row[1] for row in db.execute(f"PRAGMA table_info({table})")}
+            if global_pid is not None:
+                if "globalPid" not in columns:
+                    info.update(scope="omitted_without_globalPid", unavailable_reason="No exact globalPid column; globalTid is not decoded or joined implicitly")
+                    continue
+                info["scope"] = "exact_global_pid"
             if not {"start", "end", "nameId"} <= columns:
                 info["unavailable_reason"] = "requires start, end, and nameId columns"
                 continue
             calls = defaultdict(list)
-            for source in db.execute(f"SELECT a.*, s.value AS resolved_name FROM {table} a LEFT JOIN StringIds s ON a.nameId=s.id"):
+            query = f"SELECT a.*, s.value AS resolved_name FROM {table} a LEFT JOIN StringIds s ON a.nameId=s.id"
+            if global_pid is not None:
+                query += " WHERE a.globalPid=?"
+            for source in db.execute(query, (global_pid,) if global_pid is not None else ()):
                 row = dict(source)
                 name = row["resolved_name"]
                 if not name or not GRAPH_API.fullmatch(name):
@@ -101,7 +113,9 @@ def graph_evidence(path: Path, kernels: list[dict]) -> dict:
     return result
 
 
-def analyze(path: Path, variant: str | None = None) -> dict:
+def analyze(path: Path, variant: str | None = None, global_pid: int | None = None) -> dict:
+    if global_pid is not None and (type(global_pid) is not int or not -(2**63) <= global_pid < 2**63):
+        raise ValueError("global_pid must be a signed 64-bit integer from SQLite")
     schema = {"identity_columns": []}
     with sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True) as db:
         has_kernels = bool(db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (base.KERNEL_TABLE,)).fetchone())
@@ -109,6 +123,20 @@ def analyze(path: Path, variant: str | None = None) -> dict:
     for row in rows:
         row["category"] = classify(row)
     optional, presence = base.read_optional_activities(path)
+    selection = {"global_pid": global_pid, "identity_rule": "Exact raw SQLite globalPid; no OS PID decoding or bit interpretation", "activities": []}
+    if global_pid is not None:
+        present = [kind for kind, info in presence.items() if info["present"]]
+        missing = [kind for kind in present if "globalPid" not in presence[kind]["identity_columns"]]
+        if not present or missing:
+            raise ValueError("globalPid filtering unavailable for GPU activity table(s): " + ", ".join(missing or ["none present"]))
+    for kind in presence:
+        values = [row for row in rows + optional if row["activity_kind"] == kind]
+        selected = values if global_pid is None else [row for row in values if row.get("globalPid") == global_pid]
+        selection["activities"].append({"activity_kind": kind, "export_row_count": len(values), "selected_row_count": len(selected),
+                                        "null_or_missing_global_pid_count": sum(row.get("globalPid") is None for row in values)})
+    if global_pid is not None:
+        rows = [row for row in rows if row.get("globalPid") == global_pid]
+        optional = [row for row in optional if row.get("globalPid") == global_pid]
     categories = defaultdict(list)
     partitions = defaultdict(list)
     for row in rows:
@@ -125,7 +153,8 @@ def analyze(path: Path, variant: str | None = None) -> dict:
         "variant_annotation": variant, "input": base.file_provenance(path),
         "analyzer": base.file_provenance(Path(__file__)),
         "shared_analyzer": base.file_provenance(Path(base.__file__)),
-        "scope": "Whole supplied export; setup, warmups and measurements are pooled unless collection was externally delimited.",
+        "scope": ("Exact selected globalPid GPU activity" if global_pid is not None else "Whole supplied export") + "; setup, warmups and measurements are pooled unless collection was externally delimited.",
+        "selection": selection,
         "notes": [
             "CUDA kernel durations and interval unions are distinct from client latency and CPU wall spans; never add overlapping CPU/GPU spans.",
             "sum_ns adds kernel durations; union_ns covers intervals with at least one observed kernel. Neither is a hardware utilization counter.",
@@ -156,7 +185,7 @@ def analyze(path: Path, variant: str | None = None) -> dict:
             {**dict(identity), **summaries(values)} for identity, values in sorted(partitions.items(), key=lambda item: repr(item[0]))
         ],
         "gpu_activities": base.gpu_activity_summary(rows + optional, presence),
-        "graph_evidence": graph_evidence(path, rows),
+        "graph_evidence": graph_evidence(path, rows, global_pid),
     }
 
 
@@ -165,12 +194,13 @@ def main() -> None:
     parser.add_argument("sqlite", type=Path)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--variant", help="Caller annotation only, e.g. Q4_0, D, C, rescue_down, dense_head")
+    parser.add_argument("--global-pid", type=int, help="Exact raw SQLite globalPid; never decoded as an OS PID")
     args = parser.parse_args()
     if args.output and (args.output.resolve() == args.sqlite.resolve() or
                         (args.output.exists() and args.sqlite.exists() and args.output.samefile(args.sqlite))):
         parser.error("output must not overwrite the input database")
     try:
-        result = json.dumps(analyze(args.sqlite, args.variant), indent=2) + "\n"
+        result = json.dumps(analyze(args.sqlite, args.variant, args.global_pid), indent=2) + "\n"
         if args.output:
             args.output.write_text(result)
         else:
