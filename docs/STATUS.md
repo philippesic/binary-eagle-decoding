@@ -1,8 +1,12 @@
 # Current project status
 
+**Comparison target:** Q4_0 EAGLE is the baseline to beat for acceptance,
+latency and total throughput. FP16 EAGLE is secondary diagnostic context.
+The target/verifier model precision remains as frozen for each experiment.
+
 **Active goal:** none. **Latest completed goal:** [binary scale fitting on RTX 5080](goals/binary-scale-fitting-5080.md), completed 2026-09-27 UTC.
 
-The approved four-way A16 screen completed all **168 requests** (7 paths × 24 development prompts). A/B/C/D accepted **0.119 / 0.161 / 0.290 / 0.425 drafts per round**, versus **1.037 FP16** and **1.042 Q4_0**. Fitted group scales improved 3.585× over row-mean A, closing 33.35% of the FP16 gap. D beat all other binary candidates on every prompt but trailed both controls on every prompt. All seven paths matched target-only raw IDs on all 24 prompts. See the [report](../experiments/binary-scale-fitting-5080.md) for counts, depth survival, calibration, artifacts and limitations.
+The approved four-way A16 screen completed all **168 requests** (7 paths × 24 development prompts). A/B/C/D accepted **0.119 / 0.161 / 0.290 / 0.425 drafts per round**, versus **1.037 FP16** and **1.042 Q4_0**. Fitted group scales improved 3.585× over row-mean A, closing 33.20% of the Q4_0 gap. D beat all other binary candidates on every prompt but trailed both controls on every prompt. All seven paths matched target-only raw IDs on all 24 prompts. See the [report](../experiments/binary-scale-fitting-5080.md) for counts, depth survival, calibration, artifacts and limitations.
 
 The recommendation is to retain D as the reference for a proposed common-history body/readout diagnostic. No follow-up fit, QAT, A1/kernel work or final-set evaluation was started. The RTX 5080 was released. The [all-layer W1Ax suite](goals/w1ax-activation-precision-suite.md) and [RTX 2080 Ti quantization suite](goals/rtx2080ti-quantization-suite.md) remain completed and sealed; the prior [W1A1 research goal](goals/full-w1a1-eagle-project.md) remains checkpointed. The next scope/budget choice is user-owned.
 

@@ -25,11 +25,18 @@ distribution across prompts/runs, rather than averaging speedup ratios alone.
 
 ## Baselines and precision labels
 
+**User decision, 2026-09-27:** Q4_0 EAGLE is the primary comparison baseline
+and success target for draft acceptance, latency, and total model throughput.
+Lead summaries and improvement ratios with Q4_0. Keep FP16 EAGLE as a secondary
+diagnostic control; do not use beating FP16 as the primary decision gate. This
+is a choice of comparison drafter, not a change to the target/verifier model
+precision, and it does not retroactively change frozen measurements.
+
 | Variant | Requirement |
 | --- | --- |
 | No speculation | Same target and runtime settings; mandatory reference. |
-| FP16 EAGLE | Existing draft checkpoint converted to FP16; mandatory reference. |
-| Q4_0 EAGLE | Same target and verifier with the standard Q4_0 draft GGUF; mandatory throughput reference for future W1A1/QAT comparisons. Record its actual activation and CUDA path; do not label it genuine W4A4. |
+| FP16 EAGLE | Existing draft checkpoint converted to FP16; secondary diagnostic reference. |
+| Q4_0 EAGLE | Same target and verifier with the standard Q4_0 draft GGUF; primary acceptance, latency and throughput comparison for future W1A1/QAT work. Record its actual activation and CUDA path; do not label it genuine W4A4. |
 | W8A8 / W4A4 EAGLE | Desired comparisons; identify whether kernels actually execute at that operand precision. |
 | W1A1 simulation | Accuracy/acceptance experiment; floating-point simulation is not binary acceleration. |
 | W1A1 native | Packed binary operands and XOR/POPCOUNT computation; identify normal-precision exceptions. |
@@ -78,11 +85,11 @@ and distributional behavior instead of requiring identical random sequences.
 Evaluate W1A1 acceptance on held-out prompts before kernel investment. During
 the direct comparison, estimate an optimistic upper bound using measured emitted
 tokens per round and verification cost with draft time reduced toward zero. If
-that bound cannot beat both FP16 EAGLE and Q4_0 EAGLE, prioritize diagnosing
+that bound cannot beat Q4_0 EAGLE, prioritize diagnosing
 acceptance over further kernel optimization.
 
 For future W1A1 candidates, report both FP16 EAGLE and Q4_0 EAGLE comparisons;
-evaluate success against both anchors, not draft-call speed alone. Publish a
+evaluate success against Q4_0, using FP16 as diagnostic context. Draft-call speed alone is insufficient. Publish a
 positive result only when repeated end-to-end measurements support it and
 variability is disclosed. Otherwise quantify the bottleneck and which
 assumptions failed. A correct, well-instrumented negative result meets the goal.

@@ -144,3 +144,13 @@ relative projected-gradient residual 1.76e-5, tolerance 1e-6). The present resul
 is not a proof that all scale solutions are exhausted. No budget extension,
 sign training, readout fitting, broader QAT, A1 change or architecture pivot is
 automatically authorized. The next scope and budget remain user-owned.
+
+
+## Primary comparison baseline (user decision, 2026-09-27)
+
+The user explicitly selected **Q4_0 EAGLE, not FP16 EAGLE**, as the comparison
+target. Use Q4_0 as the primary denominator and success gate for acceptance,
+latency and total model throughput. FP16 remains a secondary diagnostic control.
+This does not authorize changing the target/verifier model precision, reopening
+completed goals, or starting a new GPU experiment. Historical measured values
+remain unchanged; future summaries should lead with Q4_0.

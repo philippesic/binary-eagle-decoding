@@ -5,6 +5,10 @@ direction, `docs/EVALUATION.md` for measurements, and `docs/AGENT_OPERATIONS.md`
 for team, handoff, Git, and GPU procedures. Read the document relevant to the
 task; do not load every document for a small edit.
 
+- Q4_0 EAGLE is the primary comparison baseline and the model to beat for
+  acceptance, latency, and total throughput. FP16 EAGLE is a secondary diagnostic
+  reference, not the primary success target. This does not change target/verifier
+  model precision or previously frozen experiments.
 - The user owns major research decisions. Continue independent work when a
   decision is pending; record options and evidence in `docs/DECISIONS.md`.
 - Keep one active goal at a time. Its durable state lives in `docs/STATUS.md`

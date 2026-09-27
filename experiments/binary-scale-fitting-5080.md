@@ -4,7 +4,11 @@
 
 ## Result and next research choice
 
-**Fitted scales recover substantial acceptance, but this recipe remains well below both controls.** D reaches 0.424965 accepted drafts/round, 3.585× A, closing 33.35% of the A→FP16 gap while retaining 40.96% of FP16 acceptance. D beats A, B and C on each of the 24 prompts, and trails FP16 and Q4_0 on each of the 24. This is descriptive evidence from a development-selected screen, not a final-set generalization claim.
+User clarification after completion: **Q4_0 EAGLE is the primary comparison
+baseline**. FP16 remains a secondary diagnostic control. This changes the
+reporting priority, not the recorded experiments or target/verifier precision.
+
+**Fitted scales recover substantial acceptance, but this recipe remains well below both controls.** D reaches 0.424965 accepted drafts/round, 3.585× A, closing 33.20% of the A→Q4_0 gap while retaining 40.80% of Q4_0 acceptance. D beats A, B and C on each of the 24 prompts, and trails FP16 and Q4_0 on each of the 24. This is descriptive evidence from a development-selected screen, not a final-set generalization claim.
 
 | Path | Accepted drafts / round | First proposal | Prefix depth 2 | Prefix depth 3 |
 | --- | ---: | ---: | ---: | ---: |
@@ -19,9 +23,28 @@ Each table cell preserves numerator/denominator. Accepted drafts/round pools ver
 
 **Correctness:** all 168 requests completed. Every path emitted 128 raw IDs per prompt (3,072/path), matching target-only exactly on all 24 prompts. All 144 speculative per-prompt boundary-state audits passed. This is empirical agreement on this workload, not universal losslessness. The differing round counts reflect accepted chunks completing the same output in fewer rounds.
 
-**Recommendation:** retain D as the stronger binary reference and propose a bounded common-history body/readout diagnostic before performance promotion. First cross ordinary/D bodies and output heads on identical forced token histories; then, if approved, fit one regularized readout on frozen D-body training states. The present own-history acceptance results do not locate the remaining error in body versus head. D’s depth-three survival is only 1.00% versus FP16’s 12.35%; scale fitting recovered roughly one-third of the control gap, not control-level quality.
+**Recommendation:** retain D as the stronger binary reference and propose a bounded common-history body/readout diagnostic before performance promotion. First cross ordinary/D bodies and output heads on identical forced token histories; then, if approved, fit one regularized readout on frozen D-body training states. The present own-history acceptance results do not locate the remaining error in body versus head. D’s depth-three survival is only 1.00% versus Q4_0’s 12.23%; scale fitting recovered roughly one-third of the control gap, not control-level quality.
 
-Fusion’s fixed-budget approximate solve limits any claim that scale-only recovery has been exhausted. No additional solver sweep, readout fit, QAT, A1 change, architecture pivot or kernel optimization was started. The next scope/budget decision remains user-owned. No throughput or speedup is claimed.
+Fusion’s fixed-budget approximate solve limits any claim that scale-only recovery has been exhausted. No additional solver sweep, readout fit, QAT, A1 change, architecture pivot or kernel optimization was started. The next scope/budget decision remains user-owned. No validated throughput or speedup claim is made. The timing observations
+requested after completion are tabulated below with their limitations.
+
+## Recorded latency and throughput (post-run extraction)
+
+These are observations from the completed RTX 5080 quality screen: one pass per 24 prompts, fixed variant order, no performance warmups/repetitions, CUDA graphs disabled, and round/state logging enabled. They are not a separate performance benchmark or an optimized W1Ax throughput claim. No new GPU run was made to extract them.
+
+Acceptance here is **accepted/proposed draft tokens**, not first-proposal acceptance or accepted drafts/round. Decode throughput is total completed output tokens divided by summed server `predicted_ms`, following the existing benchmark convention. Decode latency is its reciprocal in milliseconds/output token. Both describe the whole draft-plus-target system and exclude prefill. Draft latency is the mean `draft_us` span over all completed rounds, including rounds with no proposal; it is CPU wall time with the recorded instrumentation.
+
+| Path | Accepted/proposed | Accepted/round | Draft ms/round | System decode ms/token | System decode tok/s |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Q4_0 baseline | 21.24% (1,555/7,320) | 1.042 | 3.49 | 8.13 | 123.07 |
+| A: row mean | 2.43% (323/13,306) | 0.119 | 7.83 | 18.82 | 53.12 |
+| B: group mean | 3.30% (423/12,828) | 0.161 | 14.49 | 23.92 | 41.81 |
+| C: fitted row | 5.94% (685/11,535) | 0.290 | 7.79 | 16.27 | 61.45 |
+| D: fitted group | 8.70% (909/10,449) | 0.425 | 14.49 | 19.49 | 51.30 |
+
+The fitted group candidate D has the best measured binary acceptance, but C has the highest observed binary decode rate in this instrumented run. Group-scale drafting took about 14.49ms/round versus 7.79ms for fitted-row C and 3.49ms for Q4_0. D therefore did not demonstrate a speed gain over Q4_0; its observed decode rate was 41.69% of Q4_0. This reference-kernel cost is distinct from whether a future implementation could execute the representation faster.
+
+Mean server prefill+decode time per 128-token request was 1.096s for Q4_0, 2.459s A, 3.111s B, 2.131s C and 2.545s D. These sums omit client/HTTP wall overhead; the screen runner did not record a full request-wall latency. Raw response timings and per-round spans are preserved under `scale-development/<variant>/<prompt>/`. The local derived file is `results/binary-scale-fitting-5080/timing-observations.json`, SHA256 `b98c8ab9199280655506b9b5087a7c2d7d9646e069041576bc26f129980f6a32`.
 
 ## Frozen experiment
 
