@@ -1,6 +1,6 @@
 # Binary rescue and frozen-body head adaptation on RTX 5080
 
-Status: **in progress**. Quality screen completed; head adaptation and repeated
+Status: **in progress**. Quality, body/head diagnosis and the bounded head fit are complete; repeated
 performance measurements remain pending. No promotion decision yet.
 
 ## Frozen comparison
@@ -131,7 +131,12 @@ were unsupported and excluded from CE while retained in coverage denominators.
 There were 31,904 state presentations (3.9098 effective passes; each selected
 state appeared three or four times). All optimization/export checks were finite.
 CUDA native/surrogate parity passed with max error 0.003593 and no argmax change
-on the frozen 32-state audit. Live checkpoint selection is pending.
+on the frozen 32-state audit. Live native selection chose **step 500**: 1088/1960 = **0.5551 accepted drafts
+per round**, versus step 0 at 0.5112, step 100 at 0.5449 and step 250 at 0.5472.
+Every checkpoint matches Q4_0 and target-only raw IDs on all 24 prompts. The
+selected head improves 8.60% beyond the untrained swap, but reaches only 53.30%
+of Q4_0 acceptance. This is a dense-head mixed-precision diagnostic, not an
+all-binary result. Neither finalist meets the extra depth-screen threshold.
 
 The approved fit freezes D body/signs/scales/norm/vocabulary and all
 target parameters; one original-FP16-head initialization, true native-verifier
