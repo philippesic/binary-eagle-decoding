@@ -67,7 +67,9 @@ Selected-weight denominators are218,234,880 logical matrix weights. Binary
 payload includes packed signs plus F32 scales (1.25bits/weight); Q8_0 includes
 block scales (8.5bits/weight). Norms remain F32 and d2t I64. Full-file figures
 include GGUF metadata, padding and mapping bytes; model-parameter denominators
-exclude integer maps. Parameter percentages are not runtime percentages.
+exclude integer maps. Parameter percentages are not runtime percentages. This is owned drafter payload;
+the unchanged target embeddings remain shared higher-precision inputs, and the
+fixed FP16 target is included in total serving memory and end-to-end timing.
 Standard Q8_0's Q8_1 activation conversion differs from D's F16-cast activation
 path: these are practical mixed-path interventions, not isolated weight-bit tests.
 Per-projection executed-kernel profiling remains pending.
@@ -123,7 +125,15 @@ information loss or predict the fitted head's live-chain result.
 
 ## Head fit and performance
 
-Pending. The approved fit freezes D body/signs/scales/norm/vocabulary and all
+The one approved fit completed 500 steps in 19.83 optimizer seconds. It used
+8,160 states selected evenly from 40,815 aligned training states; 1,110 labels
+were unsupported and excluded from CE while retained in coverage denominators.
+There were 31,904 state presentations (3.9098 effective passes; each selected
+state appeared three or four times). All optimization/export checks were finite.
+CUDA native/surrogate parity passed with max error 0.003593 and no argmax change
+on the frozen 32-state audit. Live checkpoint selection is pending.
+
+The approved fit freezes D body/signs/scales/norm/vocabulary and all
 target parameters; one original-FP16-head initialization, true native-verifier
 CE and a fixed initialization regularizer. Only supported valid states from the
 96 training prompts may train, with explicit unsupported denominators, at most
