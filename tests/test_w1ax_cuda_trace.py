@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts/analyze_w1ax_cuda_trace.py"
@@ -89,6 +90,39 @@ class CudaTraceTests(unittest.TestCase):
             db.execute(f"CREATE TABLE IF NOT EXISTS {table} (" + ",".join(f"{name} INTEGER" for name in columns) + ")")
             db.execute(f"INSERT INTO {table} VALUES (" + ",".join("?" for _ in columns) + ")",
                        [values.get(name) for name in columns])
+
+    def test_exact_pid_is_pushed_into_kernel_and_optional_sql(self):
+        self.create(identity_columns=("globalPid", "contextId"))
+        self.add(0, 10, "w1a16_signadd", identity={"globalPid": 1000, "contextId": 1})
+        self.add(20, 40, "w1a16_signadd", identity={"globalPid": 2000, "contextId": 1})
+        self.add_activity("MEMCPY", 0, 12, globalPid=1000, bytes=16)
+        self.add_activity("MEMCPY", 20, 45, globalPid=2000, bytes=32)
+        statements = []
+        original_connect = sqlite3.connect
+        def traced_connect(*args, **kwargs):
+            connection = original_connect(*args, **kwargs)
+            connection.set_trace_callback(statements.append)
+            return connection
+        schema = {}
+        with mock.patch.object(ANALYSIS.sqlite3, "connect", side_effect=traced_connect):
+            rows = ANALYSIS.read_kernels(self.path, schema=schema, global_pid=1000)
+            optional, presence = ANALYSIS.read_optional_activities(self.path, global_pid=1000)
+        self.assertEqual([row["globalPid"] for row in rows + optional], [1000, 1000])
+        self.assertEqual(schema["export_row_count"], 2)
+        self.assertEqual(presence["MEMCPY"]["export_row_count"], 2)
+        self.assertTrue(any("WHERE k.globalPid=1000 ORDER BY" in sql for sql in statements))
+        self.assertTrue(any("CUPTI_ACTIVITY_KIND_MEMCPY WHERE globalPid=1000 ORDER BY" in sql for sql in statements))
+        self.assertEqual(len(ANALYSIS.read_kernels(self.path)), 2)
+        self.assertEqual(len(ANALYSIS.read_optional_activities(self.path)[0]), 2)
+
+    def test_reader_pid_filter_requires_explicit_column(self):
+        self.create()
+        with self.assertRaisesRegex(ValueError, "globalPid filtering unavailable"):
+            ANALYSIS.read_kernels(self.path, global_pid=1000)
+        with self.assertRaisesRegex(ValueError, "globalPid filtering unavailable"):
+            ANALYSIS.read_optional_activities(self.path, global_pid=1000)
+        with self.assertRaisesRegex(ValueError, "integer"):
+            ANALYSIS.read_kernels(self.path, global_pid=True)
 
     def test_gpu_activity_union_does_not_add_nested_graph_children(self):
         self.create(identity_columns=("globalPid", "contextId"))

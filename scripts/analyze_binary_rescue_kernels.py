@@ -119,10 +119,10 @@ def analyze(path: Path, variant: str | None = None, global_pid: int | None = Non
     schema = {"identity_columns": []}
     with sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True) as db:
         has_kernels = bool(db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (base.KERNEL_TABLE,)).fetchone())
-    rows = base.read_kernels(path, schema=schema) if has_kernels else []
+    rows = base.read_kernels(path, schema=schema, global_pid=global_pid) if has_kernels else []
     for row in rows:
         row["category"] = classify(row)
-    optional, presence = base.read_optional_activities(path)
+    optional, presence = base.read_optional_activities(path, global_pid=global_pid)
     selection = {"global_pid": global_pid, "identity_rule": "Exact raw SQLite globalPid; no OS PID decoding or bit interpretation", "activities": []}
     if global_pid is not None:
         present = [kind for kind, info in presence.items() if info["present"]]
@@ -131,12 +131,11 @@ def analyze(path: Path, variant: str | None = None, global_pid: int | None = Non
             raise ValueError("globalPid filtering unavailable for GPU activity table(s): " + ", ".join(missing or ["none present"]))
     for kind in presence:
         values = [row for row in rows + optional if row["activity_kind"] == kind]
-        selected = values if global_pid is None else [row for row in values if row.get("globalPid") == global_pid]
-        selection["activities"].append({"activity_kind": kind, "export_row_count": len(values), "selected_row_count": len(selected),
-                                        "null_or_missing_global_pid_count": sum(row.get("globalPid") is None for row in values)})
-    if global_pid is not None:
-        rows = [row for row in rows if row.get("globalPid") == global_pid]
-        optional = [row for row in optional if row.get("globalPid") == global_pid]
+        counts = schema if kind == "KERNEL" else presence[kind]
+        selection["activities"].append({"activity_kind": kind,
+            "export_row_count": counts.get("export_row_count", len(values)), "selected_row_count": len(values),
+            "null_or_missing_global_pid_count": counts.get("null_or_missing_global_pid_count", sum(row.get("globalPid") is None for row in values))})
+    selection["filter_pushdown"] = "SQLite WHERE globalPid=?" if global_pid is not None else None
     categories = defaultdict(list)
     partitions = defaultdict(list)
     for row in rows:

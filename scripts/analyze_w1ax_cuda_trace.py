@@ -166,7 +166,9 @@ def paired_kernel_summary(rows: list[dict]) -> dict:
     }
 
 
-def read_kernels(path: Path, *, schema: dict | None = None) -> list[dict]:
+def read_kernels(path: Path, *, schema: dict | None = None, global_pid: int | None = None) -> list[dict]:
+    if global_pid is not None and (type(global_pid) is not int or not -(2**63) <= global_pid < 2**63):
+        raise ValueError("global_pid must be a signed 64-bit SQLite integer")
     # URI mode=ro both prevents creation of missing files and disallows writes.
     with sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True) as db:
         db.row_factory = sqlite3.Row
@@ -175,8 +177,13 @@ def read_kernels(path: Path, *, schema: dict | None = None) -> list[dict]:
         if missing:
             raise ValueError("missing required SQLite table(s): " + ", ".join(sorted(missing)))
         columns = {row[1] for row in db.execute(f"PRAGMA table_info({KERNEL_TABLE})")}
+        if global_pid is not None and "globalPid" not in columns:
+            raise ValueError(f"globalPid filtering unavailable for GPU activity table: {KERNEL_TABLE}")
         if schema is not None:
             schema["identity_columns"] = [name for name in OPTIONAL_IDENTITY_COLUMNS if name in columns]
+            if global_pid is not None:
+                count, nulls = db.execute(f"SELECT COUNT(*), COUNT(*) - COUNT(globalPid) FROM {KERNEL_TABLE}").fetchone()
+                schema.update(export_row_count=count, null_or_missing_global_pid_count=nulls)
         missing = REQUIRED_COLUMNS - columns
         if missing:
             raise ValueError("missing kernel column(s): " + ", ".join(sorted(missing)))
@@ -191,9 +198,10 @@ def read_kernels(path: Path, *, schema: dict | None = None) -> list[dict]:
         for name in names:
             selections.append(f"s_{name}.value AS resolved_{name}")
             joins.append(f"LEFT JOIN StringIds s_{name} ON k.{name} = s_{name}.id")
-        query = f"SELECT {', '.join(selections)} FROM {KERNEL_TABLE} k {' '.join(joins)} ORDER BY k.start, k.end"
+        where = " WHERE k.globalPid=?" if global_pid is not None else ""
+        query = f"SELECT {', '.join(selections)} FROM {KERNEL_TABLE} k {' '.join(joins)}{where} ORDER BY k.start, k.end"
         result = []
-        for row_number, source in enumerate(db.execute(query), 1):
+        for row_number, source in enumerate(db.execute(query, (global_pid,) if global_pid is not None else ()), 1):
             row = dict(source)
             for name in REQUIRED_COLUMNS:
                 if not isinstance(row[name], int):
@@ -220,8 +228,10 @@ def read_kernels(path: Path, *, schema: dict | None = None) -> list[dict]:
         return result
 
 
-def read_optional_activities(path: Path) -> tuple[list[dict], dict]:
+def read_optional_activities(path: Path, *, global_pid: int | None = None) -> tuple[list[dict], dict]:
     """Read aggregate graph and transfer intervals without inferring children."""
+    if global_pid is not None and (type(global_pid) is not int or not -(2**63) <= global_pid < 2**63):
+        raise ValueError("global_pid must be a signed 64-bit SQLite integer")
     result = []
     presence = {}
     with sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True) as db:
@@ -234,13 +244,20 @@ def read_optional_activities(path: Path) -> tuple[list[dict], dict]:
                 continue
             columns = {row[1] for row in db.execute(f"PRAGMA table_info({table})")}
             presence[kind]["identity_columns"] = [name for name in OPTIONAL_IDENTITY_COLUMNS if name in columns]
+            if global_pid is not None and "globalPid" not in columns:
+                raise ValueError(f"globalPid filtering unavailable for GPU activity table: {table}")
             if kind == "KERNEL":
                 continue
             required = {"start", "end", "deviceId", "streamId"}
             missing = required - columns
             if missing:
                 raise ValueError(f"missing {table} column(s): {', '.join(sorted(missing))}")
-            for row_number, source in enumerate(db.execute(f"SELECT * FROM {table} ORDER BY start, end"), 1):
+            if global_pid is not None:
+                count, nulls = db.execute(f"SELECT COUNT(*), COUNT(*) - COUNT(globalPid) FROM {table}").fetchone()
+                presence[kind].update(export_row_count=count, null_or_missing_global_pid_count=nulls)
+            where = " WHERE globalPid=?" if global_pid is not None else ""
+            query = f"SELECT * FROM {table}{where} ORDER BY start, end"
+            for row_number, source in enumerate(db.execute(query, (global_pid,) if global_pid is not None else ()), 1):
                 row = dict(source)
                 for name in required:
                     if not isinstance(row[name], int):
