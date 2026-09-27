@@ -1,0 +1,4 @@
+{
+  "A_legacy": {"draft": "results/scale-fit/A_legacy.gguf", "env": {"GGML_W1AX_ACT_BITS": "16"}},
+  "A": {"draft": "results/scale-fit/A.gguf", "env": {"GGML_W1AX_ACT_BITS": "16"}}
+}
