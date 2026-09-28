@@ -1013,6 +1013,11 @@ training-eligible.
   The [causal-gradient report](../../experiments/recurrent-binary-real-later-gradient.md)
   records pinned source/map hashes and exact limitations. No optimizer,
   trained checkpoint, GPU work, final prompt or Q4_0 evaluation occurred.
+- Both results were rerun from pushed `main` on Apple M3 Max, and their
+  ignored reports were preserved under the main checkout's `results/`
+  directory before the integrated temporary worktrees and branches were
+  retired. The main checkout and published fork gitlink are clean. No local
+  model server, remote session or GPU job remains active for this work.
 
 **Next gate:** use the native CPU attention oracle to distinguish the
 student's Q/K/V operand gap from its F32 attention arithmetic gap on the
