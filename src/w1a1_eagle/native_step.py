@@ -23,6 +23,7 @@ import torch
 from torch import Tensor, nn
 from torch.nn import functional as F
 
+from .native_attention_oracle import NativeAttentionForward, native_forward_f32_backward
 from .recurrent_binary import CANDIDATE_D_BASE_TO_PATH, GroupedBinaryLinear
 from .recurrent_rollout import DraftStep
 
@@ -90,7 +91,12 @@ class NativeStepAdapter(nn.Module):
     """
 
     def __init__(
-        self, drafter: nn.Module, *, embedding_lookup: Callable[[int], Tensor] | None = None
+        self,
+        drafter: nn.Module,
+        *,
+        embedding_lookup: Callable[[int], Tensor] | None = None,
+        attention_mode: str = "f32",
+        native_attention_oracle: NativeAttentionForward | None = None,
     ) -> None:
         super().__init__()
         config = getattr(drafter, "config", None)
@@ -108,6 +114,13 @@ class NativeStepAdapter(nn.Module):
             raise ValueError("scaled RoPE is unsupported")
         if getattr(config, "hidden_act", None) != "silu":
             raise ValueError("the pinned drafter requires SiLU")
+        if attention_mode not in ("f32", "native_forward_f32_backward"):
+            raise ValueError("unsupported attention mode")
+        if attention_mode == "native_forward_f32_backward":
+            if not callable(native_attention_oracle):
+                raise ValueError("native attention mode requires a callable oracle")
+        elif native_attention_oracle is not None:
+            raise ValueError("native attention oracle requires native attention mode")
 
         hidden = getattr(config, "hidden_size", None)
         heads = getattr(config, "num_attention_heads", None)
@@ -224,6 +237,8 @@ class NativeStepAdapter(nn.Module):
         self.head_dim = head_dim
         self.max_positions = max_positions
         self.rope_theta = float(theta)
+        self.attention_mode = attention_mode
+        self.native_attention_oracle = native_attention_oracle
 
     def new_cache(self) -> NativeStepCache:
         shape = (self.kv_heads, 0, self.head_dim)
@@ -283,6 +298,8 @@ class NativeStepAdapter(nn.Module):
             raise ValueError("token must index the borrowed embedding")
         if type(decoder_position) is not int or not 0 <= decoder_position < self.max_positions:
             raise ValueError("decoder_position is outside the supported RoPE context")
+        if self.attention_mode == "native_forward_f32_backward" and decoder_position >= 256:
+            raise ValueError("native attention mode supports decoder positions 0..255")
         if getattr(self.drafter, "tree_mask", None) is not None:
             raise ValueError("tree mask cannot be used with contiguous one-step cache")
         if (
@@ -351,12 +368,17 @@ class NativeStepAdapter(nn.Module):
             torch.cat((cache.key, k[:, None, :]), dim=1),
             torch.cat((cache.value, v[:, None, :]), dim=1),
         )
-        repeat = self.heads // self.kv_heads
-        keys = next_cache.key.repeat_interleave(repeat, dim=0)
-        values = next_cache.value.repeat_interleave(repeat, dim=0)
-        scores = torch.einsum("hd,htd->ht", q, keys) / math.sqrt(self.head_dim)
-        probabilities = F.softmax(scores, dim=-1, dtype=torch.float32)
-        attention = torch.einsum("ht,htd->hd", probabilities, values).reshape(-1)
+        if self.attention_mode == "native_forward_f32_backward":
+            attention = native_forward_f32_backward(
+                q, next_cache.key, next_cache.value, self.native_attention_oracle
+            ).reshape(-1)
+        else:
+            repeat = self.heads // self.kv_heads
+            keys = next_cache.key.repeat_interleave(repeat, dim=0)
+            values = next_cache.value.repeat_interleave(repeat, dim=0)
+            scores = torch.einsum("hd,htd->ht", q, keys) / math.sqrt(self.head_dim)
+            probabilities = F.softmax(scores, dim=-1, dtype=torch.float32)
+            attention = torch.einsum("ht,htd->hd", probabilities, values).reshape(-1)
         trace("kqv_out-0", attention)
         residual = feature + attn.o_proj(attention)
         trace("ffn_inp-0", residual)
