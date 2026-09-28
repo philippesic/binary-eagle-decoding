@@ -2053,6 +2053,27 @@ checkpoint; do not create more open-ended numerical investigations.
   accounting tests, Ruff and archived analysis passed. No model inference or
   accelerator test ran; cache/trajectory equivalence and speed of the opt-in
   path remain unverified until native GPU A/B.
+- The data follow-up `3d40344` on `w1a-data-sources` was reviewed and
+  integrated as main `c4f6764`, pushed. The [candidate source freeze](../../experiments/w1a-public-source-freeze.md)
+  pins Dolly, GSM8K and MBPP revisions, terms, raw/normalized hashes and
+  transformations. The ignored main-checkout catalog SHA256 is
+  `498017fd13a49c97f782ff50035d544dcf98bb70583ffadf68d61236c2415647`;
+  the candidate split manifest SHA256 is
+  `dc37f752bb137054183162dcb7ca96004edabeb752bd611996d9cb289bfdc667`.
+  It contains 2,000 train prompts (667 prose, 667 code, 666 reasoning), 192
+  independent development and 192 sealed new final prompts (64/domain each).
+  Metadata audit found zero cross-split ID/group/exact-content-hash overlap;
+  final text was not opened. Five focused CPU tests and Ruff pass. This is a
+  candidate, not tokenized or natively captured training data; the three
+  sources cannot supply a balanced 10,000-prompt tier. Ignored raw/normalized
+  data and freeze were copied from the temporary worktree to main checkout
+  `data/` with hashes rechecked before worktree retirement.
+- During the Luna integrated-verification pass, an environment discovery step
+  accidentally called the local PyTorch CUDA/MPS availability APIs once. CUDA
+  reported unavailable and MPS available. No accelerator tensor/kernel/model
+  operation, remote check or inference ran. The worker stopped availability
+  probing and continues with explicit CPU commands only. This is recorded as
+  an instruction deviation, not GPU validation evidence.
 - Boundaries: legacy final-set contents stay sealed; the 96-prompt capture is
   smoke/regression evidence only. Group-128/A16 and row-scale W1Ax are distinct
   representation contracts. GPU timing, capture and training wait for explicit

@@ -25,6 +25,16 @@ the QAT owner is wiring captured-data training. Opt-in head pruning still
 requires native trajectory and timed A/B validation. No new GPU work or model
 inference has occurred.
 
+**Candidate data freeze (2026-09-28):** pinned Dolly/GSM8K/MBPP source files
+and a hashed local manifest now supply 2,000 candidate train prompts plus
+192 independent development and 192 sealed new final prompts, balanced across
+three broad domains (`c4f6764`). Raw prompts remain ignored under `data/`; the
+new final text was not opened. This is not yet tokenized, captured or approved
+as sufficient training coverage. The [source report](../experiments/w1a-public-source-freeze.md)
+records hashes, terms and limitations. A Luna worker accidentally queried
+local CUDA/MPS availability once during environment discovery; no accelerator
+operation or model inference ran, and verification resumed on explicit CPU.
+
 **Latest handoff (2026-09-28):** the user requested an overarching plan and a fresh team to continue the existing EAGLE work with no GPU access. Parent starting point is `d111335`, following the predecessor's `5110257`; native gitlink is `21f617d4ef3f5dc383d3ab8dc619daaa87db7ff8`. Both host pause flags are set. The plan supersedes the old next action to continue target block-14 parity. Reuse existing capture/export/CPU tests; use practical numerical gates and direct native evaluation. The old 96 prompts are smoke/regression data, not an adequate full-body QAT corpus. The [active-goal handoff](goals/recurrent-binary-body-head.md#fresh-team-handoff-eagle-w1-cpu-phase) gives the new team's assignment. Its coordinator will record fresh task/worker IDs there.
 
 **Latest completed goal:** [mixed precision rescue and frozen-body head adaptation on RTX 5080](goals/binary-rescue-head-5080.md), completed 2026-09-28 UTC. The preceding [binary scale fitting goal](goals/binary-scale-fitting-5080.md) completed 2026-09-27 UTC.
