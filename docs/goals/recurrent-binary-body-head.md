@@ -2017,6 +2017,13 @@ checkpoint; do not create more open-ended numerical investigations.
   below A16 even for row scales. Runtime owner is assessing a bounded gate
   fix, with group-128 still A16-only; QAT will label export boundaries
   honestly until the native gate is validated.
+- The Luna verification owner completed its separate archival report on branch
+  `verify-archived-evidence` at `e347449`; reviewed and integrated on main as
+  `e5bd3dc` and pushed. [The report](../../experiments/cpu-archived-latency-and-readiness.md)
+  distinguishes historical CPU-wall, request and profiler scopes and classifies
+  the old 96-prompt bundle as an audited smoke fixture without changing its
+  inherited `training_eligible: false` metadata. No new benchmark or model
+  run occurred. Its test plan awaits the implementation owners' CLIs.
 - Boundaries: legacy final-set contents stay sealed; the 96-prompt capture is
   smoke/regression evidence only. Group-128/A16 and row-scale W1Ax are distinct
   representation contracts. GPU timing, capture and training wait for explicit
