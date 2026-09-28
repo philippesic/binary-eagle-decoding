@@ -148,6 +148,17 @@ checkpoint records which arithmetic path was used. Replacing the exact
 forward with grouped matmul for a full run remains a documented research
 choice requiring a fixed-input native argmax/trajectory parity gate.
 
+The CPU `NativeStepAdapter` now runs the pinned one-layer graph structure
+without calling AngelSlim's inference-only tree generator: frozen F16 borrowed
+embeddings, frozen F32 RMS norms, embedding-first concatenation, binary
+Q/K/V/output and FFN, RoPE, F16-rounded K/V cache writes before causal
+attention, residuals, output norm and binary head. Its two-step and
+prefix-rebuild-to-optimizer synthetic tests pass. The actual pinned model's
+numeric parity with native GGML remains a stop gate; PyTorch norm, RoPE,
+attention and reduction arithmetic may differ. A strict CPU audit of the
+unchanged D GGUF found all nine packed pairs and 17,005 exact-zero scales;
+this preserves D initialization, not model quality.
+
 A CPU prefix-rebuild helper now recomputes the current student cache from
 accepted-prefix token `t[j+1]` and raw target feature `f[j]` at decoder
 position `j`, then defers `f[P]` and seed `t[P+1]` for position `P`. It

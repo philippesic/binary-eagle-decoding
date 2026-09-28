@@ -67,8 +67,9 @@ file and `docs/STATUS.md` are the durable project checkpoint.
   positions are `P+1`, `P+2`; invalid terminal rows create no decoder call. This checks the
   training interface, not actual EAGLE mask or K/V byte parity.
 
-**Latest CPU checks:** 43 recurrent tests, eight existing scale-fitting tests,
-Ruff lint/format and `git diff --check` pass. No local Metal/MPS or CUDA
+**Latest CPU checks:** 45 recurrent tests, five explicit decoder-step tests,
+eight native loader fixtures, eight existing scale-fitting tests, Ruff
+lint/format and `git diff --check` pass. No local Metal/MPS or CUDA
 runtime was selected. The complete native Q4_0 quality/throughput gates
 remain unrun under this goal.
 
@@ -120,9 +121,17 @@ mark the native Goal blocked on this turn.
   hashes. The official forward reads `fc.weight.dtype`, which the new binary
   module does not expose; using it directly would also retain F32 K/V where
   the native graph writes F16 K/V before attention. A strict explicit CPU
-  decoder-step adapter is in implementation. It must preserve separate
+  decoder-step adapter is now implemented. It preserves separate
   embedding/feature norms, embedding-first fusion, F16 K/V cache boundaries,
-  RoPE, residuals and the final pre-norm state.
+  RoPE, residuals and the final pre-norm state. Five synthetic CPU tests pass,
+  including an independent two-step reference and a full prefix-rebuild to
+  optimizer-step path; actual native full-drafter parity is still missing.
+- A strict CPU initializer read the frozen D GGUF at SHA256
+  `10e8e98e616480b25ff7600f195ba7ea3e0fd7c24832765013f960783c7609cf`:
+  all nine packed/sign-scale pairs, 32,000 absolute draft map IDs, shapes,
+  metadata and tail bits passed. D contains **17,005 exact-zero group scales**.
+  Two synthetic corruption/hash tests pass. Ignored audit report SHA256:
+  `f91c3d09f71079019cf517c08805bb805fd7a5b1bfdb1ff6aea6d84617bcb4be`.
 
 This is the **third consecutive goal turn**. It made meaningful CPU progress;
 the no-GPU restriction has not created a true impasse. The native Goal stays

@@ -14,6 +14,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from w1a1_eagle.native_step import NativeStepAdapter, NativeStepCache  # noqa: E402
 from w1a1_eagle.recurrent_binary import GroupedBinaryLinear  # noqa: E402
+from w1a1_eagle.recurrent_rollout import rebuild_prefix_cache, rollout_captured_prefix  # noqa: E402
+from w1a1_eagle.recurrent_trace import TraceAudit  # noqa: E402
+from w1a1_eagle.recurrent_training import train_step  # noqa: E402
 
 
 class TinyNorm(nn.Module):
@@ -49,7 +52,7 @@ def _drafter():
         scales = 0.06 + torch.rand(out_features, 1, generator=generator) * 0.04
         return GroupedBinaryLinear(weights, scales, group_size=128)
 
-    drafter.fc = binary(4, 6)
+    drafter.fc = binary(4, 12)
     drafter.midlayer = nn.Module()
     layer = drafter.midlayer
     layer.input_layernorm = TinyNorm(4, torch.tensor([1.0, 1.1, 0.9, 1.2]))
@@ -85,8 +88,9 @@ def _manual_step(drafter, token, feature, position, keys, values):
     layer = drafter.midlayer
     attn = layer.self_attn
     emb = drafter.embed_tokens.weight.detach()[token].float()
-    fused = torch.cat((_manual_norm(emb, layer.input_layernorm),
-                       _manual_norm(feature, layer.hidden_norm)))
+    fused = torch.cat(
+        (_manual_norm(emb, layer.input_layernorm), _manual_norm(feature, layer.hidden_norm))
+    )
     q = _manual_linear(attn.q_proj, fused).reshape(2, 2)
     k = _manual_linear(attn.k_proj, fused).reshape(1, 2)
     v = _manual_linear(attn.v_proj, fused).reshape(1, 2)
@@ -110,10 +114,88 @@ def _manual_step(drafter, token, feature, position, keys, values):
 
 
 class NativeStepTests(unittest.TestCase):
+    def test_prefix_rebuild_and_proposal_rollout_share_current_student(self):
+        drafter = _drafter()
+        adapter = NativeStepAdapter(drafter)
+        raw = torch.tensor(
+            [
+                [0.6, -0.2, 0.9, -0.3, 0.2, 0.1, 0.4, 0.7, -0.1, 0.8, -0.5, 0.3],
+                [0.2, 0.4, -0.1, 0.6, -0.3, 0.8, 0.5, -0.7, 0.9, 0.1, 0.3, -0.2],
+            ],
+            dtype=torch.float32,
+            device="cpu",
+        )
+        rebuilt = rebuild_prefix_cache(
+            [0, 1, 3],
+            raw,
+            [0, 1],
+            parent_position=1,
+            encode_feature=adapter.encode_feature,
+            decode_context=adapter.decode_step,
+            new_cache=adapter.new_cache,
+        )
+        self.assertEqual(rebuilt.cache.key.shape, (1, 1, 2))
+        self.assertFalse(rebuilt.cache.key.requires_grad)
+        rows = [
+            {
+                "prompt_id": "train-0",
+                "round_index": 0,
+                "parent_position": 1,
+                "depth": 0,
+                "input_position": 2,
+                "input_token_id": 3,
+                "proposed_token_id": 5,
+                "valid": True,
+            },
+            {
+                "prompt_id": "train-0",
+                "round_index": 0,
+                "parent_position": 1,
+                "depth": 1,
+                "input_position": 3,
+                "input_token_id": 5,
+                "proposed_token_id": 6,
+                "valid": True,
+            },
+        ]
+        logits = rollout_captured_prefix(
+            rows,
+            rebuilt.seed_raw_features,
+            encode_feature=adapter.encode_feature,
+            decode_step=adapter.decode_step,
+            initial_cache=rebuilt.cache,
+            draft_vocab_size=7,
+        )
+        self.assertEqual(logits.shape, (2, 7))
+        audit = TraceAudit(
+            draft_labels=(-1, 0),
+            valid_mask=(True, True),
+            supported_mask=(False, True),
+            ce_mask=(False, True),
+            denominator_mask=(True, True),
+            target_to_draft=tuple(range(7)),
+            counts={"total": 2},
+            per_depth={},
+        )
+        parameters = [
+            parameter
+            for linear in adapter.linears.values()
+            for parameter in (linear.latent_sign, linear.scale_offset)
+        ]
+        optimizer = torch.optim.SGD(parameters, lr=0.01)
+        loss = train_step(adapter.linears, logits, audit, optimizer)
+        self.assertGreater(loss, 0)
+        self.assertGreater(float(drafter.fc.scale_offset.grad.abs().sum()), 0)
+        self.assertGreater(float(drafter.lm_head.scale_offset.grad.abs().sum()), 0)
+
     def test_two_steps_match_independent_manual_reference(self):
         drafter = _drafter()
         adapter = NativeStepAdapter(drafter)
-        raw = torch.tensor([0.6, -0.2, 0.9, -0.3, 0.2, 0.1], dtype=torch.float32, device="cpu")
+        raw = torch.tensor(
+            [0.6, -0.2, 0.9, -0.3, 0.2, 0.1, 0.4, 0.7, -0.1, 0.8, -0.5, 0.3],
+            dtype=torch.float32,
+            device="cpu",
+        )
         feature = adapter.encode_feature(raw)
         torch.testing.assert_close(feature, _manual_linear(drafter.fc, raw), rtol=0, atol=2e-7)
         cache = adapter.new_cache()
@@ -135,8 +217,12 @@ class NativeStepTests(unittest.TestCase):
         drafter = _drafter()
         adapter = NativeStepAdapter(drafter)
         first = adapter.decode_step(
-            3, adapter.encode_feature(torch.tensor([0.6, -0.2, 0.9, -0.3, 0.2, 0.1])),
-            0, adapter.new_cache()
+            3,
+            adapter.encode_feature(
+                torch.tensor([0.6, -0.2, 0.9, -0.3, 0.2, 0.1, 0.4, 0.7, -0.1, 0.8, -0.5, 0.3])
+            ),
+            0,
+            adapter.new_cache(),
         )
         first.cache.key.retain_grad()
         first.cache.value.retain_grad()
@@ -147,17 +233,25 @@ class NativeStepTests(unittest.TestCase):
         self.assertGreater(float(first.cache.value.grad.abs().sum()), 0)
         self.assertGreater(float(first.pre_norm.grad.abs().sum()), 0)
         self.assertGreater(float(drafter.fc.scale_offset.grad.abs().sum()), 0)
-        for module in (drafter.embed_tokens, drafter.midlayer.input_layernorm,
-                       drafter.midlayer.hidden_norm, drafter.midlayer.post_attention_layernorm,
-                       drafter.norm):
-            self.assertTrue(all(not parameter.requires_grad and parameter.grad is None
-                                for parameter in module.parameters()))
+        for module in (
+            drafter.embed_tokens,
+            drafter.midlayer.input_layernorm,
+            drafter.midlayer.hidden_norm,
+            drafter.midlayer.post_attention_layernorm,
+            drafter.norm,
+        ):
+            self.assertTrue(
+                all(
+                    not parameter.requires_grad and parameter.grad is None
+                    for parameter in module.parameters()
+                )
+            )
 
     def test_rejects_wrong_cache_position_tree_and_shapes(self):
         drafter = _drafter()
         adapter = NativeStepAdapter(drafter)
         cache = adapter.new_cache()
-        feature = adapter.encode_feature(torch.ones(6, dtype=torch.float32, device="cpu"))
+        feature = adapter.encode_feature(torch.ones(12, dtype=torch.float32, device="cpu"))
         with self.assertRaisesRegex(ValueError, "prior rows"):
             adapter.decode_step(1, feature, 1, cache)
         with self.assertRaisesRegex(ValueError, "decoder_position"):
@@ -165,7 +259,7 @@ class NativeStepTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "feature"):
             adapter.decode_step(1, feature.half(), 0, cache)
         with self.assertRaisesRegex(ValueError, "raw target feature"):
-            adapter.encode_feature(torch.ones((1, 6), dtype=torch.float32, device="cpu"))
+            adapter.encode_feature(torch.ones((1, 12), dtype=torch.float32, device="cpu"))
         bad = NativeStepCache(torch.ones(1, 0, 2, dtype=torch.float16), cache.value)
         with self.assertRaisesRegex(ValueError, "key cache"):
             adapter.decode_step(1, feature, 0, bad)

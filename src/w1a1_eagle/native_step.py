@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from types import MappingProxyType
 
 import torch
 from torch import Tensor, nn
@@ -79,7 +80,10 @@ class NativeStepAdapter(nn.Module):
             head_dim = hidden // heads
         max_positions = getattr(config, "max_position_embeddings", None)
         theta = getattr(config, "rope_theta", 10000.0)
-        if not all(type(value) is int and value > 0 for value in (hidden, heads, kv_heads, intermediate, head_dim, max_positions)):
+        if not all(
+            type(value) is int and value > 0
+            for value in (hidden, heads, kv_heads, intermediate, head_dim, max_positions)
+        ):
             raise ValueError("drafter dimensions must be positive integers")
         if head_dim % 2 or hidden != heads * head_dim or heads % kv_heads:
             raise ValueError("unsupported attention head geometry")
@@ -87,7 +91,7 @@ class NativeStepAdapter(nn.Module):
             raise ValueError("rope_theta must be positive and finite")
 
         expected = {
-            "fc": (hidden, None),
+            "fc": (hidden, 3 * hidden),
             "midlayer.self_attn.q_proj": (heads * head_dim, 2 * hidden),
             "midlayer.self_attn.k_proj": (kv_heads * head_dim, 2 * hidden),
             "midlayer.self_attn.v_proj": (kv_heads * head_dim, 2 * hidden),
@@ -157,6 +161,7 @@ class NativeStepAdapter(nn.Module):
                 parameter.requires_grad_(False)
 
         self.drafter = drafter
+        self.linears = MappingProxyType(linears)
         self.hidden_size = hidden
         self.heads = heads
         self.kv_heads = kv_heads
@@ -166,17 +171,26 @@ class NativeStepAdapter(nn.Module):
 
     def new_cache(self) -> NativeStepCache:
         shape = (self.kv_heads, 0, self.head_dim)
-        return NativeStepCache(torch.empty(shape, dtype=torch.float32, device="cpu"),
-                               torch.empty(shape, dtype=torch.float32, device="cpu"))
+        return NativeStepCache(
+            torch.empty(shape, dtype=torch.float32, device="cpu"),
+            torch.empty(shape, dtype=torch.float32, device="cpu"),
+        )
 
     def _validate_cache(self, cache: NativeStepCache, position: int) -> None:
         if not isinstance(cache, NativeStepCache):
             raise ValueError("decoder cache must be NativeStepCache")
         shape = (self.kv_heads, position, self.head_dim)
         for name, value in (("key", cache.key), ("value", cache.value)):
-            if not isinstance(value, Tensor) or value.device.type != "cpu" or value.dtype != torch.float32 or value.shape != shape:
+            if (
+                not isinstance(value, Tensor)
+                or value.device.type != "cpu"
+                or value.dtype != torch.float32
+                or value.shape != shape
+            ):
                 raise ValueError(f"{name} cache must contain exactly decoder_position prior rows")
-            if not torch.isfinite(value).all() or not torch.equal(value, value.to(torch.float16).to(torch.float32)):
+            if not torch.isfinite(value).all() or not torch.equal(
+                value, value.to(torch.float16).to(torch.float32)
+            ):
                 raise ValueError(f"{name} cache must be finite and F16-exact")
 
     def encode_feature(self, raw: Tensor) -> Tensor:
@@ -233,7 +247,7 @@ class NativeStepAdapter(nn.Module):
         k = k.to(torch.float16).to(torch.float32)
         v = v.to(torch.float16).to(torch.float32)
         next_cache = NativeStepCache(
-            torch.cat((cache.key, k[:, None, :]  ), dim=1),
+            torch.cat((cache.key, k[:, None, :]), dim=1),
             torch.cat((cache.value, v[:, None, :]), dim=1),
         )
         repeat = self.heads // self.kv_heads
