@@ -2120,6 +2120,14 @@ checkpoint; do not create more open-ended numerical investigations.
   is the 24.8 GB raw full-vocabulary logit file from just 96 old prompts.
   Shards must cap both prompts and raw logit rows/bytes, audit and compact
   exact-prefix teacher data before any raw retirement, and preserve hashes.
+- The shard audit found the inherited capture runner/preparers/bundle/auditor
+  still hardcode the old 96-prompt hash/count. A separate Sol owner has sole
+  ownership of those five existing scripts and disjoint tests in managed
+  worktree `/Users/pippo/.codex/worktrees/capture-shard-contract/binary-eagle-decoding`
+  on `codex/capture-shard-contract` (started from `78d98f2`). Its bounded
+  change will accept an explicit frozen prompt file/hash/count while keeping
+  the 96 defaults. The data owner keeps only the new shard planner/report;
+  raw-logit retirement remains disabled until compact provenance is verified.
 - Boundaries: legacy final-set contents stay sealed; the 96-prompt capture is
   smoke/regression evidence only. Group-128/A16 and row-scale W1Ax are distinct
   representation contracts. GPU timing, capture and training wait for explicit
