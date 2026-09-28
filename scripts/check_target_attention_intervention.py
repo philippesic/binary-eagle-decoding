@@ -30,6 +30,7 @@ from check_target_k_cuda import _safe_rows  # noqa: E402
 from gguf import GGMLQuantizationType, GGUFReader  # noqa: E402
 from transformers import Qwen3Model  # noqa: E402
 from transformers.models.qwen3.modeling_qwen3 import (  # noqa: E402
+    Qwen3RotaryEmbedding,
     apply_rotary_pos_emb,
     eager_attention_forward,
 )
@@ -198,6 +199,10 @@ def probe(
         baseline_exact = bool(torch.equal(hf_replay, captured["ffn_input"]))
         same_norm = torch.from_numpy(native["norm"].astype("<f2")).to(device="cuda")[None]
         q_source, k_source, v_source = _qkv(layer, same_norm, captured["cos"], captured["sin"])
+        isolated_rotary = Qwen3RotaryEmbedding(model.config, device="cuda").to(device="cuda")
+        positions = torch.arange(TOKENS, device="cuda", dtype=torch.long)[None, :]
+        isolated_cos, isolated_sin = isolated_rotary(q_source, positions)
+        q_isolated, _, _ = _qkv(layer, same_norm, isolated_cos, isolated_sin)
         source_residual = _attention_residual(
             layer, residual, q_source, k_source, v_source, captured["mask"]
         )
@@ -215,13 +220,14 @@ def probe(
     prior_q = json.loads(prior_q_report.read_text())
     prior_v = json.loads(prior_v_report.read_text())
     q_metrics = _metrics(rows(q_source.transpose(1, 2)), native["q"])
+    q_isolated_metrics = _metrics(rows(q_isolated.transpose(1, 2)), native["q"])
     v_metrics = _metrics(rows(v_source.transpose(1, 2)), native["v"])
     q_prior = prior_q["metrics"]["torch_f16_rope_vs_server"]
     v_prior = prior_v["metrics"]["torch_f16_vs_server"]
-    controls_reproduced = all(
-        measured[key] == prior[key]
-        for measured, prior in ((q_metrics, q_prior), (v_metrics, v_prior))
-        for key in ("exact_f32", "exact_f16_cast", "max_abs", "position3_relative_row_l2")
+    control_keys = ("exact_f32", "exact_f16_cast", "max_abs", "position3_relative_row_l2")
+    v_control_reproduced = all(v_metrics[key] == v_prior[key] for key in control_keys)
+    isolated_q_control_reproduced = all(
+        q_isolated_metrics[key] == q_prior[key] for key in control_keys
     )
     metrics = {
         "hf_manual_vs_hf_forward": _metrics(rows(hf_replay), rows(captured["ffn_input"])),
@@ -235,12 +241,15 @@ def probe(
             rows(native_qkv_residual), native["ffn_input"]
         ),
         "same_input_source_q_vs_native": q_metrics,
+        "same_input_isolated_q_vs_native": q_isolated_metrics,
         "same_input_source_v_vs_native": v_metrics,
+        "loaded_vs_isolated_rotary_cos": _metrics(rows(captured["cos"]), rows(isolated_cos)),
+        "loaded_vs_isolated_rotary_sin": _metrics(rows(captured["sin"]), rows(isolated_sin)),
     }
     report = {
         "schema": "target_block0_attention_intervention_v1",
-        "status": "hf_baseline_and_qv_controls_reproduced"
-        if baseline_exact and controls_reproduced
+        "status": "hf_baseline_and_controls_reproduced"
+        if baseline_exact and v_control_reproduced and isolated_q_control_reproduced
         else "control_mismatch",
         "hardware": {
             "device": torch.cuda.get_device_name(0),
@@ -253,7 +262,10 @@ def probe(
         "prompt_id": PROMPT_ID,
         "prefill_tokens": TOKENS,
         "hf_manual_f16_exact": baseline_exact,
-        "same_input_qv_controls_reproduced": controls_reproduced,
+        "same_input_v_control_reproduced": v_control_reproduced,
+        "isolated_q_control_reproduced": isolated_q_control_reproduced,
+        "loaded_rotary_inv_freq_dtype": str(model.rotary_emb.inv_freq.dtype),
+        "isolated_rotary_inv_freq_dtype": str(isolated_rotary.inv_freq.dtype),
         "source_weight_identity": source_weights,
         "metrics": metrics,
         "elapsed_seconds": time.monotonic() - started,
@@ -309,7 +321,7 @@ def main() -> None:
         args.prior_v_report,
     )
     print(json.dumps({"status": result["status"]}))
-    if result["status"] != "hf_baseline_and_qv_controls_reproduced":
+    if result["status"] != "hf_baseline_and_controls_reproduced":
         raise SystemExit(3)
 
 
