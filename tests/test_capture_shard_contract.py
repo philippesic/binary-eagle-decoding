@@ -41,8 +41,11 @@ class ShardContractTests(unittest.TestCase):
             "prompt_count": 2,
             "prompt_ids": [row["id"] for row in self.rows],
             "parent": {
-                "split": "train_small", "manifest_sha256": "a" * 64,
-                "prompts_sha256": "b" * 64, "index_sha256": "c" * 64, "count": 2000,
+                "split": "train_small",
+                "manifest_sha256": "a" * 64,
+                "prompts_sha256": "b" * 64,
+                "index_sha256": "c" * 64,
+                "count": 2000,
             },
             "target_vocab_size": runner.TARGET_VOCAB_SIZE,
             "bytes_per_raw_logit_row": runner.TARGET_VOCAB_SIZE * 4,
@@ -59,18 +62,24 @@ class ShardContractTests(unittest.TestCase):
         mapping = np.arange(32_000, dtype="<i8")
         np.save(self.map_path, mapping)
         self.args = argparse.Namespace(
-            mode="recurrent-train", tokens=128, prompts=self.prompts,
-            prompt_manifest=None, prompts_sha256=None,
+            mode="recurrent-train",
+            tokens=128,
+            prompts=self.prompts,
+            prompt_manifest=None,
+            prompts_sha256=None,
             shard_manifest=self.shard_path,
-            expected_prompt_sha256=self.prompt_hash, expected_prompt_count=2,
-            binary=self.root / "binary", target=self.root / "target",
-            output=self.root / "out", d2t=self.map_path,
+            expected_prompt_sha256=self.prompt_hash,
+            expected_prompt_count=2,
+            binary=self.root / "binary",
+            target=self.root / "target",
+            output=self.root / "out",
+            d2t=self.map_path,
             target_vocab_size=runner.TARGET_VOCAB_SIZE,
-            target_logits_limit=32, target_features_limit=128, port=18092,
+            target_logits_limit=32,
+            target_features_limit=128,
+            port=18092,
         )
-        self.variants = {
-            "d_d": {"body": "D", "head": "D", "draft": str(self.root / "draft")}
-        }
+        self.variants = {"d_d": {"body": "D", "head": "D", "draft": str(self.root / "draft")}}
         self.model_patches = (
             mock.patch.object(runner, "TARGET_F16_SHA256", runner.sha256(self.args.target)),
             mock.patch.object(runner, "DRAFT_D_SHA256", runner.sha256(self.root / "draft")),
@@ -111,29 +120,36 @@ class ShardContractTests(unittest.TestCase):
         cell = self.root / "cell"
         cell.mkdir()
         (cell / "heads.jsonl").write_text(
-            json.dumps({"task_id": 1, "target_logits_row": 0}) + "\n"
-            + json.dumps({"task_id": 1, "target_logits_row": None}) + "\n"
+            json.dumps({"task_id": 1, "target_logits_row": 0})
+            + "\n"
+            + json.dumps({"task_id": 1, "target_logits_row": None})
+            + "\n"
         )
         (cell / "heads.target_features.jsonl").write_text(
-            json.dumps({"event": "decoded_row", "feature_row": 0, "task_id": 1}) + "\n"
-            + json.dumps({"event": "disposition", "feature_row": 0, "task_id": 1}) + "\n"
+            json.dumps({"event": "decoded_row", "feature_row": 0, "task_id": 1})
+            + "\n"
+            + json.dumps({"event": "disposition", "feature_row": 0, "task_id": 1})
+            + "\n"
         )
         (cell / "heads.target_features.f32").write_bytes(b"\0" * runner.FEATURE_WIDTH * 4)
         (cell / "heads.target_logits.f32").write_bytes(b"\0" * 4 * 4)
         (cell / "forced-rounds.jsonl").write_text(json.dumps({"task_id": 1}) + "\n")
         manifest = {
             "task_prompt_ids": {"1": "shard-train-0"},
-            "requests": [{
-                "task_id": "1", "capture_rows": [0, 2], "forced_round_rows": [0, 1],
-                "target_feature_event_rows": [0, 2], "target_feature_rows": [0, 1],
-                "target_logit_rows": [0, 1],
-            }],
+            "requests": [
+                {
+                    "task_id": "1",
+                    "capture_rows": [0, 2],
+                    "forced_round_rows": [0, 1],
+                    "target_feature_event_rows": [0, 2],
+                    "target_feature_rows": [0, 1],
+                    "target_logit_rows": [0, 1],
+                }
+            ],
         }
         runner.audit_recurrent_files(cell, manifest, 4, 1, 1)
         with self.assertRaisesRegex(ValueError, "exceed frozen raw-logit cap"):
-            runner.audit_recurrent_files(
-                cell, manifest, 4, 1, 1, require_full_logits=True
-            )
+            runner.audit_recurrent_files(cell, manifest, 4, 1, 1, require_full_logits=True)
 
 
 if __name__ == "__main__":

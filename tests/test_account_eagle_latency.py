@@ -15,7 +15,9 @@ SPEC.loader.exec_module(MODULE)
 class LatencyAccountingTests(unittest.TestCase):
     def test_round_overlap_and_unassigned_reconcile(self):
         row = {
-            "round_start_us": 100, "round_end_us": 200, "round_us": 100,
+            "round_start_us": 100,
+            "round_end_us": 200,
+            "round_us": 100,
             "spans_us": {"draft": [110, 150], "process": [140, 170]},
         }
         parts = MODULE.round_partition(row)
@@ -27,9 +29,14 @@ class LatencyAccountingTests(unittest.TestCase):
 
     def test_stage_requires_contiguous_partition(self):
         row = {
-            "schema": "eagle_draft_stage_v1", "clock": "ggml_time_us_cpu_wall",
-            "start_us": 10, "end_us": 20, "total_us": 10, "partition_us": 10,
-            "unassigned_us": 0, "stage_totals_us": {"seed": 10},
+            "schema": "eagle_draft_stage_v1",
+            "clock": "ggml_time_us_cpu_wall",
+            "start_us": 10,
+            "end_us": 20,
+            "total_us": 10,
+            "partition_us": 10,
+            "unassigned_us": 0,
+            "stage_totals_us": {"seed": 10},
             "spans": [{"stage": "seed", "start_us": 10, "end_us": 20, "duration_us": 10}],
         }
         self.assertEqual(MODULE.checked_stage(row), {"seed": 10})

@@ -45,7 +45,7 @@ def shingles(text: str) -> set[str]:
     words = text.split()
     if len(words) < 5:
         return {" ".join(words)}
-    return {" ".join(words[i:i + 5]) for i in range(len(words) - 4)}
+    return {" ".join(words[i : i + 5]) for i in range(len(words) - 4)}
 
 
 def simhash(items: set[str]) -> int:
@@ -62,9 +62,12 @@ def validate_messages(messages: object) -> list[dict]:
         raise ValueError("messages must be a nonempty list")
     out = []
     for message in messages:
-        if (not isinstance(message, dict) or message.get("role") not in ROLES
-                or not isinstance(message.get("content"), str)
-                or not message["content"].strip()):
+        if (
+            not isinstance(message, dict)
+            or message.get("role") not in ROLES
+            or not isinstance(message.get("content"), str)
+            or not message["content"].strip()
+        ):
             raise ValueError("invalid role/content in messages")
         out.append({"role": message["role"], "content": message["content"]})
     if not any(m["role"] == "user" for m in out):
@@ -102,8 +105,7 @@ def load_catalog(
         if not isinstance(fields, dict):
             raise ValueError(f"{sid}: fields must be an object")
         field = {
-            name: fields.get(name, name)
-            for name in ("id", "messages", "group_id", "topic_id")
+            name: fields.get(name, name) for name in ("id", "messages", "group_id", "topic_id")
         }
         if any(not isinstance(value, str) or not value for value in field.values()):
             raise ValueError(f"{sid}: invalid field mapping")
@@ -131,16 +133,22 @@ def load_catalog(
                 if topic is not None and (not isinstance(topic, str) or not topic):
                     raise ValueError(f"{sid}:{line_number}: invalid topic id")
                 key = f"{sid}:{rid}"
-                rows.append({"id": key, "source_id": sid, "source_row_id": rid,
-                             "domain": domain, "messages": messages,
-                             "group": f"group:{sid}:{group}",
-                             "topic": f"topic:{sid}:{topic}" if topic else None,
-                             "content_sha256": hashlib.sha256(canonical(messages)).hexdigest(),
-                             "text": text})
+                rows.append(
+                    {
+                        "id": key,
+                        "source_id": sid,
+                        "source_row_id": rid,
+                        "domain": domain,
+                        "messages": messages,
+                        "group": f"group:{sid}:{group}",
+                        "topic": f"topic:{sid}:{topic}" if topic else None,
+                        "content_sha256": hashlib.sha256(canonical(messages)).hexdigest(),
+                        "text": text,
+                    }
+                )
                 count += 1
         source_record = {
-            key: source[key]
-            for key in ("id", "uri", "domain", "revision", "license", "sha256")
+            key: source[key] for key in ("id", "uri", "domain", "revision", "license", "sha256")
         } | {"rows_after_length_filter": count}
         for key in ("upstream_sha256", "transform", "transform_sha256"):
             if key in source:
@@ -164,7 +172,7 @@ def deduplicate(rows: list[dict], threshold: float) -> tuple[list[dict], Counter
         fingerprint = simhash(grams)
         candidates = set()
         for band in range(4):
-            candidates.update(bands[(band, (fingerprint >> (16 * band)) & 0xffff)])
+            candidates.update(bands[(band, (fingerprint >> (16 * band)) & 0xFFFF)])
         near = False
         for candidate in sorted(candidates):
             other = shingles_by_id[candidate]
@@ -179,7 +187,7 @@ def deduplicate(rows: list[dict], threshold: float) -> tuple[list[dict], Counter
         shingles_by_id.append(grams)
         exact[digest] = index
         for band in range(4):
-            bands[(band, (fingerprint >> (16 * band)) & 0xffff)].add(index)
+            bands[(band, (fingerprint >> (16 * band)) & 0xFFFF)].add(index)
     return kept, dropped
 
 
@@ -212,8 +220,9 @@ def quotas(total: int) -> dict[str, int]:
     return {domain: base + (i < extra) for i, domain in enumerate(DOMAINS)}
 
 
-def select(groups: list[list[dict]], want: dict[str, int], seed: int,
-           name: str) -> tuple[list[list[dict]], list[list[dict]]]:
+def select(
+    groups: list[list[dict]], want: dict[str, int], seed: int, name: str
+) -> tuple[list[list[dict]], list[list[dict]]]:
     selected, rest, counts = [], [], Counter()
     ordered = sorted(groups, key=lambda g: stable_key(seed, f"{name}:{min(r['id'] for r in g)}"))
     for group in ordered:
@@ -235,9 +244,18 @@ def write_jsonl(path: Path, rows: list[dict]) -> None:
             stream.write(canonical(row) + b"\n")
 
 
-def prepare(catalog: Path, output: Path, train_small: int, train_large: int,
-            dev: int, final: int, seed: int, min_chars: int, max_chars: int,
-            near_threshold: float) -> dict:
+def prepare(
+    catalog: Path,
+    output: Path,
+    train_small: int,
+    train_large: int,
+    dev: int,
+    final: int,
+    seed: int,
+    min_chars: int,
+    max_chars: int,
+    near_threshold: float,
+) -> dict:
     if output.exists():
         raise ValueError("output must be a new directory; frozen sets are immutable")
     if not 0 < train_small <= train_large or min(dev, final) <= 0:
@@ -251,44 +269,67 @@ def prepare(catalog: Path, output: Path, train_small: int, train_large: int,
     dev_groups, groups = select(groups, quotas(dev), seed, "dev")
     large_groups, _ = select(groups, quotas(train_large), seed, "train_large")
     small_groups, _ = select(large_groups, quotas(train_small), seed, "train_small")
-    selected = {"train_small": small_groups, "train_large": large_groups,
-                "dev": dev_groups, "final": final_groups}
+    selected = {
+        "train_small": small_groups,
+        "train_large": large_groups,
+        "dev": dev_groups,
+        "final": final_groups,
+    }
     output.mkdir(parents=True)
     files = {}
     for name, split_groups in selected.items():
         split_rows = [row for group in split_groups for row in group]
         split_rows.sort(key=lambda row: stable_key(seed, f"order:{row['id']}"))
-        prompts = [{"id": row["id"], "domain": row["domain"],
-                    "messages": row["messages"]} for row in split_rows]
-        records = [{"id": row["id"], "source_id": row["source_id"],
-                    "source_row_id": row["source_row_id"], "domain": row["domain"],
-                    "group": row["group"], "topic": row["topic"],
-                    "content_sha256": row["content_sha256"],
-                    "characters": len(row["text"]),
-                    "word_count": len(row["text"].split())} for row in split_rows]
+        prompts = [
+            {"id": row["id"], "domain": row["domain"], "messages": row["messages"]}
+            for row in split_rows
+        ]
+        records = [
+            {
+                "id": row["id"],
+                "source_id": row["source_id"],
+                "source_row_id": row["source_row_id"],
+                "domain": row["domain"],
+                "group": row["group"],
+                "topic": row["topic"],
+                "content_sha256": row["content_sha256"],
+                "characters": len(row["text"]),
+                "word_count": len(row["text"].split()),
+            }
+            for row in split_rows
+        ]
         prompt_path, index_path = output / f"{name}.jsonl", output / f"{name}.index.jsonl"
         write_jsonl(prompt_path, prompts)
         write_jsonl(index_path, records)
-        files[name] = {"prompts": prompt_path.name, "prompts_sha256": sha256(prompt_path),
-                       "index": index_path.name, "index_sha256": sha256(index_path),
-                       "prompts_count": len(split_rows),
-                       "groups_count": len(split_groups),
-                       "domains": dict(sorted(
-                           Counter(row["domain"] for row in split_rows).items()
-                       )),
-                       "unique_sources": sorted({row["source_id"] for row in split_rows}),
-                       "words_total": sum(len(row["text"].split()) for row in split_rows),
-                       "characters_total": sum(len(row["text"]) for row in split_rows)}
-    report = {"schema": "w1a_data_manifest_v1", "seed": seed,
-              "catalog_sha256": sha256(catalog), "sources": sources,
-              "selection": "grouped_source_topic_then_seeded_domain_quota_v1",
-              "near_dedup": {"method": "simhash_4x16_candidate_shingle_jaccard",
-                             "threshold": near_threshold, "dropped": dict(duplicates)},
-              "filter": {"min_chars": min_chars, "max_chars": max_chars,
-                         "rejected": dict(rejected)},
-              "available_unique_prompts": len(rows), "files": files,
-              "token_counts": "pending_pinned_target_tokenizer; word counts are not token counts",
-              "final_status": "frozen_output_unreviewed; seal_after_manifest_hash_review"}
+        files[name] = {
+            "prompts": prompt_path.name,
+            "prompts_sha256": sha256(prompt_path),
+            "index": index_path.name,
+            "index_sha256": sha256(index_path),
+            "prompts_count": len(split_rows),
+            "groups_count": len(split_groups),
+            "domains": dict(sorted(Counter(row["domain"] for row in split_rows).items())),
+            "unique_sources": sorted({row["source_id"] for row in split_rows}),
+            "words_total": sum(len(row["text"].split()) for row in split_rows),
+            "characters_total": sum(len(row["text"]) for row in split_rows),
+        }
+    report = {
+        "schema": "w1a_data_manifest_v1",
+        "seed": seed,
+        "catalog_sha256": sha256(catalog),
+        "sources": sources,
+        "selection": "grouped_source_topic_then_seeded_domain_quota_v1",
+        "near_dedup": {
+            "method": "simhash_4x16_candidate_shingle_jaccard",
+            "threshold": near_threshold,
+            "dropped": dict(duplicates),
+        },
+        "filter": {"min_chars": min_chars, "max_chars": max_chars, "rejected": dict(rejected)},
+        "available_unique_prompts": len(rows),
+        "files": files,
+        "token_counts": "pending_pinned_target_tokenizer; word counts are not token counts",
+        "final_status": "frozen_output_unreviewed; seal_after_manifest_hash_review",
+    }
     (output / "manifest.json").write_bytes(canonical(report) + b"\n")
     return report
 
@@ -306,14 +347,27 @@ def main() -> None:
     parser.add_argument("--max-chars", type=int, default=24000)
     parser.add_argument("--near-threshold", type=float, default=0.88)
     args = parser.parse_args()
-    result = prepare(args.catalog, args.output, args.train_small, args.train_large,
-                     args.dev, args.final, args.seed, args.min_chars, args.max_chars,
-                     args.near_threshold)
-    print(json.dumps({"manifest": str(args.output / "manifest.json"),
-                      "sha256": sha256(args.output / "manifest.json"),
-                      "counts": {
-                          key: value["prompts_count"] for key, value in result["files"].items()
-                      }}))
+    result = prepare(
+        args.catalog,
+        args.output,
+        args.train_small,
+        args.train_large,
+        args.dev,
+        args.final,
+        args.seed,
+        args.min_chars,
+        args.max_chars,
+        args.near_threshold,
+    )
+    print(
+        json.dumps(
+            {
+                "manifest": str(args.output / "manifest.json"),
+                "sha256": sha256(args.output / "manifest.json"),
+                "counts": {key: value["prompts_count"] for key, value in result["files"].items()},
+            }
+        )
+    )
 
 
 if __name__ == "__main__":

@@ -20,13 +20,26 @@ class PublicSourcesTest(unittest.TestCase):
             directory = Path(temporary)
             raw = directory / "raw/dolly.jsonl"
             raw.parent.mkdir()
-            raw.write_text(json.dumps({"category": "summarization",
-                                       "instruction": "Summarize the note.",
-                                       "context": "A short local fixture note.",
-                                       "response": "Unused reference answer."}) + "\n")
-            spec = {"dolly": {"uri": "fixture://dolly", "revision": "test-revision",
-                              "license": "fixture-only", "upstream_sha256": sha256(raw),
-                              "domain": "prose"}}
+            raw.write_text(
+                json.dumps(
+                    {
+                        "category": "summarization",
+                        "instruction": "Summarize the note.",
+                        "context": "A short local fixture note.",
+                        "response": "Unused reference answer.",
+                    }
+                )
+                + "\n"
+            )
+            spec = {
+                "dolly": {
+                    "uri": "fixture://dolly",
+                    "revision": "test-revision",
+                    "license": "fixture-only",
+                    "upstream_sha256": sha256(raw),
+                    "domain": "prose",
+                }
+            }
             with patch.dict("fetch_w1a_public_sources.SOURCES", spec, clear=True):
                 result = build_catalog(directory, offline=True)
             catalog = json.loads(result["catalog"].read_text())
@@ -44,6 +57,7 @@ class PublicSourcesTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "wrong SHA256"):
                 # A new directory is not required to verify a cached raw hash.
                 from fetch_w1a_public_sources import download
+
                 download("dolly", directory / "raw", offline=True)
 
 

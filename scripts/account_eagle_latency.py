@@ -14,11 +14,18 @@ from collections import defaultdict
 from pathlib import Path
 
 STAGE_NAMES = (
-    "draft", "target_decode_sync", "process", "check", "checkpoint",
-    "kv_repair", "accept_hook",
+    "draft",
+    "target_decode_sync",
+    "process",
+    "check",
+    "checkpoint",
+    "kv_repair",
+    "accept_hook",
 )
 PROCESS_PARTS = (
-    "process_feature_copy_us", "process_encoder_us", "process_batch_build_us",
+    "process_feature_copy_us",
+    "process_encoder_us",
+    "process_batch_build_us",
     "process_draft_decode_us",
 )
 
@@ -75,9 +82,13 @@ def checked_stage(row: dict) -> dict[str, int]:
             raise ValueError("draft stage duration mismatch")
         totals[span["stage"]] += duration
         cursor = span["end_us"]
-    if (cursor != row["end_us"] or sum(totals.values()) != row["total_us"]
-            or row["partition_us"] != row["total_us"] or row["unassigned_us"] != 0
-            or totals != row["stage_totals_us"]):
+    if (
+        cursor != row["end_us"]
+        or sum(totals.values()) != row["total_us"]
+        or row["partition_us"] != row["total_us"]
+        or row["unassigned_us"] != 0
+        or totals != row["stage_totals_us"]
+    ):
         raise ValueError("draft stage partition mismatch")
     return totals
 
@@ -86,13 +97,24 @@ def analyze(index_path: Path) -> dict:
     index = json.loads(index_path.read_text())
     if index.get("schema") != "binary_rescue_round_cpu_v1":
         raise ValueError("unsupported round analysis index")
-    grouped: dict[str, dict] = defaultdict(lambda: {
-        "rounds": 0, "replay_rounds": 0, "round_us": 0, "proposed": 0,
-        "accepted": 0, "emitted": 0, "round_partition_us": defaultdict(int),
-        "process_parts_us": defaultdict(int), "process_unassigned_us": 0,
-        "draft_calls": 0, "draft_call_us": 0, "draft_stage_us": defaultdict(int),
-        "draft_stage_calls_unmatched": 0, "matched_proposed": 0,
-    })
+    grouped: dict[str, dict] = defaultdict(
+        lambda: {
+            "rounds": 0,
+            "replay_rounds": 0,
+            "round_us": 0,
+            "proposed": 0,
+            "accepted": 0,
+            "emitted": 0,
+            "round_partition_us": defaultdict(int),
+            "process_parts_us": defaultdict(int),
+            "process_unassigned_us": 0,
+            "draft_calls": 0,
+            "draft_call_us": 0,
+            "draft_stage_us": defaultdict(int),
+            "draft_stage_calls_unmatched": 0,
+            "matched_proposed": 0,
+        }
+    )
     windows: dict[str, list[tuple[int, int, int]]] = defaultdict(list)
     for item in index["round_files"]:
         variant = item["variant"]
@@ -124,8 +146,9 @@ def analyze(index_path: Path) -> dict:
         intervals = windows[variant]
         for row in jsonl(checked_file(item)):
             totals = checked_stage(row)
-            matches = [(a, b, n) for a, b, n in intervals
-                       if a <= row["start_us"] and row["end_us"] <= b]
+            matches = [
+                (a, b, n) for a, b, n in intervals if a <= row["start_us"] and row["end_us"] <= b
+            ]
             if not matches:
                 out["draft_stage_calls_unmatched"] += 1
                 continue
@@ -139,8 +162,10 @@ def analyze(index_path: Path) -> dict:
 
     result = {}
     for variant, raw in sorted(grouped.items()):
-        result[variant] = {key: dict(value) if isinstance(value, defaultdict) else value
-                           for key, value in raw.items()}
+        result[variant] = {
+            key: dict(value) if isinstance(value, defaultdict) else value
+            for key, value in raw.items()
+        }
         row = result[variant]
         if sum(row["round_partition_us"].values()) != row["round_us"]:
             raise ValueError("pooled round partition does not reconcile")
@@ -161,8 +186,7 @@ def analyze(index_path: Path) -> dict:
         "source_index_sha256": hashlib.sha256(index_path.read_bytes()).hexdigest(),
         "clock": "ggml_time_us_cpu_wall",
         "scope": (
-            "sum of archived measured round rows; shared batched spans can appear "
-            "in multiple rows"
+            "sum of archived measured round rows; shared batched spans can appear in multiple rows"
         ),
         "variants": result,
         "unavailable": {

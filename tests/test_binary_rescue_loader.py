@@ -57,8 +57,7 @@ def write_fixture(path, variant, activation_bits=16):
     row_scales = variant.startswith("row_")
     learned = variant == "v2_learned" or row_scales
     version = (
-        2 if variant in ("v2", "v2_learned", "unknown_scale") or variant.startswith("row_v2")
-        else 3
+        2 if variant in ("v2", "v2_learned", "unknown_scale") or variant.startswith("row_v2") else 3
     )
     writer = gguf.GGUFWriter(path, "eagle3")
     for key, value in {
@@ -75,9 +74,7 @@ def write_fixture(path, variant, activation_bits=16):
     writer.add_float32("eagle3.attention.layer_norm_rms_epsilon", 1e-5)
     writer.add_array("eagle3.target_layers", [0, 1, 2])
     writer.add_string("tokenizer.ggml.model", "none")
-    writer.add_uint32(
-        "eagle3.w1a1.version", version
-    )
+    writer.add_uint32("eagle3.w1a1.version", version)
     writer.add_array("eagle3.w1a1.groups", ["fusion", "attention", "ffn", "head"])
     dense = [] if version == 2 else ["blk.0.ffn_down.weight"]
     packed = [name for name in LINEARS if name not in dense]
@@ -221,8 +218,10 @@ class BinaryRescueNativeLoaderTests(unittest.TestCase):
 
     def test_rejects_row_activation_width_mismatch(self):
         self.assert_load(
-            "row_v2", "activation bits metadata does not match",
-            activation_bits=8, metadata_bits=4,
+            "row_v2",
+            "activation bits metadata does not match",
+            activation_bits=8,
+            metadata_bits=4,
         )
 
     def test_rejects_unknown_scale_provenance(self):

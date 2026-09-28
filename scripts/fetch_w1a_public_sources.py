@@ -22,34 +22,38 @@ from prepare_w1a_data import prepare, sha256
 ROOT = Path(__file__).resolve().parents[1]
 SOURCES = {
     "dolly": {
-        "uri": ("https://huggingface.co/datasets/databricks/databricks-dolly-15k/resolve/"
-                "bdd27f4d94b9c1f951818a7da7fd7aeea5dbff1a/databricks-dolly-15k.jsonl"),
+        "uri": (
+            "https://huggingface.co/datasets/databricks/databricks-dolly-15k/resolve/"
+            "bdd27f4d94b9c1f951818a7da7fd7aeea5dbff1a/databricks-dolly-15k.jsonl"
+        ),
         "revision": "bdd27f4d94b9c1f951818a7da7fd7aeea5dbff1a",
         "license": "CC-BY-SA-3.0",
         "upstream_sha256": "2df9083338b4abd6bceb5635764dab5d833b393b55759dffb0959b6fcbf794ec",
         "domain": "prose",
     },
     "gsm8k": {
-        "uri": ("https://raw.githubusercontent.com/openai/grade-school-math/"
-                "3101c7d5072418e28b9008a6636bde82a006892c/"
-                "grade_school_math/data/train.jsonl"),
+        "uri": (
+            "https://raw.githubusercontent.com/openai/grade-school-math/"
+            "3101c7d5072418e28b9008a6636bde82a006892c/"
+            "grade_school_math/data/train.jsonl"
+        ),
         "revision": "3101c7d5072418e28b9008a6636bde82a006892c",
         "license": "MIT",
         "upstream_sha256": "17f347dc51477c50d4efb83959dbb7c56297aba886e5544ee2aaed3024813465",
         "domain": "reasoning",
     },
     "mbpp": {
-        "uri": ("https://raw.githubusercontent.com/google-research/google-research/"
-                "d36068b845da4c2b24927fee2cea1e6ef98dadda/mbpp/mbpp.jsonl"),
+        "uri": (
+            "https://raw.githubusercontent.com/google-research/google-research/"
+            "d36068b845da4c2b24927fee2cea1e6ef98dadda/mbpp/mbpp.jsonl"
+        ),
         "revision": "d36068b845da4c2b24927fee2cea1e6ef98dadda",
         "license": "CC-BY-4.0",
         "upstream_sha256": "ccf64ceae9c5403bf50a044cb6d505bfd2a2963ee58338ba268fd65beab92a9f",
         "domain": "code",
     },
 }
-DOLLY_CATEGORIES = {
-    "brainstorming", "creative_writing", "general_qa", "open_qa", "summarization"
-}
+DOLLY_CATEGORIES = {"brainstorming", "creative_writing", "general_qa", "open_qa", "summarization"}
 
 
 def download(name: str, raw_dir: Path, *, offline: bool) -> Path:
@@ -94,28 +98,39 @@ def transformed_rows(name: str, raw: Path):
                 content = instruction + (f"\n\nContext:\n{context}" if context else "")
                 topic = (
                     hashlib.sha256(context.casefold().encode()).hexdigest()[:16]
-                    if context else None
+                    if context
+                    else None
                 )
-                row = {"id": f"line-{line_number:06d}", "messages": [
-                    {"role": "user", "content": content}],
-                    "group_id": f"line-{line_number:06d}", "category": source["category"]}
+                row = {
+                    "id": f"line-{line_number:06d}",
+                    "messages": [{"role": "user", "content": content}],
+                    "group_id": f"line-{line_number:06d}",
+                    "category": source["category"],
+                }
                 if topic:
                     row["topic_id"] = f"context-{topic}"
                 yield row
             elif name == "gsm8k":
                 content = source["question"].strip()
-                yield {"id": f"train-{line_number:06d}", "messages": [
-                    {"role": "user", "content": content}],
-                    "group_id": f"train-{line_number:06d}"}
+                yield {
+                    "id": f"train-{line_number:06d}",
+                    "messages": [{"role": "user", "content": content}],
+                    "group_id": f"train-{line_number:06d}",
+                }
             elif name == "mbpp":
                 task = source["task_id"]
                 tests = "\n".join(source["test_list"])
-                content = ("Write a Python function for this task.\n\n"
-                           + source["text"].strip()
-                           + "\n\nYour code should pass these tests:\n" + tests)
-                yield {"id": f"task-{task}", "messages": [
-                    {"role": "user", "content": content}],
-                    "group_id": f"task-{task}"}
+                content = (
+                    "Write a Python function for this task.\n\n"
+                    + source["text"].strip()
+                    + "\n\nYour code should pass these tests:\n"
+                    + tests
+                )
+                yield {
+                    "id": f"task-{task}",
+                    "messages": [{"role": "user", "content": content}],
+                    "group_id": f"task-{task}",
+                }
 
 
 def build_catalog(directory: Path, *, offline: bool) -> dict:
@@ -136,45 +151,68 @@ def build_catalog(directory: Path, *, offline: bool) -> dict:
         try:
             with open(temporary, "wb") as target:
                 for row in transformed_rows(name, raw_paths[name]):
-                    target.write(json.dumps(row, ensure_ascii=False, sort_keys=True,
-                                            separators=(",", ":")).encode() + b"\n")
+                    target.write(
+                        json.dumps(
+                            row, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+                        ).encode()
+                        + b"\n"
+                    )
                     counts[name] += 1
             os.replace(temporary, normalized)
         finally:
             if os.path.exists(temporary):
                 os.unlink(temporary)
-        entries.append({"id": name, "uri": spec["uri"], "revision": spec["revision"],
-                        "license": spec["license"], "upstream_sha256": spec["upstream_sha256"],
-                        "transform": "fetch_w1a_public_sources_v1",
-                        "transform_sha256": transform_hash,
-                        "domain": spec["domain"], "path": f"normalized/{name}.jsonl",
-                        "sha256": sha256(normalized)})
+        entries.append(
+            {
+                "id": name,
+                "uri": spec["uri"],
+                "revision": spec["revision"],
+                "license": spec["license"],
+                "upstream_sha256": spec["upstream_sha256"],
+                "transform": "fetch_w1a_public_sources_v1",
+                "transform_sha256": transform_hash,
+                "domain": spec["domain"],
+                "path": f"normalized/{name}.jsonl",
+                "sha256": sha256(normalized),
+            }
+        )
     catalog = {"schema": "w1a_source_catalog_v1", "sources": entries}
     catalog_path.write_text(json.dumps(catalog, indent=2, sort_keys=True) + "\n")
-    return {"catalog": catalog_path, "counts": dict(counts),
-            "catalog_sha256": sha256(catalog_path)}
+    return {"catalog": catalog_path, "counts": dict(counts), "catalog_sha256": sha256(catalog_path)}
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--directory", type=Path,
-                        default=ROOT / "data/w1a-public-sources/pinned-v1")
+    parser.add_argument(
+        "--directory", type=Path, default=ROOT / "data/w1a-public-sources/pinned-v1"
+    )
     parser.add_argument("--offline", action="store_true")
-    parser.add_argument("--freeze-output", type=Path,
-                        help="create a new 2k training + 192/192 dev/final split directory")
+    parser.add_argument(
+        "--freeze-output",
+        type=Path,
+        help="create a new 2k training + 192/192 dev/final split directory",
+    )
     parser.add_argument("--seed", type=int, default=1429)
     args = parser.parse_args()
     report = build_catalog(args.directory, offline=args.offline)
     if args.freeze_output:
-        manifest = prepare(report["catalog"], args.freeze_output, 2000, 2000,
-                           192, 192, args.seed, 64, 24000, 0.88)
+        manifest = prepare(
+            report["catalog"], args.freeze_output, 2000, 2000, 192, 192, args.seed, 64, 24000, 0.88
+        )
         report["freeze_manifest"] = str(args.freeze_output / "manifest.json")
         report["freeze_manifest_sha256"] = sha256(args.freeze_output / "manifest.json")
         report["split_counts"] = {
             name: value["prompts_count"] for name, value in manifest["files"].items()
         }
-    print(json.dumps({key: str(value) if isinstance(value, Path) else value
-                      for key, value in report.items()}, sort_keys=True))
+    print(
+        json.dumps(
+            {
+                key: str(value) if isinstance(value, Path) else value
+                for key, value in report.items()
+            },
+            sort_keys=True,
+        )
+    )
 
 
 if __name__ == "__main__":

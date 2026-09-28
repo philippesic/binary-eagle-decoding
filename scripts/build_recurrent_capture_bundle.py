@@ -158,8 +158,11 @@ def build_bundle(
     if shard_manifest_path is not None:
         ordered_ids = [row["id"] for row in read_jsonl(train_prompts)]
         validate_shard_manifest(
-            shard_manifest_path, train_prompts, prompt_hash,
-            expected_prompt_count, ordered_ids,
+            shard_manifest_path,
+            train_prompts,
+            prompt_hash,
+            expected_prompt_count,
+            ordered_ids,
         )
     rows_report = _json_object(
         rows_dir / "preparation.json", "recurrent_native_rows_preparation_v1"

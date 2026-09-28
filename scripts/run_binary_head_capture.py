@@ -252,8 +252,13 @@ def server_command(args, spec):
 
 
 def audit_recurrent_files(
-    cell: Path, manifest: dict, target_vocab_size: int, logit_limit: int, feature_limit: int,
-    *, require_full_logits: bool = False,
+    cell: Path,
+    manifest: dict,
+    target_vocab_size: int,
+    logit_limit: int,
+    feature_limit: int,
+    *,
+    require_full_logits: bool = False,
 ) -> None:
     """Reject incomplete raw streams before marking a recurrent cell complete."""
     heads = read_jsonl(cell / "heads.jsonl")
@@ -394,7 +399,8 @@ def run_cell(args, name, spec, prompts, forced=None):
         "ordered_prompt_ids": [prompt["id"] for prompt in prompts],
         "shard_manifest_sha256": (
             sha256(Path(args.shard_manifest))
-            if getattr(args, "shard_manifest", None) is not None else None
+            if getattr(args, "shard_manifest", None) is not None
+            else None
         ),
         "task_prompt_ids": {},
         "requests": [],
@@ -567,7 +573,8 @@ def run(args):
             "prompt_count": len(prompts),
             "shard_manifest_sha256": (
                 sha256(Path(args.shard_manifest))
-                if getattr(args, "shard_manifest", None) is not None else None
+                if getattr(args, "shard_manifest", None) is not None
+                else None
             ),
         },
     )
@@ -588,7 +595,8 @@ def run(args):
                     "train_prompt_count": len(prompts),
                     "shard_manifest_sha256": (
                         sha256(Path(args.shard_manifest))
-                        if getattr(args, "shard_manifest", None) is not None else None
+                        if getattr(args, "shard_manifest", None) is not None
+                        else None
                     ),
                     "task_prompt_ids_path": task_map.name,
                     "task_prompt_ids_sha256": sha256(task_map),

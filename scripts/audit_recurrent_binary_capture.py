@@ -54,7 +54,10 @@ def resolve_prompt_expectation(
 
 
 def validate_shard_manifest(
-    shard_path: Path, prompts_path: Path, expected_hash: str, expected_count: int,
+    shard_path: Path,
+    prompts_path: Path,
+    expected_hash: str,
+    expected_count: int,
     prompt_ids: list[str],
 ) -> dict:
     """Bind a frozen train shard to its exact ordered prompts and parent split."""
@@ -289,8 +292,11 @@ def audit_capture(
     shard = None
     if shard_manifest_path is not None:
         shard = validate_shard_manifest(
-            shard_manifest_path, prompts_path, expected_prompt_hash,
-            expected_prompt_count, prompt_ids,
+            shard_manifest_path,
+            prompts_path,
+            expected_prompt_hash,
+            expected_prompt_count,
+            prompt_ids,
         )
         if (
             shard.get("target_vocab_size") != manifest.get("target_vocab_size")
@@ -452,8 +458,11 @@ def main() -> None:
         args.expected_prompt_sha256, args.expected_prompt_count
     )
     report = audit_capture(
-        args.manifest, args.prompts, expected_hash,
-        expected_prompt_count=expected_count, shard_manifest_path=args.shard_manifest,
+        args.manifest,
+        args.prompts,
+        expected_hash,
+        expected_prompt_count=expected_count,
+        shard_manifest_path=args.shard_manifest,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
