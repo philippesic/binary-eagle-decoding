@@ -30,6 +30,13 @@ SELECTED = {
     "ffn_out-0",
     "l_out-0",
 }
+CAPTURE_MODES = {
+    "all": SELECTED,
+    "output_only": {"l_out-0"},
+    "attn_norm": {"attn_norm-0", "l_out-0"},
+    "qkv_normed": {"Qcur_normed-0", "Kcur_normed-0", "Vcur-0", "l_out-0"},
+    "ffn": {"ffn_inp-0", "ffn_norm-0", "ffn_out-0", "l_out-0"},
+}
 
 
 def sha256(path: Path) -> str:
@@ -123,7 +130,9 @@ def prepare(root: Path, target: Path, output: Path) -> dict:
     return report
 
 
-def _index(root: Path, *, output_only: bool = False) -> tuple[dict[str, list[dict]], dict]:
+def _index(root: Path, *, mode: str = "all") -> tuple[dict[str, list[dict]], dict]:
+    if mode not in CAPTURE_MODES:
+        raise ValueError("unknown block-0 capture mode")
     entries: dict[str, list[dict]] = {}
     file_hashes = {}
     rows = (root / "index.tsv").read_text().splitlines()
@@ -169,7 +178,7 @@ def _index(root: Path, *, output_only: bool = False) -> tuple[dict[str, list[dic
         entries.setdefault(name, []).append(entry)
         file_hashes[filename] = sha256(file)
         total_bytes += size
-    expected = {"l_out-0"} if output_only else SELECTED
+    expected = CAPTURE_MODES[mode]
     if set(entries) != expected or total_bytes > 16 * 1024 * 1024:
         raise ValueError("block-0 tensor capture is incomplete or exceeds cap")
     return entries, {"index.tsv": sha256(root / "index.tsv"), **file_hashes}
@@ -183,9 +192,7 @@ def _tensor(root: Path, entry: dict) -> np.ndarray:
     return np.array(tensor, copy=True)
 
 
-def audit(
-    root: Path, target: Path, capture: Path, helper: Path, *, output_only: bool = False
-) -> dict:
+def audit(root: Path, target: Path, capture: Path, helper: Path, *, mode: str = "all") -> dict:
     prefix, ladder, _ = sealed_ladder(root, target)
     prepared = json.loads((capture / "prepare.json").read_text())
     if (
@@ -194,7 +201,7 @@ def audit(
         or prepared["source_sha256"]["tokens_i32"] != sha256(capture / "tokens.i32")
     ):
         raise ValueError("block-0 probe does not use the sealed prefix")
-    entries, hashes = _index(capture, output_only=output_only)
+    entries, hashes = _index(capture, mode=mode)
     output_rows = entries["l_out-0"]
     if len(output_rows) != 1:
         raise ValueError("block-0 output is missing or repeated")
@@ -208,7 +215,7 @@ def audit(
         "hardware": {"machine": platform.machine(), "precision": "CUDA target F16 GGUF"},
         "prompt_id": PROMPT_ID,
         "prefill_tokens": TOKENS,
-        "capture_mode": "output_only" if output_only else "all",
+        "capture_mode": mode,
         "captured_tensors": {name: len(values) for name, values in entries.items()},
         "block_output": {
             "elements": output.size,
@@ -236,7 +243,7 @@ def main() -> None:
     parser.add_argument("--capture-dir", type=Path, required=True)
     parser.add_argument("--helper", type=Path)
     parser.add_argument("--report", type=Path)
-    parser.add_argument("--output-only", action="store_true")
+    parser.add_argument("--capture-mode", choices=tuple(CAPTURE_MODES), default="all")
     args = parser.parse_args()
     if args.mode == "prepare":
         if args.helper is not None or args.report is not None:
@@ -250,7 +257,7 @@ def main() -> None:
             args.target_gguf,
             args.capture_dir,
             args.helper,
-            output_only=args.output_only,
+            mode=args.capture_mode,
         )
         args.report.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
     print(json.dumps({key: result[key] for key in ("schema", "status") if key in result}))

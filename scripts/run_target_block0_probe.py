@@ -12,7 +12,7 @@ import sys
 import time
 from pathlib import Path
 
-from check_target_block0_capture import audit, prepare, sha256
+from check_target_block0_capture import CAPTURE_MODES, audit, prepare, sha256
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -27,7 +27,7 @@ def main() -> None:
     parser.add_argument("--ladder-dir", type=Path, required=True)
     parser.add_argument("--target-gguf", type=Path, required=True)
     parser.add_argument("--reuse-build-run-id")
-    parser.add_argument("--capture-mode", choices=("all", "output_only"), default="all")
+    parser.add_argument("--capture-mode", choices=tuple(CAPTURE_MODES), default="all")
     args = parser.parse_args()
     run_dir = ROOT / "runs" / args.run_id
     if not (run_dir / "state.json").is_file():
@@ -135,10 +135,10 @@ def main() -> None:
     _run(compiler, timeout=120)
     prepare(ladder, target, capture)
     helper_command = [str(helper), str(target), str(capture / "tokens.i32"), str(capture)]
-    if args.capture_mode == "output_only":
-        helper_command.append("output_only")
+    if args.capture_mode != "all":
+        helper_command.append(args.capture_mode)
     _run(helper_command, timeout=300)
-    report = audit(ladder, target, capture, helper, output_only=args.capture_mode == "output_only")
+    report = audit(ladder, target, capture, helper, mode=args.capture_mode)
     report["elapsed_seconds"] = time.monotonic() - started
     report["source_sha256"]["recipe"] = sha256(run_dir / "recipe.json")
     report["source_sha256"]["cmake_cache"] = sha256(build / "CMakeCache.txt")

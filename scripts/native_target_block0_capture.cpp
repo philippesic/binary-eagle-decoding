@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <fstream>
 #include <map>
+#include <set>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -30,7 +31,7 @@ struct capture_state {
     std::map<std::string, int> seen;
     size_t bytes_written = 0;
     bool complete = false;
-    bool output_only = false;
+    std::set<std::string> enabled;
     std::string error;
 
     static bool callback(ggml_tensor * tensor, bool ask, void * user_data) {
@@ -38,7 +39,7 @@ struct capture_state {
         const std::string name = tensor->name;
         const auto selected = SELECTED.find(name);
         if (selected == SELECTED.end() || state.complete || !state.error.empty()) return false;
-        if (state.output_only && name != "l_out-0") return false;
+        if (!state.enabled.count(name)) return false;
         if (ask) return true;
         try {
             if (tensor->type != GGML_TYPE_F32 || ggml_nelements(tensor) != selected->second * TOKENS) {
@@ -92,9 +93,19 @@ int main(int argc, char ** argv) {
         auto tokens = read_tokens(argv[2]);
         capture_state state;
         state.directory = argv[3];
-        if (argc == 5) {
-            if (std::string(argv[4]) != "output_only") return 2;
-            state.output_only = true;
+        const std::string mode = argc == 5 ? argv[4] : "all";
+        if (mode == "all") {
+            for (const auto & [name, width] : SELECTED) { (void) width; state.enabled.insert(name); }
+        } else if (mode == "output_only") {
+            state.enabled = {"l_out-0"};
+        } else if (mode == "attn_norm") {
+            state.enabled = {"attn_norm-0", "l_out-0"};
+        } else if (mode == "qkv_normed") {
+            state.enabled = {"Qcur_normed-0", "Kcur_normed-0", "Vcur-0", "l_out-0"};
+        } else if (mode == "ffn") {
+            state.enabled = {"ffn_inp-0", "ffn_norm-0", "ffn_out-0", "l_out-0"};
+        } else {
+            return 2;
         }
         state.index.open(state.directory + "/index.tsv", std::ios::out | std::ios::trunc);
         if (!state.index) throw std::runtime_error("cannot open block-0 capture index");
@@ -142,7 +153,7 @@ int main(int argc, char ** argv) {
         }
         for (const auto & [name, width] : SELECTED) {
             (void) width;
-            if (state.output_only && name != "l_out-0") continue;
+            if (!state.enabled.count(name)) continue;
             if (!state.seen.count(name)) throw std::runtime_error("missing block-0 tensor: " + name);
         }
         printf("captured %zu bytes of block-0 tensors\n", state.bytes_written);
