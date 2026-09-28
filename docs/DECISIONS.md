@@ -306,6 +306,21 @@ into the student. One CPU row does not settle the exact-versus-predeclared-
 tolerance policy or authorize all-body optimization. See the
 [stage report](../experiments/recurrent-binary-ffn-stage-parity.md).
 
+**CPU forward-parity evidence (2026-09-28):** an opt-in, no-grad Apple M3
+Max CPU student now uses pinned ggml RoPE, Flash Attention and vector
+SiLU with ordered W1/A16 candidate-D projections. Its ordinary context
+rebuild and draft-step calls match all checked native K/V bytes, graph
+states and captured head-logit probes across prose and reasoning first
+rounds plus one reasoning accepted-draft catch-up (13 depths total).
+This closes those bounded CPU forward comparisons, including the earlier
+SiLU gap. It does not validate CUDA/SM75 arithmetic, independent target
+feature reproduction, all 96 training trajectories, full mapped logits
+or the backward derivative. The user-owned choice remains either to
+establish an exact training-backend path or to predeclare a bounded
+numeric/state and accepted-trajectory tolerance before optimization.
+Neither option nor the proposed all-body budget is approved by these
+CPU diagnostics. See the [integrated report](../experiments/recurrent-binary-integrated-cpu-diagnostic.md).
+
 **Exact-prefix row clarification (2026-09-28):** the native verifier computes
 target logits for every proposed prefix in a speculative batch, and the cloned
 sampler advances along each proposed token even after an earlier live

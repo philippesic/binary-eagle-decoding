@@ -1405,3 +1405,44 @@ its unmodified five-depth calls on the sealed prose and reasoning
 training rounds, including accepted-prefix reconstruction. Keep the
 default differentiable path unchanged until the user chooses a numeric
 policy and training budget.
+
+## Thirty-fourth goal turn: integrated exact CPU diagnostic forward
+
+- Commit `7cf1ef7` adds an opt-in `native_cpu_diagnostic` path to
+  `NativeStepAdapter` with pinned ggml CPU RoPE, Flash Attention and
+  vector SiLU. It requires Apple arm64, exact helper/library hashes,
+  the frozen 32-Q/8-KV × 128-head EAGLE geometry, ordered candidate-D
+  binary projections and `torch.no_grad()`. The path rejects
+  gradient-enabled calls; it supplies no chosen training derivative.
+  The existing F32 default and attention-only/F32-surrogate modes remain
+  available. The [integrated report](../../experiments/recurrent-binary-integrated-cpu-diagnostic.md)
+  gives implementation scope and limits.
+- The adapter's ordinary `rebuild_prefix_cache` and `decode_step` calls
+  passed three sealed Apple M3 Max CPU training cases, with no
+  captured-cache injection or per-stage substitutions: prose first
+  round (31,744/31,744 F16 context K/V each, five depths), reasoning
+  first round (47,104/47,104 each, five depths), and reasoning
+  post-acceptance round (50,176/50,176 each, three depths). All 13
+  depths match every checked native graph tap and K/V write, all
+  **33,280/33,280** normalized head-state F32 values, **104/104**
+  captured head-logit probes, and captured argmax/label logits,
+  mapped argmax IDs and verifier-label ranks. The ignored report
+  SHA256 values are `9b6744fde999fcd19f901bacd4dd9dee3005c6d66fe7b2118374d7ec230973a0`
+  (prose), `8b358c1398b62bff05f5f9723510b1b0aa5d1191f447c6f6e852cc8d7636e1e8`
+  (reasoning first) and `a5595125ba24e95b13b6b0a565f71b66bc42a31293a315ee420caadc1ddd398a`
+  (reasoning post-acceptance).
+- The real-input gates, 62 native CPU unit tests, three real-step input
+  checks and Ruff lint/format passed. No target forward, backward,
+  optimizer, GPU job, local server, final prompt or Q4_0 evaluation
+  ran; the RTX 5080 is free. The diagnostics cover two frozen prompts
+  and one accepted-draft catch-up, not all 96 training trajectories,
+  full mapped-vocabulary logits, CUDA/SM75 execution, target-feature
+  alignment or a training tolerance. The user still owns exact versus
+  numerical/trajectory acceptance and any all-body optimizer budget.
+
+**Next gate:** broaden the opt-in CPU forward across another sealed
+training case or later cache rewrite, and examine whether target-feature
+alignment on RTX 5080 needs an exact backend path or a predeclared
+numeric/trajectory gate. Keep this no-grad CPU diagnostic separate from
+any QAT recipe; Q4_0 remains the primary future acceptance, latency and
+throughput comparison.

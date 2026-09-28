@@ -6,17 +6,17 @@ The target/verifier model precision remains as frozen for each experiment.
 
 **Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), parity and capture preparation. The user has authorized the free RTX 5080 for needed work; no all-body training budget has been approved. **Latest completed goal:** [mixed precision rescue and frozen-body head adaptation on RTX 5080](goals/binary-rescue-head-5080.md), completed 2026-09-28 UTC. The preceding [binary scale fitting goal](goals/binary-scale-fitting-5080.md) completed 2026-09-27 UTC.
 
-**Latest checkpoint (2026-09-28 UTC):** a sealed Apple M3 Max CPU replay
-of reasoning round 2 followed one accepted draft and reconstructed its
-49-position context from frozen features, including the four-time
-rewrite at position 48. All 100,352 stored F16 context K/V values,
-three new draft K/V writes, query RoPE, attention, FFN outputs, head
-states and 24 captured head-logit probes matched native bitwise. The
-[post-acceptance report](../experiments/recurrent-binary-postacceptance-cpu.md)
-and [goal checkpoint](goals/recurrent-binary-body-head.md#thirty-third-goal-turn-post-acceptance-cpu-parity)
-join the earlier [reasoning](../experiments/recurrent-binary-reasoning-multidepth-cpu.md)
-and [prose](../experiments/recurrent-binary-prose-multidepth-cpu.md)
-first-round checks. Broad trajectories and CUDA/SM75 parity remain open.
+**Latest checkpoint (2026-09-28 UTC):** an opt-in, forward-only Apple M3 Max
+CPU mode now runs pinned ggml RoPE, attention and vector SiLU inside the
+student's ordinary context rebuild and draft-step calls. It matched native
+K/V cache bytes and every checked graph/head boundary bitwise on the prose
+first round, reasoning first round and reasoning post-acceptance round:
+13 draft depths, 33,280 normalized state values and 104 captured logit
+probes. The [integrated report](../experiments/recurrent-binary-integrated-cpu-diagnostic.md)
+and [goal checkpoint](goals/recurrent-binary-body-head.md#thirty-fourth-goal-turn-integrated-exact-cpu-diagnostic-forward)
+record hashes, tests and limits. The default differentiable student path
+is unchanged; the diagnostic rejects gradient-enabled calls. Broad
+trajectories, target-feature alignment and CUDA/SM75 parity remain open.
 No worker, local server or remote job is active; the 5080 is free.
 Training, final-set and Q4_0 evaluation remain gated.
 
