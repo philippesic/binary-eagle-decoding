@@ -70,6 +70,19 @@ target-feature and
 whole-drafter state/logit parity remain open; the capture bundle is still
 training-ineligible pending a user-owned numeric gate and training budget.
 
+**Full-prefix feature checkpoint (2026-09-28 UTC):** the sealed 96-request
+capture supplied 3,112 complete training prefill rows. On RTX 5080 CUDA/F16,
+independent eager forwards differed from native tap-2/18/33 features by
+median relative row L2 of 0.293/0.538/0.488%. One tap-18 row reached
+10.014%; the same row reached 12.135% with independent SDPA attention.
+An Apple M3 Max ggml CPU layer-0 operator probe found near-exact RMS norm
+but nonzero pre-attention Q/K/V projection differences from F32 references.
+The [goal checkpoint](goals/recurrent-binary-body-head.md#eighteenth-goal-turn-full-training-prefix-feature-distribution-and-layer-0-probe)
+and [feature report](../experiments/recurrent-binary-target-feature-parity.md)
+record hashes, hardware and limits. Both supervised GPU comparisons exited
+zero and released the 5080. Exact target-feature and whole-drafter parity,
+numeric gate, training budget and Q4_0 evaluation remain open.
+
 **Handoff checkpoint (2026-09-28 06:35 UTC):** the active goal file records
 the current objective, pushed commits, CPU tests, projected K/V write
 comparison, pending 5080 clarification and exact next actions. Code round 2

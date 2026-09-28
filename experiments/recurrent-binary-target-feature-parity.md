@@ -74,3 +74,71 @@ check showed 0% utilization, 1,372 MiB whole-device use and no compute app.
 No development or final prompt was used.
 The SDPA counterpart is preserved beside it under
 `runs/recurrent-target-feature-sdpa-cuda-20260928/comparison.json`.
+
+## Complete frozen training-prefix distribution
+
+The full-capture diagnostic in parent commit `4327679` validated source file
+hashes, all 96 frozen task/prompt owners, streamed target-feature row ancestry,
+microbatch row identities and exact first-round prefixes. It selected 3,112
+prefill rows (22–61 tokens per prompt) from the previously sealed 96-request
+capture. The capture manifest SHA256 is
+`2b2f49861c010214d2e424ad49053c829acdd6c6dafccbad721406390ed888fd`;
+raw feature values SHA256 is
+`d2b4602a3c6749d9bd27bea8635a5113ea66bfca469525707d09c5b5714e1c7a`.
+The diagnostic used the same pinned target GGUF, D draft and local HF source
+as the one-prompt CUDA check. All selected prompt embedding rows and sampled
+gate weights matched the F16 GGUF. Six synthetic checks and Ruff passed.
+
+Two supervised RTX 5080 forwards used PyTorch 2.14.0+cu130 and Transformers
+4.57.6 with F16-rounded source weights and full-prefix `use_cache=False`
+computation. The independent attention implementations were eager and SDPA;
+the native capture used its own CUDA Flash Attention path. Values below are
+relative row L2 errors against the native F32 feature rows, across all 3,112
+rows per tap:
+
+| Tap | Eager median / p99 / max | SDPA median / p99 / max |
+| --- | --- | --- |
+| 2 | 0.293% / 0.830% / 2.433% | 0.288% / 0.797% / 2.544% |
+| 18 | 0.538% / 1.387% / 10.014% | 0.531% / 1.270% / 12.135% |
+| 33 | 0.488% / 1.687% / 2.779% | 0.480% / 1.641% / 2.908% |
+
+The tap-18 maximum in both runs is frozen training prompt
+`qat-revisit-train-code-data-validation-03` at prefill position 3 (raw feature
+row 26,465). Its native tap-18 row has L2 norm 58.85; the relative outlier
+is not solely a near-zero denominator. This diagnostic cannot attribute the
+outlier to one native operator. The source hashes in the two reports are
+identical. Their SHA256 values are
+`49d38214b1b59ad1597ee3111075f87fa05be9efa8ad24d91314c8f2374e93dd`
+(eager) and
+`09a51dfb61361b2c3f7f6cb24aa2656d21a6673fc754090808353b0314cdceca`
+(SDPA). The ignored reports remain on the registered 5080 host at
+`checkouts/recurrent-gpu-capture-20260928/runs/recurrent-target-feature-full96-20260928/report.json`
+and the corresponding `recurrent-target-feature-full96-sdpa-20260928` run.
+Both supervisors finished with exit zero, process groups stopped, and the
+device returned to 0% utilization, 1,372 MiB whole-device use and no compute
+app. No training or development/final prompts were used.
+
+## Layer-0 ggml CPU operator probe
+
+Parent commit `c798fd3` adds a standalone ggml graph for the pinned 32-token
+prose prefix on Apple M3 Max CPU, one thread, with CUDA/Metal/Accelerate/BLAS
+disabled. It checks bitwise HF-to-GGUF identity for the prompt embeddings,
+layer-0 norm and complete Q/K/V weights. The graph measures native RMS norm
+and pre-RoPE Q/K/V projections before any attention. Against a Torch F32
+reference, norm RMS error was `2.65e-9` (61,283/81,920 values exact).
+
+| Pre-RoPE projection | Native versus F32 RMS | Median relative row L2 | RMS after F16-casting normalized F32 input |
+| --- | ---: | ---: | ---: |
+| Q | 8.31e-5 | 0.086% | 8.27e-5 |
+| K | 9.16e-5 | 0.087% | 9.11e-5 |
+| V | 5.92e-5 | 0.142% | 5.88e-5 |
+
+Two native-fixture checks, Ruff and format checks passed. The ignored
+[operator report](../results/recurrent-layer0-projection-final-20260928.json)
+has SHA256
+`d7bd1dd9b2b9beeca550682b67b142fdf8a29f92b1a5c82b60143edd696b2d62`.
+It records target, capture, HF shard, helper and CPU library hashes. The
+small input-cast effect leaves an independent projection arithmetic difference
+before attention. This is a CPU operand graph, not the native target's entire
+CUDA graph, and it does not explain the tap-18 outlier or define a training
+tolerance.

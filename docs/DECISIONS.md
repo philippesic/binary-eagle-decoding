@@ -235,6 +235,14 @@ an acceptable training tolerance or an alternate exact backend path.
 Changing only the independent 5080 F16 attention from eager to PyTorch SDPA
 left median errors at 0.306/0.434/0.382%, a small mixed change from
 0.311/0.426/0.385%; attention implementation alone did not close the gap.
+The complete 96-prompt training-prefix check found median errors of
+0.293/0.538/0.488% across taps 2/18/33, but also one **10.014%** tap-18
+row (12.135% with SDPA) on the same prompt/position. An isolated ggml CPU
+layer-0 probe found projection differences before attention despite nearly
+exact norm and bitwise source operands. These results strengthen the case for
+investigating exact operator behavior before setting a tolerance; they do
+not themselves authorize a threshold, optimization budget or final-set use.
+See the [feature report](../experiments/recurrent-binary-target-feature-parity.md).
 
 **Exact-prefix row clarification (2026-09-28):** the native verifier computes
 target logits for every proposed prefix in a speculative batch, and the cloned

@@ -6,10 +6,11 @@ user decision permits the required GPU work. The pinned FP16 target/verifier
 and draft vocabulary map stay frozen. [Trial protocol](../../experiments/recurrent-binary-qat-plan.md).
 
 **State (2026-09-28 UTC): active, parity and capture preparation.** The user
-lifted the earlier GPU restriction for the free RTX 5080. No GPU experiment,
-remote run directory, model training, final-set use, or model-quality result
-exists for this goal. The native Codex Goal in this task has the same
-objective; this file and `docs/STATUS.md` are the durable project checkpoint.
+lifted the earlier GPU restriction for the free RTX 5080. The frozen training
+capture and bounded feature diagnostics have run there; no model training,
+final-set use, or model-quality result exists for this goal. The native Codex
+Goal in this task has the same objective; this file and `docs/STATUS.md` are
+the durable project checkpoint.
 
 ## Current findings and work
 
@@ -780,3 +781,48 @@ remaining target-feature difference at the first divergent layer/row and
 continue full-drafter attention/state/logit parity checks. Present a
 concrete tolerance or exact-backend path with observed limits for the
 user-owned research decision before any all-body training budget is used.
+
+## Eighteenth goal turn: full training-prefix feature distribution and layer-0 probe
+
+- Parent commit `4327679` added a strict full-capture feature diagnostic;
+  six synthetic tests and Ruff passed. It verified all 96 frozen training
+  request owners, raw hashes, complete prefill ancestry and first-round
+  prefixes, selecting **3,112 prefill rows** of length 22–61. The supervised
+  RTX 5080 CUDA/F16 eager forward finished with exit zero. Median relative
+  row L2 discrepancy at target taps 2/18/33 was **0.293/0.538/0.488%**;
+  p99 was 0.830/1.387/1.687%. Maxima were 2.433/10.014/2.779%.
+  The 10.014% tap-18 row belongs to frozen training prompt
+  `qat-revisit-train-code-data-validation-03`, position 3. All selected
+  embedding rows and sampled gate weights matched the F16 GGUF. The ignored
+  eager report SHA256 is
+  `49d38214b1b59ad1597ee3111075f87fa05be9efa8ad24d91314c8f2374e93dd`.
+- A second supervised full 96-prompt CUDA/F16 forward changed only independent
+  attention to SDPA. Median errors became 0.288/0.531/0.480%; maxima became
+  2.544/12.135/2.908%. The same tap-18 position rose to 12.135%.
+  Source hashes were identical to the eager run. SDPA report SHA256 is
+  `09a51dfb61361b2c3f7f6cb24aa2656d21a6673fc754090808353b0314cdceca`.
+  Both report files remain outside Git in their separate supervised run
+  directories beneath the isolated 5080 checkout. Both supervisors exited
+  zero; no project process or compute app remained, and the GPU returned to
+  0% utilization and 1,372 MiB whole-device use. The tmux SSH session was
+  closed. These independent forwards do not establish a safe numeric gate.
+- Parent commit `c798fd3` adds an Apple M3 Max CPU ggml layer-0 norm/QKV
+  operator probe. The pinned 32-token prose prefix embeddings, layer-0 norm
+  and Q/K/V weights matched the F16 GGUF source. Native norm versus an F32
+  reference differed by RMS `2.65e-9`; native pre-RoPE Q/K/V projections
+  versus F32 matmul from the native norm differed by RMS
+  `8.31e-5/9.16e-5/5.92e-5` and median relative row L2
+  `0.086/0.087/0.142%`. Explicitly F16-casting the normalized input only
+  reduced projection RMS to `8.27e-5/9.11e-5/5.88e-5`. Two focused
+  native-fixture tests, Ruff and formatting passed. Ignored report SHA256:
+  `d7bd1dd9b2b9beeca550682b67b142fdf8a29f92b1a5c82b60143edd696b2d62`.
+  This identifies a CPU projection arithmetic difference before attention;
+  it is not a native CUDA whole-model graph comparison and does not attribute
+  the 10–12% tap-18 outlier. The probe worktree and branch were retired after
+  equivalent content reached `main`.
+
+**Next gate:** investigate the first divergent target operation and the
+large tap-18 outlier on the captured training prefix. Preserve the sealed
+96-request source. Keep the full-drafter parity and user-owned numeric gate,
+training budget, and final-set evaluation open. No optimization or Q4_0
+performance comparison ran in this turn.
