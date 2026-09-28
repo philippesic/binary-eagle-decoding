@@ -71,3 +71,34 @@ This three-prompt training subset does not establish the proposed 96-prompt
 capture, target-feature exactness, full-drafter state/K/V parity, any
 trained-model quality gain, or native acceptance/latency/throughput against
 Q4_0 EAGLE. Those remain explicit gates.
+
+## Later-round decoder boundary after native acceptance
+
+The CPU adapter and native graph were also joined at one later round in
+each prompt, chosen after an earlier native accepted draft. Each adapter
+run rebuilt its context cache from the retained raw target-feature rows;
+the native graph execution was selected by the round's depth-zero head
+state and the frozen D output norm. The join RMS was below `1.3e-7` in
+all three cases, with the next nearest graph candidate above `0.48`.
+
+| Prompt/round | Native group | Fused-input max difference | Unrotated Q/K/V | RoPE Q/K largest difference | Attention-output max difference | Prenorm max difference | Mapped seed top ID |
+| --- | ---: | ---: | --- | ---: | ---: | ---: | ---: |
+| Prose round 3 | 20 | `4.8e-7` | bitwise exact | `1.16e-5` | `0.011560` | `0.014145` | 2176 |
+| Code round 2 | 14 | 0 | bitwise exact | `1.56e-5` | `0.011746` | `0.014496` | 13027 |
+| Reasoning round 2 | 14 | `2.4e-7` | bitwise exact | `1.38e-5` | `0.009838` | `0.018600` | 12 |
+
+The Python and native mapped seed top IDs matched in all three joined
+rounds. This shows the captured accepted-prefix feature ancestry and
+current-student rebuild reach the same **pre-attention projection
+operands** after those acceptance histories. It still does not directly
+read the native stored K/V cache bytes or prove an identical attention
+mask/reduction. The attention gap remains the first material numerical
+boundary. These three later-round graph comparison JSON files have SHA256
+`c606881019b82feed24100e95789f5ffcdd9d7222965d640ae2f7dd7aa0faec9`,
+`cc4c2e17a0f7c5493287fd7d0db317ca5f062e01ffd50c112524cabea09e0af1`,
+and `68c87c953799bd6fcd457e10405f92571a3ac8adcc5105ee23acdaaa7d867c8a`
+for prose/code/reasoning respectively. Their native-order adapter tap
+NPZ SHA256s are
+`a3db7ca216a1bf7afcbcf3b5954f495064af28de5c1cbecae8ef83ba6332d9b3`,
+`f7f791c812b5b1d79bb5ce908c77b7e60d4494aae60f2f7fe2b487d9c40f7748`,
+and `bbdb9bbcdad84b15baee8e1d5203af98fe101705e5253ff239e48883585fc6c8`.

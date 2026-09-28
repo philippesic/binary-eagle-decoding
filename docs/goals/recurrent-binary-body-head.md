@@ -67,7 +67,7 @@ file and `docs/STATUS.md` are the durable project checkpoint.
   positions are `P+1`, `P+2`; invalid terminal rows create no decoder call. This checks the
   training interface, not actual EAGLE mask or K/V byte parity.
 
-**Latest CPU checks:** 90 recurrent tests, 16 capture-runner tests, ten explicit decoder-step tests,
+**Latest CPU checks:** 91 recurrent tests, 16 capture-runner tests, ten explicit decoder-step tests,
 five frozen-operand tests, eight native loader fixtures, eight existing
 scale-fitting tests, Ruff
 lint/format and `git diff --check` pass. No local Metal/MPS or CUDA
@@ -400,6 +400,28 @@ established.
   process groups stopped cleanly, and no remote session or GPU owner was
   created.
 
+## Eleventh goal turn: post-acceptance CPU graph joins
+
+- The draft-graph comparator now selects each round's actual depth-zero
+  head-state row. It joined prose round 3, code round 2 and reasoning round
+  2 after earlier native accepted drafts. The frozen D output norm matched
+  each native prenorm graph column to its head row at RMS below `1.3e-7`,
+  with the next nearest candidate above `0.48`.
+- Fresh CPU prefix reconstruction selected unique retained target-feature
+  rows at every position. At the selected later seed steps, the native and
+  CPU input embedding and unrotated Q/K/V were bitwise exact. Fused-input
+  differences were zero to `2.4e-7`; RoPE Q/K stayed within `1.56e-5`.
+  Attention output was again the first material gap, with maxima
+  `0.011560`, `0.011746` and `0.009838` for prose/code/reasoning.
+  The mapped seed top IDs matched in all three joins.
+- The [broader CPU report](../../experiments/recurrent-binary-cpu-broader-diagnostic.md)
+  records source hashes and per-round limits. This constrains accepted
+  prefix ancestry and projection alignment; it does not directly read
+  native stored K/V bytes or prove attention mask/reduction parity. The
+  original no-GPU restriction remains in force pending the user's answer
+  about the now-available RTX 5080. No accelerator work ran, and the Goal
+  remains active.
+
 **Published checkpoints:** `7744d8e` created the goal/protocol; `1e3742d`
 integrated the trace contract; `a4dd003` integrated learned GGUF export;
 `fead52a` integrated the binary CPU reference; `792b7e0` published the
@@ -420,9 +442,9 @@ restriction. Do not request or infer that change.
 ## CPU stop gate and next actions
 
 1. Keep the 44/44 mapped-top diagnostic distinct from training quality.
-   Extend the fixed CPU comparison to later-round attention/KV boundaries
-   and more independent training prompts before proposing a parity
-   tolerance. Keep the
+   Directly compare F16-rounded draft K/V writes and cache positions for
+   the post-acceptance joins, then expand fixed CPU comparisons before
+   proposing any state tolerance. Keep the
    preparation bundle ineligible until full request, model and drafter
    parity gates pass; do not infer the 96-prompt training result from one
    prompt.
@@ -433,7 +455,7 @@ restriction. Do not request or infer that change.
 3. Recheck CPU gates and record hashes/commits at the next milestone. Keep
    model files/raw captures out of Git. Audit whether remaining local work
    can still advance the goal. This is the
-   **tenth** goal turn under the no-GPU restriction. Do not mark the Goal
+   **eleventh** goal turn under the no-GPU restriction. Do not mark the Goal
    blocked until the same GPU-only impasse persists across at least three
    consecutive goal turns and no meaningful CPU-only work remains.
 

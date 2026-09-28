@@ -218,6 +218,11 @@ Pending user-owned research choices, with independent CPU work available:
 | Training reduction order | Use the exact sequential F32 CPU reference, or explicitly choose grouped F32 matmul within each 128-input group for a practical trainer. The grouped path still runs hard signs/A16/scales and ordered group accumulation, but 35/430 archived D outputs differed from native by up to `0.0001220703125` absolute (`7.422315e-7` scaled). The grouped student matched **44/44** native mapped top IDs over 11 recorded rounds from three training prompts; native-order first-round checks matched 15/15. Normalized state drift reached `0.004617`, dominated by attention. | Freeze one path before training and require broader native argmax/trajectory parity before interpretation. |
 | Full-drafter numeric gate | Require exact backend-matched attention arithmetic, or predeclare a bounded state/logit tolerance together with native argmax and accepted-trajectory checks. On the first round of three real CPU captures, pre-attention Q/K/V projections matched bitwise or within `1.93e-5` after row conversion; the first material difference remained attention output (max `0.00999`, `0.00573`, `0.00990` under Flash Attention auto). Matching 44 top IDs across later rounds does not establish safe tolerance or K/V byte parity. | Keep parity unresolved while tracing later-round cache boundaries and more prompts; no Q4_0 promotion or GPU training follows from this diagnostic. |
 
+Post-acceptance CPU joins on prose/code/reasoning rounds again matched
+unrotated Q/K/V bitwise and put the first material gap at attention. This
+narrows the remaining question to native K/V storage, masking and reduction
+order; it does not choose the tolerance option above.
+
 **Exact-prefix row clarification (2026-09-28):** the native verifier computes
 target logits for every proposed prefix in a speculative batch, and the cloned
 sampler advances along each proposed token even after an earlier live

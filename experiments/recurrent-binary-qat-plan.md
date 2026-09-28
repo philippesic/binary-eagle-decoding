@@ -196,6 +196,12 @@ normalized state differences remained nonzero and attention was again the
 first material first-round gap. This is bounded arithmetic/ancestry
 evidence, not a trained-model acceptance estimate or a substitute for the
 full 96-prompt capture and native Q4_0 gates.
+Later post-acceptance seed-step joins on one prompt per category now show
+native/CPU input and Q/K/V projection agreement to F32 precision before
+attention, with mapped seed top IDs still matching. This supports the
+accepted-prefix feature selection and rebuild contract for those chains,
+but native stored K/V cache bytes and exact attention semantics remain
+separate unresolved gates.
 
 ## Bounded proposed first trial and stop gates
 

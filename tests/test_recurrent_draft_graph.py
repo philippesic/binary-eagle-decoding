@@ -106,6 +106,17 @@ class DraftGraphJoinTests(unittest.TestCase):
         self.assertEqual(result["differences"]["inp_embd"]["max_abs"], 0)
         self.assertEqual(result["differences"]["result_norm"]["max_abs"], 0.25)
 
+    def test_selects_requested_round_head_boundary(self):
+        path = self.root / "heads.jsonl"
+        head = json.loads(path.read_text())
+        head["round_index"] = 2
+        path.write_text(json.dumps(head) + "\n")
+        with self.assertRaisesRegex(ValueError, "selected native head"):
+            compare(self.root, self.root / "adapter.npz")
+        result = compare(self.root, self.root / "adapter.npz", round_index=2)
+        self.assertEqual(result["round_index"], 2)
+        self.assertEqual(result["native_head_state_row"], 0)
+
     def test_rejects_gap_in_raw_payload_or_wrong_head_state(self):
         self.index[1]["f32_offset"] += 1
         self.save()

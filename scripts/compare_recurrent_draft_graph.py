@@ -2,7 +2,7 @@
 """Join one native draft decoder graph with the CPU adapter's seed-step taps.
 
 The native decoder group is selected by an exact `result_norm` column match
-to head state row zero, or by uniquely reconstructing that head state from
+to the selected round's first head state, or by uniquely reconstructing it from
 `eagle3_prenorm` and the frozen output norm when graph fusion hides the
 intermediate. Every captured tensor is compared within that same execution.
 This is a CPU diagnostic, not a training or performance gate.
@@ -117,7 +117,10 @@ def compare(
     graph_values_path: Path | None = None,
     draft_gguf: Path | None = None,
     native_output_norm: np.ndarray | None = None,
+    round_index: int = 0,
 ) -> dict:
+    if type(round_index) is not int or round_index < 0:
+        raise ValueError("round index must be a nonnegative integer")
     capture_dir = Path(capture_dir)
     index = graph_index_path or capture_dir / "heads.draft_graph.jsonl"
     raw = graph_values_path or capture_dir / "heads.draft_graph.f32"
@@ -138,18 +141,22 @@ def compare(
     ) != sum(kind == "encoder" for kind, _ in groups):
         raise ValueError("native graph footer group counts differ from tensor index")
     head_rows = read_jsonl(capture_dir / "heads.jsonl")
+    matches = [
+        row for row in head_rows if row.get("round_index") == round_index and row.get("depth") == 0
+    ]
     if (
-        head_rows[0].get("schema") != "eagle_head_state_v1"
-        or head_rows[0].get("state_row") != 0
-        or head_rows[0].get("round_index") != 0
-        or head_rows[0].get("depth") != 0
-        or head_rows[0].get("state_dim") != 2560
+        len(matches) != 1
+        or matches[0].get("schema") != "eagle_head_state_v1"
+        or matches[0].get("state_dim") != 2560
+        or type(matches[0].get("state_row")) is not int
+        or not 0 <= matches[0]["state_row"] < len(head_rows)
     ):
-        raise ValueError("first native head row is not the first proposal state")
+        raise ValueError("selected native head row is not one first proposal state")
+    state_row = matches[0]["state_row"]
     native_states = np.memmap(capture_dir / "heads.f32", dtype="<f4", mode="r")
-    if native_states.size < 2560 or native_states.size % 2560:
+    if native_states.size != len(head_rows) * 2560:
         raise ValueError("native head-state file has wrong dimensions")
-    head_row = native_states[:2560]
+    head_row = native_states.reshape(-1, 2560)[state_row]
     candidates = []
     for (kind, execution), group in groups.items():
         if kind != "decoder" or "result_norm" not in group:
@@ -296,6 +303,8 @@ def compare(
             else "first_head_prenorm_join_supported_numeric_drift_measured"
         ),
         "execution_device": "cpu",
+        "round_index": round_index,
+        "native_head_state_row": state_row,
         "join_method": join_method,
         "join_error": join_error,
         "native_group_execution": execution,
@@ -323,6 +332,7 @@ def main() -> None:
     parser.add_argument("--graph-index", type=Path)
     parser.add_argument("--graph-values", type=Path)
     parser.add_argument("--draft-gguf", type=Path)
+    parser.add_argument("--round-index", type=int, default=0)
     parser.add_argument("--report", type=Path, required=True)
     args = parser.parse_args()
     if args.report.exists():
@@ -333,6 +343,7 @@ def main() -> None:
         graph_index_path=args.graph_index,
         graph_values_path=args.graph_values,
         draft_gguf=args.draft_gguf,
+        round_index=args.round_index,
     )
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
