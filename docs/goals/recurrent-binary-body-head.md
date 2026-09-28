@@ -459,7 +459,63 @@ restriction. Do not request or infer that change.
    blocked until the same GPU-only impasse persists across at least three
    consecutive goal turns and no meaningful CPU-only work remains.
 
-**Completion evidence still required:** real-model target-prefix capture and
-alignment, whole-drafter unroll parity including draft K/V and masks, trained
-GGUF loader/export checks, native acceptance, graph and latency/full-throughput
-measurements against matched Q4_0. None is established by CPU tests alone.
+**Completion evidence still required:** the full frozen 96-prompt real-model
+target-prefix capture and alignment, whole-drafter unroll parity including
+draft K/V and masks, trained GGUF loader/export checks, native acceptance,
+graph and latency/full-throughput measurements against matched Q4_0. The
+three existing single-prompt CPU captures do not establish these gates.
+
+## Rotation handoff (2026-09-28 06:35 UTC)
+
+- **Objective and restriction:** implement and CPU-validate the jointly
+  trainable binary W1A16 EAGLE body and head against pinned FP16 target and
+  candidate D, preserving Q4_0 EAGLE as the primary later acceptance,
+  latency and total-throughput baseline. The user's explicit prohibition on
+  every GPU and accelerator, including RTX 5080, Metal/MPS and remote hosts,
+  is still in force. The user said “5080 available now”; a clarification
+  asking whether that lifts the prohibition is pending, with no answer yet.
+- **Completed this session:** round-aware graph comparison joined post-native-
+  acceptance prose/code/reasoning seed steps at the exact pre-attention
+  projection boundary. A new CPU diagnostic reconstructed all 37 code-round-2
+  context positions from retained target features and joined one native graph
+  column per position. After Q/K row conversion and F16 rounding, key write
+  operands matched 37,681/37,888 elements and value operands matched
+  37,723/37,888. The remaining 207/165 mismatches and unread native cache
+  bytes keep K/V storage, rollback and attention parity open. See the
+  [broader CPU report](../../experiments/recurrent-binary-cpu-broader-diagnostic.md)
+  and ignored `results/recurrent-binary-cpu-broader-20260928/code-auto/round_02_projected_kv_writes_native_rows.json`
+  (SHA256 `15e50ae2f8f385195c87ff752c68472884667aeb44a80f07e6fbbf65baf0403e`).
+- **Published code:** parent `dce7f43` added the round-aware graph comparator
+  and later-round report; parent `acfdab7` added the projected K/V comparison
+  and result interpretation. Both are pushed to `origin/main` (remote HEAD
+  verified at `acfdab7` before this handoff update). The llama.cpp gitlink
+  stays at already-published fork commit `b4df1b547`. The following checkpoint
+  commit records this handoff.
+- **Checks:** seven focused graph-join unit tests pass; Ruff lint/format and
+  `git diff --check` pass. The prior milestone's 91 recurrent, 16 capture-
+  runner and ten decoder-step tests passed, as recorded above. The code-round-
+  2 diagnostic completed on Apple M3 Max CPU with `CUDA_VISIBLE_DEVICES=''`
+  and `PYTORCH_ENABLE_MPS_FALLBACK=0`; no accelerator, final prompt, training
+  run or new Q4_0 measurement occurred.
+- **Ownership and processes:** only the retiring orchestrator task is active.
+  All listed subagents have completed; no worker owns unmerged work for this
+  goal. No native server, local experiment, GPU process, remote tmux session,
+  remote run directory or GPU owner exists. Main is clean before this handoff
+  document edit. The earlier invalid ignored K/V report without Q/K row
+  conversion must not be used.
+- **Exact next CPU actions:** first, verify the handoff commit is pushed and
+  that main is clean. Then run `scripts/check_recurrent_kv_writes.py` for the
+  prose round 3 and reasoning round 2 joins already recorded in the broader
+  CPU report, keeping all raw reports under ignored `results/`. Analyze the
+  nonmatching F16 operands by position and whether attention arithmetic or
+  row joins explain them; do not claim native cache-byte parity from graph
+  write operands. Continue full frozen-96 capture preparation only under the
+  CPU safety gate, with capture bundle ineligible until exact-prefix,
+  model and drafter parity gates pass. Checkpoint and push the next milestone.
+- **User-owned decisions:** the no-GPU restriction change, all-body training
+  budget, scale boundary, prefix distribution and numeric tolerance remain
+  pending in [DECISIONS.md](../DECISIONS.md). Keep independent CPU work moving
+  while the 5080 clarification is unanswered. If the user authorizes GPU work,
+  consult [AGENT_OPERATIONS.md](../AGENT_OPERATIONS.md) for the live host file,
+  tmux-only SSH, unique remote run and owner protocol before any experiment;
+  do not infer a training budget from hardware availability.

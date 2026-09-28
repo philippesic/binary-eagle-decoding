@@ -6,6 +6,15 @@ The target/verifier model precision remains as frozen for each experiment.
 
 **Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), CPU preparation under the user's explicit no-GPU restriction. **Latest completed goal:** [mixed precision rescue and frozen-body head adaptation on RTX 5080](goals/binary-rescue-head-5080.md), completed 2026-09-28 UTC. The preceding [binary scale fitting goal](goals/binary-scale-fitting-5080.md) completed 2026-09-27 UTC.
 
+**Handoff checkpoint (2026-09-28 06:35 UTC):** the active goal file records
+the current objective, pushed commits, CPU tests, projected K/V write
+comparison, pending 5080 clarification and exact next actions. Code round 2
+matched 37,681/37,888 F16-rounded key operands and 37,723/37,888 value
+operands across 37 reconstructed context positions; native stored K/V bytes
+remain unread. No agent, model server, local experiment or remote job is
+running. The RTX 5080's availability has not changed the explicit CPU-only
+restriction. Continue from [the active goal handoff](goals/recurrent-binary-body-head.md#rotation-handoff-2026-09-28-0635-utc).
+
 **Current goal milestone (2026-09-28 UTC):** the [joint-training protocol](../experiments/recurrent-binary-qat-plan.md) records the candidate-D W1A16 representation, exact-prefix recurrent supervision, proposed bounded trial and stop gates. The CPU hard-binary core, nine-linear installer, exact-prefix trace validator, masked recurrent loss, differentiable proposal-chain interface, optimizer ownership/checkpoint step and learned-scale GGUF serializer are integrated. The focused CPU gates pass, including a training-checkpoint-to-GGUF synthetic roundtrip and a two-step causal-cache gradient test. A new scalar CPU replay matched 430/430 archived candidate-D native samples across all nine projections. This is arithmetic evidence on old training captures, not a trained-model quality result. Existing cached head states cannot train the body; a real feature/cache/verifier capture, full-drafter numeric parity and trained-export native validation remain necessary. No accelerator, remote host, model training or final-set prompt has been used for this goal. Q4_0 remains the primary future acceptance, latency and throughput gate; no new quality or speed claim exists.
 
 **Second CPU milestone:** native decoder memory position is one behind the
