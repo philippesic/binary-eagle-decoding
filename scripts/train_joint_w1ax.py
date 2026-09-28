@@ -104,10 +104,13 @@ def main() -> None:
     parser.add_argument(
         "--provider", help="importable MODULE:FACTORY returning a training provider"
     )
+    parser.add_argument("--provider-manifest", type=Path)
     parser.add_argument("--base-gguf-sha256", default="0" * 64)
     args = parser.parse_args()
     if args.steps < 1:
         parser.error("steps must be positive")
+    if args.provider_manifest is not None and args.provider is None:
+        parser.error("--provider-manifest requires --provider")
     config = JointQATConfig(
         W1AxContract(args.activation_bits, args.scale_layout),
         device=args.device,
@@ -120,7 +123,9 @@ def main() -> None:
         if not separator or not module_name or not factory_name:
             parser.error("--provider must be importable MODULE:FACTORY")
         factory = getattr(importlib.import_module(module_name), factory_name)
-        provider = factory(config)
+        provider = (
+            factory(config, args.provider_manifest) if args.provider_manifest else factory(config)
+        )
         linears, metrics = train_from_provider(provider, config, max_rounds=args.steps)
         base_hash = provider.base_gguf_sha256
         execution = "audited_provider_rounds"

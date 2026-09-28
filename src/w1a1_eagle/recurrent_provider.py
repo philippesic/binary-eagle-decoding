@@ -130,6 +130,10 @@ def bind_teacher_rows(batch: ProviderRound, audit: TraceAudit) -> dict[str, Tens
             or metadata.get("capture_id") != batch.capture_id
             or metadata.get("prefix_token_ids") != list(prefix)
             or (
+                "target_logits_row" in current
+                and metadata.get("logits_row") != current["target_logits_row"]
+            )
+            or (
                 "next_target_id" in arrays
                 and int(arrays["next_target_id"][teacher_index]) != current["verifier_token_id"]
             )
