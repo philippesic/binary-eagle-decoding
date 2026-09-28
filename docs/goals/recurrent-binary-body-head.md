@@ -1446,3 +1446,34 @@ alignment on RTX 5080 needs an exact backend path or a predeclared
 numeric/trajectory gate. Keep this no-grad CPU diagnostic separate from
 any QAT recipe; Q4_0 remains the primary future acceptance, latency and
 throughput comparison.
+
+## Thirty-fifth goal turn: rejected-draft rewind parity
+
+- Commit `1bb2a10` extends the opt-in integrated CPU runner to the
+  sealed reasoning middle round and records the [rewind
+  result](../../experiments/recurrent-binary-reasoning-middle-cpu.md).
+  Its first-round drafts were rejected; native had written proposal
+  token 1477 at position 47 before the next seed overwrote that slot
+  with verifier token 525. The student's ordinary context rebuild
+  matches **48,128/48,128** F16 keys and values each, and its five
+  subsequent steps match **5,120/5,120** new F16 keys and values each.
+  All checked native graph taps, **12,800/12,800** normalized head-state
+  F32 values, **40/40** captured logit probes, mapped argmax IDs,
+  argmax/label logits and verifier-label ranks are bitwise exact. The
+  ignored report SHA256 is
+  `1bda1318f85169f586490e62dd9220692824d7f4242c24aa224f02a7aaf26128`.
+- The real-input gate and Ruff checks passed on Apple M3 Max CPU. Across
+  the four integrated cases, 18 native-token-following draft depths
+  now include first-round, rejected-draft rewind and accepted-draft
+  catch-up behavior on two frozen training prompts. No gradient,
+  optimizer, target forward, GPU job, local server, final prompt or
+  Q4_0 evaluation ran; the RTX 5080 is free. The diagnostic remains
+  forward-only and does not establish full-vocabulary, all-96,
+  free-running or CUDA/SM75 parity. The exact/numeric policy and all-body
+  budget remain user-owned.
+
+**Next gate:** use the authorized RTX 5080 for a bounded, no-optimizer
+target-feature arithmetic diagnostic on frozen training inputs, using
+the existing native layer ladder and independent forward as controls.
+Choose the operator boundary and measurement before starting a remote
+run; keep the final split and Q4_0 serving gate sealed.
