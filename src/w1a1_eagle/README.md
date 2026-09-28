@@ -107,3 +107,39 @@ Actual capture, CUDA QAT calibration, long training and native
 acceptance/throughput measurements wait for restored GPU access. A future CUDA
 run must use `--device cuda:0 --allow-accelerator`; the prepared Torch path is
 still subject to a bounded native proposal/cache check before a training claim.
+
+## Frozen multi-shard training
+
+`scripts/w1ax_multishard_provider.py` binds independently captured shards to
+the frozen `w1ax_capture_shard_plan_v1` in plan order. The execution manifest
+lists one eligible single-shard provider manifest per ordinal. Before loading
+models, the wrapper checks the plan SHA, frozen parent manifest/prompt/index
+hashes, all shard manifest and prompt hashes, exact ordered coverage of 2,000
+IDs/positions, each capture's prompt order, distinct capture IDs, and common
+target/D/base GGUF, snapshot, absolute d2t and vocabulary identities. Each
+child independently audits its native capture and compact teacher.
+
+After all planned shards are eligible, create a JSONL file with one object per
+ordinal, in order, such as
+`{"ordinal":0,"provider_manifest":"/absolute/shard-0000/w1ax-provider.json"}`.
+Then create the execution manifest and use one optimizer for all rounds:
+
+```sh
+python3 scripts/prepare_w1ax_multishard_manifest.py \
+  --plan data/w1ax-capture-shards/plan-003/plan.json \
+  --parent-manifest data/w1a-public-freeze-002/manifest.json \
+  --children-jsonl "$DATA_DIR/eligible-children.jsonl" \
+  --output "$DATA_DIR/w1ax-multishard.json"
+PYTHONPATH=src:scripts python3 scripts/train_joint_w1ax.py \
+  --provider w1ax_multishard_provider:create_provider \
+  --provider-manifest "$DATA_DIR/w1ax-multishard.json" \
+  --scale-layout row --activation-bits 4 --objective hard_ce \
+  --device cpu --seed 0 --all-rounds --require-complete \
+  --output-dir runs/joint-w1a4-full
+```
+
+The runner writes one final checkpoint and `training_run.json` with plan,
+parent and per-shard manifest hashes plus each trained round's shard ordinal,
+capture ID and prompt/round key. `--require-complete` rejects a partial run
+before saving. The 2,000-prompt shard plan is currently a preparation contract;
+no eligible native captures or substantive multi-shard QAT run exist yet.

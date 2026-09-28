@@ -43,6 +43,7 @@ class ProviderRound:
     teacher_row_ids: tuple[str | None, ...] = ()
     teacher_metadata: tuple[Mapping[str, object], ...] = ()
     teacher_arrays: Mapping[str, np.ndarray] | None = None
+    shard_ordinal: int | None = None
 
 
 class StepAdapter(Protocol):
@@ -209,7 +210,7 @@ def forward_torch_round(
 
 def train_from_provider(
     provider: JointTrainingProvider, config: JointQATConfig, *, max_rounds: int
-) -> tuple[Mapping[str, nn.Module], list[dict[str, float | int]]]:
+) -> tuple[Mapping[str, nn.Module], list[dict[str, float | int | str | None]]]:
     """Install nine linears and train on injected audited native-prefix rounds.
 
     Accelerator execution still requires `JointQATConfig.allow_accelerator`.
@@ -240,7 +241,16 @@ def train_from_provider(
             batch, raw_target_features=batch.raw_target_features.to(config.device)
         )
         logits = forward_torch_round(device_batch, adapter, provider.draft_vocab_size)
-        metrics.append(joint_train_step(linears, logits, audit, optimizer, config, teacher=teacher))
+        item = joint_train_step(linears, logits, audit, optimizer, config, teacher=teacher)
+        item.update(
+            {
+                "prompt_id": batch.anchor.prompt_id,
+                "round_index": batch.anchor.round_index,
+                "capture_id": batch.capture_id,
+                "shard_ordinal": batch.shard_ordinal,
+            }
+        )
+        metrics.append(item)
         if len(metrics) >= max_rounds:
             break
     if not metrics:

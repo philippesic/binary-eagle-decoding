@@ -245,6 +245,20 @@ class NativeCaptureProvider:
         self.allowed_prompt_ids = {key[0] for key in self.capture.anchors}
         if not self.allowed_prompt_ids:
             raise ValueError("audited native capture has no prompt IDs")
+        self.total_rounds = len(self.capture.anchors)
+        self.source_metadata = {
+            "factory": "w1ax_capture_provider:create_provider",
+            "capture_id": self.capture_id,
+            "capture_manifest_sha256": self.hashes["capture_manifest"],
+            "prompts_sha256": self.hashes["prompts"],
+            "absolute_d2t_sha256": self.hashes["absolute_d2t"],
+            "model_snapshot_manifest_sha256": self.hashes["model_snapshot_manifest"],
+            "base_gguf_sha256": self.base_gguf_sha256,
+            "split": self.split,
+            "prompt_count": len(self.allowed_prompt_ids),
+            "round_count": self.total_rounds,
+            "teacher_manifest_sha256": (spec.get("teacher") or {}).get("manifest_sha256"),
+        }
         capture_data = json.loads(self.paths["capture_manifest"].read_text())
         self.target_vocab_size = capture_data["target_vocab_size"]
         self.draft_vocab_size = capture_data["draft_vocab_size"]

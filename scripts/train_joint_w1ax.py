@@ -96,6 +96,8 @@ def main() -> None:
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--allow-accelerator", action="store_true")
     parser.add_argument("--steps", type=int, default=2)
+    parser.add_argument("--all-rounds", action="store_true")
+    parser.add_argument("--require-complete", action="store_true")
     parser.add_argument(
         "--objective", choices=("hard_ce", "compact_probability"), default="hard_ce"
     )
@@ -111,6 +113,8 @@ def main() -> None:
         parser.error("steps must be positive")
     if args.provider_manifest is not None and args.provider is None:
         parser.error("--provider-manifest requires --provider")
+    if args.all_rounds and args.provider is None:
+        parser.error("--all-rounds requires --provider")
     config = JointQATConfig(
         W1AxContract(args.activation_bits, args.scale_layout),
         device=args.device,
@@ -126,10 +130,18 @@ def main() -> None:
         provider = (
             factory(config, args.provider_manifest) if args.provider_manifest else factory(config)
         )
-        linears, metrics = train_from_provider(provider, config, max_rounds=args.steps)
+        max_rounds = provider.total_rounds if args.all_rounds else args.steps
+        linears, metrics = train_from_provider(provider, config, max_rounds=max_rounds)
+        if args.require_complete and len(metrics) != getattr(provider, "total_rounds", None):
+            raise ValueError("provider run did not consume every audited training round")
+        training_complete = len(metrics) == getattr(provider, "total_rounds", None)
         base_hash = provider.base_gguf_sha256
         execution = "audited_provider_rounds"
-        source = {"factory": args.provider, "split": provider.split, "base_gguf_sha256": base_hash}
+        source = getattr(provider, "source_metadata", None) or {
+            "factory": args.provider,
+            "split": provider.split,
+            "base_gguf_sha256": base_hash,
+        }
     else:
         linears, audit = tiny_joint_fixture(config)
         optimizer = joint_optimizer(linears, config)
@@ -151,10 +163,13 @@ def main() -> None:
         base_hash = args.base_gguf_sha256
         execution = "synthetic_fixture"
         source = {"kind": "deterministic_tiny_fixture"}
+        max_rounds = args.steps
+        training_complete = False
     result = {
         "contract": vars(config.contract),
         "steps": len(metrics),
-        "max_rounds_requested": args.steps,
+        "max_rounds_requested": max_rounds,
+        "training_complete": training_complete,
         "execution": execution,
         "source": source,
         "metrics": metrics,
@@ -164,12 +179,16 @@ def main() -> None:
     if args.output_dir is not None:
         args.output_dir.mkdir(parents=True, exist_ok=True)
         checkpoint, manifest = args.output_dir / "joint.npz", args.output_dir / "joint.json"
+        report = args.output_dir / "training_run.json"
+        if report.exists():
+            raise FileExistsError(report)
         if args.scale_layout == "row":
             result["saved"] = save_joint_checkpoint(
                 linears, config, base_hash, checkpoint, manifest
             )
         else:
             result["saved"] = save_training_checkpoint(linears, base_hash, checkpoint, manifest)
+        report.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
     print(json.dumps(result, sort_keys=True))
 
 
