@@ -1332,3 +1332,38 @@ from ordered candidate-D arithmetic. Then assess whether the CPU forward
 can be integrated without captured-cache injection before proposing any
 user-owned numeric policy or optimizer budget. Keep final prompts and
 Q4_0 acceptance/speed evaluation gated.
+
+## Thirty-second goal turn: independent prose-prefix parity
+
+- Commit `ca157ef` adds an [independent prose-prefix CPU
+  replay](../../experiments/recurrent-binary-prose-multidepth-cpu.md).
+  It seals all 23 capture files against prose manifest SHA256
+  `4ad342145a1b77deb5f48cac4e00671e26b691850f398be56687ef05830b7169`,
+  then constructs the 31-position context cache from frozen raw target
+  features, borrowed embeddings, ordered candidate-D projections,
+  native-style norms and pinned ggml key RoPE. Native graph embeddings,
+  norms, fused inputs, raw K/V and rotated K are bitwise exact; all
+  **31,744/31,744** stored F16 context keys and values each match.
+- With no native-cache injection, the computed prose seed and four later
+  corrected pre-norm states feed five draft depths. All **5,120/5,120**
+  new F16 key and value writes each, **20,480/20,480** F32 query RoPE and
+  attention values each, **12,800/12,800** F32 FFN outputs and
+  normalized head states each, and **40/40** captured head-logit probes
+  match native. All five mapped argmax IDs, argmax/label logits and
+  verifier-label ranks match. The ignored machine report SHA256 is
+  `e1896769591a8c85a9fb8ed418f12ee2624bc801409eced39e84e0e3d9bdae60`.
+- The real-input run and Ruff lint/format passed on Apple M3 Max CPU.
+  It joins the prior reasoning first-round replay as a second frozen
+  training prefix, but both are native-token-following diagnostics.
+  No backward, optimizer, local server, GPU job, target forward, final
+  prompt or Q4_0 evaluation ran; the RTX 5080 is free. The F32
+  surrogate derivative, exact versus numeric/trajectory gate, and
+  all-body budget remain user-owned. Full mapped-vocabulary logits,
+  post-acceptance cache scheduling, broad training trajectories and
+  CUDA/SM75 parity remain open.
+
+**Next gate:** exercise a post-acceptance round on a frozen training
+prompt. Rebuild its shifted accepted-prefix context, including cache
+rewrites, then run the pinned CPU operator oracles through its native
+proposal chain. Keep the diagnostic forward separate from any training
+derivative or budget decision.
