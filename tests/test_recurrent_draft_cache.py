@@ -1,0 +1,122 @@
+"""The stored-cache gate rejects altered bytes, slots, and causal masks."""
+
+import json
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+import numpy as np
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+
+from audit_recurrent_draft_cache import audit  # noqa: E402
+
+
+class StoredDraftCacheAuditTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        graph = []
+        values = []
+        for name, width in (("inp_embd", 1), ("Kcur_rope-0", 1024), ("Vcur-0", 1024)):
+            graph.append(
+                {
+                    "schema": "eagle_draft_graph_v1",
+                    "event": "tensor",
+                    "group_kind": "decoder",
+                    "group_execution": 0,
+                    "tensor_name": name,
+                    "ne": [width, 1],
+                    "token_axis": 1,
+                    "token_width": width,
+                    "n_tokens": 1,
+                    "f32_count": width,
+                    "f32_offset": len(values),
+                    "f32_bytes": width * 4,
+                }
+            )
+            values.extend([0.0] * width)
+        graph.append(
+            {
+                "schema": "eagle_draft_graph_v1",
+                "event": "capture_end",
+                "status": "complete",
+                "reason": "",
+                "tensor_rows": 3,
+                "execution_count": 3,
+                "decoder_groups": 1,
+                "bytes_written": len(values) * 4,
+            }
+        )
+        self.write_jsonl("heads.draft_graph.jsonl", graph)
+        np.asarray(values, dtype="<f4").tofile(self.root / "heads.draft_graph.f32")
+        self.events = [
+            {
+                "schema": "eagle_draft_cache_v1",
+                "event": "execution",
+                "execution": 0,
+                "n_tokens": 1,
+                "n_kv": 1,
+                "mask_dtype": "f16",
+                "mask_offset": 0,
+                "mask_bytes": 2,
+            },
+            {
+                "schema": "eagle_draft_cache_v1",
+                "event": "row",
+                "execution": 0,
+                "column": 0,
+                "position": 0,
+                "token_id": 7,
+                "slot": 0,
+                "row_offset": 0,
+                "key_bytes": 2048,
+                "value_bytes": 2048,
+            },
+            {
+                "schema": "eagle_draft_cache_v1",
+                "event": "capture_end",
+                "executions": 1,
+                "rows": 1,
+                "row_bytes": 4096,
+                "mask_bytes": 2,
+            },
+        ]
+        self.write_jsonl("heads.draft_cache.jsonl", self.events)
+        (self.root / "heads.draft_cache.f16").write_bytes(bytes(4096))
+        np.asarray([0], dtype="<f2").tofile(self.root / "heads.draft_cache.mask")
+
+    def write_jsonl(self, name, events):
+        (self.root / name).write_text("".join(json.dumps(event) + "\n" for event in events))
+
+    def test_matching_stored_rows_and_mask(self):
+        result = audit(self.root)
+        self.assertEqual(result["key_equal_elements"], 1024)
+        self.assertEqual(result["value_equal_elements"], 1024)
+        self.assertEqual(result["exact_prefix_mask_rows"], 1)
+
+    def test_changed_stored_key_is_rejected(self):
+        path = self.root / "heads.draft_cache.f16"
+        data = bytearray(path.read_bytes())
+        data[0] = 1
+        path.write_bytes(data)
+        with self.assertRaisesRegex(ValueError, "stored draft cache bytes differ"):
+            audit(self.root)
+
+    def test_wrong_slot_or_mask_is_rejected(self):
+        self.events[1]["slot"] = 1
+        self.write_jsonl("heads.draft_cache.jsonl", self.events)
+        with self.assertRaisesRegex(ValueError, "slot or offset"):
+            audit(self.root)
+        self.events[1]["slot"] = 0
+        self.write_jsonl("heads.draft_cache.jsonl", self.events)
+        np.asarray([-np.inf], dtype="<f2").tofile(self.root / "heads.draft_cache.mask")
+        with self.assertRaisesRegex(ValueError, "mask is not the captured exact prefix"):
+            audit(self.root)
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -17,6 +17,7 @@ import subprocess
 from pathlib import Path
 
 from audit_recurrent_continuity import audit_internal_continuity
+from audit_recurrent_draft_cache import audit as audit_draft_cache
 from audit_recurrent_response import audit_response
 from capture_w1ax_activations import (
     generated_token_ids,
@@ -33,7 +34,7 @@ from run_binary_head_capture import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-NATIVE_REVISION = "b4df1b5473edd761dd50eadc9a64e96f6a77bf96"
+NATIVE_REVISION = "0abe6e5868d32eb74fa0d4c3dcb963b6a55fe568"
 CPU_BACKENDS = (
     "CUDA",
     "METAL",
@@ -145,6 +146,8 @@ def native_command(
 
 
 def capture_one(args: argparse.Namespace) -> dict:
+    if args.capture_cache and args.flash_attention != "auto":
+        raise ValueError("draft cache capture requires Flash Attention auto")
     prompt = validate_inputs(
         args.binary,
         args.cmake_cache,
@@ -188,6 +191,8 @@ def capture_one(args: argparse.Namespace) -> dict:
         "EAGLE_CAPTURE_DRAFT_GRAPH_MAX_EXECUTIONS": "512",
         "EAGLE_CAPTURE_DRAFT_GRAPH_MAX_BYTES": str(128 * 1024 * 1024),
     }
+    if args.capture_cache:
+        capture_env["EAGLE_CAPTURE_DRAFT_CACHE"] = "1"
     environment = {
         key: value
         for key, value in os.environ.items()
@@ -244,6 +249,18 @@ def capture_one(args: argparse.Namespace) -> dict:
     footer = graph_rows[-1]
     if footer.get("event") != "capture_end" or footer.get("status") != "complete":
         raise ValueError("CPU diagnostic draft graph capture is incomplete")
+    if args.capture_cache:
+        cache_rows = read_jsonl(output / "heads.draft_cache.jsonl")
+        cache_footer = cache_rows[-1] if cache_rows else {}
+        if (
+            cache_footer.get("event") != "capture_end"
+            or cache_footer.get("executions") != footer["decoder_groups"]
+            or cache_footer.get("rows") != sum(row.get("event") == "row" for row in cache_rows)
+            or cache_footer.get("row_bytes") != (output / "heads.draft_cache.f16").stat().st_size
+            or cache_footer.get("mask_bytes") != (output / "heads.draft_cache.mask").stat().st_size
+        ):
+            raise ValueError("CPU diagnostic draft cache capture is incomplete")
+        _write(output / "cache_audit.json", audit_draft_cache(output))
     files = {
         path.name: {"bytes": path.stat().st_size, "sha256": sha256(path)}
         for path in sorted(output.iterdir())
@@ -272,6 +289,7 @@ def capture_one(args: argparse.Namespace) -> dict:
             "target_feature_rows": sum(row.get("event") == "decoded_row" for row in events),
             "draft_decoder_groups": footer["decoder_groups"],
             "draft_encoder_groups": footer["encoder_groups"],
+            "draft_cache_rows": cache_footer["rows"] if args.capture_cache else None,
         },
         "files": files,
     }
@@ -288,6 +306,7 @@ def main() -> None:
     parser.add_argument("--train-prompts", type=Path, required=True)
     parser.add_argument("--prompt-id", required=True)
     parser.add_argument("--flash-attention", choices=("auto", "off"), default="auto")
+    parser.add_argument("--capture-cache", action="store_true")
     parser.add_argument("--max-tokens", type=int, default=8)
     parser.add_argument("--port", type=int, default=18557)
     parser.add_argument("--output", type=Path, required=True)
