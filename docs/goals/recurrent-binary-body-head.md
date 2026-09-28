@@ -2128,6 +2128,17 @@ checkpoint; do not create more open-ended numerical investigations.
   change will accept an explicit frozen prompt file/hash/count while keeping
   the 96 defaults. The data owner keeps only the new shard planner/report;
   raw-logit retirement remains disabled until compact provenance is verified.
+- The device-aware QAT follow-up `2b19b2f` was reviewed, integrated as main
+  `4d0684d` and pushed. Row-scale standard Torch attention/rollout follows
+  the declared device, with F16 K/V cache casts and exact prefix/mask/position
+  structure; group-128 and native CPU-oracle modes remain CPU-only. The CLI
+  still requires `--allow-accelerator` for CUDA, and neither CUDA nor MPS was
+  exercised. Twenty-nine focused CPU tests and Ruff passed on main; a separate
+  meta-device shape check by the owner used no accelerator. CUDA memory,
+  training throughput and native trajectories remain hardware-only gates.
+  A single eligible shard can support the first 100-step calibration; the QAT
+  owner is coordinating a multi-shard iterator with the data planner for a
+  continuous 2k-prompt training run and optimizer state.
 - Boundaries: legacy final-set contents stay sealed; the 96-prompt capture is
   smoke/regression evidence only. Group-128/A16 and row-scale W1Ax are distinct
   representation contracts. GPU timing, capture and training wait for explicit
