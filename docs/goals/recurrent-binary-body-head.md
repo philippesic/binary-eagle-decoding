@@ -1218,3 +1218,36 @@ its first differing projection/write boundary. The native-attention
 operand ablation already found a 0.002172 maximum attention difference
 with student K/V and exact agreement with native K/V. Continue with the
 sealed CPU reasoning capture and preserve the no-optimizer boundary.
+
+## Twenty-ninth goal turn: reasoning cache projection boundary
+
+- Successor native Goal task `01a0e7b2-e75d-7c00-8ad8-3101a73d8409`
+  continued from pushed `c9b9c28`. Commit `d98b5aa` adds the bounded
+  [cache-boundary probe and report](../../experiments/recurrent-binary-reasoning-cache-boundary.md).
+  It verifies the frozen CPU reasoning capture and original grouped
+  student cache hashes, rebuilds all 46 context K/V rows bitwise, and
+  joins the first-round 47-slot native stored-cache prefix.
+- The grouped student differs from native storage at 70/48,128 F16 keys
+  and 66/48,128 F16 values; position 46 (first seed) matches. Grouped FC
+  arithmetic produces only 14 differing F16-cast fused-input elements
+  across 13 of the 46 context rows. At positions 0, 26 and 45, replacing
+  just their two/one/one differing fused-input F16 coordinates and using
+  ordered K/V projections makes both raw K and V 1,024/1,024 F32 exact.
+  Ordered FC plus the existing norm reproduces native `g_norm`, fused
+  input, raw K and raw V **bitwise at all 46 context positions**.
+- With ordered FC/K/V, 47,104/47,104 context F16 values and 47,101/47,104
+  context F16 keys match actual native stored bytes. The three remaining
+  key bits are at positions 15, 20 and 40, after RoPE. The standalone
+  RoPE replay reproduces the archived grouped-student key cache
+  47,104/47,104, so the residual is native-versus-adapter key rotation
+  arithmetic, not a cache-index join artifact. The ignored machine report
+  SHA256 is `28aa44ed15f1798271f338338ea3cdb4821ea4f816aded38bc499a59955ca7f2`.
+- Ruff lint/format and the sealed real-input probe passed on Apple M3 Max
+  CPU. No local model server, GPU job, optimizer, final prompt or Q4_0
+  evaluation ran. The RTX 5080 is free. Exact versus numeric/trajectory
+  parity and the all-body optimizer budget remain user-owned.
+
+**Next gate:** isolate the three F16 key thresholds in pinned ggml CPU
+RoPE arithmetic, then recompute first-depth attention/state with corrected
+cache operands. This one-prefix CPU result is not CUDA/SM75 evidence or a
+training tolerance.
