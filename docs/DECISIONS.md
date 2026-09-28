@@ -281,11 +281,15 @@ prose/reasoning captures: 593,920/593,920 F32 outputs match from stored F16
 cache bytes and masks, including later rewrites. A real-size later-only CE
 probe also proved gradient reaches the earlier proposal's pre-norm state
 and appended K/V without an optimizer step. These close operand/oracle and
-causal-gradient preparation gaps, but the current Python student still uses
-F32 attention. An exact-forward/surrogate-backward diagnostic mode is a
-possible preparation path, with its derivative explicitly labeled a
-surrogate. Neither finding sets the numeric gate or transfers the earlier
-head-only optimizer budget to all-body training.
+causal-gradient preparation gaps. The default Python student still uses F32
+attention. An optional native-forward/F32-surrogate-backward CPU diagnostic
+now closes prose first-seed attention bitwise after Q/K row conversion and
+reduces reasoning error, while preserving later-only gradients. Its
+derivative is explicitly a surrogate, and residual state/cache differences
+remain. The user must choose whether this arithmetic becomes part of a
+training recipe or whether a predeclared numeric/trajectory tolerance is
+acceptable. These findings do not transfer the earlier head-only optimizer
+budget to all-body training.
 
 **Exact-prefix row clarification (2026-09-28):** the native verifier computes
 target logits for every proposed prefix in a speculative batch, and the cloned

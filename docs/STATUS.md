@@ -146,6 +146,19 @@ record hashes, hardware and limits. The Python student still uses a different
 F32 attention forward, and exact whole-drafter parity, training budget and
 Q4_0 evaluation remain open. No GPU was used for these two checks.
 
+**Optional native student-attention checkpoint (2026-09-28 UTC):** the CPU
+student can now use the pinned ggml attention result in an explicit
+diagnostic forward while retaining an F32 surrogate backward. Correcting
+Python/native Q/K row order made the prose first-seed attention output
+4,096/4,096 F32 elements bitwise equal; reasoning's remaining maximum
+attention error is 0.002172 from stored K/V operand differences. First
+normalized-state maximum error fell to 0.000184 prose and 0.000511
+reasoning, and a real-size later-only loss still reached earlier state/K/V
+through the surrogate without an optimizer step. The [goal checkpoint](goals/recurrent-binary-body-head.md#twenty-fourth-goal-turn-optional-native-forward-student-attention)
+and [diagnostic report](../experiments/recurrent-binary-native-attention-student.md)
+record exact hashes and limits. This mode is not a chosen training recipe;
+full-drafter parity, all-body budget and Q4_0 evaluation remain open.
+
 **Handoff checkpoint (2026-09-28 06:35 UTC):** the active goal file records
 the current objective, pushed commits, CPU tests, projected K/V write
 comparison, pending 5080 clarification and exact next actions. Code round 2

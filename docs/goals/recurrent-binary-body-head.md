@@ -1027,3 +1027,46 @@ native output agreement and finite later-position Q/K/V/body gradients
 before any training decision. The user still owns the full numeric gate
 and all-body optimizer budget; captured native training data remains
 preparation-only.
+
+## Twenty-fourth goal turn: optional native-forward student attention
+
+- Parent commits `c960078`, `24f140e`, `adf7166`, `2cb1d75` and `d286bf5`
+  added an **opt-in CPU diagnostic** attention mode to the nine-linear
+  student. Its forward calls the pinned ggml attention helper over 256
+  physical slots; its backward explicitly recomputes the former F32
+  attention derivative as a surrogate. The default student remains F32.
+  Focused tests verified exact oracle output, strict mask/geometry and
+  helper SHA, unchanged default behavior, Q/K row conversion and two-step
+  causal derivatives. No optimizer or trained checkpoint used this mode.
+- A seven-mode first-seed ablation isolated an initially missing row-order
+  conversion. Student Q/K are half-split in Python and interleaved in
+  native ggml. With both converted before the helper, the complete prose
+  student attention matched all **4,096/4,096 F32 elements bitwise**;
+  unconverted student Q/K had max error `0.007402`. Reasoning improved from
+  max `0.009470` unconverted to `0.002172` converted, with 70 F16 key and
+  66 value operand differences across its 47 visible cache positions.
+  Student Q converted and paired with native K/V matched both first-seed
+  native outputs bitwise. The ignored prose/reasoning ablation reports have
+  SHA256 `3742bb7f6100e7877aa311d3cda1006599e9cc4257a7604d7d8ca6dc7997037f`
+  and `3fe43dfd9b6bd76d49fcc8b92b37588a5215e94b948c2a237413a9a220fe4f42`.
+- On the Apple M3 Max grouped-matmul D replay, corrected first-depth
+  normalized-state maximum error fell from `0.002019` to `0.000184` for prose
+  and from `0.002422` to `0.000511` for reasoning; all recorded top target
+  IDs still matched native. The real-size depth-1-only CE check with this
+  mode gave nonzero earlier state and appended K/V gradients, zero direct
+  depth-0-logit gradient and finite nonzero sign/scale gradients in all nine
+  shared linears, with **zero optimizer steps**. Its ignored report SHA256 is
+  `1d50de7bfc48b6211ebc42272183b412b4cae13f0bfb1dc61375d396a814a892`.
+  The [detailed diagnostic report](../../experiments/recurrent-binary-native-attention-student.md)
+  records hardware, source hashes, the surrogate derivative and limits.
+  This mode has not been selected as training arithmetic or validated on
+  CUDA/SM75. Exact whole-drafter parity, the user-owned numeric gate and
+  all-body training budget remain open; no final prompt or Q4_0 evaluation
+  ran.
+
+**Next gate:** explain the remaining first-depth state drift after exact
+prose attention—beginning at attention output projection/residual and FFN
+math—and quantify which reasoning cache K/V F16 differences matter. If
+the user chooses a bounded numeric/trajectory policy instead of exact
+backend parity, freeze it before any optimizer run. Preserve the native
+capture and keep the default training mode unchanged until that decision.
