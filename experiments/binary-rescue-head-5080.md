@@ -1,10 +1,11 @@
 # Binary rescue and frozen-body head adaptation on RTX 5080
 
 Status: **in progress**. Quality, body/head diagnosis, the bounded head fit,
-profiling and clean repeated primary performance are complete. With the user's
-clearance, full-prompt round attribution is rerunning; the frozen longer-context
-diagnostic and final artifact handoff remain pending. No candidate has been
-promoted.
+profiling and clean repeated primary performance are complete. The resumed
+full-prompt instrumented run completed all 312 requests with CUDA graph
+launches in every block; round-cost analysis is pending. The frozen
+longer-context comparison is running, and final artifact handoff remains
+pending. No candidate has been promoted.
 
 ## Frozen comparison
 
