@@ -206,6 +206,11 @@ created a complete impasse. Remaining CPU work includes an end-to-end
 synthetic capture bundle, cross-round continuity checks and a bounded
 native runtime capture protocol. GPU-dependent quality and timing gates
 remain unauthorized.
+Parent commits `cae7184` and `c51a8a7` are pushed to `main`; the latter
+points to already-pushed llama.cpp fork commit `ddcf2a608`. Temporary native
+row-preparer and submodule feature-capture worktrees/branches were clean and
+retired after integration. No live process or remote session belongs to
+this goal.
 
 **Published checkpoints:** `7744d8e` created the goal/protocol; `1e3742d`
 integrated the trace contract; `a4dd003` integrated learned GGUF export;
