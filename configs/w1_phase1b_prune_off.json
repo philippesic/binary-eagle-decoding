@@ -19,7 +19,7 @@
   "target": "models/gguf/Qwen3-4B-f16.gguf",
   "variants": {
     "D": {
-      "draft": "results/scale-archive/scale-fit/D.gguf",
+      "draft": "results/binary-scale-fitting-5080/results/scale-fit/D.gguf",
       "env": {
         "GGML_W1AX_ACT_BITS": "16"
       }
@@ -28,7 +28,7 @@
       "draft": "models/gguf/Qwen3-4B-eagle3-f16.gguf"
     },
     "q4_0": {
-      "draft": "results/scale-archive/scale-models/Qwen3-4B-eagle3-q4_0.gguf"
+      "draft": "models/gguf/Qwen3-4B-eagle3-q4_0.gguf"
     },
     "target_only": {}
   },
