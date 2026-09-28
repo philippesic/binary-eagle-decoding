@@ -32,6 +32,7 @@ struct capture_state {
     size_t bytes_written = 0;
     bool complete = false;
     bool deferred_q_mode = false;
+    bool k_rope_mode = false;
     ggml_tensor * deferred_q = nullptr;
     std::set<std::string> enabled;
     std::string error;
@@ -77,6 +78,9 @@ struct capture_state {
                     state.deferred_q = tensor;
                 }
             }
+            return false;
+        }
+        if (state.k_rope_mode && name == "Kcur-0" && tensor->op != GGML_OP_ROPE) {
             return false;
         }
         if (!state.enabled.count(name)) return false;
@@ -129,6 +133,9 @@ int main(int argc, char ** argv) {
             state.enabled = {"Qcur_normed-0", "l_out-0"};
         } else if (mode == "k_norm") {
             state.enabled = {"Kcur_normed-0", "l_out-0"};
+        } else if (mode == "k_rope") {
+            state.enabled = {"Kcur-0", "l_out-0"};
+            state.k_rope_mode = true;
         } else if (mode == "q_deferred_k_norm") {
             state.enabled = {"Qcur-0", "Kcur_normed-0", "l_out-0"};
             state.deferred_q_mode = true;
