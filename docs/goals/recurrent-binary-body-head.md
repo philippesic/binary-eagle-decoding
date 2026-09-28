@@ -2039,13 +2039,20 @@ checkpoint; do not create more open-ended numerical investigations.
   are present. Thirteen focused CPU tests and Ruff passed on main. The owner is
   adding a captured-data/real-drafter adapter; the current runner alone is a
   smoke fixture, not a real training command.
-- The runtime owner first pushed native `25e31b6` and parent `4a6eb78` on
-  `codex/w1-runtime-latency`. Review found the opt-in unused-head branch in the
-  encoder graph, which has no draft head. That candidate is **not integrated**.
-  The owner is moving it to the decoder before the output norm/head, then will
-  rebuild, retest and republish the native commit before the parent gitlink can
-  advance. Offline latency analysis and the learned row loader gate in the
-  same branch remain under review.
+- The runtime owner's first native `25e31b6`/parent `4a6eb78` candidate placed
+  the opt-in unused-head branch in the encoder graph, which has no draft head;
+  it was **not integrated**. Corrected native `14c188e` was pushed to the
+  user's fork before parent `d484b6e`; reviewed and integrated on main as
+  `112693f` and pushed. The branch now prunes the decoder output norm/head/map
+  only for zero-logit, no-embedding calls under `GGML_EAGLE_PRUNE_UNUSED_HEAD=1`.
+  The shared graph covers FP16, Q4_0 and W1Ax. Learned row-scale v2/v3 loader
+  metadata accepts A16/A8/A4/A1, while group-128 remains A16-only. The offline
+  [latency report](../../experiments/eagle-latency-phase1a-cpu.md) preserves
+  residual CPU-wall time and a fixed-input later A/B protocol. On main, an
+  Apple M3 Max arm64 CPU build with CUDA/Metal off, 11 native loader tests, two
+  accounting tests, Ruff and archived analysis passed. No model inference or
+  accelerator test ran; cache/trajectory equivalence and speed of the opt-in
+  path remain unverified until native GPU A/B.
 - Boundaries: legacy final-set contents stay sealed; the 96-prompt capture is
   smoke/regression evidence only. Group-128/A16 and row-scale W1Ax are distinct
   representation contracts. GPU timing, capture and training wait for explicit
