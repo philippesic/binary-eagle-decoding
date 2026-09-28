@@ -27,7 +27,7 @@ from torch.nn import functional as F
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from audit_recurrent_binary_capture import load_audited_capture, sha256  # noqa: E402
-from check_recurrent_real_step import _build_drafter  # noqa: E402
+from check_recurrent_real_step import _attention_oracle, _build_drafter  # noqa: E402
 from run_binary_head_capture import (  # noqa: E402
     DRAFT_D_D2T_SHA256,
     DRAFT_D_SHA256,
@@ -226,6 +226,9 @@ def diagnose(
     candidate_d: Path,
     config: Path,
     report_path: Path,
+    *,
+    attention_mode: str = "f32",
+    native_attention_helper: Path | None = None,
 ) -> dict:
     if report_path.exists():
         raise ValueError("diagnostic report path must be new")
@@ -239,6 +242,9 @@ def diagnose(
     }
     if sources["target_gguf"] != TARGET_F16_SHA256 or sources["candidate_d"] != DRAFT_D_SHA256:
         raise ValueError("target and candidate D must match pinned FP16/D hashes")
+    oracle = _attention_oracle(attention_mode, native_attention_helper)
+    if native_attention_helper is not None:
+        sources["native_attention_helper"] = sha256(native_attention_helper)
     capture = load_audited_capture(
         bundle_manifest, train_prompts, sources["train_prompts"], expected_prompt_count=1
     )
@@ -267,7 +273,14 @@ def diagnose(
     )
     label = depth_one_label(rows, trace)
     operands = FrozenOperands(target_gguf, candidate_d)
-    adapter = _build_drafter(config, candidate_d, operands, ARITHMETIC)
+    adapter = _build_drafter(
+        config,
+        candidate_d,
+        operands,
+        ARITHMETIC,
+        attention_mode=attention_mode,
+        native_attention_oracle=oracle,
+    )
     rebuilt = rebuild_prefix_cache(
         round0.prefix_token_ids,
         round0.raw_target_features,
@@ -294,6 +307,10 @@ def diagnose(
         "torch_version": torch.__version__,
         "torch_threads": torch.get_num_threads(),
         "arithmetic": ARITHMETIC,
+        "attention_mode": attention_mode,
+        "attention_backward": (
+            "f32_attention_surrogate" if oracle is not None else "f32_attention"
+        ),
         "cache_write_dtype": "float16_rounded_in_float32_storage",
         "optimizer_steps": 0,
         "prompt_id": prompt_id,
@@ -324,6 +341,10 @@ def main() -> None:
     parser.add_argument("--target-gguf", type=Path, required=True)
     parser.add_argument("--candidate-d", type=Path, required=True)
     parser.add_argument("--config", type=Path, required=True)
+    parser.add_argument(
+        "--attention-mode", choices=("f32", "native_forward_f32_backward"), default="f32"
+    )
+    parser.add_argument("--native-attention-helper", type=Path)
     parser.add_argument("--report", type=Path, required=True)
     args = parser.parse_args()
     report = diagnose(
@@ -333,6 +354,8 @@ def main() -> None:
         args.candidate_d,
         args.config,
         args.report,
+        attention_mode=args.attention_mode,
+        native_attention_helper=args.native_attention_helper,
     )
     print(json.dumps({"status": report["status"], "loss": report["causal"]["loss"]}))
 
