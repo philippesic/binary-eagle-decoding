@@ -33,6 +33,9 @@ def main() -> None:
     cmake_exe = Path(sys.executable).parent / "cmake"
     if not cmake_exe.is_file():
         parser.error("project Python environment lacks its bundled CMake")
+    cuda_compat = ROOT.parents[1] / "results/cuda-glibc-compat/include"
+    if not (cuda_compat / "crt/host_config.h").is_file():
+        parser.error("registered GPU project lacks its pinned CUDA/glibc compatibility headers")
     build = run_dir / "build"
     helper = build / "bin" / "native-target-block0-capture"
     capture = run_dir / "block0"
@@ -47,6 +50,7 @@ def main() -> None:
         "-DCMAKE_BUILD_TYPE=Release",
         "-DGGML_CUDA=ON",
         "-DGGML_CUDA_FA=ON",
+        f"-DCMAKE_CUDA_FLAGS=-I{cuda_compat}",
         "-DLLAMA_BUILD_TESTS=OFF",
         "-DLLAMA_BUILD_SERVER=OFF",
         "-DLLAMA_BUILD_EXAMPLES=OFF",
@@ -97,6 +101,12 @@ def main() -> None:
     report = audit(ladder, target, capture, helper)
     report["elapsed_seconds"] = time.monotonic() - started
     report["source_sha256"]["recipe"] = sha256(run_dir / "recipe.json")
+    report["source_sha256"]["cmake_cache"] = sha256(build / "CMakeCache.txt")
+    for library in ("libllama.so", "libggml-base.so", "libggml-cuda.so"):
+        path = build / "bin" / library
+        if not path.is_file():
+            raise ValueError(f"built target backend library is missing: {library}")
+        report["source_sha256"][library] = sha256(path)
     (run_dir / "comparison.json").write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
     print(json.dumps({"status": report["status"], "block_output": report["block_output"]}))
     if report["status"] != "same_native_block_output":
