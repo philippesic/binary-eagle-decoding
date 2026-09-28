@@ -147,6 +147,10 @@ mark the native Goal blocked on this turn.
 This is the **third consecutive goal turn**. It made meaningful CPU progress;
 the no-GPU restriction has not created a true impasse. The native Goal stays
 active. No actual target/drafter inference or accelerator execution occurred.
+Third-turn parent commits `79208ef`, `7c91809`, and `cf593c8` are pushed to
+`main`; the parent gitlink references the previously pushed llama.cpp fork
+commit `7f23c89b3`. The temporary decoder and frozen-operand worktrees and
+branches were retired after their reviewed content was integrated.
 
 **Published checkpoints:** `7744d8e` created the goal/protocol; `1e3742d`
 integrated the trace contract; `a4dd003` integrated learned GGUF export;
