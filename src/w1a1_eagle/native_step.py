@@ -247,7 +247,9 @@ class NativeStepAdapter(nn.Module):
             ):
                 raise ValueError(f"{name} cache must be finite and F16-exact")
 
-    def encode_feature(self, raw: Tensor) -> Tensor:
+    def encode_feature(
+        self, raw: Tensor, *, trace_callback: Callable[[str, Tensor], None] | None = None
+    ) -> Tensor:
         if (
             not isinstance(raw, Tensor)
             or raw.device.type != "cpu"
@@ -256,7 +258,10 @@ class NativeStepAdapter(nn.Module):
             or not torch.isfinite(raw).all()
         ):
             raise ValueError("raw target feature must be one finite F32 CPU row")
-        return self.drafter.fc(raw)
+        encoded = self.drafter.fc(raw)
+        if trace_callback is not None:
+            trace_callback("fc_out", encoded.detach().clone())
+        return encoded
 
     def decode_step(
         self,
@@ -266,7 +271,12 @@ class NativeStepAdapter(nn.Module):
         cache: NativeStepCache,
         *,
         compute_logits: bool = True,
+        trace_callback: Callable[[str, Tensor], None] | None = None,
     ) -> DraftStep:
+        def trace(name: str, value: Tensor) -> None:
+            if trace_callback is not None:
+                trace_callback(name, value.detach().clone())
+
         if type(token) is not int or token < 0 or token >= self.embedding_vocab_size:
             raise ValueError("token must index the borrowed embedding")
         if type(decoder_position) is not int or not 0 <= decoder_position < self.max_positions:
@@ -286,6 +296,7 @@ class NativeStepAdapter(nn.Module):
         layer = self.drafter.midlayer
         attn = layer.self_attn
         mlp = layer.mlp
+        trace("inp_g_embeddings", feature)
         embedding_f16 = self.embedding_lookup(token)
         if (
             not isinstance(embedding_f16, Tensor)
@@ -297,12 +308,22 @@ class NativeStepAdapter(nn.Module):
         ):
             raise ValueError("embedding lookup must return a frozen finite CPU F16 row")
         embedding = embedding_f16.to(torch.float32)
+        trace("inp_embd", embedding)
         normalized_embedding = _frozen_rms_norm(embedding, layer.input_layernorm)
+        trace("embd_norm-0", normalized_embedding)
         normalized_feature = _frozen_rms_norm(feature, layer.hidden_norm)
+        trace("g_norm-0", normalized_feature)
         fused = torch.cat((normalized_embedding, normalized_feature), dim=-1)
-        q = attn.q_proj(fused).reshape(self.heads, self.head_dim)
-        k = attn.k_proj(fused).reshape(self.kv_heads, self.head_dim)
-        v = attn.v_proj(fused).reshape(self.kv_heads, self.head_dim)
+        trace("concat_embd-0", fused)
+        q = attn.q_proj(fused)
+        k = attn.k_proj(fused)
+        v = attn.v_proj(fused)
+        trace("Qcur-0", q)
+        trace("Kcur-0", k)
+        trace("Vcur-0", v)
+        q = q.reshape(self.heads, self.head_dim)
+        k = k.reshape(self.kv_heads, self.head_dim)
+        v = v.reshape(self.kv_heads, self.head_dim)
 
         freq = torch.arange(0, self.head_dim, 2, dtype=torch.float32, device="cpu")
         angle = decoder_position / (self.rope_theta ** (freq / self.head_dim))
@@ -311,6 +332,8 @@ class NativeStepAdapter(nn.Module):
         half = self.head_dim // 2
         q = q * cos + torch.cat((-q[:, half:], q[:, :half]), dim=-1) * sin
         k = k * cos + torch.cat((-k[:, half:], k[:, :half]), dim=-1) * sin
+        trace("Qcur_rope-0", q)
+        trace("Kcur_rope-0", k)
 
         # Native KV cache writes F16 and reads F32. Include casts in autograd;
         # current K/V must take this boundary before both attention and append.
@@ -326,12 +349,24 @@ class NativeStepAdapter(nn.Module):
         scores = torch.einsum("hd,htd->ht", q, keys) / math.sqrt(self.head_dim)
         probabilities = F.softmax(scores, dim=-1, dtype=torch.float32)
         attention = torch.einsum("ht,htd->hd", probabilities, values).reshape(-1)
+        trace("kqv_out-0", attention)
         residual = feature + attn.o_proj(attention)
+        trace("ffn_inp-0", residual)
         post_attention = _frozen_rms_norm(residual, layer.post_attention_layernorm)
+        trace("post_attn_norm-0", post_attention)
         ffn = mlp.down_proj(F.silu(mlp.gate_proj(post_attention)) * mlp.up_proj(post_attention))
+        trace("ffn_out-0", ffn)
         pre_norm = residual + ffn
+        trace("eagle3_prenorm-0", pre_norm)
+        normalized_output = (
+            _frozen_rms_norm(pre_norm, self.drafter.norm)
+            if compute_logits or trace_callback is not None
+            else None
+        )
+        if normalized_output is not None:
+            trace("result_norm", normalized_output)
         logits = (
-            self.drafter.lm_head(_frozen_rms_norm(pre_norm, self.drafter.norm))
+            self.drafter.lm_head(normalized_output)
             if compute_logits
             else torch.empty(0, dtype=torch.float32, device="cpu")
         )

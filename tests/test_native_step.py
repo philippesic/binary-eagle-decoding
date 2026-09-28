@@ -126,6 +126,43 @@ def _manual_step(drafter, token, feature, position, keys, values):
 
 
 class NativeStepTests(unittest.TestCase):
+    def test_cpu_intermediate_taps_do_not_change_decoder(self):
+        adapter = NativeStepAdapter(_drafter())
+        taps = {}
+
+        def record(name, value):
+            self.assertNotIn(name, taps)
+            taps[name] = value
+
+        feature = adapter.encode_feature(torch.ones(12), trace_callback=record)
+        traced = adapter.decode_step(1, feature, 0, adapter.new_cache(), trace_callback=record)
+        plain = adapter.decode_step(1, feature, 0, adapter.new_cache())
+        self.assertEqual(
+            set(taps),
+            {
+                "fc_out",
+                "inp_g_embeddings",
+                "inp_embd",
+                "embd_norm-0",
+                "g_norm-0",
+                "concat_embd-0",
+                "Qcur-0",
+                "Kcur-0",
+                "Vcur-0",
+                "Qcur_rope-0",
+                "Kcur_rope-0",
+                "kqv_out-0",
+                "ffn_inp-0",
+                "post_attn_norm-0",
+                "ffn_out-0",
+                "eagle3_prenorm-0",
+                "result_norm",
+            },
+        )
+        torch.testing.assert_close(taps["eagle3_prenorm-0"], traced.pre_norm)
+        torch.testing.assert_close(traced.logits, plain.logits)
+        torch.testing.assert_close(traced.cache.key, plain.cache.key)
+
     def test_context_step_skips_head_but_preserves_state_and_cache(self):
         adapter = NativeStepAdapter(_drafter())
         feature = adapter.encode_feature(torch.ones(12))

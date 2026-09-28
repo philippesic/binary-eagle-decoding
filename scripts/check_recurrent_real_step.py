@@ -104,6 +104,7 @@ def check_first_round(
     draft_gguf: Path,
     drafter_config: Path,
     arithmetic: str = "group_matmul",
+    tap_output: Path | None = None,
 ) -> dict:
     if arithmetic not in {"native_order", "group_matmul"}:
         raise ValueError("unknown CPU binary arithmetic")
@@ -159,6 +160,13 @@ def check_first_round(
         raise ValueError("first native round has incomplete proposal head states")
     mapping = np.asarray(Model(draft_gguf).tensors["d2t"].data)
     depth_rows = []
+    taps: dict[str, np.ndarray] = {}
+
+    def record_tap(name: str, value: torch.Tensor) -> None:
+        if name in taps:
+            raise ValueError(f"duplicate adapter tap {name}")
+        taps[name] = value.cpu().numpy().astype("<f4", copy=True).reshape(-1)
+
     with torch.no_grad():
         raw = torch.from_numpy(np.array(feature_values[: len(prompt)], copy=True))
         rebuilt = rebuild_prefix_cache(
@@ -170,12 +178,23 @@ def check_first_round(
             decode_context=adapter.decode_context,
             new_cache=adapter.new_cache,
         )
-        feature = adapter.encode_feature(rebuilt.seed_raw_features)
+        feature = adapter.encode_feature(
+            rebuilt.seed_raw_features,
+            trace_callback=record_tap if tap_output is not None else None,
+        )
         token = rebuilt.seed_token
         cache = rebuilt.cache
         norm = adapter.drafter.norm
         for depth, native_row in enumerate(round_heads):
-            result = adapter.decode_step(token, feature, rebuilt.decoder_position + depth, cache)
+            result = adapter.decode_step(
+                token,
+                feature,
+                rebuilt.decoder_position + depth,
+                cache,
+                trace_callback=record_tap if tap_output is not None and depth == 0 else None,
+            )
+            if tap_output is not None and depth == 0:
+                record_tap("draft_logits", result.logits)
             state = result.pre_norm
             normalized = (
                 state * torch.rsqrt(state.square().mean() + norm.variance_epsilon) * norm.weight
@@ -203,6 +222,11 @@ def check_first_round(
             feature = result.pre_norm
             cache = result.cache
     first_depth = depth_rows[0]
+    if tap_output is not None:
+        if tap_output.exists():
+            raise ValueError("adapter tap output must be new")
+        tap_output.parent.mkdir(parents=True, exist_ok=True)
+        np.savez(tap_output, **taps)
     return {
         "schema": "recurrent_real_step_cpu_diagnostic_v1",
         "execution_device": "cpu",
@@ -214,6 +238,17 @@ def check_first_round(
         "per_depth": depth_rows,
         "all_top1_target_ids_match_native": all(
             row["top1_target_id_matches_native"] for row in depth_rows
+        ),
+        **(
+            {
+                "adapter_taps": {
+                    "path": str(tap_output),
+                    "sha256": sha256(tap_output),
+                    "names": sorted(taps),
+                }
+            }
+            if tap_output is not None
+            else {}
         ),
         "elapsed_seconds": time.monotonic() - start,
         "source_sha256": {
@@ -238,12 +273,18 @@ def main() -> None:
     parser.add_argument(
         "--arithmetic", choices=("native_order", "group_matmul"), default="group_matmul"
     )
+    parser.add_argument("--tap-output", type=Path)
     parser.add_argument("--report", type=Path, required=True)
     args = parser.parse_args()
     if args.report.exists():
         parser.error("report must be a new file")
     report = check_first_round(
-        args.capture_dir, args.target_gguf, args.draft_gguf, args.drafter_config, args.arithmetic
+        args.capture_dir,
+        args.target_gguf,
+        args.draft_gguf,
+        args.drafter_config,
+        args.arithmetic,
+        args.tap_output,
     )
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")

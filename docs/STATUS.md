@@ -106,6 +106,19 @@ records the per-row limits and hashes. These are alignment diagnostics,
 not exact target-feature parity or SM75 results. The focused 80 recurrent,
 16 capture-runner and nine adapter CPU tests pass. No GPU/accelerator ran.
 
+**Ninth CPU milestone:** the forked native server now has a bounded opt-in
+draft graph callback, published first in fork commit `b4df1b547`. On one
+CPU request its completed trace left existing output IDs, head states,
+target features and verifier logits byte-identical. A numeric join to the
+first proposal shows decoder inputs, fusion norm and Q/K/V bitwise exact
+after Q/K row conversion; RoPE differs by at most `3.55e-6`. The first
+material gap is attention output: max `0.009986` with native Flash
+Attention auto, `0.005002` with it off. Replaying attention from native
+Q/K/V reproduces that gap. The [CPU capture report](../experiments/recurrent-binary-cpu-capture-smoke.md)
+has source hashes and the mapped draft-logit comparison. This localizes
+the drift but does not certify full parity or Q4_0 quality/throughput. The
+focused 86 recurrent, 16 capture-runner and ten adapter CPU tests pass.
+
 **Current milestone:** the [final rescue/readout report](../experiments/binary-rescue-head-5080.md) records a negative result against Q4_0 EAGLE. Q4_0 reached 1.042 accepted drafts/round and 135.1 full-request tokens/s; the admitted attention+fusion Q8_0 rescue reached 0.696 and 83.3 (0.616×), and the fitted frozen-D-body FP16 head reached 0.555 and 60.8 (0.450×). All 120 primary measured raw outputs per path matched Q4_0 and target-only. The 264-request speculative round calibration, 92 graph-verified server blocks across final primary/diagnostic runs, and separate six-prompt longer-context comparison are complete. The longer-context client rates were 127.0 Q4_0, 68.5 combined rescue, 47.1 fitted head and 93.8 target-only tokens/s. Neither endpoint beat target-only. Full raw results, logs, binaries and model artifacts are indexed in the remote archive named in the report. Final RTX 5080 check found no owned process or compute app, 1,916 MiB whole-device use and 0% utilization. The user owns any future body-aware QAT or final-set decision; none was started.
 
 The approved four-way A16 screen completed all **168 requests** (7 paths × 24 development prompts). A/B/C/D accepted **0.119 / 0.161 / 0.290 / 0.425 drafts per round**, versus **1.037 FP16** and **1.042 Q4_0**. Fitted group scales improved 3.585× over row-mean A, closing 33.20% of the Q4_0 gap. D beat all other binary candidates on every prompt but trailed both controls on every prompt. All seven paths matched target-only raw IDs on all 24 prompts. See the [report](../experiments/binary-scale-fitting-5080.md) for counts, depth survival, calibration, artifacts and limitations.

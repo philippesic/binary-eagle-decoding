@@ -67,7 +67,7 @@ file and `docs/STATUS.md` are the durable project checkpoint.
   positions are `P+1`, `P+2`; invalid terminal rows create no decoder call. This checks the
   training interface, not actual EAGLE mask or K/V byte parity.
 
-**Latest CPU checks:** 80 recurrent tests, 16 capture-runner tests, nine explicit decoder-step tests,
+**Latest CPU checks:** 86 recurrent tests, 16 capture-runner tests, ten explicit decoder-step tests,
 five frozen-operand tests, eight native loader fixtures, eight existing
 scale-fitting tests, Ruff
 lint/format and `git diff --check` pass. No local Metal/MPS or CUDA
@@ -330,6 +330,38 @@ established.
   captures and source model weights remain outside Git. No remote session
   or native server process remains active for this turn.
 
+## Ninth goal turn: native CPU draft graph boundaries
+
+- Fork commit `b4df1b547` adds opt-in, CPU-host-only draft graph capture
+  with bounded F32 payload, tensor/layout/execution JSONL and a complete
+  footer. The source-level names `result_norm` and encoder `fc_out` did not
+  appear in the scheduler callbacks during one real request; a bounded
+  40-name node probe confirmed this. The callback does capture prenorm and
+  `result_output`, correctly labeled as mapped **draft** logits.
+- The final `auto` and `--flash-attn off` one-prompt CPU traces stopped
+  cleanly and reproduced each untraced setting's output IDs, head states,
+  target features and raw verifier logits bytewise. The `auto` graph trace
+  recorded 26 decoder groups and 390 tensor rows under a 64 MiB limit.
+  Prenorm plus the frozen output norm joined one graph column to native
+  head row zero with RMS `6.74e-8`; the next nearest candidate was `0.577`.
+  This is a numeric join because the normalized graph node was unavailable.
+- The CPU adapter's seed-step taps matched native input embedding, both
+  input norms, concatenation and Q/K/V **bitwise** after Q/K row-order
+  conversion. RoPE Q/K maximum differences were at most `3.55e-6`.
+  Attention output was the first substantial gap (max `0.009986` with
+  Flash Attention auto, `0.005002` off). A separate replay using native
+  Q/K/V and F16-rounded K/V reproduced each attention gap, constraining
+  the cause to attention execution rather than binary projections.
+  The mapped draft-head top ID remained `3070`; its 32,000 finite logits
+  differed by RMS `0.001128` in the `auto` seed step.
+- The [capture report](../../experiments/recurrent-binary-cpu-capture-smoke.md)
+  records hashes, detailed limits and the unreconciled full-parity gate.
+  No GPU, accelerator, remote host, final prompt, approved training trial
+  or Q4_0 performance run occurred. The native Goal stays active.
+- Fork commit `b4df1b547` was pushed to the user's llama.cpp fork before
+  the parent gitlink update. The final diagnostic server process stopped
+  with return code zero; no remote session or GPU owner exists.
+
 **Published checkpoints:** `7744d8e` created the goal/protocol; `1e3742d`
 integrated the trace contract; `a4dd003` integrated learned GGUF export;
 `fead52a` integrated the binary CPU reference; `792b7e0` published the
@@ -349,21 +381,21 @@ restriction. Do not request or infer that change.
 
 ## CPU stop gate and next actions
 
-1. Locate the remaining full-drafter state drift at Q/K/V, attention,
-   residual and FFN boundaries with bounded native CPU intermediate values.
-   The independent target-feature comparison constrains the input side but
-   does not certify exact parity. Keep the
+1. Extend the native attention-boundary comparison to other training
+   prompts and proposal depths under fixed CPU settings. Determine whether
+   its bounded drift can change mapped argmax or accepted trajectories;
+   do not choose a parity tolerance from one prompt. Keep the
    preparation bundle ineligible until full request, model and drafter
    parity gates pass; do not infer the 96-prompt training result from one
    prompt.
-2. Connect prefix rebuilding to the pinned full drafter only with verified
-   attention/RoPE/KV rounding and mask semantics; do not substitute saved
-   normalized head states. Keep the sequential reference and grouped-matmul
-   training forward distinct in all reports.
+2. Keep accepted-prefix rebuilding tied to fresh current-student cache and
+   recorded target features. Investigate native attention reduction/mask
+   differences before treating PyTorch states as numerically interchangeable
+   with llama.cpp; preserve the sequential and grouped-matmul modes.
 3. Recheck CPU gates and record hashes/commits at the next milestone. Keep
    model files/raw captures out of Git. Audit whether remaining local work
    can still advance the goal. This is the
-   **eighth** goal turn under the no-GPU restriction. Do not mark the Goal
+   **ninth** goal turn under the no-GPU restriction. Do not mark the Goal
    blocked until the same GPU-only impasse persists across at least three
    consecutive goal turns and no meaningful CPU-only work remains.
 

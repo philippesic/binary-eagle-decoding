@@ -193,3 +193,59 @@ The independent comparison report is
 (SHA256 `4820b720d0f7b1e27296760f9380ec515fc7dfd71aab062c66eff45814dca719`).
 It records source hashes, Transformers 4.57.1, PyTorch 2.14.0, per-tap
 absolute and relative errors, and both capture identities.
+
+## Native draft graph boundary localization
+
+Fork commit `b4df1b547` adds an opt-in CPU-only draft graph callback with a
+bounded F32 payload and JSONL tensor index. The final one-prompt `auto`
+capture used a 256-group / 64 MiB cap, ended `complete`, and recorded 26
+decoder groups, 390 tensor rows and 52,532,736 F32 bytes. The matching
+non-flash capture also ended cleanly. Both emitted the original eight raw
+IDs. Their native head states, target features and raw verifier logits were
+byte-identical to their respective untraced captures; callback timing was
+not used as a performance measurement.
+
+The optional scheduler node probe saw 40 distinct node names without
+truncation. It did not see `result_norm` or encoder `fc_out`, although both
+have source-level graph names. It did see `result_output`, which is the
+**mapped draft-head logits**, and the final capture records that identity
+without calling it a target verifier row. A native `eagle3_prenorm` column
+was joined uniquely to head-state row zero by applying the pinned D output
+norm: reconstructed-vs-native head RMS `6.74e-8`, next closest group
+`0.577`. The non-flash join had comparable separation. This is a bounded
+numeric join; the hidden normalized node was not captured directly.
+
+The Python adapter recorded the corresponding seed-step intermediates.
+After converting its Q/K rows from checkpoint order back to GGUF row order,
+the following values matched native **bitwise**: input embedding, embedding
+norm, fused-feature norm, their concatenation, and unrotated Q/K/V. RoPE
+Q/K maximum differences were `3.55e-6` and `2.38e-6`. The first material
+disagreement was the attention output:
+
+| Native attention setting | Attention max/RMS difference | Prenorm max difference | Native Q/K/V replay max difference |
+| --- | ---: | ---: | ---: |
+| Auto | `0.009986 / 0.001067` | `0.023849` | `0.009986` |
+| Off | `0.005002 / 0.000671` | `0.007173` | `0.005002` |
+
+The independent attention replay checked that all 31 context decoder
+embedding rows exactly matched the frozen prompt tokens. It then used
+**native-captured** Q, K and V, rounded K/V through the declared F16 cache
+boundary, and computed PyTorch F32 attention. Its gap from native was
+essentially the same as the adapter's gap, which localizes this first-round
+state drift to attention execution rather than the binary projections or
+feature join. This does not prove which native reduction, masking or kernel
+operation causes it. For the `auto` seed step, 32,000 finite mapped draft
+logits had max/RMS differences `0.004978 / 0.001128`; native and CPU both
+selected target ID `3070`. No whole-model parity or quality gate is claimed.
+
+Ignored final evidence:
+
+| File | SHA256 |
+| --- | --- |
+| `results/recurrent-binary-cpu-smoke-20260928-draft-graph-final/heads.draft_graph.jsonl` | `ce74aa432a8955571629d4822fa27bc70ccf8d69893aaad7030fa0401905fed7` |
+| `results/recurrent-binary-cpu-smoke-20260928-draft-graph-final/heads.draft_graph.f32` | `396665daec88ae12659dc859e9cae34b209f85846fe96ad9a842484912ffabce` |
+| `results/recurrent-binary-cpu-smoke-20260928-draft-graph-final/seed_graph_vs_adapter_with_head.json` | `4adaa44d4e0a0c8d6474f06f37af34bccef5b4b378cf082162a55face5b9580c` |
+| `results/recurrent-binary-cpu-smoke-20260928-draft-graph-final/native_qkv_torch_attention.json` | `6769cc7f099b701a6428db9b60bb906032d95d5ec852c6593f7d5e230468f37d` |
+| `results/recurrent-binary-cpu-smoke-20260928-draft-graph-no-flash/seed_graph_vs_adapter_native_order.json` | `0a2df2853fe99adfe8755fc023525e1e4c9180895568e42179a1319dca360de1` |
+| `results/recurrent-binary-cpu-smoke-20260928-draft-graph-no-flash/native_qkv_torch_attention.json` | `1215f693ff95fe0418e22ce8d37236ded32dfbdca13c78029390276abc0b2264` |
+| `results/recurrent-binary-cpu-smoke-20260928-name-probe/heads.draft_graph_nodes.jsonl` | `d0a3027a496588a99e1ee6b8304ae43801b3e2f2434fe2701eca32c36aaab6b9` |

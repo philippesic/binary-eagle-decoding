@@ -178,6 +178,16 @@ now checks local Hugging Face target inputs against native layer taps 2,
 weights. The measured relative row drift is bounded for one prompt, while
 exact feature and whole-drafter numeric parity remain open. A non-flash
 native replay narrows, but does not eliminate, state drift.
+Bounded native CPU draft-graph capture now exposes decoder intermediates
+without changing observed outputs. On the first real proposal, decoder
+inputs and unrotated Q/K/V match the CPU adapter bitwise after the declared
+Q/K row permutation; RoPE drift is micro-scale. Replaying attention from
+native Q/K/V reproduces the first material state gap. These findings support
+the PyTorch step as a structurally aligned differentiable reference for this
+one chain,
+but its attention arithmetic is not numerically interchangeable with the
+native backend. The Q4_0 acceptance and throughput gates remain future
+native measurements, not inferred from CPU trace agreement.
 
 ## Bounded proposed first trial and stop gates
 
