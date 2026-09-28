@@ -13,7 +13,15 @@ from pathlib import Path
 
 import numpy as np
 import torch
+import transformers
 from safetensors import safe_open
+from torch.nn import functional as F
+from transformers import AutoConfig
+from transformers.models.qwen3.modeling_qwen3 import (
+    Qwen3RMSNorm,
+    Qwen3RotaryEmbedding,
+    apply_rotary_pos_emb,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "third_party/llama.cpp/gguf-py"))
@@ -161,6 +169,30 @@ def probe(
     }
     if not all(np.isfinite(value).all() for stages in ggml.values() for value in stages.values()):
         raise ValueError("Q replay produced nonfinite values")
+    config = AutoConfig.from_pretrained(hf_model, local_files_only=True)
+    if config.rms_norm_eps != 1e-6:
+        raise ValueError("HF Qwen3 RMS epsilon differs from pinned ggml graph")
+    with torch.no_grad():
+        input_half = torch.from_numpy(native_norm.astype("<f2")).to(device="cuda")
+        weight_half = torch.from_numpy(weight).to(device="cuda")
+        q_raw = F.linear(input_half, weight_half).reshape(1, TOKENS, HEADS, HEAD_WIDTH)
+        q_norm_module = Qwen3RMSNorm(HEAD_WIDTH, eps=config.rms_norm_eps).to(
+            device="cuda", dtype=torch.float16
+        )
+        q_norm_module.weight.copy_(torch.from_numpy(norm_weight).to(device="cuda"))
+        q_norm = q_norm_module(q_raw).transpose(1, 2)
+        rotary = Qwen3RotaryEmbedding(config, device="cuda").to(device="cuda")
+        positions = torch.arange(TOKENS, device="cuda", dtype=torch.long)[None, :]
+        cos, sin = rotary(q_norm, positions)
+        q_rope, _ = apply_rotary_pos_emb(q_norm, q_norm, cos, sin)
+        torch_stages = {
+            "raw": q_raw.float().cpu().numpy().reshape(TOKENS, Q_WIDTH),
+            "normed": q_norm.transpose(1, 2).float().cpu().numpy().reshape(TOKENS, Q_WIDTH),
+            "rope": q_rope.transpose(1, 2).float().cpu().numpy().reshape(TOKENS, Q_WIDTH),
+        }
+        torch.cuda.synchronize()
+    if not all(np.isfinite(value).all() for value in torch_stages.values()):
+        raise ValueError("Torch Q path produced nonfinite values")
     metrics = {
         "ggml_f32_rope_vs_server": _metrics(ggml["f32"]["rope"], native_q),
         "ggml_f16cast_rope_vs_server": _metrics(ggml["f16cast"]["rope"], native_q),
@@ -168,6 +200,11 @@ def probe(
             f"ggml_cast_vs_f32_{stage}": _metrics(ggml["f16cast"][stage], ggml["f32"][stage])
             for stage in ("raw", "normed", "rope")
         },
+        **{
+            f"torch_f16_vs_ggml_{stage}": _metrics(torch_stages[stage], ggml["f32"][stage])
+            for stage in ("raw", "normed", "rope")
+        },
+        "torch_f16_rope_vs_server": _metrics(torch_stages["rope"], native_q),
     }
     report = {
         "schema": "target_q_cuda_same_input_projection_v1",
@@ -178,7 +215,10 @@ def probe(
             "device": torch.cuda.get_device_name(0),
             "compute_capability": torch.cuda.get_device_capability(0),
         },
-        "precision": "F16 GGUF Q matrix, F32 GGUF head norm and RoPE; F32 or F16-cast native input",
+        "precision": (
+            "F16 GGUF Q matrix, F32 GGUF head norm and RoPE; "
+            "F32 or F16-cast native input; Torch CUDA/F16 source Qwen3 control"
+        ),
         "prompt_id": PROMPT_ID,
         "prefill_tokens": TOKENS,
         "metrics": metrics,
@@ -195,13 +235,19 @@ def probe(
             "q_norm_weight_f32": sha256(operands / "q_norm_weight.f32"),
             "positions_i32": sha256(operands / "positions.i32"),
             "hf_weight_shard": sha256(hf_shard),
+            "hf_config": sha256(hf_model / "config.json"),
+            "hf_qwen3_implementation": sha256(Path(sys.modules[Qwen3RMSNorm.__module__].__file__)),
             "helper_source": sha256(ROOT / "scripts/native_target_q_cuda.cpp"),
             "helper_binary": sha256(helper),
             "ggml_cuda_library": sha256(build / "bin/libggml-cuda.so"),
             "cmake_cache": sha256(build / "CMakeCache.txt"),
             "probe": sha256(Path(__file__)),
         },
-        "software": {"numpy": np.__version__, "torch": torch.__version__},
+        "software": {
+            "numpy": np.__version__,
+            "torch": torch.__version__,
+            "transformers": transformers.__version__,
+        },
     }
     (run_dir / "comparison.json").write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
     return report
