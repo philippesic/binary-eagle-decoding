@@ -281,7 +281,16 @@ established.
   all five mapped top IDs, but normalized head-state max differences grew
   to about 0.0034. Numerical state/KV parity is **not** established; the
   two ignored per-depth reports and exact source hashes are in the CPU
-  capture report. No optimizer step ran.
+  capture report.
+- One diagnostic two-position CPU SGD step on the audited real capture
+  produced finite nonzero sign and scale gradients in all nine binary
+  projections. The 839 MiB checkpoint exported to a 38 MiB GGUF with
+  truthful learned-scale metadata. All nine scale tensors changed versus D;
+  the packed sign words remained unchanged after the small step. A CPU-only
+  native server loaded all nine exported linears and returned the same eight
+  raw IDs for this prompt. The [CPU capture report](../../experiments/recurrent-binary-cpu-capture-smoke.md)
+  records hashes and limits. This is a one-step integration diagnostic, not
+  approved full training or evidence against Q4_0.
 - This closes a real runtime-format gap for a single request only. It does
   not establish numerical target-feature parity, whole-drafter state/KV
   parity, 96-prompt capture completeness, training quality or native Q4_0

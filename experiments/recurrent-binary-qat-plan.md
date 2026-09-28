@@ -167,6 +167,11 @@ with native D, while normalized state differences reached roughly 0.0034.
 This is a measured structural/numeric drift, not an exact full-drafter parity
 gate. The [capture report](recurrent-binary-cpu-capture-smoke.md) gives the
 per-depth evidence and limits.
+A separate two-position CPU-only integration step on the audited capture
+backpropagated to all nine binary sign/scale pairs, wrote the 18-array
+checkpoint, exported truthful learned-scale metadata, and loaded the output
+GGUF in the native CPU server. It did not use the proposed full budget,
+estimate live acceptance gains or meet the native Q4_0 performance gate.
 
 ## Bounded proposed first trial and stop gates
 

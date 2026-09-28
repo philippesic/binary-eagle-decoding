@@ -10,8 +10,8 @@ checkpoint weight: ``<source name>.latent`` with shape [rows, K] and
 are in original checkpoint row order. Q and K rows are permuted here into the
 GGUF RoPE layout before packing. No accelerator or model execution is used.
 
-This writes truthful ``f32_learned_nonnegative`` metadata. Current native
-loaders do not recognize that rule; deployment is gated on a loader change.
+This writes truthful ``f32_learned_nonnegative`` metadata. The fork's native
+loader recognizes that rule; each export still needs loader and numeric gates.
 """
 
 from __future__ import annotations
@@ -251,9 +251,7 @@ def export_model(base_path: Path, checkpoint: Path, manifest_path: Path, output:
             "output": {"path": str(output), "sha256": output_hash},
             "scale_rule": "f32_learned_nonnegative",
             "training_arithmetic": manifest["training_arithmetic"],
-            "native_loader_gate": (
-                "loader support and CPU numeric parity are required before execution"
-            ),
+            "native_loader_gate": "verify loader and full-drafter numeric parity before deployment",
             "serialization_audit_passed": True,
             "projections": {
                 base: {

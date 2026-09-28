@@ -118,3 +118,38 @@ The ignored reports are `real_round_native_order.json` (SHA256
 `ff3890aaf14225c68955c178d2b520b13f8384321b5338d69172251ecf577b7a`)
 and `real_round_group_matmul.json` (SHA256
 `061215c1900fad504af406481f97534593dbbb8034c842b649b01d489119c239`).
+
+## Two-position diagnostic update and native export
+
+The audited one-prompt bundle supplied the first two proposal rows and
+frozen cloned-verifier labels. One CPU grouped-matmul student unroll rebuilt
+the accepted-prefix cache, kept the next two proposal steps differentiable,
+and applied one SGD step (`lr=1e-5`) to exactly the nine binary sign/scale
+parameter pairs. The supported-label CE was `2.4826886653900146`; all nine
+linears had finite nonzero sign and scale gradients. This tests the real-size
+joint gradient path; the earlier tiny causal-cache test remains the evidence
+that a *later-only* loss reaches an earlier K/V/state. The two-position
+diagnostic did not establish that specific real-size later-only derivative.
+
+The resulting 839 MiB checkpoint exported through the learned-scale GGUF
+serializer. The 38 MiB artifact (SHA256
+`111458a74c8eed4daaef572c3f60097907aff13b3af55aa350ae00834abdd53b`)
+retained the frozen map and four draft norms. Against candidate D, all nine
+scale tensors changed, with **1,092,652 changed F32 scale entries**; no
+packed sign word changed after this single small step. The accelerator-disabled
+native server loaded all nine linears under `f32_learned_nonnegative` and A16,
+served the same eight raw output IDs on the one prompt, and stopped cleanly.
+That output agreement is a loader/export smoke result, not improved acceptance
+or throughput. The project's Q4_0 gate and complete training budget remain
+unrun.
+
+Ignored files are under `results/recurrent-binary-cpu-smoke-20260928-a16/diagnostic-train-step/`:
+
+| Artifact | SHA256 |
+| --- | --- |
+| `diagnostic_step.npz` | `caf2753f9acee468eae95af5b873e49fe8095ea9c0c9005381b144095c3cf86e` |
+| `checkpoint_manifest.json` | `c896b83954c5c7c1403613f51a0395a1fbb4273e0c250d3a1e0c1cab30abd590` |
+| `report.json` | `76d28ac1ae0137e078121e633a858c9395e888733beb67b880aaf34bc7c2ad63` |
+| `export_audit.json` | `39a497299912090c6332b36c70b3d282a33d6116bea0e76813b2fc4898389c4e` |
+| `export_delta.json` | `ea7e70763d8e34be62b90e7349631cf546fc547f405ef2e8e7448ae728080167` |
+| `native-smoke/response.json` | `3abf697d9cc6ad50f4e50baf8dc392154399c623e248902c536e824e69428c3b` |
