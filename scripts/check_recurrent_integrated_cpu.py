@@ -42,6 +42,7 @@ CASES = {
         "context": 46,
         "execution": 2,
         "depths": 5,
+        "accepted_drafts": 0,
     },
     "prose_first": {
         "prompt_id": "qat-revisit-train-prose-urban-waterways-01",
@@ -50,6 +51,7 @@ CASES = {
         "context": 31,
         "execution": 2,
         "depths": 5,
+        "accepted_drafts": 0,
     },
     "reasoning_postaccept": {
         "prompt_id": "qat-revisit-train-reasoning-rate-and-work-01",
@@ -58,6 +60,16 @@ CASES = {
         "context": 49,
         "execution": 14,
         "depths": 3,
+        "accepted_drafts": 2,
+    },
+    "reasoning_middle": {
+        "prompt_id": "qat-revisit-train-reasoning-rate-and-work-01",
+        "manifest": "99b9003698bcdf5505421a1667dac4d21a8545471d91330c04181c9f2a931d40",
+        "round": 1,
+        "context": 47,
+        "execution": 8,
+        "depths": 5,
+        "accepted_drafts": 1,
     },
 }
 GRAPH_TAPS = (
@@ -175,6 +187,8 @@ def audit(
     if len(rounds) != 1 or len(rounds[0]["prefix_token_ids"]) != case["context"] + 1:
         raise ValueError("selected round has wrong accepted prefix")
     round_row = rounds[0]
+    if round_row.get("accepted_drafts") != case["accepted_drafts"]:
+        raise ValueError("selected round acceptance count differs")
     heads = [
         row
         for row in read_jsonl(capture / "heads.jsonl")
