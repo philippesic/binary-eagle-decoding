@@ -8,14 +8,17 @@ The target/verifier model precision remains as frozen for each experiment.
 
 **Latest checkpoint (2026-09-28 UTC):** a standalone ggml CUDA replay on
 the RTX 5080 matched all **29,696/29,696** output-preserving native
-Qwen3 block-0 V projection values on the same frozen F32 norm rows and
-F16 weight. Explicitly rounding the ggml input to F16 changed none;
-Torch CUDA/F16 matched only 5,351 values and retained 0.0934% relative
-row error at the outlier position. The [V operator
-report](../experiments/recurrent-target-v-cuda-projection.md), earlier
-[safe-tap report](../experiments/recurrent-target-block0-safe-taps-5080.md)
-and [goal checkpoint](goals/recurrent-binary-body-head.md#thirty-seventh-goal-turn-same-input-target-v-cuda-arithmetic)
-record hashes and limits. K/Q and later target blocks remain open;
+Qwen3 block-0 K projection plus per-head RMS norm values on the same
+frozen F32 norm rows and pinned weights. Explicitly casting the ggml
+input to F16 changed no raw or normed K values. Torch CUDA/F16 raw K
+projection matched 6,530 values; its Qwen3 norm output matched only 2
+native F32 values, with 0.0916% relative row error at position 3.
+Given identical ggml raw F32 K, the Torch norm matched 24,456 values
+and position 3 exactly; casting that raw K to F16 introduced 0.0338%
+position-3 error. The [K report](../experiments/recurrent-target-k-cuda-projection.md),
+earlier [V report](../experiments/recurrent-target-v-cuda-projection.md)
+and [goal checkpoint](goals/recurrent-binary-body-head.md#thirty-eighth-goal-turn-same-input-target-k-cuda-arithmetic)
+record hashes and limits. Q and later target blocks remain open;
 the Q-normalization callback is intrusive. The integrated Apple CPU
 drafter forward has 18 exact diagnostic depths. No worker, local server
 or remote job is active; the 5080 is free. Training, final-set and

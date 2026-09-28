@@ -347,6 +347,20 @@ strengthens the exact-backend option but does not select it, set a
 tolerance or authorize optimization. See the [operator
 report](../experiments/recurrent-target-v-cuda-projection.md).
 
+**Same-input K operator evidence (2026-09-28):** an isolated ggml CUDA
+K projection and per-head RMS norm on the RTX 5080 matched all 29,696
+output-preserving native server values bitwise, with either F32 or
+explicitly F16-cast native norm input. Torch CUDA/F16 differed already
+at raw K projection (6,530/29,696 exact), and its Qwen3 norm output
+reproduced the earlier 0.0916% position-3 native gap. Feeding the Torch
+norm identical ggml raw F32 K cut that row gap to zero and gave
+24,456/29,696 exact values; casting the raw K to F16 introduced 0.0338%
+row error. Backend projection arithmetic and F16 intermediate precision
+both matter under this geometry. This supports continued operator
+attribution but does not choose an exact training backend versus a
+predeclared numerical/trajectory gate, or authorize optimization. The
+native Q tap remains intrusive. See the [K report](../experiments/recurrent-target-k-cuda-projection.md).
+
 **Exact-prefix row clarification (2026-09-28):** the native verifier computes
 target logits for every proposed prefix in a speculative batch, and the cloned
 sampler advances along each proposed token even after an earlier live

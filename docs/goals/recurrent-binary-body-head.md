@@ -1567,3 +1567,47 @@ the same output-preserving native input and weights, with an exact native
 K tap as the fidelity gate. Keep the intrusive Q tap excluded. Only
 after these local operators are understood should the team revisit a
 predeclared target-feature/trajectory tolerance or exact training backend.
+
+## Thirty-eighth goal turn: same-input target K CUDA arithmetic
+
+- Commits `1d02161`, `86d1b67` and `c6b63b0` add and refine the
+  bounded K operator replay. The [report](../../experiments/recurrent-target-k-cuda-projection.md)
+  covers block-0 `ggml_mul_mat`, eight-head reshape and weighted RMS norm
+  on the frozen 29-token code/data-validation training prompt. The F16
+  K matrix and F32 head-norm weight match the pinned GGUF/HF sources;
+  the input is an output-preserving native attention-norm capture.
+  Local C++ syntax and Ruff lint/format checks passed. The standalone
+  ggml CUDA F32-input graph matches **29,696/29,696** output-preserving
+  native `Kcur_normed-0` F32 values bitwise, satisfying the fidelity
+  gate. Explicitly casting its input to F16 changes no raw or normed K
+  values.
+- Torch CUDA/F16 raw K projection matches **6,530/29,696** ggml raw
+  values; after the exact Qwen3 HF norm it matches only **2/29,696**
+  native F32 normed values, with position-3 relative row L2 **0.0916%**.
+  This reproduces the earlier same-input full-model HF intervention
+  exactly. Giving the Torch norm the identical ggml raw F32 K yields
+  **24,456/29,696** exact values, maximum absolute gap
+  `4.57763671875e-5` and zero position-3 gap. Casting that same raw K
+  to F16 before the Torch norm yields 0.0338% position-3 error. The
+  tested K gap therefore includes projection backend arithmetic and
+  F16 intermediate precision; same-raw F32 norm arithmetic is much
+  smaller. These effects are not presumed additive.
+- The corrected supervised run
+  `checkouts/target-block0-operator-20260928/runs/target-k-cuda-c-20260928`
+  on the registered RTX 5080/SM120 host exited zero; ignored report
+  SHA256 `58c67405a21576200ba5ce0a1db4675e39c674ee43b27f2e9e448dcedcf8400f`.
+  The first generic-Torch-norm run and the second corrected-HF-norm run
+  are preserved as ignored diagnostics. The final process group stopped
+  and the GPU returned to 0% utilization and 1,372 MiB whole-device
+  baseline. No target full-model forward, optimizer, final prompt or
+  Q4_0 serving evaluation ran. This one SM120 operator case does not
+  establish SM75 performance or a global target-feature tolerance.
+  Training remains gated by the user-owned exact/numeric policy and
+  all-body budget; the 96-prompt capture is still training-ineligible.
+
+**Next gate:** investigate an output-preserving native Q/attention
+boundary, since the existing Q-normalization callback changes the
+block output. Keep the sealed training prefix and same-input checks;
+do not treat an intrusive tap as native server-path evidence. Revisit
+the user-owned numeric/trajectory policy only after the operator
+evidence is adequate.
