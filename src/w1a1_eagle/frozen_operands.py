@@ -2,7 +2,7 @@
 
 The pinned target's token embedding is too large to copy for a CPU training
 adapter. GGUFReader memory-maps it; each lookup copies just one F16 row into a
-CPU tensor. The four small draft norms are copied out of their GGUF mapping.
+CPU tensor. The four small candidate-D draft norms are copied from GGUF.
 Neither object exposes a trainable parameter or a view of mapped weight bytes.
 """
 
@@ -24,7 +24,7 @@ if str(_GGUF_PY) not in sys.path:
 from gguf import GGMLQuantizationType, GGUFReader  # noqa: E402
 
 TARGET_F16_SHA256 = "05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6"
-DRAFT_F16_SHA256 = "c1f895a130b64cd3d5a97fba7aa7605dc7fe3a389dd6d48e6751128614ee76d1"
+DRAFT_D_SHA256 = "10e8e98e616480b25ff7600f195ba7ea3e0fd7c24832765013f960783c7609cf"
 
 TARGET_EMBEDDING = "token_embd.weight"
 DRAFT_NORMS = (
@@ -56,7 +56,7 @@ def _unique_tensor(reader: GGUFReader, name: str):
 class FrozenOperands:
     """Validated F16 target embedding lookup and F32 draft norm source.
 
-    Expected hashes default to the two pinned GGUF conversions. Explicit
+    Expected hashes default to the pinned FP16 target and candidate D. Explicit
     hashes and dimensions allow tiny synthetic GGUF fixtures without weakening
     the production check. The target mapping stays alive with this object.
     ``norm_arrays`` returns fresh CPU tensor copies so callers cannot alter
@@ -69,7 +69,7 @@ class FrozenOperands:
         draft_gguf: Path,
         *,
         target_sha256: str = TARGET_F16_SHA256,
-        draft_sha256: str = DRAFT_F16_SHA256,
+        draft_sha256: str = DRAFT_D_SHA256,
         vocab_size: int = 151_936,
         hidden_size: int = 2_560,
     ) -> None:

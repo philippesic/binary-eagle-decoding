@@ -67,8 +67,9 @@ file and `docs/STATUS.md` are the durable project checkpoint.
   positions are `P+1`, `P+2`; invalid terminal rows create no decoder call. This checks the
   training interface, not actual EAGLE mask or K/V byte parity.
 
-**Latest CPU checks:** 45 recurrent tests, five explicit decoder-step tests,
-eight native loader fixtures, eight existing scale-fitting tests, Ruff
+**Latest CPU checks:** 45 recurrent tests, seven explicit decoder-step tests,
+five frozen-operand tests, eight native loader fixtures, eight existing
+scale-fitting tests, Ruff
 lint/format and `git diff --check` pass. No local Metal/MPS or CUDA
 runtime was selected. The complete native Q4_0 quality/throughput gates
 remain unrun under this goal.
@@ -132,6 +133,16 @@ mark the native Goal blocked on this turn.
   metadata and tail bits passed. D contains **17,005 exact-zero group scales**.
   Two synthetic corruption/hash tests pass. Ignored audit report SHA256:
   `f91c3d09f71079019cf517c08805bb805fd7a5b1bfdb1ff6aea6d84617bcb4be`.
+- A read-only GGUF view verified the actual pinned 7.5 GiB FP16 target file
+  hash and the D draft hash, memory-mapped the 151,936-by-2,560 target
+  embedding, copied only requested CPU F16 rows, and supplied the four
+  F32 draft norm arrays. No target forward or full embedding copy ran.
+  An adapter test binds copied norms and uses the external frozen embedding
+  lookup even when the drafter's borrowed module is BF16; seven decoder-step
+  tests and five frozen-operand tests pass on synthetic models. The ignored
+  two-row/four-norm audit is
+  `results/binary-scale-fitting-5080/recurrent-frozen-operands-audit.json`
+  (SHA256 `5070724d9d2dc1a567c727980529bd15e26cbf0ff2372747b54e14c295ad076d`).
 
 This is the **third consecutive goal turn**. It made meaningful CPU progress;
 the no-GPU restriction has not created a true impasse. The native Goal stays

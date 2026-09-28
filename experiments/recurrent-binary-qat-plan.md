@@ -158,6 +158,11 @@ numeric parity with native GGML remains a stop gate; PyTorch norm, RoPE,
 attention and reduction arithmetic may differ. A strict CPU audit of the
 unchanged D GGUF found all nine packed pairs and 17,005 exact-zero scales;
 this preserves D initialization, not model quality.
+The frozen-input adapter verifies the pinned FP16 target GGUF and D GGUF
+hashes, memory-maps the target's F16 token embedding, copies only requested
+rows, and binds copied F32 draft norm vectors. A CPU read of one real token
+row passed without a target forward or full embedding copy. This is operand
+identity evidence, not target-feature capture or model-output parity.
 
 A CPU prefix-rebuild helper now recomputes the current student cache from
 accepted-prefix token `t[j+1]` and raw target feature `f[j]` at decoder

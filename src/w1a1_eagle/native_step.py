@@ -15,6 +15,7 @@ cache scheduling and GPU graph behavior remain unverified.
 from __future__ import annotations
 
 import math
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from types import MappingProxyType
 
@@ -24,6 +25,39 @@ from torch.nn import functional as F
 
 from .recurrent_binary import CANDIDATE_D_BASE_TO_PATH, GroupedBinaryLinear
 from .recurrent_rollout import DraftStep
+
+NATIVE_NORM_PATHS = {
+    "blk.0.attn_norm.weight": "midlayer.input_layernorm",
+    "blk.0.attn_norm_2.weight": "midlayer.hidden_norm",
+    "blk.0.ffn_norm.weight": "midlayer.post_attention_layernorm",
+    "output_norm.weight": "norm",
+}
+
+
+def bind_frozen_norms(drafter: nn.Module, norm_arrays: Mapping[str, Tensor]) -> None:
+    """Copy native F32 draft norms without changing borrowed target tensors."""
+    if set(norm_arrays) != set(NATIVE_NORM_PATHS):
+        raise ValueError("expected the four named frozen native EAGLE norms")
+    hidden = getattr(getattr(drafter, "config", None), "hidden_size", None)
+    if type(hidden) is not int or hidden < 1:
+        raise ValueError("drafter hidden size is invalid")
+    pending = []
+    for name, path in NATIVE_NORM_PATHS.items():
+        module = drafter.get_submodule(path)
+        weight = norm_arrays[name]
+        if (
+            not isinstance(weight, Tensor)
+            or weight.device.type != "cpu"
+            or weight.dtype != torch.float32
+            or weight.shape != (hidden,)
+            or not torch.isfinite(weight).all()
+        ):
+            raise ValueError(f"{name}: native norm must be one finite CPU F32 row")
+        if not isinstance(getattr(module, "weight", None), nn.Parameter):
+            raise ValueError(f"{path}: expected an existing norm parameter")
+        pending.append((module, weight.detach().clone()))
+    for module, weight in pending:
+        module.weight = nn.Parameter(weight, requires_grad=False)
 
 
 @dataclass(frozen=True)
@@ -53,7 +87,9 @@ class NativeStepAdapter(nn.Module):
     masks, holes in a prefix and nondefault RoPE are intentionally rejected.
     """
 
-    def __init__(self, drafter: nn.Module) -> None:
+    def __init__(
+        self, drafter: nn.Module, *, embedding_lookup: Callable[[int], Tensor] | None = None
+    ) -> None:
         super().__init__()
         config = getattr(drafter, "config", None)
         if config is None or getattr(config, "pretraining_tp", None) != 1:
@@ -119,11 +155,27 @@ class NativeStepAdapter(nn.Module):
         if len({module.arithmetic for module in linears.values()}) != 1:
             raise ValueError("binary projections must use one declared arithmetic")
 
-        embedding = getattr(drafter, "embed_tokens", None)
-        if not isinstance(embedding, nn.Embedding) or embedding.weight.device.type != "cpu":
-            raise ValueError("borrowed token embedding must be a CPU nn.Embedding")
-        if embedding.weight.dtype != torch.float16 or embedding.embedding_dim != hidden:
-            raise ValueError("borrowed token embedding must be F16 with hidden_size columns")
+        if embedding_lookup is None:
+            embedding = getattr(drafter, "embed_tokens", None)
+            if not isinstance(embedding, nn.Embedding) or embedding.weight.device.type != "cpu":
+                raise ValueError("borrowed token embedding must be a CPU nn.Embedding")
+            if embedding.weight.dtype != torch.float16 or embedding.embedding_dim != hidden:
+                raise ValueError("borrowed token embedding must be F16 with hidden_size columns")
+
+            def read_embedding(token: int) -> Tensor:
+                return embedding.weight[token]
+
+            embedding_lookup = read_embedding
+            embedding_vocab_size = embedding.num_embeddings
+        else:
+            embedding_vocab_size = getattr(embedding_lookup, "vocab_size", None)
+            if (
+                not callable(embedding_lookup)
+                or type(embedding_vocab_size) is not int
+                or embedding_vocab_size < 1
+                or getattr(embedding_lookup, "hidden_size", None) != hidden
+            ):
+                raise ValueError("external F16 embedding lookup has incompatible dimensions")
         norm_paths = (
             "midlayer.input_layernorm",
             "midlayer.hidden_norm",
@@ -162,6 +214,8 @@ class NativeStepAdapter(nn.Module):
 
         self.drafter = drafter
         self.linears = MappingProxyType(linears)
+        self.embedding_lookup = embedding_lookup
+        self.embedding_vocab_size = embedding_vocab_size
         self.hidden_size = hidden
         self.heads = heads
         self.kv_heads = kv_heads
@@ -207,7 +261,7 @@ class NativeStepAdapter(nn.Module):
     def decode_step(
         self, token: int, feature: Tensor, decoder_position: int, cache: NativeStepCache
     ) -> DraftStep:
-        if type(token) is not int or token < 0 or token >= self.drafter.embed_tokens.num_embeddings:
+        if type(token) is not int or token < 0 or token >= self.embedding_vocab_size:
             raise ValueError("token must index the borrowed embedding")
         if type(decoder_position) is not int or not 0 <= decoder_position < self.max_positions:
             raise ValueError("decoder_position is outside the supported RoPE context")
@@ -226,7 +280,17 @@ class NativeStepAdapter(nn.Module):
         layer = self.drafter.midlayer
         attn = layer.self_attn
         mlp = layer.mlp
-        embedding = self.drafter.embed_tokens.weight[token].to(torch.float32)
+        embedding_f16 = self.embedding_lookup(token)
+        if (
+            not isinstance(embedding_f16, Tensor)
+            or embedding_f16.device.type != "cpu"
+            or embedding_f16.dtype != torch.float16
+            or embedding_f16.shape != (self.hidden_size,)
+            or embedding_f16.requires_grad
+            or not torch.isfinite(embedding_f16).all()
+        ):
+            raise ValueError("embedding lookup must return a frozen finite CPU F16 row")
+        embedding = embedding_f16.to(torch.float32)
         normalized_embedding = _frozen_rms_norm(embedding, layer.input_layernorm)
         normalized_feature = _frozen_rms_norm(feature, layer.hidden_norm)
         fused = torch.cat((normalized_embedding, normalized_feature), dim=-1)

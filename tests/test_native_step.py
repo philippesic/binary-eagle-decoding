@@ -1,18 +1,30 @@
 """Small CPU-only structural checks for the one-step binary EAGLE adapter."""
 
+import hashlib
 import math
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
+import numpy as np
 import torch
 from torch import nn
 from torch.nn import functional as F
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "third_party/llama.cpp/gguf-py"))
 
-from w1a1_eagle.native_step import NativeStepAdapter, NativeStepCache  # noqa: E402
+from gguf import GGUFWriter  # noqa: E402
+
+from w1a1_eagle.frozen_operands import DRAFT_NORMS, FrozenOperands  # noqa: E402
+from w1a1_eagle.native_step import (  # noqa: E402
+    NATIVE_NORM_PATHS,
+    NativeStepAdapter,
+    NativeStepCache,
+    bind_frozen_norms,
+)
 from w1a1_eagle.recurrent_binary import GroupedBinaryLinear  # noqa: E402
 from w1a1_eagle.recurrent_rollout import rebuild_prefix_cache, rollout_captured_prefix  # noqa: E402
 from w1a1_eagle.recurrent_trace import TraceAudit  # noqa: E402
@@ -114,6 +126,72 @@ def _manual_step(drafter, token, feature, position, keys, values):
 
 
 class NativeStepTests(unittest.TestCase):
+    def test_frozen_gguf_operand_view_binds_to_binary_adapter(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            target, draft = directory / "target.gguf", directory / "D.gguf"
+            writer = GGUFWriter(target, "qwen3")
+            embedding = (np.arange(44, dtype=np.float32).reshape(11, 4) / 100).astype(np.float16)
+            writer.add_tensor("token_embd.weight", embedding)
+            writer.write_header_to_file()
+            writer.write_kv_data_to_file()
+            writer.write_tensors_to_file()
+            writer.close()
+            writer = GGUFWriter(draft, "eagle3")
+            for index, name in enumerate(DRAFT_NORMS):
+                writer.add_tensor(name, np.ones(4, np.float32) * (1 + index / 10))
+            writer.write_header_to_file()
+            writer.write_kv_data_to_file()
+            writer.write_tensors_to_file()
+            writer.close()
+            operands = FrozenOperands(
+                target,
+                draft,
+                target_sha256=hashlib.sha256(target.read_bytes()).hexdigest(),
+                draft_sha256=hashlib.sha256(draft.read_bytes()).hexdigest(),
+                vocab_size=11,
+                hidden_size=4,
+            )
+            drafter = _drafter()
+            drafter.embed_tokens = nn.Embedding(11, 4, dtype=torch.bfloat16, device="cpu")
+            borrowed_before = drafter.embed_tokens.weight.detach().clone()
+            bind_frozen_norms(drafter, operands.norm_arrays)
+            adapter = NativeStepAdapter(drafter, embedding_lookup=operands)
+            feature = adapter.encode_feature(torch.ones(12, device="cpu"))
+            result = adapter.decode_step(3, feature, 0, adapter.new_cache())
+            self.assertEqual(result.logits.shape, (7,))
+            self.assertTrue(torch.isfinite(result.logits).all())
+            torch.testing.assert_close(operands(3), torch.from_numpy(embedding[3].copy()))
+            self.assertTrue(
+                all(not parameter.requires_grad for parameter in drafter.embed_tokens.parameters())
+            )
+            torch.testing.assert_close(drafter.embed_tokens.weight.detach(), borrowed_before)
+
+    def test_binds_frozen_native_norm_copies_atomically(self):
+        drafter = _drafter()
+        originals = {
+            name: drafter.get_submodule(path).weight for name, path in NATIVE_NORM_PATHS.items()
+        }
+        arrays = {
+            name: torch.full((4,), 0.5 + index / 10, dtype=torch.float32, device="cpu")
+            for index, name in enumerate(NATIVE_NORM_PATHS)
+        }
+        bad = dict(arrays)
+        bad["output_norm.weight"] = torch.ones(3, dtype=torch.float32, device="cpu")
+        with self.assertRaisesRegex(ValueError, "native norm"):
+            bind_frozen_norms(drafter, bad)
+        for name, path in NATIVE_NORM_PATHS.items():
+            self.assertIs(drafter.get_submodule(path).weight, originals[name])
+        bind_frozen_norms(drafter, arrays)
+        for name, path in NATIVE_NORM_PATHS.items():
+            weight = drafter.get_submodule(path).weight
+            self.assertIsNot(weight, originals[name])
+            self.assertFalse(weight.requires_grad)
+            torch.testing.assert_close(weight, arrays[name])
+        arrays["output_norm.weight"].fill_(9)
+        self.assertNotEqual(float(drafter.norm.weight[0]), 9)
+        NativeStepAdapter(drafter)
+
     def test_prefix_rebuild_and_proposal_rollout_share_current_student(self):
         drafter = _drafter()
         adapter = NativeStepAdapter(drafter)
