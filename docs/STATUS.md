@@ -6,23 +6,24 @@ The target/verifier model precision remains as frozen for each experiment.
 
 **Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), parity and capture preparation. The user has authorized the free RTX 5080 for needed work; no all-body training budget has been approved. **Latest completed goal:** [mixed precision rescue and frozen-body head adaptation on RTX 5080](goals/binary-rescue-head-5080.md), completed 2026-09-28 UTC. The preceding [binary scale fitting goal](goals/binary-scale-fitting-5080.md) completed 2026-09-27 UTC.
 
-**Latest checkpoint (2026-09-28 UTC):** a standalone ggml CUDA replay on
-the RTX 5080 matched all **29,696/29,696** output-preserving native
-Qwen3 block-0 K projection plus per-head RMS norm values on the same
-frozen F32 norm rows and pinned weights. Explicitly casting the ggml
-input to F16 changed no raw or normed K values. Torch CUDA/F16 raw K
-projection matched 6,530 values; its Qwen3 norm output matched only 2
-native F32 values, with 0.0916% relative row error at position 3.
-Given identical ggml raw F32 K, the Torch norm matched 24,456 values
-and position 3 exactly; casting that raw K to F16 introduced 0.0338%
-position-3 error. The [K report](../experiments/recurrent-target-k-cuda-projection.md),
-earlier [V report](../experiments/recurrent-target-v-cuda-projection.md)
-and [goal checkpoint](goals/recurrent-binary-body-head.md#thirty-eighth-goal-turn-same-input-target-k-cuda-arithmetic)
-record hashes and limits. Q and later target blocks remain open;
-the Q-normalization callback is intrusive. The integrated Apple CPU
-drafter forward has 18 exact diagnostic depths. No worker, local server
-or remote job is active; the 5080 is free. Training, final-set and
-Q4_0 evaluation remain gated.
+**Latest checkpoint (2026-09-28 UTC):** a deferred RTX 5080 callback
+captured native Qwen3 block-0 post-RoPE Q while preserving all
+**74,240/74,240** sealed block-output values and the earlier safe K
+payload. A standalone ggml CUDA projection, 32-head norm and NeoX
+RoPE replay on the same frozen input and pinned weights matched all
+**118,784/118,784** safe native Q values bitwise; explicitly casting
+the input to F16 changed none. The old direct Q callback differs by at
+most `9.5367431640625e-7` in Q and changed 1,911 block-output values,
+so its values remain excluded from server-path attribution. The
+[Q report](../experiments/recurrent-target-q-deferred-cuda.md),
+[K report](../experiments/recurrent-target-k-cuda-projection.md),
+[V report](../experiments/recurrent-target-v-cuda-projection.md)
+and [goal checkpoint](goals/recurrent-binary-body-head.md#thirty-ninth-goal-turn-output-preserving-q-boundary-and-cuda-replay)
+record hashes and limits. Torch Q and attention/residual attribution,
+later target blocks and a training numeric policy remain open. The
+integrated Apple CPU drafter forward has 18 exact diagnostic depths.
+No worker, local server or remote job is active; the 5080 is free.
+Training, final-set and Q4_0 evaluation remain gated.
 
 **Prior CPU arithmetic checkpoint (2026-09-28 UTC):** corrected CPU RMS norm and RoPE
 frequency arithmetic matched all 619,520 F16 fused-input and 123,904 raw

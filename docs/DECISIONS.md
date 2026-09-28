@@ -361,6 +361,19 @@ attribution but does not choose an exact training backend versus a
 predeclared numerical/trajectory gate, or authorize optimization. The
 native Q tap remains intrusive. See the [K report](../experiments/recurrent-target-k-cuda-projection.md).
 
+**Output-preserving Q evidence (2026-09-28):** a deferred post-RoPE Q
+read at the already safe K-norm callback preserved all 74,240 block-0
+output values and the safe K payload. A standalone RTX 5080 ggml CUDA
+Q projection, 32-head norm and NeoX RoPE replay then matched all
+118,784 captured Q values bitwise; explicit F16 input casting changed
+none. The old direct Q callback differed by at most `9.5367431640625e-7`
+in Q and changed 1,911 later output values. Its Q data remain excluded
+from native server-path attribution. This closes one same-input Q
+operator fidelity gate, but Torch Q, attention/residual, later target
+blocks and accepted trajectories remain open. The finding does not
+select the user-owned exact-backend versus numeric/trajectory policy or
+authorize training. See the [Q report](../experiments/recurrent-target-q-deferred-cuda.md).
+
 **Exact-prefix row clarification (2026-09-28):** the native verifier computes
 target logits for every proposed prefix in a speculative batch, and the cloned
 sampler advances along each proposed token even after an earlier live

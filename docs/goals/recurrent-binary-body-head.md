@@ -1611,3 +1611,45 @@ block output. Keep the sealed training prefix and same-input checks;
 do not treat an intrusive tap as native server-path evidence. Revisit
 the user-owned numeric/trajectory policy only after the operator
 evidence is adequate.
+
+## Thirty-ninth goal turn: output-preserving Q boundary and CUDA replay
+
+- Commits `af7fa14`, `453f558` and `dae1137` add a deferred native Q
+  callback mode, its safe-capture audit and a same-input ggml CUDA Q
+  replay. The [Q report](../../experiments/recurrent-target-q-deferred-cuda.md)
+  records the method, hashes and limits. The mode observes the
+  post-RoPE `Qcur-0` pointer without requesting a scheduler stop at Q,
+  then copies it when the previously safe K-norm callback stops the
+  graph. The supervised 29-token native RTX 5080/SM120 run captured
+  one finite 118,784-value F32 Q tensor. Its K payload matches the old
+  safe K capture bytewise, and its **74,240/74,240** block-output
+  values match the sealed ladder and output-only capture bitwise.
+- The safe deferred Q differs slightly from the old intrusive
+  post-RoPE Q capture: **102,401/118,784** F32 values exact, maximum
+  absolute difference `9.5367431640625e-7`, with only three different
+  F16-cast values. The old direct Q callback changed 1,911 block-output
+  values; the small Q discrepancy alone does not prove that later
+  change's cause. A standalone ggml CUDA graph on identical native
+  F32 norm input and pinned F16 Q/F32 head-norm weights applies Q
+  projection, 32-head RMS norm and NeoX RoPE. It matches the safe
+  post-RoPE Q **118,784/118,784 F32 values bitwise**. Explicit F16
+  input cast changes no raw, normed or rotated Q value.
+- Ignored comparison SHA256 values on the registered host are
+  `ae5f934444e64b4b3a589b5be2bdcf67cfa55611e64c425d3d41411d437a969f`
+  (deferred native Q),
+  `d1da2dd8ca27477e7e25992be60c789296572a9fe8adee864a303b11c62c7f1d`
+  (safe K/output and intrusive-Q audit), and
+  `febaced1bd0e7ad5d6d7471693e3408788ae98cd276e017dcbab07e723e8979b`
+  (standalone Q replay). All supervisors exited zero, process groups
+  stopped and the 5080 returned to 0% utilization and 1,372 MiB
+  whole-device baseline. Local C++ syntax and Ruff checks passed.
+  No optimizer, final prompt or Q4_0 serving evaluation ran. This
+  single SM120 target case does not prove general target-feature or
+  SM75 parity. The full96 capture remains training-ineligible; the
+  exact/numeric training policy and all-body budget remain user-owned.
+
+**Next gate:** compare a pinned Torch CUDA/F16 same-input Q path
+against the newly safe post-RoPE Q boundary, then attribute block-0
+attention/residual error using output-preserving taps. Keep all
+probes on frozen training prefixes and separate from training and
+Q4_0 gates.
