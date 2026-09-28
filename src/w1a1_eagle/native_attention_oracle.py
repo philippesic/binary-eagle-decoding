@@ -125,6 +125,13 @@ def f32_attention_surrogate(query: Tensor, keys: Tensor, values: Tensor) -> Tens
     return torch.einsum("ht,htd->hd", probabilities, repeated_values)
 
 
+def _native_interleaved_qk(value: Tensor) -> Tensor:
+    """Map Python half-split RoPE channels to ggml's interleaved Q/K rows."""
+    if not isinstance(value, Tensor) or value.ndim not in (2, 3) or value.shape[-1] != 128:
+        raise ValueError("native Q/K row conversion requires head_dim=128")
+    return value.reshape(*value.shape[:-1], 2, 64).transpose(-1, -2).reshape(value.shape)
+
+
 class _NativeForwardF32Backward(torch.autograd.Function):
     @staticmethod
     def forward(
@@ -141,6 +148,8 @@ class _NativeForwardF32Backward(torch.autograd.Function):
             raise ValueError("native attention prefix or head geometry is invalid")
         heads, width = query.shape
         kv_heads, prefix, kv_width = keys.shape
+        if width != 128:
+            raise ValueError("native attention forward requires head_dim=128")
         if (
             values.shape != keys.shape
             or width != kv_width
@@ -158,11 +167,12 @@ class _NativeForwardF32Backward(torch.autograd.Function):
             raise ValueError("native attention cache K/V must be F16-exact")
         padded_keys = torch.zeros((kv_heads, NATIVE_ATTENTION_SLOTS, width), dtype=torch.float32)
         padded_values = torch.zeros_like(padded_keys)
-        padded_keys[:, :prefix] = keys
+        padded_keys[:, :prefix] = _native_interleaved_qk(keys)
         padded_values[:, :prefix] = values
         mask = torch.full((1, NATIVE_ATTENTION_SLOTS), -torch.inf, dtype=torch.float16)
         mask[:, :prefix] = 0
-        result = oracle(query.detach().clone(), padded_keys, padded_values, mask)
+        native_query = _native_interleaved_qk(query).detach().clone()
+        result = oracle(native_query, padded_keys, padded_values, mask)
         _require_f32("native attention output", result, (heads, width))
         ctx.save_for_backward(query, keys, values)
         return result

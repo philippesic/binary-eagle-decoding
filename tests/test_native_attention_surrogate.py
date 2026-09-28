@@ -23,14 +23,34 @@ from w1a1_eagle.native_attention_oracle import (  # noqa: E402
     native_forward_f32_backward,
 )
 from w1a1_eagle.native_step import NativeStepAdapter  # noqa: E402
+from w1a1_eagle.recurrent_binary import GroupedBinaryLinear  # noqa: E402
+
+
+def _drafter_native_width():
+    drafter = _drafter()
+    drafter.config.head_dim = 128
+    generator = torch.Generator(device="cpu").manual_seed(291)
+
+    def binary(out_features, in_features):
+        weights = torch.randn(out_features, in_features, generator=generator) * 0.5
+        scales = torch.full((out_features, (in_features + 127) // 128), 0.08)
+        return GroupedBinaryLinear(weights, scales, group_size=128)
+
+    attention = drafter.midlayer.self_attn
+    attention.q_proj = binary(256, 8)
+    attention.k_proj = binary(128, 8)
+    attention.v_proj = binary(128, 8)
+    attention.o_proj = binary(4, 256)
+    return drafter
 
 
 class NativeAttentionSurrogateTests(unittest.TestCase):
     def test_native_forward_is_returned_exactly_and_padded_mask_is_causal(self):
-        query = torch.tensor([[0.25, -0.5], [0.5, 0.125]], requires_grad=True)
-        keys = torch.tensor([[[0.5, 0.25], [0.125, -0.5]]], requires_grad=True)
-        values = torch.tensor([[[0.25, 0.5], [0.75, 0.125]]], requires_grad=True)
-        native = torch.tensor([[0.03125, 0.0625], [-0.125, 0.25]], dtype=torch.float32)
+        query = (torch.arange(256, dtype=torch.float32).reshape(2, 128) / 256).requires_grad_()
+        key_rows = torch.arange(128, dtype=torch.float32) / 128
+        keys = torch.stack((key_rows, -key_rows))[None].requires_grad_()
+        values = torch.stack((key_rows / 2, key_rows / 4))[None].requires_grad_()
+        native = torch.arange(256, dtype=torch.float32).reshape(2, 128) / 512
         calls = []
 
         def oracle(q, k, v, mask):
@@ -41,13 +61,16 @@ class NativeAttentionSurrogateTests(unittest.TestCase):
         self.assertEqual(len(calls), 1)
         self.assertTrue(torch.equal(output, native))
         q, k, v, mask = calls[0]
-        self.assertEqual(q.shape, (2, 2))
-        self.assertEqual(k.shape, (1, NATIVE_ATTENTION_SLOTS, 2))
+        self.assertEqual(q.shape, (2, 128))
+        self.assertEqual(k.shape, (1, NATIVE_ATTENTION_SLOTS, 128))
         self.assertEqual(v.shape, k.shape)
         self.assertEqual(mask.shape, (1, NATIVE_ATTENTION_SLOTS))
         self.assertEqual(mask.dtype, torch.float16)
-        torch.testing.assert_close(q, query)
-        torch.testing.assert_close(k[:, :2], keys)
+        expected_q = torch.stack((query[:, :64], query[:, 64:]), dim=-1).reshape(2, 128)
+        expected_k = torch.stack((keys[..., :64], keys[..., 64:]), dim=-1).reshape(1, 2, 128)
+        torch.testing.assert_close(q, expected_q)
+        torch.testing.assert_close(k[:, :2], expected_k)
+        self.assertEqual(q[0, :4].tolist(), [0.0, 0.25, 1 / 256, 65 / 256])
         torch.testing.assert_close(v[:, :2], values)
         self.assertTrue(torch.equal(k[:, 2:], torch.zeros_like(k[:, 2:])))
         self.assertTrue(torch.equal(v[:, 2:], torch.zeros_like(v[:, 2:])))
@@ -55,14 +78,15 @@ class NativeAttentionSurrogateTests(unittest.TestCase):
         self.assertTrue(torch.isneginf(mask[0, 2:]).all())
 
     def test_backward_equals_original_f32_attention_surrogate(self):
-        query = torch.tensor([[0.25, -0.5], [0.5, 0.125]], requires_grad=True)
-        keys = torch.tensor([[[0.5, 0.25], [0.125, -0.5]]], requires_grad=True)
-        values = torch.tensor([[[0.25, 0.5], [0.75, 0.125]]], requires_grad=True)
-        incoming = torch.tensor([[0.25, -0.5], [-0.25, 0.75]])
+        generator = torch.Generator(device="cpu").manual_seed(292)
+        query = (torch.randn(2, 128, generator=generator) / 8).requires_grad_()
+        keys = (torch.randn(1, 2, 128, generator=generator) / 8).half().float().requires_grad_()
+        values = (torch.randn(1, 2, 128, generator=generator) / 8).half().float().requires_grad_()
+        incoming = torch.randn(2, 128, generator=generator)
         native = native_forward_f32_backward(
-            query, keys, values, lambda *_: torch.full((2, 2), 13.0)
+            query, keys, values, lambda *_: torch.full((2, 128), 13.0)
         )
-        self.assertTrue(torch.equal(native, torch.full((2, 2), 13.0)))
+        self.assertTrue(torch.equal(native, torch.full((2, 128), 13.0)))
         native_grad = torch.autograd.grad(native, (query, keys, values), incoming)
         reference = f32_attention_surrogate(query, keys, values)
         reference_grad = torch.autograd.grad(reference, (query, keys, values), incoming)
@@ -90,29 +114,33 @@ class NativeAttentionSurrogateTests(unittest.TestCase):
             NativeStepAdapter(_drafter(), attention_mode="native_forward_f32_backward")
 
     def test_rejects_nonfinite_shape_and_prefix_overflow(self):
-        query = torch.zeros(2, 2)
-        keys = torch.zeros(1, 1, 2)
+        query = torch.zeros(2, 128)
+        keys = torch.zeros(1, 1, 128)
         values = torch.zeros_like(keys)
 
         def oracle(*_):
-            return torch.zeros(2, 2)
+            return torch.zeros(2, 128)
 
         with self.assertRaisesRegex(ValueError, "query"):
-            native_forward_f32_backward(torch.full((2, 2), float("nan")), keys, values, oracle)
+            native_forward_f32_backward(torch.full((2, 128), float("nan")), keys, values, oracle)
+        with self.assertRaisesRegex(ValueError, "head_dim=128"):
+            native_forward_f32_backward(
+                torch.zeros(2, 2), torch.zeros(1, 1, 2), torch.zeros(1, 1, 2), oracle
+            )
         with self.assertRaisesRegex(ValueError, "head geometry"):
-            native_forward_f32_backward(query, torch.zeros(3, 1, 2), values, oracle)
+            native_forward_f32_backward(query, torch.zeros(3, 1, 128), values, oracle)
         with self.assertRaisesRegex(ValueError, "prefix"):
             native_forward_f32_backward(
                 query,
-                torch.zeros(1, NATIVE_ATTENTION_SLOTS + 1, 2),
-                torch.zeros(1, NATIVE_ATTENTION_SLOTS + 1, 2),
+                torch.zeros(1, NATIVE_ATTENTION_SLOTS + 1, 128),
+                torch.zeros(1, NATIVE_ATTENTION_SLOTS + 1, 128),
                 oracle,
             )
         with self.assertRaisesRegex(ValueError, "F16-exact"):
-            native_forward_f32_backward(query, torch.full((1, 1, 2), 0.1), values, oracle)
+            native_forward_f32_backward(query, torch.full((1, 1, 128), 0.1), values, oracle)
         with self.assertRaisesRegex(ValueError, "native attention output"):
-            native_forward_f32_backward(query, keys, values, lambda *_: torch.zeros(2, 3))
-        drafter = _drafter()
+            native_forward_f32_backward(query, keys, values, lambda *_: torch.zeros(2, 127))
+        drafter = _drafter_native_width()
         drafter.config.max_position_embeddings = 512
         adapter = NativeStepAdapter(
             drafter, attention_mode="native_forward_f32_backward", native_attention_oracle=oracle
@@ -135,7 +163,7 @@ class NativeAttentionSurrogateTests(unittest.TestCase):
             calls.append(prefix)
             return f32_attention_surrogate(q, k[:, :prefix], v[:, :prefix]).detach()
 
-        drafter = _drafter()
+        drafter = _drafter_native_width()
         adapter = NativeStepAdapter(
             drafter,
             attention_mode="native_forward_f32_backward",
