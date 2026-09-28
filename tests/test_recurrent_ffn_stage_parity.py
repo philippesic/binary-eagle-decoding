@@ -199,7 +199,7 @@ class GraphTapTests(unittest.TestCase):
             "n_tokens": 1,
             "token_width": width,
             "dtype": "f32",
-            "ne": [width, 1],
+            "ne": [width, 1, 1, 1],
             "token_axis": 1,
             "f32_offset": offset,
         }

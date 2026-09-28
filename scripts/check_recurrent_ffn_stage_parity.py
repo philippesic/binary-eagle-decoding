@@ -159,7 +159,7 @@ def read_first_seed(capture_dir: Path, candidate_d: Path, *, require_stages: boo
                 row.get("dtype") != "f32"
                 or row.get("n_tokens") != token_count
                 or row.get("token_width") != width
-                or row.get("ne") != [width, token_count]
+                or row.get("ne") != [width, token_count, 1, 1]
                 or row.get("token_axis") != 1
             ):
                 raise ValueError(f"native {name} stage has wrong F32 graph geometry")
