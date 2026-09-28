@@ -81,6 +81,9 @@ def compare(
     hf_model: Path,
 ) -> dict:
     prefix, ladder, _ = sealed_ladder(ladder_dir, target)
+    server_log = ladder_dir / "server.log"
+    if "rope type             = 2" not in server_log.read_text(errors="replace"):
+        raise ValueError("Qwen3 target does not use the pinned NeoX RoPE row order")
     if sha256(candidate_d) != D_SHA256:
         raise ValueError("candidate-D source differs from the frozen target capture")
     if set(safe_runs) != {"attn_norm", "k_norm", "v_only", "ffn"}:
@@ -188,10 +191,6 @@ def compare(
     measurements = {}
     for native_name, (mode, hf_name, width) in SAFE_STAGES.items():
         hf_value = snapshots[hf_name]
-        if native_name.startswith(("Qcur", "Kcur")):
-            heads = width // 128
-            hf_value = hf_value.reshape(TOKENS, heads, 2, 64)
-            hf_value = hf_value.swapaxes(-2, -1).reshape(TOKENS, width).copy()
         capture, entries = captures[mode]
         measurements[native_name] = _metrics(
             hf_value, _native_rows(capture, entries, native_name, width)
@@ -204,6 +203,7 @@ def compare(
             "compute_capability": torch.cuda.get_device_capability(0),
         },
         "precision": "native ggml CUDA/F32 graph taps versus HF CUDA/F16 eager",
+        "target_rope_layout": "NeoX half-split, no Q/K row permutation",
         "prompt_id": PROMPT_ID,
         "prefill_tokens": TOKENS,
         "stages": measurements,
@@ -212,6 +212,7 @@ def compare(
         "sampled_source_weight_identity": sampled_weights,
         "source_sha256": {
             "ladder_manifest": LADDER_MANIFEST_SHA256,
+            "ladder_server_log": sha256(server_log),
             "target_gguf": sha256(target),
             "candidate_d": D_SHA256,
             "safe_native_reports": capture_hashes,
