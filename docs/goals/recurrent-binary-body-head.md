@@ -231,8 +231,8 @@ this goal.
 - The bundle builder in `be0e2af` joins cell-owned raw capture hashes, both
   preparer outputs and the final CPU capture audit. An optional continuity
   report must name the same round, event and task-map sources. A subsequent
-  provenance gate checks pinned target/draft file hashes and the canonical
-  little-endian D map digest. Its output is
+  provenance gate in `20d6e26` checks pinned target/draft file hashes and
+  the canonical little-endian D map digest. Its output is
   explicitly `training_eligible: false` because runtime feature parity,
   full-drafter numerical/cache parity and live model evidence remain open.
   The combined focused checks pass: 73 recurrent tests and 16 capture-runner
