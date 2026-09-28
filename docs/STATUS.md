@@ -6,25 +6,23 @@ The target/verifier model precision remains as frozen for each experiment.
 
 **Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), parity and capture preparation. The user has authorized the free RTX 5080 for needed work; no all-body training budget has been approved. **Latest completed goal:** [mixed precision rescue and frozen-body head adaptation on RTX 5080](goals/binary-rescue-head-5080.md), completed 2026-09-28 UTC. The preceding [binary scale fitting goal](goals/binary-scale-fitting-5080.md) completed 2026-09-27 UTC.
 
-**Latest checkpoint (2026-09-28 UTC):** a bounded RTX 5080
-source-Qwen3 CUDA/F16 eager attention replay matches the loaded HF
-model's own block-0 residual **74,240/74,240 F16 values bitwise**.
-On the frozen 29-token training prefix, substituting the
-output-preserving native post-RoPE Q/K and V into that path reduces
-position-3 relative error against native `ffn_inp-0` from 0.2547%
-to 0.2048%; native attention-norm input alone gives 0.2434%.
-The remaining gap includes Torch attention, Q casting, output
-projection and residual arithmetic, so its cause is not yet isolated.
-The loaded HF model has an F16 rotary frequency buffer, whereas the
-earlier isolated Q control used F32; both variants are reproduced and
-recorded. The [attention report](../experiments/recurrent-target-attention-intervention.md),
-[safe K-RoPE report](../experiments/recurrent-target-k-rope-safe.md)
-and [goal checkpoint](goals/recurrent-binary-body-head.md#forty-second-goal-turn-native-qkv-torch-attention-intervention)
-record hashes and limits. Exact ggml attention/output-projection
-attribution, later target blocks and a training numeric policy remain
-open. The integrated Apple CPU drafter forward has 18 exact diagnostic
-depths. No worker, local server or remote job is active; the 5080 is
-free. Training, final-set and Q4_0 evaluation remain gated.
+**Latest checkpoint (2026-09-28 UTC):** a standalone RTX 5080 ggml CUDA
+Flash Attention, F16 O-projection and F32 residual graph on the
+output-preserving native Q/K/V operands matches all **74,240/74,240**
+safe block-0 `ffn_inp-0` F32 values bitwise. The replay uses the
+native 256-slot F16 K/V cache and F16 causal mask. Rounding Q through
+F16 and returning it to the CUDA kernel's required F32 type changes
+no residual value on this prefix. The [Flash Attention
+report](../experiments/recurrent-target-flash-attention-cuda.md),
+[Torch intervention report](../experiments/recurrent-target-attention-intervention.md)
+and [goal checkpoint](goals/recurrent-binary-body-head.md#forty-third-goal-turn-exact-same-input-flash-attention-residual)
+record hashes and limits. The earlier Torch eager path still has
+0.2048% position-3 error after native Q/K/V substitution; attention,
+O-projection and residual contributions need separate taps. Later
+target blocks and a training numeric policy remain open. The Apple
+CPU drafter forward has 18 exact diagnostic depths. No worker, local
+server or remote job is active; the 5080 is free. Training, final-set
+and Q4_0 evaluation remain gated.
 
 **Prior CPU arithmetic checkpoint (2026-09-28 UTC):** corrected CPU RMS norm and RoPE
 frequency arithmetic matched all 619,520 F16 fused-input and 123,904 raw

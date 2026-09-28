@@ -411,6 +411,18 @@ and output-projection attribution before selecting a target-feature
 numeric/trajectory gate or requesting an all-body budget. See the
 [attention report](../experiments/recurrent-target-attention-intervention.md).
 
+**Exact Flash Attention residual evidence (2026-09-28):** a pinned
+standalone ggml CUDA graph on output-preserving native Q/K/V,
+256-slot F16 cache and F16 causal mask matches all 74,240 native
+block-0 attention-residual F32 values bitwise, including F16 O
+projection and F32 residual add. Rounding Q through F16 and back to
+the kernel-required F32 changes no value in this geometry. This
+closes the combined same-input native operator fidelity gate; the
+remaining Torch path difference must be decomposed across attention,
+O projection and residual stages before selecting a training
+numeric/trajectory policy. It does not authorize an all-body budget.
+See the [Flash Attention report](../experiments/recurrent-target-flash-attention-cuda.md).
+
 **Exact-prefix row clarification (2026-09-28):** the native verifier computes
 target logits for every proposed prefix in a speculative batch, and the cloned
 sampler advances along each proposed token even after an earlier live

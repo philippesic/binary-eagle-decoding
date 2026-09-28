@@ -1767,3 +1767,35 @@ attention-residual tap as a fidelity gate. Quantify separately the
 effects of F32 Q versus F16 casting, F16 K/V cache storage and
 output-projection backend arithmetic. The exact/numeric policy and
 all-body optimizer budget remain user-owned.
+
+## Forty-third goal turn: exact same-input Flash Attention residual
+
+- Commits `e2c4bbe` and `27ec5ec` add a bounded [ggml CUDA Flash
+  Attention replay](../../experiments/recurrent-target-flash-attention-cuda.md)
+  on the frozen 29-token training prefix. It takes output-preserving
+  F32 post-RoPE Q/K and V, reconstructs 256-slot F16 K/V cache and
+  F16 causal mask, uses F32 Q and F32-accumulation Flash Attention,
+  then the pinned F16 O projection and F32 residual. The O weight
+  matches the HF source bytes. The standalone graph matches all
+  **74,240/74,240** safe native `ffn_inp-0` F32 values bitwise,
+  satisfying the attention-residual fidelity gate.
+- An explicit F16 roundtrip of Q before the CUDA kernel changes no
+  residual value on this prefix. Direct F16 Q was rejected by the
+  pinned CUDA Flash Attention implementation's F32-Q assertion; that
+  first supervised attempt is preserved as an ignored diagnostic.
+  The corrected `target-flash-attn-b-20260928` run exited zero and
+  has ignored `comparison.json` SHA256
+  `ae265f07976acdd5954023a5697bb5ffe6bf7cde38101f051198dad8fef2a0a1`.
+  Its process group stopped and the RTX 5080/SM120 returned to 0%
+  utilization and 1,372 MiB whole-device baseline. Local C++ syntax
+  and Ruff checks passed. No optimizer, final prompt or Q4_0 serving
+  evaluation ran; the full96 capture remains training-ineligible.
+  This one case does not validate SM75 performance, later target
+  blocks or a global target-feature tolerance.
+
+**Next gate:** obtain an output-preserving pre-O attention tensor
+from native block 0, then compare Torch eager attention and Torch/
+ggml O projection on identical operands. Keep the full residual replay
+as an exact fidelity gate; distinguish attention-kernel differences
+from O-projection and residual rounding. The exact/numeric policy and
+all-body budget remain user-owned.
