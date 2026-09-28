@@ -6,6 +6,17 @@ The target/verifier model precision remains as frozen for each experiment.
 
 **Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), parity and capture preparation. The user has authorized the free RTX 5080 for needed work; no all-body training budget has been approved. **Latest completed goal:** [mixed precision rescue and frozen-body head adaptation on RTX 5080](goals/binary-rescue-head-5080.md), completed 2026-09-28 UTC. The preceding [binary scale fitting goal](goals/binary-scale-fitting-5080.md) completed 2026-09-27 UTC.
 
+**Latest handoff (2026-09-28 11:05 UTC):** the bounded reasoning
+first-seed FFN recapture preserved archived prompt/request bytes, eight raw
+IDs, head state, FFN input and FFN output bitwise. Candidate D's ordered
+gate/up each matched 9,728/9,728 native F32 values; the first gap is SiLU
+(6,557/9,728 exact; max `4.7684e-7`), reaching max `6.1035e-5` at down.
+The [stage report](../experiments/recurrent-binary-ffn-stage-parity.md) and
+[active-goal handoff](goals/recurrent-binary-body-head.md#twenty-sixth-goal-turn-ffn-stage-boundary-and-task-rotation)
+give hashes, pushed commits, tests, remaining decisions and exact next work.
+No worker, local model server or remote experiment is active; the 5080 is
+free. Training, final-set and Q4_0 evaluation remain gated.
+
 **Prior CPU arithmetic checkpoint (2026-09-28 UTC):** corrected CPU RMS norm and RoPE
 frequency arithmetic matched all 619,520 F16 fused-input and 123,904 raw
 F32 K/V projection elements across three post-acceptance joins. F16 projected

@@ -1108,3 +1108,53 @@ arithmetic gap. Separately, keep the earlier reasoning cache K/V F16
 differences visible in the attention/state audit. The user still owns
 the numeric/trajectory policy and all-body optimizer budget; neither
 is inferred from this one-row FFN result.
+
+## Twenty-sixth goal turn: FFN stage boundary and task rotation
+
+**Objective:** prepare and CPU-validate a jointly trainable nine-linear
+W1A16 EAGLE body and head with pinned FP16 target/verifier and D vocabulary
+map. Q4_0 EAGLE remains the primary later acceptance, latency and total
+throughput baseline. The user authorized the free RTX 5080 for needed work,
+but has not chosen exact parity versus a numerical/trajectory tolerance or
+approved an all-body optimizer budget, final-set use or Q4_0 gate.
+
+- The fork's `21f617d4ef3f5dc383d3ab8dc619daaa87db7ff8` commit added
+  four opt-in native FFN graph taps and was pushed before the parent gitlink.
+  Parent `2abfe72` updated the gitlink and capture-runner revision; parent
+  `5d336a8` added the sealed stage comparator and eight synthetic checks;
+  parent `1256a8d` corrected its strict native four-dimensional graph shape
+  check and recorded the outcome. All three parent commits are pushed to
+  `main`.
+- CPU-only fork build and `llama-server --help` passed. The eight stage
+  comparator tests and Ruff passed after the geometry fix. The recapture
+  completed eight tokens on Apple M3 Max CPU and its server exited with code
+  zero. No local model server is running. The new manifest SHA256 is
+  `97f9af6e03914edde054e123315d77ad85b518443b7c4be445fbd9f73f0224a7`;
+  the archived baseline is `99b9003698bcdf5505421a1667dac4d21a8545471d91330c04181c9f2a931d40`.
+  The ignored machine report SHA256 is
+  `3136384dbebb39c1ca79361dbb1c0c1eec810e9e6acdbc7245c36c749b0774cd`.
+- The recapture's prompt and request bytes, eight output IDs, first-seed
+  head state, normalized FFN input and FFN output are byte-identical to the
+  archived CPU reasoning control. On the joined execution-2/column-0 input,
+  ordered binary gate and up are each 9,728/9,728 bitwise exact. The first
+  mismatch is SiLU: 6,557/9,728 exact, maximum `4.76837158203125e-7`.
+  The product is 6,772/9,728 exact, maximum `9.5367431640625e-7`; down is
+  5/2,560 exact, maximum `6.103515625e-5`. Grouped matmul diverges at gate
+  (9,101/9,728 exact). The
+  [stage report](../../experiments/recurrent-binary-ffn-stage-parity.md)
+  records complete metrics and limits. This is one Apple CPU column, not
+  CUDA/SM75 or a trained quality result.
+- All delegated agents are finished; their feature work has been integrated
+  or superseded. No remote experiment or tmux GPU job is active; the RTX
+  5080 is free. No training, final prompts or Q4_0 run occurred this turn.
+  The local main checkout contains the integrated work. Both completed
+  managed temporary worktrees are archived. The published fork commit
+  referenced by the parent gitlink remains available.
+
+**Exact next actions:** (1) inspect the pinned
+ggml CPU SiLU implementation and run a bounded elementwise replay from the
+captured raw gate and SiLU vectors, reporting exact count and max/RMS per
+arithmetic choice; (2) update this file and `docs/STATUS.md` with evidence,
+commit and push; (3) then consider the next drafter state/cache difference
+without consuming training or final-set gates. The user still owns the
+numeric/trajectory policy and all-body training budget.

@@ -297,6 +297,14 @@ far above their `1.9073e-6` mutual difference. Thus switching the whole
 trainer to native-order reduction alone would not close that residual.
 The training arithmetic and numeric gate remain user-owned decisions;
 the next exact-parity probe is the missing native FFN intermediates.
+The subsequent first-seed reasoning recapture found ordered gate and up
+bitwise exact at all 9,728 values each. The first gap is native versus Torch
+SiLU (3,171 differing values, maximum `4.7684e-7`); the down output's
+maximum gap is `6.1035e-5`. This supports a bounded elementwise SiLU
+arithmetic probe before choosing whether to carry exact native CPU arithmetic
+into the student. One CPU row does not settle the exact-versus-predeclared-
+tolerance policy or authorize all-body optimization. See the
+[stage report](../experiments/recurrent-binary-ffn-stage-parity.md).
 
 **Exact-prefix row clarification (2026-09-28):** the native verifier computes
 target logits for every proposed prefix in a speculative batch, and the cloned
