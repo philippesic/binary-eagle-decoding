@@ -395,6 +395,10 @@ established.
 - The user noted that the RTX 5080 is available. The goal's explicit
   no-GPU restriction remains in force pending clarification; availability
   alone was not treated as authorization. CPU work continued independently.
+- Parent commit `06a74a6` is pushed to `main`; the llama.cpp fork gitlink
+  remains at the already-published `b4df1b547`. The two new CPU server
+  process groups stopped cleanly, and no remote session or GPU owner was
+  created.
 
 **Published checkpoints:** `7744d8e` created the goal/protocol; `1e3742d`
 integrated the trace contract; `a4dd003` integrated learned GGUF export;
