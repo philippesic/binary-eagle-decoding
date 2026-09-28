@@ -37,7 +37,8 @@ int main(int argc, char ** argv) {
     try {
         const std::string dir = argv[1];
         const std::string mode = argv[2];
-        const bool o_mode = mode == "o_native" || mode == "o_torch" || mode == "o_f16cast";
+        const bool o_mode = mode == "o_native" || mode == "o_torch" ||
+                            mode == "o_f16cast" || mode == "o_project_native";
         if (mode != "qf32" && mode != "qf16roundtrip" && mode != "attn_only" && !o_mode) return 2;
         auto q_bytes = read_exact(dir + "/q_rope.f32", TOKENS * Q_WIDTH * sizeof(float));
         auto k_bytes = read_exact(dir + "/k_cache.f16", KV_SLOTS * KV_WIDTH * sizeof(ggml_fp16_t));
@@ -83,8 +84,11 @@ int main(int argc, char ** argv) {
         ggml_tensor * output = ggml_add(ctx, projected, residual);
         ggml_tensor * o_operand = mode == "o_f16cast"
             ? ggml_cast(ctx, attn_input, GGML_TYPE_F16) : attn_input;
-        ggml_tensor * o_output = ggml_add(ctx, ggml_mul_mat(ctx, weight, o_operand), residual);
-        ggml_tensor * selected = mode == "attn_only" ? heads : o_mode ? o_output : output;
+        ggml_tensor * o_projected = ggml_mul_mat(ctx, weight, o_operand);
+        ggml_tensor * o_output = ggml_add(ctx, o_projected, residual);
+        ggml_tensor * selected = mode == "attn_only" ? heads :
+                                 mode == "o_project_native" ? o_projected :
+                                 o_mode ? o_output : output;
         if (output->type != GGML_TYPE_F32 || output->ne[0] != HIDDEN || output->ne[1] != TOKENS) {
             throw std::runtime_error("ggml attention residual returned wrong geometry");
         }
@@ -104,7 +108,8 @@ int main(int argc, char ** argv) {
         }
         std::vector<char> result(ggml_nbytes(selected));
         ggml_backend_tensor_get(selected, result.data(), 0, result.size());
-        const std::string suffix = mode == "attn_only" ? ".f32" : "_residual.f32";
+        const std::string suffix = mode == "attn_only" || mode == "o_project_native"
+            ? ".f32" : "_residual.f32";
         std::ofstream file(dir + "/ggml_attn_" + mode + suffix, std::ios::binary);
         file.write(result.data(), result.size());
         if (!file) throw std::runtime_error("cannot write ggml attention residual");

@@ -53,7 +53,7 @@ def _native_heads(rows: np.ndarray, heads: int) -> torch.Tensor:
 
 
 def _load(operands: Path, mode: str, width: int) -> np.ndarray:
-    suffix = ".f32" if mode == "attn_only" else "_residual.f32"
+    suffix = ".f32" if mode in ("attn_only", "o_project_native") else "_residual.f32"
     values = np.fromfile(operands / f"ggml_attn_{mode}{suffix}", dtype="<f4")
     if values.size != TOKENS * width:
         raise ValueError(f"ggml {mode} output has wrong geometry")
@@ -161,8 +161,16 @@ def probe(
             device="cuda"
         )
         native_attn_half = torch.from_numpy(native["attn"].astype("<f2")).to(device="cuda")
-        torch_o_native = (
-            (attn_module.o_proj(native_attn_half) + residual_half).float().cpu().numpy()
+        torch_projected_native = attn_module.o_proj(native_attn_half)
+        torch_projected_native_rows = torch_projected_native.float().cpu().numpy()
+        torch_o_native = (torch_projected_native + residual_half).float().cpu().numpy()
+        torch_o_native_f32_residual = (
+            (
+                torch_projected_native.float()
+                + torch.from_numpy(np.asarray(ladder[:, 0, :]).copy()).to(device="cuda")
+            )
+            .cpu()
+            .numpy()
         )
         torch_o_torch = (
             (attn_module.o_proj(torch_attn.reshape(TOKENS, Q_WIDTH)) + residual_half)
@@ -172,15 +180,23 @@ def probe(
         )
         torch.cuda.synchronize()
     if not all(
-        np.isfinite(array).all() for array in (torch_attn_rows, torch_o_native, torch_o_torch)
+        np.isfinite(array).all()
+        for array in (
+            torch_attn_rows,
+            torch_projected_native_rows,
+            torch_o_native,
+            torch_o_native_f32_residual,
+            torch_o_torch,
+        )
     ):
         raise ValueError("Torch attention/O stage returned nonfinite values")
-    modes = ("qf32", "attn_only", "o_native", "o_f16cast", "o_torch")
+    modes = ("qf32", "attn_only", "o_native", "o_f16cast", "o_torch", "o_project_native")
     for mode in modes:
         subprocess.run([str(helper), str(operands), mode], check=True, timeout=120)
     ggml = {
         mode: _load(operands, mode, Q_WIDTH if mode == "attn_only" else HIDDEN) for mode in modes
     }
+    reconstructed = (ggml["o_project_native"] + np.asarray(ladder[:, 0, :])).astype("<f4")
     prior = json.loads(prior_intervention.read_text())
     prior_metrics = prior["metrics"]["native_qkv_torch_eager_vs_native_ffn_input"]
     torch_combined = _metrics(torch_o_torch, native["ffn"])
@@ -192,10 +208,18 @@ def probe(
         "ggml_full_vs_server_residual": _metrics(ggml["qf32"], native["ffn"]),
         "ggml_attention_only_vs_server": _metrics(ggml["attn_only"], native["attn"]),
         "ggml_o_native_vs_server_residual": _metrics(ggml["o_native"], native["ffn"]),
+        "ggml_o_projected_plus_f32_residual_vs_server": _metrics(reconstructed, native["ffn"]),
         "ggml_o_f16cast_vs_server_residual": _metrics(ggml["o_f16cast"], native["ffn"]),
         "ggml_o_torch_vs_server_residual": _metrics(ggml["o_torch"], native["ffn"]),
         "torch_attention_vs_server": _metrics(torch_attn_rows, native["attn"]),
         "torch_o_native_vs_server_residual": _metrics(torch_o_native, native["ffn"]),
+        "torch_o_native_f32_residual_vs_server": _metrics(
+            torch_o_native_f32_residual, native["ffn"]
+        ),
+        "torch_o_projected_vs_ggml_projected": _metrics(
+            torch_projected_native_rows, ggml["o_project_native"]
+        ),
+        "torch_f16_residual_vs_f32_residual": _metrics(torch_o_native, torch_o_native_f32_residual),
         "torch_o_torch_vs_server_residual": torch_combined,
     }
     exact_gate = all(
@@ -204,6 +228,7 @@ def probe(
             "ggml_full_vs_server_residual",
             "ggml_attention_only_vs_server",
             "ggml_o_native_vs_server_residual",
+            "ggml_o_projected_plus_f32_residual_vs_server",
         )
     )
     report = {
