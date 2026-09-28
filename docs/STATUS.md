@@ -23,7 +23,16 @@ decoder mask rows allowed exactly slots through their query position. The
 [active goal checkpoint](goals/recurrent-binary-body-head.md#thirteenth-goal-turn-actual-stored-draft-cache-and-mask)
 record hashes, commits and limits. Attention arithmetic, general cache
 behavior, full 96-prompt capture, training and Q4_0 quality/speed gates
-remain open. No GPU run has started under this goal.
+remain open. No GPU run had started at that checkpoint.
+
+**RTX 5080 capture checkpoint (2026-09-28 UTC):** the authorized eight-token
+CUDA smoke on one frozen training prompt captured raw target logits and
+features, passed continuity/response audits and reproduced the CPU raw IDs.
+Its supervised run stopped and the GPU returned idle. The full 96-prompt
+capture is prepared with expanded explicit row limits and an isolated
+remote checkout; it has not started. The [goal checkpoint](goals/recurrent-binary-body-head.md#fourteenth-goal-turn-cuda-capture-path-and-full-run-setup)
+records the owner, tmux session, remote directory, commits, source hashes
+and stop procedure. No training budget or final-set use has been approved.
 
 **Handoff checkpoint (2026-09-28 06:35 UTC):** the active goal file records
 the current objective, pushed commits, CPU tests, projected K/V write

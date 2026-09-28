@@ -603,3 +603,43 @@ the first attention-output discrepancy. Then prepare a bounded full frozen-96
 capture under the user-authorized RTX 5080 with its live host registry,
 tmux-only SSH, isolated run directory and one GPU owner. Do not infer the
 all-body training budget or numeric tolerance from hardware availability.
+
+## Fourteenth goal turn: CUDA capture path and full-run setup
+
+- The user-authorized RTX 5080 passed a supervised eight-token capture smoke
+  on one frozen prose training prompt. Both target and candidate-D draft
+  models were fully offloaded under CUDA 13.1/SM120a with A16 draft
+  activations. Four native rounds, 16 head rows, 16 raw target-logit rows
+  and 53 target-feature rows passed continuity and response audits. The
+  eight raw output IDs matched the earlier Apple M3 Max CPU request, while
+  raw feature/logit/head payload hashes differed across backends. See the
+  [CUDA smoke report](../../experiments/recurrent-binary-cuda-capture-smoke.md)
+  (manifest SHA256
+  `44b189aed1f603d9c56a8143c5c4e274d0f583ce5a4fe2198205def7435f267f`).
+- Parent commits `d5a8374` and `f7e561b` are pushed to `main`. The first
+  extends the pinned, bounded diagnostic runner with a CUDA-only build/device
+  gate; four policy tests pass. The second permits explicit full-run caps
+  of 65,536 verifier-logit rows and 131,072 target-feature rows; 16
+  capture-runner tests pass. The former 8,192/65,536 caps could truncate
+  the frozen 96-by-128 protocol. Ruff and diff hygiene pass.
+- The remote GPU owner is this task. The live host registry was consulted;
+  SSH uses tmux MCP session `recurrent-capture-5080` (`$15`). An isolated
+  remote checkout at `checkouts/recurrent-gpu-capture-20260928/` has the
+  published fork gitlink. The CUDA server build used the host's previously
+  documented private CUDA/glibc compatibility include; no system header
+  changed. The preserved remote D GGUF, frozen training file and D map
+  passed their pinned file/raw digests. The smoke supervisor
+  `recurrent-cuda-smoke-20260928` finished with code zero; afterward the
+  GPU showed 0% utilization, 1,372 MiB whole-device use and no compute
+  app or project server. No other GPU owner or run exists.
+
+**Prepared next run:** update that remote checkout to `f7e561b`, then use
+`scripts/remote_job.py recurrent-full96-20260928` for the frozen 96-prompt
+D/D own-history cell at 128 output tokens per request, with explicit
+65,536/131,072 raw-logit/feature limits. Keep its files under that run
+directory. Stop and inspect its process group before releasing the GPU.
+Audit request ownership, all raw file hashes, prompt/round continuity and
+the preparation bundle before any training use. The all-body optimizer
+budget and numeric tolerance remain user-owned; no training or reserved
+final evaluation is authorized by this capture setup. The native Goal
+remains active.
