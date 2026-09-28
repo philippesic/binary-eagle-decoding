@@ -445,6 +445,15 @@ parity. Continue later-block attribution before choosing a training
 numeric policy or all-body budget. See the [stage-split
 report](../experiments/recurrent-target-attention-stage-split.md).
 
+**Block-14 capture evidence (2026-09-28):** six native attention/FFN
+stage tensors on the frozen RTX 5080 training prefix preserve all
+74,240 sealed block-14 output values. They permit a stage-specific
+test of the earlier position-3 error jump without using the
+intrusive or approximate block-0 callbacks as proxies. The capture
+alone does not assign the amplification to attention or FFN, set a
+numeric tolerance or authorize all-body training. See the
+[block-14 report](../experiments/recurrent-target-block14-safe-stages.md).
+
 **Exact-prefix row clarification (2026-09-28):** the native verifier computes
 target logits for every proposed prefix in a speculative batch, and the cloned
 sampler advances along each proposed token even after an earlier live

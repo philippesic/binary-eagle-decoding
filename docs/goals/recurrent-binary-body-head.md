@@ -1869,3 +1869,31 @@ using the frozen native layer ladder and safe callback discipline,
 prioritizing the earliest material later-layer divergence and the
 block-14 outlier amplification. Keep this independent of the
 user-owned exact/numeric policy and all-body optimizer budget.
+
+## Forty-sixth goal turn: output-preserving block-14 stages
+
+- Commit `24d740c` extends the bounded native CUDA callback and
+  auditor with a `block14_stages` mode. The [report](../../experiments/recurrent-target-block14-safe-stages.md)
+  records six F32 tensors on the frozen 29-token code/data-validation
+  training prefix: attention norm, pre-O attention output,
+  post-attention residual, FFN norm, FFN output and `l_out-14`.
+  The supervised RTX 5080/SM120 run captured 1,959,936 bytes and
+  matched **74,240/74,240** sealed native layer-15 input F32 values
+  bitwise, satisfying the block-output fidelity gate. The existing
+  block-0 `all` mode retains its previous selection.
+- Ignored machine report
+  `checkouts/target-block0-operator-20260928/runs/target-block14-stages-a-20260928/comparison.json`
+  has SHA256 `8caeabd9313f090725de7b611848216d60fee6e603f81ca89b77775ee4686827`.
+  The supervisor exited zero, its process group stopped and the GPU
+  returned to 0% utilization and 1,372 MiB whole-device baseline.
+  Local C++ syntax, Ruff and Python checks passed. No optimizer,
+  final prompt or Q4_0 serving evaluation ran. This single SM120
+  capture does not set a training tolerance, validate SM75 or make
+  the full96 bundle training-eligible.
+
+**Next gate:** compare the same block-14 native stage tensors against
+source HF CUDA/F16 eager stages under both accumulated HF input and
+captured native layer-14 input. Reproduce the earlier 4.148% versus
+0.149% position-3 output errors before attributing amplification to
+attention or FFN. The numeric policy and all-body budget remain
+user-owned.
