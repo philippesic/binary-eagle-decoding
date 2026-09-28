@@ -33,7 +33,7 @@ from run_binary_head_capture import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-NATIVE_REVISION = "0abe6e5868d32eb74fa0d4c3dcb963b6a55fe568"
+NATIVE_REVISION = "87cdf11fb6fbfe5d35ab297ecae163c718a9593f"
 CPU_BACKENDS = (
     "CUDA",
     "METAL",
@@ -45,6 +45,46 @@ CPU_BACKENDS = (
     "BLAS",
     "ACCELERATE",
 )
+LADDER_LAYERS = tuple(range(19)) + (33,)
+LADDER_MAX_ROWS = 64
+LADDER_ROW_BYTES = len(LADDER_LAYERS) * 2_560 * 4
+
+
+def audit_target_ladder(output: Path, feature_events: list[dict]) -> int:
+    """Join a bounded optional target ladder to the existing native prefill rows."""
+    rows = read_jsonl(output / "heads.target_layer_ladder.jsonl")
+    prefill = [
+        event
+        for event in feature_events
+        if event.get("event") == "decoded_row" and event.get("phase") == "prefill"
+    ]
+    if not rows or len(rows) != len(prefill) or len(rows) > LADDER_MAX_ROWS:
+        raise ValueError("target ladder does not cover exactly the bounded prefill")
+    if (output / "heads.target_layer_ladder.f32").stat().st_size != len(rows) * LADDER_ROW_BYTES:
+        raise ValueError("target ladder F32 size differs from bounded row metadata")
+    for index, (row, event) in enumerate(zip(rows, prefill, strict=True)):
+        if (
+            row.get("schema") != "eagle_target_layer_ladder_v1"
+            or row.get("row") != index
+            or row.get("task_id") != event.get("task_id")
+            or row.get("slot_id") != event.get("slot_id")
+            or row.get("decode_ordinal") != event.get("decode_ordinal")
+            or row.get("batch_row_local") != event.get("batch_row_local")
+            or row.get("batch_row_global") != event.get("batch_row_global")
+            or row.get("position") != event.get("position")
+            or row.get("token_id") != event.get("token_id")
+            or row.get("layer_ids") != list(LADDER_LAYERS)
+            or row.get("hidden") != 2_560
+            or row.get("byte_offset") != index * LADDER_ROW_BYTES
+            or row.get("byte_count") != LADDER_ROW_BYTES
+            or row.get("dtype") != "float32_native_endian"
+            or row.get("boundary") != "raw_target_layer_input"
+            or row.get("source") != "target_verifier"
+            or not isinstance(row.get("target_source"), str)
+            or not row["target_source"]
+        ):
+            raise ValueError("target ladder row disagrees with frozen prefill provenance")
+    return len(rows)
 
 
 def _write(path: Path, value: object) -> None:
@@ -203,6 +243,14 @@ def capture_one(args: argparse.Namespace) -> dict:
         "EAGLE_CAPTURE_TARGET_FEATURES": "1",
         "EAGLE_CAPTURE_TARGET_FEATURES_LIMIT": "1024",
     }
+    if args.capture_target_ladder:
+        capture_env.update(
+            EAGLE_CAPTURE_TARGET_LAYER_LADDER="1",
+            EAGLE_CAPTURE_TARGET_LAYER_LADDER_LAYERS="0-18,33",
+            EAGLE_CAPTURE_TARGET_LAYER_LADDER_MAX_LAYERS=str(len(LADDER_LAYERS)),
+            EAGLE_CAPTURE_TARGET_LAYER_LADDER_MAX_ROWS=str(LADDER_MAX_ROWS),
+            EAGLE_CAPTURE_TARGET_LAYER_LADDER_MAX_BYTES=str(LADDER_MAX_ROWS * LADDER_ROW_BYTES),
+        )
     if args.device == "cpu":
         capture_env.update(
             EAGLE_CAPTURE_DRAFT_GRAPH="1",
@@ -243,6 +291,7 @@ def capture_one(args: argparse.Namespace) -> dict:
     heads = read_jsonl(output / "heads.jsonl")
     rounds = read_jsonl(output / "forced-rounds.jsonl")
     events = read_jsonl(output / "heads.target_features.jsonl")
+    ladder_rows = audit_target_ladder(output, events) if args.capture_target_ladder else None
     tasks = {str(row.get("task_id")) for row in heads + rounds}
     if len(tasks) != 1 or not heads or not rounds or not events:
         raise ValueError("native diagnostic raw capture lacks one owned native task")
@@ -311,6 +360,7 @@ def capture_one(args: argparse.Namespace) -> dict:
             "rounds": len(rounds),
             "head_rows": len(heads),
             "target_feature_rows": sum(row.get("event") == "decoded_row" for row in events),
+            "target_ladder_rows": ladder_rows,
             "draft_decoder_groups": footer["decoder_groups"] if footer else None,
             "draft_encoder_groups": footer["encoder_groups"] if footer else None,
             "draft_cache_rows": cache_footer["rows"] if args.capture_cache else None,
@@ -332,6 +382,7 @@ def main() -> None:
     parser.add_argument("--flash-attention", choices=("auto", "off"), default="auto")
     parser.add_argument("--device", choices=("cpu", "cuda"), default="cpu")
     parser.add_argument("--capture-cache", action="store_true")
+    parser.add_argument("--capture-target-ladder", action="store_true")
     parser.add_argument("--max-tokens", type=int, default=8)
     parser.add_argument("--port", type=int, default=18557)
     parser.add_argument("--output", type=Path, required=True)

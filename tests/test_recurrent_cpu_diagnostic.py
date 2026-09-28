@@ -101,6 +101,63 @@ class CpuDiagnosticPolicyTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "requires CPU mode"):
             runner.capture_one(args)
 
+    def test_target_ladder_joins_bounded_prefill_and_rejects_bad_offsets(self):
+        events = []
+        ladder = []
+        for index in range(2):
+            event = {
+                "event": "decoded_row",
+                "phase": "prefill",
+                "task_id": 7,
+                "slot_id": 0,
+                "decode_ordinal": 1,
+                "batch_row_local": index,
+                "batch_row_global": index,
+                "position": index,
+                "token_id": 100 + index,
+            }
+            events.append(event)
+            ladder.append(
+                {
+                    "schema": "eagle_target_layer_ladder_v1",
+                    "row": index,
+                    **{
+                        key: event[key]
+                        for key in (
+                            "task_id",
+                            "slot_id",
+                            "decode_ordinal",
+                            "batch_row_local",
+                            "batch_row_global",
+                            "position",
+                            "token_id",
+                        )
+                    },
+                    "layer_ids": list(runner.LADDER_LAYERS),
+                    "hidden": 2_560,
+                    "byte_offset": index * runner.LADDER_ROW_BYTES,
+                    "byte_count": runner.LADDER_ROW_BYTES,
+                    "dtype": "float32_native_endian",
+                    "boundary": "raw_target_layer_input",
+                    "source": "target_verifier",
+                    "target_source": str(self.target),
+                }
+            )
+        metadata = self.root / "heads.target_layer_ladder.jsonl"
+        values = self.root / "heads.target_layer_ladder.f32"
+        metadata.write_text("".join(json.dumps(row) + "\n" for row in ladder))
+        values.write_bytes(bytes(2 * runner.LADDER_ROW_BYTES))
+        self.assertEqual(runner.audit_target_ladder(self.root, events), 2)
+        ladder[1]["byte_offset"] += 4
+        metadata.write_text("".join(json.dumps(row) + "\n" for row in ladder))
+        with self.assertRaisesRegex(ValueError, "provenance"):
+            runner.audit_target_ladder(self.root, events)
+        ladder[1]["byte_offset"] -= 4
+        metadata.write_text("".join(json.dumps(row) + "\n" for row in ladder))
+        values.write_bytes(b"short")
+        with self.assertRaisesRegex(ValueError, "F32 size"):
+            runner.audit_target_ladder(self.root, events)
+
 
 if __name__ == "__main__":
     unittest.main()
