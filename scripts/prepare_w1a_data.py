@@ -138,10 +138,16 @@ def load_catalog(
                              "content_sha256": hashlib.sha256(canonical(messages)).hexdigest(),
                              "text": text})
                 count += 1
-        sources.append({
+        source_record = {
             key: source[key]
             for key in ("id", "uri", "domain", "revision", "license", "sha256")
-        } | {"rows_after_length_filter": count})
+        } | {"rows_after_length_filter": count}
+        for key in ("upstream_sha256", "transform", "transform_sha256"):
+            if key in source:
+                if not isinstance(source[key], str) or not source[key]:
+                    raise ValueError(f"{sid}: invalid {key}")
+                source_record[key] = source[key]
+        sources.append(source_record)
     return rows, sources, rejected
 
 
