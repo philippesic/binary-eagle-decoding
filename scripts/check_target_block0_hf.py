@@ -195,6 +195,26 @@ def compare(
         measurements[native_name] = _metrics(
             hf_value, _native_rows(capture, entries, native_name, width)
         )
+    norm_capture, norm_entries = captures["attn_norm"]
+    native_norm = _native_rows(norm_capture, norm_entries, "attn_norm-0", HIDDEN)
+    k_capture, k_entries = captures["k_norm"]
+    v_capture, v_entries = captures["v_only"]
+    with torch.no_grad():
+        same_input = torch.from_numpy(native_norm.astype("<f2")).to(device="cuda")
+        k_same = layer.self_attn.k_proj(same_input).reshape(TOKENS, 8, 128)
+        k_same = layer.self_attn.k_norm(k_same).float().cpu().numpy().reshape(TOKENS, 1024)
+        v_same = layer.self_attn.v_proj(same_input).float().cpu().numpy().reshape(TOKENS, 1024)
+        cast_input = same_input.float().cpu().numpy()
+    torch.cuda.synchronize()
+    same_input_metrics = {
+        "native_norm_to_hf_f16_cast": _metrics(cast_input, native_norm),
+        "Kcur_normed-0": _metrics(
+            k_same, _native_rows(k_capture, k_entries, "Kcur_normed-0", 1024)
+        ),
+        "Vcur-0": _metrics(v_same, _native_rows(v_capture, v_entries, "Vcur-0", 1024)),
+        "k_change_from_baseline": _metrics(k_same, snapshots["k_norm"]),
+        "v_change_from_baseline": _metrics(v_same, snapshots["v_proj"]),
+    }
     return {
         "schema": "target_block0_hf_cuda_comparison_v1",
         "hardware": {
@@ -207,6 +227,7 @@ def compare(
         "prompt_id": PROMPT_ID,
         "prefill_tokens": TOKENS,
         "stages": measurements,
+        "same_input_kv_intervention": same_input_metrics,
         "q_norm_capture_perturbation": q_meta["block_output"],
         "q_norm_hf_snapshot_available_without_safe_native_tap": True,
         "sampled_source_weight_identity": sampled_weights,
