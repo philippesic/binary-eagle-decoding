@@ -79,6 +79,14 @@ class TargetFeatureComparisonTests(unittest.TestCase):
                 compare(
                     self.directory, self.directory, self.directory, [self.directory], device="cuda"
                 )
+        with self.assertRaisesRegex(ValueError, "must be eager or sdpa"):
+            compare(
+                self.directory,
+                self.directory,
+                self.directory,
+                [self.directory],
+                attention_implementation="other",
+            )
 
 
 if __name__ == "__main__":

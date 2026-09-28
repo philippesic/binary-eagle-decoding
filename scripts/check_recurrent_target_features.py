@@ -99,6 +99,7 @@ def compare(
     *,
     threads: int = 8,
     device: str = "cpu",
+    attention_implementation: str = "eager",
 ) -> dict:
     try:
         import transformers
@@ -111,6 +112,8 @@ def compare(
         raise ValueError("target-feature comparison device must be cpu or cuda")
     if device == "cuda" and not torch.cuda.is_available():
         raise ValueError("CUDA target-feature comparison requires an available CUDA device")
+    if attention_implementation not in {"eager", "sdpa"}:
+        raise ValueError("target-feature attention implementation must be eager or sdpa")
     torch.set_num_threads(threads)
     first_round = read_jsonl(capture_dirs[0] / "forced-rounds.jsonl")[0]
     prefix = first_round.get("prefix_token_ids")
@@ -119,7 +122,10 @@ def compare(
     operands = FrozenOperands(target_gguf, candidate_d)
     sampled_weights = _source_weights_match_gguf(hf_model, target_gguf)
     model = Qwen3Model.from_pretrained(
-        str(hf_model), local_files_only=True, dtype=torch.float16, attn_implementation="eager"
+        str(hf_model),
+        local_files_only=True,
+        dtype=torch.float16,
+        attn_implementation=attention_implementation,
     )
     compute_dtype = torch.float32 if device == "cpu" else torch.float16
     model.to(device=device, dtype=compute_dtype).eval()
@@ -158,6 +164,7 @@ def compare(
             if device == "cpu"
             else "float16_from_f16_rounded_source_weights"
         ),
+        "attention_implementation": attention_implementation,
         "prompt_tokens": len(prefix),
         "tap_layers": list(TAPS),
         "embedding_rows_exact": True,
@@ -182,6 +189,7 @@ def main() -> None:
     parser.add_argument("--capture-dir", type=Path, action="append", required=True)
     parser.add_argument("--threads", type=int, default=8)
     parser.add_argument("--device", choices=("cpu", "cuda"), default="cpu")
+    parser.add_argument("--attention-implementation", choices=("eager", "sdpa"), default="eager")
     parser.add_argument("--report", type=Path, required=True)
     args = parser.parse_args()
     if args.report.exists():
@@ -193,6 +201,7 @@ def main() -> None:
         args.capture_dir,
         threads=args.threads,
         device=args.device,
+        attention_implementation=args.attention_implementation,
     )
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
