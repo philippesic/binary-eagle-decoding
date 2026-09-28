@@ -335,6 +335,18 @@ work before setting a global tolerance, but do not compel the user to
 choose that path. The [report](../experiments/recurrent-target-block0-safe-taps-5080.md)
 adds no all-body budget or final-set authorization.
 
+**Same-input V operator evidence (2026-09-28):** an isolated ggml CUDA
+V projection on the RTX 5080 matched the output-preserving native server
+tap in all 29,696 F32 values on the identical captured normalized input
+and F16 weight. Explicitly casting the ggml input to F16 changed no
+output values; Torch CUDA/F16 on the same operands matched only 5,351.
+This makes backend matmul arithmetic/dispatch, rather than that input
+cast, the immediate V mismatch under the tested geometry. K, intrusive
+Q, attention and later target blocks remain unproven. The result
+strengthens the exact-backend option but does not select it, set a
+tolerance or authorize optimization. See the [operator
+report](../experiments/recurrent-target-v-cuda-projection.md).
+
 **Exact-prefix row clarification (2026-09-28):** the native verifier computes
 target logits for every proposed prefix in a speculative batch, and the cloned
 sampler advances along each proposed token even after an earlier live

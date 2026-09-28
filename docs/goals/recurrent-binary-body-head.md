@@ -1530,3 +1530,40 @@ ggml CUDA backend, while requiring an output-preserving callback or a
 separate equivalence check. Q-normalization cannot be attributed from
 the intrusive callback. Keep CUDA target-feature and all-body training
 decisions separate from the exact Apple CPU drafter diagnostic.
+
+## Thirty-seventh goal turn: same-input target V CUDA arithmetic
+
+- Commit `b9320fa` adds a bounded standalone [ggml CUDA V
+  replay](../../experiments/recurrent-target-v-cuda-projection.md) and
+  source/HF operand audit. It takes the 29 F32 block-0 native
+  attention-norm rows from an output-preserving capture and the pinned
+  F16 `blk.0.attn_v.weight` GGUF tensor, whose bytes match the HF source
+  shard. It runs the same 29-token V `ggml_mul_mat` geometry on the RTX
+  5080, then an explicit F16-cast-input variant and a Torch CUDA/F16
+  linear control. The run uses no target full forward or optimizer.
+- The F32-input ggml output matches all **29,696/29,696** actual native
+  server V values bitwise, satisfying its fidelity gate. Explicit F16
+  input cast changes **0/29,696** values. Torch on the same F16 input
+  and F16 weight matches only **5,351/29,696** native values (maximum
+  `0.00146484375`, position-3 relative row L2 **0.0934%**), reproducing
+  the earlier full-model same-input intervention. This isolates the V
+  residual under this geometry to ggml-versus-Torch projection backend
+  arithmetic/dispatch; it does not identify an instruction or settle
+  K/Q or later target blocks. The ignored machine report at
+  `checkouts/target-block0-operator-20260928/runs/target-v-cuda-20260928/comparison.json`
+  on the registered host has SHA256
+  `39cd41fe114e0c42b8cd31598cbd54efef1abf97057428c0e55d15d45ede9747`.
+- The supervised WSL run exited zero and released its process group;
+  final RTX 5080 use was 0% GPU and 1,372 MiB whole-device baseline.
+  The tmux session was closed. Local C++ syntax and Ruff checks passed.
+  No training, target full-model forward, final prompt or Q4_0 serving
+  evaluation ran. This is one SM120 operator case, not SM75 performance,
+  general target-feature parity or a user-approved training tolerance.
+  The full96 capture remains training-ineligible and the all-body
+  optimizer budget remains user-owned.
+
+**Next gate:** replay the pinned K projection and per-head RMS norm on
+the same output-preserving native input and weights, with an exact native
+K tap as the fidelity gate. Keep the intrusive Q tap excluded. Only
+after these local operators are understood should the team revisit a
+predeclared target-feature/trajectory tolerance or exact training backend.

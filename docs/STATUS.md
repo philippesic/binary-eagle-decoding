@@ -6,20 +6,20 @@ The target/verifier model precision remains as frozen for each experiment.
 
 **Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), parity and capture preparation. The user has authorized the free RTX 5080 for needed work; no all-body training budget has been approved. **Latest completed goal:** [mixed precision rescue and frozen-body head adaptation on RTX 5080](goals/binary-rescue-head-5080.md), completed 2026-09-28 UTC. The preceding [binary scale fitting goal](goals/binary-scale-fitting-5080.md) completed 2026-09-27 UTC.
 
-**Latest checkpoint (2026-09-28 UTC):** on the RTX 5080, four separately
-captured Qwen3 block-0 operator sets preserved the sealed 29-token native
-block output bitwise. HF CUDA/F16 differed from those faithful native
-taps by 0.0325% relative row L2 after attention norm, 0.0922/0.0994%
-at K/V, and 0.2547% at the attention residual on the training outlier
-position. Supplying native norm cast to F16 left 0.0916/0.0934% K/V
-error. A Q-normalization callback changed the block output slightly,
-so its tensors are excluded from server-path attribution. The
-[CUDA report](../experiments/recurrent-target-block0-safe-taps-5080.md)
-and [goal checkpoint](goals/recurrent-binary-body-head.md#thirty-sixth-goal-turn-safe-target-block-zero-taps-on-5080)
-record hashes and limits. The integrated Apple CPU drafter forward also
-passed 18 depths across first, rejected and accepted rounds. No worker,
-local server or remote job is active; the 5080 is free. Training,
-final-set and Q4_0 evaluation remain gated.
+**Latest checkpoint (2026-09-28 UTC):** a standalone ggml CUDA replay on
+the RTX 5080 matched all **29,696/29,696** output-preserving native
+Qwen3 block-0 V projection values on the same frozen F32 norm rows and
+F16 weight. Explicitly rounding the ggml input to F16 changed none;
+Torch CUDA/F16 matched only 5,351 values and retained 0.0934% relative
+row error at the outlier position. The [V operator
+report](../experiments/recurrent-target-v-cuda-projection.md), earlier
+[safe-tap report](../experiments/recurrent-target-block0-safe-taps-5080.md)
+and [goal checkpoint](goals/recurrent-binary-body-head.md#thirty-seventh-goal-turn-same-input-target-v-cuda-arithmetic)
+record hashes and limits. K/Q and later target blocks remain open;
+the Q-normalization callback is intrusive. The integrated Apple CPU
+drafter forward has 18 exact diagnostic depths. No worker, local server
+or remote job is active; the 5080 is free. Training, final-set and
+Q4_0 evaluation remain gated.
 
 **Prior CPU arithmetic checkpoint (2026-09-28 UTC):** corrected CPU RMS norm and RoPE
 frequency arithmetic matched all 619,520 F16 fused-input and 123,904 raw
