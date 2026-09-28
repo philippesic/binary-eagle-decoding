@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Capture one frozen training prompt with pinned D on a CPU-only native server.
+"""Capture one frozen training prompt with pinned D on a checked native server.
 
-This bounded diagnostic verifies the binary was built with all accelerator,
-BLAS and Accelerate backends disabled, sets both GPU layer counts to zero,
-and stops its dedicated server process group. It is not a training or timing
-runner and never reads development or final prompts.
+CPU mode disables every accelerator and GPU layer. CUDA mode requires only
+the CUDA accelerator, offloads both models, and omits CPU-only graph/cache
+hooks. Both modes stop the server process group and avoid final prompts.
 """
 
 from __future__ import annotations
@@ -60,46 +59,57 @@ def validate_inputs(
     train_prompts: Path,
     prompt_id: str,
     max_tokens: int,
+    device: str = "cpu",
 ) -> dict:
+    if device not in {"cpu", "cuda"}:
+        raise ValueError("native diagnostic device must be cpu or cuda")
     if type(max_tokens) is not int or not 1 <= max_tokens <= 16:
-        raise ValueError("CPU diagnostic output cap must be 1..16")
+        raise ValueError("native diagnostic output cap must be 1..16")
     if not prompt_id.startswith("qat-revisit-train-") or "final" in prompt_id.lower():
-        raise ValueError("CPU diagnostic requires a frozen training prompt")
+        raise ValueError("native diagnostic requires a frozen training prompt")
     if binary.resolve() != (cmake_cache.parent / "bin/llama-server").resolve():
         raise ValueError("server binary must belong to the checked CPU-only CMake build")
     revision = subprocess.check_output(
         ["git", "-C", str(ROOT / "third_party/llama.cpp"), "rev-parse", "HEAD"], text=True
     ).strip()
     if revision != NATIVE_REVISION:
-        raise ValueError("CPU diagnostic native source revision changed")
+        raise ValueError("native diagnostic source revision changed")
     cache = cmake_cache.read_text()
     for backend in CPU_BACKENDS:
-        if f"GGML_{backend}:BOOL=OFF" not in cache.splitlines():
-            raise ValueError(f"CPU diagnostic requires GGML_{backend}=OFF")
+        required = "ON" if backend == "CUDA" and device == "cuda" else "OFF"
+        if f"GGML_{backend}:BOOL={required}" not in cache.splitlines():
+            raise ValueError(f"{device.upper()} diagnostic requires GGML_{backend}={required}")
     if (
         sha256(target) != TARGET_F16_SHA256
         or sha256(draft) != DRAFT_D_SHA256
         or sha256(train_prompts) != TRAIN_PROMPTS_SHA256
     ):
-        raise ValueError("CPU diagnostic target, D draft or training split hash changed")
+        raise ValueError("native diagnostic target, D draft or training split hash changed")
     prompts = [json.loads(line) for line in train_prompts.read_text().splitlines() if line.strip()]
     matches = [row for row in prompts if row.get("id") == prompt_id]
     if len(prompts) != 96 or len(matches) != 1 or not isinstance(matches[0].get("messages"), list):
-        raise ValueError("CPU diagnostic prompt ID is missing from frozen training split")
+        raise ValueError("native diagnostic prompt ID is missing from frozen training split")
     return matches[0]
 
 
 def native_command(
-    binary: Path, target: Path, draft: Path, port: int, flash_attention: str
+    binary: Path, target: Path, draft: Path, port: int, flash_attention: str, device: str = "cpu"
 ) -> list[str]:
-    if flash_attention not in {"auto", "off"} or not 1024 <= port <= 65535:
-        raise ValueError("CPU diagnostic needs a valid port and auto/off Flash Attention")
+    if (
+        device not in {"cpu", "cuda"}
+        or flash_attention not in {"auto", "off"}
+        or not 1024 <= port <= 65535
+    ):
+        raise ValueError(
+            "native diagnostic needs cpu/cuda, a valid port and auto/off Flash Attention"
+        )
+    gpu_layers = "all" if device == "cuda" else "0"
     return [
         str(binary.resolve()),
         "-m",
         str(target.resolve()),
         "--n-gpu-layers",
-        "0",
+        gpu_layers,
         "--ctx-size",
         "2048",
         "--parallel",
@@ -128,7 +138,7 @@ def native_command(
         "--spec-draft-p-min",
         "0",
         "--spec-draft-ngl",
-        "0",
+        gpu_layers,
         "--spec-draft-type-k",
         "f16",
         "--spec-draft-type-v",
@@ -146,6 +156,8 @@ def native_command(
 
 
 def capture_one(args: argparse.Namespace) -> dict:
+    if args.capture_cache and args.device != "cpu":
+        raise ValueError("stored draft cache capture requires CPU mode")
     if args.capture_cache and args.flash_attention != "auto":
         raise ValueError("draft cache capture requires Flash Attention auto")
     prompt = validate_inputs(
@@ -156,8 +168,11 @@ def capture_one(args: argparse.Namespace) -> dict:
         args.train_prompts,
         args.prompt_id,
         args.max_tokens,
+        args.device,
     )
-    command = native_command(args.binary, args.target, args.draft, args.port, args.flash_attention)
+    command = native_command(
+        args.binary, args.target, args.draft, args.port, args.flash_attention, args.device
+    )
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     body = {
@@ -175,7 +190,7 @@ def capture_one(args: argparse.Namespace) -> dict:
     _write(output / "prompt.json", prompt)
     _write(output / "request.json", body)
     capture_env = {
-        "CUDA_VISIBLE_DEVICES": "",
+        "CUDA_VISIBLE_DEVICES": "0" if args.device == "cuda" else "",
         "PYTORCH_ENABLE_MPS_FALLBACK": "0",
         "GGML_W1AX_ACT_BITS": "16",
         "EAGLE_CAPTURE_PREFIX": str(output / "heads"),
@@ -187,10 +202,13 @@ def capture_one(args: argparse.Namespace) -> dict:
         "EAGLE_CAPTURE_TARGET_LOGITS_LIMIT": "32",
         "EAGLE_CAPTURE_TARGET_FEATURES": "1",
         "EAGLE_CAPTURE_TARGET_FEATURES_LIMIT": "1024",
-        "EAGLE_CAPTURE_DRAFT_GRAPH": "1",
-        "EAGLE_CAPTURE_DRAFT_GRAPH_MAX_EXECUTIONS": "512",
-        "EAGLE_CAPTURE_DRAFT_GRAPH_MAX_BYTES": str(128 * 1024 * 1024),
     }
+    if args.device == "cpu":
+        capture_env.update(
+            EAGLE_CAPTURE_DRAFT_GRAPH="1",
+            EAGLE_CAPTURE_DRAFT_GRAPH_MAX_EXECUTIONS="512",
+            EAGLE_CAPTURE_DRAFT_GRAPH_MAX_BYTES=str(128 * 1024 * 1024),
+        )
     if args.capture_cache:
         capture_env["EAGLE_CAPTURE_DRAFT_CACHE"] = "1"
     environment = {
@@ -218,16 +236,16 @@ def capture_one(args: argparse.Namespace) -> dict:
             stopped = stop_server(process)
             _write(output / "server_stop.json", stopped)
     if not stopped["stopped"] or stopped["return_code"] != 0:
-        raise RuntimeError("CPU diagnostic server did not stop cleanly")
+        raise RuntimeError("native diagnostic server did not stop cleanly")
     ids = generated_token_ids(response)
     if not ids or len(ids) > args.max_tokens:
-        raise ValueError("CPU diagnostic response has no bounded raw output IDs")
+        raise ValueError("native diagnostic response has no bounded raw output IDs")
     heads = read_jsonl(output / "heads.jsonl")
     rounds = read_jsonl(output / "forced-rounds.jsonl")
     events = read_jsonl(output / "heads.target_features.jsonl")
     tasks = {str(row.get("task_id")) for row in heads + rounds}
     if len(tasks) != 1 or not heads or not rounds or not events:
-        raise ValueError("CPU diagnostic raw capture lacks one owned native task")
+        raise ValueError("native diagnostic raw capture lacks one owned native task")
     task_id = next(iter(tasks))
     task_map = output / "task_prompt_ids.json"
     _write(task_map, {task_id: prompt["id"]})
@@ -245,10 +263,12 @@ def capture_one(args: argparse.Namespace) -> dict:
         task_id,
     )
     _write(output / "response_round_join.json", response_audit)
-    graph_rows = read_jsonl(output / "heads.draft_graph.jsonl")
-    footer = graph_rows[-1]
-    if footer.get("event") != "capture_end" or footer.get("status") != "complete":
-        raise ValueError("CPU diagnostic draft graph capture is incomplete")
+    footer = None
+    if args.device == "cpu":
+        graph_rows = read_jsonl(output / "heads.draft_graph.jsonl")
+        footer = graph_rows[-1]
+        if footer.get("event") != "capture_end" or footer.get("status") != "complete":
+            raise ValueError("CPU diagnostic draft graph capture is incomplete")
     if args.capture_cache:
         cache_rows = read_jsonl(output / "heads.draft_cache.jsonl")
         cache_footer = cache_rows[-1] if cache_rows else {}
@@ -267,8 +287,12 @@ def capture_one(args: argparse.Namespace) -> dict:
         if path.is_file() and path.name != "manifest.json"
     }
     manifest = {
-        "schema": "recurrent_cpu_native_diagnostic_v1",
-        "execution_device": "cpu",
+        "schema": (
+            "recurrent_cpu_native_diagnostic_v1"
+            if args.device == "cpu"
+            else "recurrent_cuda_native_diagnostic_v1"
+        ),
+        "execution_device": args.device,
         "training_eligible": False,
         "kind": "instrumented_capture_not_timing",
         "host": {"platform": platform.platform(), "machine": platform.machine()},
@@ -287,8 +311,8 @@ def capture_one(args: argparse.Namespace) -> dict:
             "rounds": len(rounds),
             "head_rows": len(heads),
             "target_feature_rows": sum(row.get("event") == "decoded_row" for row in events),
-            "draft_decoder_groups": footer["decoder_groups"],
-            "draft_encoder_groups": footer["encoder_groups"],
+            "draft_decoder_groups": footer["decoder_groups"] if footer else None,
+            "draft_encoder_groups": footer["encoder_groups"] if footer else None,
             "draft_cache_rows": cache_footer["rows"] if args.capture_cache else None,
         },
         "files": files,
@@ -306,6 +330,7 @@ def main() -> None:
     parser.add_argument("--train-prompts", type=Path, required=True)
     parser.add_argument("--prompt-id", required=True)
     parser.add_argument("--flash-attention", choices=("auto", "off"), default="auto")
+    parser.add_argument("--device", choices=("cpu", "cuda"), default="cpu")
     parser.add_argument("--capture-cache", action="store_true")
     parser.add_argument("--max-tokens", type=int, default=8)
     parser.add_argument("--port", type=int, default=18557)

@@ -1,5 +1,6 @@
 """CPU-only native diagnostic refuses accelerator builds and GPU layers."""
 
+import argparse
 import json
 import sys
 import tempfile
@@ -40,7 +41,7 @@ class CpuDiagnosticPolicyTests(unittest.TestCase):
         ]
         self.prompts.write_text("".join(json.dumps(row) + "\n" for row in self.rows))
 
-    def validate(self):
+    def validate(self, device="cpu"):
         def fake_hash(path):
             return {
                 self.target: runner.TARGET_F16_SHA256,
@@ -62,6 +63,7 @@ class CpuDiagnosticPolicyTests(unittest.TestCase):
                 self.prompts,
                 self.rows[0]["id"],
                 8,
+                device,
             )
 
     def test_cpu_build_and_command_pin_both_gpu_layer_counts_to_zero(self):
@@ -77,6 +79,27 @@ class CpuDiagnosticPolicyTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(ValueError, "GGML_METAL=OFF"):
             self.validate()
+
+    def test_cuda_mode_requires_cuda_only_and_offloads_both_models(self):
+        self.cache.write_text(
+            self.cache.read_text().replace("GGML_CUDA:BOOL=OFF", "GGML_CUDA:BOOL=ON")
+        )
+        self.assertEqual(self.validate("cuda")["id"], self.rows[0]["id"])
+        command = runner.native_command(self.binary, self.target, self.draft, 18557, "auto", "cuda")
+        self.assertEqual(command[command.index("--n-gpu-layers") + 1], "all")
+        self.assertEqual(command[command.index("--spec-draft-ngl") + 1], "all")
+        with self.assertRaisesRegex(ValueError, "CPU diagnostic requires GGML_CUDA=OFF"):
+            self.validate()
+        self.cache.write_text(
+            self.cache.read_text().replace("GGML_METAL:BOOL=OFF", "GGML_METAL:BOOL=ON")
+        )
+        with self.assertRaisesRegex(ValueError, "CUDA diagnostic requires GGML_METAL=OFF"):
+            self.validate("cuda")
+
+    def test_cuda_mode_rejects_cpu_cache_hook_before_launch(self):
+        args = argparse.Namespace(device="cuda", capture_cache=True, flash_attention="auto")
+        with self.assertRaisesRegex(ValueError, "requires CPU mode"):
+            runner.capture_one(args)
 
 
 if __name__ == "__main__":
