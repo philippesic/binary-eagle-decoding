@@ -2105,6 +2105,21 @@ checkpoint; do not create more open-ended numerical investigations.
   native fork branch `research/w1-phase1a-runtime` remains published because
   main's gitlink references `14c188e`. Ignored analyzer JSON and five tiny
   QAT smoke artifacts were preserved in main `results/` before archival.
+- The concrete capture factory `e792493` was reviewed, integrated as main
+  `83e72d6` and pushed. It pins capture/prompt/map/model/teacher hashes,
+  rejects inherited ineligible bundles before loading weights, validates
+  compact teacher prefix/logit-row/label joins, and exposes the real
+  `w1ax_capture_provider:create_provider` CLI path. Fourteen focused CPU tests
+  and Ruff passed on main using injected model doubles. No weights were loaded
+  in this check. The QAT owner is adding a device-agnostic Torch rollout under
+  an explicit accelerator guard; actual accelerator execution stays paused.
+- A new bounded data subtask owns sharded capture preparation in managed
+  worktree `/Users/pippo/.codex/worktrees/w1ax-capture-shards/binary-eagle-decoding`
+  on branch `w1ax-capture-shards` from `83e72d6`. It owns only a new shard
+  planner, tests and report; QAT owner alone edits provider files. The reason
+  is the 24.8 GB raw full-vocabulary logit file from just 96 old prompts.
+  Shards must cap both prompts and raw logit rows/bytes, audit and compact
+  exact-prefix teacher data before any raw retirement, and preserve hashes.
 - Boundaries: legacy final-set contents stay sealed; the 96-prompt capture is
   smoke/regression evidence only. Group-128/A16 and row-scale W1Ax are distinct
   representation contracts. GPU timing, capture and training wait for explicit
