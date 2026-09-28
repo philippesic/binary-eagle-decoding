@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
 from pathlib import Path
 
 import numpy as np
@@ -34,6 +35,7 @@ LADDER_ROW_BYTES = LADDER_WIDTH * 4
 OUTLIER_POSITION = 3
 INTERVENTION_INPUT_LAYER = 14
 INTERVENTION_OUTPUT_LAYER = INTERVENTION_INPUT_LAYER + 1
+LOCAL_BLOCKS = tuple(range(18))
 
 
 def _manifest_file(root: Path, files: dict, name: str) -> Path:
@@ -290,27 +292,58 @@ def first_sharp_growth(layers: dict[str, dict]) -> dict | None:
     return largest
 
 
-def forward_with_layer14_input(model, tokens: torch.Tensor, replacement: torch.Tensor):
-    """Use the complete cast native input for exactly one HF block-14 call."""
+def forward_with_layer_input(model, tokens: torch.Tensor, replacement: torch.Tensor, layer: int):
+    """Use a complete cast native input for exactly one selected HF block."""
+    if type(layer) is not int or layer not in LOCAL_BLOCKS or layer >= len(model.layers):
+        raise ValueError("intervention block is outside the bounded native ladder")
     calls = 0
 
     def replace(_module, args):
         nonlocal calls
         calls += 1
         if calls != 1 or not args or args[0].shape != replacement.shape:
-            raise ValueError("block-14 hook invocation or input shape differs")
+            raise ValueError(f"block-{layer} hook invocation or input shape differs")
         if args[0].device != replacement.device or args[0].dtype != replacement.dtype:
-            raise ValueError("block-14 hook input device or dtype differs")
+            raise ValueError(f"block-{layer} hook input device or dtype differs")
         return (replacement, *args[1:])
 
-    handle = model.layers[INTERVENTION_INPUT_LAYER].register_forward_pre_hook(replace)
+    handle = model.layers[layer].register_forward_pre_hook(replace)
     try:
         hidden = model(input_ids=tokens, output_hidden_states=True, use_cache=False).hidden_states
     finally:
         handle.remove()
     if calls != 1:
-        raise ValueError("block-14 hook was not called exactly once")
+        raise ValueError(f"block-{layer} hook was not called exactly once")
     return hidden
+
+
+def forward_with_layer14_input(model, tokens: torch.Tensor, replacement: torch.Tensor):
+    """Retain the prior block-14 diagnostic entry point."""
+    return forward_with_layer_input(model, tokens, replacement, INTERVENTION_INPUT_LAYER)
+
+
+def rank_local_blocks(blocks: list[dict]) -> dict[str, list[dict]]:
+    """Rank exact same-input output errors; ties keep lower block first."""
+    if [row.get("block") for row in blocks] != list(LOCAL_BLOCKS):
+        raise ValueError("local-block table must contain exactly blocks 0 through 17")
+    compact = [
+        {
+            "block": row["block"],
+            "output_layer": row["output_layer"],
+            "position3_relative_l2": row["output"]["positions"][OUTLIER_POSITION]["relative_l2"],
+            "position3_rms": row["output"]["positions"][OUTLIER_POSITION]["rms"],
+            "all_rows_rms": row["output"]["rms"],
+        }
+        for row in blocks
+    ]
+    return {
+        "position3_relative_l2_descending": sorted(
+            compact, key=lambda row: (-row["position3_relative_l2"], row["block"])
+        ),
+        "all_rows_rms_descending": sorted(
+            compact, key=lambda row: (-row["all_rows_rms"], row["block"])
+        ),
+    }
 
 
 def compare(
@@ -356,28 +389,69 @@ def compare(
         gguf_embedding = np.stack([operands(token).to(torch.float16).numpy() for token in prefix])
         if not np.array_equal(embedding, gguf_embedding):
             raise ValueError("prompt embedding differs from pinned target GGUF")
+        if not np.array_equal(native[:, :HIDDEN], embedding.astype(np.float64)):
+            raise ValueError("native ladder layer-0 input differs from pinned target embeddings")
+        torch.cuda.synchronize()
+        baseline_start = time.perf_counter()
         hidden = model(input_ids=tokens, output_hidden_states=True, use_cache=False).hidden_states
-        baseline_14 = hidden[INTERVENTION_INPUT_LAYER][0].detach().clone()
-        baseline_15 = hidden[INTERVENTION_OUTPUT_LAYER][0].detach().clone()
-        start_14 = LADDER_LAYERS.index(INTERVENTION_INPUT_LAYER) * HIDDEN
-        native_14 = native[:, start_14 : start_14 + HIDDEN]
-        replacement = torch.from_numpy(native_14.astype(np.float16)).to("cuda")[None]
-        intervened = forward_with_layer14_input(model, tokens, replacement)
-        if not torch.equal(hidden[INTERVENTION_INPUT_LAYER][0], baseline_14) or not torch.equal(
-            hidden[INTERVENTION_OUTPUT_LAYER][0], baseline_15
-        ):
-            raise ValueError("intervention mutated immutable baseline hidden states")
+        torch.cuda.synchronize()
+        baseline_seconds = time.perf_counter() - baseline_start
+        baseline_snapshots = [hidden[layer][0].detach().clone() for layer in range(19)]
     measurements = {}
     for index, layer in enumerate(LADDER_LAYERS):
         reference = hidden[layer][0].float().cpu().numpy()
         actual = native[:, index * HIDDEN : (index + 1) * HIDDEN]
         measurements[str(layer)] = layer_metrics(reference, actual)
-    start_15 = LADDER_LAYERS.index(INTERVENTION_OUTPUT_LAYER) * HIDDEN
-    native_15 = native[:, start_15 : start_15 + HIDDEN]
-    intervention_14 = layer_metrics(replacement[0].float().cpu().numpy(), native_14)
-    intervention_15 = layer_metrics(
-        intervened[INTERVENTION_OUTPUT_LAYER][0].float().cpu().numpy(), native_15
-    )
+    local_blocks = []
+    existing_hooks = {
+        block: tuple(model.layers[block]._forward_pre_hooks) for block in LOCAL_BLOCKS
+    }
+    local_start = time.perf_counter()
+    with torch.no_grad():
+        for block in LOCAL_BLOCKS:
+            input_start = LADDER_LAYERS.index(block) * HIDDEN
+            output_start = LADDER_LAYERS.index(block + 1) * HIDDEN
+            native_input = native[:, input_start : input_start + HIDDEN]
+            native_output = native[:, output_start : output_start + HIDDEN]
+            replacement = torch.from_numpy(native_input.astype(np.float16)).to(tokens.device)[None]
+            torch.cuda.synchronize()
+            forward_start = time.perf_counter()
+            intervened = forward_with_layer_input(model, tokens, replacement, block)
+            torch.cuda.synchronize()
+            forward_seconds = time.perf_counter() - forward_start
+            input_metrics = layer_metrics(replacement[0].float().cpu().numpy(), native_input)
+            output_metrics = layer_metrics(
+                intervened[block + 1][0].float().cpu().numpy(), native_output
+            )
+            local_blocks.append(
+                {
+                    "block": block,
+                    "input_layer": block,
+                    "output_layer": block + 1,
+                    "cast_input": input_metrics,
+                    "output": output_metrics,
+                    "baseline_output_position3_relative_l2": measurements[str(block + 1)][
+                        "positions"
+                    ][OUTLIER_POSITION]["relative_l2"],
+                    "baseline_output_position3_rms": measurements[str(block + 1)]["positions"][
+                        OUTLIER_POSITION
+                    ]["rms"],
+                    "baseline_output_all_rows_rms": measurements[str(block + 1)]["rms"],
+                    "forward_seconds": forward_seconds,
+                }
+            )
+            del intervened, replacement
+    local_seconds = time.perf_counter() - local_start
+    if any(not torch.equal(hidden[layer][0], baseline_snapshots[layer]) for layer in range(19)):
+        raise ValueError("local interventions mutated immutable baseline hidden states")
+    if any(
+        tuple(model.layers[block]._forward_pre_hooks) != existing_hooks[block]
+        for block in LOCAL_BLOCKS
+    ):
+        raise ValueError("local intervention forward hook remained installed")
+    block14 = local_blocks[INTERVENTION_INPUT_LAYER]
+    intervention_14 = block14["cast_input"]
+    intervention_15 = block14["output"]
     baseline_14_metrics = measurements[str(INTERVENTION_INPUT_LAYER)]
     baseline_15_metrics = measurements[str(INTERVENTION_OUTPUT_LAYER)]
     intervention = {
@@ -416,8 +490,8 @@ def compare(
         hf_shards={name: sha256(hf_model / name) for name in shards},
     )
     return {
-        "schema": "target_layer_ladder_cuda_comparison_v2",
-        "status": "independent_f16_layer_inputs_and_block14_intervention_measured_parity_unproven",
+        "schema": "target_layer_ladder_cuda_comparison_v3",
+        "status": "independent_f16_local_block_errors_measured_parity_unproven",
         **provenance,
         "prefill_tokens": len(prefix),
         "outlier_position": OUTLIER_POSITION,
@@ -434,6 +508,26 @@ def compare(
         "layers": measurements,
         "first_largest_position3_adjacent_growth": first_sharp_growth(measurements),
         "block14_input_intervention": intervention,
+        "local_block_method": {
+            "blocks": list(LOCAL_BLOCKS),
+            "input": "complete_native_layer_input_f32_cast_f16_per_block",
+            "forward": "independent_no_cache_eager_full_29_token_prefix_per_block",
+            "model_loads": 1,
+            "baseline_forwards": 1,
+            "intervention_forwards": len(LOCAL_BLOCKS),
+            "gradients": False,
+            "hooks_scoped_and_restored": True,
+            "timing": "perf_counter_wall_seconds_cuda_synchronized_not_benchmark",
+        },
+        "runtime_seconds": {
+            "baseline_forward": baseline_seconds,
+            "all_local_blocks_including_cpu_metrics": local_seconds,
+            "per_block_forward": {
+                str(row["block"]): row["forward_seconds"] for row in local_blocks
+            },
+        },
+        "local_blocks": local_blocks,
+        "local_block_ranking": rank_local_blocks(local_blocks),
     }
 
 

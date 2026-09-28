@@ -33,15 +33,13 @@ class _ToyBlock(torch.nn.Module):
 class _ToyModel(torch.nn.Module):
     def __init__(self):
         super().__init__()
-        self.layers = torch.nn.ModuleList(
-            [torch.nn.Identity() for _ in range(ladder.INTERVENTION_INPUT_LAYER)] + [_ToyBlock()]
-        )
+        self.layers = torch.nn.ModuleList([_ToyBlock() for _ in ladder.LOCAL_BLOCKS])
 
     def forward(self, input_ids, output_hidden_states, use_cache):
         assert output_hidden_states is True and use_cache is False
-        start = input_ids
-        end = self.layers[ladder.INTERVENTION_INPUT_LAYER](start)
-        states = [start] * (ladder.INTERVENTION_INPUT_LAYER + 1) + [end]
+        states = [input_ids]
+        for block in self.layers:
+            states.append(block(states[-1]))
         return SimpleNamespace(hidden_states=tuple(states))
 
 
@@ -294,6 +292,56 @@ class LadderTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "synthetic block failure"):
             ladder.forward_with_layer14_input(model, tokens, tokens.clone())
         self.assertEqual(len(model.layers[ladder.INTERVENTION_INPUT_LAYER]._forward_pre_hooks), 0)
+
+    def test_general_hook_is_scoped_across_distinct_blocks(self):
+        model = _ToyModel()
+        tokens = torch.zeros((1, 4, ladder.HIDDEN), dtype=torch.float16)
+        original = model(input_ids=tokens, output_hidden_states=True, use_cache=False).hidden_states
+        for block in (0, 7, 14, 17):
+            replacement = torch.full_like(tokens, float(block + 1))
+            result = ladder.forward_with_layer_input(model, tokens, replacement, block)
+            self.assertTrue(torch.equal(result[block + 1], replacement + 1))
+            self.assertTrue(all(not layer._forward_pre_hooks for layer in model.layers))
+        again = model(input_ids=tokens, output_hidden_states=True, use_cache=False).hidden_states
+        self.assertTrue(torch.equal(original[18], again[18]))
+
+    def test_general_hook_rejects_invalid_block_dtype_and_missing_call(self):
+        model = _ToyModel()
+        tokens = torch.zeros((1, 4, ladder.HIDDEN), dtype=torch.float16)
+        for block in (-1, 18, 0.0):
+            with self.assertRaisesRegex(ValueError, "outside the bounded"):
+                ladder.forward_with_layer_input(model, tokens, tokens, block)
+        with self.assertRaisesRegex(ValueError, "dtype differs"):
+            ladder.forward_with_layer_input(model, tokens, tokens.float(), 7)
+        self.assertTrue(all(not layer._forward_pre_hooks for layer in model.layers))
+        with mock.patch.object(model, "forward", return_value=SimpleNamespace(hidden_states=())):
+            with self.assertRaisesRegex(ValueError, "not called exactly once"):
+                ladder.forward_with_layer_input(model, tokens, tokens.clone(), 7)
+        self.assertTrue(all(not layer._forward_pre_hooks for layer in model.layers))
+
+    def test_ranks_largest_local_errors_with_stable_ties(self):
+        rows = [
+            {
+                "block": block,
+                "output_layer": block + 1,
+                "output": {
+                    "positions": [{"relative_l2": 0.0, "rms": 0.0} for _ in range(4)],
+                    "rms": 0.01,
+                },
+            }
+            for block in ladder.LOCAL_BLOCKS
+        ]
+        rows[7]["output"]["positions"][3].update(relative_l2=0.3, rms=0.03)
+        rows[14]["output"]["positions"][3].update(relative_l2=0.3, rms=0.02)
+        rows[14]["output"]["rms"] = 0.2
+        ranked = ladder.rank_local_blocks(rows)
+        self.assertEqual(
+            [row["block"] for row in ranked["position3_relative_l2_descending"][:2]],
+            [7, 14],
+        )
+        self.assertEqual(ranked["all_rows_rms_descending"][0]["block"], 14)
+        with self.assertRaisesRegex(ValueError, "exactly blocks"):
+            ladder.rank_local_blocks(rows[:-1])
 
 
 if __name__ == "__main__":
