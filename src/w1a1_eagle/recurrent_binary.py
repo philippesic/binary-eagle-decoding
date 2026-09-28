@@ -2,8 +2,9 @@
 
 This is a correctness reference, not a fast kernel or a complete recurrent
 drafter. Every forward uses hard signs and nonnegative group scales. Latent F32
-weights exist only for optimization; ``export_arrays`` exposes the inference
-representation used by candidate D (little-endian I32 signs and F32 scales).
+weights exist only for optimization; ``export_arrays`` exposes little-endian
+I32 signs and F32 scales in the module's row order. The GGUF exporter must
+apply its Q/K RoPE row permutation after a PyTorch training checkpoint.
 
 The sign surrogate is clipped identity: d sign(w) / d w = 1 for |w| <= 1,
 and zero outside. It changes only the backward pass. The activation cast
@@ -102,8 +103,7 @@ class GroupedBinaryLinear(nn.Module):
     sum is multiplied by its F32 scale, then products are added in group order
     in F32. Zero scales are valid in candidate D; a trainable additive F32
     offset is clamped in forward and can be projected after each optimizer
-    step. No dense
-    floating weight is used by the forward pass.
+    step. No dense floating weight is used by the forward pass.
     """
 
     def __init__(
@@ -215,7 +215,11 @@ class GroupedBinaryLinear(nn.Module):
 
     @torch.no_grad()
     def export_arrays(self) -> tuple[np.ndarray, np.ndarray]:
-        """Return only deployable I32 packed signs and nonnegative F32 scales."""
+        """Return I32 packed signs and F32 scales in the module's row order.
+
+        A Q/K module installed from candidate D has PyTorch checkpoint row
+        order. The GGUF exporter applies native Q/K RoPE row permutation.
+        """
         if self.latent_sign.device.type != "cpu" or self.scale_offset.device.type != "cpu":
             raise ValueError("GroupedBinaryLinear export is CPU-only")
         if not torch.isfinite(self.latent_sign).all():

@@ -63,6 +63,14 @@ Ruff lint/format and `git diff --check` pass. No local Metal/MPS or CUDA
 runtime was selected. The complete native Q4_0 quality/throughput gates
 remain unrun under this goal.
 
+**Published checkpoints:** `7744d8e` created the goal/protocol; `1e3742d`
+integrated the trace contract; `a4dd003` integrated learned GGUF export;
+`fead52a` integrated the binary CPU reference; `792b7e0` published the
+corrected CPU path, capture audit and arithmetic replay. All are on pushed
+`main`. The three temporary feature worktrees were clean and removed after
+their reviewed content was integrated; their branches were removed. No
+llama.cpp submodule commit or parent gitlink changed.
+
 ## Research choices pending
 
 The [decision log](../DECISIONS.md) records options for scale zero handling,
