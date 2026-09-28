@@ -11,12 +11,12 @@ An explicitly configured missing library or a compile failure is an error.
 """
 
 import os
-from pathlib import Path
 import shlex
 import subprocess
 import sys
 import tempfile
 import unittest
+from pathlib import Path
 
 import numpy as np
 
@@ -24,7 +24,6 @@ ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = ROOT / "third_party" / "llama.cpp"
 sys.path.insert(0, str(RUNTIME / "gguf-py"))
 import gguf  # noqa: E402
-
 
 LINEARS = {
     "fc.weight": (32, 96),
@@ -37,7 +36,7 @@ LINEARS = {
     "blk.0.ffn_up.weight": (64, 32),
     "output.weight": (64, 32),
 }
-LOADER_SOURCE = r'''
+LOADER_SOURCE = r"""
 #include "llama.h"
 int main(int argc, char ** argv) {
     if (argc != 2) return 2;
@@ -50,7 +49,7 @@ int main(int argc, char ** argv) {
     llama_backend_free();
     return result;
 }
-'''
+"""
 
 
 def write_fixture(path, variant):
@@ -70,9 +69,11 @@ def write_fixture(path, variant):
     writer.add_float32("eagle3.attention.layer_norm_rms_epsilon", 1e-5)
     writer.add_array("eagle3.target_layers", [0, 1, 2])
     writer.add_string("tokenizer.ggml.model", "none")
-    writer.add_uint32("eagle3.w1a1.version", 2 if variant == "v2" else 3)
+    writer.add_uint32(
+        "eagle3.w1a1.version", 2 if variant in ("v2", "v2_learned", "unknown_scale") else 3
+    )
     writer.add_array("eagle3.w1a1.groups", ["fusion", "attention", "ffn", "head"])
-    dense = [] if variant == "v2" else ["blk.0.ffn_down.weight"]
+    dense = [] if variant in ("v2", "v2_learned", "unknown_scale") else ["blk.0.ffn_down.weight"]
     packed = [name for name in LINEARS if name not in dense]
     if variant == "overlap":
         packed += dense
@@ -85,7 +86,13 @@ def write_fixture(path, variant):
     for key, value in {
         "bit_order": "little",
         "sign_rule": "nonnegative_is_one",
-        "scale_rule": "f32_nonnegative_least_squares",
+        "scale_rule": (
+            "f32_learned_nonnegative"
+            if variant == "v2_learned"
+            else "unrecognized_scale"
+            if variant == "unknown_scale"
+            else "f32_nonnegative_least_squares"
+        ),
         "arithmetic": "f32",
     }.items():
         writer.add_string(f"eagle3.w1a1.{key}", value)
@@ -106,7 +113,12 @@ def write_fixture(path, variant):
             writer.add_string(audit + ".scale", scale_name)
     if variant == "shadow":
         writer.add_tensor("fc.weight", np.ones(LINEARS["fc.weight"], np.float16))
-    for name in ["output_norm.weight", "blk.0.attn_norm.weight", "blk.0.attn_norm_2.weight", "blk.0.ffn_norm.weight"]:
+    for name in [
+        "output_norm.weight",
+        "blk.0.attn_norm.weight",
+        "blk.0.attn_norm_2.weight",
+        "blk.0.ffn_norm.weight",
+    ]:
         writer.add_tensor(name, np.ones(32, np.float32))
     writer.write_header_to_file()
     writer.write_kv_data_to_file()
@@ -120,7 +132,9 @@ class BinaryRescueNativeLoaderTests(unittest.TestCase):
         configured = os.environ.get("LLAMA_TEST_BUILD_DIR")
         build = Path(configured).expanduser().resolve() if configured else RUNTIME / "build-cpu"
         library_dir = build / "bin"
-        libraries = list(library_dir.glob("libllama*.dylib")) + list(library_dir.glob("libllama.so*"))
+        libraries = list(library_dir.glob("libllama*.dylib")) + list(
+            library_dir.glob("libllama.so*")
+        )
         if not libraries:
             message = f"Build llama.cpp's shared CPU library first: no libllama in {library_dir}"
             if configured:
@@ -133,14 +147,24 @@ class BinaryRescueNativeLoaderTests(unittest.TestCase):
         source.write_text(LOADER_SOURCE)
         cls.loader = cls.directory / "loader"
         command = shlex.split(os.environ.get("CXX", "c++")) + [
-            "-std=c++17", "-I", str(RUNTIME / "include"),
-            "-I", str(RUNTIME / "ggml" / "include"), str(source),
-            "-L", str(library_dir), "-lllama", f"-Wl,-rpath,{library_dir}",
-            "-o", str(cls.loader),
+            "-std=c++17",
+            "-I",
+            str(RUNTIME / "include"),
+            "-I",
+            str(RUNTIME / "ggml" / "include"),
+            str(source),
+            "-L",
+            str(library_dir),
+            "-lllama",
+            f"-Wl,-rpath,{library_dir}",
+            "-o",
+            str(cls.loader),
         ]
         result = subprocess.run(command, capture_output=True, text=True, timeout=60)
         if result.returncode:
-            raise RuntimeError(f"Native loader compilation failed:\n{result.stdout}\n{result.stderr}")
+            raise RuntimeError(
+                f"Native loader compilation failed:\n{result.stdout}\n{result.stderr}"
+            )
 
     def assert_load(self, variant, expected_error=None):
         path = self.directory / f"{variant}.gguf"
@@ -148,20 +172,30 @@ class BinaryRescueNativeLoaderTests(unittest.TestCase):
         result = subprocess.run(
             [str(self.loader), str(path)],
             env={**os.environ, "GGML_W1AX_ACT_BITS": "16", "CUDA_VISIBLE_DEVICES": ""},
-            capture_output=True, text=True, timeout=30,
+            capture_output=True,
+            text=True,
+            timeout=30,
         )
         output = result.stdout + result.stderr
         self.assertEqual(result.returncode, 1 if expected_error else 0, output)
         if expected_error:
             self.assertIn(expected_error, output)
         elif variant == "valid":
-            self.assertIn("dense loaded blk.0.ffn_down.weight (type=q8_0, K=64, rows=32, bytes=2176)", output)
+            self.assertIn(
+                "dense loaded blk.0.ffn_down.weight (type=q8_0, K=64, rows=32, bytes=2176)", output
+            )
 
     def test_loads_v3_down_only_q8(self):
         self.assert_load("valid")
 
     def test_loads_unchanged_v2_binary(self):
         self.assert_load("v2")
+
+    def test_loads_learned_nonnegative_v2_binary(self):
+        self.assert_load("v2_learned")
+
+    def test_rejects_unknown_scale_provenance(self):
+        self.assert_load("unknown_scale", "unsupported or incomplete audit record")
 
     def test_rejects_wrong_dense_type(self):
         self.assert_load("wrong_type", "dense type or shape does not match audit metadata")

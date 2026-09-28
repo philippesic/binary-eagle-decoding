@@ -27,10 +27,12 @@ scale gradients use the actual hard-binary forward and project scales to
 `>=0` after the optimizer step. D's fitted representation permits zero scales,
 so a strictly positive parameterization would change its initialization.
 
-The current native v2/v3 loader recognizes `f32_nonnegative_least_squares`
-as D's **origin**, not the learned scale rule of a trained export. A trained
-GGUF must use a truthful new scale-rule value and a loader contract change;
-until then, native trained-model loading is a stop gate. Export only packed
+The former native v2/v3 loader recognized `f32_nonnegative_least_squares`
+as D's **origin**, not the learned scale rule of a trained export. Fork commit
+`7f23c89b3` now also accepts truthful `f32_learned_nonnegative` metadata;
+eight CPU-only native loader fixtures pass, including rejection of an unknown
+scale rule. This validates loader declaration, not numerical behavior of a
+trained model. Export only packed
 I32 sign words, F32 group scales, the unchanged nonselected tensors and
 explicitly declared exceptions (none in the primary trial). Audit each
 tensor's shape, type, bits, source hash, mapping and packed roundtrip. The
@@ -159,7 +161,7 @@ This is necessary
 preparation, not evidence about real-model quality or throughput. The native
 model capture of raw target features, an efficient hard-binary training
 forward with accepted numerical differences, student cache parity, the
-trained-scale GGUF loader amendment, real-model training, and matched native
+trained-export native numerical parity, real-model training, and matched native
 evaluation remain unverified. The first future GPU-owner operation,
 **only if the user changes the no-GPU restriction and approves the budget,**
 begins with the CPU preflight command below, followed by a training-split-only

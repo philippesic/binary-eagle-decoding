@@ -25,9 +25,11 @@ file and `docs/STATUS.md` are the durable project checkpoint.
   and feeds pre-norm student state into later positions; saved head captures
   contain output-normalized states only. A new feature/cache/verifier capture
   and a whole-drafter unroll remain needed.
-- The native GGUF loader currently accepts mean-absolute or NNLS scale-rule
-  metadata. Jointly learned scales require an honestly named rule and loader
-  amendment before a trained export can load.
+- The forked native GGUF loader now accepts the honest
+  `f32_learned_nonnegative` rule in commit `7f23c89b3`. A CPU-only build with
+  Metal, CUDA, Vulkan, SYCL, HIP, RPC, Accelerate and BLAS disabled passed
+  eight native loader fixtures, including learned v2 and unknown-rule
+  rejection. A real trained GGUF has not been loaded or checked numerically.
 - CPU-only implementation is split into distinct bounded modules: trainable
   group binary arithmetic and a recurrent exact-prefix trace validator.
   The trace validator was integrated as `1e3742d`: eight synthetic ancestry,
@@ -35,8 +37,8 @@ file and `docs/STATUS.md` are the durable project checkpoint.
   three CPU gradient/mask tests. The learned nine-linear exporter was
   integrated as `a4dd003`: five synthetic GGUF serialization tests passed,
   including Q/K row order, frozen tensors and invalid inputs. It declares
-  `f32_learned_nonnegative` and explicitly blocks native loading until the
-  loader recognizes that rule. The hard-binary CPU reference was integrated
+  `f32_learned_nonnegative`; the loader now recognizes that rule. The
+  hard-binary CPU reference was integrated
   as `fead52a`, then repaired locally after the project virtual environment
   exposed zero gradient at an exact zero scale. Eight arithmetic tests now
   pass, including a genuine two-call student recurrence and all-nine module
@@ -105,6 +107,26 @@ restriction. It made substantive CPU progress; a GPU-only impasse has not
 been established. Meaningful local work remains on a faithful full-drafter
 adapter and native capture writer/parity fixtures. Do not
 mark the native Goal blocked on this turn.
+
+## Third goal turn: loader gate and full-drafter adapter
+
+- Pushed llama.cpp fork commit `7f23c89b3` before advancing the parent
+  gitlink. A plain CPU-only CMake build of `libllama` succeeded on Apple M3
+  Max. All eight native loader fixtures passed with `n_gpu_layers=0` and
+  `CUDA_VISIBLE_DEVICES=''`; the newly learned-scale v2 fixture loads, while
+  an unknown rule is rejected. This closes the metadata-loader gap only.
+- Read the pinned AngelSlim decoder source at revision
+  `0358da9c651e6a7d7ccafea26ced4b9c98d11681` and verified its source
+  hashes. The official forward reads `fc.weight.dtype`, which the new binary
+  module does not expose; using it directly would also retain F32 K/V where
+  the native graph writes F16 K/V before attention. A strict explicit CPU
+  decoder-step adapter is in implementation. It must preserve separate
+  embedding/feature norms, embedding-first fusion, F16 K/V cache boundaries,
+  RoPE, residuals and the final pre-norm state.
+
+This is the **third consecutive goal turn**. It made meaningful CPU progress;
+the no-GPU restriction has not created a true impasse. The native Goal stays
+active. No actual target/drafter inference or accelerator execution occurred.
 
 **Published checkpoints:** `7744d8e` created the goal/protocol; `1e3742d`
 integrated the trace contract; `a4dd003` integrated learned GGUF export;
