@@ -99,6 +99,18 @@ record bounds, source hash and limits. The supervised GPU run stopped;
 target layer-by-layer parity, the numeric gate, training and Q4_0 evaluation
 remain open.
 
+**Target ladder checkpoint (2026-09-28 UTC):** a bounded native RTX 5080
+capture on the 29-token outlier prompt recorded target layer inputs
+`0–18,33`. Existing taps 2/18/33 matched the same-run and sealed full96
+feature bytes exactly. The independent F16 forward's position-3 error had
+its largest adjacent rise across target block 14: 1.209% at layer-14 input
+to 4.148% at layer-15 input, with absolute RMS error 0.01202→0.04218.
+The [active goal checkpoint](goals/recurrent-binary-body-head.md#twentieth-goal-turn-target-layer-input-ladder-localizes-the-outlier)
+and [feature report](../experiments/recurrent-binary-target-feature-parity.md#native-target-layer-input-ladder-on-the-outlier)
+record source hashes, hardware and limits. Both supervised runs stopped and
+the GPU is free. The responsible block operation, exact target parity,
+training gate and Q4_0 evaluation remain open.
+
 **Handoff checkpoint (2026-09-28 06:35 UTC):** the active goal file records
 the current objective, pushed commits, CPU tests, projected K/V write
 comparison, pending 5080 clarification and exact next actions. Code round 2

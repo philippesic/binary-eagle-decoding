@@ -255,6 +255,11 @@ investigating the intervening target blocks before setting any tolerance;
 the intervention's F16 cast and backend difference preclude an exact causal
 attribution. The pending exact-parity versus predeclared-tolerance decision
 and all-body budget remain with the user.
+A new native layer-input ladder reproduced the sealed old taps exactly and
+located the outlier's largest adjacent relative-error rise across target
+block 14 (1.209%→4.148%; absolute RMS 0.01202→0.04218). This narrows the
+next exact-parity probe to that block but does not yet identify its attention,
+FFN or residual arithmetic. It does not justify setting a numeric threshold.
 See the [feature report](../experiments/recurrent-binary-target-feature-parity.md).
 
 **Exact-prefix row clarification (2026-09-28):** the native verifier computes

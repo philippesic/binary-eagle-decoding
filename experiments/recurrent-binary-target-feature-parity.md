@@ -205,3 +205,64 @@ hardware and software versions, and per-row baseline/intervention errors.
 The supervised run exited zero, its process group stopped, and the 5080
 returned to 0% utilization, 1,372 MiB whole-device use and no compute app.
 No training or development/final prompt ran.
+
+## Native target layer-input ladder on the outlier
+
+Fork commit `87cdf11fb` and parent commit `bfe5561` add a strictly opt-in,
+bounded native target layer-input capture. It selects layers `0–18,33`
+without changing the draft-declared EAGLE taps, writes a separate F32 file
+and row-provenance JSONL, and rejects unsupported geometry or explicit
+layer/row/byte cap overflow. A local Apple M3 Max CPU smoke captured the
+frozen 29-token prompt, matched all 87 old tap comparisons (29 rows × layers
+2/18/33), preserved the output and existing feature bytes with capture off,
+and rejected a 28-row cap before writing ladder bytes. The final source also
+passed a complete CPU `llama-server` rebuild. These CPU checks did not
+validate CUDA numeric behavior.
+
+The supervised RTX 5080 capture used the same frozen prompt, target, D draft
+and Flash Attention setting as the repeat above. It recorded 29 ladder rows
+(5,939,200 F32 bytes), 49 existing target-feature rows, 15 head rows and
+four native rounds. The independent auditor in parent commit `ebbebe5`
+required source hashes, prompt ancestry, row/byte offsets, and **bitwise
+identity of every ladder tap 2/18/33 with both the same-run writer and the
+sealed full96 capture** before loading the Hugging Face model. Eleven
+synthetic auditor tests passed. The CUDA/F16 eager comparison uses PyTorch
+2.14.0+cu130 and Transformers 4.57.6 on the RTX 5080.
+
+For the reproducible outlier at prefill position 3, relative row L2 error
+against native layer inputs grew as follows:
+
+| Target layer input | Relative row L2 | Absolute error RMS | Native row L2 norm |
+| --- | ---: | ---: | ---: |
+| 0 | 0% | 0 | — |
+| 2 | 0.324% | — | — |
+| 13 | 0.694% | 0.00650 | 47.36 |
+| 14 | 1.209% | 0.01202 | 50.29 |
+| 15 | 4.148% | 0.04218 | 51.45 |
+| 16 | 6.731% | 0.07412 | 55.72 |
+| 17 | 8.193% | 0.09532 | 58.87 |
+| 18 | 10.014% | 0.11647 | 58.85 |
+| 33 | 0.835% | — | — |
+
+The largest adjacent rise at this position is **layer-14 input to layer-15
+input**, across block 14: 1.209% → 4.148%. Its absolute RMS error also rises
+while native state norm stays near 50–51, so the relative jump is not a
+shrinking-denominator artifact. Another row, position 2, has a separate
+0.584% → 2.845% rise from layer 6 to 7. These are locations of numeric
+amplification, not yet attribution to attention, FFN, residual or capture
+indexing within either block.
+
+The CUDA capture manifest SHA256 is
+`72410d35fae0b1561fca0546e8e3b6e58a30506af75fd0802d10da865db6151d`;
+the ladder F32 SHA256 is
+`242a5a748a2a62e7480363c6bd80688563f63b59a37c3ec1bd884782664a2d9e`;
+the executed CUDA server binary SHA256 is
+`8873d9b215f503ce84252f84d1dead73595bc36af389dcf662902fe6bb23eed1`.
+The independent comparison report SHA256 is
+`9642d6c84e02377e8fcd83bc100be0cd57c3de0af9dbd663f9971cba0b1f79eb`.
+Both ignored run directories are retained on the registered 5080 host as
+`recurrent-target-ladder-cuda-20260928` and
+`recurrent-target-ladder-compare-20260928` under the isolated checkout.
+Both supervisors finished with exit zero; no native server or compute app
+remained, and the GPU returned to 0% utilization and 1,372 MiB whole-device
+use. No optimization or development/final prompt was used.

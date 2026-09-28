@@ -879,3 +879,43 @@ unchanged, and compare layer-by-layer against the same F16 independent
 forward. If the ladder changes old taps or fails its bounds, stop and keep
 the existing capture sealed. Do not choose a numeric tolerance or begin the
 all-body optimizer without the user's research decision.
+
+## Twentieth goal turn: target layer-input ladder localizes the outlier
+
+- Fork commit `87cdf11fb6fbfe5d35ab297ecae163c718a9593f` was pushed before
+  parent gitlink commit `bfe5561`. The opt-in native target ladder captures
+  only bounded prefill rows at layers `0–18,33`, separate from the unchanged
+  EAGLE feature writer. Apple M3 Max CPU smoke passed 29 rows and 87/87
+  byte-exact old-tap comparisons; the capture-off control preserved output
+  and old feature bytes, and a 28-row limit rejected the 29-row request
+  before ladder payload was written. The final source passed a full CPU
+  server rebuild. Parent commit `ebbebe5` added an independent ladder auditor
+  with 11 synthetic tests, source/row/hash checks and a bitwise old-tap gate.
+  The existing one-prompt runner added explicit 20-layer/64-row/12.5 MiB caps;
+  five focused runner tests and Ruff passed.
+- The supervised RTX 5080 capture and CUDA/F16 independent comparison each
+  exited zero on the frozen 29-token outlier prompt. All new native ladder
+  taps 2/18/33 matched both same-run and sealed full96 raw feature bytes
+  exactly. At prefill position 3, relative row L2 error rose from 1.209%
+  at native layer-14 input to 4.148% at layer-15 input, then to 10.014% at
+  layer-18 input. Absolute error RMS rose 0.01202→0.04218 across block 14
+  while native row norms stayed near 50–51. This identifies the largest
+  adjacent amplification at block 14, without attributing it to a particular
+  suboperation. Another position has a distinct layer-6→7 jump.
+- Capture manifest SHA256 is
+  `72410d35fae0b1561fca0546e8e3b6e58a30506af75fd0802d10da865db6151d`;
+  comparison report SHA256 is
+  `9642d6c84e02377e8fcd83bc100be0cd57c3de0af9dbd663f9971cba0b1f79eb`.
+  Both reports and raw ladder bytes remain outside Git in the isolated 5080
+  checkout. The supervisors, native server and compute app stopped; device
+  returned to 0% utilization and 1,372 MiB whole-device use. The remote
+  tmux-only session `recurrent-tap2-intervention-5080` (`$20`) remains open
+  for the bounded block-14 follow-up, with no active job. The full96 source
+  remains sealed, and no optimization, final-set prompt or Q4_0 performance
+  run occurred.
+
+**Next gate:** inject captured native layer-14 input into the independent
+block-14 forward to distinguish upstream perturbation amplification from a
+block-local arithmetic gap. Then instrument only the implicated native block
+operations if its same-input output still diverges. Keep the user-owned
+numeric gate and all-body training budget unresolved.
