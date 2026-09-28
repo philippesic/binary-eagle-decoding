@@ -195,3 +195,23 @@ counterfactual. These observations motivate a body-aware fit but do not prove
 that it will recover quality or overcome current A16 runtime cost.
 This is a recommendation, not authorization: no broader QAT, budget increase,
 head rebinarization, final-set evaluation or new GPU run begins from it.
+
+## Joint binary body/head preparation (2026-09-28)
+
+The user approved a new jointly trained binary body/head research goal but
+explicitly prohibited **all GPU and accelerator use** in this task. CPU-only
+preparation proceeds under the [active goal](goals/recurrent-binary-body-head.md)
+and [trial protocol](../experiments/recurrent-binary-qat-plan.md). The earlier
+head-only 500-step/45-minute budget is not silently transferred to all-body
+training. Q4_0 remains the primary later native gate; no new outcome has been
+measured.
+
+Pending user-owned research choices, with independent CPU work available:
+
+| Choice | Options and present evidence | Gate |
+| --- | --- | --- |
+| Scale boundary | Keep D's `scale >= 0` including exact zero, or change to strictly positive scales with a documented initialization difference. D's NNLS fit explicitly allowed zeros; deployment already accepts nonnegative F32 scales. CPU implementation should retain D exactly. | Freeze before training/export. |
+| Training prefix distribution | Teacher-force bounded native D prefixes with exact labels and differentiable student recurrence, or refresh exact-prefix labels as student proposals change. The former is reproducible and CPU-testable but off-policy after sign changes; the latter requires new real-model target capture and extra compute. Neither guarantees live acceptance. | Capture/support audit and a fixed budget before real training. |
+| First all-body budget | Proposed one 500-step / 45-optimizer-minute run, at most 8,160 starts of up to five steps on the frozen 96 training prompts; select on 24 development prompts, leave 24 final sealed. This is a proposed cap, not authorization for GPU execution. | Explicit future user budget decision and changed no-GPU restriction. |
+| Unsupported labels | Count all unsupported rows and target probability mass; apply CE only to valid supported labels, keeping unsupported rows in denominators. A different vocabulary-support objective would be a separate choice after the real mapped-mass audit. | Reject any capture with wrong offset/inverse map or prefix/verifier join. |
+| Learned-scale metadata | Add a truthful learned-scale rule to the native GGUF loader, or defer trained export. Existing loader accepts mean-absolute and NNLS provenance only; relabeling learned scales as NNLS would be false. | Loader and export tests before a native trained candidate. |
