@@ -9,6 +9,15 @@ task; do not load every document for a small edit.
   acceptance, latency, and total throughput. FP16 EAGLE is a secondary diagnostic
   reference, not the primary success target. This does not change target/verifier
   model precision or previously frozen experiments.
+- Favor development speed and decisive native acceptance/throughput tests over
+  bit-exact cross-backend parity. Timebox numerical diagnostics and require each
+  one to address a concrete training or deployment risk. Hugging Face versus
+  llama.cpp floating-point drift alone is not a blocker when training uses
+  captured native target features/logits and bounded native trajectory checks
+  pass. Record the discrepancy and a practical numeric gate, then proceed.
+  Investigate further if it changes labels, drafter decisions, gradients, or
+  conclusions. Preserve exact data ancestry, cache/mask semantics, verifier
+  behavior, and held-out evaluation.
 - The user owns major research decisions. Continue independent work when a
   decision is pending; record options and evidence in `docs/DECISIONS.md`.
 - Keep one active goal at a time. Its durable state lives in `docs/STATUS.md`
