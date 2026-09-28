@@ -1,0 +1,383 @@
+"""Efficient joint W1Ax training simulation and explicit representation contracts.
+
+The forward always uses hard binary weights and native-style activation values.
+Dense F32 matmul computes their dot product; it does not predict kernel latency.
+Clipped identity is the weight-sign surrogate. Activation codes use an identity
+surrogate through the dequantized value; dynamic absmax/mean-absolute scales
+are detached in the backward pass. A16 uses an F16
+boundary cast and PyTorch's cast derivative. No accelerator is used by default.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+from collections.abc import Mapping
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Literal
+
+import numpy as np
+import torch
+from torch import Tensor, nn
+from torch.nn import functional as F
+
+from .recurrent_binary import CANDIDATE_D_BASE_TO_PATH, GroupedBinaryLinear, hard_sign_ste
+from .recurrent_loss import supported_prefix_ce
+from .recurrent_trace import TraceAudit
+
+ActivationBits = Literal[1, 4, 8, 16]
+ScaleLayout = Literal["row", "group128"]
+
+
+@dataclass(frozen=True)
+class W1AxContract:
+    activation_bits: ActivationBits
+    scale_layout: ScaleLayout = "row"
+
+    def __post_init__(self) -> None:
+        if self.activation_bits not in (1, 4, 8, 16):
+            raise ValueError("activation bits must be A1, A4, A8, or A16")
+        if self.scale_layout not in ("row", "group128"):
+            raise ValueError("scale layout must be row or group128")
+        if self.scale_layout == "group128" and self.activation_bits != 16:
+            raise ValueError("native group128 supports A16 only")
+
+    @property
+    def export_status(self) -> str:
+        if self.scale_layout == "group128":
+            return "candidate_d_group128_a16_exporter"
+        return "row_w1ax_requires_native_validation"
+
+
+class _HardActivationSTE(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, x: Tensor, bits: int) -> tuple[Tensor, Tensor, Tensor]:
+        x = x.float()
+        if bits == 1:
+            scale = x.abs().double().mean(dim=-1, keepdim=True).float()
+            hard = torch.where(x < 0, -torch.ones_like(x), torch.ones_like(x))
+            saturation = torch.zeros_like(x, dtype=torch.bool)
+        else:
+            qmax = (1 << (bits - 1)) - 1
+            absmax = x.abs().amax(dim=-1, keepdim=True)
+            scale = absmax / qmax
+            # Native uses x * (qmax / absmax), then round-to-nearest-even.
+            normalized = x * torch.where(absmax > 0, qmax / absmax, 0)
+            hard = torch.round(normalized).clamp(-qmax, qmax)
+            saturation = hard.abs() == qmax
+        ctx.mark_non_differentiable(scale, saturation)
+        return hard * scale, scale, saturation
+
+    @staticmethod
+    def backward(ctx, grad_values: Tensor, grad_scale: Tensor, grad_saturation: Tensor):
+        # Identity through the dequantized value; dynamic scale is detached.
+        return grad_values, None
+
+
+def hard_activation(input: Tensor, bits: ActivationBits) -> tuple[Tensor, Tensor, Tensor]:
+    """Return hard dequantized values, per-token scale and saturation mask."""
+    if bits not in (1, 4, 8, 16):
+        raise ValueError("unsupported activation width")
+    if not input.is_floating_point() or not bool(torch.isfinite(input).all()):
+        raise ValueError("activations must be finite floating point")
+    if bits == 16:
+        cast = input.float().to(torch.float16).float()
+        if not bool(torch.isfinite(cast).all()):
+            raise ValueError("A16 boundary cast overflow")
+        return cast, torch.ones_like(cast[..., :1]), torch.zeros_like(cast, dtype=torch.bool)
+    return _HardActivationSTE.apply(input, bits)
+
+
+class RowBinaryLinear(nn.Module):
+    """Trainable one-bit row-scale linear for A1/A4/A8/A16 simulation.
+
+    `latent_sign` and `scale_offset` are the only trainable parameters. Frozen
+    biases are retained. A zero weight scale is legal and projects to zero.
+    A row checkpoint from this module is not a deployable GGUF.
+    """
+
+    def __init__(
+        self,
+        weight: Tensor,
+        scales: Tensor,
+        contract: W1AxContract,
+        *,
+        bias: Tensor | None = None,
+    ) -> None:
+        super().__init__()
+        if contract.scale_layout != "row":
+            raise ValueError("RowBinaryLinear needs row-scale contract")
+        if weight.ndim != 2 or min(weight.shape) < 1 or scales.shape != (weight.shape[0],):
+            raise ValueError("weight and row scale shapes disagree")
+        if not bool(torch.isfinite(weight).all()) or not bool(torch.isfinite(scales).all()):
+            raise ValueError("initial weight and scales must be finite")
+        if bool((scales < 0).any()):
+            raise ValueError("weight scales must be nonnegative")
+        if bias is not None and (
+            bias.shape != (weight.shape[0],) or not bool(torch.isfinite(bias).all())
+        ):
+            raise ValueError("frozen bias shape or values invalid")
+        self.contract = contract
+        self.in_features = weight.shape[1]
+        self.out_features = weight.shape[0]
+        self.latent_sign = nn.Parameter(weight.detach().float().clone())
+        self.register_buffer("initial_scale", scales.detach().float().clone())
+        self.scale_offset = nn.Parameter(torch.zeros_like(self.initial_scale))
+        self.register_buffer("frozen_bias", None if bias is None else bias.detach().float().clone())
+        self.last_saturation_fraction = 0.0
+
+    def effective_scales(self) -> Tensor:
+        raw = self.initial_scale + self.scale_offset
+        return torch.where(raw >= 0, raw, torch.zeros_like(raw))
+
+    @torch.no_grad()
+    def project_scales_(self) -> None:
+        raw = self.initial_scale + self.scale_offset
+        if not bool(torch.isfinite(raw).all()):
+            raise ValueError("weight scales became nonfinite")
+        self.scale_offset.copy_(torch.where(raw < 0, -self.initial_scale, self.scale_offset))
+
+    def forward(self, input: Tensor) -> Tensor:
+        if input.shape[-1] != self.in_features:
+            raise ValueError("input last dimension differs from weight")
+        if input.device != self.latent_sign.device:
+            raise ValueError("input and linear must share device")
+        quantized, _, saturated = hard_activation(input, self.contract.activation_bits)
+        self.last_saturation_fraction = float(saturated.float().mean().detach())
+        signs = hard_sign_ste(self.latent_sign)
+        return F.linear(quantized, signs) * self.effective_scales() + (
+            0 if self.frozen_bias is None else self.frozen_bias
+        )
+
+
+@dataclass(frozen=True)
+class JointQATConfig:
+    contract: W1AxContract
+    device: str = "cpu"
+    allow_accelerator: bool = False
+    objective: Literal["hard_ce", "compact_probability"] = "hard_ce"
+    sign_lr: float = 1e-4
+    scale_lr: float = 1e-5
+    max_grad_norm: float = 1.0
+    seed: int = 0
+
+    def __post_init__(self) -> None:
+        device = torch.device(self.device)
+        if device.type != "cpu" and not self.allow_accelerator:
+            raise ValueError("accelerator use requires explicit allow_accelerator")
+        if self.contract.scale_layout == "group128" and device.type != "cpu":
+            raise ValueError("group128 reference projection is CPU-only")
+        if self.objective not in ("hard_ce", "compact_probability"):
+            raise ValueError("unknown joint QAT objective")
+        if self.sign_lr <= 0 or self.scale_lr <= 0 or self.max_grad_norm <= 0:
+            raise ValueError("learning rates and gradient bound must be positive")
+
+
+def validate_joint_linears(
+    linears: Mapping[str, RowBinaryLinear | GroupedBinaryLinear], config: JointQATConfig
+) -> None:
+    if set(linears) != set(CANDIDATE_D_BASE_TO_PATH.values()):
+        raise ValueError("joint training needs exactly the nine candidate-D linears")
+    expected = RowBinaryLinear if config.contract.scale_layout == "row" else GroupedBinaryLinear
+    if any(not isinstance(module, expected) for module in linears.values()):
+        raise TypeError("nine linears do not match declared scale layout")
+    if config.contract.scale_layout == "row":
+        if any(module.contract != config.contract for module in linears.values()):
+            raise ValueError("row linears must share the W1Ax contract")
+    elif any(module.group_size != 128 for module in linears.values()):
+        raise ValueError("group contract needs group size 128")
+    if any(module.latent_sign.device != torch.device(config.device) for module in linears.values()):
+        raise ValueError("joint linears are not on configured device")
+
+
+def joint_optimizer(
+    linears: Mapping[str, RowBinaryLinear | GroupedBinaryLinear], config: JointQATConfig
+) -> torch.optim.Optimizer:
+    """AdamW with separate sign/scale rates and no latent weight decay."""
+    validate_joint_linears(linears, config)
+    return torch.optim.AdamW(
+        [
+            {"params": [m.latent_sign for m in linears.values()], "lr": config.sign_lr},
+            {"params": [m.scale_offset for m in linears.values()], "lr": config.scale_lr},
+        ],
+        weight_decay=0,
+    )
+
+
+def compact_probability_loss(
+    logits: Tensor, audit: TraceAudit, teacher: Mapping[str, Tensor]
+) -> Tensor:
+    """Conditional mapped-vocab CE with uniform unseen tail approximation.
+
+    Teacher `draft_topk_probs` and `draft_tail_mass` are unconditional target
+    softmax masses. `outside_draft_mass` remains visible and is excluded from
+    the conditional objective. Mapped tail is distributed uniformly among
+    draft IDs absent from top-k. This approximation must not be called full KL.
+    """
+    if logits.ndim != 2 or not logits.is_floating_point() or not bool(torch.isfinite(logits).all()):
+        raise ValueError("student logits must be finite floating [rows, draft vocab]")
+    n, vocab = logits.shape
+    if n != len(audit.valid_mask) or vocab != sum(x >= 0 for x in audit.target_to_draft):
+        raise ValueError("student logits disagree with audited rows or vocabulary")
+    ids = teacher["draft_topk_ids"].to(device=logits.device)
+    probs = teacher["draft_topk_probs"].to(device=logits.device)
+    tail = teacher["draft_tail_mass"].to(device=logits.device)
+    outside = teacher["outside_draft_mass"].to(device=logits.device)
+    if ids.ndim != 2 or ids.shape != probs.shape or ids.shape[0] != n or ids.shape[1] >= vocab:
+        raise ValueError("compact teacher top-k shape invalid")
+    if tail.shape != (n,) or outside.shape != (n,):
+        raise ValueError("compact teacher tail shape invalid")
+    if ids.dtype not in (torch.int32, torch.int64) or bool(((ids < 0) | (ids >= vocab)).any()):
+        raise ValueError("compact teacher IDs outside draft vocabulary")
+    if bool((ids.sort(dim=1).values[:, 1:] == ids.sort(dim=1).values[:, :-1]).any()):
+        raise ValueError("duplicate compact teacher IDs")
+    if not all(bool(torch.isfinite(x).all()) for x in (probs, tail, outside)):
+        raise ValueError("compact teacher masses must be finite")
+    if bool((probs < 0).any()) or bool((tail < 0).any()) or bool((outside < 0).any()):
+        raise ValueError("compact teacher masses must be nonnegative")
+    total = probs.sum(dim=1) + tail + outside
+    if not bool(torch.allclose(total, torch.ones_like(total), rtol=0, atol=1e-4)):
+        raise ValueError("compact teacher mass does not sum to one")
+    mapped = 1 - outside
+    mask = torch.tensor(audit.valid_mask, dtype=torch.bool, device=logits.device) & (mapped > 0)
+    if not bool(mask.any()):
+        raise ValueError("no valid row with mapped teacher mass")
+    logp = F.log_softmax(logits.float(), dim=-1)
+    selected = logp.gather(1, ids.long())
+    # Sum of log-probabilities over all other draft IDs; no dense teacher
+    # distribution is materialized even for the full 32k vocabulary.
+    tail_log_sum = logp.sum(dim=1) - selected.sum(dim=1)
+    numerator = (probs * selected).sum(dim=1) + tail * tail_log_sum / (vocab - ids.shape[1])
+    return -(numerator[mask] / mapped[mask]).mean()
+
+
+def joint_train_step(
+    linears: Mapping[str, RowBinaryLinear | GroupedBinaryLinear],
+    logits: Tensor,
+    audit: TraceAudit,
+    optimizer: torch.optim.Optimizer,
+    config: JointQATConfig,
+    *,
+    teacher: Mapping[str, Tensor] | None = None,
+) -> dict[str, float | int]:
+    """Update all nine linears from an attached current-student unroll.
+
+    Caller constructs that unroll and its cache. Later loss must retain the
+    earlier state/K/V graph; this step never detaches logits. Trace auditing
+    remains mandatory at capture ingestion.
+    """
+    validate_joint_linears(linears, config)
+    if logits.device != torch.device(config.device):
+        raise ValueError("logits are not on configured device")
+    params = [p for m in linears.values() for p in (m.latent_sign, m.scale_offset)]
+    owned = [p for group in optimizer.param_groups for p in group["params"]]
+    if len(owned) != len(params) or {id(p) for p in owned} != {id(p) for p in params}:
+        raise ValueError("optimizer must own only nine sign and scale pairs")
+    before_signs = [m.latent_sign.detach().clone() < 0 for m in linears.values()]
+    before_scales = [m.effective_scales().detach().clone() for m in linears.values()]
+    optimizer.zero_grad(set_to_none=True)
+    if config.objective == "hard_ce":
+        if teacher is not None:
+            raise ValueError("hard CE does not take compact teacher")
+        loss = supported_prefix_ce(logits, audit)
+    else:
+        if teacher is None:
+            raise ValueError("compact probability objective needs teacher")
+        loss = compact_probability_loss(logits, audit, teacher)
+    if not loss.requires_grad or not bool(torch.isfinite(loss)):
+        raise ValueError("joint loss must be finite and differentiable")
+    loss.backward()
+    gradient_tensors = sum(p.grad is not None and bool((p.grad != 0).any()) for p in params)
+    if any(p.grad is not None and not bool(torch.isfinite(p.grad).all()) for p in params):
+        raise ValueError("nonfinite joint QAT gradient")
+    norm = torch.nn.utils.clip_grad_norm_(params, config.max_grad_norm, error_if_nonfinite=True)
+    optimizer.step()
+    for module in linears.values():
+        # The clipped sign surrogate has zero derivative outside [-1, 1].
+        # Project after AdamW so a packed +/-1 initialization cannot drift
+        # permanently outside its trainable interval.
+        with torch.no_grad():
+            module.latent_sign.clamp_(-1, 1)
+        module.project_scales_()
+    sign_flips = sum(
+        int(((m.latent_sign.detach() < 0) != old).sum())
+        for m, old in zip(linears.values(), before_signs)
+    )
+    scale_movement = sum(
+        float((m.effective_scales().detach() - old).abs().sum())
+        for m, old in zip(linears.values(), before_scales)
+    )
+    latent_outside_clip = sum(
+        int((m.latent_sign.detach().abs() > 1).sum()) for m in linears.values()
+    )
+    return {
+        "loss": float(loss.detach()),
+        "gradient_tensors": gradient_tensors,
+        "gradient_norm": float(norm),
+        "sign_flips": sign_flips,
+        "scale_l1_movement": scale_movement,
+        "latent_outside_clip": latent_outside_clip,
+        "saturation_mean": sum(
+            getattr(m, "last_saturation_fraction", 0.0) for m in linears.values()
+        )
+        / 9,
+    }
+
+
+def save_joint_checkpoint(
+    linears: Mapping[str, RowBinaryLinear | GroupedBinaryLinear],
+    config: JointQATConfig,
+    base_gguf_sha256: str,
+    checkpoint_path: Path,
+    manifest_path: Path,
+) -> dict[str, str]:
+    """Save row-scale training state; block accidental group/row export mixups."""
+    validate_joint_linears(linears, config)
+    if config.contract.scale_layout != "row":
+        raise ValueError("group128 uses save_training_checkpoint and its existing exporter")
+    if len(base_gguf_sha256) != 64 or any(c not in "0123456789abcdef" for c in base_gguf_sha256):
+        raise ValueError("base GGUF SHA256 must be lowercase hex")
+    checkpoint_path, manifest_path = Path(checkpoint_path), Path(manifest_path)
+    if checkpoint_path.exists() or manifest_path.exists():
+        raise FileExistsError("checkpoint and manifest must be new paths")
+    arrays: dict[str, np.ndarray] = {}
+    projections = {}
+    from .recurrent_training import CHECKPOINT_NAMES
+
+    for base, path in CANDIDATE_D_BASE_TO_PATH.items():
+        module = linears[path]
+        name = CHECKPOINT_NAMES[base]
+        arrays[name + ".latent"] = (
+            module.latent_sign.detach().cpu().numpy().astype(np.float32, copy=True)
+        )
+        arrays[name + ".scale"] = (
+            module.effective_scales().detach().cpu().numpy().astype(np.float32, copy=True)
+        )
+        projections[base] = {"checkpoint_name": name, "shape": list(module.latent_sign.shape)}
+    checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+    manifest_path.parent.mkdir(parents=True, exist_ok=True)
+    np.savez(checkpoint_path, **arrays)
+    hasher = hashlib.sha256()
+    with checkpoint_path.open("rb") as stream:
+        for block in iter(lambda: stream.read(8 * 1024 * 1024), b""):
+            hasher.update(block)
+    digest = hasher.hexdigest()
+    manifest = {
+        "schema_version": 2,
+        "base_gguf_sha256": base_gguf_sha256,
+        "checkpoint_sha256": digest,
+        "scale_layout": "row",
+        "activation_bits": config.contract.activation_bits,
+        "activation_rule": "a16_f16_cast_a8a4_absmax_even_a1_f64_meanabs_sign_zero_positive",
+        "weight_rule": "hard_sign_zero_positive_clipped_identity_ste",
+        "qk_row_order": "original_checkpoint",
+        "export_status": config.contract.export_status,
+        "objective": config.objective,
+        "projections": projections,
+    }
+    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+    return {
+        "checkpoint_sha256": digest,
+        "manifest_sha256": hashlib.sha256(manifest_path.read_bytes()).hexdigest(),
+    }

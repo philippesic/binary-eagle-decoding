@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
-"""Export a jointly trained nine-linear W1A16 EAGLE checkpoint on CPU.
+"""Export jointly trained nine-linear EAGLE group128/A16 or row W1Ax on CPU.
 
 The checkpoint is an uncompressed NPZ with exactly two F32 arrays per original
 checkpoint weight: ``<source name>.latent`` with shape [rows, K] and
-``<source name>.scale`` with shape [rows, ceil(K/128)]. Its JSON manifest has
-``schema_version: 1``, ``base_gguf_sha256``, ``training_arithmetic``, and
+``<source name>.scale`` with shape [rows, ceil(K/128)] for legacy group128/A16,
+or [rows] for row W1Ax. The schema-v1 group manifest has
+``base_gguf_sha256``, ``training_arithmetic``, and
 ``projections`` mapping each GGUF base to
 ``{"checkpoint_name": ..., "shape": [rows, K]}``. All arrays
-are in original checkpoint row order. Q and K rows are permuted here into the
-GGUF RoPE layout before packing. No accelerator or model execution is used.
+are in original checkpoint row order. Schema-v2 row manifests also pin the
+checkpoint hash, activation bits and quantizer rule. Q and K rows are permuted
+here into the GGUF RoPE layout before packing. No model execution is used.
 
 This writes truthful ``f32_learned_nonnegative`` metadata. The fork's native
 loader recognizes that rule; each export still needs loader and numeric gates.
@@ -53,17 +55,45 @@ def tensor_key(base: str, suffix: str) -> str:
 
 
 def check_manifest(manifest: dict, base_hash: str) -> dict[str, tuple[str, tuple[int, int]]]:
-    if not isinstance(manifest, dict) or set(manifest) != {
-        "schema_version",
-        "base_gguf_sha256",
-        "training_arithmetic",
-        "projections",
-    }:
-        raise ValueError("manifest requires version, base GGUF hash, arithmetic and projections")
-    if manifest["schema_version"] != 1 or manifest["base_gguf_sha256"] != base_hash:
+    if not isinstance(manifest, dict) or manifest.get("schema_version") not in (1, 2):
+        raise ValueError("manifest schema must be v1 group128 or v2 row")
+    if manifest["schema_version"] == 1:
+        required = {"schema_version", "base_gguf_sha256", "training_arithmetic", "projections"}
+        if set(manifest) != required:
+            raise ValueError("group manifest requires version, base hash, arithmetic, projections")
+        if manifest["training_arithmetic"] not in ("native_order", "group_matmul"):
+            raise ValueError("unknown declared training arithmetic")
+    else:
+        required = {
+            "schema_version",
+            "base_gguf_sha256",
+            "checkpoint_sha256",
+            "scale_layout",
+            "activation_bits",
+            "activation_rule",
+            "weight_rule",
+            "qk_row_order",
+            "export_status",
+            "objective",
+            "projections",
+        }
+        if set(manifest) != required:
+            raise ValueError("row manifest has missing or extra contract fields")
+        if (
+            manifest["scale_layout"] != "row"
+            or manifest["activation_bits"] not in (1, 4, 8, 16)
+            or manifest["activation_rule"]
+            != "a16_f16_cast_a8a4_absmax_even_a1_f64_meanabs_sign_zero_positive"
+            or manifest["weight_rule"] != "hard_sign_zero_positive_clipped_identity_ste"
+            or manifest["qk_row_order"] != "original_checkpoint"
+            or manifest["export_status"] != "row_w1ax_requires_native_validation"
+            or manifest["objective"] not in ("hard_ce", "compact_probability")
+            or not isinstance(manifest["checkpoint_sha256"], str)
+            or not re.fullmatch("[0-9a-f]{64}", manifest["checkpoint_sha256"])
+        ):
+            raise ValueError("unsupported row checkpoint contract")
+    if manifest["base_gguf_sha256"] != base_hash:
         raise ValueError("manifest version or base GGUF hash mismatch")
-    if manifest["training_arithmetic"] not in ("native_order", "group_matmul"):
-        raise ValueError("unknown declared training arithmetic")
     projections = manifest["projections"]
     if not isinstance(projections, dict) or set(projections) != set(SOURCE_NAMES):
         raise ValueError("manifest must declare exactly nine selected projections")
@@ -122,7 +152,7 @@ def pack(latent: np.ndarray) -> np.ndarray:
     return np.ascontiguousarray(np.packbits(signs, axis=1, bitorder="little").view("<i4"))
 
 
-def load_checkpoint(checkpoint: Path, expected: dict) -> dict:
+def load_checkpoint(checkpoint: Path, expected: dict, *, row_scale: bool = False) -> dict:
     required = {name + suffix for name, _ in expected.values() for suffix in (".latent", ".scale")}
     arrays = {}
     with np.load(checkpoint, allow_pickle=False) as archive:
@@ -134,8 +164,9 @@ def load_checkpoint(checkpoint: Path, expected: dict) -> dict:
             groups = (shape[1] + GROUP_SIZE - 1) // GROUP_SIZE
             if latent.dtype != np.float32 or latent.shape != shape:
                 raise ValueError(f"{name}: latent must be F32 with declared shape")
-            if scale.dtype != np.float32 or scale.shape != (shape[0], groups):
-                raise ValueError(f"{name}: scale must be F32 [rows, ceil(K/128)]")
+            scale_shape = (shape[0],) if row_scale else (shape[0], groups)
+            if scale.dtype != np.float32 or scale.shape != scale_shape:
+                raise ValueError(f"{name}: scale must be F32 with shape {scale_shape}")
             if not np.isfinite(latent).all():
                 raise ValueError(f"{name}: nonfinite latent")
             if (
@@ -145,9 +176,19 @@ def load_checkpoint(checkpoint: Path, expected: dict) -> dict:
             ):
                 raise ValueError(f"{name}: scales must be finite and nonnegative")
             if base == "blk.0.attn_q":
-                latent, scale = gguf_qk_row_order(latent, 32), gguf_qk_row_order(scale, 32)
+                latent = gguf_qk_row_order(latent, 32)
+                scale = (
+                    gguf_qk_row_order(scale[:, None], 32)[:, 0]
+                    if row_scale
+                    else gguf_qk_row_order(scale, 32)
+                )
             elif base == "blk.0.attn_k":
-                latent, scale = gguf_qk_row_order(latent, 8), gguf_qk_row_order(scale, 8)
+                latent = gguf_qk_row_order(latent, 8)
+                scale = (
+                    gguf_qk_row_order(scale[:, None], 8)[:, 0]
+                    if row_scale
+                    else gguf_qk_row_order(scale, 8)
+                )
             arrays[base] = {
                 "packed": pack(latent),
                 "scale": np.ascontiguousarray(scale),
@@ -176,9 +217,12 @@ def export_model(base_path: Path, checkpoint: Path, manifest_path: Path, output:
     base_hash = sha256(base_path)
     manifest = json.loads(manifest_path.read_text())
     expected = check_manifest(manifest, base_hash)
+    row_scale = manifest["schema_version"] == 2
+    if row_scale and sha256(checkpoint) != manifest["checkpoint_sha256"]:
+        raise ValueError("row checkpoint SHA256 differs from manifest")
     reader = GGUFReader(base_path)
     tensors = check_base(reader, expected)
-    arrays = load_checkpoint(checkpoint, expected)
+    arrays = load_checkpoint(checkpoint, expected, row_scale=row_scale)
     selected_names = {base + ".weight" for base in SOURCE_NAMES}
     preserved = {name: tensor for name, tensor in tensors.items() if name not in selected_names}
     expected_names = set(preserved) | {
@@ -197,7 +241,9 @@ def export_model(base_path: Path, checkpoint: Path, manifest_path: Path, output:
                     field.types[-1] if len(field.types) > 1 else None,
                 )
         writer.add_uint32(PREFIX + "version", 2)
-        writer.add_uint32(PREFIX + "scale_group_size", GROUP_SIZE)
+        writer.add_uint32(PREFIX + "scale_group_size", 0 if row_scale else GROUP_SIZE)
+        if row_scale:
+            writer.add_uint32(PREFIX + "activation_bits", manifest["activation_bits"])
         writer.add_array(PREFIX + "groups", list(GROUPS))
         writer.add_array(PREFIX + "tensors", sorted(selected_names))
         writer.add_string(PREFIX + "bit_order", "little")
@@ -242,6 +288,11 @@ def export_model(base_path: Path, checkpoint: Path, manifest_path: Path, output:
                     raise ValueError(f"source metadata changed: {key}")
         if reread.fields[PREFIX + "scale_rule"].contents() != "f32_learned_nonnegative":
             raise ValueError("export scale rule mismatch")
+        if row_scale and (
+            reread.fields[PREFIX + "scale_group_size"].contents() != 0
+            or reread.fields[PREFIX + "activation_bits"].contents() != manifest["activation_bits"]
+        ):
+            raise ValueError("row activation or scale metadata mismatch")
         output_hash = sha256(temporary)
         report = {
             "schema_version": 1,
@@ -250,7 +301,9 @@ def export_model(base_path: Path, checkpoint: Path, manifest_path: Path, output:
             "checkpoint_manifest": {"path": str(manifest_path), "sha256": sha256(manifest_path)},
             "output": {"path": str(output), "sha256": output_hash},
             "scale_rule": "f32_learned_nonnegative",
-            "training_arithmetic": manifest["training_arithmetic"],
+            "training_arithmetic": manifest.get("training_arithmetic", "dense_matmul_hard_quant"),
+            "scale_layout": "row" if row_scale else "group128",
+            "activation_bits": manifest["activation_bits"] if row_scale else 16,
             "native_loader_gate": "verify loader and full-drafter numeric parity before deployment",
             "serialization_audit_passed": True,
             "projections": {

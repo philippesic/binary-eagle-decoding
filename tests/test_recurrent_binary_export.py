@@ -11,6 +11,12 @@ import numpy as np
 import torch
 
 from w1a1_eagle.recurrent_binary import CANDIDATE_D_BASE_TO_PATH, GroupedBinaryLinear
+from w1a1_eagle.recurrent_qat import (
+    JointQATConfig,
+    RowBinaryLinear,
+    W1AxContract,
+    save_joint_checkpoint,
+)
 from w1a1_eagle.recurrent_training import save_training_checkpoint
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -83,6 +89,47 @@ class RecurrentBinaryExportTests(unittest.TestCase):
         if override:
             override(manifest)
         self.manifest.write_text(json.dumps(manifest))
+
+    def test_row_w1ax_schema_v2_pins_bits_scales_and_checkpoint_hash(self):
+        for name in SOURCE_NAMES.values():
+            self.arrays[name + ".scale"] = self.arrays[name + ".scale"][:, 0].copy()
+        linears = {
+            CANDIDATE_D_BASE_TO_PATH[base]: RowBinaryLinear(
+                torch.from_numpy(self.arrays[name + ".latent"]),
+                torch.from_numpy(self.arrays[name + ".scale"]),
+                W1AxContract(4),
+            )
+            for base, name in SOURCE_NAMES.items()
+        }
+        self.checkpoint.unlink()
+        self.manifest.unlink()
+        save_joint_checkpoint(
+            linears,
+            JointQATConfig(W1AxContract(4)),
+            sha256(self.base),
+            self.checkpoint,
+            self.manifest,
+        )
+        manifest = json.loads(self.manifest.read_text())
+        report = self.export()
+        self.assertEqual(report["scale_layout"], "row")
+        self.assertEqual(report["activation_bits"], 4)
+        reader = GGUFReader(self.output)
+        self.assertEqual(reader.fields[PREFIX + "scale_group_size"].contents(), 0)
+        self.assertEqual(reader.fields[PREFIX + "activation_bits"].contents(), 4)
+        tensors = {tensor.name: tensor for tensor in reader.tensors}
+        for base, name in SOURCE_NAMES.items():
+            scales = self.arrays[name + ".scale"]
+            if base == "blk.0.attn_q":
+                scales = gguf_qk_row_order(scales[:, None], 32)[:, 0]
+            elif base == "blk.0.attn_k":
+                scales = gguf_qk_row_order(scales[:, None], 8)[:, 0]
+            np.testing.assert_array_equal(tensors[base + ".w1a1_scale"].data, scales)
+        self.output.unlink()
+        manifest["checkpoint_sha256"] = "0" * 64
+        self.manifest.write_text(json.dumps(manifest))
+        with self.assertRaisesRegex(ValueError, "checkpoint SHA256"):
+            self.export()
 
     def export(self):
         return export_model(self.base, self.checkpoint, self.manifest, self.output)
