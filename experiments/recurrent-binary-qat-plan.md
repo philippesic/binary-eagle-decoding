@@ -148,6 +148,14 @@ preparation bundle marked `training_eligible: false`. No current CPU result
 certifies what a future server executed, native training eligibility or model
 quality.
 
+A [one-prompt CPU-only model capture](recurrent-binary-cpu-capture-smoke.md)
+now exercises the native writers end to end with the pinned target and D
+draft. It exposed a missing `GGML_W1AX_ACT_BITS=16` setting in the runner;
+the corrected diagnostic passed continuity, both preparers and the final
+bundle audit. This validates capture format and the local joins for one real
+request. It does not establish numerical target-feature or drafter-cache
+parity, full 96-prompt capture completeness, training quality or Q4_0 gates.
+
 ## Bounded proposed first trial and stop gates
 
 The existing prompt manifests stay fixed: 96 training prompts, 24 development

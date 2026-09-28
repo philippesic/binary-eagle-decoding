@@ -396,6 +396,7 @@ class RunnerTests(unittest.TestCase):
             manifest = runner.run_cell(self.args, "d_d", self.spec, [self.prompt])
         stop.assert_called_once_with(proc)
         env = popen.call_args.kwargs["env"]
+        self.assertEqual(env["GGML_W1AX_ACT_BITS"], "16")
         self.assertEqual(env["EAGLE_CAPTURE_TARGET_LOGITS"], "1")
         self.assertEqual(env["EAGLE_CAPTURE_TARGET_FEATURES"], "1")
         self.assertEqual(env["EAGLE_CAPTURE_TARGET_FEATURES_LIMIT"], "128")

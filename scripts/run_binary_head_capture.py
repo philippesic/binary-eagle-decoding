@@ -295,6 +295,7 @@ def run_cell(args, name, spec, prompts, forced=None):
     if recurrent:
         env.update(
             {
+                "GGML_W1AX_ACT_BITS": "16",
                 "EAGLE_CAPTURE_TARGET_LOGITS": "1",
                 "EAGLE_CAPTURE_TARGET_LOGITS_LIMIT": str(args.target_logits_limit),
                 "EAGLE_CAPTURE_TARGET_FEATURES": "1",

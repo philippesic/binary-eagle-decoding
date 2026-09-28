@@ -248,6 +248,28 @@ Meaningful CPU work closed the offline assembly and internal continuity
 gaps. The native Goal remains active; a GPU-only impasse has not yet been
 established.
 
+## Seventh goal turn: actual CPU-only capture path
+
+- The first CPU launch of pinned target plus D draft failed during draft
+  loading because the `recurrent-train` runner omitted the mandatory
+  `GGML_W1AX_ACT_BITS=16` setting. The runner and its mock test now set/check
+  it. No request was served in that failed launch.
+- A retry ran one frozen training prompt for eight output tokens with both
+  model GPU-layer counts at zero and all accelerator/BLAS backends compiled
+  out. The server stopped cleanly. It recorded four rounds, 16 head states,
+  16 raw target-logit rows and 53 raw target-feature rows. The actual raw
+  streams passed internal continuity, both native preparers and the final
+  preparation-only bundle audit. The first seven response IDs match the
+  native seed and round emissions; the terminal eighth token has no
+  independent raw target-logit check. The [CPU capture report](../../experiments/recurrent-binary-cpu-capture-smoke.md)
+  has pinned identities, counts, SHA256s, hardware and limitations. Raw
+  files remain ignored under `results/recurrent-binary-cpu-smoke-20260928-a16/`.
+- This closes a real runtime-format gap for a single request only. It does
+  not establish numerical target-feature parity, whole-drafter state/KV
+  parity, 96-prompt capture completeness, training quality or native Q4_0
+  acceptance and throughput. The native Goal stays active. No GPU,
+  accelerator, remote host, final prompt or training step ran.
+
 **Published checkpoints:** `7744d8e` created the goal/protocol; `1e3742d`
 integrated the trace contract; `a4dd003` integrated learned GGUF export;
 `fead52a` integrated the binary CPU reference; `792b7e0` published the
@@ -267,10 +289,11 @@ restriction. Do not request or infer that change.
 
 ## CPU stop gate and next actions
 
-1. Keep the synthetic joined bundle as a preparation-only gate. Audit
-   whether captured model/map identity and response-to-round completion can
-   be made stronger with local evidence. The new native writers still need
-   real-model runtime and feature-row-order validation.
+1. Extend the one-request real CPU capture with an independent numerical
+   target-feature check and a response-to-round/terminal audit. Keep the
+   preparation bundle ineligible until full request, model and drafter
+   parity gates pass; do not infer the 96-prompt training result from one
+   prompt.
 2. Connect prefix rebuilding to the pinned full drafter only with verified
    attention/RoPE/KV rounding and mask semantics; do not substitute saved
    normalized head states. Keep the sequential reference and grouped-matmul
@@ -278,7 +301,7 @@ restriction. Do not request or infer that change.
 3. Recheck CPU gates and record hashes/commits at the next milestone. Keep
    model files/raw captures out of Git. Audit whether remaining local work
    can still advance the goal. This is the
-   **sixth** goal turn under the no-GPU restriction. Do not mark the Goal
+   **seventh** goal turn under the no-GPU restriction. Do not mark the Goal
    blocked until the same GPU-only impasse persists across at least three
    consecutive goal turns and no meaningful CPU-only work remains.
 
