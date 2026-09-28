@@ -122,6 +122,17 @@ record the source hash and limits. The supervised run stopped and the GPU
 is free. The first material local operator difference and training gate
 remain open.
 
+**Local target-block screen (2026-09-28 UTC):** on the same frozen 29-token
+prefix, independent RTX 5080 F16 forwards supplied each block `0–17` its
+own captured native input. At the position-3 outlier, every same-input
+block-output error was at most 0.272% relative row L2, compared with the
+accumulated 10.014% layer-18 error. Small local backend differences are
+amplified through later blocks; the all-row ranking differs and no numeric
+gate follows from one prompt. The [goal checkpoint](goals/recurrent-binary-body-head.md#twenty-second-goal-turn-local-target-blocks-and-amplified-state-drift)
+and [feature report](../experiments/recurrent-binary-target-feature-parity.md#same-input-local-block-screen)
+record source hashes and limits. The supervised run stopped and the GPU is
+free. Full-drafter parity, training budget and Q4_0 evaluation remain open.
+
 **Handoff checkpoint (2026-09-28 06:35 UTC):** the active goal file records
 the current objective, pushed commits, CPU tests, projected K/V write
 comparison, pending 5080 clarification and exact next actions. Code round 2

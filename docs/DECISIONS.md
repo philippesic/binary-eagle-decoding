@@ -265,6 +265,15 @@ to 0.149% (RMS 0.04218→0.001516), showing that this block mainly amplifies
 an upstream difference under the independent forward. Screen local blocks
 from their own native inputs before selecting a tolerance or blaming a single
 block operator. The research choice remains open.
+The full same-input screen across blocks 0–17 found at most 0.272% local
+output error at the outlier position, compared with 10.014% accumulated
+error by layer 18. This favors a distributed-backend-arithmetic plus
+amplification explanation, not a single large local failure. Other positions
+have different absolute-error rankings, and the 29-token screen cannot set
+a global tolerance. The choice of exact backend arithmetic versus a
+predeclared numeric/trajectory gate remains user-owned; captured native
+features and verifier logits can be reused while independent drafter parity
+work continues.
 See the [feature report](../experiments/recurrent-binary-target-feature-parity.md).
 
 **Exact-prefix row clarification (2026-09-28):** the native verifier computes

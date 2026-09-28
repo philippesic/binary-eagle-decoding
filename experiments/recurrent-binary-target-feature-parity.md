@@ -294,3 +294,48 @@ SHA256 `e8945330179e87e1ac8ffa9d75124d19a372908a1c79b28f05ac490dfa30e8b5`.
 Its supervisor exited zero, process group stopped, and the 5080 returned to
 0% utilization, 1,372 MiB whole-device use and no compute app. No new
 native capture, training or development/final prompt was used.
+
+## Same-input local block screen
+
+Parent commit `8c89e48` measures every target decoder block `0–17` from
+its own captured native layer input on the same 29-token training prefix.
+Each of 18 independent, no-gradient HF CUDA/F16 eager forwards uses a scoped
+pre-hook, supplies **all 29 native F32 input rows cast to F16** for one block,
+then compares its next-layer output to the native ladder. Baseline tensors
+stay unchanged, hooks are removed, and GPU hidden tuples are released between
+forwards. Sixteen focused tests, Ruff and formatting passed. This is a
+per-block numerical diagnostic, not an execution-time benchmark.
+
+At the position-3 outlier, every same-input block output differs by at most
+**0.272% relative row L2**, versus 10.014% in the accumulated layer-18
+baseline. Selected examples show the contrast:
+
+| Block | Native-input cast error | Same-input output error | Accumulated baseline output error |
+| --- | ---: | ---: | ---: |
+| 0 | 0% | 0.272% | 0.272% |
+| 1 | 0.020% | 0.233% | 0.324% |
+| 7 | 0.026% | 0.204% | 0.493% |
+| 14 | 0.016% | 0.149% | 4.148% |
+| 17 | 0.022% | 0.104% | 10.014% |
+
+The layer-0 native input matched the pinned embeddings bitwise; block 0
+therefore demonstrates a nonzero local backend difference without any input
+cast discrepancy. Later F16 input casts contribute roughly 0.016–0.026% at
+this position. The sweep supports distributed small local numerical
+differences followed by sensitivity/amplification, especially through
+blocks 14–17, rather than one 10% same-input operator failure. It does not
+prove which arithmetic instruction is responsible, exact parity for other
+positions, or a safe training tolerance. The all-row absolute RMS ranking
+differs: block 6 reaches 0.297, driven by another position, so the
+position-3 conclusion must not be generalized to every row.
+
+The report schema `target_layer_ladder_cuda_comparison_v3` preserves the
+baseline and block-14 intervention, all per-row metrics, both rankings and
+source hashes. Its ignored report is
+`checkouts/recurrent-gpu-capture-20260928/runs/recurrent-target-local-blocks-20260928/comparison.json`
+on the registered RTX 5080 host, SHA256
+`e1ca603864bfd0454e14e5694e547c6bbfe1ba62dcffee5e17c1b6be7dab50f8`.
+The supervised run finished with exit zero and no compute app or project
+process remaining; the GPU returned to 0% utilization and 1,372 MiB
+whole-device use. The new ladder capture's first eight native output IDs
+also matched the earlier no-ladder same-prompt recapture exactly.

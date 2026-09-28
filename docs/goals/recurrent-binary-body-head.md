@@ -945,3 +945,37 @@ against the next native layer input, using the same bounded prefix and F16
 cast. This local-block screen can rank where backend arithmetic first creates
 material drift, separately from later amplification. Keep the user-owned
 numeric tolerance and all-body training budget pending.
+
+## Twenty-second goal turn: local target blocks and amplified state drift
+
+- Parent commit `8c89e48` adds 18 independent CUDA/F16 no-gradient HF forwards,
+  each replacing one target block's complete 29-row input with the captured
+  native F32 ladder values cast F16. Baseline tensors remain immutable, hooks
+  are scoped and removed, and only CPU metric summaries remain between
+  forwards. Sixteen synthetic checks, Ruff and format passed. The supervised
+  RTX 5080 run finished with exit zero; ignored report SHA256 is
+  `e1ca603864bfd0454e14e5694e547c6bbfe1ba62dcffee5e17c1b6be7dab50f8`.
+- At the position-3 outlier, **all 18 same-input block-output errors are at
+  most 0.272% relative row L2**. Block 0 has that maximum from bitwise-exact
+  native embeddings. Block 14's local output error is 0.149% and block 17's
+  is 0.104%, versus their accumulated baseline errors of 4.148% and
+  10.014%. Later native-input F16 casts add 0.016–0.026% at this position.
+  The evidence supports distributed small local backend differences followed
+  by amplification of state drift, rather than one 10% same-input block
+  failure. The all-row RMS ranking is different: block 6 has 0.297 absolute
+  RMS because of another position. This is a one-prompt diagnostic, not a
+  general numeric tolerance or proof of exact operator parity.
+- The new ladder run's first eight native output IDs matched the earlier
+  no-ladder recapture. The local sweep reused the sealed ladder; no new
+  native capture, optimization, final-set or Q4_0 run occurred. Its supervisor
+  stopped and the GPU returned to 0% utilization, 1,372 MiB whole-device
+  use and no compute app. The remote tmux session `$20` is still open with
+  no active job at this checkpoint.
+
+**Next gate:** audit the first local block and the largest all-row block-6
+case at their exact native inputs, then decide with the user whether the
+training gate requires exact target backend arithmetic or a predeclared
+numeric/trajectory policy. Continue independent full-drafter attention,
+state, logit and cache checks while that decision is pending. The captured
+native target features and verifier logits remain sealed and are not yet
+training-eligible.
