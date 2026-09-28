@@ -1799,3 +1799,32 @@ ggml O projection on identical operands. Keep the full residual replay
 as an exact fidelity gate; distinguish attention-kernel differences
 from O-projection and residual rounding. The exact/numeric policy and
 all-body budget remain user-owned.
+
+## Forty-fourth goal turn: safe pre-O attention tensor
+
+- Commit `d1e16bb` adds an `attn_output` callback mode for native
+  `kqv_out-0`, immediately after Flash Attention and before O
+  projection. The [report](../../experiments/recurrent-target-attn-output-safe.md)
+  records one supervised RTX 5080/SM120 run on the frozen 29-token
+  training prefix. It captured one 118,784-value F32 pre-O tensor
+  while preserving all **74,240/74,240** sealed block-output F32
+  values bitwise; the block output is byte-identical to the prior
+  output-only capture. This supplies a safe stage boundary between
+  the already exact combined ggml attention/O replay and source
+  Torch attention/O arithmetic.
+- Ignored machine report
+  `checkouts/target-block0-operator-20260928/runs/target-attn-output-a-20260928/comparison.json`
+  has SHA256 `3150ec96dbca949ef0564deff898fb65cef2b8fd4ae3eaea339651e43b7ac35d`.
+  The supervised process group stopped and the GPU returned to 0%
+  utilization and 1,372 MiB whole-device baseline. Local C++ syntax
+  and Ruff checks passed. No optimizer, final prompt or Q4_0 serving
+  evaluation ran. This one SM120 capture does not validate SM75,
+  later-block or general target-feature parity. The full96 capture
+  remains training-ineligible and the numeric policy and all-body
+  budget remain user-owned.
+
+**Next gate:** replay the pinned ggml Flash Attention output alone
+against the safe `kqv_out-0` tensor, then feed that same tensor through
+ggml and Torch O projections plus residual. Compare the source Torch
+eager attention output on safe Q/K/V with this native boundary so
+attention-kernel and O-projection differences are measured separately.

@@ -423,6 +423,14 @@ O projection and residual stages before selecting a training
 numeric/trajectory policy. It does not authorize an all-body budget.
 See the [Flash Attention report](../experiments/recurrent-target-flash-attention-cuda.md).
 
+**Pre-O attention boundary (2026-09-28):** a native RTX 5080
+`kqv_out-0` callback captured 118,784 F32 values and preserved all
+74,240 sealed block-output values. The safe tensor separates Flash
+Attention from O projection for the next same-input comparison. It
+does not yet assign the remaining Torch residual error to either
+stage or change the user-owned numeric policy and training budget.
+See the [pre-O report](../experiments/recurrent-target-attn-output-safe.md).
+
 **Exact-prefix row clarification (2026-09-28):** the native verifier computes
 target logits for every proposed prefix in a speculative batch, and the cloned
 sampler advances along each proposed token even after an earlier live
