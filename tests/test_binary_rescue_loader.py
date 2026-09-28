@@ -52,8 +52,14 @@ int main(int argc, char ** argv) {
 """
 
 
-def write_fixture(path, variant):
+def write_fixture(path, variant, activation_bits=16):
     """One 32-wide block, with only the requested malformed contract changed."""
+    row_scales = variant.startswith("row_")
+    learned = variant == "v2_learned" or row_scales
+    version = (
+        2 if variant in ("v2", "v2_learned", "unknown_scale") or variant.startswith("row_v2")
+        else 3
+    )
     writer = gguf.GGUFWriter(path, "eagle3")
     for key, value in {
         "context_length": 128,
@@ -70,10 +76,10 @@ def write_fixture(path, variant):
     writer.add_array("eagle3.target_layers", [0, 1, 2])
     writer.add_string("tokenizer.ggml.model", "none")
     writer.add_uint32(
-        "eagle3.w1a1.version", 2 if variant in ("v2", "v2_learned", "unknown_scale") else 3
+        "eagle3.w1a1.version", version
     )
     writer.add_array("eagle3.w1a1.groups", ["fusion", "attention", "ffn", "head"])
-    dense = [] if variant in ("v2", "v2_learned", "unknown_scale") else ["blk.0.ffn_down.weight"]
+    dense = [] if version == 2 else ["blk.0.ffn_down.weight"]
     packed = [name for name in LINEARS if name not in dense]
     if variant == "overlap":
         packed += dense
@@ -88,7 +94,7 @@ def write_fixture(path, variant):
         "sign_rule": "nonnegative_is_one",
         "scale_rule": (
             "f32_learned_nonnegative"
-            if variant == "v2_learned"
+            if learned
             else "unrecognized_scale"
             if variant == "unknown_scale"
             else "f32_nonnegative_least_squares"
@@ -96,7 +102,9 @@ def write_fixture(path, variant):
         "arithmetic": "f32",
     }.items():
         writer.add_string(f"eagle3.w1a1.{key}", value)
-    writer.add_uint32("eagle3.w1a1.scale_group_size", 128)
+    writer.add_uint32("eagle3.w1a1.scale_group_size", 0 if row_scales else 128)
+    if row_scales:
+        writer.add_uint32("eagle3.w1a1.activation_bits", activation_bits)
     for name, (rows, width) in LINEARS.items():
         if name in dense:
             quant_type = gguf.GGMLQuantizationType.Q8_0
@@ -107,7 +115,8 @@ def write_fixture(path, variant):
             scale_name = name.removesuffix(".weight") + ".w1a1_scale"
             audit = "eagle3.w1a1.tensor." + name.replace(".", "_")
             writer.add_tensor(packed_name, np.full((rows, (width + 31) // 32), -1, np.int32))
-            writer.add_tensor(scale_name, np.ones((rows, (width + 127) // 128), np.float32))
+            scale_shape = (rows,) if row_scales else (rows, (width + 127) // 128)
+            writer.add_tensor(scale_name, np.ones(scale_shape, np.float32))
             writer.add_uint32(audit + ".logical_k", width)
             writer.add_string(audit + ".packed", packed_name)
             writer.add_string(audit + ".scale", scale_name)
@@ -166,12 +175,17 @@ class BinaryRescueNativeLoaderTests(unittest.TestCase):
                 f"Native loader compilation failed:\n{result.stdout}\n{result.stderr}"
             )
 
-    def assert_load(self, variant, expected_error=None):
+    def assert_load(self, variant, expected_error=None, activation_bits=16, metadata_bits=None):
         path = self.directory / f"{variant}.gguf"
-        write_fixture(path, variant)
+        write_fixture(path, variant, activation_bits if metadata_bits is None else metadata_bits)
         result = subprocess.run(
             [str(self.loader), str(path)],
-            env={**os.environ, "GGML_W1AX_ACT_BITS": "16", "CUDA_VISIBLE_DEVICES": ""},
+            env={
+                **os.environ,
+                "GGML_W1AX_ACT_BITS": str(activation_bits),
+                "CUDA_VISIBLE_DEVICES": "",
+                "GGML_EAGLE_PRUNE_UNUSED_HEAD": "0",
+            },
             capture_output=True,
             text=True,
             timeout=30,
@@ -193,6 +207,23 @@ class BinaryRescueNativeLoaderTests(unittest.TestCase):
 
     def test_loads_learned_nonnegative_v2_binary(self):
         self.assert_load("v2_learned")
+
+    def test_learned_row_scales_allow_all_activation_widths(self):
+        for version in (2, 3):
+            for bits in (16, 8, 4, 1):
+                with self.subTest(version=version, bits=bits):
+                    self.assert_load(f"row_v{version}", activation_bits=bits)
+
+    def test_group128_rejects_lower_activation_widths(self):
+        for bits in (8, 4, 1):
+            with self.subTest(bits=bits):
+                self.assert_load("v2_learned", "group128 with explicit A16", activation_bits=bits)
+
+    def test_rejects_row_activation_width_mismatch(self):
+        self.assert_load(
+            "row_v2", "activation bits metadata does not match",
+            activation_bits=8, metadata_bits=4,
+        )
 
     def test_rejects_unknown_scale_provenance(self):
         self.assert_load("unknown_scale", "unsupported or incomplete audit record")
