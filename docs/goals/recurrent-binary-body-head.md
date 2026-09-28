@@ -969,8 +969,11 @@ numeric tolerance and all-body training budget pending.
   no-ladder recapture. The local sweep reused the sealed ladder; no new
   native capture, optimization, final-set or Q4_0 run occurred. Its supervisor
   stopped and the GPU returned to 0% utilization, 1,372 MiB whole-device
-  use and no compute app. The remote tmux session `$20` is still open with
-  no active job at this checkpoint.
+  use and no compute app. Final remote state showed all four ladder-related
+  supervisors `finished` with exit zero; the tmux-only SSH session `$20` was
+  closed. The integrated target-ladder and auditor worktrees were archived.
+  The fork commit remains published on `origin/research/target-layer-ladder`
+  for the parent gitlink.
 
 **Next gate:** audit the first local block and the largest all-row block-6
 case at their exact native inputs, then decide with the user whether the

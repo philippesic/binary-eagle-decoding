@@ -328,6 +328,8 @@ prove which arithmetic instruction is responsible, exact parity for other
 positions, or a safe training tolerance. The all-row absolute RMS ranking
 differs: block 6 reaches 0.297, driven by another position, so the
 position-3 conclusion must not be generalized to every row.
+Its first-token local RMS is 1.602 (0.484% relative row L2), on the much
+larger first-token state; the position-3 local RMS there is 0.000965.
 
 The report schema `target_layer_ladder_cuda_comparison_v3` preserves the
 baseline and block-14 intervention, all per-row metrics, both rankings and
