@@ -431,6 +431,20 @@ does not yet assign the remaining Torch residual error to either
 stage or change the user-owned numeric policy and training budget.
 See the [pre-O report](../experiments/recurrent-target-attn-output-safe.md).
 
+**Attention/O stage attribution (2026-09-28):** standalone ggml CUDA
+Flash Attention and O-plus-residual stages each match their
+output-preserving native block-0 taps bitwise on the frozen RTX 5080
+training prefix. Torch eager attention on native Q/K/V has 0.1058%
+position-3 pre-O error, while Torch F16 O projection on the identical
+native pre-O tensor differs from ggml by 0.2071%. F16-versus-F32
+residual addition is smaller (0.0212% mutual position-3 row error).
+These controlled differences explain why native Q/K/V substitution
+alone did not close the Torch residual; they do not combine as a
+single additive error budget or establish later-layer/trajectory
+parity. Continue later-block attribution before choosing a training
+numeric policy or all-body budget. See the [stage-split
+report](../experiments/recurrent-target-attention-stage-split.md).
+
 **Exact-prefix row clarification (2026-09-28):** the native verifier computes
 target logits for every proposed prefix in a speculative batch, and the cloned
 sampler advances along each proposed token even after an earlier live

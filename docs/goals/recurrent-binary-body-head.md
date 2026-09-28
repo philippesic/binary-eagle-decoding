@@ -1828,3 +1828,44 @@ against the safe `kqv_out-0` tensor, then feed that same tensor through
 ggml and Torch O projections plus residual. Compare the source Torch
 eager attention output on safe Q/K/V with this native boundary so
 attention-kernel and O-projection differences are measured separately.
+
+## Forty-fifth goal turn: attention and O projection split
+
+- Commits `bb0e796` and `0318f50` add a bounded [stage-split
+  report](../../experiments/recurrent-target-attention-stage-split.md)
+  for the frozen 29-token training prefix on RTX 5080/SM120. The
+  standalone ggml CUDA full residual matches **74,240/74,240**
+  native F32 values, Flash Attention alone matches **118,784/118,784**
+  safe pre-O F32 values, and O plus F32 residual on captured native
+  pre-O input matches **74,240/74,240**. Separately emitted ggml O
+  projection plus the frozen F32 input reconstructs the same native
+  residual bitwise. Explicit F16 rounding of the ggml O input changes
+  no residual value. The constructed source Torch eager combined
+  path reproduces the earlier native-Q/K/V intervention exactly.
+- On identical native operands, Torch eager attention has 0.1058%
+  position-3 relative row error at pre-O. Feeding Torch attention
+  output through ggml O/F32 residual yields 0.1253% error. On the
+  **native** pre-O tensor, Torch F16 O projection differs from ggml
+  by 0.2071% relative row L2 (7,451/74,240 F32 exact); with F32
+  residual addition the error against native `ffn_inp-0` is 0.1947%,
+  and with source F16 residual it is 0.1941%. The full Torch
+  attention/O/F16-residual path is 0.2048%. F16 versus F32 residual
+  addition on the same Torch O output differs by 0.0212% position-3
+  row L2. These are separate interventions and not additive terms.
+- The final ignored report at
+  `checkouts/target-block0-operator-20260928/runs/target-attention-stages-b-20260928/comparison.json`
+  has SHA256 `c9c24997d2f3f6bcc1d1bf9b734cd5ffa2bbb1072f35bba795c2a499e9c2164e`.
+  The first successful stage run is retained as an ignored diagnostic;
+  the second added projection-only and residual-precision checks.
+  Its supervisor exited zero, process group stopped and the GPU
+  returned to 0% utilization and 1,372 MiB whole-device baseline.
+  Local C++ syntax, Ruff and Python checks passed. No optimizer,
+  final prompt or Q4_0 serving evaluation ran. This single SM120
+  case does not validate SM75 or later target blocks, set a global
+  feature tolerance or make the full96 capture training-eligible.
+
+**Next gate:** extend exact target-feature attribution beyond block 0
+using the frozen native layer ladder and safe callback discipline,
+prioritizing the earliest material later-layer divergence and the
+block-14 outlier amplification. Keep this independent of the
+user-owned exact/numeric policy and all-body optimizer budget.
