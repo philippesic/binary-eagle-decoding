@@ -14,6 +14,9 @@ import torch
 from check_recurrent_full_target_features import _source_weights_match_gguf
 from check_target_block0_capture import (
     HIDDEN,
+    LADDER_MANIFEST_SHA256,
+    PROMPT_ID,
+    TARGET_GGUF_SHA256,
     TOKENS,
     _index,
     _tensor,
@@ -21,27 +24,26 @@ from check_target_block0_capture import (
     sha256,
 )
 
-STAGES = {
-    "attn_norm-0": ("attn_norm", HIDDEN),
-    "Qcur_normed-0": ("q_norm", 4096),
-    "Kcur_normed-0": ("k_norm", 1024),
-    "Vcur-0": ("v_proj", 1024),
-    "ffn_inp-0": ("ffn_inp", HIDDEN),
-    "ffn_norm-0": ("ffn_norm", HIDDEN),
-    "ffn_out-0": ("ffn_out", HIDDEN),
-    "l_out-0": ("block_output", HIDDEN),
+SAFE_STAGES = {
+    "attn_norm-0": ("attn_norm", "attn_norm", HIDDEN),
+    "Kcur_normed-0": ("k_norm", "k_norm", 1024),
+    "Vcur-0": ("v_only", "v_proj", 1024),
+    "ffn_inp-0": ("ffn", "ffn_inp", HIDDEN),
+    "ffn_norm-0": ("ffn", "ffn_norm", HIDDEN),
+    "ffn_out-0": ("ffn", "ffn_out", HIDDEN),
+    "l_out-0": ("ffn", "block_output", HIDDEN),
 }
 D_SHA256 = "10e8e98e616480b25ff7600f195ba7ea3e0fd7c24832765013f960783c7609cf"
 
 
 def _native_rows(root: Path, entries: dict, name: str, width: int) -> np.ndarray:
     selected = entries[name]
-    if len(selected) != 1:
-        raise ValueError(f"native {name} is missing or repeated")
-    value = _tensor(root, selected[0])
-    if value.size != TOKENS * width:
-        raise ValueError(f"native {name} has wrong width")
-    result = value.reshape(TOKENS, width)
+    if not 1 <= len(selected) <= 2:
+        raise ValueError(f"native {name} has wrong capture count")
+    arrays = [_tensor(root, entry).reshape(TOKENS, width) for entry in selected]
+    result = arrays[0]
+    if any(not np.array_equal(result.view("<u4"), array.view("<u4")) for array in arrays[1:]):
+        raise ValueError(f"native {name} repeated taps have different values")
     if not np.isfinite(result).all():
         raise ValueError(f"native {name} has nonfinite values")
     return result
@@ -74,23 +76,45 @@ def compare(
     ladder_dir: Path,
     target: Path,
     candidate_d: Path,
-    capture: Path,
-    native_report: Path,
+    safe_runs: dict[str, Path],
+    q_run: Path,
     hf_model: Path,
 ) -> dict:
     prefix, ladder, _ = sealed_ladder(ladder_dir, target)
     if sha256(candidate_d) != D_SHA256:
         raise ValueError("candidate-D source differs from the frozen target capture")
-    native_meta = json.loads(native_report.read_text())
+    if set(safe_runs) != {"attn_norm", "k_norm", "v_only", "ffn"}:
+        raise ValueError("four safe block-0 capture modes are required")
+    captures = {}
+    capture_hashes = {}
+    for mode, run in safe_runs.items():
+        report_path = run / "comparison.json"
+        meta = json.loads(report_path.read_text())
+        if (
+            meta.get("schema") != "target_block0_native_cuda_capture_v1"
+            or meta.get("capture_mode") != mode
+            or meta.get("status") != "same_native_block_output"
+            or meta.get("prompt_id") != PROMPT_ID
+            or meta["block_output"]["exact_elements"] != TOKENS * HIDDEN
+            or meta["source_sha256"]["ladder_manifest"] != LADDER_MANIFEST_SHA256
+            or meta["source_sha256"]["target_gguf"] != TARGET_GGUF_SHA256
+        ):
+            raise ValueError(f"native {mode} capture does not preserve the server block output")
+        entries, hashes = _index(run / "block0", mode=mode)
+        if any(meta["source_sha256"].get(name) != digest for name, digest in hashes.items()):
+            raise ValueError(f"native {mode} tensor files differ from validated report")
+        captures[mode] = (run / "block0", entries)
+        capture_hashes[mode] = sha256(report_path)
+    q_report = q_run / "comparison.json"
+    q_meta = json.loads(q_report.read_text())
     if (
-        native_meta.get("schema") != "target_block0_native_cuda_capture_v1"
-        or native_meta.get("status") != "same_native_block_output"
-        or native_meta["block_output"]["exact_elements"] != TOKENS * HIDDEN
+        q_meta.get("capture_mode") != "q_norm"
+        or q_meta.get("status") != "block_output_differs"
+        or q_meta.get("prompt_id") != PROMPT_ID
+        or q_meta["block_output"]["exact_elements"] != 72329
+        or q_meta["source_sha256"]["ladder_manifest"] != LADDER_MANIFEST_SHA256
     ):
-        raise ValueError("native block-0 capture is not a same-run proxy")
-    entries, hashes = _index(capture)
-    if any(native_meta["source_sha256"].get(name) != digest for name, digest in hashes.items()):
-        raise ValueError("native block-0 tensor files differ from validated report")
+        raise ValueError("Q normalization perturbation control changed")
     if not torch.cuda.is_available():
         raise ValueError("HF block-0 comparison requires CUDA")
     device_name = torch.cuda.get_device_name(0)
@@ -150,15 +174,25 @@ def compare(
     finally:
         for hook in hooks:
             hook.remove()
-    if set(snapshots) != {stage[0] for stage in STAGES.values()}:
+    if set(snapshots) != {
+        "attn_norm",
+        "q_norm",
+        "k_norm",
+        "v_proj",
+        "ffn_inp",
+        "ffn_norm",
+        "ffn_out",
+        "block_output",
+    }:
         raise ValueError("HF block-0 hook set is incomplete")
     measurements = {}
-    for native_name, (hf_name, width) in STAGES.items():
+    for native_name, (mode, hf_name, width) in SAFE_STAGES.items():
         hf_value = snapshots[hf_name]
         if native_name.startswith(("Qcur", "Kcur")):
             heads = width // 128
             hf_value = hf_value.reshape(TOKENS, heads, 2, 64)
             hf_value = hf_value.swapaxes(-2, -1).reshape(TOKENS, width).copy()
+        capture, entries = captures[mode]
         measurements[native_name] = _metrics(
             hf_value, _native_rows(capture, entries, native_name, width)
         )
@@ -170,15 +204,18 @@ def compare(
             "compute_capability": torch.cuda.get_device_capability(0),
         },
         "precision": "native ggml CUDA/F32 graph taps versus HF CUDA/F16 eager",
-        "prompt_id": native_meta["prompt_id"],
+        "prompt_id": PROMPT_ID,
         "prefill_tokens": TOKENS,
         "stages": measurements,
+        "q_norm_capture_perturbation": q_meta["block_output"],
+        "q_norm_hf_snapshot_available_without_safe_native_tap": True,
         "sampled_source_weight_identity": sampled_weights,
         "source_sha256": {
-            "ladder_manifest": native_meta["source_sha256"]["ladder_manifest"],
+            "ladder_manifest": LADDER_MANIFEST_SHA256,
             "target_gguf": sha256(target),
             "candidate_d": D_SHA256,
-            "native_capture_report": sha256(native_report),
+            "safe_native_reports": capture_hashes,
+            "q_perturbation_report": sha256(q_report),
             "hf_config": sha256(hf_model / "config.json"),
             "comparator": sha256(Path(__file__)),
         },
@@ -195,8 +232,11 @@ def main() -> None:
     parser.add_argument("--ladder-dir", type=Path, required=True)
     parser.add_argument("--target-gguf", type=Path, required=True)
     parser.add_argument("--candidate-d", type=Path, required=True)
-    parser.add_argument("--capture-dir", type=Path, required=True)
-    parser.add_argument("--native-report", type=Path, required=True)
+    parser.add_argument("--attn-norm-run", type=Path, required=True)
+    parser.add_argument("--k-norm-run", type=Path, required=True)
+    parser.add_argument("--v-run", type=Path, required=True)
+    parser.add_argument("--ffn-run", type=Path, required=True)
+    parser.add_argument("--q-run", type=Path, required=True)
     parser.add_argument("--hf-model", type=Path, required=True)
     parser.add_argument("--report", type=Path, required=True)
     args = parser.parse_args()
@@ -206,8 +246,13 @@ def main() -> None:
         args.ladder_dir,
         args.target_gguf,
         args.candidate_d,
-        args.capture_dir,
-        args.native_report,
+        {
+            "attn_norm": args.attn_norm_run,
+            "k_norm": args.k_norm_run,
+            "v_only": args.v_run,
+            "ffn": args.ffn_run,
+        },
+        args.q_run,
         args.hf_model,
     )
     args.report.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
