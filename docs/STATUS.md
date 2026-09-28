@@ -6,25 +6,22 @@ The target/verifier model precision remains as frozen for each experiment.
 
 **Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), parity and capture preparation. The user has authorized the free RTX 5080 for needed work; no all-body training budget has been approved. **Latest completed goal:** [mixed precision rescue and frozen-body head adaptation on RTX 5080](goals/binary-rescue-head-5080.md), completed 2026-09-28 UTC. The preceding [binary scale fitting goal](goals/binary-scale-fitting-5080.md) completed 2026-09-27 UTC.
 
-**Latest checkpoint (2026-09-28 UTC):** the same-input RTX 5080
-Torch CUDA/F16 Q path differs from native ggml at raw block-0 Q
-projection: **14,513/118,784** F32 values exact and 0.2880% relative
-row error at position 3. After the source Qwen3 norm and RoPE modules,
-only **2/118,784** safe native post-RoPE Q values match, with 0.2347%
-position-3 error. The exact ggml CUDA replay still matches all
-**118,784/118,784** output-preserving native Q values. A separate
-retained-intermediate ggml graph gives a diagnostic norm comparison
-but perturbs final Q by at most `9.5367431640625e-7`; its final output
-is excluded from native-path attribution. The [Torch Q
-report](../experiments/recurrent-target-q-torch-control.md),
-[safe Q report](../experiments/recurrent-target-q-deferred-cuda.md),
-[K report](../experiments/recurrent-target-k-cuda-projection.md)
-and [goal checkpoint](goals/recurrent-binary-body-head.md#fortieth-goal-turn-same-input-torch-q-stages)
-record hashes and limits. Attention/residual attribution, later target
-blocks and a training numeric policy remain open. The integrated
-Apple CPU drafter forward has 18 exact diagnostic depths. No worker,
-local server or remote job is active; the 5080 is free. Training,
-final-set and Q4_0 evaluation remain gated.
+**Latest checkpoint (2026-09-28 UTC):** a direct RTX 5080 native
+post-RoPE K callback on the frozen 29-token training prefix preserved
+all **74,240/74,240** sealed block-output values and captured one
+29,696-value F32 K tensor. It joins the prior output-preserving
+post-RoPE Q, V and FFN-input captures for a same-input attention
+replay. The [K-RoPE report](../experiments/recurrent-target-k-rope-safe.md),
+[Torch Q report](../experiments/recurrent-target-q-torch-control.md)
+and [goal checkpoint](goals/recurrent-binary-body-head.md#forty-first-goal-turn-safe-post-rope-k-boundary)
+record hashes and limits. The earlier Torch CUDA/F16 Q path differed
+from native already at raw projection (14,513/118,784 F32 exact) and
+had 0.2347% position-3 relative error after RoPE, while the pinned
+ggml replay matched native Q bitwise. Attention/residual attribution,
+later target blocks and a training numeric policy remain open. The
+integrated Apple CPU drafter forward has 18 exact diagnostic depths.
+No worker, local server or remote job is active; the 5080 is free.
+Training, final-set and Q4_0 evaluation remain gated.
 
 **Prior CPU arithmetic checkpoint (2026-09-28 UTC):** corrected CPU RMS norm and RoPE
 frequency arithmetic matched all 619,520 F16 fused-input and 123,904 raw

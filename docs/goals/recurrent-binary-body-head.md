@@ -1694,3 +1694,31 @@ Q4_0 gates.
 using same-input, output-preserving native Q/K/V and FFN-input taps.
 Separate source Q/K/V projection precision from attention backend
 arithmetic before choosing a target-feature/trajectory policy.
+
+## Forty-first goal turn: safe post-RoPE K boundary
+
+- Commit `abedf46` adds a `k_rope` native callback mode that requests
+  only the RoPE-operation `Kcur-0` tensor, skipping earlier nodes with
+  the same name. The [report](../../experiments/recurrent-target-k-rope-safe.md)
+  records one supervised RTX 5080/SM120 run on the frozen 29-token
+  code/data-validation training prefix. It captured one 29,696-value
+  F32 post-RoPE K tensor and preserved all **74,240/74,240** sealed
+  block-output F32 values bitwise. The output payload matches the
+  earlier output-only capture bytewise. The old intrusive all-tap K
+  payload differs and remains excluded from native-path attribution.
+- Ignored machine report
+  `checkouts/target-block0-operator-20260928/runs/target-k-rope-a-20260928/comparison.json`
+  has SHA256 `c3fc11f35c995c95b75302906f37a4bf52489c70ca3351fc053a6b7b1fa6a2cf`.
+  The supervised process group stopped; final RTX 5080 use was 0%
+  utilization and 1,372 MiB whole-device baseline. Local C++ syntax
+  and Ruff checks passed. No optimizer, final prompt or Q4_0 serving
+  evaluation ran. This single SM120 capture does not prove attention,
+  later-block, SM75 or general target-feature parity. The full96
+  capture remains training-ineligible and the user-owned numeric
+  policy and all-body budget remain open.
+
+**Next gate:** join the output-preserving post-RoPE Q/K and V tensors
+with the safe FFN-input residual tap on the same sealed prefix. Replay
+the attention and output projection under pinned ggml CUDA and Torch
+controls, requiring exact native output before attributing backend
+arithmetic.

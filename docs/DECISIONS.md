@@ -388,6 +388,15 @@ and later target blocks remain to be attributed. These observations
 do not choose a training numeric/trajectory policy or budget. See
 the [Torch Q report](../experiments/recurrent-target-q-torch-control.md).
 
+**Post-RoPE K capture evidence (2026-09-28):** a direct K-RoPE callback
+preserved all 74,240 sealed block-output values on the frozen 29-token
+RTX 5080 training prefix and yielded one 29,696-value F32 K tensor.
+Output-preserving Q, K, V and FFN-input boundaries are now available
+for same-input attention attribution. The result does not resolve
+Flash Attention/output-projection arithmetic or justify either a
+training tolerance or optimizer budget. See the [safe K-RoPE
+report](../experiments/recurrent-target-k-rope-safe.md).
+
 **Exact-prefix row clarification (2026-09-28):** the native verifier computes
 target logits for every proposed prefix in a speculative batch, and the cloned
 sampler advances along each proposed token even after an earlier live
