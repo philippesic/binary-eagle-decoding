@@ -169,6 +169,11 @@ def probe(
     }
     if not all(np.isfinite(value).all() for stages in ggml.values() for value in stages.values()):
         raise ValueError("Q replay produced nonfinite values")
+    for mode, stages in ggml.items():
+        norm_l2 = np.linalg.norm(stages["normed"].astype(np.float64), axis=1)
+        rope_l2 = np.linalg.norm(stages["rope"].astype(np.float64), axis=1)
+        if not np.allclose(norm_l2, rope_l2, rtol=1e-5, atol=1e-5):
+            raise ValueError(f"Q {mode} intermediate readback fails RoPE norm preservation")
     config = AutoConfig.from_pretrained(hf_model, local_files_only=True)
     if config.rms_norm_eps != 1e-6:
         raise ValueError("HF Qwen3 RMS epsilon differs from pinned ggml graph")

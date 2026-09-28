@@ -65,6 +65,8 @@ int main(int argc, char ** argv) {
             ctx, normed, positions, nullptr, HEAD_WIDTH, GGML_ROPE_TYPE_NEOX,
             40960, 1000000.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f
         );
+        ggml_set_output(projected);
+        ggml_set_output(normed);
         ggml_cgraph * graph = ggml_new_graph_custom(ctx, 48, false);
         ggml_build_forward_expand(graph, output);
         ggml_backend_buffer_t buffer = ggml_backend_alloc_ctx_tensors(ctx, backend);
