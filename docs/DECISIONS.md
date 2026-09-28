@@ -29,6 +29,45 @@ an isolated neural-forward time or a hardware lower bound. Runtime opportunities
 eligible cache-update pruning) are source-supported but have no measured A/B
 gain yet; changes shared with Q4_0 must benefit that comparison path too.
 
+## Phase 1A implementation defaults and pending research choices
+
+The CPU implementation uses a **row-scale W1Ax interface** for a comparable
+A16/A8/A4/A1 sweep; candidate D's group-128/A16 remains a separate reference.
+Collapsing D group scales to one row scale would be a new, lossy initialization,
+not the same D weights. Native row-scale kernels cover all four activation
+formats, but the current learned-checkpoint metadata loader gate rejects
+row-scale formats below A16. The bounded loader fix and CPU acceptance/rejection
+matrix are implementation work, not proof of CUDA performance. Lower-width
+exports stay explicitly unsupported until that gate and metadata tests pass.
+
+The first training objective is hard target-label CE on valid exact-prefix
+native capture rows, including reached teacher-forced rows after a live
+rejection as already clarified below. Compact target-probability distillation
+is a declared secondary option with top-k mass, mapped-tail mass and
+outside-draft mass retained separately; it is an approximation, not a new
+full-vocabulary label. The earlier failed head-only KL fit had a different
+state/teacher contract and does not decide this comparison. The first later
+GPU calibration, not the inherited 500-step smoke budget, will establish
+training rate and a token/example budget.
+
+**Pending user-owned representation choice:** compare (a) independent row-scale
+W1Ax checkpoints with D-group/A16 as a separately labeled reference, or (b)
+extend group-128 native scale support to A8/A4/A1. The actionable Phase 1A
+default is (a), because all four row kernels already exist and (b) requires
+additional native arithmetic and cost validation. No acceptance or speed
+conclusion is implied. Revisit after fixed-shape GPU profiling and checkpoint
+zero native export checks.
+
+**Provisional practical numeric gate for Phase 1B:** preselect a small non-final
+train/dev prefix sample and compare exported student operands and bounded native
+proposal trajectories, including exact ancestry, masks, mapping, hard quantized
+codes, finite values, logit error and proposal disagreements. Margin-separated
+top-1 changes, cache/mapping differences or systematic proposal changes block;
+near-tie differences are counted and resolved by native acceptance. The sample
+and tolerances must be frozen before the GPU run. This replaces open-ended
+independent HF target arithmetic parity as a training prerequisite; actual
+native acceptance versus Q4_0 is the decisive quality test.
+
 Record research or infrastructure forks when evidence could lead to different
 next steps. Keep the current decision and the reason; revisit when new data
 changes the tradeoff. Routine implementation choices belong in commits.

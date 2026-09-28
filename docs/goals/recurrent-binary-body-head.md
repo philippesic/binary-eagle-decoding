@@ -2002,6 +2002,21 @@ checkpoint; do not create more open-ended numerical investigations.
   and `/root/advice` (Astra medium, read-only). Each implementation owner is
   preparing an isolated managed worktree; paths/branches will be recorded at
   the first implementation checkpoint.
+- Worktrees assigned: runtime `/Users/pippo/.codex/worktrees/w1-runtime-latency/binary-eagle-decoding`
+  (branch being named); QAT
+  `/Users/pippo/.codex/worktrees/joint-w1ax-qat/binary-eagle-decoding`
+  (`work/joint-w1ax-qat`);
+  data `/Users/pippo/.codex/worktrees/w1a-data-prep/binary-eagle-decoding`
+  (branch being named); verifier
+  `/Users/pippo/.codex/worktrees/cpu-verification/binary-eagle-decoding`
+  (`verify-archived-evidence`).
+  Runtime initializes its own native submodule checkout; no other worker
+  writes that submodule.
+- Early compatibility finding: native row-scale kernels cover A16/A8/A4/A1,
+  but the v2/v3 learned-scale loader metadata gate currently rejects values
+  below A16 even for row scales. Runtime owner is assessing a bounded gate
+  fix, with group-128 still A16-only; QAT will label export boundaries
+  honestly until the native gate is validated.
 - Boundaries: legacy final-set contents stay sealed; the 96-prompt capture is
   smoke/regression evidence only. Group-128/A16 and row-scale W1Ax are distinct
   representation contracts. GPU timing, capture and training wait for explicit
