@@ -67,7 +67,7 @@ file and `docs/STATUS.md` are the durable project checkpoint.
   positions are `P+1`, `P+2`; invalid terminal rows create no decoder call. This checks the
   training interface, not actual EAGLE mask or K/V byte parity.
 
-**Latest CPU checks:** 77 recurrent tests, 16 capture-runner tests, seven explicit decoder-step tests,
+**Latest CPU checks:** 77 recurrent tests, 16 capture-runner tests, nine explicit decoder-step tests,
 five frozen-operand tests, eight native loader fixtures, eight existing
 scale-fitting tests, Ruff
 lint/format and `git diff --check` pass. No local Metal/MPS or CUDA
@@ -265,6 +265,23 @@ established.
   independent raw target-logit check. The [CPU capture report](../../experiments/recurrent-binary-cpu-capture-smoke.md)
   has pinned identities, counts, SHA256s, hardware and limitations. Raw
   files remain ignored under `results/recurrent-binary-cpu-smoke-20260928-a16/`.
+- A second CPU request with target and draft `n_ubatch=1` (versus 512)
+  emitted identical raw IDs and canonical rounds. All 53 raw target-feature
+  rows, 16 native head-state rows and 16 raw target-logit rows were bitwise
+  identical, and both continuity/response audits passed. This is a bounded
+  scheduling check, not independent numerical target-feature parity. The
+  repeat remains ignored under
+  `results/recurrent-binary-cpu-smoke-20260928-ubatch1/`.
+- Real candidate-D operands and captured raw features now instantiate the
+  full 2,560-hidden/4,096-Q CPU adapter. Its previous `hidden == Q width`
+  guard rejected the valid native geometry and was corrected; a context
+  decode path skips unused logits without changing state/KV values. The
+  first round rebuilt 31 cache positions and replayed all five native
+  proposal tokens. Both native-order and grouped-matmul arithmetic matched
+  all five mapped top IDs, but normalized head-state max differences grew
+  to about 0.0034. Numerical state/KV parity is **not** established; the
+  two ignored per-depth reports and exact source hashes are in the CPU
+  capture report. No optimizer step ran.
 - This closes a real runtime-format gap for a single request only. It does
   not establish numerical target-feature parity, whole-drafter state/KV
   parity, 96-prompt capture completeness, training quality or native Q4_0
@@ -290,8 +307,8 @@ restriction. Do not request or infer that change.
 
 ## CPU stop gate and next actions
 
-1. Extend the one-request real CPU capture with an independent numerical
-   target-feature and full-drafter cache/state check. Keep the
+1. Locate the measured full-drafter state drift with independent native
+   intermediate outputs or a CPU target-feature reference. Keep the
    preparation bundle ineligible until full request, model and drafter
    parity gates pass; do not infer the 96-prompt training result from one
    prompt.

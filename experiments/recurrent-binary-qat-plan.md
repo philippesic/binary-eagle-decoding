@@ -157,6 +157,16 @@ request. A separate response audit joins its raw output IDs to the seed,
 canonical verifier emissions and terminal no-proposal trace. It does not
 establish independent target sampling, numerical target-feature or drafter-cache
 parity, full 96-prompt capture completeness, training quality or Q4_0 gates.
+A repeat with native `n_ubatch=1` reproduced every captured raw feature,
+head-state and target-logit value bitwise for that prompt; it does not replace
+an independent target-feature computation.
+The CPU drafter adapter has now replayed the first native D proposal chain
+with both sequential and grouped-matmul binary arithmetic. After the valid
+2,560-hidden/4,096-Q geometry was admitted, all five mapped top IDs agreed
+with native D, while normalized state differences reached roughly 0.0034.
+This is a measured structural/numeric drift, not an exact full-drafter parity
+gate. The [capture report](recurrent-binary-cpu-capture-smoke.md) gives the
+per-depth evidence and limits.
 
 ## Bounded proposed first trial and stop gates
 

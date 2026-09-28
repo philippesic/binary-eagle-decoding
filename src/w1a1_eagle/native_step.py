@@ -121,7 +121,7 @@ class NativeStepAdapter(nn.Module):
             for value in (hidden, heads, kv_heads, intermediate, head_dim, max_positions)
         ):
             raise ValueError("drafter dimensions must be positive integers")
-        if head_dim % 2 or hidden != heads * head_dim or heads % kv_heads:
+        if head_dim % 2 or heads % kv_heads:
             raise ValueError("unsupported attention head geometry")
         if not isinstance(theta, (int, float)) or not math.isfinite(theta) or theta <= 0:
             raise ValueError("rope_theta must be positive and finite")
@@ -259,7 +259,13 @@ class NativeStepAdapter(nn.Module):
         return self.drafter.fc(raw)
 
     def decode_step(
-        self, token: int, feature: Tensor, decoder_position: int, cache: NativeStepCache
+        self,
+        token: int,
+        feature: Tensor,
+        decoder_position: int,
+        cache: NativeStepCache,
+        *,
+        compute_logits: bool = True,
     ) -> DraftStep:
         if type(token) is not int or token < 0 or token >= self.embedding_vocab_size:
             raise ValueError("token must index the borrowed embedding")
@@ -324,5 +330,15 @@ class NativeStepAdapter(nn.Module):
         post_attention = _frozen_rms_norm(residual, layer.post_attention_layernorm)
         ffn = mlp.down_proj(F.silu(mlp.gate_proj(post_attention)) * mlp.up_proj(post_attention))
         pre_norm = residual + ffn
-        logits = self.drafter.lm_head(_frozen_rms_norm(pre_norm, self.drafter.norm))
+        logits = (
+            self.drafter.lm_head(_frozen_rms_norm(pre_norm, self.drafter.norm))
+            if compute_logits
+            else torch.empty(0, dtype=torch.float32, device="cpu")
+        )
         return DraftStep(logits=logits, pre_norm=pre_norm, cache=next_cache)
+
+    def decode_context(
+        self, token: int, feature: Tensor, decoder_position: int, cache: NativeStepCache
+    ) -> DraftStep:
+        """Rebuild a context cache without computing unused draft-head logits."""
+        return self.decode_step(token, feature, decoder_position, cache, compute_logits=False)

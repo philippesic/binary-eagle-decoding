@@ -72,3 +72,49 @@ Ignored evidence directory:
 This one-request diagnostic used an explicit one-prompt audit override. The
 future frozen training capture still requires all 96 prompts, the full
 request ownership manifest, and every later parity and quality gate.
+
+## One-row microbatch repeat
+
+The same request was repeated with `--ubatch-size 1`, versus the default
+`n_ubatch=512`. Both target and draft context logs reported the changed
+setting. The eight output IDs and all four canonical rounds were identical.
+The raw feature event file and every F32 value in the 53-by-7,680 feature
+matrix were **bitwise identical**. All 16 native head-state rows and all 16
+raw target-logit rows were also bitwise identical. Both internal continuity
+and response-emission audits passed on the repeat. This checks this prompt
+under two native microbatch configurations; it does not prove feature
+values against an independent target forward or establish all possible
+batching paths.
+
+The repeat is ignored at
+`results/recurrent-binary-cpu-smoke-20260928-ubatch1/`. Its feature-event,
+feature-value, head-state and raw-target-logit SHA256s match the corresponding
+files in the table above; `heads.f32` is
+`585d15f04c9b5dd2584884b1d4d8aebf50966f6927af83a63d04fc7d9de1e982`.
+
+## First-round CPU drafter replay
+
+The captured raw target features, pinned F16 target embedding, four D norms
+and all nine packed D linears were loaded into the recurrent CPU adapter.
+The frozen prompt rebuilt 31 context cache positions; the seed and four
+teacher-forced proposals then produced all five first-round head states.
+The pinned model's attention projects 2,560 hidden values to 4,096 Q values;
+the adapter incorrectly rejected this valid geometry before this check and
+was corrected. Context rebuild now skips unused head logits while retaining
+the same state and F16-rounded K/V cache.
+
+| Arithmetic | First-depth max state difference | Fifth-depth max state difference | Fifth-depth RMS difference | Mapped top IDs matching native |
+| --- | ---: | ---: | ---: | ---: |
+| Native scalar order | 0.0020966 | 0.0034338 | 0.0008022 | 5/5 |
+| Grouped F32 matmul | 0.0021046 | 0.0034620 | 0.0008022 | 5/5 |
+
+The five native proposals were `[3070, 3070, 8926, 334, 32]`; both CPU
+paths selected those target IDs after the frozen D vocabulary map. These
+are top-one matches on one teacher-forced chain. The nonzero state drift is
+similar under both arithmetic orders and remains unexplained. It may affect
+other argmax decisions or training gradients; whole-drafter numeric/cache
+parity and any quality claim remain unverified. No optimizer step ran.
+The ignored reports are `real_round_native_order.json` (SHA256
+`ff3890aaf14225c68955c178d2b520b13f8384321b5338d69172251ecf577b7a`)
+and `real_round_group_matmul.json` (SHA256
+`061215c1900fad504af406481f97534593dbbb8034c842b649b01d489119c239`).

@@ -126,6 +126,37 @@ def _manual_step(drafter, token, feature, position, keys, values):
 
 
 class NativeStepTests(unittest.TestCase):
+    def test_context_step_skips_head_but_preserves_state_and_cache(self):
+        adapter = NativeStepAdapter(_drafter())
+        feature = adapter.encode_feature(torch.ones(12))
+        full = adapter.decode_step(1, feature, 0, adapter.new_cache())
+        context = adapter.decode_context(1, feature, 0, adapter.new_cache())
+        self.assertEqual(context.logits.numel(), 0)
+        torch.testing.assert_close(context.pre_norm, full.pre_norm)
+        torch.testing.assert_close(context.cache.key, full.cache.key)
+        torch.testing.assert_close(context.cache.value, full.cache.value)
+
+    def test_real_eagle_attention_width_can_exceed_hidden_width(self):
+        drafter = _drafter()
+        drafter.config.head_dim = 4
+        drafter.midlayer.self_attn.q_proj = GroupedBinaryLinear(
+            torch.ones(8, 8), torch.ones(8, 1), group_size=128
+        )
+        for name in ("k_proj", "v_proj"):
+            setattr(
+                drafter.midlayer.self_attn,
+                name,
+                GroupedBinaryLinear(torch.ones(4, 8), torch.ones(4, 1), group_size=128),
+            )
+        drafter.midlayer.self_attn.o_proj = GroupedBinaryLinear(
+            torch.ones(4, 8), torch.ones(4, 1), group_size=128
+        )
+        adapter = NativeStepAdapter(drafter)
+        feature = adapter.encode_feature(torch.ones(12))
+        result = adapter.decode_step(1, feature, 0, adapter.new_cache())
+        self.assertEqual(result.logits.shape, (7,))
+        self.assertEqual(result.cache.key.shape, (1, 1, 4))
+
     def test_frozen_gguf_operand_view_binds_to_binary_adapter(self):
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
