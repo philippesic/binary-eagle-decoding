@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -29,11 +30,14 @@ def main() -> None:
         parser.error("start this probe through scripts/remote_job.py")
     ladder = args.ladder_dir.resolve()
     target = args.target_gguf.resolve()
+    cmake_exe = Path(sys.executable).parent / "cmake"
+    if not cmake_exe.is_file():
+        parser.error("project Python environment lacks its bundled CMake")
     build = run_dir / "build"
     helper = build / "bin" / "native-target-block0-capture"
     capture = run_dir / "block0"
     cmake = [
-        "cmake",
+        str(cmake_exe),
         "-S",
         str(ROOT / "third_party/llama.cpp"),
         "-B",
@@ -67,7 +71,10 @@ def main() -> None:
     }
     (run_dir / "recipe.json").write_text(json.dumps(recipe, indent=2, sort_keys=True) + "\n")
     _run(cmake, timeout=900)
-    _run(["cmake", "--build", str(build), "--target", "llama", "ggml-cuda", "-j", "8"], timeout=900)
+    _run(
+        [str(cmake_exe), "--build", str(build), "--target", "llama", "ggml-cuda", "-j", "8"],
+        timeout=900,
+    )
     compiler = [
         "g++",
         "-std=c++17",
