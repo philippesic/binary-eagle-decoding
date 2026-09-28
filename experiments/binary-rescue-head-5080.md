@@ -1,11 +1,10 @@
 # Binary rescue and frozen-body head adaptation on RTX 5080
 
-Status: **in progress**. Quality, body/head diagnosis, the bounded head fit,
-profiling and clean repeated primary performance are complete. The resumed
-full-prompt instrumented run completed all 312 requests with CUDA graph
-launches in every block; round-cost analysis is pending. The frozen
-longer-context comparison is running, and final artifact handoff remains
-pending. No candidate has been promoted.
+Status: **complete**. Quality,
+body/head diagnosis, the bounded head fit, native profiling, matched primary
+performance, full-prompt round attribution and frozen longer-context
+comparison are complete. The raw archive is indexed and the RTX 5080 is idle.
+No candidate has been promoted.
 
 ## Frozen comparison
 
@@ -16,7 +15,7 @@ requests use native greedy sample-and-match, D=5, p_min=0, context2048, F16 KV,
 seed42, no thinking, no prompt reuse, one client, and at most128 output tokens.
 
 The [goal checkpoint](../docs/goals/binary-rescue-head-5080.md) records ownership,
-protocol, jobs and pending work. Earlier scale-fitting and SM75 reports remain
+protocol, jobs and final evidence. Earlier scale-fitting and SM75 reports remain
 sealed. Development data is reused exploratory evidence; timing repetitions do
 not create additional independent quality prompts.
 
@@ -321,9 +320,10 @@ The first timing attempt was interrupted after a simultaneous CPU-only Nsight
 SQLite export overlapped its initial Q4_0 block. All its results were excluded;
 the clean 60-block matrix above ran without that competing export. Separate
 full-prompt round instrumentation was interrupted at the user's request for all
-RTX 5080 host resources and is excluded from final cost calibration. The frozen
-longer-context diagnostic has not started. Neither can replace the clean
-primary timings.
+RTX 5080 host resources and is excluded from final cost calibration. A fresh
+complete run supplied that calibration after the user released the host. Both
+it and the longer-context run are separately labeled diagnostics and do not
+replace the clean primary timings.
 
 Whole-device telemetry was sampled once per second during each server block,
 including setup, warmups, measured requests and shutdown. “Loaded” is the
@@ -353,6 +353,104 @@ The 2,048-token logical FP16 KV allocation is 288 MiB for the 36-layer target
 and 8 MiB for the one-layer drafter. The file payload comparison above is the
 more direct drafter storage measure.
 
+## Complete-round cost and conditional headroom
+
+The separate full-prompt instrumented run completed 24 measured requests plus
+two warmups for each of the twelve paths (312 requests), with graph launches
+in all twelve server blocks. Its final binary, models, primary prompts and
+policy hash-match the clean timing matrix. All 288 traced requests matched
+raw output IDs, stable proposal/output digests and native speculative counters
+against **each** of their five timed counterparts: 1,440 behavior comparisons.
+For all 264 speculative traced requests, independently reconstructed round
+files validated the correction
+`complete rounds = digest proposal rounds + no-proposal events − 1` against
+actual completed rounds and accepted-draft counts. Target-only has no
+speculative round trace. The same-build correction gives the five-repetition
+accepted/round values shown above, including 0.6962 for the combined rescue
+and 0.5551 for the fitted head.
+
+All 288 per-request round files passed span/order/emission validation. Each
+speculative path's nested draft-stage file mapped to its measured round
+windows with no error call; unmatched stage calls belong to warmups or work
+outside the selected windows. The disjoint CPU span partition closes exactly
+for every path. It covers complete rounds only: each 24-prompt path has 3,048
+emitted IDs inside traced rounds and 24 leading seed IDs outside them, totaling
+the 3,072 client IDs. No terminal accepted draft was left unemitted in this
+run. The traces use `ggml_time_us` CPU wall and explicit diagnostic sync; they
+are **not** primary serving latency or CUDA-event timings.
+
+| Path | Complete rounds | Traced round CPU (s) | Exclusive draft (s) | CPU after removing draft span (s) | Conditional rate / Q4 traced round |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Q4_0 | 1,493 | 23.516 | 4.415 | 19.102 | 1.231 |
+| D | 2,139 | 58.250 | 31.134 | 27.115 | 0.867 |
+| C | 2,363 | 47.781 | 18.828 | 28.953 | 0.812 |
+| D + attention Q8_0 | 1,894 | 40.099 | 16.184 | 23.914 | 0.983 |
+| D + fusion Q8_0 | 1,988 | 54.360 | 29.594 | 24.766 | 0.950 |
+| D + FFN-down Q8_0 | 2,071 | 52.140 | 25.947 | 26.193 | 0.898 |
+| D + output-head Q8_0 | 2,020 | 52.101 | 26.785 | 25.316 | 0.929 |
+| D + original FP16 head | 2,017 | 52.748 | 27.625 | 25.123 | 0.936 |
+| D + attention/fusion Q8_0 | 1,797 | 37.456 | 15.852 | 21.604 | 1.088 |
+| D + fitted FP16 head | 1,960 | 51.327 | 26.934 | 24.393 | 0.964 |
+| FP16 EAGLE | 1,496 | 25.352 | 7.304 | 18.048 | 1.303 |
+
+The last column holds each path's emitted IDs, proposals, acceptance, round
+count, target work and scheduling fixed, then removes its **exclusive** draft
+CPU span. It compares that conditional round-only rate with Q4_0's observed
+129.61 emitted IDs/s over instrumented complete rounds. For the combined
+rescue, the hypothetical remainder gives 141.08 IDs/s, 1.088× that Q4_0
+round rate; the fitted head gives 124.96, or 0.964×. The combined value is
+0.993× Q4_0's **separately timed full-decode** 142.13 tokens/s, but those
+boundaries differ, so this is a sensitivity comparison, not an optimized
+speedup or hardware ceiling. No instrumented span is subtracted from a timed
+request. Begin/prefill, possible leading seed, inter-round gaps, HTTP and
+other outside-round work are excluded from the traced-round total.
+
+The nested CPU draft-call partition helps locate work already inside the
+exclusive draft span; these figures must not be added to the outer table.
+
+| Path | Seed decode + sync (s) | Recurrent decode + sync (s) | Output sampling (s) | Outer exclusive draft (s) |
+| --- | ---: | ---: | ---: | ---: |
+| Q4_0 | 0.933 | 3.241 | 0.024 | 4.415 |
+| D + attention/fusion Q8_0 | 6.476 | 9.078 | 0.033 | 15.852 |
+| D + fitted FP16 head | 9.471 | 17.132 | 0.037 | 26.934 |
+
+Sync/retrieve includes backend wait and state access; the apparent large
+recurrent contribution is not a separate GPU kernel duration. The CPU
+sampling component is small here. The earlier per-PID Nsight trace supplies
+actual GPU kernels and shapes, but its three historical prompts and warmups
+have different trajectories from this full development run. CPU and GPU sums
+are not combined.
+
+## Frozen longer-context diagnostic
+
+The predeclared first two development prompts in each of prose, code and
+reasoning received 72 identical neutral reference notes. Their actual native
+chat-template input lengths were 902–915 tokens (rather than exactly 1,024).
+The 2,048 context, D=5/p_min=0 policy and 256-token output cap were fixed.
+Four paths completed six prompts × five alternating repetitions = 120 measured
+requests, plus 40 warmups. Every one of the twenty blocks launched CUDA
+graphs, with zero incompatible/disabled fallbacks. The 30 measured responses
+per path emitted the same 7,175 raw IDs, matched Q4_0 and target-only on
+every paired request, and had the same stop/length outcomes (15 each).
+
+| Path | Client tok/s | Client / Q4_0 (95% interval) | Server decode tok/s | Request p50 / p95 (s) | TTFT p50 / p95 (s) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| **Q4_0** | **127.0** | **1.000** | **133.7** | **1.893 / 2.152** | 0.092 / 0.109 |
+| Target only | 93.8 | 0.738 (0.682–0.791) | 96.6 | 2.660 / 2.738 | 0.073 / 0.074 |
+| D + attention/fusion Q8_0 | 68.5 | 0.539 (0.515–0.559) | 76.1 | 3.575 / 3.831 | 0.345 / 0.361 |
+| D + fitted FP16 head | 47.1 | 0.370 (0.353–0.386) | 50.8 | 5.156 / 5.586 | 0.374 / 0.395 |
+
+Client rates use each path's 7,175 emitted tokens divided by the sum of its
+30 full request wall times. The paired interval resamples six prompt IDs,
+retaining repetitions; it is exploratory and does not estimate a population
+or reserved-final result. Both candidates trail Q4_0 on every one of these
+six prompts, and both trail the 93.8 tokens/s target-only control. Q4_0's
+server prefill p50 was 87.2 ms, versus 340.3 ms for the combined rescue and
+368.6 ms for the fitted head; those paths also have much longer TTFT. The
+longer input magnifies their prefill cost rather than reversing the primary
+result. This diagnostic is a different workload and is never pooled with the
+128-output-token primary matrix.
+
 ## Interim assessment
 
 Neither tested endpoint merits promotion as a Q4_0 replacement on the
@@ -365,9 +463,9 @@ head under Q4 body. A future bounded target-aligned recurrent body-plus-head
 adaptation with fixed binary/A16 deployment and native Q4_0 gates is therefore
 the most directly motivated research option. Its quality and speed remain
 unproven; the observed A16 execution cost is a separate obstacle. This
-recommendation starts no new training or GPU work. The longer-context and
-full-prompt round diagnostics must still be completed before closing this
-goal; reserved-final evaluation requires a separate user decision.
+recommendation starts no new training or GPU work. The completed longer-context
+and full-prompt round diagnostics do not change it; reserved-final evaluation
+requires a separate user decision.
 
 ## Reproducibility checkpoint
 
@@ -409,10 +507,39 @@ supervisor states. Primary quality run: `rescue-quality-20260927`, directory
 `rescue-timed-primary-clean-20260927`, directory
 `results/timed-primary-clean`. The interrupted full-prompt instrumented run is
 `rescue-instrumented-primary-20260927` and is excluded from completed results.
-Local ignored evidence is under `results/binary-rescue-head-5080`, including
-the clean 34 MiB timing manifest, Nsight SQLite and per-process kernel analysis.
-The partial local artifact index hashes 14 current evidence files (644,203,716
-bytes in total) and identifies the preserved remote project; it will be
-extended after the remaining diagnostics and raw archive are complete.
-The remote checkout and all raw artifacts remain preserved for resumption;
-the final archive/index and remaining diagnostic results are pending.
+The successful full-prompt run is `rescue-instrumented-primary-resume-20260928`,
+directory `results/instrumented-primary-resume`; the longer-context run is
+`rescue-long-context-20260928`, directory `results/long-context`. Both completed
+with exit code zero and all server blocks graph-verified.
+
+A complete remote copy of the project results, native CUDA binaries, resolved
+configs, train/development/long-context input files and 30 supervisor
+state/log directories is stored at
+`/home/philip/binary-eagle-decoding/runs/binary-rescue-head-5080-artifacts-20260928`.
+Its machine-readable `file-index.json` hashes 20,868 regular files totaling
+6,258,683,828 bytes and records 15 symlinks, including the preserved earlier
+scale archive link. `archive.json` records the source checkout and published
+parent/llama.cpp commits. The fixed FP16 target and other source GGUFs remain
+in their previously referenced model store, identified by the hashes above;
+they are not duplicated into this archive.
+
+Local ignored evidence under `results/binary-rescue-head-5080` includes the
+clean complete primary raw run, successful instrumented round files, complete
+longer-context raw run, selected combined-rescue and fitted-head GGUFs,
+Nsight SQLite, kernel analysis and all compact analyses. The local
+`artifact-index.json` hashes 28 representative evidence files (1,323,356,029
+bytes), includes the complete remote archive index, and names both archive
+locations. The two selected local GGUF hashes and all three final raw manifest
+hashes were checked against that remote index. Raw files and model weights are
+ignored by Git; this report and the tested source remain published on `main`.
+The independent `final-validation.json` reconciles 1,440 primary measured
+requests, 288 traced requests and 1,440 trace/timing behavior pairs, 120
+longer-context measured requests, all 92 graph-verified server blocks, the
+twelve-path kernel profile, and the absence of the reserved-final prompt file
+from the archived inputs.
+
+Final remote verification found all three final supervised job groups absent,
+no owned benchmark or server process, no listed compute application, and RTX
+5080 usage at 1,916 MiB / 0% utilization. This is the host's post-run
+whole-device baseline, not a claim that every byte of VRAM belongs to the
+experiment. No owned GPU resource remains active.

@@ -158,12 +158,12 @@ remain unchanged; future summaries should lead with Q4_0.
 
 ## Approved rescue and readout follow-up (2026-09-27)
 
-The user approved BOTH four independent Q8_0 subset rescues of fitted-group D and one bounded true-verifier-aligned FP16 head fit on frozen D body, followed by graph-enabled repeated native performance measurements on RTX 5080 only. The [active protocol](goals/binary-rescue-head-5080.md) freezes comparison, combination admission, data boundaries and budgets. Q4_0 remains primary; original FP16-head swap is an essential control. Final prompts stay sealed. Necessary bounded runtime/graph/capture work is authorized.
+The user approved BOTH four independent Q8_0 subset rescues of fitted-group D and one bounded true-verifier-aligned FP16 head fit on frozen D body, followed by graph-enabled repeated native performance measurements on RTX 5080 only. The [completed protocol](goals/binary-rescue-head-5080.md) froze comparison, combination admission, data boundaries and budgets. Q4_0 remains primary; original FP16-head swap was an essential control. Final prompts stay sealed. The completed results and recommendation are recorded below.
 
-Pending larger decisions remain user-owned: head rebinarization, body QAT, changed signs/scales/A1, expanded training/search budgets, architecture change, deployment promotion and final-set evaluation. Evidence from this exploratory goal will recommend one next choice, not start it automatically.
+Pending larger decisions remain user-owned: head rebinarization, body QAT, changed signs/scales/A1, expanded training/search budgets, architecture change, deployment promotion and final-set evaluation. This exploratory goal recommends one next choice without starting it automatically.
 
 
-## Interim rescue/readout assessment after clean native timing (2026-09-27)
+## Completed rescue/readout assessment (2026-09-28)
 
 The approved rescue and head-fit experiments completed, and the clean
 five-repetition RTX 5080 primary timing matrix is available. Q4_0 remains the
@@ -172,19 +172,26 @@ The admitted attention+fusion Q8_0 rescue reaches 0.696 accepted/round and
 83.3 tokens/s (0.616× Q4_0). The single bounded fitted FP16 head reaches
 0.555 accepted/round and 60.8 tokens/s (0.450× Q4_0). Every measured output
 matches the Q4_0 and target-only raw token IDs. Neither candidate beats even
-the 97.7 tokens/s target-only control. These are development-workload findings;
-the frozen longer-context diagnostic and full-prompt CPU round attribution
-were interrupted when the user needed all 5080 host resources. No final-set
-data was used.
+the 97.7 tokens/s target-only control. The fully rerun 24-prompt round trace
+matched all five timing repetitions and validated complete-round denominators.
+The separate six-prompt, longer-context diagnostic also favored Q4_0: 127.0
+client tokens/s, versus 68.5 (0.539× Q4_0) for the combined rescue, 47.1
+(0.370×) for the fitted head and 93.8 for target-only. These are
+development-workload findings; no final-set data was used.
 
-Provisional recommendation: do not promote either endpoint as a Q4_0
+Recommendation: do not promote either endpoint as a Q4_0
 replacement. If the user chooses another bounded recovery goal, prioritize
 target-aligned recurrent body-plus-head adaptation under an explicitly fixed
 binary/A16 deployment format, with native Q4_0 quality and throughput gates.
 The forced common-history factorial assigns a much larger first-position
 agreement loss to the D body (19.8 points under Q4 head) than to the D head
 (5.9 points under Q4 body); the frozen-body dense head gains only 8.6% over
-its untrained control. These observations motivate a body-aware fit, but do not
-prove that it will recover quality or overcome current A16 runtime cost.
+its untrained control. In the fully instrumented fixed-trajectory calculation,
+removing every exclusive draft CPU span gives the combined rescue 1.088× the
+instrumented Q4_0 round-only rate but only 0.993× Q4_0's separately timed
+decode rate; these scopes cannot be equated to measured speedup. The fitted
+head remains below the instrumented Q4_0 round rate even under that
+counterfactual. These observations motivate a body-aware fit but do not prove
+that it will recover quality or overcome current A16 runtime cost.
 This is a recommendation, not authorization: no broader QAT, budget increase,
 head rebinarization, final-set evaluation or new GPU run begins from it.
