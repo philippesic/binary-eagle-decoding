@@ -102,6 +102,12 @@ int main(int argc, char ** argv) {
             state.enabled = {"attn_norm-0", "l_out-0"};
         } else if (mode == "qkv_normed") {
             state.enabled = {"Qcur_normed-0", "Kcur_normed-0", "Vcur-0", "l_out-0"};
+        } else if (mode == "q_norm") {
+            state.enabled = {"Qcur_normed-0", "l_out-0"};
+        } else if (mode == "k_norm") {
+            state.enabled = {"Kcur_normed-0", "l_out-0"};
+        } else if (mode == "v_only") {
+            state.enabled = {"Vcur-0", "l_out-0"};
         } else if (mode == "ffn") {
             state.enabled = {"ffn_inp-0", "ffn_norm-0", "ffn_out-0", "l_out-0"};
         } else {
