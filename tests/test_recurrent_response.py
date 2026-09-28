@@ -135,6 +135,39 @@ class ResponseJoinTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "output length"):
             self.audit()
 
+    def test_final_eos_clips_only_the_unemitted_canonical_suffix(self):
+        self.fixture.rounds[1]["draft_token_ids"] = [6, 151645]
+        self.fixture.rounds[1]["accepted_drafts"] = 2
+        self.fixture.rounds[1]["verifier_token_ids"] = [6, 151645, 198]
+        self.fixture.events = [row for row in self.fixture.events if row["feature_row"] != 7]
+        for row in self.fixture.events:
+            if row["feature_row"] == 6:
+                if row["event"] == "decoded_row":
+                    row["token_id"] = 151645
+                    row["prefix_token_ids"][-1] = 151645
+                else:
+                    row["retained_input"] = True
+                    row["reason"] = "accepted_prefix"
+                    row["accepted_drafts"] = 2
+            elif row["event"] == "disposition" and row["round_index"] == 1:
+                row["accepted_drafts"] = 2
+        self.fixture.save()
+        self.trace[1]["proposed_token_ids"] = [6, 151645]
+        self.trace[1]["n_accepted"] = 2
+        self.trace[1]["emitted_token_ids"] = [6, 151645]
+        self.trace[1]["n_emitted"] = 2
+        self.trace.pop()  # no target-only terminal decode after EOS
+        self.response["__verbose"]["tokens"] = [3, 5, 6, 151645]
+        self.response["__verbose"]["tokens_predicted"] = 4
+        self.response["usage"]["completion_tokens"] = 4
+        self.response["choices"][0]["finish_reason"] = "stop"
+        self.save()
+        self.assertEqual(self.audit()["eos_clipped_final_rounds"], 1)
+        self.trace[1]["emitted_token_ids"] = [6, 7]
+        self.save()
+        with self.assertRaisesRegex(ValueError, "round trace disagrees"):
+            self.audit()
+
 
 if __name__ == "__main__":
     unittest.main()

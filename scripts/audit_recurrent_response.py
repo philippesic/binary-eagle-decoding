@@ -15,6 +15,8 @@ from pathlib import Path
 from audit_recurrent_binary_capture import read_jsonl, sha256
 from audit_recurrent_continuity import audit_internal_continuity
 
+PINNED_TARGET_EOS_TOKEN_ID = 151_645
+
 
 def _tokens(value: object, label: str) -> list[int]:
     if not isinstance(value, list) or any(type(token) is not int or token < 0 for token in value):
@@ -75,9 +77,20 @@ def audit_response(
 
     emitted = [canonical[0]["seed_token_id"]]
     accepted_total = 0
+    eos_clipped_final_rounds = 0
     for index, (record, live) in enumerate(zip(canonical, trace[: len(canonical)])):
         verifier = _tokens(record.get("verifier_token_ids"), "verifier emission")
         proposed = _tokens(record.get("draft_token_ids"), "draft proposal")
+        live_emitted = _tokens(live.get("emitted_token_ids"), "live verifier emission")
+        eos_clip = (
+            index == len(canonical) - 1
+            and len(trace) == len(canonical)
+            and reason == "stop"
+            and bool(live_emitted)
+            and live_emitted[-1] == PINNED_TARGET_EOS_TOKEN_ID
+            and len(live_emitted) < len(verifier)
+            and verifier[: len(live_emitted)] == live_emitted
+        )
         if (
             live.get("schema") != "w1ax_eagle_round_v1"
             or live.get("status") != "complete"
@@ -86,13 +99,14 @@ def audit_response(
             or live.get("round_index") != index
             or live.get("n_proposed") != len(proposed)
             or live.get("n_accepted") != record.get("accepted_drafts")
-            or live.get("n_emitted") != len(verifier)
+            or live.get("n_emitted") != len(live_emitted)
             or live.get("proposed_token_ids") != proposed
-            or live.get("emitted_token_ids") != verifier
+            or (live_emitted != verifier and not eos_clip)
         ):
             raise ValueError("native round trace disagrees with canonical verifier emission")
-        emitted.extend(verifier)
+        emitted.extend(live_emitted)
         accepted_total += record["accepted_drafts"]
+        eos_clipped_final_rounds += int(eos_clip)
     terminal = trace[len(canonical) :]
     feature_rows = [
         row
@@ -130,6 +144,7 @@ def audit_response(
         "prompt_id": task_map[task_id],
         "rounds": len(canonical),
         "accepted_drafts": accepted_total,
+        "eos_clipped_final_rounds": eos_clipped_final_rounds,
         "response_tokens": len(output),
         "round_emission_prefix_tokens": len(emitted) - len(terminal),
         "terminal_trace_tokens": len(terminal),

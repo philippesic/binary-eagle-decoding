@@ -71,6 +71,7 @@ def audit_full_requests(capture_root: Path) -> dict:
         totals["response_tokens"] += report["response_tokens"]
         totals["rounds"] += report["rounds"]
         totals["accepted_drafts"] += report["accepted_drafts"]
+        totals["eos_clipped_final_rounds"] += report["eos_clipped_final_rounds"]
         totals[f"finish_{report['finish_reason']}"] += 1
         results.append(
             {
@@ -80,6 +81,7 @@ def audit_full_requests(capture_root: Path) -> dict:
                 "response_tokens": report["response_tokens"],
                 "rounds": report["rounds"],
                 "accepted_drafts": report["accepted_drafts"],
+                "eos_clipped_final_rounds": report["eos_clipped_final_rounds"],
                 "finish_reason": report["finish_reason"],
                 "response_sha256": item["response_sha256"],
             }
