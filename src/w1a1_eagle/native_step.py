@@ -73,10 +73,12 @@ class NativeStepCache:
 
 
 def _frozen_rms_norm(x: Tensor, module: nn.Module) -> Tensor:
-    # The pinned Python RMSNorm computes variance in F32. Every input to this
-    # adapter is F32, so its output and its frozen weight multiplication are F32.
-    variance = x.square().mean(dim=-1, keepdim=True)
-    return x * torch.rsqrt(variance + module.variance_epsilon) * module.weight
+    # ggml accumulates F32 squares in double, rounds the mean to F32, then
+    # evaluates sqrt and reciprocal in F32 before the two F32 multiplies.
+    variance = x.square().to(torch.float64).sum(dim=-1, keepdim=True)
+    variance = (variance / x.shape[-1]).to(torch.float32)
+    scale = torch.reciprocal(torch.sqrt(variance + module.variance_epsilon))
+    return x * scale * module.weight
 
 
 class NativeStepAdapter(nn.Module):
@@ -325,8 +327,14 @@ class NativeStepAdapter(nn.Module):
         k = k.reshape(self.kv_heads, self.head_dim)
         v = v.reshape(self.kv_heads, self.head_dim)
 
-        freq = torch.arange(0, self.head_dim, 2, dtype=torch.float32, device="cpu")
-        angle = decoder_position / (self.rope_theta ** (freq / self.head_dim))
+        # ggml builds RoPE frequencies by repeated F32 multiplication. A
+        # direct power at every channel changes some F16-rounded cache keys.
+        theta_scale = torch.tensor(self.rope_theta, dtype=torch.float32).pow(-2.0 / self.head_dim)
+        angle = torch.empty(self.head_dim // 2, dtype=torch.float32)
+        theta = torch.tensor(float(decoder_position), dtype=torch.float32)
+        for index in range(angle.numel()):
+            angle[index] = theta
+            theta = theta * theta_scale
         full_angle = torch.cat((angle, angle))
         cos, sin = full_angle.cos(), full_angle.sin()
         half = self.head_dim // 2

@@ -5,12 +5,11 @@ draft body and binary head, then evaluate it against Q4_0 EAGLE when a later
 user decision permits the required GPU work. The pinned FP16 target/verifier
 and draft vocabulary map stay frozen. [Trial protocol](../../experiments/recurrent-binary-qat-plan.md).
 
-**State (2026-09-28 UTC): active, CPU preparation.** The user explicitly
-denies access to every GPU and accelerator, including remote hosts and local
-Metal/MPS. No SSH or GPU work is permitted. No GPU owner, remote tmux session,
-run directory, model training, final-set use, or model-quality result exists
-for this goal. The native Codex Goal in this task has the same objective; this
-file and `docs/STATUS.md` are the durable project checkpoint.
+**State (2026-09-28 UTC): active, parity and capture preparation.** The user
+lifted the earlier GPU restriction for the free RTX 5080. No GPU experiment,
+remote run directory, model training, final-set use, or model-quality result
+exists for this goal. The native Codex Goal in this task has the same
+objective; this file and `docs/STATUS.md` are the durable project checkpoint.
 
 ## Current findings and work
 
@@ -519,3 +518,45 @@ three existing single-prompt CPU captures do not establish these gates.
   consult [AGENT_OPERATIONS.md](../AGENT_OPERATIONS.md) for the live host file,
   tmux-only SSH, unique remote run and owner protocol before any experiment;
   do not infer a training budget from hardware availability.
+
+## Twelfth goal turn: native-style CPU norm and RoPE
+
+- The handoff commit `6ca070f` was verified both locally and at
+  `origin/main`; the inherited `main` checkout was clean. The successor
+  created its own native Codex Goal with the same objective and used a
+  temporary `kv-parity` worktree for changes.
+- Prose round 3 and reasoning round 2 projected-write comparisons completed
+  from the existing CPU captures. Before the correction, prose matched
+  35,666/35,840 F16 key and 35,727/35,840 value elements; reasoning
+  matched 49,688/50,176 key and 49,781/50,176 value elements. Each context
+  position had one native graph-row join. All value mismatches in the three
+  captures coincided with one or two F16 fused-input differences at that
+  position, traced to tiny embedding RMS-norm rounding differences.
+- The adapter now follows ggml's F64 sum of F32 squares, F32 mean and F32
+  scale/product sequence, plus recurrent F32 RoPE frequencies. On Apple M3
+  Max CPU, all 619,520 F16 fused-input elements and all 123,904 raw F32 K
+  and V projection elements across 121 selected context positions matched
+  native graph columns. All 123,904 F16 value write operands matched;
+  123,900/123,904 F16 key write operands matched. The four remaining key
+  differences are after RoPE, with maximum F16 difference `0.00048828125`.
+  The [broader CPU report](../../experiments/recurrent-binary-cpu-broader-diagnostic.md)
+  records individual counts and ignored report SHA256s.
+- A fresh code round-2 full CPU proposal replay retained every mapped top
+  ID and reduced the first-depth maximum state difference from `0.0025558472`
+  to `0.0024642944`; whole-drafter numerical parity is still open. The
+  focused 91 recurrent and 17 native-step/graph-join tests passed. Ruff
+  and diff hygiene pass. No new native model inference, training, final
+  prompt or GPU experiment ran.
+- The user explicitly authorized use of the free RTX 5080. A tmux-only
+  read-only host check found 0% utilization and no project experiment
+  process. The remote `main` was behind and had an unrelated untracked
+  rescue directory; neither was changed. The SSH/tmux session was closed.
+  The proposed all-body budget, scale boundary, prefix distribution and
+  tolerance decision remain user-owned.
+
+**Next parity gate:** read native stored K/V bytes and check cache positions
+and rollback against the projected operands, then isolate attention
+mask/reduction arithmetic. Keep the preparation bundle ineligible and the
+96-prompt capture/final-set gates separate. Use the authorized RTX 5080 only
+for a specific bounded parity/capture need under the host and run protocol;
+do not start the unapproved all-body training trial.

@@ -77,7 +77,14 @@ def compare_kv_writes(
             taps: dict[str, np.ndarray] = {}
 
             def record(name: str, value: torch.Tensor) -> None:
-                if name in {"inp_embd", "g_norm-0"}:
+                if name in {
+                    "inp_embd",
+                    "embd_norm-0",
+                    "g_norm-0",
+                    "concat_embd-0",
+                    "Kcur-0",
+                    "Vcur-0",
+                }:
                     taps[name] = value.cpu().numpy().astype(np.float32, copy=True).reshape(-1)
 
             step = adapter.decode_step(
@@ -91,9 +98,19 @@ def compare_kv_writes(
                 .reshape(8, 128)
             )
             expected_value = cache.value[:, position, :].numpy().astype(np.float16).view(np.uint16)
+            expected_key_before_rope = _python_qk_to_native_rows(taps["Kcur-0"], 8).reshape(8, 128)
+            expected_value_before_cache = taps["Vcur-0"].reshape(8, 128)
             candidates = []
             for execution, group in groups.items():
-                required = {"inp_embd", "g_norm-0", "Kcur_rope-0", "Vcur-0"}
+                required = {
+                    "inp_embd",
+                    "embd_norm-0",
+                    "g_norm-0",
+                    "concat_embd-0",
+                    "Kcur-0",
+                    "Kcur_rope-0",
+                    "Vcur-0",
+                }
                 if not required <= set(group):
                     continue
                 for column in range(group["inp_embd"]["n_tokens"]):
@@ -106,18 +123,78 @@ def compare_kv_writes(
                     )
                     if norm_rms >= 1e-5:
                         continue
+                    native_embedding_norm = _column(group["embd_norm-0"], values, column)
+                    native_fused = _column(group["concat_embd-0"], values, column)
+                    fused_f16_equal = int(
+                        np.count_nonzero(
+                            native_fused.astype(np.float16).view(np.uint16)
+                            == taps["concat_embd-0"].astype(np.float16).view(np.uint16)
+                        )
+                    )
                     key = _column(group["Kcur_rope-0"], values, column).reshape(8, 128)
                     value = _column(group["Vcur-0"], values, column).reshape(8, 128)
+                    key_before_rope = _column(group["Kcur-0"], values, column).reshape(8, 128)
                     native_key = key.astype(np.float16).view(np.uint16)
                     native_value = value.astype(np.float16).view(np.uint16)
+                    native_key_before_rope = key_before_rope.astype(np.float16).view(np.uint16)
+                    expected_key_before_rope_f16 = expected_key_before_rope.astype(np.float16).view(
+                        np.uint16
+                    )
+                    expected_value_before_cache_f16 = expected_value_before_cache.astype(
+                        np.float16
+                    ).view(np.uint16)
                     candidates.append(
                         {
                             "group_execution": execution,
                             "token_column": column,
                             "fused_norm_rms_difference": norm_rms,
+                            "embedding_norm_max_abs_f32_difference": float(
+                                np.max(np.abs(native_embedding_norm - taps["embd_norm-0"]))
+                            ),
+                            "fused_input_max_abs_f32_difference": float(
+                                np.max(np.abs(native_fused - taps["concat_embd-0"]))
+                            ),
+                            "fused_input_f16_equal_elements": fused_f16_equal,
+                            "fused_input_elements": native_fused.size,
                             "key_equal_elements": int(np.count_nonzero(expected_key == native_key)),
                             "value_equal_elements": int(
                                 np.count_nonzero(expected_value == native_value)
+                            ),
+                            "key_before_rope_f32_equal_elements": int(
+                                np.count_nonzero(expected_key_before_rope == key_before_rope)
+                            ),
+                            "value_before_cache_f32_equal_elements": int(
+                                np.count_nonzero(expected_value_before_cache == value)
+                            ),
+                            "key_before_rope_f16_equal_elements": int(
+                                np.count_nonzero(
+                                    expected_key_before_rope_f16 == native_key_before_rope
+                                )
+                            ),
+                            "value_before_cache_f16_equal_elements": int(
+                                np.count_nonzero(expected_value_before_cache_f16 == native_value)
+                            ),
+                            "key_before_rope_max_abs_f32_difference": float(
+                                np.max(np.abs(expected_key_before_rope - key_before_rope))
+                            ),
+                            "value_before_cache_max_abs_f32_difference": float(
+                                np.max(np.abs(expected_value_before_cache - value))
+                            ),
+                            "key_write_max_abs_f16_difference": float(
+                                np.max(
+                                    np.abs(
+                                        expected_key.view(np.float16).astype(np.float32)
+                                        - native_key.view(np.float16).astype(np.float32)
+                                    )
+                                )
+                            ),
+                            "value_write_max_abs_f16_difference": float(
+                                np.max(
+                                    np.abs(
+                                        expected_value.view(np.float16).astype(np.float32)
+                                        - native_value.view(np.float16).astype(np.float32)
+                                    )
+                                )
                             ),
                             "key_bits": native_key.copy(),
                             "value_bits": native_value.copy(),
@@ -143,9 +220,43 @@ def compare_kv_writes(
                     "max_fused_norm_rms_difference": max(
                         item["fused_norm_rms_difference"] for item in candidates
                     ),
+                    "embedding_norm_max_abs_f32_difference": max(
+                        item["embedding_norm_max_abs_f32_difference"] for item in candidates
+                    ),
+                    "fused_input_max_abs_f32_difference": max(
+                        item["fused_input_max_abs_f32_difference"] for item in candidates
+                    ),
+                    "fused_input_f16_equal_elements": min(
+                        item["fused_input_f16_equal_elements"] for item in candidates
+                    ),
+                    "fused_input_elements": chosen["fused_input_elements"],
                     "key_equal_elements": min(item["key_equal_elements"] for item in candidates),
                     "value_equal_elements": min(
                         item["value_equal_elements"] for item in candidates
+                    ),
+                    "key_before_rope_f32_equal_elements": min(
+                        item["key_before_rope_f32_equal_elements"] for item in candidates
+                    ),
+                    "value_before_cache_f32_equal_elements": min(
+                        item["value_before_cache_f32_equal_elements"] for item in candidates
+                    ),
+                    "key_before_rope_f16_equal_elements": min(
+                        item["key_before_rope_f16_equal_elements"] for item in candidates
+                    ),
+                    "value_before_cache_f16_equal_elements": min(
+                        item["value_before_cache_f16_equal_elements"] for item in candidates
+                    ),
+                    "key_before_rope_max_abs_f32_difference": max(
+                        item["key_before_rope_max_abs_f32_difference"] for item in candidates
+                    ),
+                    "value_before_cache_max_abs_f32_difference": max(
+                        item["value_before_cache_max_abs_f32_difference"] for item in candidates
+                    ),
+                    "key_write_max_abs_f16_difference": max(
+                        item["key_write_max_abs_f16_difference"] for item in candidates
+                    ),
+                    "value_write_max_abs_f16_difference": max(
+                        item["value_write_max_abs_f16_difference"] for item in candidates
                     ),
                 }
             )
@@ -163,6 +274,40 @@ def compare_kv_writes(
         "key_equal_elements": key_matches,
         "value_elements": elements,
         "value_equal_elements": value_matches,
+        "key_before_rope_f32_equal_elements": sum(
+            row["key_before_rope_f32_equal_elements"] for row in comparisons
+        ),
+        "value_before_cache_f32_equal_elements": sum(
+            row["value_before_cache_f32_equal_elements"] for row in comparisons
+        ),
+        "key_before_rope_f16_equal_elements": sum(
+            row["key_before_rope_f16_equal_elements"] for row in comparisons
+        ),
+        "value_before_cache_f16_equal_elements": sum(
+            row["value_before_cache_f16_equal_elements"] for row in comparisons
+        ),
+        "key_before_rope_max_abs_f32_difference": max(
+            row["key_before_rope_max_abs_f32_difference"] for row in comparisons
+        ),
+        "value_before_cache_max_abs_f32_difference": max(
+            row["value_before_cache_max_abs_f32_difference"] for row in comparisons
+        ),
+        "key_write_max_abs_f16_difference": max(
+            row["key_write_max_abs_f16_difference"] for row in comparisons
+        ),
+        "value_write_max_abs_f16_difference": max(
+            row["value_write_max_abs_f16_difference"] for row in comparisons
+        ),
+        "fused_input_f16_equal_elements": sum(
+            row["fused_input_f16_equal_elements"] for row in comparisons
+        ),
+        "fused_input_elements": sum(row["fused_input_elements"] for row in comparisons),
+        "embedding_norm_max_abs_f32_difference": max(
+            row["embedding_norm_max_abs_f32_difference"] for row in comparisons
+        ),
+        "fused_input_max_abs_f32_difference": max(
+            row["fused_input_max_abs_f32_difference"] for row in comparisons
+        ),
         "all_native_duplicate_candidates_agree": all(
             row["candidate_kv_values_agree"] for row in comparisons
         ),

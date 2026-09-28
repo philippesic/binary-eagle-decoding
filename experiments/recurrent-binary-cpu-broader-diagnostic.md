@@ -122,3 +122,43 @@ The ignored comparison is
 The diagnostic script explicitly distinguishes projected write operands from
 native cache storage. An earlier ignored exploratory report without the Q/K
 row conversion is invalid and must not be used.
+
+## Native-style norm and RoPE replay across later rounds
+
+The earlier projected-write discrepancies were localized with the same three
+accepted-prefix captures. Every decoder position had one native graph-row
+join. Before the adapter change, all native value-write mismatches occurred at
+positions with one or two different F16-cast fused-input elements. The raw
+target-feature norm joined exactly; the differing elements came from the
+borrowed embedding norm near F16 rounding boundaries. The native CPU RMS norm
+sums F32 squares in F64, rounds the mean to F32, then applies F32 square root,
+reciprocal and weight products. The adapter had used a PyTorch F32 mean.
+
+The corrected adapter now follows that reduction and builds RoPE frequencies
+by recurrent F32 multiplication, as the native CPU graph does. A fresh replay
+gave the following **projected operands**, before native cache storage:
+
+| Prompt/round | Context positions | F16 fused input | Raw F32 K and V | F16 key write | F16 value write |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Prose 3 | 35 | 179,200/179,200 | 35,840/35,840 each | 35,840/35,840 | 35,840/35,840 |
+| Code 2 | 37 | 189,440/189,440 | 37,888/37,888 each | 37,887/37,888 | 37,888/37,888 |
+| Reasoning 2 | 49 | 250,880/250,880 | 50,176/50,176 each | 50,173/50,176 | 50,176/50,176 |
+
+The four remaining F16 key differences occur after RoPE at code position 34
+and reasoning positions 15, 20 and 40; the largest difference is
+`0.00048828125`. A code round-2 full CPU proposal replay still matched all
+native mapped top IDs, and its first-depth maximum state difference changed
+from `0.0025558472` to `0.0024642944`. The normalized state is not numerically
+interchangeable with native execution. Native stored K/V bytes, rollback,
+attention mask/reduction, complete 96-prompt capture and Q4_0 quality/timing
+remain unverified.
+
+The ignored corrected reports for prose/code/reasoning have SHA256
+`931fb363b4dae81c8540ee36e6a6242c54f7bfac5561f34ada14682c3e686731`,
+`0d15d3e197c565139898687ae885779bdc0527e8ea23b18907be93e640e86ab5`
+and `d3051b34c71922c92406e65b9fb4b4c9104a90d1f5db4d2c03ec156a4531cf7e`.
+The code full-round replay has SHA256
+`e0d4e1c2a0bcd3b2a56bc2bac13ef591dedffee9583be20fa3cb113737ee3412`.
+All used Apple M3 Max CPU, the pinned FP16 target and candidate-D draft, and
+the previously hashed native capture streams. No new model inference or
+training was run.

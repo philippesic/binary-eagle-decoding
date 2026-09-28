@@ -198,9 +198,9 @@ head rebinarization, final-set evaluation or new GPU run begins from it.
 
 ## Joint binary body/head preparation (2026-09-28)
 
-The user approved a new jointly trained binary body/head research goal but
-explicitly prohibited **all GPU and accelerator use** in this task. CPU-only
-preparation proceeds under the [active goal](goals/recurrent-binary-body-head.md)
+The user approved a new jointly trained binary body/head research goal and
+initially prohibited **all GPU and accelerator use**. CPU preparation began
+under the [active goal](goals/recurrent-binary-body-head.md)
 and [trial protocol](../experiments/recurrent-binary-qat-plan.md). The earlier
 head-only 500-step/45-minute budget is not silently transferred to all-body
 training. Q4_0 remains the primary later native gate; no new outcome has been
@@ -212,7 +212,7 @@ Pending user-owned research choices, with independent CPU work available:
 | --- | --- | --- |
 | Scale boundary | Keep D's `scale >= 0` including exact zero, or change to strictly positive scales with a documented initialization difference. D's NNLS fit explicitly allowed zeros; deployment already accepts nonnegative F32 scales. CPU implementation should retain D exactly. | Freeze before training/export. |
 | Training prefix distribution | Teacher-force bounded native D prefixes with exact labels and differentiable student recurrence, or refresh exact-prefix labels as student proposals change. The former is reproducible and CPU-testable but off-policy after sign changes; the latter requires new real-model target capture and extra compute. Neither guarantees live acceptance. | Capture/support audit and a fixed budget before real training. |
-| First all-body budget | Proposed one 500-step / 45-optimizer-minute run, at most 8,160 starts of up to five steps on the frozen 96 training prompts; select on 24 development prompts, leave 24 final sealed. This is a proposed cap, not authorization for GPU execution. | Explicit future user budget decision and changed no-GPU restriction. |
+| First all-body budget | Proposed one 500-step / 45-optimizer-minute run, at most 8,160 starts of up to five steps on the frozen 96 training prompts; select on 24 development prompts, leave 24 final sealed. This is a proposed cap, not authorization for training. | Explicit future user budget decision; the GPU access restriction has been lifted. |
 | Unsupported labels | Count all unsupported rows and target probability mass; apply CE only to valid supported labels, keeping unsupported rows in denominators. A different vocabulary-support objective would be a separate choice after the real mapped-mass audit. | Reject any capture with wrong offset/inverse map or prefix/verifier join. |
 | Learned-scale metadata | Resolved for the loader declaration: fork commit `7f23c89b3` accepts `f32_learned_nonnegative` under v2/v3, and eight CPU-only native loader fixtures pass. The exporter retains that truthful rule rather than relabeling learned scales as NNLS. | A real trained GGUF still needs full native load and numerical parity before deployment. |
 | Training reduction order | Use the exact sequential F32 CPU reference, or explicitly choose grouped F32 matmul within each 128-input group for a practical trainer. The grouped path still runs hard signs/A16/scales and ordered group accumulation, but 35/430 archived D outputs differed from native by up to `0.0001220703125` absolute (`7.422315e-7` scaled). The grouped student matched **44/44** native mapped top IDs over 11 recorded rounds from three training prompts; native-order first-round checks matched 15/15. Normalized state drift reached `0.004617`, dominated by attention. | Freeze one path before training and require broader native argmax/trajectory parity before interpretation. |
@@ -236,7 +236,9 @@ accepted draft rows `j=0..A` join retained history; `j>A` are rejected
 suffix. The verifier label at `j=A` is still a reached label. The CPU feature
 preparer checks this offset explicitly.
 
-**RTX 5080 availability (2026-09-28):** the user reported that the 5080 is
-available, but has not yet explicitly lifted this goal's no-GPU restriction.
-Availability is recorded without starting an accelerator experiment; a
-clarification is pending while CPU work continues.
+**RTX 5080 authorization (2026-09-28):** after the earlier availability
+notice, the user explicitly said the GPU is free and to use it when needed.
+The RTX 5080 is now available for this goal's parity and capture work under
+the host, tmux and one-owner protocol. This does not authorize the proposed
+all-body training budget or final-set evaluation. A read-only host check found
+no project experiment process and 0% utilization; no GPU run has started.

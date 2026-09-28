@@ -4,7 +4,15 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-**Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), CPU preparation under the user's explicit no-GPU restriction. **Latest completed goal:** [mixed precision rescue and frozen-body head adaptation on RTX 5080](goals/binary-rescue-head-5080.md), completed 2026-09-28 UTC. The preceding [binary scale fitting goal](goals/binary-scale-fitting-5080.md) completed 2026-09-27 UTC.
+**Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), parity and capture preparation. The user has authorized the free RTX 5080 for needed work; no all-body training budget has been approved. **Latest completed goal:** [mixed precision rescue and frozen-body head adaptation on RTX 5080](goals/binary-rescue-head-5080.md), completed 2026-09-28 UTC. The preceding [binary scale fitting goal](goals/binary-scale-fitting-5080.md) completed 2026-09-27 UTC.
+
+**Current checkpoint (2026-09-28 UTC):** corrected CPU RMS norm and RoPE
+frequency arithmetic matched all 619,520 F16 fused-input and 123,904 raw
+F32 K/V projection elements across three post-acceptance joins. F16 projected
+value writes matched 123,904/123,904; projected key writes matched
+123,900/123,904. Native stored cache bytes and attention arithmetic remain
+unverified. The [goal file](goals/recurrent-binary-body-head.md#twelfth-goal-turn-native-style-cpu-norm-and-rope)
+records the checks, report hashes, 5080 access change and next gate.
 
 **Handoff checkpoint (2026-09-28 06:35 UTC):** the active goal file records
 the current objective, pushed commits, CPU tests, projected K/V write
