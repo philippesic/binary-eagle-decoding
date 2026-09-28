@@ -8,6 +8,10 @@ import unittest
 from pathlib import Path
 
 import numpy as np
+import torch
+
+from w1a1_eagle.recurrent_binary import CANDIDATE_D_BASE_TO_PATH, GroupedBinaryLinear
+from w1a1_eagle.recurrent_training import save_training_checkpoint
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -205,6 +209,20 @@ class RecurrentBinaryExportTests(unittest.TestCase):
         self.assertEqual(json.loads(audit.read_text())["output"]["sha256"], sha256(self.output))
         with self.assertRaises(FileExistsError):
             self.export()
+
+    def test_training_checkpoint_feeds_exporter(self):
+        modules = {}
+        for base, name in SOURCE_NAMES.items():
+            modules[CANDIDATE_D_BASE_TO_PATH[base]] = GroupedBinaryLinear(
+                torch.from_numpy(self.arrays[name + ".latent"].copy()),
+                torch.from_numpy(self.arrays[name + ".scale"].copy()),
+            )
+        self.checkpoint.unlink()
+        self.manifest.unlink()
+        save_training_checkpoint(modules, sha256(self.base), self.checkpoint, self.manifest)
+        report = self.export()
+        self.assertEqual(len(report["projections"]), 9)
+        self.assertEqual(report["checkpoint"]["sha256"], sha256(self.checkpoint))
 
 
 if __name__ == "__main__":

@@ -6,14 +6,14 @@ Every round needs an independently recorded anchor so a row cannot borrow a
 prefix from another round or prompt. Invalid rows are terminal: synthetic
 padding after a missing proposal has no exact proposal ancestry to validate.
 """
+
 from __future__ import annotations
 
 import math
 from collections import Counter
+from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass
 from numbers import Integral, Real
-from typing import Collection, Mapping, Sequence
-
 
 LABEL_SOURCE = "cloned_native_verifier_sampler_at_actual_proposal_prefix"
 INVALID_REASONS = frozenset({"padding", "pruned", "eos", "unreached"})
@@ -40,6 +40,7 @@ class TraceAudit:
     target_to_draft: tuple[int, ...]
     counts: Mapping[str, int]
     per_depth: Mapping[int, Mapping[str, int]]
+    mapped_probability_mass: tuple[float | None, ...] = ()
 
 
 def _integer(value: object, name: str, minimum: int = 0) -> int:
@@ -123,7 +124,9 @@ def validate_recurrent_trace(
         key = (anchor.prompt_id, round_index)
         if key in by_key:
             raise ValueError("duplicate round anchor")
-        by_key[key] = RoundAnchor(anchor.prompt_id, split, round_index, prefix, anchor.seed_token_id)
+        by_key[key] = RoundAnchor(
+            anchor.prompt_id, split, round_index, prefix, anchor.seed_token_id
+        )
     if not rows or not by_key:
         raise ValueError("trace rows and round anchors must be nonempty")
 
@@ -134,6 +137,7 @@ def validate_recurrent_trace(
     supported_mask: list[bool] = []
     depth_counts: dict[int, Counter[str]] = {}
     totals: Counter[str] = Counter()
+    mapped_mass: list[float | None] = []
     for row in rows:
         prompt, row_split = row.get("prompt_id"), row.get("split")
         if not isinstance(prompt, str) or prompt not in allowed or row_split != split:
@@ -155,16 +159,20 @@ def validate_recurrent_trace(
         expected_parent = len(anchor.prefix_token_ids) - 1
         if parent != expected_parent:
             raise ValueError("parent position differs from round anchor")
-        if (row.get("alignment_valid") is not True
-                or row.get("is_bonus") is not False
-                or row.get("forced", False) is not False
-                or _integer(row.get("verifier_row"), "verifier_row") != depth
-                or _integer(row.get("input_position"), "input_position") != parent + depth + 1
-                or _integer(row.get("label_position"), "label_position") != parent + depth + 2):
+        if (
+            row.get("alignment_valid") is not True
+            or row.get("is_bonus") is not False
+            or row.get("forced", False) is not False
+            or _integer(row.get("verifier_row"), "verifier_row") != depth
+            or _integer(row.get("input_position"), "input_position") != parent + depth + 1
+            or _integer(row.get("label_position"), "label_position") != parent + depth + 2
+        ):
             raise ValueError("state/verifier position or alignment mismatch")
         prefix = _prefix(row.get("prefix_token_ids"), "row prefix", target_vocab_size)
-        if (len(prefix) != row["label_position"]
-                or _token(row.get("input_token_id"), "input_token_id", target_vocab_size) != prefix[-1]):
+        if (
+            len(prefix) != row["label_position"]
+            or _token(row.get("input_token_id"), "input_token_id", target_vocab_size) != prefix[-1]
+        ):
             raise ValueError("row prefix/input/label position mismatch")
         prior = previous.get(key)
         if prior is None:
@@ -198,19 +206,43 @@ def validate_recurrent_trace(
         else:
             if reason not in INVALID_REASONS:
                 raise ValueError("invalid row needs padding/pruned/eos/unreached reason")
-            if (row.get("verifier_token_id") is not None
-                    or row.get("proposed_token_id") is not None
-                    or row.get("label_supported") is not False):
+            if (
+                row.get("verifier_token_id") is not None
+                or row.get("proposed_token_id") is not None
+                or row.get("label_supported") is not False
+            ):
                 raise ValueError("invalid row must have no label or proposal")
             draft_label, supported = -1, False
 
         logits = row.get("verifier_logits")
+        probability_mass = None
         if logits is not None:
-            if not valid or not isinstance(logits, (list, tuple)) or len(logits) != target_vocab_size:
+            if (
+                not valid
+                or not isinstance(logits, (list, tuple))
+                or len(logits) != target_vocab_size
+            ):
                 raise ValueError("verifier logits require a valid full target-vocabulary row")
-            if any(isinstance(x, bool) or not isinstance(x, Real)
-                   or math.isnan(x) or x == math.inf for x in logits):
+            if any(
+                isinstance(x, bool) or not isinstance(x, Real) or math.isnan(x) or x == math.inf
+                for x in logits
+            ):
                 raise ValueError("invalid verifier logits")
+            maximum = max(logits)
+            if maximum == -math.inf:
+                raise ValueError("verifier logits have zero probability mass")
+            exponentials = [math.exp(value - maximum) for value in logits]
+            total_mass = sum(exponentials)
+            probability_mass = (
+                sum(
+                    exponentials[token_id]
+                    for token_id, draft_id in enumerate(reverse)
+                    if draft_id >= 0
+                )
+                / total_mass
+            )
+            totals["logit_rows"] += 1
+        mapped_mass.append(probability_mass)
         labels.append(draft_label)
         valid_mask.append(valid)
         supported_mask.append(supported)
@@ -228,7 +260,13 @@ def validate_recurrent_trace(
         raise ValueError("round anchor has no trace rows")
     ce_mask = tuple(valid and supported for valid, supported in zip(valid_mask, supported_mask))
     return TraceAudit(
-        tuple(labels), tuple(valid_mask), tuple(supported_mask), ce_mask,
-        tuple(valid_mask), reverse, dict(totals),
+        tuple(labels),
+        tuple(valid_mask),
+        tuple(supported_mask),
+        ce_mask,
+        tuple(valid_mask),
+        reverse,
+        dict(totals),
         {depth: dict(counts) for depth, counts in sorted(depth_counts.items())},
+        tuple(mapped_mass),
     )

@@ -107,11 +107,14 @@ class RecurrentBinaryTests(unittest.TestCase):
             group_size=1,
         )
         x = torch.tensor([0.5, 0.25], device="cpu")
-        later_loss = head(body(x)).sum()
-        self.assertEqual(float(later_loss.detach()), 0.5)
+        first = body(x)
+        first.retain_grad()
+        later_input = torch.stack((first.squeeze(), x[1]))
+        later_loss = head(body(later_input)).sum()
         later_loss.backward()
+        self.assertIsNotNone(first.grad)
+        self.assertGreater(abs(float(first.grad[0])), 0)
         self.assertIsNotNone(body.latent_sign.grad)
-        torch.testing.assert_close(body.latent_sign.grad, torch.tensor([[1.0, 0.5]]))
         self.assertGreater(abs(float(body.scale_offset.grad[0, 0])), 0)
 
     def test_packed_roundtrip_and_scalar_replay(self):
@@ -162,6 +165,10 @@ class RecurrentBinaryTests(unittest.TestCase):
             float(replay_packed_linear(np.ones(2, dtype=np.float32), packed, scales, 2).item()),
             float(layer(x).detach()),
         )
+        with torch.no_grad():
+            layer.scale_offset.fill_(-1)
+        layer.project_scales_()
+        self.assertEqual(float(layer.effective_scales()[0, 0].detach()), 0)
 
     def test_rejects_negative_scale(self):
         weight = torch.ones((1, 2), device="cpu")

@@ -51,7 +51,9 @@ seed pair, and accepted-prefix cache truncation. Reset/detach only at the
 bounded unroll boundary, never between its proposal positions.
 
 The target is frozen and supplies a next-token label/logit row for the **exact
-proposal prefix**. A training record must join prompt, round, parent node,
+proposal prefix**. Use the native verifier sampler cloned and advanced with
+the proposed token even after a rejection; raw target argmax can differ from
+the sampler label. A training record must join prompt, round, parent node,
 prefix IDs, input position, label position, verifier row, proposal depth,
 validity/reached/EOS masks, and draft-to-target vocabulary mapping. For
 depth `d` under parent position `P`, input position is `P+d+1`, label
@@ -68,7 +70,9 @@ this target-verifier supervision.
 Use scheduled teacher-forced proposal prefixes from the native capture for a
 bounded, differentiable unroll. This gives exact-prefix labels and allows a
 later-position loss to backpropagate through earlier student body states and
-K/V. It does **not** by itself measure live-chain acceptance: export and run
+K/V. Captured D prefixes become off-policy if training changes proposal IDs;
+their labels must never be reused as labels for a different current-student
+prefix. It does **not** by itself measure live-chain acceptance: export and run
 the native sampler to check that. Capture must include sufficient target
 features, token IDs, positions, mask/KV boundary records, verifier labels and
 logits to replay each prefix without reading frozen final prompts.
@@ -110,16 +114,37 @@ completed. No existing CPU or 5080 result establishes SM75 performance.
 
 ## CPU work and remaining gate
 
-CPU tests may validate hard-sign/group-scale forward and backward, gradients
-from later unroll losses to earlier body states, exact-prefix/offset/mask
-joins on synthetic traces, sign/scale serialization, and a scalar replay.
-This is necessary preparation, not evidence about real-model quality or
-throughput. The native model capture of raw target features, student cache
-parity, trained-scale GGUF loader amendment, real-model training, and matched
-native evaluation remain unverified. The first future GPU-owner operation,
+CPU tests now validate hard-sign/group-scale forward and backward, gradients
+from a later two-call unroll loss to earlier body states, exact-prefix/offset/
+mask joins on synthetic traces, sign/scale serialization, and scalar replay.
+The repaired scale surrogate passes gradient at an exact zero scale and
+projects any negative update back to zero. The CPU reference also matches
+430/430 **archived D native sampled outputs** across all nine projections;
+these are previously recorded training-capture operands, not a trained model.
+The sequential per-feature PyTorch forward is deliberately an exact CPU
+reference and is too slow for the full nine-linear model. This is necessary
+preparation, not evidence about real-model quality or throughput. The native
+model capture of raw target features, an efficient hard-binary training
+forward with bounded numerical differences, student cache parity, the
+trained-scale GGUF loader amendment, real-model training, and matched native
+evaluation remain unverified. The first future GPU-owner operation,
 **only if the user changes the no-GPU restriction and approves the budget,**
-is a training-split-only native capture/alignment gate using the pinned
+begins with the CPU preflight command below, followed by a training-split-only
+native capture/alignment gate using the pinned
 target, D draft and exact commands/versions recorded in a new run directory;
 validate prefix ancestry, unsupported-label mass and fixed-prefix recurrence
 before starting optimizer steps. No remote command is prescribed while the
 required capture implementation is incomplete.
+
+```sh
+CUDA_VISIBLE_DEVICES='' PYTORCH_ENABLE_MPS_FALLBACK=0 PYTHONPATH=src \
+  .venv/bin/python -m unittest discover -s tests -p 'test_recurrent_*.py'
+```
+
+Once a native capture exists, its first CPU metadata gate is
+`scripts/audit_recurrent_binary_capture.py --manifest <capture-manifest>
+--prompts data/qat-revisit/train.jsonl --output <new-audit-json>`. That gate
+requires the frozen 96-prompt train hash and checks proposal ancestry,
+offset-form `d2t` with the `t2d` inverse mask, exact-prefix verifier labels, masks and mapped probability
+mass where full logits were saved. It explicitly leaves target-feature and
+draft-cache parity unverified; those need separate fixed-prefix model checks.

@@ -101,7 +101,8 @@ class GroupedBinaryLinear(nn.Module):
     input features are added sequentially within each group in F32. Each group
     sum is multiplied by its F32 scale, then products are added in group order
     in F32. Zero scales are valid in candidate D; a trainable additive F32
-    offset is projected onto the nonnegative range on every forward. No dense
+    offset is clamped in forward and can be projected after each optimizer
+    step. No dense
     floating weight is used by the forward pass.
     """
 
@@ -169,8 +170,17 @@ class GroupedBinaryLinear(nn.Module):
         return self.frozen_bias
 
     def effective_scales(self) -> Tensor:
-        """Nonnegative F32 scales, with PyTorch's boundary clamp derivative."""
-        return (self.initial_scale + self.scale_offset).clamp_min(0)
+        """Nonnegative F32 scales; the surrogate derivative at exact zero is one."""
+        raw = self.initial_scale + self.scale_offset
+        return torch.where(raw >= 0, raw, torch.zeros_like(raw))
+
+    @torch.no_grad()
+    def project_scales_(self) -> None:
+        """Project additive scales after an optimizer step, including zero."""
+        raw = self.initial_scale + self.scale_offset
+        if not torch.isfinite(raw).all():
+            raise ValueError("trained scales must be finite")
+        self.scale_offset.copy_(torch.where(raw < 0, -self.initial_scale, self.scale_offset))
 
     def forward(self, input: Tensor) -> Tensor:
         if (

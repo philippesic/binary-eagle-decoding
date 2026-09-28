@@ -30,7 +30,38 @@ file and `docs/STATUS.md` are the durable project checkpoint.
   amendment before a trained export can load.
 - CPU-only implementation is split into distinct bounded modules: trainable
   group binary arithmetic and a recurrent exact-prefix trace validator.
-  Their review, integration and results will be recorded here.
+  The trace validator was integrated as `1e3742d`: eight synthetic ancestry,
+  position, offset and mask tests passed. The masked CE objective now has
+  three CPU gradient/mask tests. The learned nine-linear exporter was
+  integrated as `a4dd003`: five synthetic GGUF serialization tests passed,
+  including Q/K row order, frozen tensors and invalid inputs. It declares
+  `f32_learned_nonnegative` and explicitly blocks native loading until the
+  loader recognizes that rule. The hard-binary CPU reference was integrated
+  as `fead52a`, then repaired locally after the project virtual environment
+  exposed zero gradient at an exact zero scale. Eight arithmetic tests now
+  pass, including a genuine two-call student recurrence and all-nine module
+  installation. The CPU training step checks nine-linear optimizer ownership,
+  projects scales and writes the 18-array exporter checkpoint; three tests
+  pass. These modules still need a real-model recurrent graph and capture.
+- A new CPU scalar replay of the archived candidate-D training-capture inputs
+  matched **430/430 recorded native outputs exactly** across 16 captures and
+  all nine projections. This reads old native outputs and performs no current
+  GPU execution. Current host: Apple M3 Max CPU (`arm64`), PyTorch 2.14.0,
+  NumPy 2.4.6; arithmetic uses F16-cast inputs with F32 signed/group sums.
+  The ignored evidence is
+  `results/binary-scale-fitting-5080/recurrent-binary-cpu-parity.json`
+  (SHA256 `dc37bc4905ee81a0646ec7546c8ea050dbb4f9aa04193d8480780e03e26f46f2`).
+  It validates D arithmetic on these sampled operands, not a trained export
+  or whole-drafter recurrence.
+- A CPU capture-metadata gate now enforces the frozen 96-prompt training hash,
+  file hashes, exact-prefix ancestry, native offset mapping, `t2d` inverse
+  consistency and valid/support masks. Four synthetic tests pass. It cannot create target features or
+  certify K/V cache parity.
+
+**Latest CPU checks:** 32 recurrent tests, eight existing scale-fitting tests,
+Ruff lint/format and `git diff --check` pass. No local Metal/MPS or CUDA
+runtime was selected. The complete native Q4_0 quality/throughput gates
+remain unrun under this goal.
 
 ## Research choices pending
 
@@ -42,11 +73,11 @@ restriction. Do not request or infer that change.
 
 ## CPU stop gate and next actions
 
-1. Review and integrate the two CPU modules, with forward/backward, unroll,
-   ancestry/mapping/mask and packed scalar-replay tests.
-2. Add a bounded model-independent training driver or adapter only where it
-   can preserve the real native recurrence contract. Keep any unavailable
-   real-model steps explicit rather than substituting a cached-head trainer.
+1. Review the corrected CPU arithmetic, recurrent loss, training-step and
+   checkpoint/export integration; run their focused CPU gates together.
+2. Prepare the missing real-model capture/recurrent graph contract without
+   substituting saved normalized head states. The exact sequential CPU forward
+   is intentionally slow and is not a practical full-model training kernel.
 3. Test CPU-only commands with explicit CPU devices and record results,
    hashes and commits. Keep model files/raw captures out of Git.
 4. Audit whether remaining local work can still advance the goal. This is the
