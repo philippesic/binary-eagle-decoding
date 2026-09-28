@@ -57,8 +57,14 @@ file and `docs/STATUS.md` are the durable project checkpoint.
   file hashes, exact-prefix ancestry, native offset mapping, `t2d` inverse
   consistency and valid/support masks. Four synthetic tests pass. It cannot create target features or
   certify K/V cache parity.
+- A model-independent CPU rollout contract now feeds each proposed token and
+  the previous **pre-norm** student state into the next step without detaching
+  the functional cache. Three tiny causal-cache tests pass: a later-only CE
+  loss reaches the first key, value, state, fusion and head; positions advance
+  2 then 3; invalid terminal rows create no decoder call. This checks the
+  training interface, not actual EAGLE mask or K/V byte parity.
 
-**Latest CPU checks:** 32 recurrent tests, eight existing scale-fitting tests,
+**Latest CPU checks:** 35 recurrent tests, eight existing scale-fitting tests,
 Ruff lint/format and `git diff --check` pass. No local Metal/MPS or CUDA
 runtime was selected. The complete native Q4_0 quality/throughput gates
 remain unrun under this goal.

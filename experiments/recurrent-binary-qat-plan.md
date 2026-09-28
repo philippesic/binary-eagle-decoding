@@ -115,8 +115,9 @@ completed. No existing CPU or 5080 result establishes SM75 performance.
 ## CPU work and remaining gate
 
 CPU tests now validate hard-sign/group-scale forward and backward, gradients
-from a later two-call unroll loss to earlier body states, exact-prefix/offset/
-mask joins on synthetic traces, sign/scale serialization, and scalar replay.
+from a later two-call unroll loss to earlier body states and functional
+causal-cache key/value entries, exact-prefix/offset/mask joins on synthetic
+traces, sign/scale serialization, and scalar replay.
 The repaired scale surrogate passes gradient at an exact zero scale and
 projects any negative update back to zero. The CPU reference also matches
 430/430 **archived D native sampled outputs** across all nine projections;
