@@ -32,6 +32,8 @@ LADDER_LAYERS = (*range(19), 33)
 LADDER_WIDTH = len(LADDER_LAYERS) * HIDDEN
 LADDER_ROW_BYTES = LADDER_WIDTH * 4
 OUTLIER_POSITION = 3
+INTERVENTION_INPUT_LAYER = 14
+INTERVENTION_OUTPUT_LAYER = INTERVENTION_INPUT_LAYER + 1
 
 
 def _manifest_file(root: Path, files: dict, name: str) -> Path:
@@ -288,6 +290,29 @@ def first_sharp_growth(layers: dict[str, dict]) -> dict | None:
     return largest
 
 
+def forward_with_layer14_input(model, tokens: torch.Tensor, replacement: torch.Tensor):
+    """Use the complete cast native input for exactly one HF block-14 call."""
+    calls = 0
+
+    def replace(_module, args):
+        nonlocal calls
+        calls += 1
+        if calls != 1 or not args or args[0].shape != replacement.shape:
+            raise ValueError("block-14 hook invocation or input shape differs")
+        if args[0].device != replacement.device or args[0].dtype != replacement.dtype:
+            raise ValueError("block-14 hook input device or dtype differs")
+        return (replacement, *args[1:])
+
+    handle = model.layers[INTERVENTION_INPUT_LAYER].register_forward_pre_hook(replace)
+    try:
+        hidden = model(input_ids=tokens, output_hidden_states=True, use_cache=False).hidden_states
+    finally:
+        handle.remove()
+    if calls != 1:
+        raise ValueError("block-14 hook was not called exactly once")
+    return hidden
+
+
 def compare(
     capture_dir: Path,
     sealed_capture_root: Path,
@@ -332,11 +357,57 @@ def compare(
         if not np.array_equal(embedding, gguf_embedding):
             raise ValueError("prompt embedding differs from pinned target GGUF")
         hidden = model(input_ids=tokens, output_hidden_states=True, use_cache=False).hidden_states
+        baseline_14 = hidden[INTERVENTION_INPUT_LAYER][0].detach().clone()
+        baseline_15 = hidden[INTERVENTION_OUTPUT_LAYER][0].detach().clone()
+        start_14 = LADDER_LAYERS.index(INTERVENTION_INPUT_LAYER) * HIDDEN
+        native_14 = native[:, start_14 : start_14 + HIDDEN]
+        replacement = torch.from_numpy(native_14.astype(np.float16)).to("cuda")[None]
+        intervened = forward_with_layer14_input(model, tokens, replacement)
+        if not torch.equal(hidden[INTERVENTION_INPUT_LAYER][0], baseline_14) or not torch.equal(
+            hidden[INTERVENTION_OUTPUT_LAYER][0], baseline_15
+        ):
+            raise ValueError("intervention mutated immutable baseline hidden states")
     measurements = {}
     for index, layer in enumerate(LADDER_LAYERS):
         reference = hidden[layer][0].float().cpu().numpy()
         actual = native[:, index * HIDDEN : (index + 1) * HIDDEN]
         measurements[str(layer)] = layer_metrics(reference, actual)
+    start_15 = LADDER_LAYERS.index(INTERVENTION_OUTPUT_LAYER) * HIDDEN
+    native_15 = native[:, start_15 : start_15 + HIDDEN]
+    intervention_14 = layer_metrics(replacement[0].float().cpu().numpy(), native_14)
+    intervention_15 = layer_metrics(
+        intervened[INTERVENTION_OUTPUT_LAYER][0].float().cpu().numpy(), native_15
+    )
+    baseline_14_metrics = measurements[str(INTERVENTION_INPUT_LAYER)]
+    baseline_15_metrics = measurements[str(INTERVENTION_OUTPUT_LAYER)]
+    intervention = {
+        "input_layer": INTERVENTION_INPUT_LAYER,
+        "output_layer": INTERVENTION_OUTPUT_LAYER,
+        "replacement": "complete_native_layer14_f32_input_cast_to_hf_float16",
+        "replacement_dtype": "float16_from_native_float32",
+        "baseline_forward_immutable": True,
+        "hook_call_count": 1,
+        "baseline": {
+            str(INTERVENTION_INPUT_LAYER): baseline_14_metrics,
+            str(INTERVENTION_OUTPUT_LAYER): baseline_15_metrics,
+        },
+        "intervention": {
+            str(INTERVENTION_INPUT_LAYER): intervention_14,
+            str(INTERVENTION_OUTPUT_LAYER): intervention_15,
+        },
+        "position3": {
+            "baseline_input_relative_l2": baseline_14_metrics["positions"][OUTLIER_POSITION][
+                "relative_l2"
+            ],
+            "cast_input_relative_l2": intervention_14["positions"][OUTLIER_POSITION]["relative_l2"],
+            "baseline_output_relative_l2": baseline_15_metrics["positions"][OUTLIER_POSITION][
+                "relative_l2"
+            ],
+            "intervention_output_relative_l2": intervention_15["positions"][OUTLIER_POSITION][
+                "relative_l2"
+            ],
+        },
+    }
     index_path = hf_model / "model.safetensors.index.json"
     shards = sorted(set(json.loads(index_path.read_text())["weight_map"].values()))
     provenance["source_sha256"].update(
@@ -345,8 +416,8 @@ def compare(
         hf_shards={name: sha256(hf_model / name) for name in shards},
     )
     return {
-        "schema": "target_layer_ladder_cuda_comparison_v1",
-        "status": "independent_f16_layer_inputs_measured_parity_unproven",
+        "schema": "target_layer_ladder_cuda_comparison_v2",
+        "status": "independent_f16_layer_inputs_and_block14_intervention_measured_parity_unproven",
         **provenance,
         "prefill_tokens": len(prefix),
         "outlier_position": OUTLIER_POSITION,
@@ -362,6 +433,7 @@ def compare(
         "old_taps_bitwise_equal_to_same_run_and_sealed": True,
         "layers": measurements,
         "first_largest_position3_adjacent_growth": first_sharp_growth(measurements),
+        "block14_input_intervention": intervention,
     }
 
 

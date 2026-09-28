@@ -7,14 +7,42 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 import numpy as np
+import torch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import check_target_layer_ladder as ladder  # noqa: E402
+
+
+class _ToyBlock(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.fail = False
+
+    def forward(self, x):
+        if self.fail:
+            raise RuntimeError("synthetic block failure")
+        return x + 1
+
+
+class _ToyModel(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.layers = torch.nn.ModuleList(
+            [torch.nn.Identity() for _ in range(ladder.INTERVENTION_INPUT_LAYER)] + [_ToyBlock()]
+        )
+
+    def forward(self, input_ids, output_hidden_states, use_cache):
+        assert output_hidden_states is True and use_cache is False
+        start = input_ids
+        end = self.layers[ladder.INTERVENTION_INPUT_LAYER](start)
+        states = [start] * (ladder.INTERVENTION_INPUT_LAYER + 1) + [end]
+        return SimpleNamespace(hidden_states=tuple(states))
 
 
 class LadderTests(unittest.TestCase):
@@ -242,6 +270,30 @@ class LadderTests(unittest.TestCase):
         }
         layers["2"]["positions"][3]["relative_l2"] = 0.21
         self.assertEqual(ladder.first_sharp_growth(layers)["to_layer"], 2)
+
+    def test_block14_hook_replaces_only_one_forward_and_preserves_baseline(self):
+        model = _ToyModel()
+        tokens = torch.zeros((1, 4, ladder.HIDDEN), dtype=torch.float16)
+        native_cast = torch.full_like(tokens, 2.0)
+        baseline = model(input_ids=tokens, output_hidden_states=True, use_cache=False).hidden_states
+        baseline_output = baseline[ladder.INTERVENTION_OUTPUT_LAYER].clone()
+        intervened = ladder.forward_with_layer14_input(model, tokens, native_cast)
+        self.assertTrue(torch.equal(intervened[ladder.INTERVENTION_OUTPUT_LAYER], native_cast + 1))
+        self.assertTrue(torch.equal(baseline[ladder.INTERVENTION_OUTPUT_LAYER], baseline_output))
+        self.assertEqual(len(model.layers[ladder.INTERVENTION_INPUT_LAYER]._forward_pre_hooks), 0)
+        again = model(input_ids=tokens, output_hidden_states=True, use_cache=False).hidden_states
+        self.assertTrue(torch.equal(again[ladder.INTERVENTION_OUTPUT_LAYER], baseline_output))
+
+    def test_block14_hook_cleans_up_after_shape_or_forward_failure(self):
+        model = _ToyModel()
+        tokens = torch.zeros((1, 4, ladder.HIDDEN), dtype=torch.float16)
+        with self.assertRaisesRegex(ValueError, "input shape differs"):
+            ladder.forward_with_layer14_input(model, tokens, tokens[:, :3])
+        self.assertEqual(len(model.layers[ladder.INTERVENTION_INPUT_LAYER]._forward_pre_hooks), 0)
+        model.layers[ladder.INTERVENTION_INPUT_LAYER].fail = True
+        with self.assertRaisesRegex(RuntimeError, "synthetic block failure"):
+            ladder.forward_with_layer14_input(model, tokens, tokens.clone())
+        self.assertEqual(len(model.layers[ladder.INTERVENTION_INPUT_LAYER]._forward_pre_hooks), 0)
 
 
 if __name__ == "__main__":
