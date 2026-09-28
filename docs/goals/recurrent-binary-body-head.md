@@ -67,7 +67,7 @@ file and `docs/STATUS.md` are the durable project checkpoint.
   positions are `P+1`, `P+2`; invalid terminal rows create no decoder call. This checks the
   training interface, not actual EAGLE mask or K/V byte parity.
 
-**Latest CPU checks:** 86 recurrent tests, 16 capture-runner tests, ten explicit decoder-step tests,
+**Latest CPU checks:** 90 recurrent tests, 16 capture-runner tests, ten explicit decoder-step tests,
 five frozen-operand tests, eight native loader fixtures, eight existing
 scale-fitting tests, Ruff
 lint/format and `git diff --check` pass. No local Metal/MPS or CUDA
@@ -363,6 +363,39 @@ established.
   with return code zero; no remote session or GPU owner exists. Parent
   integration commit `2c9dce2` is pushed to `main` with that gitlink.
 
+## Tenth goal turn: broader CPU proposal-chain check
+
+- A new bounded CPU diagnostic runner validates the pinned FP16 target,
+  candidate-D draft, full 96-prompt training-file hash, native source
+  revision and every disabled accelerator/BLAS backend before launching.
+  It forces target and draft GPU layers to zero, captures one selected
+  train-only prompt, stops the process group, and runs continuity plus
+  response audits. Safety fixtures reject an enabled Metal build.
+- The runner captured code and reasoning training prompts at eight output
+  tokens each; the earlier prose capture supplied the third category.
+  All three single-request captures passed the native continuity and
+  response-emission checks. Code had four rounds with acceptance depths
+  `[0,1,0,1]`; reasoning had three with `[0,1,2]`; prose had four with
+  `[0,0,1,1]`.
+- The CPU grouped-matmul student rebuilt a fresh accepted-prefix cache for
+  every one of the 11 rounds using unique retained target-feature rows,
+  then replayed the proposal chain. Its mapped top ID matched native D at
+  **all 44/44 positions** (prose 16, code 15, reasoning 13). Maximum
+  normalized state differences were `0.003462`, `0.004617` and `0.004564`
+  respectively. Native-order first-round checks also matched 5/5 top IDs
+  in each category. First-round graph taps in both new prompts again put
+  the first material disagreement at attention, not Q/K/V projection.
+- The [broader CPU report](../../experiments/recurrent-binary-cpu-broader-diagnostic.md)
+  and ignored `results/recurrent-binary-cpu-broader-20260928/summary.json`
+  record raw hashes, per-round joins and limitations. The three-prompt
+  result does not establish the 96-prompt capture, numerical K/V parity,
+  trained-model quality or native Q4_0 performance. No GPU/accelerator,
+  remote host, development/final prompt or additional training step ran.
+  The Goal remains active.
+- The user noted that the RTX 5080 is available. The goal's explicit
+  no-GPU restriction remains in force pending clarification; availability
+  alone was not treated as authorization. CPU work continued independently.
+
 **Published checkpoints:** `7744d8e` created the goal/protocol; `1e3742d`
 integrated the trace contract; `a4dd003` integrated learned GGUF export;
 `fead52a` integrated the binary CPU reference; `792b7e0` published the
@@ -382,10 +415,10 @@ restriction. Do not request or infer that change.
 
 ## CPU stop gate and next actions
 
-1. Extend the native attention-boundary comparison to other training
-   prompts and proposal depths under fixed CPU settings. Determine whether
-   its bounded drift can change mapped argmax or accepted trajectories;
-   do not choose a parity tolerance from one prompt. Keep the
+1. Keep the 44/44 mapped-top diagnostic distinct from training quality.
+   Extend the fixed CPU comparison to later-round attention/KV boundaries
+   and more independent training prompts before proposing a parity
+   tolerance. Keep the
    preparation bundle ineligible until full request, model and drafter
    parity gates pass; do not infer the 96-prompt training result from one
    prompt.
@@ -396,7 +429,7 @@ restriction. Do not request or infer that change.
 3. Recheck CPU gates and record hashes/commits at the next milestone. Keep
    model files/raw captures out of Git. Audit whether remaining local work
    can still advance the goal. This is the
-   **ninth** goal turn under the no-GPU restriction. Do not mark the Goal
+   **tenth** goal turn under the no-GPU restriction. Do not mark the Goal
    blocked until the same GPU-only impasse persists across at least three
    consecutive goal turns and no meaningful CPU-only work remains.
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Compare the first real native D proposal chain with the CPU adapter.
+"""Compare one real native D proposal chain with the CPU adapter.
 
-This diagnostic rebuilds the first round's D cache from accepted-prefix raw
+This diagnostic rebuilds one round's D cache from accepted-prefix raw
 target features and reports numeric drift. It never trains or uses an
 accelerator. Grouped-matmul arithmetic is approximate to native reduction;
 the report does not confer parity automatically.
@@ -98,47 +98,68 @@ def _build_drafter(
     return NativeStepAdapter(drafter, embedding_lookup=operands)
 
 
-def check_first_round(
+def _retained_feature_indices(events: list[dict], prefix: list[int], task_id: int) -> list[int]:
+    decoded = [row for row in events if row.get("event") == "decoded_row"]
+    dispositions = {
+        row.get("feature_row"): row for row in events if row.get("event") == "disposition"
+    }
+    indices = []
+    for position, token in enumerate(prefix):
+        matches = [
+            row.get("feature_row")
+            for row in decoded
+            if row.get("task_id") == task_id
+            and row.get("position") == position
+            and row.get("token_id") == token
+            and row.get("prefix_token_ids") == prefix[: position + 1]
+            and dispositions.get(row.get("feature_row"), {}).get("retained_input") is True
+        ]
+        if len(matches) != 1 or type(matches[0]) is not int or matches[0] < 0:
+            raise ValueError("accepted prefix lacks exactly one retained native feature row")
+        indices.append(matches[0])
+    return indices
+
+
+def check_round(
     capture_dir: Path,
     target_gguf: Path,
     draft_gguf: Path,
     drafter_config: Path,
     arithmetic: str = "group_matmul",
     tap_output: Path | None = None,
+    round_index: int = 0,
 ) -> dict:
-    if arithmetic not in {"native_order", "group_matmul"}:
+    if (
+        arithmetic not in {"native_order", "group_matmul"}
+        or type(round_index) is not int
+        or round_index < 0
+    ):
         raise ValueError("unknown CPU binary arithmetic")
     start = time.monotonic()
     rounds = read_jsonl(capture_dir / "forced-rounds.jsonl")
     heads = read_jsonl(capture_dir / "heads.jsonl")
     events = read_jsonl(capture_dir / "heads.target_features.jsonl")
-    first = rounds[0]
-    prompt = first.get("prefix_token_ids")
+    selected = [record for record in rounds if record.get("round_index") == round_index]
+    if len(selected) != 1:
+        raise ValueError("capture lacks one selected native round")
+    record = selected[0]
+    prefix = record.get("prefix_token_ids")
     if (
-        first.get("round_index") != 0
-        or not isinstance(prompt, list)
-        or len(prompt) < 2
-        or heads[0].get("round_index") != 0
-        or heads[0].get("depth") != 0
-        or heads[0].get("state_row") != 0
-        or heads[0].get("state_dim") != 2560
+        not isinstance(prefix, list)
+        or len(prefix) < 2
+        or not any(
+            head.get("round_index") == round_index and head.get("depth") == 0 for head in heads
+        )
     ):
-        raise ValueError("first native round/head row is not the expected prefix")
-    prefill = [
-        row for row in events if row.get("event") == "decoded_row" and row.get("phase") == "prefill"
-    ]
-    if len(prefill) != len(prompt) or any(
-        row.get("feature_row") != position
-        or row.get("position") != position
-        or row.get("prefix_token_ids") != prompt[: position + 1]
-        for position, row in enumerate(prefill)
-    ):
-        raise ValueError("raw target-feature prefill does not match first round")
+        raise ValueError("selected native round/head row is not the expected prefix")
+    feature_indices = _retained_feature_indices(events, prefix, record["task_id"])
     feature_path = capture_dir / "heads.target_features.f32"
     feature_values = np.memmap(feature_path, dtype="<f4", mode="r")
     if feature_values.size % 7680:
         raise ValueError("raw target feature file has wrong width")
     feature_values = feature_values.reshape(-1, 7680)
+    if max(feature_indices) >= len(feature_values):
+        raise ValueError("retained native feature row exceeds F32 payload")
     native_path = capture_dir / "heads.f32"
     native_values = np.memmap(native_path, dtype="<f4", mode="r")
     if native_values.size != len(heads) * 2560:
@@ -149,15 +170,21 @@ def check_first_round(
     round_heads = [
         row
         for row in heads
-        if row.get("round_index") == 0 and row.get("task_id") == first.get("task_id")
+        if row.get("round_index") == round_index and row.get("task_id") == record.get("task_id")
     ]
-    proposed = first.get("draft_token_ids")
+    proposed = record.get("draft_token_ids")
     if (
         not isinstance(proposed, list)
         or len(round_heads) != len(proposed)
         or [row.get("depth") for row in round_heads] != list(range(len(proposed)))
+        or any(
+            row.get("state_dim") != 2560
+            or type(row.get("state_row")) is not int
+            or not 0 <= row["state_row"] < len(heads)
+            for row in round_heads
+        )
     ):
-        raise ValueError("first native round has incomplete proposal head states")
+        raise ValueError("selected native round has incomplete proposal head states")
     mapping = np.asarray(Model(draft_gguf).tensors["d2t"].data)
     depth_rows = []
     taps: dict[str, np.ndarray] = {}
@@ -168,12 +195,12 @@ def check_first_round(
         taps[name] = value.cpu().numpy().astype("<f4", copy=True).reshape(-1)
 
     with torch.no_grad():
-        raw = torch.from_numpy(np.array(feature_values[: len(prompt)], copy=True))
+        raw = torch.from_numpy(np.array(feature_values[feature_indices], copy=True))
         rebuilt = rebuild_prefix_cache(
-            prompt + [first["seed_token_id"]],
+            prefix + [record["seed_token_id"]],
             raw,
-            list(range(len(prompt))),
-            parent_position=len(prompt) - 1,
+            list(range(len(prefix))),
+            parent_position=len(prefix) - 1,
             encode_feature=adapter.encode_feature,
             decode_context=adapter.decode_context,
             new_cache=adapter.new_cache,
@@ -232,7 +259,9 @@ def check_first_round(
         "execution_device": "cpu",
         "arithmetic": arithmetic,
         "status": "numeric_drift_measured_parity_unproven",
-        "prompt_tokens": len(prompt),
+        "round_index": round_index,
+        "prefix_tokens": len(prefix),
+        "retained_feature_indices": feature_indices,
         "cache_positions": result.cache.key.shape[1],
         "first_depth": first_depth,
         "per_depth": depth_rows,
@@ -274,17 +303,19 @@ def main() -> None:
         "--arithmetic", choices=("native_order", "group_matmul"), default="group_matmul"
     )
     parser.add_argument("--tap-output", type=Path)
+    parser.add_argument("--round-index", type=int, default=0)
     parser.add_argument("--report", type=Path, required=True)
     args = parser.parse_args()
     if args.report.exists():
         parser.error("report must be a new file")
-    report = check_first_round(
+    report = check_round(
         args.capture_dir,
         args.target_gguf,
         args.draft_gguf,
         args.drafter_config,
         args.arithmetic,
         args.tap_output,
+        args.round_index,
     )
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")

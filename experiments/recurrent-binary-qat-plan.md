@@ -188,6 +188,14 @@ one chain,
 but its attention arithmetic is not numerically interchangeable with the
 native backend. The Q4_0 acceptance and throughput gates remain future
 native measurements, not inferred from CPU trace agreement.
+A [three-category CPU diagnostic](recurrent-binary-cpu-broader-diagnostic.md)
+has now replayed 11 native D rounds from three frozen training prompts with
+fresh accepted-prefix cache rebuilding. The practical grouped-matmul student
+matched all 44 native mapped top proposal IDs on those recorded chains;
+normalized state differences remained nonzero and attention was again the
+first material first-round gap. This is bounded arithmetic/ancestry
+evidence, not a trained-model acceptance estimate or a substitute for the
+full 96-prompt capture and native Q4_0 gates.
 
 ## Bounded proposed first trial and stop gates
 
