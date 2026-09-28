@@ -223,6 +223,16 @@ constrain the first material gap to attention arithmetic in the tested
 single-sequence geometry. The source-guided F16 replay substantially reduces
 that gap but does not choose the tolerance option above.
 
+Independent target-feature forwards now also cover code/reasoning on Apple
+M3 Max CPU and one prose prefix in CUDA/F16 on the RTX 5080. The median
+relative row L2 discrepancy at taps 2/18/33 is about 0.3–0.6%; the
+largest checked CPU reasoning row reaches 2.088%, and the CUDA prose
+maximum reaches 1.753%. Source prompt embeddings and sampled gate weights
+match the pinned FP16 GGUF, but the independent eager and native attention
+paths differ. The [target-feature note](../experiments/recurrent-binary-target-feature-parity.md)
+records exact metrics and limits. This evidence does not by itself select
+an acceptable training tolerance or an alternate exact backend path.
+
 **Exact-prefix row clarification (2026-09-28):** the native verifier computes
 target logits for every proposed prefix in a speculative batch, and the cloned
 sampler advances along each proposed token even after an earlier live

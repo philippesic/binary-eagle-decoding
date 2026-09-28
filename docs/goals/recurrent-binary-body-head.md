@@ -733,3 +733,39 @@ boundary, prefix distribution and numeric tolerance choices in
 and should be reused; no repeat GPU capture is needed for the current
 offline questions. Q4_0 remains the primary eventual acceptance, latency
 and total-throughput baseline.
+
+## Seventeenth goal turn: independent target-feature comparison
+
+- The independent CPU Hugging Face target checker was run on existing code
+  and reasoning native training captures after the earlier prose check.
+  Source BF16 weights were rounded to F16; requested embedding rows and
+  sampled gate weights matched the pinned GGUF. F32 eager computation on
+  Apple M3 Max still differed from native CPU taps: median relative row
+  L2 errors were 0.542/0.397/0.279% (code) and 0.501/0.569/0.490%
+  (reasoning) for layers 2/18/33; largest rows reached 1.359% and
+  2.088% at layer 33. The ignored reports are hashed in the
+  [target-feature note](../../experiments/recurrent-binary-target-feature-parity.md).
+- Parent commit `8e8f1a2` adds a bounded CUDA F16 mode to that checker,
+  preserving the code-prompt CPU metrics exactly; four focused tests and
+  Ruff passed. A supervised RTX 5080 run reused the eight-token prose CUDA
+  native capture and local Hugging Face source shards. PyTorch 2.14.0+cu130
+  and Transformers 4.57.6 in eager F16 computation matched all 32 prompt
+  embedding rows, but median native-feature relative row L2 errors were
+  0.311/0.426/0.385% at taps 2/18/33, with maxima
+  0.789/1.367/1.753%. The ignored CUDA report SHA256 is
+  `b2ee0c273b7b7a3a66abb61541ac8ee619728b43a04aabdf471fd0ad3b9c8a29`.
+  It records source, model and capture hashes and device versions.
+- That one-request diagnostic exited zero under remote supervisor
+  `recurrent-target-feature-cuda-20260928`. Its process group stopped;
+  the GPU returned to 0% utilization, 1,372 MiB whole-device use and no
+  compute app. Native and independent forwards differ in attention and
+  reduction arithmetic, and this F16 comparison is not a complete
+  tensor-by-tensor target parity proof. Target-feature numeric parity and
+  any predeclared tolerance remain open. No optimizer, development/final
+  prompt or Q4_0 measurement ran. The native Goal remains active.
+
+**Next action:** keep the full 96-prompt capture sealed; isolate the
+remaining target-feature difference at the first divergent layer/row and
+continue full-drafter attention/state/logit parity checks. Present a
+concrete tolerance or exact-backend path with observed limits for the
+user-owned research decision before any all-body training budget is used.

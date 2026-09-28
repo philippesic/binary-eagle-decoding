@@ -56,6 +56,18 @@ and [full capture report](../experiments/recurrent-binary-full-capture-5080.md)
 record hashes, checks, failed first audit attempts and remaining gates.
 The RTX 5080 is free; no training or final-set use occurred.
 
+**Target-feature checkpoint (2026-09-28 UTC):** independent Hugging Face
+forwards on Apple M3 Max CPU and, separately, RTX 5080 CUDA/F16 used frozen
+training prefixes and checked source embeddings. Their raw target-feature
+rows still differed from native execution by median relative row L2 errors
+of roughly 0.3–0.6% across taps 2, 18 and 33; the largest checked row
+reached 2.088% in the CPU reasoning capture. The
+[target-feature report](../experiments/recurrent-binary-target-feature-parity.md)
+records per-tap measurements, hardware, versions and source hashes. The
+CUDA diagnostic stopped and the GPU is free. Exact target-feature and
+whole-drafter state/logit parity remain open; the capture bundle is still
+training-ineligible pending a user-owned numeric gate and training budget.
+
 **Handoff checkpoint (2026-09-28 06:35 UTC):** the active goal file records
 the current objective, pushed commits, CPU tests, projected K/V write
 comparison, pending 5080 clarification and exact next actions. Code round 2
