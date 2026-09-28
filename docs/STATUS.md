@@ -111,6 +111,17 @@ record source hashes, hardware and limits. Both supervised runs stopped and
 the GPU is free. The responsible block operation, exact target parity,
 training gate and Q4_0 evaluation remain open.
 
+**Block-14 intervention checkpoint (2026-09-28 UTC):** substituting captured
+native layer-14 input into the independent RTX 5080 F16 forward reduced
+the outlier's layer-15 relative error from 4.148% to 0.149% and absolute
+RMS error from 0.04218 to 0.001516. Block 14 amplifies earlier drift in
+this comparison; its same-input operator mismatch is much smaller. The
+[active goal](goals/recurrent-binary-body-head.md#twenty-first-goal-turn-block-14-amplifies-upstream-drift)
+and [feature report](../experiments/recurrent-binary-target-feature-parity.md#same-input-block-14-intervention)
+record the source hash and limits. The supervised run stopped and the GPU
+is free. The first material local operator difference and training gate
+remain open.
+
 **Handoff checkpoint (2026-09-28 06:35 UTC):** the active goal file records
 the current objective, pushed commits, CPU tests, projected K/V write
 comparison, pending 5080 clarification and exact next actions. Code round 2

@@ -260,6 +260,11 @@ located the outlier's largest adjacent relative-error rise across target
 block 14 (1.209%→4.148%; absolute RMS 0.01202→0.04218). This narrows the
 next exact-parity probe to that block but does not yet identify its attention,
 FFN or residual arithmetic. It does not justify setting a numeric threshold.
+A same-input F16 intervention then reduced block-14 output error from 4.148%
+to 0.149% (RMS 0.04218→0.001516), showing that this block mainly amplifies
+an upstream difference under the independent forward. Screen local blocks
+from their own native inputs before selecting a tolerance or blaming a single
+block operator. The research choice remains open.
 See the [feature report](../experiments/recurrent-binary-target-feature-parity.md).
 
 **Exact-prefix row clarification (2026-09-28):** the native verifier computes

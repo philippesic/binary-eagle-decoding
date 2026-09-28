@@ -919,3 +919,29 @@ block-14 forward to distinguish upstream perturbation amplification from a
 block-local arithmetic gap. Then instrument only the implicated native block
 operations if its same-input output still diverges. Keep the user-owned
 numeric gate and all-body training budget unresolved.
+
+## Twenty-first goal turn: block-14 amplifies upstream drift
+
+- Parent commit `19b2246` adds a scoped native-input intervention to the
+  audited ladder comparator; 13 focused synthetic tests, Ruff and formatting
+  passed. The supervised RTX 5080 CUDA/F16 eager forward reused the exact
+  29-row native ladder, again passing source hashes and old-tap byte identity.
+  At position 3, the independent layer-14 input error of 1.209% fell to
+  0.016% after replacing it with native F32 rows cast F16. The subsequent
+  layer-15 input error fell from 4.148% to **0.149%**, and absolute RMS from
+  0.04218 to 0.001516. This makes block 14 an amplifier of earlier state
+  drift under this independent forward; it is not evidence of a large
+  same-input block-14 operator mismatch. Exact native arithmetic still
+  differs because the intervention casts F32 input to F16.
+- Ignored report SHA256 is
+  `e8945330179e87e1ac8ffa9d75124d19a372908a1c79b28f05ac490dfa30e8b5`.
+  Its supervisor exited zero, no project GPU process remained, and the
+  RTX 5080 returned to 0% utilization and 1,372 MiB whole-device use.
+  The existing remote tmux session `$20` remains open, with no running job.
+  No new native capture, optimizer, final-set or Q4_0 run occurred.
+
+**Next gate:** compare every block `0..17` from its own captured native input
+against the next native layer input, using the same bounded prefix and F16
+cast. This local-block screen can rank where backend arithmetic first creates
+material drift, separately from later amplification. Keep the user-owned
+numeric tolerance and all-body training budget pending.

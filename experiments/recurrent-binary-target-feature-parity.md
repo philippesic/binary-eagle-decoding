@@ -266,3 +266,31 @@ Both ignored run directories are retained on the registered 5080 host as
 Both supervisors finished with exit zero; no native server or compute app
 remained, and the GPU returned to 0% utilization and 1,372 MiB whole-device
 use. No optimization or development/final prompt was used.
+
+## Same-input block-14 intervention
+
+Parent commit `19b2246` extends the ladder comparator with a scoped
+native-input intervention at Hugging Face decoder block 14. The complete
+29-row native layer-14 F32 input is cast to F16 and replaces the independent
+block input for one eager forward; the baseline tensors remain unchanged and
+the hook is removed. Thirteen synthetic checks passed. The sealed source
+hashes and all old-tap byte-identity gates passed again on RTX 5080.
+
+| Position-3 comparison | Baseline error | With native layer-14 input |
+| --- | ---: | ---: |
+| Layer-14 input relative L2 | 1.209% | 0.016% after F16 cast |
+| Layer-15 input relative L2 | 4.148% | 0.149% |
+| Layer-15 input absolute RMS | 0.04218 | 0.001516 |
+
+The block-14 output gap nearly vanishes when its input is supplied from the
+native ladder. This shows strong amplification of an upstream state
+difference under this independent forward, rather than a large same-input
+block-14 arithmetic mismatch. It does not identify where the upstream
+difference originates, and the F16 cast prevents exact-backend parity claims.
+
+The ignored follow-up report is on the same host at
+`checkouts/recurrent-gpu-capture-20260928/runs/recurrent-target-block14-intervention-20260928/comparison.json`,
+SHA256 `e8945330179e87e1ac8ffa9d75124d19a372908a1c79b28f05ac490dfa30e8b5`.
+Its supervisor exited zero, process group stopped, and the 5080 returned to
+0% utilization, 1,372 MiB whole-device use and no compute app. No new
+native capture, training or development/final prompt was used.
