@@ -1,5 +1,13 @@
 # Joint binary body and head: CPU preparation and frozen trial protocol
 
+> **Superseded planning status, 2026-09-28:** The user has authorized a fresh
+> CPU-only EAGLE W1 team under [W1_RESEARCH_PLAN.md](../docs/W1_RESEARCH_PLAN.md).
+> Its practical numerical policy, latency accounting, W1Ax training preparation
+> and larger-data plan take precedence over the historical gates below. The
+> 96-prompt/500-step proposal is a smoke reference, not a sufficient full-body
+> QAT study. All GPU work is paused. Preserve the original arithmetic/capture
+> evidence and manifests; do not resume the target block-14 parity investigation.
+
 **Status:** CPU implementation and parity work in progress. The user has
 authorized use of the free RTX 5080 for needed capture and diagnostic work.
 The frozen 96-prompt native training capture is complete and audited, but its

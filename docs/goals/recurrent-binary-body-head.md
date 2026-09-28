@@ -1,16 +1,21 @@
 # Joint binary EAGLE body and head
 
-**Objective:** prepare a faithful W1A16 jointly trainable nine-linear EAGLE
-draft body and binary head, then evaluate it against Q4_0 EAGLE when a later
-user decision permits the required GPU work. The pinned FP16 target/verifier
-and draft vocabulary map stay frozen. [Trial protocol](../../experiments/recurrent-binary-qat-plan.md).
+**Objective (amended 2026-09-28):** complete Phase 1 of the
+[one-bit drafter plan](../W1_RESEARCH_PLAN.md): EAGLE W1 latency accounting and
+bounded runtime improvements, an efficient jointly trainable body/head pipeline
+for declared W1A16/A8/A4/A1 representations, and substantially expanded training
+data. Evaluate native draft quality and speed against Q4_0 when GPU work is
+explicitly permitted. Preserve the pinned FP16 target/verifier and draft map.
+This continues the existing goal rather than opening a second goal.
 
-**State (2026-09-28 UTC): active, parity and capture preparation; RTX 5080
-work paused at the user's availability notice.** The earlier authorization
-covered bounded capture/parity work, which has run there; no model training,
-final-set use, or model-quality result exists for this goal. The native Codex
-Goal in this task has the same objective; this file and `docs/STATUS.md` are
-the durable project checkpoint.
+**State: active CPU-only implementation and preparation; all GPU access paused.**
+The user requested a fresh team after the audit. No joint GPU training or final
+evaluation has run. The [fresh-team handoff](#fresh-team-handoff-eagle-w1-cpu-phase)
+and overarching plan supersede older next-action lists and the old numerical
+parity prerequisite. The original [trial protocol](../../experiments/recurrent-binary-qat-plan.md)
+is retained as historical design; the 96-prompt/500-step recipe is a smoke
+reference, not the enlarged full-body experiment. This file and STATUS.md remain
+the durable record.
 
 ## Current findings and work
 
@@ -1938,3 +1943,42 @@ broaden target-feature parity across representative training rows and
 later blocks before proposing a numeric/trajectory gate. While the
 5080 is paused, continue only CPU analysis and checkpoint work; do
 not start GPU jobs without an explicit availability update.
+
+## Fresh-team handoff: EAGLE W1 CPU phase
+
+The user's audit in chat `01a0e9aa-3619-7012-9b4a-e4002a36901a` changed the
+execution priority: account for actual drafter latency and avoidable work,
+finish practical joint QAT, and expand the data beyond 96 prompts. The user
+then requested a consolidated plan and a fresh team, explicitly **no GPU access**.
+The [overarching plan](../W1_RESEARCH_PLAN.md) is the controlling work breakdown.
+The forty-seventh-turn target-FFN investigation above is preserved as history
+and is not the next assignment.
+
+Starting state: parent `d111335` on clean main, predecessor checkpoint
+`5110257`, native submodule `21f617d4ef3f5dc383d3ab8dc619daaa87db7ff8`.
+The predecessor chat **Continue joint binary EAGLE parity**
+(`01a0e7b2-e75d-7c00-8ad8-3101a73d8409`) is idle. Its last reported supervised
+GPU run had exited and process group 417 was absent; tmux session `$33` was
+closed. No remote job is inherited. Both GPU host pause flags were set locally
+for this handoff; no remote availability check or model run was performed.
+
+CPU work starts immediately in parallel file partitions: native runtime and
+latency tooling; efficient device-configurable W1Ax joint trainer; larger-data
+ingestion/split and compact-teacher tools; Luna validation. Use a short Astra
+consultation for representation/gradient risks. The fresh coordinator owns
+integration and these durable records; it must register its chat and worker
+IDs, worktrees and owned files here before handing out conflicting edits.
+
+Reuse all previously audited capture, masks/cache, gradients and exporter
+work. Native captured target values are the teacher contract; no exact HF
+target reproduction is required. Keep structural correctness and practical
+native export/trajectory checks. The inherited 96-prompt eligibility flag
+requires a documented replacement readiness assessment, not silent editing.
+Preserve legacy final prompts unopened.
+
+Explicit remaining design work includes row versus group scale compatibility
+(group-128 currently runs only with A16), hard-label versus target-probability
+loss, prompt/token scaling, and later GPU budgets based on measured training
+step time. These do not block CPU implementation. No DFlash/DSpark work starts.
+Stop at a concrete GPU-only validation/training boundary with a reviewable
+checkpoint; do not create more open-ended numerical investigations.

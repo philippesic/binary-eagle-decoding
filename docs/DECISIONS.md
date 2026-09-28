@@ -1,5 +1,34 @@
 # Decision log
 
+## Active user direction: EAGLE W1 preparation (2026-09-28)
+
+The user requested the [overarching plan](W1_RESEARCH_PLAN.md) and a fresh team
+to start its EAGLE phase from the previous checkpoint, with **no GPU access**.
+This continues the existing body/head goal and authorizes CPU-only runtime
+implementation, latency accounting, reusable W1Ax QAT preparation and expanded
+data tooling. Both host pause flags are set. DFlash/DSpark remain future work.
+
+The user explicitly favors development speed over bit-exact cross-backend
+accuracy; this is recorded in AGENTS.md at `d111335`. Replace the old target
+block-14 investigation as a prerequisite with practical train/export numerical
+checks and later native acceptance measurements. Preserve masks, token ancestry,
+mapping and verifier correctness. Use native teacher data without requiring a
+second backend to reproduce every target value.
+
+The 96 training prompts are smoke/regression data, not a sufficient serious
+all-body QAT corpus. Prepare larger, diverse train/dev/final splits and compact
+teacher storage. Proposed sizes and estimates in the plan are configurable
+planning targets, not verified sufficiency or approved GPU execution budgets.
+Finalize the row/group scale comparison, objective and actual compute budget
+before GPU experiments; make independent CPU implementation progress meanwhile.
+
+The audit also distinguished one-bit W1A1 popcount from the current slow
+W1A16 sign-add implementation. Recorded amortized draft-only latency is not
+an isolated neural-forward time or a hardware lower bound. Runtime opportunities
+(shared packing, compact-vocabulary selection, device-state recurrence and
+eligible cache-update pruning) are source-supported but have no measured A/B
+gain yet; changes shared with Q4_0 must benefit that comparison path too.
+
 Record research or infrastructure forks when evidence could lead to different
 next steps. Keep the current decision and the reason; revisit when new data
 changes the tradeoff. Routine implementation choices belong in commits.
