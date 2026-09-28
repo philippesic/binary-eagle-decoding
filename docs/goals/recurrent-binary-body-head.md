@@ -1063,6 +1063,12 @@ preparation-only.
   CUDA/SM75. Exact whole-drafter parity, the user-owned numeric gate and
   all-body training budget remain open; no final prompt or Q4_0 evaluation
   ran.
+- The final diagnostic code and reports were checked from pushed `main`;
+  all focused CPU gates passed. The integrated temporary attention worktree
+  and its branch were retired after its content reached `main`. All raw
+  capture and diagnostic reports remain outside Git under the main
+  checkout's `results/` directory. No local server, GPU job or remote tmux
+  session is active for this work.
 
 **Next gate:** explain the remaining first-depth state drift after exact
 prose attention—beginning at attention output projection/residual and FFN
