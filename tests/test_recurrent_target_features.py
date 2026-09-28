@@ -7,13 +7,14 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from check_recurrent_target_features import WIDTH, _capture_metrics  # noqa: E402
+from check_recurrent_target_features import WIDTH, _capture_metrics, compare  # noqa: E402
 
 
 class TargetFeatureComparisonTests(unittest.TestCase):
@@ -69,6 +70,15 @@ class TargetFeatureComparisonTests(unittest.TestCase):
         self.assertGreater(metrics["18"]["max_relative_row_l2"], 0)
         self.assertEqual(metrics["2"]["max_abs"], 0)
         self.assertEqual(metrics["33"]["max_abs"], 0)
+
+    def test_cuda_mode_requires_cuda_before_loading_model(self):
+        with self.assertRaisesRegex(ValueError, "must be cpu or cuda"):
+            compare(self.directory, self.directory, self.directory, [self.directory], device="mps")
+        with mock.patch("torch.cuda.is_available", return_value=False):
+            with self.assertRaisesRegex(ValueError, "available CUDA device"):
+                compare(
+                    self.directory, self.directory, self.directory, [self.directory], device="cuda"
+                )
 
 
 if __name__ == "__main__":

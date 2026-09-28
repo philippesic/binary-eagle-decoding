@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""Compare native target-feature taps with an independent CPU Qwen3 forward.
+"""Compare native target-feature taps with an independent Qwen3 forward.
 
 The local BF16 source weights are rounded to F16; sampled tensors are checked
-against the pinned target GGUF before F32 CPU computation. This is a numeric
-diagnostic,
-not a proof of exact llama.cpp target parity or an accelerator result.
+against the pinned target GGUF. CPU mode computes in F32; CUDA mode computes
+in F16 on the selected device. Neither is exact llama.cpp arithmetic.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import platform
 import sys
 from pathlib import Path
 
@@ -98,6 +98,7 @@ def compare(
     capture_dirs: list[Path],
     *,
     threads: int = 8,
+    device: str = "cpu",
 ) -> dict:
     try:
         import transformers
@@ -106,6 +107,10 @@ def compare(
         raise ValueError("install transformers==4.57.1 for this CPU diagnostic") from error
     if not capture_dirs or type(threads) is not int or threads < 1:
         raise ValueError("one or more captures and positive CPU thread count are required")
+    if device not in {"cpu", "cuda"}:
+        raise ValueError("target-feature comparison device must be cpu or cuda")
+    if device == "cuda" and not torch.cuda.is_available():
+        raise ValueError("CUDA target-feature comparison requires an available CUDA device")
     torch.set_num_threads(threads)
     first_round = read_jsonl(capture_dirs[0] / "forced-rounds.jsonl")[0]
     prefix = first_round.get("prefix_token_ids")
@@ -116,15 +121,20 @@ def compare(
     model = Qwen3Model.from_pretrained(
         str(hf_model), local_files_only=True, dtype=torch.float16, attn_implementation="eager"
     )
-    model.to(device="cpu", dtype=torch.float32).eval()
+    compute_dtype = torch.float32 if device == "cpu" else torch.float16
+    model.to(device=device, dtype=compute_dtype).eval()
     with torch.no_grad():
-        tokens = torch.tensor([prefix], dtype=torch.long, device="cpu")
+        tokens = torch.tensor([prefix], dtype=torch.long, device=device)
         embedding = model.embed_tokens(tokens)[0].cpu().numpy()
-        gguf_embedding = np.stack([operands(int(token)).float().numpy() for token in prefix])
+        gguf_embedding = np.stack(
+            [operands(int(token)).to(compute_dtype).numpy() for token in prefix]
+        )
         if not np.array_equal(embedding, gguf_embedding):
             raise ValueError("F16-rounded HF prompt embedding differs from target GGUF")
         hidden = model(input_ids=tokens, output_hidden_states=True, use_cache=False).hidden_states
-        reference = np.concatenate([hidden[layer][0].cpu().numpy() for layer in TAPS], axis=1)
+        reference = np.concatenate(
+            [hidden[layer][0].float().cpu().numpy() for layer in TAPS], axis=1
+        )
     results = {}
     sources = {}
     for directory in capture_dirs:
@@ -137,12 +147,17 @@ def compare(
     index_path = hf_model / "model.safetensors.index.json"
     shards = sorted(set(json.loads(index_path.read_text())["weight_map"].values()))
     return {
-        "schema": "recurrent_target_feature_hf_cpu_comparison_v1",
-        "status": "independent_cpu_feature_drift_measured_parity_unproven",
-        "execution_device": "cpu",
+        "schema": f"recurrent_target_feature_hf_{device}_comparison_v1",
+        "status": f"independent_{device}_feature_drift_measured_parity_unproven",
+        "execution_device": device,
+        "device_name": torch.cuda.get_device_name(0) if device == "cuda" else platform.processor(),
         "transformers_version": transformers.__version__,
         "torch_version": torch.__version__,
-        "compute_dtype": "float32_from_f16_rounded_source_weights",
+        "compute_dtype": (
+            "float32_from_f16_rounded_source_weights"
+            if device == "cpu"
+            else "float16_from_f16_rounded_source_weights"
+        ),
         "prompt_tokens": len(prefix),
         "tap_layers": list(TAPS),
         "embedding_rows_exact": True,
@@ -166,6 +181,7 @@ def main() -> None:
     parser.add_argument("--candidate-d", type=Path, required=True)
     parser.add_argument("--capture-dir", type=Path, action="append", required=True)
     parser.add_argument("--threads", type=int, default=8)
+    parser.add_argument("--device", choices=("cpu", "cuda"), default="cpu")
     parser.add_argument("--report", type=Path, required=True)
     args = parser.parse_args()
     if args.report.exists():
@@ -176,6 +192,7 @@ def main() -> None:
         args.candidate_d,
         args.capture_dir,
         threads=args.threads,
+        device=args.device,
     )
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
