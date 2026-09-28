@@ -360,7 +360,8 @@ established.
   or Q4_0 performance run occurred. The native Goal stays active.
 - Fork commit `b4df1b547` was pushed to the user's llama.cpp fork before
   the parent gitlink update. The final diagnostic server process stopped
-  with return code zero; no remote session or GPU owner exists.
+  with return code zero; no remote session or GPU owner exists. Parent
+  integration commit `2c9dce2` is pushed to `main` with that gitlink.
 
 **Published checkpoints:** `7744d8e` created the goal/protocol; `1e3742d`
 integrated the trace contract; `a4dd003` integrated learned GGUF export;
