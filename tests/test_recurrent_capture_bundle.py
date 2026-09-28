@@ -36,6 +36,8 @@ class RecurrentCaptureBundleTests(unittest.TestCase):
         self.addCleanup(native.doCleanups)
         self.native = native
         self.prompt_hash = sha256(native.prompts)
+        self.target_hash = "a" * 64
+        self.draft_hash = "b" * 64
         self.root = native.root
         self.feature_events = self.root / "target_features.jsonl"
         self.feature_values = self.root / "target_features.f32"
@@ -87,6 +89,8 @@ class RecurrentCaptureBundleTests(unittest.TestCase):
     def _make_prepared(self) -> None:
         # Simulate a completed cell recording all raw source file hashes.
         cell = json.loads(self.native.cell.read_text())
+        cell["target_sha256"] = self.target_hash
+        cell["draft_sha256"] = self.draft_hash
         cell["files"].update(
             {
                 path.name: {"bytes": path.stat().st_size, "sha256": sha256(path)}
@@ -108,6 +112,7 @@ class RecurrentCaptureBundleTests(unittest.TestCase):
             expected_prompt_hash=self.prompt_hash,
             expected_prompt_count=2,
         )
+        self.map_raw_hash = result[-1]["absolute_map_raw_sha256"]
         write_prepared(self.rows_dir, result)
         prepare_native_features(
             self.feature_events,
@@ -133,12 +138,16 @@ class RecurrentCaptureBundleTests(unittest.TestCase):
             continuity_report=continuity_report,
             expected_prompt_hash=self.prompt_hash,
             expected_prompt_count=2,
+            expected_target_hash=self.target_hash,
+            expected_draft_hash=self.draft_hash,
+            expected_map_raw_hash=self.map_raw_hash,
         )
 
     def test_builds_self_contained_audited_preparation_only_bundle(self):
         result = self.build()
         manifest = json.loads(result["manifest"].read_text())
         self.assertFalse(manifest["training_eligible"])
+        self.assertTrue(manifest["pinned_source_artifact_hashes_verified"])
         self.assertEqual(manifest["readiness"], "preparation_only")
         self.assertIn("cross_round_acceptance_ancestry", manifest["unverified_gates"])
         self.assertEqual(result["audit"]["raw_target_logit_rows"], 1)
@@ -199,6 +208,27 @@ class RecurrentCaptureBundleTests(unittest.TestCase):
         report_path.write_text(json.dumps(original))
         self.native.prompts.write_text(self.native.prompts.read_text() + "\n")
         with self.assertRaisesRegex(ValueError, "frozen train prompts"):
+            self.build()
+
+    def test_rejects_wrong_pinned_artifact_identity(self):
+        cell = json.loads(self.native.cell.read_text())
+        cell["target_sha256"] = "0" * 64
+        self.native.cell.write_text(json.dumps(cell))
+        with self.assertRaisesRegex(ValueError, "pinned target"):
+            self.build()
+        cell["target_sha256"] = self.target_hash
+        cell["draft_sha256"] = "0" * 64
+        self.native.cell.write_text(json.dumps(cell))
+        with self.assertRaisesRegex(ValueError, "pinned target"):
+            self.build()
+        cell["draft_sha256"] = self.draft_hash
+        self.native.cell.write_text(json.dumps(cell))
+        report_path = self.rows_dir / "preparation.json"
+        report = json.loads(report_path.read_text())
+        report["absolute_map_raw_sha256"] = "0" * 64
+        report["source_sha256"]["cell_manifest"] = sha256(self.native.cell)
+        report_path.write_text(json.dumps(report))
+        with self.assertRaisesRegex(ValueError, "pinned target"):
             self.build()
 
     def test_rejects_missing_logits_features_and_truncated_payload(self):

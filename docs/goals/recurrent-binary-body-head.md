@@ -67,7 +67,7 @@ file and `docs/STATUS.md` are the durable project checkpoint.
   positions are `P+1`, `P+2`; invalid terminal rows create no decoder call. This checks the
   training interface, not actual EAGLE mask or K/V byte parity.
 
-**Latest CPU checks:** 72 recurrent tests, 16 capture-runner tests, seven explicit decoder-step tests,
+**Latest CPU checks:** 73 recurrent tests, 16 capture-runner tests, seven explicit decoder-step tests,
 five frozen-operand tests, eight native loader fixtures, eight existing
 scale-fitting tests, Ruff
 lint/format and `git diff --check` pass. No local Metal/MPS or CUDA
@@ -230,12 +230,18 @@ this goal.
   complete requests or numerical target features.
 - The bundle builder in `be0e2af` joins cell-owned raw capture hashes, both
   preparer outputs and the final CPU capture audit. An optional continuity
-  report must name the same round, event and task-map sources. Its output is
+  report must name the same round, event and task-map sources. A subsequent
+  provenance gate checks pinned target/draft file hashes and the canonical
+  little-endian D map digest. Its output is
   explicitly `training_eligible: false` because runtime feature parity,
   full-drafter numerical/cache parity and live model evidence remain open.
-  The combined focused checks pass: 72 recurrent tests and 16 capture-runner
+  The combined focused checks pass: 73 recurrent tests and 16 capture-runner
   tests, Ruff and diff hygiene. No accelerator, GPU host, native model
   inference, training or final-set use occurred.
+- Parent commits `3454f7a`, `be0e2af` and `7f10643` are pushed to `main`.
+  The two temporary capture worktrees were clean; their content matched the
+  pushed integration and their worktrees/branches were retired. No native
+  submodule revision or gitlink changed in this turn.
 
 This is the **sixth consecutive goal turn** under the no-GPU restriction.
 Meaningful CPU work closed the offline assembly and internal continuity

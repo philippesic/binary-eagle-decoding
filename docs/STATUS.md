@@ -64,8 +64,9 @@ continuity audit checks complete captured prefill, every speculative input,
 the accepted-prefix retention rule and consecutive round prefixes/seeds;
 initial sampling, terminal emission and request completeness remain
 unverified. A bundle builder joins both native preparers and the final
-capture audit and always marks output `training_eligible: false`. The
-focused 72 recurrent and 16 capture-runner CPU tests pass. No real-model
+capture audit, checks pinned target/draft hashes and the D map digest, and
+always marks output `training_eligible: false`. The focused 73 recurrent
+and 16 capture-runner CPU tests pass. No real-model
 capture, training, accelerator or Q4_0 quality/throughput gate ran.
 
 **Current milestone:** the [final rescue/readout report](../experiments/binary-rescue-head-5080.md) records a negative result against Q4_0 EAGLE. Q4_0 reached 1.042 accepted drafts/round and 135.1 full-request tokens/s; the admitted attention+fusion Q8_0 rescue reached 0.696 and 83.3 (0.616×), and the fitted frozen-D-body FP16 head reached 0.555 and 60.8 (0.450×). All 120 primary measured raw outputs per path matched Q4_0 and target-only. The 264-request speculative round calibration, 92 graph-verified server blocks across final primary/diagnostic runs, and separate six-prompt longer-context comparison are complete. The longer-context client rates were 127.0 Q4_0, 68.5 combined rescue, 47.1 fitted head and 93.8 target-only tokens/s. Neither endpoint beat target-only. Full raw results, logs, binaries and model artifacts are indexed in the remote archive named in the report. Final RTX 5080 check found no owned process or compute app, 1,916 MiB whole-device use and 0% utilization. The user owns any future body-aware QAT or final-set decision; none was started.

@@ -25,6 +25,11 @@ from audit_recurrent_binary_capture import (
     sha256,
 )
 from prepare_recurrent_native_rows import MAX_DEPTH
+from run_binary_head_capture import (
+    DRAFT_D_D2T_SHA256,
+    DRAFT_D_SHA256,
+    TARGET_F16_SHA256,
+)
 
 FILES = {
     "rows": ("rows.jsonl", "rows.jsonl"),
@@ -129,6 +134,9 @@ def build_bundle(
     continuity_report: Path | None = None,
     expected_prompt_hash: str = TRAIN_PROMPTS_SHA256,
     expected_prompt_count: int = TRAIN_PROMPTS,
+    expected_target_hash: str = TARGET_F16_SHA256,
+    expected_draft_hash: str = DRAFT_D_SHA256,
+    expected_map_raw_hash: str = DRAFT_D_D2T_SHA256,
 ) -> dict:
     """Create a self-contained, audited, explicitly non-trainable bundle."""
     rows_dir = Path(rows_dir)
@@ -150,6 +158,12 @@ def build_bundle(
     )
     cell = _json_object(cell_manifest, "binary_head_capture_cell_v1")
     _verify_cell(cell, prompt_hash, prompt_ids)
+    if (
+        cell.get("target_sha256") != expected_target_hash
+        or cell.get("draft_sha256") != expected_draft_hash
+        or rows_report.get("absolute_map_raw_sha256") != expected_map_raw_hash
+    ):
+        raise ValueError("capture does not have pinned target, draft and D map identity")
     cell_hash = sha256(cell_manifest)
     if (
         rows_report.get("split") != "train"
@@ -246,8 +260,9 @@ def build_bundle(
             "max_depth": MAX_DEPTH,
             "training_eligible": False,
             "readiness": "preparation_only",
+            "pinned_source_artifact_hashes_verified": True,
             "unverified_gates": [
-                "pinned_target_and_draft_model_identity",
+                "native_model_execution_identity",
                 "native_target_feature_numeric_parity",
                 "full_drafter_mask_position_and_kv_parity",
                 (

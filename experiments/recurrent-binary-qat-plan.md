@@ -142,9 +142,11 @@ input/disposition and successive accepted prefixes against canonical round
 records. It deliberately leaves the initial target sample, terminal emission,
 stopping, request completeness and numerical feature values unproved.
 `scripts/build_recurrent_capture_bundle.py` joins the cell and preparer
-hashes, runs the final CPU capture audit and publishes a self-contained
+hashes, checks pinned target/draft file hashes and the canonical D map
+digest, runs the final CPU capture audit and publishes a self-contained
 preparation bundle marked `training_eligible: false`. No current CPU result
-certifies native training eligibility or model quality.
+certifies what a future server executed, native training eligibility or model
+quality.
 
 ## Bounded proposed first trial and stop gates
 

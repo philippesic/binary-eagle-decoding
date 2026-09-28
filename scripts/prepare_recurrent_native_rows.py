@@ -443,6 +443,9 @@ def prepare(
         "split": "train",
         "prompts_sha256": expected_prompt_hash,
         "source_sha256": sources,
+        "absolute_map_raw_sha256": hashlib.sha256(
+            np.asarray(np.load(absolute_map_path, allow_pickle=False), dtype="<i8").tobytes()
+        ).hexdigest(),
         "target_vocab_size": target_vocab_size,
         "draft_vocab_size": len(offsets),
         "rounds": len(anchors),
