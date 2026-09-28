@@ -149,20 +149,19 @@ def audit_feature_ledger(
     }
 
 
-def attach_raw_target_logits(rows: list[dict], path: Path, target_vocab_size: int) -> int:
-    """Join bounded native target F32 rows, rejecting draft-head logit files."""
+def validate_raw_target_logit_rows(rows: list[dict], path: Path, target_vocab_size: int) -> int:
+    """Join native logit row indices without materializing vocabulary vectors."""
     row_bytes = target_vocab_size * 4
     size = path.stat().st_size
     if target_vocab_size < 1 or size < row_bytes or size % row_bytes:
         raise ValueError("raw target logits payload size is incompatible with target vocabulary")
     count = size // row_bytes
-    values = np.memmap(path, mode="r", dtype="<f4", shape=(count, target_vocab_size))
     used = set()
     for row in rows:
         index = row.get("target_logits_row")
+        if row.get("verifier_logits") is not None:
+            raise ValueError("inline verifier logits are not a native target-logit join")
         if index is None:
-            if row.get("verifier_logits") is not None:
-                raise ValueError("inline verifier logits are not a native target-logit join")
             continue
         if (
             type(index) is not int
@@ -174,11 +173,30 @@ def attach_raw_target_logits(rows: list[dict], path: Path, target_vocab_size: in
         ):
             raise ValueError("raw target logits row, source or valid mask mismatch")
         used.add(index)
-        row["verifier_logits"] = np.asarray(values[index]).tolist()
-        row["verifier_logits_source"] = VERIFIER_LOGITS_SOURCE
     if used != set(range(count)):
         raise ValueError("raw target logits contain unjoined or duplicated rows")
     return count
+
+
+def streamed_mapped_probability_mass(
+    path: Path, count: int, target_vocab_size: int, target_to_draft: tuple[int, ...]
+) -> float:
+    """Compute diagnostic mapped mass in bounded F64 batches over raw F32 rows."""
+    values = np.memmap(path, mode="r", dtype="<f4", shape=(count, target_vocab_size))
+    mapped_ids = np.flatnonzero(np.asarray(target_to_draft) >= 0)
+    total = 0.0
+    for start in range(0, count, 16):
+        batch = np.asarray(values[start : start + 16], dtype=np.float64)
+        if np.isnan(batch).any() or np.isposinf(batch).any():
+            raise ValueError("invalid verifier logits")
+        maxima = batch.max(axis=1)
+        if not np.isfinite(maxima).all():
+            raise ValueError("verifier logits have zero probability mass")
+        batch -= maxima[:, None]
+        np.exp(batch, out=batch)
+        masses = batch[:, mapped_ids].sum(axis=1) / batch.sum(axis=1)
+        total += float(masses.sum())
+    return total / count
 
 
 def audit_capture(
@@ -214,6 +232,7 @@ def audit_capture(
         files[field] = path
     rows = read_jsonl(files["rows"])
     target_logit_rows = 0
+    target_logit_path = None
     if "target_logits" in manifest:
         record = manifest["target_logits"]
         if not isinstance(record, dict) or set(record) != {"path", "sha256"}:
@@ -222,7 +241,10 @@ def audit_capture(
         if sha256(path) != record["sha256"]:
             raise ValueError("target_logits SHA256 mismatch")
         files["target_logits"] = path
-        target_logit_rows = attach_raw_target_logits(rows, path, manifest["target_vocab_size"])
+        target_logit_rows = validate_raw_target_logit_rows(
+            rows, path, manifest["target_vocab_size"]
+        )
+        target_logit_path = path
     elif any(
         row.get("target_logits_row") is not None or row.get("verifier_logits") is not None
         for row in rows
@@ -255,20 +277,29 @@ def audit_capture(
         set(prompt_ids),
         manifest["target_vocab_size"],
     )
-    observed_mass = [mass for mass in trace.mapped_probability_mass if mass is not None]
+    mapped_mass_mean = (
+        streamed_mapped_probability_mass(
+            target_logit_path,
+            target_logit_rows,
+            manifest["target_vocab_size"],
+            trace.target_to_draft,
+        )
+        if target_logit_path is not None
+        else None
+    )
+    counts = dict(trace.counts)
+    counts["logit_rows"] = target_logit_rows
     return {
         "schema": "recurrent_binary_capture_audit_v1",
         "execution_device": "cpu",
         "capture_manifest_sha256": sha256(manifest_path),
         "training_prompts_sha256": expected_prompt_hash,
         "source_sha256": {field: sha256(path) for field, path in files.items()},
-        "counts": trace.counts,
+        "counts": counts,
         "per_depth": trace.per_depth,
         "feature_ledger": feature_ledger,
         "raw_target_logit_rows": target_logit_rows,
-        "mapped_probability_mass_mean_on_sampled_logit_rows": (
-            sum(observed_mass) / len(observed_mass) if observed_mass else None
-        ),
+        "mapped_probability_mass_mean_on_sampled_logit_rows": mapped_mass_mean,
         "real_model_feature_and_kv_parity": "unverified",
     }
 

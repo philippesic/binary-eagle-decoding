@@ -21,6 +21,7 @@ from audit_recurrent_binary_capture import (  # noqa: E402
     audit_capture,
     load_audited_capture,
     sha256,
+    streamed_mapped_probability_mass,
 )
 
 from w1a1_eagle.recurrent_rollout import DraftStep, rebuild_prefix_cache  # noqa: E402
@@ -139,6 +140,29 @@ class RecurrentCaptureAuditTests(unittest.TestCase):
         self.assertEqual(report["feature_ledger"]["rows"], 2)
         self.assertEqual(report["feature_ledger"]["tap_ids"], FEATURE_TAPS)
         self.assertEqual(report["raw_target_logit_rows"], 1)
+
+    def test_streamed_raw_logits_reject_nonfinite_and_zero_mass_rows(self):
+        for value, message in (
+            (np.nan, "invalid verifier logits"),
+            (np.inf, "invalid verifier logits"),
+            (-np.inf, "zero probability mass"),
+        ):
+            with self.subTest(value=value):
+                self.save()
+                self.target_logits.write_bytes(np.full(8, value, dtype="<f4").tobytes())
+                manifest = json.loads(self.manifest.read_text())
+                manifest["target_logits"]["sha256"] = sha256(self.target_logits)
+                self.manifest.write_text(json.dumps(manifest))
+                with self.assertRaisesRegex(ValueError, message):
+                    audit_capture(self.manifest, self.prompts, self.prompt_hash)
+
+    def test_mapped_mass_streams_across_batch_boundary(self):
+        np.zeros((17, 8), dtype="<f4").tofile(self.target_logits)
+        target_to_draft = (-1, -1, 0, -1, 1, 2, -1, -1)
+        self.assertAlmostEqual(
+            streamed_mapped_probability_mass(self.target_logits, 17, 8, target_to_draft),
+            3 / 8,
+        )
 
     def test_audited_round_loads_prefix_features_for_rebuild(self):
         loaded = load_audited_capture(self.manifest, self.prompts, self.prompt_hash)
