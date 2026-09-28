@@ -176,11 +176,11 @@ def probe(
         input_half = torch.from_numpy(native_norm.astype("<f2")).to(device="cuda")
         weight_half = torch.from_numpy(weight).to(device="cuda")
         torch_raw = F.linear(input_half, weight_half).reshape(TOKENS, HEADS, HEAD_WIDTH)
-        torch_norm = F.rms_norm(
-            torch_raw,
-            (HEAD_WIDTH,),
-            torch.from_numpy(norm_weight.astype("<f2")).to(device="cuda"),
-            eps=1e-6,
+        # Match Qwen3RMSNorm's F32 variance and cast-before-weight order.
+        variance = torch_raw.float().pow(2).mean(-1, keepdim=True)
+        normalized = torch_raw.float() * torch.rsqrt(variance + 1e-6)
+        torch_norm = torch.from_numpy(norm_weight.astype("<f2")).to(device="cuda") * (
+            normalized.to(torch_raw.dtype)
         )
         torch_raw_cpu = torch_raw.float().cpu().numpy().reshape(TOKENS, K_WIDTH)
         torch_output = torch_norm.float().cpu().numpy().reshape(TOKENS, K_WIDTH)
