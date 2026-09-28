@@ -1251,3 +1251,44 @@ sealed CPU reasoning capture and preserve the no-optimizer boundary.
 RoPE arithmetic, then recompute first-depth attention/state with corrected
 cache operands. This one-prefix CPU result is not CUDA/SM75 evidence or a
 training tolerance.
+
+## Thirtieth goal turn: exact CPU RoPE and first-seed intervention
+
+- Commit `52eb4f9` adds a bounded [ggml CPU key RoPE
+  oracle](../../experiments/recurrent-binary-reasoning-rope-oracle.md).
+  The native graph operator, on the identical 46 context raw K vectors,
+  matches all **47,104/47,104** captured F32 rotated keys and actual
+  stored F16 keys bitwise. The prior ordered FC/K/V replay matched those
+  raw K vectors and all context V writes; the seed K/V write already
+  matched. Together these boundaries account for the full first-round
+  47-position draft cache (48,128/48,128 F16 keys and values). The
+  ignored RoPE report SHA256 is
+  `cf99b7bf89847a692800e8dc1c6870bd7e862476abeaa57fa3d9c1d5334a9f88`.
+- Commit `e6f5c85` adds a [first-seed corrected-cache
+  intervention](../../experiments/recurrent-binary-reasoning-seed-intervention.md).
+  The ordered candidate-D CPU seed with the actual native K/V cache and
+  pinned ggml attention helper matches attention output, FFN input and
+  post-attention norm bitwise. Its ordinary Torch SiLU leaves the FFN
+  output 5/2,560 exact (max `6.1035e-5`) and normalized head state
+  5/2,560 exact (max `5.9009e-6`). Calling the pinned ggml vector SiLU
+  on the same exact gate makes all gate/up/SiLU/product stages
+  **9,728/9,728**, down/pre-norm/head state **2,560/2,560**, and eight
+  captured draft-logit probes plus argmax/label logits bitwise exact.
+  The mapped argmax target ID is 1477 and verifier-label rank is 4 in
+  both paths. The ignored seed report SHA256 is
+  `54c095813d5ea704f5b152b59b25dfb2c2e90a7d790fd0f68f11a2cc4909d9ed`.
+- Both real-input CPU probes passed, as did Ruff lint/format. The RoPE
+  helper links the same hashed ggml CPU library as the earlier attention
+  ablation. No default student forward, training derivative, model weight
+  or frozen capture was changed. No local server, GPU job, optimizer,
+  target forward, final prompt or Q4_0 evaluation ran. The RTX 5080 is
+  free. This is an **intervention on one Apple M3 Max CPU first seed**,
+  not native whole-drafter/CUDA/SM75 parity or full-vocabulary logit proof.
+  The user still owns exact versus numeric/trajectory acceptance and any
+  all-body optimizer budget.
+
+**Next gate:** test a multi-depth CPU proposal trajectory with ordered
+binary projections and pinned native attention, RoPE and SiLU, including
+cache writes and mapped draft logits. Separate the diagnostic native
+forward from its F32 surrogate backward. Do not train or open final/Q4_0
+gates before the user-owned numeric policy and optimizer budget.

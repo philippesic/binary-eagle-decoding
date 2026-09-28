@@ -6,20 +6,19 @@ The target/verifier model precision remains as frozen for each experiment.
 
 **Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), parity and capture preparation. The user has authorized the free RTX 5080 for needed work; no all-body training budget has been approved. **Latest completed goal:** [mixed precision rescue and frozen-body head adaptation on RTX 5080](goals/binary-rescue-head-5080.md), completed 2026-09-28 UTC. The preceding [binary scale fitting goal](goals/binary-scale-fitting-5080.md) completed 2026-09-27 UTC.
 
-**Latest checkpoint (2026-09-28 UTC):** the sealed Apple M3 Max CPU
-reasoning-prefix replay matched all 46 context `g_norm`, fused input, raw
-K and raw V F32 values with ordered FC and K/V arithmetic. The grouped
-student had 14 fused-input F16 threshold differences, yielding 70 key
-and 66 value stored-cache differences across 47 positions. Ordered replay
-reduced these to three F16 key differences after RoPE at positions 15,
-20 and 40; values match throughout. The
-[cache-boundary report](../experiments/recurrent-binary-reasoning-cache-boundary.md)
-and [goal checkpoint](goals/recurrent-binary-body-head.md#twenty-ninth-goal-turn-reasoning-cache-projection-boundary)
-record hashes and limits. The earlier [SiLU](../experiments/recurrent-binary-silu-arithmetic.md)
-and [downstream FFN](../experiments/recurrent-binary-ffn-native-silu.md)
-reports close the first-seed FFN arithmetic on one CPU column. No worker,
-local server or remote job is active; the 5080 is free. Training, final-set
-and Q4_0 evaluation remain gated.
+**Latest checkpoint (2026-09-28 UTC):** a pinned ggml CPU RoPE graph matched
+all 47,104 reasoning context key outputs in F32 and their actual F16 cache
+bytes; the seed row was already exact. In a corrected-cache first-seed
+intervention, ggml attention, FFN input, vector SiLU, every FFN stage and
+the normalized head state matched native bitwise. Eight captured head-logit
+probes and the argmax/label logits also matched. The
+[RoPE report](../experiments/recurrent-binary-reasoning-rope-oracle.md),
+[seed report](../experiments/recurrent-binary-reasoning-seed-intervention.md)
+and [goal checkpoint](goals/recurrent-binary-body-head.md#thirtieth-goal-turn-exact-cpu-rope-and-first-seed-intervention)
+record evidence and limits. This is one Apple M3 Max CPU prefix and seed;
+multi-depth trajectory and CUDA/SM75 parity remain open. No worker, local
+server or remote job is active; the 5080 is free. Training, final-set and
+Q4_0 evaluation remain gated.
 
 **Prior CPU arithmetic checkpoint (2026-09-28 UTC):** corrected CPU RMS norm and RoPE
 frequency arithmetic matched all 619,520 F16 fused-input and 123,904 raw
