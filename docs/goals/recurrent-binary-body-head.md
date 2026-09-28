@@ -2153,6 +2153,16 @@ checkpoint; do not create more open-ended numerical investigations.
   coexist. Current v1 bundle re-audit requires raw logits, so the planner
   explicitly prohibits raw retirement; full-tier storage remains an open
   capture-schema decision, not a solved compact-storage claim.
+- The five-script manifest-aware capture extension `71f152f` was reviewed,
+  integrated as main `a18e5a9` and pushed. Runner, native row/feature
+  preparers, bundle builder and independent auditor now accept explicit frozen
+  prompt SHA/count with old 96 defaults preserved. The runner binds an ordered
+  shard manifest and enforces full raw target-logit coverage; the bundle embeds
+  the shard manifest and retains raw bytes with retirement prohibited. The
+  independent audit checks embedded provenance and hard row/byte caps. On main,
+  35 affected synthetic CPU tests and Ruff passed. The [shard runbook](../../experiments/w1ax-sharded-capture-plan.md)
+  command was corrected in `6e8a58d` to pass `--shard-manifest` to the bundle
+  builder. No model capture or GPU run has tested these new CLI paths.
 - Boundaries: legacy final-set contents stay sealed; the 96-prompt capture is
   smoke/regression evidence only. Group-128/A16 and row-scale W1Ax are distinct
   representation contracts. GPU timing, capture and training wait for explicit

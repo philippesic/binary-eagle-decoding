@@ -42,7 +42,7 @@ state/cache gradients in CPU fixtures. The concrete future-capture factory is
 integrated as `83e72d6`; it still awaits eligible larger captures. A guarded
 device-aware Torch rollout is integrated as `4d0684d`; bounded raw-logit
 sharding is integrated as `08c70b0` (65 capped train shards), and the
-capture-tool prompt-contract extension is active CPU work. The v1 bundle still
+capture-tool prompt-contract extension is integrated as `a18e5a9`. The v1 bundle still
 requires raw logits for re-audit; the full-tier compact/label-only storage
 choice is recorded in [DECISIONS.md](DECISIONS.md#phase-1a-implementation-defaults-and-pending-research-choices).
 Native training quality and throughput remain unmeasured.
