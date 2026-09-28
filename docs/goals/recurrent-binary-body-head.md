@@ -1722,3 +1722,48 @@ with the safe FFN-input residual tap on the same sealed prefix. Replay
 the attention and output projection under pinned ggml CUDA and Torch
 controls, requiring exact native output before attributing backend
 arithmetic.
+
+## Forty-second goal turn: native-QKV Torch attention intervention
+
+- Commits `724b70d` and `1d90531` add a bounded source-Qwen3 eager
+  [attention intervention](../../experiments/recurrent-target-attention-intervention.md)
+  on the frozen 29-token training prefix. The runner joins five
+  output-preserving native captures (attention norm, post-RoPE Q/K,
+  V and `ffn_inp-0`) with matching target GGUF/CUDA identities and
+  audits seven source weights. A full HF CUDA/F16 forward supplies the
+  exact block-0 causal mask, rotary cos/sin and attention input. A
+  manual source-module replay matches its own **74,240/74,240**
+  block-0 residual F16 values bitwise, satisfying the HF fidelity
+  gate. The isolated Q and V same-input controls reproduce their
+  earlier reports.
+- Against the safe native F32 `ffn_inp-0`, position-3 relative row L2
+  is **0.2547%** for the loaded HF forward, **0.2434%** with native
+  attention-norm input but source Q/K/V, and **0.2048%** after
+  substituting safe native post-RoPE Q/K and V cast to F16. The
+  corresponding median row errors are 0.2269%, 0.2257% and 0.2038%.
+  Projection substitution reduces error but leaves a material
+  attention/residual difference. It cannot be assigned solely to
+  Flash Attention because the Torch path casts native Q to F16 and
+  retains Torch eager attention, F16 output projection and F16
+  residual arithmetic.
+- The loaded HF model's rotary inverse-frequency buffer is F16,
+  while a fresh isolated Qwen3 rotary module's is F32. Their cosines
+  match 3,264/3,712 F16 values, maximum gap `0.00439453125`.
+  The corrected run accounts for this and reproduces the earlier
+  isolated Q control. Its ignored report at
+  `checkouts/target-block0-operator-20260928/runs/target-attention-intervention-b-20260928/comparison.json`
+  has SHA256 `9b125cb4c8f73eade7bfc1127495479ac88e4ff7d1fbfae097337be30d9b46d8`.
+  The first attempt is preserved as a diagnostic control mismatch.
+  The final supervised RTX 5080/SM120 process exited zero and stopped;
+  GPU use returned to 0% and 1,372 MiB whole-device baseline. Ruff,
+  Python compilation and diff checks passed. No optimizer, final
+  prompt or Q4_0 serving evaluation ran. This single prefix does not
+  set a training tolerance, prove later-block parity or validate
+  SM75 performance; the full96 capture remains training-ineligible.
+
+**Next gate:** replay pinned ggml CUDA Flash Attention and output
+projection on the same safe Q/K/V operands, requiring the native
+attention-residual tap as a fidelity gate. Quantify separately the
+effects of F32 Q versus F16 casting, F16 K/V cache storage and
+output-projection backend arithmetic. The exact/numeric policy and
+all-body optimizer budget remain user-owned.

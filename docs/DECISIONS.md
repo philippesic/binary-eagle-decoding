@@ -397,6 +397,20 @@ Flash Attention/output-projection arithmetic or justify either a
 training tolerance or optimizer budget. See the [safe K-RoPE
 report](../experiments/recurrent-target-k-rope-safe.md).
 
+**Same-input attention evidence (2026-09-28):** a source-Qwen3
+CUDA/F16 eager replay matches its full-model block-0 residual
+74,240/74,240 F16 values bitwise. Replacing source Q/K/V with
+output-preserving native post-RoPE Q/K and V cast to F16 reduces the
+frozen position-3 residual error from 0.2547% to 0.2048%, leaving a
+material gap. The remaining difference cannot be assigned solely to
+Flash Attention: Q casting, F16 output projection and residual
+arithmetic also differ from native ggml. The loaded HF model's rotary
+frequency buffer is F16; the earlier isolated Q control used F32,
+and both variants are reproduced. Continue exact same-input attention
+and output-projection attribution before selecting a target-feature
+numeric/trajectory gate or requesting an all-body budget. See the
+[attention report](../experiments/recurrent-target-attention-intervention.md).
+
 **Exact-prefix row clarification (2026-09-28):** the native verifier computes
 target logits for every proposed prefix in a speculative batch, and the cloned
 sampler advances along each proposed token even after an earlier live
