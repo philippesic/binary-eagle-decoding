@@ -33,6 +33,7 @@ def row(depth: int, prefix: list[int], *, label: int = 4, proposal: int = 6) -> 
         "alignment_valid": True,
         "is_bonus": False,
         "valid": True,
+        "verifier_reached": True,
         "invalid_reason": None,
         "label_source": LABEL_SOURCE,
         "verifier_token_id": label,
@@ -60,10 +61,12 @@ class RecurrentTraceTests(unittest.TestCase):
             row(1, [0, 1, 3, 6], label=7, proposal=5),
             row(2, [0, 1, 3, 6, 5], label=2, proposal=4),
         ]
+        rows[2]["verifier_reached"] = False
         result = self.audit(rows)
         self.assertEqual(result.target_to_draft, (-1, -1, 0, -1, 1, 2, -1, -1))
         self.assertEqual(result.draft_labels, (1, -1, 0))
         self.assertEqual(result.ce_mask, (True, False, True))
+        self.assertEqual(result.reached_mask, (True, True, False))
         self.assertEqual(result.denominator_mask, (True, True, True))
         self.assertEqual(result.counts["unsupported"], 1)
         self.assertEqual(result.per_depth[1]["valid"], 1)
@@ -73,6 +76,7 @@ class RecurrentTraceTests(unittest.TestCase):
         terminal = row(1, [0, 1, 3, 6])
         terminal.update(
             valid=False,
+            verifier_reached=False,
             invalid_reason="pruned",
             verifier_token_id=None,
             proposed_token_id=None,
@@ -139,6 +143,7 @@ class RecurrentTraceTests(unittest.TestCase):
         bad = dict(
             first,
             valid=False,
+            verifier_reached=False,
             invalid_reason="padding",
             label_supported=False,
             verifier_token_id=None,

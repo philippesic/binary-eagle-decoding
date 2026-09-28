@@ -21,7 +21,11 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from w1a1_eagle.recurrent_trace import RoundAnchor, validate_recurrent_trace  # noqa: E402
+from w1a1_eagle.recurrent_trace import (  # noqa: E402
+    VERIFIER_LOGITS_SOURCE,
+    RoundAnchor,
+    validate_recurrent_trace,
+)
 
 TRAIN_PROMPTS_SHA256 = "80e365bbc6d2caf4abd5e216e53d72ce62d80f9cf1a668e6862efb845a185e74"
 TRAIN_PROMPTS = 96
@@ -145,6 +149,38 @@ def audit_feature_ledger(
     }
 
 
+def attach_raw_target_logits(rows: list[dict], path: Path, target_vocab_size: int) -> int:
+    """Join bounded native target F32 rows, rejecting draft-head logit files."""
+    row_bytes = target_vocab_size * 4
+    size = path.stat().st_size
+    if target_vocab_size < 1 or size < row_bytes or size % row_bytes:
+        raise ValueError("raw target logits payload size is incompatible with target vocabulary")
+    count = size // row_bytes
+    values = np.memmap(path, mode="r", dtype="<f4", shape=(count, target_vocab_size))
+    used = set()
+    for row in rows:
+        index = row.get("target_logits_row")
+        if index is None:
+            if row.get("verifier_logits") is not None:
+                raise ValueError("inline verifier logits are not a native target-logit join")
+            continue
+        if (
+            type(index) is not int
+            or not 0 <= index < count
+            or index in used
+            or row.get("target_logits_dim") != target_vocab_size
+            or row.get("target_logits_source") != VERIFIER_LOGITS_SOURCE
+            or row.get("valid") is not True
+        ):
+            raise ValueError("raw target logits row, source or valid mask mismatch")
+        used.add(index)
+        row["verifier_logits"] = np.asarray(values[index]).tolist()
+        row["verifier_logits_source"] = VERIFIER_LOGITS_SOURCE
+    if used != set(range(count)):
+        raise ValueError("raw target logits contain unjoined or duplicated rows")
+    return count
+
+
 def audit_capture(manifest_path: Path, prompts_path: Path, expected_prompt_hash: str) -> dict:
     manifest = json.loads(manifest_path.read_text())
     if not isinstance(manifest, dict) or manifest.get("schema") != "recurrent_binary_capture_v1":
@@ -171,6 +207,21 @@ def audit_capture(manifest_path: Path, prompts_path: Path, expected_prompt_hash:
             raise ValueError(f"{field} SHA256 mismatch")
         files[field] = path
     rows = read_jsonl(files["rows"])
+    target_logit_rows = 0
+    if "target_logits" in manifest:
+        record = manifest["target_logits"]
+        if not isinstance(record, dict) or set(record) != {"path", "sha256"}:
+            raise ValueError("invalid target_logits file record")
+        path = _owned_file(manifest_path.parent, record["path"])
+        if sha256(path) != record["sha256"]:
+            raise ValueError("target_logits SHA256 mismatch")
+        files["target_logits"] = path
+        target_logit_rows = attach_raw_target_logits(rows, path, manifest["target_vocab_size"])
+    elif any(
+        row.get("target_logits_row") is not None or row.get("verifier_logits") is not None
+        for row in rows
+    ):
+        raise ValueError("target logits require the native raw target-logit file")
     anchor_rows = read_jsonl(files["anchors"])
     anchors = [RoundAnchor(**row) for row in anchor_rows]
     offsets = np.load(files["offsets"], allow_pickle=False)
@@ -208,6 +259,7 @@ def audit_capture(manifest_path: Path, prompts_path: Path, expected_prompt_hash:
         "counts": trace.counts,
         "per_depth": trace.per_depth,
         "feature_ledger": feature_ledger,
+        "raw_target_logit_rows": target_logit_rows,
         "mapped_probability_mass_mean_on_sampled_logit_rows": (
             sum(observed_mass) / len(observed_mass) if observed_mass else None
         ),

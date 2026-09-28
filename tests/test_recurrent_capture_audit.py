@@ -40,6 +40,7 @@ class RecurrentCaptureAuditTests(unittest.TestCase):
         self.anchors = self.directory / "anchors.jsonl"
         self.offsets = self.directory / "offsets.npy"
         self.t2d = self.directory / "t2d.npy"
+        self.target_logits = self.directory / "target-logits.f32"
         self.features = self.directory / "features.npy"
         self.feature_rows = self.directory / "feature-rows.jsonl"
         self.manifest = self.directory / "manifest.json"
@@ -57,13 +58,15 @@ class RecurrentCaptureAuditTests(unittest.TestCase):
             "alignment_valid": True,
             "is_bonus": False,
             "valid": True,
+            "verifier_reached": True,
             "invalid_reason": None,
             "label_source": LABEL_SOURCE,
             "verifier_token_id": 4,
             "proposed_token_id": 5,
             "label_supported": True,
-            "verifier_logits": [0.0] * 8,
-            "verifier_logits_source": VERIFIER_LOGITS_SOURCE,
+            "target_logits_row": 0,
+            "target_logits_dim": 8,
+            "target_logits_source": VERIFIER_LOGITS_SOURCE,
         }
         self.feature_metadata = [
             {
@@ -96,6 +99,7 @@ class RecurrentCaptureAuditTests(unittest.TestCase):
         )
         np.save(self.offsets, np.array([2, 3, 3], dtype=np.int64))
         np.save(self.t2d, np.array([False, False, True, False, True, True, False, False]))
+        self.target_logits.write_bytes(np.zeros(8, dtype="<f4").tobytes())
         features = np.zeros((len(self.feature_metadata), FEATURE_WIDTH), dtype=np.float32)
         features[:, 0] = np.arange(len(features), dtype=np.float32)
         np.save(self.features, features)
@@ -118,6 +122,7 @@ class RecurrentCaptureAuditTests(unittest.TestCase):
                             ("anchors", self.anchors),
                             ("offsets", self.offsets),
                             ("t2d", self.t2d),
+                            ("target_logits", self.target_logits),
                             ("features", self.features),
                             ("feature_rows", self.feature_rows),
                         )
@@ -133,6 +138,7 @@ class RecurrentCaptureAuditTests(unittest.TestCase):
         self.assertEqual(report["real_model_feature_and_kv_parity"], "unverified")
         self.assertEqual(report["feature_ledger"]["rows"], 2)
         self.assertEqual(report["feature_ledger"]["tap_ids"], FEATURE_TAPS)
+        self.assertEqual(report["raw_target_logit_rows"], 1)
 
     def test_audited_round_loads_prefix_features_for_rebuild(self):
         loaded = load_audited_capture(self.manifest, self.prompts, self.prompt_hash)
@@ -170,6 +176,29 @@ class RecurrentCaptureAuditTests(unittest.TestCase):
         self.row["input_position"] += 1
         self.save()
         with self.assertRaisesRegex(ValueError, "position"):
+            audit_capture(self.manifest, self.prompts, self.prompt_hash)
+
+    def test_rejects_draft_logit_substitution_and_bad_target_join(self):
+        self.row["target_logits_source"] = "native_mapped_target_vocabulary_before_sampler"
+        self.save()
+        with self.assertRaisesRegex(ValueError, "source"):
+            audit_capture(self.manifest, self.prompts, self.prompt_hash)
+        self.row["target_logits_source"] = VERIFIER_LOGITS_SOURCE
+        self.row["target_logits_row"] = 2
+        self.save()
+        with self.assertRaisesRegex(ValueError, "row"):
+            audit_capture(self.manifest, self.prompts, self.prompt_hash)
+
+    def test_rejects_missing_or_corrupt_target_logit_file(self):
+        manifest = json.loads(self.manifest.read_text())
+        del manifest["target_logits"]
+        self.manifest.write_text(json.dumps(manifest))
+        with self.assertRaisesRegex(ValueError, "require the native"):
+            audit_capture(self.manifest, self.prompts, self.prompt_hash)
+        self.save()
+        self.target_logits.write_bytes(b"wrong")
+        self.save_manifest_hashes_only("target_logits", self.target_logits)
+        with self.assertRaisesRegex(ValueError, "payload size"):
             audit_capture(self.manifest, self.prompts, self.prompt_hash)
 
     def test_rejects_file_hash_mismatch(self):

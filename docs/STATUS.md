@@ -35,6 +35,17 @@ target and D draft hashes, memory-mapped the frozen target embedding and
 extracted one F16 row plus four F32 draft norms. The adapter can consume these
 operands without copying the full target embedding or changing target weights.
 
+**Fourth CPU milestone:** fork commit `c282087a9` adds an opt-in 32-row-capped
+file of raw target verifier logits, copied before sampler processing and
+separate from the existing mapped draft-head logit file. A CPU-only
+`llama-server` build passed with GPU and optional Accelerate/BLAS backends
+disabled; runtime capture was not exercised. The CPU capture audit checks
+that file's hash, target-vocabulary width, source label and unique exact-prefix
+row joins. Live `verifier_reached` and teacher-forced valid/support masks are
+now recorded separately, so later-position loss is not censored merely by
+an earlier live rejection. Accepted-prefix raw target-feature capture and
+real-model parity remain open.
+
 **Current milestone:** the [final rescue/readout report](../experiments/binary-rescue-head-5080.md) records a negative result against Q4_0 EAGLE. Q4_0 reached 1.042 accepted drafts/round and 135.1 full-request tokens/s; the admitted attention+fusion Q8_0 rescue reached 0.696 and 83.3 (0.616×), and the fitted frozen-D-body FP16 head reached 0.555 and 60.8 (0.450×). All 120 primary measured raw outputs per path matched Q4_0 and target-only. The 264-request speculative round calibration, 92 graph-verified server blocks across final primary/diagnostic runs, and separate six-prompt longer-context comparison are complete. The longer-context client rates were 127.0 Q4_0, 68.5 combined rescue, 47.1 fitted head and 93.8 target-only tokens/s. Neither endpoint beat target-only. Full raw results, logs, binaries and model artifacts are indexed in the remote archive named in the report. Final RTX 5080 check found no owned process or compute app, 1,916 MiB whole-device use and 0% utilization. The user owns any future body-aware QAT or final-set decision; none was started.
 
 The approved four-way A16 screen completed all **168 requests** (7 paths × 24 development prompts). A/B/C/D accepted **0.119 / 0.161 / 0.290 / 0.425 drafts per round**, versus **1.037 FP16** and **1.042 Q4_0**. Fitted group scales improved 3.585× over row-mean A, closing 33.20% of the Q4_0 gap. D beat all other binary candidates on every prompt but trailed both controls on every prompt. All seven paths matched target-only raw IDs on all 24 prompts. See the [report](../experiments/binary-scale-fitting-5080.md) for counts, depth survival, calibration, artifacts and limitations.

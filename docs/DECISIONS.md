@@ -216,3 +216,12 @@ Pending user-owned research choices, with independent CPU work available:
 | Unsupported labels | Count all unsupported rows and target probability mass; apply CE only to valid supported labels, keeping unsupported rows in denominators. A different vocabulary-support objective would be a separate choice after the real mapped-mass audit. | Reject any capture with wrong offset/inverse map or prefix/verifier join. |
 | Learned-scale metadata | Resolved for the loader declaration: fork commit `7f23c89b3` accepts `f32_learned_nonnegative` under v2/v3, and eight CPU-only native loader fixtures pass. The exporter retains that truthful rule rather than relabeling learned scales as NNLS. | A real trained GGUF still needs full native load and numerical parity before deployment. |
 | Training reduction order | Use the exact sequential F32 CPU reference, or explicitly choose grouped F32 matmul within each 128-input group for a practical trainer. The grouped path still runs hard signs/A16/scales and ordered group accumulation, but 35/430 archived D outputs differed from native by up to `0.0001220703125` absolute (`7.422315e-7` scaled). Its effect on argmax and recurrent states is unmeasured. The checkpoint now records this choice. | Freeze one path before training and require fixed-input native argmax/trajectory parity before interpretation. |
+
+**Exact-prefix row clarification (2026-09-28):** the native verifier computes
+target logits for every proposed prefix in a speculative batch, and the cloned
+sampler advances along each proposed token even after an earlier live
+rejection. A valid, supported row beyond that rejection can contribute
+teacher-forced later-position CE. Keep `verifier_reached` as a separate live
+acceptance diagnostic and exclude rows with no actual target label or
+invalid/padded ancestry. This clarification preserves the proposed recurrent
+objective; it does not turn off-policy CE into a live acceptance estimate.

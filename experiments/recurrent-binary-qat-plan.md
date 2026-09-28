@@ -63,11 +63,26 @@ position is `P+d+2`, and the next row's prefix must append the previous
 proposal token. In the checkpoint `d2t[i]` is an **offset**, so target ID is
 `i+d2t[i]`; GGUF stores absolute IDs. Unsupported target labels and target
 probability mass outside the 32,000-token draft vocabulary must be counted
-and reported. CE applies only to supported, valid, reached rows; unsupported
+and reported. CE applies to supported, valid exact-prefix proposal rows,
+including cloned-verifier rows beyond an earlier live rejection when their
+target logits were actually computed. `verifier_reached` remains a separate
+diagnostic mask for online acceptance and must not silently censor those
+teacher-forced later-position losses. Unsupported
 rows remain in all coverage and agreement denominators. Padding, pruned
 branches, post-EOS rows and bonus target tokens cannot silently become
 training labels. No head-only cached-state or teacher-draft KL loss replaces
 this target-verifier supervision.
+
+Fork commit `c282087a9` adds an opt-in bounded raw target-logit file beside
+the existing head capture: `EAGLE_CAPTURE_TARGET_LOGITS=1` writes
+`<EAGLE_CAPTURE_PREFIX>.target_logits.f32`, with a default 32-row cap and
+`EAGLE_CAPTURE_TARGET_LOGITS_LIMIT` override. It copies target logits before
+the cloned sampler runs and writes a distinct row index/source in each head
+record. The existing `EAGLE_CAPTURE_FULL_LOGITS` file contains mapped
+**draft-head** logits and remains separate. The CPU audit joins only the
+raw-target file by row index, dimensions and exact provenance; malformed,
+missing or substituted files fail. A CPU-only server build passed, but no
+real-model capture has exercised this new writer.
 
 Use scheduled teacher-forced proposal prefixes from the native capture for a
 bounded, differentiable unroll. This gives exact-prefix labels and allows a

@@ -67,7 +67,7 @@ file and `docs/STATUS.md` are the durable project checkpoint.
   positions are `P+1`, `P+2`; invalid terminal rows create no decoder call. This checks the
   training interface, not actual EAGLE mask or K/V byte parity.
 
-**Latest CPU checks:** 45 recurrent tests, seven explicit decoder-step tests,
+**Latest CPU checks:** 47 recurrent tests, seven explicit decoder-step tests,
 five frozen-operand tests, eight native loader fixtures, eight existing
 scale-fitting tests, Ruff
 lint/format and `git diff --check` pass. No local Metal/MPS or CUDA
@@ -152,6 +152,31 @@ Third-turn parent commits `79208ef`, `7c91809`, and `cf593c8` are pushed to
 commit `7f23c89b3`. The temporary decoder and frozen-operand worktrees and
 branches were retired after their reviewed content was integrated.
 
+## Fourth goal turn: exact-prefix raw target logits
+
+- Fork commit `c282087a9` was pushed before the parent gitlink update. It
+  writes bounded raw target-verifier F32 logit rows **before** sampler
+  processing under `EAGLE_CAPTURE_TARGET_LOGITS`, alongside existing
+  `EAGLE_CAPTURE_PREFIX` head rows. The existing optional draft-head-logit
+  file remains separate and explicitly labeled. A local `llama-server`
+  compilation passed with Metal, CUDA, Vulkan, SYCL, HIP, RPC, Accelerate
+  and BLAS disabled. No model/server inference was run.
+- The CPU capture audit now joins the native raw-target file to exact-prefix
+  rows by unique row index, target vocabulary width, SHA256 and source label.
+  Synthetic tests reject missing/corrupt data and substitution of the old
+  mapped draft-head logit file. `verifier_reached` is retained as a separate
+  online diagnostic; valid supported cloned-verifier rows after a live
+  rejection can still contribute later-position teacher-forced CE.
+- The remaining native **raw target-feature** writer is unsolved. The target
+  feature taps are available after target decode, but a raw dump could include
+  rejected speculative branches. It must carry task/prefix ancestry and be
+  filtered to the accepted-prefix ledger before the CPU audit can admit it.
+  Real-model capture and numerical student/cache parity still need later
+  user-authorized GPU execution.
+
+This is the **fourth consecutive goal turn**. It made meaningful CPU-only
+progress; no no-GPU impasse has been reached. The native Goal remains active.
+
 **Published checkpoints:** `7744d8e` created the goal/protocol; `1e3742d`
 integrated the trace contract; `a4dd003` integrated learned GGUF export;
 `fead52a` integrated the binary CPU reference; `792b7e0` published the
@@ -171,11 +196,11 @@ restriction. Do not request or infer that change.
 
 ## CPU stop gate and next actions
 
-1. Implement a native capture writer for accepted-prefix raw target features
-   and separate raw target verifier logits, then validate its output with the
-   new CPU ledger audit. The present head-only capture cannot serve that
-   purpose. This requires careful llama.cpp changes and later real-model
-   execution for parity.
+1. Implement a native capture writer for raw target feature taps with
+   task/prefix ancestry, then filter to accepted-prefix rows and validate
+   against the CPU ledger audit. The new raw verifier-logit writer is present
+   but still needs real-model runtime validation. This requires careful
+   llama.cpp changes and later model execution for parity.
 2. Connect prefix rebuilding to the pinned full drafter only with verified
    attention/RoPE/KV rounding and mask semantics; do not substitute saved
    normalized head states. Keep the sequential reference and grouped-matmul
@@ -183,7 +208,7 @@ restriction. Do not request or infer that change.
 3. Recheck CPU gates and record hashes/commits at the next milestone. Keep
    model files/raw captures out of Git. Audit whether remaining local work
    can still advance the goal. This is the
-   **second** goal turn under the no-GPU restriction. Do not mark the Goal
+   **fourth** goal turn under the no-GPU restriction. Do not mark the Goal
    blocked until the same GPU-only impasse persists across at least three
    consecutive goal turns and no meaningful CPU-only work remains.
 

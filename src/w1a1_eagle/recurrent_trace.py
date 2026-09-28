@@ -42,6 +42,7 @@ class TraceAudit:
     counts: Mapping[str, int]
     per_depth: Mapping[int, Mapping[str, int]]
     mapped_probability_mass: tuple[float | None, ...] = ()
+    reached_mask: tuple[bool, ...] = ()
 
 
 def _integer(value: object, name: str, minimum: int = 0) -> int:
@@ -136,6 +137,7 @@ def validate_recurrent_trace(
     labels: list[int] = []
     valid_mask: list[bool] = []
     supported_mask: list[bool] = []
+    reached_mask: list[bool] = []
     depth_counts: dict[int, Counter[str]] = {}
     totals: Counter[str] = Counter()
     mapped_mass: list[float | None] = []
@@ -192,6 +194,9 @@ def validate_recurrent_trace(
         valid = row.get("valid")
         if type(valid) is not bool:
             raise ValueError("valid mask must be explicit bool")
+        reached = row.get("verifier_reached")
+        if type(reached) is not bool:
+            raise ValueError("verifier_reached mask must be explicit bool")
         reason = row.get("invalid_reason")
         if valid:
             if reason is not None:
@@ -249,9 +254,12 @@ def validate_recurrent_trace(
         labels.append(draft_label)
         valid_mask.append(valid)
         supported_mask.append(supported)
+        reached_mask.append(reached)
         bucket = depth_counts.setdefault(depth, Counter())
         for counter in (totals, bucket):
             counter["total"] += 1
+            if reached:
+                counter["verifier_reached"] += 1
             if valid:
                 counter["valid"] += 1
                 counter["supported" if supported else "unsupported"] += 1
@@ -272,4 +280,5 @@ def validate_recurrent_trace(
         dict(totals),
         {depth: dict(counts) for depth, counts in sorted(depth_counts.items())},
         tuple(mapped_mass),
+        tuple(reached_mask),
     )
