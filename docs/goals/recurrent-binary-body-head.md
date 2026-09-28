@@ -1367,3 +1367,41 @@ prompt. Rebuild its shifted accepted-prefix context, including cache
 rewrites, then run the pinned CPU operator oracles through its native
 proposal chain. Keep the diagnostic forward separate from any training
 derivative or budget decision.
+
+## Thirty-third goal turn: post-acceptance CPU parity
+
+- Commit `6230b5c` adds a [sealed reasoning round-2 CPU
+  replay](../../experiments/recurrent-binary-postacceptance-cpu.md).
+  The prior round accepted one draft. Round 2's 50-token accepted prefix
+  requires 49 draft context rows. Its native cache has speculative
+  rewrites: position 47 was written three times, with token 525 from
+  execution 8 retained; position 48 was written four times, with
+  accepted token 2661 from five-column catch-up execution 13 retained.
+  The probe joins each accepted-prefix position to its latest physical
+  write before the round-2 seed and reconstructs K/V independently from
+  frozen target features and ordered candidate-D arithmetic.
+- All context embeddings and normalized inputs match native
+  125,440/125,440 F32 each, fused input 250,880/250,880, raw K/V and
+  ggml-rotated K 50,176/50,176 each, and actual stored F16 context K/V
+  50,176/50,176 each. The three draft depths have 3,072/3,072 new F16
+  key and value writes each, 12,288/12,288 query-RoPE and attention
+  F32 values each, 7,680/7,680 FFN outputs and normalized head states
+  each, and 24/24 captured head-logit probes. Their mapped argmax IDs
+  (12, 3070, 362), argmax/label logits and verifier-label ranks match.
+  The ignored machine report SHA256 is
+  `31acfdb2c62fb314bced1d4ed188db1855f38fe53ebdd4d02c5aa2a7bce45a4d`.
+- The real-input run and Ruff lint/format passed on Apple M3 Max CPU.
+  No captured-cache injection, GPU, local server, target forward,
+  backward, optimizer, final prompt or Q4_0 evaluation ran. The RTX
+  5080 is free. This verifies one post-acceptance training round under
+  the diagnostic native forward, not general cache scheduling,
+  free-running trajectories, full mapped logits or CUDA/SM75 parity.
+  The F32 surrogate derivative, exact/numeric policy and all-body
+  optimizer budget remain user-owned.
+
+**Next gate:** integrate the validated native CPU RoPE, attention and
+SiLU arithmetic into one opt-in diagnostic student forward, then test
+its unmodified five-depth calls on the sealed prose and reasoning
+training rounds, including accepted-prefix reconstruction. Keep the
+default differentiable path unchanged until the user chooses a numeric
+policy and training budget.

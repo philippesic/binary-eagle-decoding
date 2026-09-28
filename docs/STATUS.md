@@ -6,19 +6,19 @@ The target/verifier model precision remains as frozen for each experiment.
 
 **Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), parity and capture preparation. The user has authorized the free RTX 5080 for needed work; no all-body training budget has been approved. **Latest completed goal:** [mixed precision rescue and frozen-body head adaptation on RTX 5080](goals/binary-rescue-head-5080.md), completed 2026-09-28 UTC. The preceding [binary scale fitting goal](goals/binary-scale-fitting-5080.md) completed 2026-09-27 UTC.
 
-**Latest checkpoint (2026-09-28 UTC):** an independent Apple M3 Max CPU
-prose-prefix replay constructed all 31 context K/V rows from frozen target
-features and candidate-D ordered arithmetic; all 63,488 F16 context K/V
-values matched actual native storage. Its five draft depths matched native
-at all new cache writes, query RoPE, attention, FFN output, normalized
-head state and 40 captured head-logit probes. The
-[prose report](../experiments/recurrent-binary-prose-multidepth-cpu.md),
-[reasoning report](../experiments/recurrent-binary-reasoning-multidepth-cpu.md)
-and [goal checkpoint](goals/recurrent-binary-body-head.md#thirty-second-goal-turn-independent-prose-prefix-parity)
-record two first-round CPU diagnostics. Post-acceptance scheduling,
-general trajectories and CUDA/SM75 parity remain open. No worker, local
-server or remote job is active; the 5080 is free. Training, final-set and
-Q4_0 evaluation remain gated.
+**Latest checkpoint (2026-09-28 UTC):** a sealed Apple M3 Max CPU replay
+of reasoning round 2 followed one accepted draft and reconstructed its
+49-position context from frozen features, including the four-time
+rewrite at position 48. All 100,352 stored F16 context K/V values,
+three new draft K/V writes, query RoPE, attention, FFN outputs, head
+states and 24 captured head-logit probes matched native bitwise. The
+[post-acceptance report](../experiments/recurrent-binary-postacceptance-cpu.md)
+and [goal checkpoint](goals/recurrent-binary-body-head.md#thirty-third-goal-turn-post-acceptance-cpu-parity)
+join the earlier [reasoning](../experiments/recurrent-binary-reasoning-multidepth-cpu.md)
+and [prose](../experiments/recurrent-binary-prose-multidepth-cpu.md)
+first-round checks. Broad trajectories and CUDA/SM75 parity remain open.
+No worker, local server or remote job is active; the 5080 is free.
+Training, final-set and Q4_0 evaluation remain gated.
 
 **Prior CPU arithmetic checkpoint (2026-09-28 UTC):** corrected CPU RMS norm and RoPE
 frequency arithmetic matched all 619,520 F16 fused-input and 123,904 raw
