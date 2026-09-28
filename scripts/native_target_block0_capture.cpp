@@ -30,6 +30,7 @@ struct capture_state {
     std::map<std::string, int> seen;
     size_t bytes_written = 0;
     bool complete = false;
+    bool output_only = false;
     std::string error;
 
     static bool callback(ggml_tensor * tensor, bool ask, void * user_data) {
@@ -37,6 +38,7 @@ struct capture_state {
         const std::string name = tensor->name;
         const auto selected = SELECTED.find(name);
         if (selected == SELECTED.end() || state.complete || !state.error.empty()) return false;
+        if (state.output_only && name != "l_out-0") return false;
         if (ask) return true;
         try {
             if (tensor->type != GGML_TYPE_F32 || ggml_nelements(tensor) != selected->second * TOKENS) {
@@ -85,11 +87,15 @@ std::vector<llama_token> read_tokens(const std::string & path) {
 } // namespace
 
 int main(int argc, char ** argv) {
-    if (argc != 4) return 2; // target GGUF, 29-token I32 file, output directory
+    if (argc != 4 && argc != 5) return 2; // target GGUF, tokens, output directory, optional mode
     try {
         auto tokens = read_tokens(argv[2]);
         capture_state state;
         state.directory = argv[3];
+        if (argc == 5) {
+            if (std::string(argv[4]) != "output_only") return 2;
+            state.output_only = true;
+        }
         state.index.open(state.directory + "/index.tsv", std::ios::out | std::ios::trunc);
         if (!state.index) throw std::runtime_error("cannot open block-0 capture index");
 
@@ -136,6 +142,7 @@ int main(int argc, char ** argv) {
         }
         for (const auto & [name, width] : SELECTED) {
             (void) width;
+            if (state.output_only && name != "l_out-0") continue;
             if (!state.seen.count(name)) throw std::runtime_error("missing block-0 tensor: " + name);
         }
         printf("captured %zu bytes of block-0 tensors\n", state.bytes_written);

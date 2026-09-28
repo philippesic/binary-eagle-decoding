@@ -27,6 +27,7 @@ def main() -> None:
     parser.add_argument("--ladder-dir", type=Path, required=True)
     parser.add_argument("--target-gguf", type=Path, required=True)
     parser.add_argument("--reuse-build-run-id")
+    parser.add_argument("--capture-mode", choices=("all", "output_only"), default="all")
     args = parser.parse_args()
     run_dir = ROOT / "runs" / args.run_id
     if not (run_dir / "state.json").is_file():
@@ -76,6 +77,7 @@ def main() -> None:
         "target_gguf": str(target),
         "ladder_dir": str(ladder),
         "reused_build_run_id": args.reuse_build_run_id,
+        "capture_mode": args.capture_mode,
     }
     (run_dir / "recipe.json").write_text(json.dumps(recipe, indent=2, sort_keys=True) + "\n")
     if args.reuse_build_run_id is not None:
@@ -87,20 +89,26 @@ def main() -> None:
         source_run = ROOT / "runs" / args.reuse_build_run_id
         source_state = json.loads((source_run / "state.json").read_text())
         source_recipe = json.loads((source_run / "recipe.json").read_text())
+        source_gitlink = subprocess.check_output(
+            ["git", "ls-tree", source_recipe["source_commit"], "third_party/llama.cpp"],
+            cwd=ROOT,
+            text=True,
+        ).split()[2]
+        current_gitlink = subprocess.check_output(
+            ["git", "-C", str(ROOT / "third_party/llama.cpp"), "rev-parse", "HEAD"],
+            text=True,
+        ).strip()
         if (
             source_state.get("status") != "finished"
-            or source_recipe.get("source_sha256", {}).get("helper")
-            != recipe["source_sha256"]["helper"]
+            or source_gitlink != current_gitlink
             or not (source_run / "build/CMakeCache.txt").is_file()
             or not (source_run / "build/bin/native-target-block0-capture").is_file()
         ):
-            raise ValueError("reused build is unfinished or differs from pinned helper source")
+            raise ValueError("reused build is unfinished or differs from pinned llama.cpp")
         build.mkdir(parents=True, exist_ok=False)
         shutil.copy2(source_run / "build/CMakeCache.txt", build / "CMakeCache.txt")
         shutil.copytree(source_run / "build/bin", build / "bin", symlinks=True)
-        recipe["source_sha256"]["reused_helper_binary"] = sha256(
-            source_run / "build/bin/native-target-block0-capture"
-        )
+        recipe["source_sha256"]["reused_cmake_cache"] = sha256(source_run / "build/CMakeCache.txt")
         (run_dir / "recipe.json").write_text(json.dumps(recipe, indent=2, sort_keys=True) + "\n")
     else:
         _run(cmake, timeout=900)
@@ -108,26 +116,29 @@ def main() -> None:
             [str(cmake_exe), "--build", str(build), "--target", "llama", "ggml-cuda", "-j", "8"],
             timeout=900,
         )
-        compiler = [
-            "g++",
-            "-std=c++17",
-            "-O2",
-            "-I" + str(ROOT / "third_party/llama.cpp/include"),
-            "-I" + str(ROOT / "third_party/llama.cpp/ggml/include"),
-            str(ROOT / "scripts/native_target_block0_capture.cpp"),
-            "-L" + str(build / "bin"),
-            "-Wl,-rpath,$ORIGIN",
-            "-lllama",
-            "-lggml",
-            "-lggml-base",
-            "-lggml-cpu",
-            "-o",
-            str(helper),
-        ]
-        _run(compiler, timeout=120)
+    compiler = [
+        "g++",
+        "-std=c++17",
+        "-O2",
+        "-I" + str(ROOT / "third_party/llama.cpp/include"),
+        "-I" + str(ROOT / "third_party/llama.cpp/ggml/include"),
+        str(ROOT / "scripts/native_target_block0_capture.cpp"),
+        "-L" + str(build / "bin"),
+        "-Wl,-rpath,$ORIGIN",
+        "-lllama",
+        "-lggml",
+        "-lggml-base",
+        "-lggml-cpu",
+        "-o",
+        str(helper),
+    ]
+    _run(compiler, timeout=120)
     prepare(ladder, target, capture)
-    _run([str(helper), str(target), str(capture / "tokens.i32"), str(capture)], timeout=300)
-    report = audit(ladder, target, capture, helper)
+    helper_command = [str(helper), str(target), str(capture / "tokens.i32"), str(capture)]
+    if args.capture_mode == "output_only":
+        helper_command.append("output_only")
+    _run(helper_command, timeout=300)
+    report = audit(ladder, target, capture, helper, output_only=args.capture_mode == "output_only")
     report["elapsed_seconds"] = time.monotonic() - started
     report["source_sha256"]["recipe"] = sha256(run_dir / "recipe.json")
     report["source_sha256"]["cmake_cache"] = sha256(build / "CMakeCache.txt")
