@@ -65,7 +65,7 @@ file and `docs/STATUS.md` are the durable project checkpoint.
   positions are `P+1`, `P+2`; invalid terminal rows create no decoder call. This checks the
   training interface, not actual EAGLE mask or K/V byte parity.
 
-**Latest CPU checks:** 40 recurrent tests, eight existing scale-fitting tests,
+**Latest CPU checks:** 43 recurrent tests, eight existing scale-fitting tests,
 Ruff lint/format and `git diff --check` pass. No local Metal/MPS or CUDA
 runtime was selected. The complete native Q4_0 quality/throughput gates
 remain unrun under this goal.
@@ -84,6 +84,13 @@ remain unrun under this goal.
   capture's draft logits mapped into target vocabulary. The trace validator
   now requires explicit raw-target provenance before computing mapped mass.
   This prevents using `EAGLE_CAPTURE_FULL_LOGITS` as a target-mass source.
+- The capture audit now requires raw F32 7,680-wide feature rows with tap
+  order `[2,18,33]`, accepted-prefix ancestry and absolute positions, joined
+  to every round anchor. It rejects missing, misordered, rejected-branch and
+  unjoined feature rows on synthetic fixtures. An audited CPU loader now
+  supplies a round's prefix tokens and raw feature rows directly to the
+  prefix-cache rebuilder after one manifest audit. The native writer does not yet
+  produce this ledger, and numerical target-feature parity is unverified.
 - Added an explicit CPU `group_matmul` training arithmetic option that keeps
   hard signs/A16/group scales but changes in-group F32 reduction order. On
   430 archived native D outputs, 395 matched exactly; max absolute discrepancy
@@ -95,8 +102,8 @@ remain unrun under this goal.
 
 This is the **second consecutive goal turn** under the user's no-GPU
 restriction. It made substantive CPU progress; a GPU-only impasse has not
-been established. Meaningful local work remains on capture-ledger schema,
-prefix/cache parity fixtures, and a faithful full-drafter adapter. Do not
+been established. Meaningful local work remains on a faithful full-drafter
+adapter and native capture writer/parity fixtures. Do not
 mark the native Goal blocked on this turn.
 
 **Published checkpoints:** `7744d8e` created the goal/protocol; `1e3742d`
@@ -118,9 +125,11 @@ restriction. Do not request or infer that change.
 
 ## CPU stop gate and next actions
 
-1. Define and CPU-test a native capture ledger for accepted-prefix raw target
-   feature rows, absolute positions, true verifier sampler labels and separate
-   raw target logits. The present head-only capture cannot serve that purpose.
+1. Implement a native capture writer for accepted-prefix raw target features
+   and separate raw target verifier logits, then validate its output with the
+   new CPU ledger audit. The present head-only capture cannot serve that
+   purpose. This requires careful llama.cpp changes and later real-model
+   execution for parity.
 2. Connect prefix rebuilding to the pinned full drafter only with verified
    attention/RoPE/KV rounding and mask semantics; do not substitute saved
    normalized head states. Keep the sequential reference and grouped-matmul

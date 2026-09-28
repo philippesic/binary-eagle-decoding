@@ -12,7 +12,9 @@ The target/verifier model precision remains as frozen for each experiment.
 shifted input-token index; the rollout and tests now use that position.
 Accepted-prefix cache rebuilding uses raw target features with a fresh cache
 and an explicit truncated-gradient boundary. The trace rejects draft-head
-logits mislabeled as raw target verifier logits. An explicit grouped-F32-matmul
+logits mislabeled as raw target verifier logits. The CPU capture gate now
+requires a hashed raw-feature ledger joined to every accepted-prefix anchor,
+with 7,680-wide F32 rows and frozen target tap order. An explicit grouped-F32-matmul
 training option matched 395/430 archived native D outputs exactly; its maximum
 absolute difference was `0.0001220703125`, so real-model argmax and cache
 parity remain gates. Training checkpoint manifests record the arithmetic mode.

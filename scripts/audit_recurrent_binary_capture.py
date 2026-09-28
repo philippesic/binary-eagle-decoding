@@ -3,7 +3,7 @@
 
 This validates prompt ownership, file hashes, proposal ancestry, verifier
 label provenance, vocabulary offsets and unsupported-label masks. It does not
-create a native capture or certify target features and draft K/V cache parity.
+create a native capture or certify target-feature values and draft K/V parity.
 """
 
 from __future__ import annotations
@@ -12,9 +12,12 @@ import argparse
 import hashlib
 import json
 import sys
+from collections import defaultdict
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
+import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -22,6 +25,48 @@ from w1a1_eagle.recurrent_trace import RoundAnchor, validate_recurrent_trace  # 
 
 TRAIN_PROMPTS_SHA256 = "80e365bbc6d2caf4abd5e216e53d72ce62d80f9cf1a668e6862efb845a185e74"
 TRAIN_PROMPTS = 96
+FEATURE_WIDTH = 7680
+FEATURE_TAPS = [2, 18, 33]
+FEATURE_BOUNDARY = "native_target_block_inputs_concat_before_draft_fc"
+FEATURE_SOURCE = "native_target_features_on_accepted_prefix"
+
+
+@dataclass(frozen=True)
+class CapturedRound:
+    anchor: RoundAnchor
+    rows: tuple[dict, ...]
+    prefix_token_ids: tuple[int, ...]
+    raw_target_features: torch.Tensor
+    feature_positions: tuple[int, ...]
+
+
+@dataclass
+class AuditedCapture:
+    report: dict
+    anchors: dict[tuple[str, int], RoundAnchor]
+    rows: dict[tuple[str, int], tuple[dict, ...]]
+    feature_lookup: dict[tuple[str, tuple[int, ...]], int]
+    features: np.ndarray
+
+    def round_inputs(self, prompt_id: str, round_index: int) -> CapturedRound:
+        """Return one validated accepted-prefix bundle for CPU replay."""
+        key = (prompt_id, round_index)
+        if key not in self.anchors:
+            raise KeyError(key)
+        anchor = self.anchors[key]
+        accepted = tuple(anchor.prefix_token_ids)
+        indices = [
+            self.feature_lookup[(prompt_id, accepted[: position + 1])]
+            for position in range(len(accepted))
+        ]
+        raw = torch.from_numpy(np.array(self.features[indices], dtype=np.float32, copy=True))
+        return CapturedRound(
+            anchor,
+            tuple(dict(row) for row in self.rows[key]),
+            (*accepted, anchor.seed_token_id),
+            raw,
+            tuple(range(len(accepted))),
+        )
 
 
 def sha256(path: Path) -> str:
@@ -46,6 +91,60 @@ def _owned_file(directory: Path, value: str) -> Path:
     return path
 
 
+def audit_feature_ledger(
+    feature_path: Path,
+    feature_rows_path: Path,
+    anchors: list[RoundAnchor],
+    allowed_prompt_ids: set[str],
+    target_vocab_size: int,
+) -> dict:
+    metadata = read_jsonl(feature_rows_path)
+    features = np.load(feature_path, mmap_mode="r", allow_pickle=False)
+    if features.dtype != np.float32 or features.shape != (len(metadata), FEATURE_WIDTH):
+        raise ValueError("raw target features must be F32 [feature rows, 7680]")
+    if not np.isfinite(features).all():
+        raise ValueError("raw target features contain nonfinite values")
+    lookup = {}
+    for index, row in enumerate(metadata):
+        prompt = row.get("prompt_id")
+        position = row.get("position")
+        prefix = row.get("prefix_token_ids")
+        if (
+            row.get("feature_row") != index
+            or prompt not in allowed_prompt_ids
+            or type(position) is not int
+            or position < 0
+            or not isinstance(prefix, list)
+            or len(prefix) != position + 1
+            or any(type(token) is not int or not 0 <= token < target_vocab_size for token in prefix)
+            or row.get("tap_ids") != FEATURE_TAPS
+            or row.get("boundary") != FEATURE_BOUNDARY
+            or row.get("source") != FEATURE_SOURCE
+            or row.get("accepted_prefix") is not True
+        ):
+            raise ValueError("feature row has invalid accepted-prefix provenance or position")
+        key = (prompt, tuple(prefix))
+        if key in lookup:
+            raise ValueError("duplicate raw target feature prefix")
+        lookup[key] = index
+    used = set()
+    for anchor in anchors:
+        for position in range(len(anchor.prefix_token_ids)):
+            key = (anchor.prompt_id, tuple(anchor.prefix_token_ids[: position + 1]))
+            if key not in lookup:
+                raise ValueError("accepted-prefix target feature row is missing")
+            used.add(lookup[key])
+    if used != set(range(len(metadata))):
+        raise ValueError("feature ledger contains rows outside audited accepted prefixes")
+    return {
+        "rows": len(metadata),
+        "width": FEATURE_WIDTH,
+        "tap_ids": FEATURE_TAPS,
+        "boundary": FEATURE_BOUNDARY,
+        "source": FEATURE_SOURCE,
+    }
+
+
 def audit_capture(manifest_path: Path, prompts_path: Path, expected_prompt_hash: str) -> dict:
     manifest = json.loads(manifest_path.read_text())
     if not isinstance(manifest, dict) or manifest.get("schema") != "recurrent_binary_capture_v1":
@@ -63,7 +162,7 @@ def audit_capture(manifest_path: Path, prompts_path: Path, expected_prompt_hash:
     ):
         raise ValueError("expected 96 unique frozen training prompt IDs")
     files = {}
-    for field in ("rows", "anchors", "offsets", "t2d"):
+    for field in ("rows", "anchors", "offsets", "t2d", "features", "feature_rows"):
         record = manifest.get(field)
         if not isinstance(record, dict) or set(record) != {"path", "sha256"}:
             raise ValueError(f"missing {field} file record")
@@ -92,6 +191,13 @@ def audit_capture(manifest_path: Path, prompts_path: Path, expected_prompt_hash:
         raise ValueError("t2d must be a target-vocabulary boolean mask")
     if not np.array_equal(t2d, np.asarray(trace.target_to_draft) >= 0):
         raise ValueError("t2d mask disagrees with offset-form d2t inverse")
+    feature_ledger = audit_feature_ledger(
+        files["features"],
+        files["feature_rows"],
+        anchors,
+        set(prompt_ids),
+        manifest["target_vocab_size"],
+    )
     observed_mass = [mass for mass in trace.mapped_probability_mass if mass is not None]
     return {
         "schema": "recurrent_binary_capture_audit_v1",
@@ -101,11 +207,42 @@ def audit_capture(manifest_path: Path, prompts_path: Path, expected_prompt_hash:
         "source_sha256": {field: sha256(path) for field, path in files.items()},
         "counts": trace.counts,
         "per_depth": trace.per_depth,
+        "feature_ledger": feature_ledger,
         "mapped_probability_mass_mean_on_sampled_logit_rows": (
             sum(observed_mass) / len(observed_mass) if observed_mass else None
         ),
         "real_model_feature_and_kv_parity": "unverified",
     }
+
+
+def load_audited_capture(
+    manifest_path: Path, prompts_path: Path, expected_prompt_hash: str
+) -> AuditedCapture:
+    """Audit once, then expose CPU round bundles for prefix reconstruction."""
+    report = audit_capture(manifest_path, prompts_path, expected_prompt_hash)
+    manifest = json.loads(manifest_path.read_text())
+    directory = manifest_path.parent
+    anchors = {
+        (item["prompt_id"], item["round_index"]): RoundAnchor(**item)
+        for item in read_jsonl(directory / manifest["anchors"]["path"])
+    }
+    rows = defaultdict(list)
+    for row in read_jsonl(directory / manifest["rows"]["path"]):
+        rows[(row["prompt_id"], row["round_index"])].append(row)
+    for group in rows.values():
+        group.sort(key=lambda row: row["depth"])
+    feature_lookup = {
+        (item["prompt_id"], tuple(item["prefix_token_ids"])): item["feature_row"]
+        for item in read_jsonl(directory / manifest["feature_rows"]["path"])
+    }
+    features = np.load(directory / manifest["features"]["path"], mmap_mode="r", allow_pickle=False)
+    return AuditedCapture(
+        report,
+        anchors,
+        {key: tuple(group) for key, group in rows.items()},
+        feature_lookup,
+        features,
+    )
 
 
 def main() -> None:

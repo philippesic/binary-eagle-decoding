@@ -77,6 +77,18 @@ the native sampler to check that. Capture must include sufficient target
 features, token IDs, positions, mask/KV boundary records, verifier labels and
 logits to replay each prefix without reading frozen final prompts.
 
+The CPU capture gate expects two feature-ledger files in addition to proposal
+rows, round anchors, offset `d2t` and boolean `t2d`: a hashed F32 `.npy` matrix
+of 7,680-wide raw target-feature rows and a hashed JSONL with one row per
+matrix row. Each ledger row declares its prompt, absolute target position,
+accepted-prefix token IDs through that position, ordered taps `[2,18,33]`,
+and boundary `native_target_block_inputs_concat_before_draft_fc`. Every
+anchor must find feature rows for all positions `0..P`; no unjoined or
+rejected-prefix feature row is admitted. The last row `f[P]` is deferred for
+the seed, while earlier rows rebuild the current student context cache.
+This metadata gate cannot prove the numerical feature values came from the
+pinned target; native fixed-prefix replay must do that.
+
 ## Bounded proposed first trial and stop gates
 
 The existing prompt manifests stay fixed: 96 training prompts, 24 development
