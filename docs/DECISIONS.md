@@ -290,6 +290,13 @@ remain. The user must choose whether this arithmetic becomes part of a
 training recipe or whether a predeclared numeric/trajectory tolerance is
 acceptable. These findings do not transfer the earlier head-only optimizer
 budget to all-body training.
+The same-input FFN check then matched the prose native output exactly with
+ordered F32 binary arithmetic; grouped matmul differed by at most
+`1.4305e-6`. Both modes remained `6.1035e-5` from native on reasoning,
+far above their `1.9073e-6` mutual difference. Thus switching the whole
+trainer to native-order reduction alone would not close that residual.
+The training arithmetic and numeric gate remain user-owned decisions;
+the next exact-parity probe is the missing native FFN intermediates.
 
 **Exact-prefix row clarification (2026-09-28):** the native verifier computes
 target logits for every proposed prefix in a speculative batch, and the cloned

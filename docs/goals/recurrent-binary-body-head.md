@@ -1076,3 +1076,33 @@ math—and quantify which reasoning cache K/V F16 differences matter. If
 the user chooses a bounded numeric/trajectory policy instead of exact
 backend parity, freeze it before any optimizer run. Preserve the native
 capture and keep the default training mode unchanged until that decision.
+
+## Twenty-fifth goal turn: same-input binary FFN boundary
+
+- Parent commit `3e2b73f` adds a CPU-only native graph FFN diagnostic with
+  six synthetic tests, Ruff and formatting checks. It feeds the exact
+  captured first-seed `post_attn_norm-0` F32 row to candidate D's three
+  binary gate/up/down projections under both ordered sequential F32 and
+  grouped F32 matmul arithmetic. The native graph/head join is unique at
+  execution 2, column 0; no student context, attention or optimizer is run.
+- On Apple M3 Max, native-order arithmetic matched all **2,560/2,560**
+  prose `ffn_out-0` values bitwise. Grouped matmul differed by at most
+  `1.4305e-6`. On reasoning, both arithmetic modes differed from native
+  by at most `6.1035e-5`, while the two modes differed from each other by
+  only `1.9073e-6`. Thus grouped reduction explains tiny prose FFN drift
+  but not the reasoning residual. Native gate/up/SiLU intermediates were
+  not captured, so its exact suboperation remains unidentified. The
+  [FFN report](../../experiments/recurrent-binary-ffn-same-input.md)
+  preserves hardware, source hashes and limits; ignored prose/reasoning
+  report SHA256 values are
+  `25a84157686595caa79d89d721a5f1b2fab41627e066f393001b7eeae9091c23`
+  and `afe5faf6ca28dc55d3acbd267eaf0402bdd58ce0a1a5be9dfc8e921d0c39a887`.
+  No GPU, training, final-set or Q4_0 run occurred.
+
+**Next gate:** if exact CPU drafter parity is pursued, capture only the
+native reasoning first-seed gate/up/SiLU/fused FFN intermediates and replay
+them from the identical input to locate the F16 threshold or nonlinear
+arithmetic gap. Separately, keep the earlier reasoning cache K/V F16
+differences visible in the attention/state audit. The user still owns
+the numeric/trajectory policy and all-body optimizer budget; neither
+is inferred from this one-row FFN result.

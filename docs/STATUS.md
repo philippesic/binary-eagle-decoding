@@ -159,6 +159,16 @@ and [diagnostic report](../experiments/recurrent-binary-native-attention-student
 record exact hashes and limits. This mode is not a chosen training recipe;
 full-drafter parity, all-body budget and Q4_0 evaluation remain open.
 
+**Same-input FFN checkpoint (2026-09-28 UTC):** on a captured native FFN
+input, candidate D's native-order CPU arithmetic matched all 2,560 prose
+output values bitwise; grouped matmul differed by at most 1.4305e-6.
+On reasoning, both modes remained 6.1035e-5 from native while differing
+from each other by at most 1.9073e-6. The [goal checkpoint](goals/recurrent-binary-body-head.md#twenty-fifth-goal-turn-same-input-binary-ffn-boundary)
+and [FFN report](../experiments/recurrent-binary-ffn-same-input.md) record
+hashes and limits. This narrows the remaining reasoning FFN gap beyond
+grouped reduction order; exact whole-drafter parity, training budget and
+Q4_0 evaluation remain open. No GPU was used.
+
 **Handoff checkpoint (2026-09-28 06:35 UTC):** the active goal file records
 the current objective, pushed commits, CPU tests, projected K/V write
 comparison, pending 5080 clarification and exact next actions. Code round 2
