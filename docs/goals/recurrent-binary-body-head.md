@@ -1653,3 +1653,44 @@ against the newly safe post-RoPE Q boundary, then attribute block-0
 attention/residual error using output-preserving taps. Keep all
 probes on frozen training prefixes and separate from training and
 Q4_0 gates.
+
+## Fortieth goal turn: same-input Torch Q stages
+
+- Commits `ba17621`, `927ff19` and `55c6125` add the bounded
+  [Torch Q control](../../experiments/recurrent-target-q-torch-control.md)
+  and separate an exact ggml Q graph from a retained-intermediate
+  diagnostic graph. The Torch path uses the installed Qwen3 RMS norm,
+  rotary embedding and RoPE application modules on the same native
+  F32 attention-norm rows explicitly cast to F16, with exact source
+  GGUF/HF Q weights. The final supervised RTX 5080/SM120 run retains
+  the **118,784/118,784** exact ggml post-RoPE Q fidelity gate.
+- Torch F16 raw Q projection matches **14,513/118,784** exact ggml
+  raw values, with position-3 relative row L2 **0.2880%**. Torch
+  normalized Q matches **3/118,784** F32 values of the diagnostic
+  retained ggml norm, position-3 error **0.2337%**. Torch post-RoPE Q
+  matches **2/118,784** safe native F32 values, position-3 error
+  **0.2347%** and maximum absolute gap `0.08107709884643555`. The
+  Q discrepancy is present before norm and persists; the stage errors
+  are not assumed additive.
+- A ggml graph retaining its raw/normed intermediates leaves raw Q
+  bitwise identical to the exact graph, but changes 16,383 final
+  post-RoPE F32 values by at most `9.5367431640625e-7`. That graph
+  supplies only a diagnostic norm-stage comparison. The original
+  unretained norm readback was invalid because its buffer was reused,
+  and the retained-only run failed the strict server-Q fidelity gate;
+  both are preserved as ignored diagnostics, not results. The final
+  ignored report at
+  `checkouts/target-block0-operator-20260928/runs/target-q-cuda-d-20260928/comparison.json`
+  has SHA256 `849b6c26b40261062f2664783c2c0b7672dca681510cebfd7687364f8d0e5474`.
+  Its supervisor exited zero and the 5080 returned to 0% utilization
+  and 1,372 MiB whole-device baseline. Local C++ syntax and Ruff
+  lint/format passed. No optimizer, final prompt or Q4_0 serving
+  evaluation ran; this single SM120 prefix does not set a global
+  target-feature tolerance or validate SM75 performance. The full96
+  capture remains training-ineligible; exact/numeric policy and the
+  all-body budget remain user-owned.
+
+**Next gate:** attribute the block-0 attention and residual boundary
+using same-input, output-preserving native Q/K/V and FFN-input taps.
+Separate source Q/K/V projection precision from attention backend
+arithmetic before choosing a target-feature/trajectory policy.

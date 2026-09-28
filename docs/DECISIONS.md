@@ -374,6 +374,20 @@ blocks and accepted trajectories remain open. The finding does not
 select the user-owned exact-backend versus numeric/trajectory policy or
 authorize training. See the [Q report](../experiments/recurrent-target-q-deferred-cuda.md).
 
+**Same-input Torch Q evidence (2026-09-28):** with the safe post-RoPE
+native Q boundary available, a source-module Torch CUDA/F16 Qwen3
+control on the identical native norm input matches 14,513/118,784
+raw ggml Q F32 values and only 2/118,784 safe native post-RoPE Q F32
+values. Position-3 relative row errors are 0.2880% and 0.2347%,
+respectively. The exact ggml replay still matches all native Q values.
+Retaining ggml intermediate tensors changes its final Q by tiny F32
+amounts, so only the unretained graph is used as the native fidelity
+path. Projection backend arithmetic is already a material source of
+Q difference under this geometry; attention/residual amplification
+and later target blocks remain to be attributed. These observations
+do not choose a training numeric/trajectory policy or budget. See
+the [Torch Q report](../experiments/recurrent-target-q-torch-control.md).
+
 **Exact-prefix row clarification (2026-09-28):** the native verifier computes
 target logits for every proposed prefix in a speculative batch, and the cloned
 sampler advances along each proposed token even after an earlier live
