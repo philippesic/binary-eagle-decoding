@@ -1477,3 +1477,56 @@ target-feature arithmetic diagnostic on frozen training inputs, using
 the existing native layer ladder and independent forward as controls.
 Choose the operator boundary and measurement before starting a remote
 run; keep the final split and Q4_0 serving gate sealed.
+
+## Thirty-sixth goal turn: safe target block-zero taps on 5080
+
+- The bounded target block-0 helper, runner and auditors were pushed in
+  commits `7663ec0`, `c14d7f9`, `9824c80`, `395ead3`, `02b06ac`,
+  `7c7c085`, `65ae6d5`, `47f27ae`, `09f1c4d`, `835f183`, `fe8dfc3` and
+  `80d6170`. Local C++ syntax and Ruff checks passed. No target ggml
+  submodule change was needed; the published fork gitlink remains
+  `21f617d4ef3f5dc383d3ab8dc619daaa87db7ff8`.
+- The host registry supplied the RTX 5080 address; SSH used only the tmux
+  MCP. A new detached remote checkout
+  `checkouts/target-block0-operator-20260928` preserved the older native
+  ladder checkout and the frozen 29-token **code/data-validation training
+  prompt**. The first attempts were preserved: run `a` lacked CMake on
+  PATH, `b` lacked the GPU host's pinned CUDA/glibc compatibility include,
+  and `c` built successfully but rejected a mistakenly named prompt
+  before model execution. Later runs reused `c`'s 54 MiB compiled CUDA
+  libraries by hash in separate supervised directories.
+- An output-only CUDA callback matched the sealed native layer-1 input
+  **74,240/74,240 F32 bitwise**. Attention-norm, K-norm, V, and FFN-side
+  callbacks each preserved that complete block output. Q-normalization
+  alone and the all-tap callback produced **72,329/74,240** exact values
+  (maximum `0.000244140625`), so their Q data are excluded from
+  server-path attribution. Every run's process group stopped and the
+  5080 returned to 0% utilization and 1,372 MiB whole-device baseline
+  use. The tmux session was closed after the audit.
+- The [safe-tap report](../../experiments/recurrent-target-block0-safe-taps-5080.md)
+  compares only output-preserving native CUDA/F32 taps against a pinned
+  HF CUDA/F16 eager forward. On outlier position 3, relative row L2 is
+  0.0325% after attention RMS norm, 0.0922/0.0994% at K/V, 0.2547%
+  after attention residual, and 0.2721% at full block output. Supplying
+  native attention-norm values cast to F16 changes K/V errors only to
+  0.0916/0.0934%. This rules out ordinary norm-input drift as the sole
+  explanation under that F16 intervention, but it does not identify a
+  particular Q or Flash Attention instruction. The valid HF report is
+  `checkouts/target-block0-operator-20260928/runs/target-block0-safe-hf-c-20260928/comparison.json`
+  on the registered host, SHA256
+  `e2012372501f4f9e0595465e4e69e7656330917bdf8c0547c22bd521bb1b9b43`.
+  An earlier HF report with an EAGLE-style K row permutation was corrected
+  and excluded; Qwen3 target uses NeoX half-split rows.
+- No optimizer, training, development/final prompt or Q4_0 serving
+  evaluation ran. This is one SM120/RTX 5080 F16 target-operator
+  diagnostic, not SM75 performance or a global target-feature gate. The
+  full96 native capture remains training-ineligible; the user still owns
+  exact versus predeclared numeric/trajectory acceptance and the
+  all-body budget.
+
+**Next gate:** isolate the remaining same-input K/V projection arithmetic
+from F16 input-cast effects using an operator replay with the pinned
+ggml CUDA backend, while requiring an output-preserving callback or a
+separate equivalence check. Q-normalization cannot be attributed from
+the intrusive callback. Keep CUDA target-feature and all-body training
+decisions separate from the exact Apple CPU drafter diagnostic.

@@ -321,6 +321,20 @@ numeric/state and accepted-trajectory tolerance before optimization.
 Neither option nor the proposed all-body budget is approved by these
 CPU diagnostics. See the [integrated report](../experiments/recurrent-binary-integrated-cpu-diagnostic.md).
 
+**Target-feature CUDA gate update (2026-09-28):** four output-preserving
+RTX 5080 block-0 callbacks on the frozen 29-token training outlier
+showed nonzero HF CUDA/F16 differences at attention norm, K/V projection,
+attention residual and FFN. At position 3, relative row errors were
+0.0325%, 0.0922/0.0994%, 0.2547% and 0.2721% at those successive
+boundaries. Replacing the HF K/V input with native norm cast to F16 left
+0.0916/0.0934% K/V error. Q normalization cannot be used as native-path
+evidence because requesting that callback changed 1,911 block-output
+values; output-only, K, V, norm and FFN callbacks preserved the sealed
+block output bitwise. These measurements favor further exact operator
+work before setting a global tolerance, but do not compel the user to
+choose that path. The [report](../experiments/recurrent-target-block0-safe-taps-5080.md)
+adds no all-body budget or final-set authorization.
+
 **Exact-prefix row clarification (2026-09-28):** the native verifier computes
 target logits for every proposed prefix in a speculative batch, and the cloned
 sampler advances along each proposed token even after an earlier live
