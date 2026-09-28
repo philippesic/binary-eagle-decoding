@@ -33,7 +33,7 @@ from run_binary_head_capture import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-NATIVE_REVISION = "87cdf11fb6fbfe5d35ab297ecae163c718a9593f"
+NATIVE_REVISION = "21f617d4ef3f5dc383d3ab8dc619daaa87db7ff8"
 CPU_BACKENDS = (
     "CUDA",
     "METAL",
