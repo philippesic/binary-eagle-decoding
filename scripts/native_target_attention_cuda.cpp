@@ -33,11 +33,11 @@ std::vector<char> read_exact(const std::string & path, size_t size) {
 } // namespace
 
 int main(int argc, char ** argv) {
-    if (argc != 3) return 2; // operand directory, qf32 or qf16cast
+    if (argc != 3) return 2; // operand directory, qf32 or qf16roundtrip
     try {
         const std::string dir = argv[1];
         const std::string mode = argv[2];
-        if (mode != "qf32" && mode != "qf16cast") return 2;
+        if (mode != "qf32" && mode != "qf16roundtrip") return 2;
         auto q_bytes = read_exact(dir + "/q_rope.f32", TOKENS * Q_WIDTH * sizeof(float));
         auto k_bytes = read_exact(dir + "/k_cache.f16", KV_SLOTS * KV_WIDTH * sizeof(ggml_fp16_t));
         auto v_bytes = read_exact(dir + "/v_cache.f16", KV_SLOTS * KV_WIDTH * sizeof(ggml_fp16_t));
@@ -62,7 +62,8 @@ int main(int argc, char ** argv) {
         ggml_tensor * mask = ggml_new_tensor_4d(ctx, GGML_TYPE_F16, KV_SLOTS, TOKENS, 1, 1);
         ggml_tensor * weight = ggml_new_tensor_2d(ctx, GGML_TYPE_F16, Q_WIDTH, HIDDEN);
         ggml_tensor * residual = ggml_new_tensor_2d(ctx, GGML_TYPE_F32, HIDDEN, TOKENS);
-        ggml_tensor * q_operand = mode == "qf16cast" ? ggml_cast(ctx, q_raw, GGML_TYPE_F16) : q_raw;
+        ggml_tensor * q_operand = mode == "qf16roundtrip"
+            ? ggml_cast(ctx, ggml_cast(ctx, q_raw, GGML_TYPE_F16), GGML_TYPE_F32) : q_raw;
         ggml_tensor * q = ggml_permute(ctx, q_operand, 0, 2, 1, 3);
         ggml_tensor * k = ggml_permute(ctx, k_cache, 0, 2, 1, 3);
         ggml_tensor * v = ggml_permute(ctx, v_cache, 0, 2, 1, 3);

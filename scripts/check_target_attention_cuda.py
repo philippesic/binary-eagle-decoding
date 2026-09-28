@@ -143,10 +143,10 @@ def probe(
     mask.tofile(operands / "causal_mask.f16")
     weight.tofile(operands / "o_weight.f16")
     np.asarray(ladder[:, 0, :], dtype="<f4").tofile(operands / "layer_input.f32")
-    for mode in ("qf32", "qf16cast"):
+    for mode in ("qf32", "qf16roundtrip"):
         subprocess.run([str(helper), str(operands), mode], check=True, timeout=120)
     outputs = {}
-    for mode in ("qf32", "qf16cast"):
+    for mode in ("qf32", "qf16roundtrip"):
         values = np.fromfile(operands / f"ggml_attn_{mode}_residual.f32", dtype="<f4")
         if values.size != TOKENS * HIDDEN:
             raise ValueError(f"ggml {mode} attention residual has wrong size")
@@ -155,8 +155,8 @@ def probe(
         raise ValueError("ggml attention residual has nonfinite values")
     metrics = {
         "ggml_qf32_vs_server": _metrics(outputs["qf32"], native["ffn_input"]),
-        "ggml_qf16cast_vs_server": _metrics(outputs["qf16cast"], native["ffn_input"]),
-        "ggml_q_cast_vs_qf32": _metrics(outputs["qf16cast"], outputs["qf32"]),
+        "ggml_qf16roundtrip_vs_server": _metrics(outputs["qf16roundtrip"], native["ffn_input"]),
+        "ggml_q_roundtrip_vs_qf32": _metrics(outputs["qf16roundtrip"], outputs["qf32"]),
     }
     report = {
         "schema": "target_attention_cuda_same_input_v1",
@@ -168,7 +168,7 @@ def probe(
             "compute_capability": torch.cuda.get_device_capability(0),
         },
         "precision": (
-            "F32 native post-RoPE Q or explicit F16 cast; F16 padded K/V cache and causal mask; "
+            "F32 native post-RoPE Q or F16-roundtrip F32 Q; F16 padded K/V cache and mask; "
             "F32 Flash Attention accumulation; F16 GGUF output weight; F32 residual"
         ),
         "prefill_tokens": TOKENS,
