@@ -30,11 +30,11 @@ std::vector<char> read_exact(const std::string & path, size_t size) {
 } // namespace
 
 int main(int argc, char ** argv) {
-    if (argc != 3) return 2; // operand directory, f32 or f16cast
+    if (argc != 3) return 2; // operand directory, f32/f16cast with optional retain suffix
     try {
         const std::string dir = argv[1];
         const std::string mode = argv[2];
-        if (mode != "f32" && mode != "f16cast") return 2;
+        if (mode != "f32" && mode != "f16cast" && mode != "f32retain") return 2;
         auto input_bytes = read_exact(dir + "/native_norm.f32", TOKENS * HIDDEN * sizeof(float));
         auto weight_bytes = read_exact(dir + "/q_weight.f16", HIDDEN * Q_WIDTH * sizeof(ggml_fp16_t));
         auto norm_bytes = read_exact(dir + "/q_norm_weight.f32", HEAD_WIDTH * sizeof(float));
@@ -65,8 +65,10 @@ int main(int argc, char ** argv) {
             ctx, normed, positions, nullptr, HEAD_WIDTH, GGML_ROPE_TYPE_NEOX,
             40960, 1000000.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f
         );
-        ggml_set_output(projected);
-        ggml_set_output(normed);
+        if (mode == "f32retain") {
+            ggml_set_output(projected);
+            ggml_set_output(normed);
+        }
         ggml_cgraph * graph = ggml_new_graph_custom(ctx, 48, false);
         ggml_build_forward_expand(graph, output);
         ggml_backend_buffer_t buffer = ggml_backend_alloc_ctx_tensors(ctx, backend);

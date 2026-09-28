@@ -161,19 +161,19 @@ def probe(
     weight.astype("<f2").tofile(operands / "q_weight.f16")
     norm_weight.astype("<f4").tofile(operands / "q_norm_weight.f32")
     np.arange(TOKENS, dtype="<i4").tofile(operands / "positions.i32")
-    for mode in ("f32", "f16cast"):
+    for mode in ("f32", "f16cast", "f32retain"):
         subprocess.run([str(helper), str(operands), mode], check=True, timeout=120)
     ggml = {
         mode: {stage: _load(operands, mode, stage) for stage in ("raw", "normed", "rope")}
-        for mode in ("f32", "f16cast")
+        for mode in ("f32", "f16cast", "f32retain")
     }
     if not all(np.isfinite(value).all() for stages in ggml.values() for value in stages.values()):
         raise ValueError("Q replay produced nonfinite values")
-    for mode, stages in ggml.items():
-        norm_l2 = np.linalg.norm(stages["normed"].astype(np.float64), axis=1)
-        rope_l2 = np.linalg.norm(stages["rope"].astype(np.float64), axis=1)
-        if not np.allclose(norm_l2, rope_l2, rtol=1e-5, atol=1e-5):
-            raise ValueError(f"Q {mode} intermediate readback fails RoPE norm preservation")
+    retained = ggml["f32retain"]
+    norm_l2 = np.linalg.norm(retained["normed"].astype(np.float64), axis=1)
+    rope_l2 = np.linalg.norm(retained["rope"].astype(np.float64), axis=1)
+    if not np.allclose(norm_l2, rope_l2, rtol=1e-5, atol=1e-5):
+        raise ValueError("retained Q intermediate readback fails RoPE norm preservation")
     config = AutoConfig.from_pretrained(hf_model, local_files_only=True)
     if config.rms_norm_eps != 1e-6:
         raise ValueError("HF Qwen3 RMS epsilon differs from pinned ggml graph")
@@ -201,14 +201,13 @@ def probe(
     metrics = {
         "ggml_f32_rope_vs_server": _metrics(ggml["f32"]["rope"], native_q),
         "ggml_f16cast_rope_vs_server": _metrics(ggml["f16cast"]["rope"], native_q),
-        **{
-            f"ggml_cast_vs_f32_{stage}": _metrics(ggml["f16cast"][stage], ggml["f32"][stage])
-            for stage in ("raw", "normed", "rope")
-        },
-        **{
-            f"torch_f16_vs_ggml_{stage}": _metrics(torch_stages[stage], ggml["f32"][stage])
-            for stage in ("raw", "normed", "rope")
-        },
+        "ggml_cast_vs_f32_raw": _metrics(ggml["f16cast"]["raw"], ggml["f32"]["raw"]),
+        "ggml_cast_vs_f32_rope": _metrics(ggml["f16cast"]["rope"], ggml["f32"]["rope"]),
+        "ggml_retained_raw_vs_exact_raw": _metrics(retained["raw"], ggml["f32"]["raw"]),
+        "ggml_retained_rope_vs_server": _metrics(retained["rope"], native_q),
+        "torch_f16_vs_ggml_raw": _metrics(torch_stages["raw"], ggml["f32"]["raw"]),
+        "torch_f16_vs_ggml_retained_normed": _metrics(torch_stages["normed"], retained["normed"]),
+        "torch_f16_vs_ggml_retained_rope": _metrics(torch_stages["rope"], retained["rope"]),
         "torch_f16_rope_vs_server": _metrics(torch_stages["rope"], native_q),
     }
     report = {
