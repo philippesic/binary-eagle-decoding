@@ -24,6 +24,9 @@ const std::map<std::string, int64_t> SELECTED = {
     {"kqv_out-0", 4096},
     {"ffn_inp-0", 2560}, {"ffn_norm-0", 2560}, {"ffn_out-0", 2560},
     {"l_out-0", 2560},
+    {"attn_norm-14", 2560}, {"kqv_out-14", 4096},
+    {"ffn_inp-14", 2560}, {"ffn_norm-14", 2560}, {"ffn_out-14", 2560},
+    {"l_out-14", 2560},
 };
 
 struct capture_state {
@@ -34,6 +37,7 @@ struct capture_state {
     bool complete = false;
     bool deferred_q_mode = false;
     bool k_rope_mode = false;
+    std::string output_name = "l_out-0";
     ggml_tensor * deferred_q = nullptr;
     std::set<std::string> enabled;
     std::string error;
@@ -63,7 +67,7 @@ struct capture_state {
         index << '\n';
         if (!index) throw std::runtime_error("cannot write block-0 index");
         bytes_written += bytes;
-        if (name == "l_out-0") complete = true;
+        if (name == output_name) complete = true;
     }
 
     static bool callback(ggml_tensor * tensor, bool ask, void * user_data) {
@@ -123,7 +127,12 @@ int main(int argc, char ** argv) {
         state.directory = argv[3];
         const std::string mode = argc == 5 ? argv[4] : "all";
         if (mode == "all") {
-            for (const auto & [name, width] : SELECTED) { (void) width; state.enabled.insert(name); }
+            for (const auto & [name, width] : SELECTED) {
+                (void) width;
+                if (name.size() >= 2 && name.compare(name.size() - 2, 2, "-0") == 0) {
+                    state.enabled.insert(name);
+                }
+            }
         } else if (mode == "output_only") {
             state.enabled = {"l_out-0"};
         } else if (mode == "attn_norm") {
@@ -146,6 +155,10 @@ int main(int argc, char ** argv) {
             state.enabled = {"kqv_out-0", "l_out-0"};
         } else if (mode == "ffn") {
             state.enabled = {"ffn_inp-0", "ffn_norm-0", "ffn_out-0", "l_out-0"};
+        } else if (mode == "block14_stages") {
+            state.enabled = {"attn_norm-14", "kqv_out-14", "ffn_inp-14",
+                             "ffn_norm-14", "ffn_out-14", "l_out-14"};
+            state.output_name = "l_out-14";
         } else {
             return 2;
         }

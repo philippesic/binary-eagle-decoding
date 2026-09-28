@@ -30,9 +30,15 @@ SELECTED = {
     "ffn_norm-0",
     "ffn_out-0",
     "l_out-0",
+    "attn_norm-14",
+    "kqv_out-14",
+    "ffn_inp-14",
+    "ffn_norm-14",
+    "ffn_out-14",
+    "l_out-14",
 }
 CAPTURE_MODES = {
-    "all": SELECTED,
+    "all": {name for name in SELECTED if name.endswith("-0")},
     "output_only": {"l_out-0"},
     "attn_norm": {"attn_norm-0", "l_out-0"},
     "qkv_normed": {"Qcur_normed-0", "Kcur_normed-0", "Vcur-0", "l_out-0"},
@@ -43,6 +49,14 @@ CAPTURE_MODES = {
     "v_only": {"Vcur-0", "l_out-0"},
     "attn_output": {"kqv_out-0", "l_out-0"},
     "ffn": {"ffn_inp-0", "ffn_norm-0", "ffn_out-0", "l_out-0"},
+    "block14_stages": {
+        "attn_norm-14",
+        "kqv_out-14",
+        "ffn_inp-14",
+        "ffn_norm-14",
+        "ffn_out-14",
+        "l_out-14",
+    },
 }
 
 
@@ -167,7 +181,7 @@ def _index(root: Path, *, mode: str = "all") -> tuple[dict[str, list[dict]], dic
             != TOKENS
             * (
                 4096
-                if name.startswith("Qcur") or name == "kqv_out-0"
+                if name.startswith(("Qcur", "kqv_out"))
                 else 1024
                 if name.startswith(("Kcur", "Vcur"))
                 else HIDDEN
@@ -209,20 +223,26 @@ def audit(root: Path, target: Path, capture: Path, helper: Path, *, mode: str = 
     ):
         raise ValueError("block-0 probe does not use the sealed prefix")
     entries, hashes = _index(capture, mode=mode)
-    output_rows = entries["l_out-0"]
+    layer14 = mode == "block14_stages"
+    output_rows = entries["l_out-14" if layer14 else "l_out-0"]
     if len(output_rows) != 1:
         raise ValueError("block-0 output is missing or repeated")
     output = _tensor(capture, output_rows[0]).reshape(TOKENS, HIDDEN)
-    expected = np.asarray(ladder[:, 1, :])
+    expected = np.asarray(ladder[:, 15 if layer14 else 1, :])
     delta = output.astype(np.float64) - expected.astype(np.float64)
     exact = int(np.count_nonzero(output.view("<u4") == expected.view("<u4")))
     return {
-        "schema": "target_block0_native_cuda_capture_v1",
+        "schema": (
+            "target_layer14_native_cuda_capture_v1"
+            if layer14
+            else "target_block0_native_cuda_capture_v1"
+        ),
         "status": "same_native_block_output" if exact == output.size else "block_output_differs",
         "hardware": {"machine": platform.machine(), "precision": "CUDA target F16 GGUF"},
         "prompt_id": PROMPT_ID,
         "prefill_tokens": TOKENS,
         "capture_mode": mode,
+        "output_layer": 14 if layer14 else 0,
         "captured_tensors": {name: len(values) for name, values in entries.items()},
         "block_output": {
             "elements": output.size,
