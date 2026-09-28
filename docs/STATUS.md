@@ -35,6 +35,12 @@ records hashes, terms and limitations. A Luna worker accidentally queried
 local CUDA/MPS availability once during environment discovery; no accelerator
 operation or model inference ran, and verification resumed on explicit CPU.
 
+**Trainer integration (2026-09-28):** the joint QAT CLI now accepts an audited
+native-prefix provider (`29f0e96`). It checks eligibility before model loading,
+rechecks trace and exact-prefix compact-teacher ancestry, and retains recurrent
+state/cache gradients in CPU fixtures. The concrete future-capture factory is
+being wired now. Native training quality and throughput remain unmeasured.
+
 **Latest handoff (2026-09-28):** the user requested an overarching plan and a fresh team to continue the existing EAGLE work with no GPU access. Parent starting point is `d111335`, following the predecessor's `5110257`; native gitlink is `21f617d4ef3f5dc383d3ab8dc619daaa87db7ff8`. Both host pause flags are set. The plan supersedes the old next action to continue target block-14 parity. Reuse existing capture/export/CPU tests; use practical numerical gates and direct native evaluation. The old 96 prompts are smoke/regression data, not an adequate full-body QAT corpus. The [active-goal handoff](goals/recurrent-binary-body-head.md#fresh-team-handoff-eagle-w1-cpu-phase) gives the new team's assignment. Its coordinator will record fresh task/worker IDs there.
 
 **Latest completed goal:** [mixed precision rescue and frozen-body head adaptation on RTX 5080](goals/binary-rescue-head-5080.md), completed 2026-09-28 UTC. The preceding [binary scale fitting goal](goals/binary-scale-fitting-5080.md) completed 2026-09-27 UTC.

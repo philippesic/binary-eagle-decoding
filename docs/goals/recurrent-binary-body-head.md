@@ -2074,6 +2074,37 @@ checkpoint; do not create more open-ended numerical investigations.
   operation, remote check or inference ran. The worker stopped availability
   probing and continues with explicit CPU commands only. This is recorded as
   an instruction deviation, not GPU validation evidence.
+- The Luna pass on main `1e32901` ran the archived analyzer to ignored
+  `results/cpu-integrated-verification-20260928/eagle-latency-accounting.json`
+  (SHA256 `2b6c2a36708d96b0ecfd0f75dc6477673f9defef2596e0f067d7f7dc8554df12`).
+  It reconciled every round and draft-stage partition across 11 variants;
+  Q4_0 had 1,493 rounds/7,320 proposals/1,555 accepted/3,048 emitted,
+  D group-128/A16 had 2,139/10,449/909/3,048. Their unassigned CPU-wall
+  round time was 103,568 and 151,330 µs respectively. Two analyzer, four data
+  and six QAT tests passed; explicit CPU one-step smoke ran row A16/A8/A4/A1
+  and group-128/A16, each with finite loss and 18 gradient tensors. No sign
+  flips occurred in those single steps; they are not convergence evidence.
+  This Luna worktree lacked a CPU `libllama` and skipped its loader class,
+  while the coordinator's separate main CPU build and 11 loader tests passed.
+- The completed data worktree was archived after copying ignored raw/normalized
+  files and the candidate freeze to main; temporary data branches were removed
+  after patch-equivalence checks. Native and verification worktree cleanup is
+  pending; QAT provider work remains active.
+- The QAT provider addition `2e31437` was reviewed, integrated on main as
+  `29f0e96` and pushed. It installs all nine row modules from pinned original
+  dense weights or group modules from explicit D arrays; audits native-prefix
+  rounds and exact-prefix compact teacher binding; rebuilds the current student
+  context cache and retains state/K/V gradients. The CLI accepts an injected
+  provider factory and rejects `training_eligible:false` before loading
+  models. Twenty-one focused CPU tests and Ruff passed on main. A concrete
+  model/capture-backed factory is still being implemented so the documented
+  command will exist when larger eligible native captures arrive; no model
+  weights were loaded or inference run in this phase.
+- Runtime and both Luna verification worktrees were archived after tracked
+  integration checks; their temporary parent branches were removed. The
+  native fork branch `research/w1-phase1a-runtime` remains published because
+  main's gitlink references `14c188e`. Ignored analyzer JSON and five tiny
+  QAT smoke artifacts were preserved in main `results/` before archival.
 - Boundaries: legacy final-set contents stay sealed; the 96-prompt capture is
   smoke/regression evidence only. Group-128/A16 and row-scale W1Ax are distinct
   representation contracts. GPU timing, capture and training wait for explicit
