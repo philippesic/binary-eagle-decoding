@@ -1190,3 +1190,31 @@ numeric/trajectory policy and all-body training budget.
 and ordered binary down projection to determine whether their remaining
 one-row difference disappears; then resume the draft cache/state audit.
 Keep results CPU-scoped and do not infer a training gate from this row.
+
+## Twenty-eighth goal turn: native SiLU closes one-column FFN
+
+- Commit `2960121` adds a sealed [native-SiLU downstream
+  replay](../../experiments/recurrent-binary-ffn-native-silu.md). It reads
+  the same reasoning execution-2/column-0 native up and SiLU vectors,
+  checks the candidate-D and stage hashes, multiplies them in F32, and
+  runs the existing ordered A16/W1 down projection. The product matches
+  **9,728/9,728** and down matches **2,560/2,560** native F32 values
+  bitwise. The Torch-SiLU control reproduces the prior 6,772/9,728
+  product and 5/2,560 down counts, so the intervention isolates the
+  change to SiLU input. The ignored machine report SHA256 is
+  `3c19a62baff2b2afb744462def71709db998e407b6f1287c0b909ac7e2b9f7ef`.
+- Ruff lint/format and the real-input replay passed. Together with the
+  previously exact gate/up and pinned ggml SiLU vector replay, this
+  accounts for the first-seed FFN arithmetic end to end on **one Apple
+  M3 Max CPU column**. It does not certify another column, recurrent
+  trajectory, CUDA/SM75 execution or training tolerance. No local model
+  server, GPU job, optimizer, final prompt or Q4_0 evaluation ran. The
+  5080 remains free; all-body optimizer budget and exact versus numeric
+  policy are still user-owned.
+
+**Next gate:** quantify the earlier reasoning stored-cache discrepancy
+(70 F16 key and 66 F16 value differences across 47 visible positions) at
+its first differing projection/write boundary. The native-attention
+operand ablation already found a 0.002172 maximum attention difference
+with student K/V and exact agreement with native K/V. Continue with the
+sealed CPU reasoning capture and preserve the no-optimizer boundary.

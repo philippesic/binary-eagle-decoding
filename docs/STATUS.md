@@ -6,16 +6,17 @@ The target/verifier model precision remains as frozen for each experiment.
 
 **Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), parity and capture preparation. The user has authorized the free RTX 5080 for needed work; no all-body training budget has been approved. **Latest completed goal:** [mixed precision rescue and frozen-body head adaptation on RTX 5080](goals/binary-rescue-head-5080.md), completed 2026-09-28 UTC. The preceding [binary scale fitting goal](goals/binary-scale-fitting-5080.md) completed 2026-09-27 UTC.
 
-**Latest checkpoint (2026-09-28 11:12 UTC):** on the sealed reasoning
-first-seed gate vector, the pinned ggml CPU vector SiLU reproduced all
-9,728 native F32 outputs bitwise. Torch SiLU reproduced 6,557; the ggml
-scalar tail reproduced 6,519. The first FFN stage gap on this Apple M3 Max
-column is explained by ggml's vector SiLU arithmetic. The
-[arithmetic report](../experiments/recurrent-binary-silu-arithmetic.md) and
-[active-goal checkpoint](goals/recurrent-binary-body-head.md#twenty-seventh-goal-turn-cpu-silu-arithmetic-replay)
-record hashes, limits and next work. No worker, local server or remote job
-is active; the 5080 is free. Training, final-set and Q4_0 evaluation remain
-gated.
+**Latest checkpoint (2026-09-28 UTC):** the pinned ggml CPU vector SiLU
+reproduced all 9,728 captured reasoning first-seed values bitwise. Feeding
+that native SiLU into the candidate-D product and ordered binary down
+projection made those stages exact too: 9,728/9,728 and 2,560/2,560 F32
+values. The one-column Apple M3 Max FFN arithmetic path is now bitwise
+accounted for. The [SiLU report](../experiments/recurrent-binary-silu-arithmetic.md),
+[downstream report](../experiments/recurrent-binary-ffn-native-silu.md) and
+[active-goal checkpoint](goals/recurrent-binary-body-head.md#twenty-eighth-goal-turn-native-silu-closes-one-column-ffn)
+record hashes and limits. Next is the reasoning draft cache/state residual.
+No worker, local server or remote job is active; the 5080 is free. Training,
+final-set and Q4_0 evaluation remain gated.
 
 **Prior CPU arithmetic checkpoint (2026-09-28 UTC):** corrected CPU RMS norm and RoPE
 frequency arithmetic matched all 619,520 F16 fused-input and 123,904 raw
