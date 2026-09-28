@@ -325,6 +325,10 @@ established.
   alignment evidence, not exact target-feature or full-drafter parity.
   No GPU, accelerator, remote host, final prompt, new training step or
   Q4_0 performance measurement ran. The native Goal remains active.
+- Parent commit `c4f4849` is pushed to `main`. The optional
+  `target-feature-cpu` dependency group pins Transformers 4.57.1; raw
+  captures and source model weights remain outside Git. No remote session
+  or native server process remains active for this turn.
 
 **Published checkpoints:** `7744d8e` created the goal/protocol; `1e3742d`
 integrated the trace contract; `a4dd003` integrated learned GGUF export;
