@@ -126,9 +126,25 @@ offset-form vocabulary maps and optional raw target logits; separately, they
 filter the raw feature stream by disposition and exact accepted-prefix
 ancestry into the feature ledger required above. A request cell manifest can
 verify task-to-prompt ownership and file hashes. A plain task map alone is
-reported as unverified and is insufficient to start training. Cross-round
-acceptance continuity, pinned model identity in captured rows, and actual
-target/drafter numerical parity remain stop gates.
+reported as unverified and is insufficient to start training. Complete
+request/terminal continuity, pinned model identity in captured rows, and
+actual target/drafter numerical parity remain stop gates.
+
+The `recurrent-train` capture-runner mode prepares the exact frozen 96-prompt
+D/D own-history cell. It pins target, draft and absolute D vocabulary-map
+hashes, requests both raw target streams with explicit positive limits,
+disables context shift, prompt-cache reuse and checkpoints, and records
+request task/ranges and raw-file hashes. This is a future run protocol only:
+its tests use mocked CPU server files, and it has not been used to launch a
+native model. Its cell manifest and task map feed both native preparers.
+`scripts/audit_recurrent_continuity.py` then checks prefill, each speculative
+input/disposition and successive accepted prefixes against canonical round
+records. It deliberately leaves the initial target sample, terminal emission,
+stopping, request completeness and numerical feature values unproved.
+`scripts/build_recurrent_capture_bundle.py` joins the cell and preparer
+hashes, runs the final CPU capture audit and publishes a self-contained
+preparation bundle marked `training_eligible: false`. No current CPU result
+certifies native training eligibility or model quality.
 
 ## Bounded proposed first trial and stop gates
 

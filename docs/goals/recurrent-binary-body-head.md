@@ -67,7 +67,7 @@ file and `docs/STATUS.md` are the durable project checkpoint.
   positions are `P+1`, `P+2`; invalid terminal rows create no decoder call. This checks the
   training interface, not actual EAGLE mask or K/V byte parity.
 
-**Latest CPU checks:** 59 recurrent tests, seven explicit decoder-step tests,
+**Latest CPU checks:** 72 recurrent tests, 16 capture-runner tests, seven explicit decoder-step tests,
 five frozen-operand tests, eight native loader fixtures, eight existing
 scale-fitting tests, Ruff
 lint/format and `git diff --check` pass. No local Metal/MPS or CUDA
@@ -212,6 +212,36 @@ row-preparer and submodule feature-capture worktrees/branches were clean and
 retired after integration. No live process or remote session belongs to
 this goal.
 
+## Sixth goal turn: bounded capture assembly and continuity
+
+- The native capture runner gained a `recurrent-train` mode in commit
+  `3454f7a`. It requires the frozen 96-prompt hash, pinned FP16 target and
+  candidate-D draft hashes, and the D absolute vocabulary map. Its D/D
+  own-history policy requests bounded raw target logits and target features,
+  disables context shift/cache reuse/checkpoint replay, and records task and
+  request row ranges plus raw-file hashes. This mode has only been exercised
+  against mocked CPU server output; no native server or model was run.
+- `scripts/audit_recurrent_continuity.py` checks complete prefill, native
+  speculative target input rows `j=0..len(D)`, retention through the
+  accepted depth, and consecutive round prefixes and seeds. It rejects
+  unexplained gaps, task/slot changes, misplaced target-only inputs and
+  contradictory terminal input tokens. It verifies internal acceptance
+  ancestry, not the initial target sample, final token emission, stopping,
+  complete requests or numerical target features.
+- The bundle builder in `be0e2af` joins cell-owned raw capture hashes, both
+  preparer outputs and the final CPU capture audit. An optional continuity
+  report must name the same round, event and task-map sources. Its output is
+  explicitly `training_eligible: false` because runtime feature parity,
+  full-drafter numerical/cache parity and live model evidence remain open.
+  The combined focused checks pass: 72 recurrent tests and 16 capture-runner
+  tests, Ruff and diff hygiene. No accelerator, GPU host, native model
+  inference, training or final-set use occurred.
+
+This is the **sixth consecutive goal turn** under the no-GPU restriction.
+Meaningful CPU work closed the offline assembly and internal continuity
+gaps. The native Goal remains active; a GPU-only impasse has not yet been
+established.
+
 **Published checkpoints:** `7744d8e` created the goal/protocol; `1e3742d`
 integrated the trace contract; `a4dd003` integrated learned GGUF export;
 `fead52a` integrated the binary CPU reference; `792b7e0` published the
@@ -231,10 +261,10 @@ restriction. Do not request or infer that change.
 
 ## CPU stop gate and next actions
 
-1. Join one synthetic native head/round/logit/feature bundle through both
-   preparers and the final CPU capture audit; add cross-round acceptance
-   continuity checks before training eligibility. The new native writers
-   still need real-model runtime and feature-row-order validation.
+1. Keep the synthetic joined bundle as a preparation-only gate. Audit
+   whether captured model/map identity and response-to-round completion can
+   be made stronger with local evidence. The new native writers still need
+   real-model runtime and feature-row-order validation.
 2. Connect prefix rebuilding to the pinned full drafter only with verified
    attention/RoPE/KV rounding and mask semantics; do not substitute saved
    normalized head states. Keep the sequential reference and grouped-matmul
@@ -242,7 +272,7 @@ restriction. Do not request or infer that change.
 3. Recheck CPU gates and record hashes/commits at the next milestone. Keep
    model files/raw captures out of Git. Audit whether remaining local work
    can still advance the goal. This is the
-   **fifth** goal turn under the no-GPU restriction. Do not mark the Goal
+   **sixth** goal turn under the no-GPU restriction. Do not mark the Goal
    blocked until the same GPU-only impasse persists across at least three
    consecutive goal turns and no meaningful CPU-only work remains.
 
