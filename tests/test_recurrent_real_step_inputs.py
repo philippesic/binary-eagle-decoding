@@ -3,11 +3,14 @@
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from check_recurrent_real_step import _retained_feature_indices  # noqa: E402
+import check_recurrent_real_step as replay  # noqa: E402
+
+_retained_feature_indices = replay._retained_feature_indices
 
 
 class RetainedFeatureTests(unittest.TestCase):
@@ -46,6 +49,19 @@ class RetainedFeatureTests(unittest.TestCase):
         ]
         with self.assertRaisesRegex(ValueError, "exactly one"):
             _retained_feature_indices(duplicate, [10, 11, 12], 5)
+
+    def test_attention_mode_requires_exact_pinned_helper(self):
+        self.assertIsNone(replay._attention_oracle("f32", None))
+        with self.assertRaisesRegex(ValueError, "requires native attention mode"):
+            replay._attention_oracle("f32", Path("helper"))
+        with self.assertRaisesRegex(ValueError, "requires a pinned helper"):
+            replay._attention_oracle("native_forward_f32_backward", None)
+        with mock.patch.object(replay, "NativeCPUAttentionOracle") as oracle:
+            helper = Path("helper")
+            self.assertIs(
+                replay._attention_oracle("native_forward_f32_backward", helper), oracle.return_value
+            )
+            oracle.assert_called_once_with(helper, threads=10)
 
 
 if __name__ == "__main__":

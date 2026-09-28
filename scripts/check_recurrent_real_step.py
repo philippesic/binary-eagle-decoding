@@ -27,6 +27,7 @@ from load_recurrent_binary_init import load_candidate_d_arrays  # noqa: E402
 from prepare_recurrent_native_rows import read_jsonl, sha256  # noqa: E402
 
 from w1a1_eagle.frozen_operands import FrozenOperands  # noqa: E402
+from w1a1_eagle.native_attention_oracle import NativeCPUAttentionOracle  # noqa: E402
 from w1a1_eagle.native_step import NativeStepAdapter, bind_frozen_norms  # noqa: E402
 from w1a1_eagle.recurrent_binary import (  # noqa: E402
     CANDIDATE_D_BASE_TO_PATH,
@@ -45,7 +46,13 @@ def _norm(width: int, epsilon: float) -> nn.Module:
 
 
 def _build_drafter(
-    config_path: Path, candidate_d: Path, operands: FrozenOperands, arithmetic: str
+    config_path: Path,
+    candidate_d: Path,
+    operands: FrozenOperands,
+    arithmetic: str,
+    *,
+    attention_mode: str = "f32",
+    native_attention_oracle: NativeCPUAttentionOracle | None = None,
 ) -> NativeStepAdapter:
     config = json.loads(config_path.read_text())
     if (
@@ -95,7 +102,22 @@ def _build_drafter(
         parent = drafter.get_submodule(parent_name) if parent_name else drafter
         setattr(parent, name, binary)
     bind_frozen_norms(drafter, operands.norm_arrays)
-    return NativeStepAdapter(drafter, embedding_lookup=operands)
+    return NativeStepAdapter(
+        drafter,
+        embedding_lookup=operands,
+        attention_mode=attention_mode,
+        native_attention_oracle=native_attention_oracle,
+    )
+
+
+def _attention_oracle(mode: str, helper: Path | None) -> NativeCPUAttentionOracle | None:
+    if mode == "f32":
+        if helper is not None:
+            raise ValueError("native attention helper requires native attention mode")
+        return None
+    if mode != "native_forward_f32_backward" or helper is None:
+        raise ValueError("native attention mode requires a pinned helper")
+    return NativeCPUAttentionOracle(helper, threads=10)
 
 
 def _retained_feature_indices(events: list[dict], prefix: list[int], task_id: int) -> list[int]:
@@ -128,6 +150,8 @@ def check_round(
     arithmetic: str = "group_matmul",
     tap_output: Path | None = None,
     round_index: int = 0,
+    attention_mode: str = "f32",
+    native_attention_helper: Path | None = None,
 ) -> dict:
     if (
         arithmetic not in {"native_order", "group_matmul"}
@@ -166,7 +190,15 @@ def check_round(
         raise ValueError("native head-state file has wrong row count")
     native_values = native_values.reshape(-1, 2560)
     operands = FrozenOperands(target_gguf, draft_gguf)
-    adapter = _build_drafter(drafter_config, draft_gguf, operands, arithmetic)
+    oracle = _attention_oracle(attention_mode, native_attention_helper)
+    adapter = _build_drafter(
+        drafter_config,
+        draft_gguf,
+        operands,
+        arithmetic,
+        attention_mode=attention_mode,
+        native_attention_oracle=oracle,
+    )
     round_heads = [
         row
         for row in heads
@@ -258,6 +290,10 @@ def check_round(
         "schema": "recurrent_real_step_cpu_diagnostic_v1",
         "execution_device": "cpu",
         "arithmetic": arithmetic,
+        "attention_mode": attention_mode,
+        "attention_backward": (
+            "f32_attention_surrogate" if oracle is not None else "f32_attention"
+        ),
         "status": "numeric_drift_measured_parity_unproven",
         "round_index": round_index,
         "prefix_tokens": len(prefix),
@@ -289,6 +325,11 @@ def check_round(
             "head_states": sha256(native_path),
             "feature_events": sha256(capture_dir / "heads.target_features.jsonl"),
             "feature_values": sha256(feature_path),
+            **(
+                {"native_attention_helper": sha256(native_attention_helper)}
+                if native_attention_helper is not None
+                else {}
+            ),
         },
     }
 
@@ -304,6 +345,10 @@ def main() -> None:
     )
     parser.add_argument("--tap-output", type=Path)
     parser.add_argument("--round-index", type=int, default=0)
+    parser.add_argument(
+        "--attention-mode", choices=("f32", "native_forward_f32_backward"), default="f32"
+    )
+    parser.add_argument("--native-attention-helper", type=Path)
     parser.add_argument("--report", type=Path, required=True)
     args = parser.parse_args()
     if args.report.exists():
@@ -316,6 +361,8 @@ def main() -> None:
         args.arithmetic,
         args.tap_output,
         args.round_index,
+        args.attention_mode,
+        args.native_attention_helper,
     )
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
