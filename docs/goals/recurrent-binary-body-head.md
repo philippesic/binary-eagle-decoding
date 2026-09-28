@@ -1097,7 +1097,9 @@ capture and keep the default training mode unchanged until that decision.
   report SHA256 values are
   `25a84157686595caa79d89d721a5f1b2fab41627e066f393001b7eeae9091c23`
   and `afe5faf6ca28dc55d3acbd267eaf0402bdd58ce0a1a5be9dfc8e921d0c39a887`.
-  No GPU, training, final-set or Q4_0 run occurred.
+  The main checkout reran both checks and preserved the ignored reports
+  before the integrated temporary worktree and branch were retired. No
+  local model server, GPU, training, final-set or Q4_0 run occurred.
 
 **Next gate:** if exact CPU drafter parity is pursued, capture only the
 native reasoning first-seed gate/up/SiLU/fused FFN intermediates and replay
