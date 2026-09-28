@@ -43,6 +43,19 @@ progress. The [active goal checkpoint](goals/recurrent-binary-body-head.md#fifte
 records counts, hashes, limitations and the next CPU checks. The raw capture
 is not yet training-eligible; no optimization or final-set evaluation ran.
 
+**Final capture preparation checkpoint (2026-09-28 UTC):** the frozen
+96-prompt bundle and all-request audit now pass. All 40,815 raw verifier
+logit rows and 15,042 retained feature rows are joined; 96/96 responses
+match 12,251 native emissions, including one final EOS stop with an
+un-emitted canonical suffix. Mean mapped target probability mass is 0.972
+on captured candidate-D histories. The bundle remains explicitly
+`training_eligible: false`. A CPU attention arithmetic ablation explains
+most first-seed drift but leaves residual numerical differences. The
+[active goal checkpoint](goals/recurrent-binary-body-head.md#sixteenth-goal-turn-full-capture-audited-training-still-gated)
+and [full capture report](../experiments/recurrent-binary-full-capture-5080.md)
+record hashes, checks, failed first audit attempts and remaining gates.
+The RTX 5080 is free; no training or final-set use occurred.
+
 **Handoff checkpoint (2026-09-28 06:35 UTC):** the active goal file records
 the current objective, pushed commits, CPU tests, projected K/V write
 comparison, pending 5080 clarification and exact next actions. Code round 2

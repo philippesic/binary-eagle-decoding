@@ -213,15 +213,15 @@ Pending user-owned research choices, with independent CPU work available:
 | Scale boundary | Keep D's `scale >= 0` including exact zero, or change to strictly positive scales with a documented initialization difference. D's NNLS fit explicitly allowed zeros; deployment already accepts nonnegative F32 scales. CPU implementation should retain D exactly. | Freeze before training/export. |
 | Training prefix distribution | Teacher-force bounded native D prefixes with exact labels and differentiable student recurrence, or refresh exact-prefix labels as student proposals change. The former is reproducible and CPU-testable but off-policy after sign changes; the latter requires new real-model target capture and extra compute. Neither guarantees live acceptance. | Capture/support audit and a fixed budget before real training. |
 | First all-body budget | Proposed one 500-step / 45-optimizer-minute run, at most 8,160 starts of up to five steps on the frozen 96 training prompts; select on 24 development prompts, leave 24 final sealed. This is a proposed cap, not authorization for training. | Explicit future user budget decision; the GPU access restriction has been lifted. |
-| Unsupported labels | Count all unsupported rows and target probability mass; apply CE only to valid supported labels, keeping unsupported rows in denominators. A different vocabulary-support objective would be a separate choice after the real mapped-mass audit. | Reject any capture with wrong offset/inverse map or prefix/verifier join. |
+| Unsupported labels | The full frozen 96-prompt D capture has 1,110 unsupported labels among 40,815 valid rows (2.72%); mean mapped target probability mass is 0.972 on those captured prefixes. The proposed CE still applies only to valid supported labels while keeping unsupported rows in denominators. A new vocabulary-support objective is a separate user choice. | Reject any capture with wrong offset/inverse map or prefix/verifier join; do not infer live acceptance from mapped mass. |
 | Learned-scale metadata | Resolved for the loader declaration: fork commit `7f23c89b3` accepts `f32_learned_nonnegative` under v2/v3, and eight CPU-only native loader fixtures pass. The exporter retains that truthful rule rather than relabeling learned scales as NNLS. | A real trained GGUF still needs full native load and numerical parity before deployment. |
 | Training reduction order | Use the exact sequential F32 CPU reference, or explicitly choose grouped F32 matmul within each 128-input group for a practical trainer. The grouped path still runs hard signs/A16/scales and ordered group accumulation, but 35/430 archived D outputs differed from native by up to `0.0001220703125` absolute (`7.422315e-7` scaled). The grouped student matched **44/44** native mapped top IDs over 11 recorded rounds from three training prompts; native-order first-round checks matched 15/15. Normalized state drift reached `0.004617`, dominated by attention. | Freeze one path before training and require broader native argmax/trajectory parity before interpretation. |
-| Full-drafter numeric gate | Require exact backend-matched attention arithmetic, or predeclare a bounded state/logit tolerance together with native argmax and accepted-trajectory checks. On the first round of three real CPU captures, pre-attention Q/K/V projections matched bitwise or within `1.93e-5` after row conversion; the first material difference remained attention output (max `0.00999`, `0.00573`, `0.00990` under Flash Attention auto). Matching 44 top IDs across later rounds does not establish safe tolerance or K/V byte parity. | Keep parity unresolved while tracing later-round cache boundaries and more prompts; no Q4_0 promotion or GPU training follows from this diagnostic. |
+| Full-drafter numeric gate | Require exact backend-matched attention arithmetic, or predeclare a bounded state/logit tolerance together with native argmax and accepted-trajectory checks. Two CPU requests now have exact stored native F16 K/V writes and prefix masks; the corrected adapter matches 123,900/123,904 projected F16 keys and all values across three later-round joins. Modeling native F16 attention arithmetic cut first-seed maximum differences from roughly `0.010/0.0057/0.0099` to `0.00178/0.00000095/0.000847` for prose/code/reasoning, but residual state drift remains. Matching 44 top IDs does not establish a safe tolerance. | Keep whole-drafter state/logit and target-feature parity unresolved; no training-quality or Q4_0 promotion follows. |
 
-Post-acceptance CPU joins on prose/code/reasoning rounds again matched
-unrotated Q/K/V bitwise and put the first material gap at attention. This
-narrows the remaining question to native K/V storage, masking and reduction
-order; it does not choose the tolerance option above.
+Post-acceptance CPU joins, stored-cache byte captures and mask checks now
+constrain the first material gap to attention arithmetic in the tested
+single-sequence geometry. The source-guided F16 replay substantially reduces
+that gap but does not choose the tolerance option above.
 
 **Exact-prefix row clarification (2026-09-28):** the native verifier computes
 target logits for every proposed prefix in a speculative batch, and the cloned
@@ -238,7 +238,8 @@ preparer checks this offset explicitly.
 
 **RTX 5080 authorization (2026-09-28):** after the earlier availability
 notice, the user explicitly said the GPU is free and to use it when needed.
-The RTX 5080 is now available for this goal's parity and capture work under
+The RTX 5080 is available for this goal's parity and capture work under
 the host, tmux and one-owner protocol. This does not authorize the proposed
-all-body training budget or final-set evaluation. A read-only host check found
-no project experiment process and 0% utilization; no GPU run has started.
+all-body training budget or final-set evaluation. The subsequently completed
+96-prompt capture and GPU release are recorded in the active goal file;
+no optimization was started.

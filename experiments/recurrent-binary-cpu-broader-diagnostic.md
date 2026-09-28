@@ -123,6 +123,42 @@ The diagnostic script explicitly distinguishes projected write operands from
 native cache storage. An earlier ignored exploratory report without the Q/K
 row conversion is invalid and must not be used.
 
+## CPU attention arithmetic ablation
+
+A model-free replay used the archived first prose seed graph row, with 32
+attended positions and native-captured Q/K/V. The earlier replay kept Q,
+dot products, softmax and value accumulation in F32. Source inspection of
+the Apple M3 Max native CPU Flash Attention path found F16 query conversion,
+NEON F16 dot accumulation, and an online F16 value numerator. A bounded
+arithmetic ablation changed these stages one at a time:
+
+| Replay arithmetic | Maximum absolute difference from native attention | RMS difference |
+| --- | ---: | ---: |
+| Prior F32 softmax/value replay | 0.0099864 | 0.00106654 |
+| F16 query, F32 softmax/value | 0.0108323 | 0.00106794 |
+| Modeled NEON F16 dot, F32 softmax/value | 0.00926089 | 0.000915012 |
+| F16 dot, ordered F32 online value sum | 0.00926042 | 0.000915017 |
+| F16 dot and online F16 value numerator | **0.00178361** | **0.0000366726** |
+
+This strongly implicates native F16 attention arithmetic as the principal
+source of the first-row gap. The remaining difference is real; NumPy half
+rounding and `math.exp` are approximations of NEON FMA and native `expf`, so
+the table does not declare exact attention or whole-drafter parity. The
+CPU-only script and three tests were integrated as `4a448b8`. Its ignored
+report SHA256 is
+`d38190805a8a4cb1a5441d0b8b7000b31a529bcf6155f2c6d6fcd2634b1b9a1e`,
+with graph, model-reference and kernel-source hashes. No model inference,
+accelerator or performance run was used for this ablation.
+
+The same bounded ablation on the first code and reasoning seed rows reduced
+maximum/RMS differences from `0.00569153/0.000875192` to
+`0.000000954/0.0000000856` (code) and from `0.00989914/0.00108065` to
+`0.000846684/0.0000154912` (reasoning). Their ignored report SHA256s are
+`561bb21e1b7b4dca59483c641dc5d5acb415b272fff05f8475ab076aa8a5452b`
+and `e3eafe47f2ce68202d9c541ec0d9784758a87f1ac2ff5b6b1554c96de982ec44`.
+The residual gap varies by prompt; these three rows do not set a safe state
+or logit tolerance for recurrent training.
+
 ## Native-style norm and RoPE replay across later rounds
 
 The earlier projected-write discrepancies were localized with the same three

@@ -681,3 +681,55 @@ raw-response auditor against the sealed files, record source/output hashes
 and any rejection, then isolate native F16 attention arithmetic using the
 captured CPU graph inputs. Keep the RTX 5080 free unless a specific new
 bounded experiment is required.
+
+## Sixteenth goal turn: full capture audited, training still gated
+
+- A first bundle build was killed with exit 137 because the audit converted
+  all 40,815-by-151,936 raw logits into Python float lists. Source captures
+  and preparer outputs remained intact. Commit `51317fc` replaced that
+  materialization with bounded F64 batches and preserved source/provenance
+  and nonfinite-row checks. Eleven focused capture-audit tests and eight
+  bundle tests passed. A second supervised CPU bundle build finished with
+  code zero. Its manifest SHA256 is
+  `8919cd05614f952f945bf6e1bf97a6bb8c30a13f47f5d02f3c7b169f93e8e31c`;
+  audit SHA256 is
+  `9a43b4a708664bb3f42287411595365b3b955fc4f83a67fab20010331909caff`.
+  It verified all 40,815 raw target-logit rows and 15,042 selected feature
+  rows, and measured mean mapped target probability mass `0.9719726884`.
+  Its explicit `training_eligible: false` / `preparation_only` status remains.
+- The all-request audit joined **96/96 responses**: 12,251 emitted tokens,
+  8,295 rounds and 3,786 accepted drafts on training histories. One
+  final round stopped at accepted EOS `151645`; its canonical verifier
+  batch retained one un-emitted suffix token. Commit `bca41b1` allows
+  only that final EOS prefix clipping, with focused positive/negative
+  tests. The successful response-audit SHA256 is
+  `8ebba18b41a58a886a71914298c139433832083bdac10a83001072f23afd4051`.
+  Ninety-five requests ended at the 128-token cap and one stopped at EOS.
+  The [full capture report](../../experiments/recurrent-binary-full-capture-5080.md)
+  records sources, counts, hashes, the failed first attempts and limits.
+- Independently, model-free Apple M3 Max CPU attention arithmetic ablations
+  integrated as `4a448b8` reduced archived first-seed maximum native
+  attention differences from `0.009986/0.005692/0.009899` to
+  `0.001784/0.000000954/0.000847` for prose/code/reasoning by modeling
+  F16 dot and online F16 value accumulation. Three focused tests, Ruff
+  and source-hashed reports pass; this is an approximate numeric
+  explanation, not exact whole-drafter parity. The
+  [broader CPU report](../../experiments/recurrent-binary-cpu-broader-diagnostic.md)
+  retains each stage and report hash. The temporary attention worker
+  worktree/branch were retired after its pushed commit reached `main`.
+- The full GPU capture and subsequent CPU audit supervisors exited zero;
+  the failed audit runs are retained as evidence. The duplicate failed
+  temporary bundle copy was removed only after the successful bundle
+  manifest and audit were verified. Final RTX 5080 check again found no
+  project process or compute app, 0% utilization and 1,372 MiB whole-device
+  use. No training, development/final prompt, trained GGUF or Q4_0
+  performance run occurred. The native Goal remains active.
+
+**Next gate:** audit real-model target-feature numerical parity and the
+remaining whole-drafter attention/state/logit gap before any training
+eligibility declaration. Keep the user-owned all-body budget, scale
+boundary, prefix distribution and numeric tolerance choices in
+[DECISIONS.md](../DECISIONS.md). The full 96-prompt capture is complete
+and should be reused; no repeat GPU capture is needed for the current
+offline questions. Q4_0 remains the primary eventual acceptance, latency
+and total-throughput baseline.
