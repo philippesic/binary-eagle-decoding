@@ -37,6 +37,7 @@ CAPTURE_MODES = {
     "qkv_normed": {"Qcur_normed-0", "Kcur_normed-0", "Vcur-0", "l_out-0"},
     "q_norm": {"Qcur_normed-0", "l_out-0"},
     "k_norm": {"Kcur_normed-0", "l_out-0"},
+    "q_deferred_k_norm": {"Qcur-0", "Kcur_normed-0", "l_out-0"},
     "v_only": {"Vcur-0", "l_out-0"},
     "ffn": {"ffn_inp-0", "ffn_norm-0", "ffn_out-0", "l_out-0"},
 }

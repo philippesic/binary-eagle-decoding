@@ -31,39 +31,62 @@ struct capture_state {
     std::map<std::string, int> seen;
     size_t bytes_written = 0;
     bool complete = false;
+    bool deferred_q_mode = false;
+    ggml_tensor * deferred_q = nullptr;
     std::set<std::string> enabled;
     std::string error;
+
+    void write_tensor(ggml_tensor * tensor) {
+        const std::string name = tensor->name;
+        const auto selected = SELECTED.find(name);
+        if (selected == SELECTED.end() || tensor->type != GGML_TYPE_F32 ||
+            ggml_nelements(tensor) != selected->second * TOKENS) {
+            throw std::runtime_error("selected block-0 tensor has unexpected type or element count: " + name);
+        }
+        const size_t bytes = ggml_nbytes(tensor);
+        if (bytes == 0 || bytes > MAX_BYTES - bytes_written) {
+            throw std::runtime_error("block-0 tensor capture exceeds byte cap");
+        }
+        const int ordinal = seen[name]++;
+        if (ordinal >= 3) throw std::runtime_error("repeated block-0 tensor exceeds ordinal cap: " + name);
+        const std::string filename = name + "_" + std::to_string(ordinal) + ".f32";
+        std::vector<char> data(bytes);
+        ggml_backend_tensor_get(tensor, data.data(), 0, bytes);
+        std::ofstream output(directory + "/" + filename, std::ios::binary);
+        output.write(data.data(), data.size());
+        if (!output) throw std::runtime_error("cannot write block-0 tensor " + filename);
+        index << name << '\t' << ordinal << '\t' << bytes << '\t' << filename;
+        for (int i = 0; i < GGML_MAX_DIMS; ++i) index << '\t' << tensor->ne[i];
+        for (int i = 0; i < GGML_MAX_DIMS; ++i) index << '\t' << tensor->nb[i];
+        index << '\n';
+        if (!index) throw std::runtime_error("cannot write block-0 index");
+        bytes_written += bytes;
+        if (name == "l_out-0") complete = true;
+    }
 
     static bool callback(ggml_tensor * tensor, bool ask, void * user_data) {
         auto & state = *static_cast<capture_state *>(user_data);
         const std::string name = tensor->name;
         const auto selected = SELECTED.find(name);
         if (selected == SELECTED.end() || state.complete || !state.error.empty()) return false;
+        if (state.deferred_q_mode && name == "Qcur-0") {
+            if (ask && tensor->op == GGML_OP_ROPE) {
+                if (state.deferred_q && state.deferred_q != tensor) {
+                    state.error = "multiple post-RoPE Q tensors";
+                } else {
+                    state.deferred_q = tensor;
+                }
+            }
+            return false;
+        }
         if (!state.enabled.count(name)) return false;
         if (ask) return true;
         try {
-            if (tensor->type != GGML_TYPE_F32 || ggml_nelements(tensor) != selected->second * TOKENS) {
-                throw std::runtime_error("selected block-0 tensor has unexpected type or element count: " + name);
+            if (state.deferred_q_mode && name == "Kcur_normed-0") {
+                if (!state.deferred_q) throw std::runtime_error("post-RoPE Q tensor was not seen");
+                state.write_tensor(state.deferred_q);
             }
-            const size_t bytes = ggml_nbytes(tensor);
-            if (bytes == 0 || bytes > MAX_BYTES - state.bytes_written) {
-                throw std::runtime_error("block-0 tensor capture exceeds byte cap");
-            }
-            const int ordinal = state.seen[name]++;
-            if (ordinal >= 3) throw std::runtime_error("repeated block-0 tensor exceeds ordinal cap: " + name);
-            const std::string filename = name + "_" + std::to_string(ordinal) + ".f32";
-            std::vector<char> data(bytes);
-            ggml_backend_tensor_get(tensor, data.data(), 0, bytes);
-            std::ofstream output(state.directory + "/" + filename, std::ios::binary);
-            output.write(data.data(), data.size());
-            if (!output) throw std::runtime_error("cannot write block-0 tensor " + filename);
-            state.index << name << '\t' << ordinal << '\t' << bytes << '\t' << filename;
-            for (int i = 0; i < GGML_MAX_DIMS; ++i) state.index << '\t' << tensor->ne[i];
-            for (int i = 0; i < GGML_MAX_DIMS; ++i) state.index << '\t' << tensor->nb[i];
-            state.index << '\n';
-            if (!state.index) throw std::runtime_error("cannot write block-0 index");
-            state.bytes_written += bytes;
-            if (name == "l_out-0") state.complete = true;
+            state.write_tensor(tensor);
         } catch (const std::exception & error) {
             state.error = error.what();
             return false;
@@ -106,6 +129,9 @@ int main(int argc, char ** argv) {
             state.enabled = {"Qcur_normed-0", "l_out-0"};
         } else if (mode == "k_norm") {
             state.enabled = {"Kcur_normed-0", "l_out-0"};
+        } else if (mode == "q_deferred_k_norm") {
+            state.enabled = {"Qcur-0", "Kcur_normed-0", "l_out-0"};
+            state.deferred_q_mode = true;
         } else if (mode == "v_only") {
             state.enabled = {"Vcur-0", "l_out-0"};
         } else if (mode == "ffn") {
