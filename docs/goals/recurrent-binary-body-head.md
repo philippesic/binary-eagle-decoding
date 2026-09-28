@@ -1989,6 +1989,10 @@ checkpoint; do not create more open-ended numerical investigations.
   project goal from plan commit `8bd1b91`. Its native task Goal covers only
   CPU Phase 1A. Main checkout was clean at takeover. No GPU or remote model
   operations are assigned.
+- Boundaries: legacy final-set contents stay sealed; the 96-prompt capture is
+  smoke/regression evidence only. Group-128/A16 and row-scale W1Ax are distinct
+  representation contracts. GPU timing, capture and training wait for explicit
+  restored access.
 - Initial file ownership: coordinator owns `docs/STATUS.md`, this goal file,
   `docs/DECISIONS.md`, integration and final checks. The runtime owner alone
   writes the `llama.cpp` submodule, and owns new latency tooling and its tests.
@@ -2163,7 +2167,99 @@ checkpoint; do not create more open-ended numerical investigations.
   35 affected synthetic CPU tests and Ruff passed. The [shard runbook](../../experiments/w1ax-sharded-capture-plan.md)
   command was corrected in `6e8a58d` to pass `--shard-manifest` to the bundle
   builder. No model capture or GPU run has tested these new CLI paths.
-- Boundaries: legacy final-set contents stay sealed; the 96-prompt capture is
-  smoke/regression evidence only. Group-128/A16 and row-scale W1Ax are distinct
-  representation contracts. GPU timing, capture and training wait for explicit
-  restored access.
+
+## CPU Phase 1A completion and GPU-only boundary
+
+Phase 1A implementation is integrated on pushed main through `d9f3ae9`; the
+native gitlink is published fork commit `14c188e`. Main was clean at this
+checkpoint. All temporary team worktrees were archived after integration and
+ignored data preservation; their temporary parent branches were removed. The
+same project goal remains active for Phase 1B. Both GPU hosts remain paused;
+no remote check, CUDA/Metal/MPS model run, target inference, training or native
+performance measurement was performed by this team. One Luna worker's single
+accidental local CUDA/MPS *availability query* is recorded above; no accelerator
+compute followed it.
+
+- Latency: the [offline analyzer](../../scripts/account_eagle_latency.py) and
+  [archival report](../../experiments/cpu-archived-latency-and-readiness.md)
+  separate nested draft/process CPU-wall spans from request rates and lifetime
+  kernel sums, retaining unassigned time. No per-projection or CUDA-graph-node
+  attribution exists yet. The opt-in shared decoder head-pruning patch is
+  source-reviewed and CPU built, but its native trajectory and speed effect
+  remain unmeasured. Paired A/B configs are
+  [off](../../configs/w1_phase1b_prune_off.json) SHA256
+  `38e44ad17c5a32c1fd7d0d52d13d618d8254a238d94dfdbe46980233d6d842c1`
+  and [on](../../configs/w1_phase1b_prune_on.json) SHA256
+  `ad69c379def326c169d00cbb6750553841fddc0dbf9e066862931b0d9e68e8eb`.
+  They differ only by `GGML_EAGLE_PRUNE_UNUSED_HEAD=0/1`, use Q4_0 as primary,
+  D group-128/A16 and FP16 as diagnostics, and keep target-only as control.
+  Local pinned target/Q4_0/D/FP16 draft GGUF hashes are respectively
+  `05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6`,
+  `2db40f99d27e404298b80b2865671b9fd0136060ffb503007cb2ae23759e7280`,
+  `10e8e98e616480b25ff7600f195ba7ea3e0fd7c24832765013f960783c7609cf`,
+  `c1f895a130b64cd3d5a97fba7aa7605dc7fe3a389dd6d48e6751128614ee76d1`.
+- QAT: row-scale A16/A8/A4/A1 hard-forward training, separate candidate-D
+  group-128/A16, nine-linear installation, exact-prefix provider, compact
+  teacher option, guarded Torch-device rollout, checkpoint/export and
+  multi-shard one-optimizer streaming are implemented. Hard-label CE is the
+  first objective; top-k/tail conditional probability loss is an explicitly
+  approximate option. The native learned-row loader passes CPU metadata tests
+  for all four widths. Actual CUDA numeric/throughput and native proposal/cache
+  checks are pending. The old 96-prompt bundle keeps
+  `training_eligible:false`; the provider rejects it before model loading.
+- Data: the pinned candidate 2k/192/192 train/dev/sealed-final freeze and
+  65-shard plan remain under ignored main `data/` with manifest SHA256
+  `dc37f752bb137054183162dcb7ca96004edabeb752bd611996d9cb289bfdc667`
+  and plan SHA256
+  `a20a9f8e3a48c65dfc754c0598c1c256f77c9754d874caa04dabcb60b4095c1d`.
+  This source set is narrow and not target-tokenized or captured. Full-tier
+  v1 raw retention is potentially above 1 TB with bundle copies; the
+  [storage choice](../DECISIONS.md#phase-1a-implementation-defaults-and-pending-research-choices)
+  remains user-owned before a full 2k capture. The first capped shard can be
+  retained raw for a bounded calibration without deciding the full tier.
+
+**Integrated CPU checks:** Apple M3 Max arm64 `GGML_CUDA=OFF`,
+`GGML_METAL=OFF` llama shared-library build; 11 native loader tests; 36
+focused integrated Python tests after formatting; changed Python files pass
+Ruff lint/format and `git diff --check`. Archived analyzer totals reconcile;
+single-step CPU QAT fixtures cover row A16/A8/A4/A1 and group-128/A16 with
+finite loss and all 18 parameter-gradient tensors. A meta-device shape check
+by the QAT owner used no accelerator. Single-step sign flips were zero, so
+these checks do not establish learning. Whole-repository Ruff lint reports
+legacy errors in untouched files; only changed-file lint is claimed green.
+
+**Exact first GPU commands, only after the user explicitly restores access:**
+the coordinator first runs `python3 scripts/agent_env.py resume rtx5080`, reads
+the saved host registry, and connects solely through tmux MCP. On that saved
+host's project checkout, one GPU owner fast-forwards main and updates the
+submodule, verifies the four GGUF hashes above and the two config hashes, and
+builds the pinned CUDA binary. If any artifact or hash differs, stop and
+resolve it before running. Start each command below inside its own tmux
+MCP-managed session and supervise it with `scripts/remote_job.py`:
+
+```sh
+python3 scripts/remote_job.py w1-prune-off-quality -- python3 scripts/run_binary_rescue_benchmark.py --config configs/w1_phase1b_prune_off.json --mode quality --output runs/w1-prune-off-quality/benchmark
+python3 scripts/remote_job.py w1-prune-on-quality -- python3 scripts/run_binary_rescue_benchmark.py --config configs/w1_phase1b_prune_on.json --mode quality --output runs/w1-prune-on-quality/benchmark
+python3 scripts/remote_job.py w1-prune-off-timed -- python3 scripts/run_binary_rescue_benchmark.py --config configs/w1_phase1b_prune_off.json --mode timed --output runs/w1-prune-off-timed/benchmark
+python3 scripts/remote_job.py w1-prune-on-timed -- python3 scripts/run_binary_rescue_benchmark.py --config configs/w1_phase1b_prune_on.json --mode timed --output runs/w1-prune-on-timed/benchmark
+```
+
+Run the two quality commands first; require identical emitted IDs, proposed/
+accepted/round counts and verifier outcomes before exploratory timing. Cache/
+state equivalence needs a separate bounded native trace before enabling the
+opt-in path by default or claiming an output-preserving speedup. Alternate
+timed order in a second paired block if the first is clean, and report
+absolute draft/process/request times and acceptance versus Q4_0. Do not
+sum overlapping CPU/GPU spans or claim SM75 speed from RTX 5080. The
+[first-shard capture command block](../../experiments/w1ax-sharded-capture-plan.md#native-command-sequence-and-current-interface-gate)
+is next after fixed native timing, with `shard-0000` capped at 16,384 raw
+logit rows. Its model/variant/map inputs must be pinned on the remote host.
+The builder still emits preparation-only bundles; a larger capture's
+eligibility/readiness gate and a measured 100-step budget must be recorded
+before substantive QAT. The later 2080 Ti SM75 comparison remains separate.
+
+**Stop condition:** CPU Phase 1A is complete. Do not manufacture more backend
+parity diagnostics or start another architecture while GPU access is paused.
+The next action is the supervised native A/B and first-shard calibration after
+explicit access restoration and user-owned research choices at their stated
+gates.

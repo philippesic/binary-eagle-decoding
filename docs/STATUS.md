@@ -6,7 +6,20 @@ The target/verifier model precision remains as frozen for each experiment.
 
 **Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), continued as Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md): EAGLE W1 latency accounting, bounded runtime improvements, reusable joint W1Ax QAT and expanded-data preparation. **CPU-only work is authorized; all GPU work is paused.** No joint GPU training has run. DFlash/DSpark are future roadmap items, not active work.
 
-**CPU Phase 1A underway (2026-09-28):** fresh task
+**CPU Phase 1A complete (2026-09-28):** the fresh team's latency analyzer,
+opt-in shared runtime patch, four-format row-scale joint QAT with a guarded
+Torch device path, eligible-capture/multi-shard provider, pinned candidate
+2k/192/192 data freeze and bounded 65-shard capture plan are reviewed,
+CPU-tested, committed and pushed on main through `d9f3ae9`; native gitlink
+`14c188e` is published in the user's fork. The
+[completion checkpoint](goals/recurrent-binary-body-head.md#cpu-phase-1a-completion-and-gpu-only-boundary)
+records hashes, limits and the first supervised GPU commands. All temporary
+team worktrees were archived after preserving ignored data. The same project
+goal remains active; native acceptance, CUDA timing/training and SM75 claims
+wait for explicit restored access. Full-tier raw-logit storage and final
+representation/objective budgets are user-owned choices before their runs.
+
+**CPU Phase 1A team setup (historical):** fresh task
 `01a0e9d0-1273-70a1-972e-8d1381f72701` resumed the same goal with separate
 runtime, joint QAT, data and CPU verification workers. Their file ownership
 and worktrees are recorded in the [goal checkpoint](goals/recurrent-binary-body-head.md#fresh-team-execution-cpu-phase-1a).
@@ -18,12 +31,9 @@ provisional practical numeric gate are in [DECISIONS.md](DECISIONS.md#phase-1a-i
 The archived-latency and capture-readiness report, larger-data preparers and
 compact-teacher schema, and synthetic joint W1Ax QAT path are now integrated
 and pushed (`e5bd3dc`, `0b5fce7`, `6db186f`). The corrected native runtime
-patch and latency analyzer are integrated as `112693f`, with native gitlink
-`14c188e` already published in the user's fork. CPU build, loader, analyzer,
-QAT and data fixtures pass. The data owner is pinning real source choices and
-the QAT owner is wiring captured-data training. Opt-in head pruning still
-requires native trajectory and timed A/B validation. No new GPU work or model
-inference has occurred.
+patch and latency analyzer were integrated as `112693f`, with native gitlink
+`14c188e` published in the user's fork. Subsequent data/capture/provider
+commits and final CPU checks are summarized in the completion checkpoint.
 
 **Candidate data freeze (2026-09-28):** pinned Dolly/GSM8K/MBPP source files
 and a hashed local manifest now supply 2,000 candidate train prompts plus
@@ -47,7 +57,7 @@ requires raw logits for re-audit; the full-tier compact/label-only storage
 choice is recorded in [DECISIONS.md](DECISIONS.md#phase-1a-implementation-defaults-and-pending-research-choices).
 Native training quality and throughput remain unmeasured.
 
-**Latest handoff (2026-09-28):** the user requested an overarching plan and a fresh team to continue the existing EAGLE work with no GPU access. Parent starting point is `d111335`, following the predecessor's `5110257`; native gitlink is `21f617d4ef3f5dc383d3ab8dc619daaa87db7ff8`. Both host pause flags are set. The plan supersedes the old next action to continue target block-14 parity. Reuse existing capture/export/CPU tests; use practical numerical gates and direct native evaluation. The old 96 prompts are smoke/regression data, not an adequate full-body QAT corpus. The [active-goal handoff](goals/recurrent-binary-body-head.md#fresh-team-handoff-eagle-w1-cpu-phase) gives the new team's assignment. Its coordinator will record fresh task/worker IDs there.
+**Pre-team handoff (historical):** the user requested an overarching plan and a fresh team to continue the existing EAGLE work with no GPU access. Parent starting point was `d111335`, following the predecessor's `5110257`; native gitlink then was `21f617d4ef3f5dc383d3ab8dc619daaa87db7ff8`. Both host pause flags were set. The plan superseded the old next action to continue target block-14 parity. The old 96 prompts are smoke/regression data, not an adequate full-body QAT corpus. The [handoff](goals/recurrent-binary-body-head.md#fresh-team-handoff-eagle-w1-cpu-phase) and [completion checkpoint](goals/recurrent-binary-body-head.md#cpu-phase-1a-completion-and-gpu-only-boundary) preserve the state across tasks.
 
 **Latest completed goal:** [mixed precision rescue and frozen-body head adaptation on RTX 5080](goals/binary-rescue-head-5080.md), completed 2026-09-28 UTC. The preceding [binary scale fitting goal](goals/binary-scale-fitting-5080.md) completed 2026-09-27 UTC.
 
