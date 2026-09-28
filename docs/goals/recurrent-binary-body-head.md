@@ -291,6 +291,11 @@ established.
   raw IDs for this prompt. The [CPU capture report](../../experiments/recurrent-binary-cpu-capture-smoke.md)
   records hashes and limits. This is a one-step integration diagnostic, not
   approved full training or evidence against Q4_0.
+- Seventh-turn parent commits `ca10b03`, `2b25d69`, `dca1487` and
+  `1ce667c` are pushed to `main`. No llama.cpp submodule revision or parent
+  gitlink changed. The CPU server process groups stopped with return code
+  zero; no project remote session, GPU owner or temporary worktree exists
+  for this turn.
 - This closes a real runtime-format gap for a single request only. It does
   not establish numerical target-feature parity, whole-drafter state/KV
   parity, 96-prompt capture completeness, training quality or native Q4_0
