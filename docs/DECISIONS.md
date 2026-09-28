@@ -225,3 +225,7 @@ teacher-forced later-position CE. Keep `verifier_reached` as a separate live
 acceptance diagnostic and exclude rows with no actual target label or
 invalid/padded ancestry. This clarification preserves the proposed recurrent
 objective; it does not turn off-policy CE into a live acceptance estimate.
+For `A` accepted drafts, native target **input features** from seed and
+accepted draft rows `j=0..A` join retained history; `j>A` are rejected
+suffix. The verifier label at `j=A` is still a reached label. The CPU feature
+preparer checks this offset explicitly.

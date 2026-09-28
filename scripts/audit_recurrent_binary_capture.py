@@ -181,7 +181,13 @@ def attach_raw_target_logits(rows: list[dict], path: Path, target_vocab_size: in
     return count
 
 
-def audit_capture(manifest_path: Path, prompts_path: Path, expected_prompt_hash: str) -> dict:
+def audit_capture(
+    manifest_path: Path,
+    prompts_path: Path,
+    expected_prompt_hash: str,
+    *,
+    expected_prompt_count: int = TRAIN_PROMPTS,
+) -> dict:
     manifest = json.loads(manifest_path.read_text())
     if not isinstance(manifest, dict) or manifest.get("schema") != "recurrent_binary_capture_v1":
         raise ValueError("unsupported recurrent capture manifest")
@@ -192,11 +198,11 @@ def audit_capture(manifest_path: Path, prompts_path: Path, expected_prompt_hash:
     prompts = read_jsonl(prompts_path)
     prompt_ids = [row.get("id") for row in prompts]
     if (
-        len(prompt_ids) != TRAIN_PROMPTS
+        len(prompt_ids) != expected_prompt_count
         or any(not isinstance(prompt_id, str) or not prompt_id for prompt_id in prompt_ids)
-        or len(set(prompt_ids)) != TRAIN_PROMPTS
+        or len(set(prompt_ids)) != expected_prompt_count
     ):
-        raise ValueError("expected 96 unique frozen training prompt IDs")
+        raise ValueError(f"expected {expected_prompt_count} unique frozen training prompt IDs")
     files = {}
     for field in ("rows", "anchors", "offsets", "t2d", "features", "feature_rows"):
         record = manifest.get(field)
@@ -268,10 +274,19 @@ def audit_capture(manifest_path: Path, prompts_path: Path, expected_prompt_hash:
 
 
 def load_audited_capture(
-    manifest_path: Path, prompts_path: Path, expected_prompt_hash: str
+    manifest_path: Path,
+    prompts_path: Path,
+    expected_prompt_hash: str,
+    *,
+    expected_prompt_count: int = TRAIN_PROMPTS,
 ) -> AuditedCapture:
     """Audit once, then expose CPU round bundles for prefix reconstruction."""
-    report = audit_capture(manifest_path, prompts_path, expected_prompt_hash)
+    report = audit_capture(
+        manifest_path,
+        prompts_path,
+        expected_prompt_hash,
+        expected_prompt_count=expected_prompt_count,
+    )
     manifest = json.loads(manifest_path.read_text())
     directory = manifest_path.parent
     anchors = {

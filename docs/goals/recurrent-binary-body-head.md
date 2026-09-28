@@ -23,8 +23,8 @@ file and `docs/STATUS.md` are the durable project checkpoint.
   row scales. It cannot train the body or propagate later-position loss.
   Native recurrence uses `(token[P+1], target features[P])` at position `P`
   and feeds pre-norm student state into later positions; saved head captures
-  contain output-normalized states only. A new feature/cache/verifier capture
-  and a whole-drafter unroll remain needed.
+  contain output-normalized states only. Source capture and a CPU drafter
+  unroll now exist; their real-model alignment and cache parity remain needed.
 - The forked native GGUF loader now accepts the honest
   `f32_learned_nonnegative` rule in commit `7f23c89b3`. A CPU-only build with
   Metal, CUDA, Vulkan, SYCL, HIP, RPC, Accelerate and BLAS disabled passed
@@ -57,7 +57,7 @@ file and `docs/STATUS.md` are the durable project checkpoint.
   or whole-drafter recurrence.
 - A CPU capture-metadata gate now enforces the frozen 96-prompt training hash,
   file hashes, exact-prefix ancestry, native offset mapping, `t2d` inverse
-  consistency and valid/support masks. Four synthetic tests pass. It cannot create target features or
+  consistency and valid/support masks. Synthetic tests pass. It cannot prove target features or
   certify K/V cache parity.
 - A model-independent CPU rollout contract now feeds each proposed token and
   the previous **pre-norm** student state into the next step without detaching
@@ -67,7 +67,7 @@ file and `docs/STATUS.md` are the durable project checkpoint.
   positions are `P+1`, `P+2`; invalid terminal rows create no decoder call. This checks the
   training interface, not actual EAGLE mask or K/V byte parity.
 
-**Latest CPU checks:** 47 recurrent tests, seven explicit decoder-step tests,
+**Latest CPU checks:** 59 recurrent tests, seven explicit decoder-step tests,
 five frozen-operand tests, eight native loader fixtures, eight existing
 scale-fitting tests, Ruff
 lint/format and `git diff --check` pass. No local Metal/MPS or CUDA
@@ -167,15 +167,45 @@ branches were retired after their reviewed content was integrated.
   mapped draft-head logit file. `verifier_reached` is retained as a separate
   online diagnostic; valid supported cloned-verifier rows after a live
   rejection can still contribute later-position teacher-forced CE.
-- The remaining native **raw target-feature** writer is unsolved. The target
-  feature taps are available after target decode, but a raw dump could include
-  rejected speculative branches. It must carry task/prefix ancestry and be
-  filtered to the accepted-prefix ledger before the CPU audit can admit it.
-  Real-model capture and numerical student/cache parity still need later
+- At this checkpoint, native **raw target-feature** capture was still open.
+  The following milestone adds the source stream and accepted-prefix filter;
+  real-model capture and numerical student/cache parity still need later
   user-authorized GPU execution.
 
 This is the **fourth consecutive goal turn**. It made meaningful CPU-only
 progress; no no-GPU impasse has been reached. The native Goal remains active.
+
+## Fifth goal turn: raw feature stream and offline joins
+
+- Fork commit `ddcf2a608` was pushed before updating the parent gitlink.
+  It captures three draft-declared raw target layer-input taps after each
+  successful target decode, before EAGLE fusion, with task/slot, exact token
+  ancestry, position, batch-row identities and a later disposition per row.
+  For `A` accepted drafts, input rows `j<=A` are retained; `j>A` are a
+  rejected suffix. Capture is opt-in, bounded, and fails on overflow or
+  unsupported reuse, shift, multimodal, replay or multi-slot paths. A
+  CPU-only `llama-server` build passed with every optional accelerator and
+  BLAS backend disabled. No target/drafter inference was run.
+- Parent script `prepare_recurrent_native_rows.py` validates native
+  proposal/round joins, frozen training split, verifier labels, support,
+  offset mapping and optional raw target-logit indices. It emits rows,
+  anchors, offsets and `t2d` with source hashes. A source cell manifest
+  verifies request/task ownership; a plain task map is flagged unverified.
+  Eight synthetic CPU tests pass.
+- Parent script `prepare_recurrent_native_features.py` verifies one
+  disposition per raw feature row, exact prefix and target tap order, and
+  selects only retained rows needed by round anchors. Four synthetic tests
+  cover zero and later-depth acceptance, rejected suffix exclusion,
+  broken ancestry, missing disposition, nonfinite values and cell-manifest
+  file hashes. The final capture audit still needs one combined native run;
+  no real feature-value or microbatch row parity is claimed.
+
+This is the **fifth consecutive goal turn**. It made meaningful CPU-only
+progress. The native Goal remains active; the no-GPU restriction has not
+created a complete impasse. Remaining CPU work includes an end-to-end
+synthetic capture bundle, cross-round continuity checks and a bounded
+native runtime capture protocol. GPU-dependent quality and timing gates
+remain unauthorized.
 
 **Published checkpoints:** `7744d8e` created the goal/protocol; `1e3742d`
 integrated the trace contract; `a4dd003` integrated learned GGUF export;
@@ -196,11 +226,10 @@ restriction. Do not request or infer that change.
 
 ## CPU stop gate and next actions
 
-1. Implement a native capture writer for raw target feature taps with
-   task/prefix ancestry, then filter to accepted-prefix rows and validate
-   against the CPU ledger audit. The new raw verifier-logit writer is present
-   but still needs real-model runtime validation. This requires careful
-   llama.cpp changes and later model execution for parity.
+1. Join one synthetic native head/round/logit/feature bundle through both
+   preparers and the final CPU capture audit; add cross-round acceptance
+   continuity checks before training eligibility. The new native writers
+   still need real-model runtime and feature-row-order validation.
 2. Connect prefix rebuilding to the pinned full drafter only with verified
    attention/RoPE/KV rounding and mask semantics; do not substitute saved
    normalized head states. Keep the sequential reference and grouped-matmul
@@ -208,7 +237,7 @@ restriction. Do not request or infer that change.
 3. Recheck CPU gates and record hashes/commits at the next milestone. Keep
    model files/raw captures out of Git. Audit whether remaining local work
    can still advance the goal. This is the
-   **fourth** goal turn under the no-GPU restriction. Do not mark the Goal
+   **fifth** goal turn under the no-GPU restriction. Do not mark the Goal
    blocked until the same GPU-only impasse persists across at least three
    consecutive goal turns and no meaningful CPU-only work remains.
 

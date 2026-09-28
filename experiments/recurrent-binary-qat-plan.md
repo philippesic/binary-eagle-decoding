@@ -106,6 +106,30 @@ the seed, while earlier rows rebuild the current student context cache.
 This metadata gate cannot prove the numerical feature values came from the
 pinned target; native fixed-prefix replay must do that.
 
+Fork commit `ddcf2a608` adds an opt-in raw target-feature stream under
+`EAGLE_CAPTURE_TARGET_FEATURES=1` and `EAGLE_CAPTURE_PREFIX`. It writes
+`<prefix>.target_features.f32` and `.target_features.jsonl` after successful
+target decode and before EAGLE fusion. Each decoded row records task, slot,
+decode ordinal, local and global batch indices, absolute token position,
+complete through-token prefix, ordered tap IDs and F32 source boundary.
+A disposition event records whether that input joined retained history. If
+`A` drafts were accepted, verifier input rows `j=0..A` (seed and accepted
+draft inputs) are retained and later rows are rejected suffix. The default
+4,096-row budget fails the run on overflow; a positive
+`EAGLE_CAPTURE_TARGET_FEATURES_LIMIT` can be set before capture. The first
+capture contract rejects context shift, prompt reuse, multimodal inputs,
+checkpoint replay and multiple slots. A CPU-only server compilation passed,
+but no real-model run has validated row order or feature values.
+
+The CPU preparers now join native head/round records to prompt IDs,
+offset-form vocabulary maps and optional raw target logits; separately, they
+filter the raw feature stream by disposition and exact accepted-prefix
+ancestry into the feature ledger required above. A request cell manifest can
+verify task-to-prompt ownership and file hashes. A plain task map alone is
+reported as unverified and is insufficient to start training. Cross-round
+acceptance continuity, pinned model identity in captured rows, and actual
+target/drafter numerical parity remain stop gates.
+
 ## Bounded proposed first trial and stop gates
 
 The existing prompt manifests stay fixed: 96 training prompts, 24 development
