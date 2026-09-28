@@ -102,3 +102,23 @@ NPZ SHA256s are
 `a3db7ca216a1bf7afcbcf3b5954f495064af28de5c1cbecae8ef83ba6332d9b3`,
 `f7f791c812b5b1d79bb5ce908c77b7e60d4494aae60f2f7fe2b487d9c40f7748`,
 and `bbdb9bbcdad84b15baee8e1d5203af98fe101705e5253ff239e48883585fc6c8`.
+
+## Code round 2 projected K/V write operands
+
+A follow-up CPU comparison rebuilt all 37 decoder context positions preceding
+code round 2 from retained target features. Each adapter input embedding and
+fused-feature norm joined one native decoder graph column. After converting
+the adapter key to native Q/K row order and rounding both projected operands
+to F16, **37,681/37,888 key elements** and **37,723/37,888 value elements**
+matched bitwise. Every position had exactly one qualifying native graph
+column. This confirms close projected K/V write values through the accepted
+prefix, while the 207 key and 165 value mismatches rule out bitwise operand
+parity. Native stored cache bytes were not captured or read; neither cache
+layout/rollback parity nor attention mask/reduction parity follows.
+
+The ignored comparison is
+`results/recurrent-binary-cpu-broader-20260928/code-auto/round_02_projected_kv_writes_native_rows.json`
+(SHA256 `15e50ae2f8f385195c87ff752c68472884667aeb44a80f07e6fbbf65baf0403e`).
+The diagnostic script explicitly distinguishes projected write operands from
+native cache storage. An earlier ignored exploratory report without the Q/K
+row conversion is invalid and must not be used.
