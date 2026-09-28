@@ -28,6 +28,7 @@ from prepare_recurrent_native_rows import read_jsonl, sha256  # noqa: E402
 
 from w1a1_eagle.frozen_operands import FrozenOperands  # noqa: E402
 from w1a1_eagle.native_attention_oracle import NativeCPUAttentionOracle  # noqa: E402
+from w1a1_eagle.native_cpu_diagnostic import NativeCPUDiagnosticOperators  # noqa: E402
 from w1a1_eagle.native_step import (  # noqa: E402
     NativeStepAdapter,
     NativeStepCache,
@@ -57,6 +58,7 @@ def _build_drafter(
     *,
     attention_mode: str = "f32",
     native_attention_oracle: NativeCPUAttentionOracle | None = None,
+    native_cpu_operators: NativeCPUDiagnosticOperators | None = None,
 ) -> NativeStepAdapter:
     config = json.loads(config_path.read_text())
     if (
@@ -111,6 +113,7 @@ def _build_drafter(
         embedding_lookup=operands,
         attention_mode=attention_mode,
         native_attention_oracle=native_attention_oracle,
+        native_cpu_operators=native_cpu_operators,
     )
 
 

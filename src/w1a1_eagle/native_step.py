@@ -24,6 +24,7 @@ from torch import Tensor, nn
 from torch.nn import functional as F
 
 from .native_attention_oracle import NativeAttentionForward, native_forward_f32_backward
+from .native_cpu_diagnostic import NativeCPUDiagnosticOperators
 from .recurrent_binary import CANDIDATE_D_BASE_TO_PATH, GroupedBinaryLinear
 from .recurrent_rollout import DraftStep
 
@@ -97,6 +98,7 @@ class NativeStepAdapter(nn.Module):
         embedding_lookup: Callable[[int], Tensor] | None = None,
         attention_mode: str = "f32",
         native_attention_oracle: NativeAttentionForward | None = None,
+        native_cpu_operators: NativeCPUDiagnosticOperators | None = None,
     ) -> None:
         super().__init__()
         config = getattr(drafter, "config", None)
@@ -114,12 +116,17 @@ class NativeStepAdapter(nn.Module):
             raise ValueError("scaled RoPE is unsupported")
         if getattr(config, "hidden_act", None) != "silu":
             raise ValueError("the pinned drafter requires SiLU")
-        if attention_mode not in ("f32", "native_forward_f32_backward"):
+        if attention_mode not in ("f32", "native_forward_f32_backward", "native_cpu_diagnostic"):
             raise ValueError("unsupported attention mode")
         if attention_mode == "native_forward_f32_backward":
-            if not callable(native_attention_oracle):
+            if not callable(native_attention_oracle) or native_cpu_operators is not None:
                 raise ValueError("native attention mode requires a callable oracle")
-        elif native_attention_oracle is not None:
+        elif attention_mode == "native_cpu_diagnostic":
+            if not isinstance(native_cpu_operators, NativeCPUDiagnosticOperators):
+                raise ValueError("native CPU diagnostic mode requires pinned operators")
+            if native_attention_oracle is not None:
+                raise ValueError("native CPU diagnostic owns its attention oracle")
+        elif native_attention_oracle is not None or native_cpu_operators is not None:
             raise ValueError("native attention oracle requires native attention mode")
 
         hidden = getattr(config, "hidden_size", None)
@@ -138,6 +145,15 @@ class NativeStepAdapter(nn.Module):
             raise ValueError("drafter dimensions must be positive integers")
         if head_dim % 2 or heads % kv_heads:
             raise ValueError("unsupported attention head geometry")
+        if attention_mode == "native_cpu_diagnostic" and (
+            hidden != 2560
+            or heads != 32
+            or kv_heads != 8
+            or head_dim != 128
+            or intermediate != 9728
+            or max_positions < 256
+        ):
+            raise ValueError("native CPU diagnostic requires pinned EAGLE geometry")
         if not isinstance(theta, (int, float)) or not math.isfinite(theta) or theta <= 0:
             raise ValueError("rope_theta must be positive and finite")
 
@@ -169,6 +185,10 @@ class NativeStepAdapter(nn.Module):
             linears[path] = module
         if len({module.arithmetic for module in linears.values()}) != 1:
             raise ValueError("binary projections must use one declared arithmetic")
+        if attention_mode == "native_cpu_diagnostic" and any(
+            module.arithmetic != "native_order" for module in linears.values()
+        ):
+            raise ValueError("native CPU diagnostic requires ordered binary projections")
 
         if embedding_lookup is None:
             embedding = getattr(drafter, "embed_tokens", None)
@@ -239,6 +259,7 @@ class NativeStepAdapter(nn.Module):
         self.rope_theta = float(theta)
         self.attention_mode = attention_mode
         self.native_attention_oracle = native_attention_oracle
+        self.native_cpu_operators = native_cpu_operators
 
     def new_cache(self) -> NativeStepCache:
         shape = (self.kv_heads, 0, self.head_dim)
@@ -298,8 +319,13 @@ class NativeStepAdapter(nn.Module):
             raise ValueError("token must index the borrowed embedding")
         if type(decoder_position) is not int or not 0 <= decoder_position < self.max_positions:
             raise ValueError("decoder_position is outside the supported RoPE context")
-        if self.attention_mode == "native_forward_f32_backward" and decoder_position >= 256:
+        if (
+            self.attention_mode in ("native_forward_f32_backward", "native_cpu_diagnostic")
+            and decoder_position >= 256
+        ):
             raise ValueError("native attention mode supports decoder positions 0..255")
+        if self.attention_mode == "native_cpu_diagnostic" and torch.is_grad_enabled():
+            raise ValueError("native CPU diagnostic is forward-only; use torch.no_grad()")
         if getattr(self.drafter, "tree_mask", None) is not None:
             raise ValueError("tree mask cannot be used with contiguous one-step cache")
         if (
@@ -344,19 +370,24 @@ class NativeStepAdapter(nn.Module):
         k = k.reshape(self.kv_heads, self.head_dim)
         v = v.reshape(self.kv_heads, self.head_dim)
 
-        # ggml builds RoPE frequencies by repeated F32 multiplication. A
-        # direct power at every channel changes some F16-rounded cache keys.
-        theta_scale = torch.tensor(self.rope_theta, dtype=torch.float32).pow(-2.0 / self.head_dim)
-        angle = torch.empty(self.head_dim // 2, dtype=torch.float32)
-        theta = torch.tensor(float(decoder_position), dtype=torch.float32)
-        for index in range(angle.numel()):
-            angle[index] = theta
-            theta = theta * theta_scale
-        full_angle = torch.cat((angle, angle))
-        cos, sin = full_angle.cos(), full_angle.sin()
-        half = self.head_dim // 2
-        q = q * cos + torch.cat((-q[:, half:], q[:, :half]), dim=-1) * sin
-        k = k * cos + torch.cat((-k[:, half:], k[:, :half]), dim=-1) * sin
+        if self.attention_mode == "native_cpu_diagnostic":
+            q, k = self.native_cpu_operators.rope(q, k, decoder_position)
+        else:
+            # ggml builds RoPE frequencies by repeated F32 multiplication. A
+            # direct power at every channel changes some F16-rounded cache keys.
+            theta_scale = torch.tensor(self.rope_theta, dtype=torch.float32).pow(
+                -2.0 / self.head_dim
+            )
+            angle = torch.empty(self.head_dim // 2, dtype=torch.float32)
+            theta = torch.tensor(float(decoder_position), dtype=torch.float32)
+            for index in range(angle.numel()):
+                angle[index] = theta
+                theta = theta * theta_scale
+            full_angle = torch.cat((angle, angle))
+            cos, sin = full_angle.cos(), full_angle.sin()
+            half = self.head_dim // 2
+            q = q * cos + torch.cat((-q[:, half:], q[:, :half]), dim=-1) * sin
+            k = k * cos + torch.cat((-k[:, half:], k[:, :half]), dim=-1) * sin
         trace("Qcur_rope-0", q)
         trace("Kcur_rope-0", k)
 
@@ -368,7 +399,11 @@ class NativeStepAdapter(nn.Module):
             torch.cat((cache.key, k[:, None, :]), dim=1),
             torch.cat((cache.value, v[:, None, :]), dim=1),
         )
-        if self.attention_mode == "native_forward_f32_backward":
+        if self.attention_mode == "native_cpu_diagnostic":
+            attention = self.native_cpu_operators.attention(
+                q, next_cache.key, next_cache.value
+            ).reshape(-1)
+        elif self.attention_mode == "native_forward_f32_backward":
             attention = native_forward_f32_backward(
                 q, next_cache.key, next_cache.value, self.native_attention_oracle
             ).reshape(-1)
@@ -384,7 +419,13 @@ class NativeStepAdapter(nn.Module):
         trace("ffn_inp-0", residual)
         post_attention = _frozen_rms_norm(residual, layer.post_attention_layernorm)
         trace("post_attn_norm-0", post_attention)
-        ffn = mlp.down_proj(F.silu(mlp.gate_proj(post_attention)) * mlp.up_proj(post_attention))
+        gate = mlp.gate_proj(post_attention)
+        activated = (
+            self.native_cpu_operators.silu(gate)
+            if self.attention_mode == "native_cpu_diagnostic"
+            else F.silu(gate)
+        )
+        ffn = mlp.down_proj(activated * mlp.up_proj(post_attention))
         trace("ffn_out-0", ffn)
         pre_norm = residual + ffn
         trace("eagle3_prenorm-0", pre_norm)

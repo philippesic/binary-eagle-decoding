@@ -22,6 +22,7 @@ from w1a1_eagle.native_attention_oracle import (  # noqa: E402
     f32_attention_surrogate,
     native_forward_f32_backward,
 )
+from w1a1_eagle.native_cpu_diagnostic import NativeCPUDiagnosticOperators  # noqa: E402
 from w1a1_eagle.native_step import NativeStepAdapter  # noqa: E402
 from w1a1_eagle.recurrent_binary import GroupedBinaryLinear  # noqa: E402
 
@@ -45,6 +46,21 @@ def _drafter_native_width():
 
 
 class NativeAttentionSurrogateTests(unittest.TestCase):
+    def test_diagnostic_forward_cannot_enable_grad_or_change_geometry(self):
+        with self.assertRaisesRegex(ValueError, "pinned operators"):
+            NativeStepAdapter(_drafter(), attention_mode="native_cpu_diagnostic")
+        fake_operators = object.__new__(NativeCPUDiagnosticOperators)
+        with self.assertRaisesRegex(ValueError, "pinned EAGLE geometry"):
+            NativeStepAdapter(
+                _drafter_native_width(),
+                attention_mode="native_cpu_diagnostic",
+                native_cpu_operators=fake_operators,
+            )
+        with self.assertRaisesRegex(ValueError, "forward-only"):
+            NativeCPUDiagnosticOperators._require_no_grad()
+        with torch.no_grad():
+            NativeCPUDiagnosticOperators._require_no_grad()
+
     def test_native_forward_is_returned_exactly_and_padded_mask_is_causal(self):
         query = (torch.arange(256, dtype=torch.float32).reshape(2, 128) / 256).requires_grad_()
         key_rows = torch.arange(128, dtype=torch.float32) / 128
