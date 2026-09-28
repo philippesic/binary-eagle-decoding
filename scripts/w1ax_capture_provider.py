@@ -141,8 +141,8 @@ class NativeCaptureProvider:
         adapter_factory: Callable[..., Any] | None = None,
         candidate_loader: Callable[..., Any] | None = None,
     ) -> None:
-        if config.device != "cpu":
-            raise ValueError("native capture provider currently requires explicit CPU")
+        if torch.device(config.device).type not in {"cpu", "cuda"}:
+            raise ValueError("native capture provider requires CPU or explicit CUDA")
         manifest_path = Path(manifest_path)
         spec = json.loads(manifest_path.read_text())
         if not isinstance(spec, dict) or spec.get("schema") != SCHEMA:
@@ -307,10 +307,15 @@ class NativeCaptureProvider:
                 depth=5,
                 top_k=10,
                 threshold=1.0,
+                # Captured native features/logits replace target forward in
+                # this QAT path. Keep the frozen target on CPU; only the
+                # drafter and its borrowed embedding need accelerator memory.
                 target_load_kwargs={"dtype": torch.float16, "device_map": "cpu"},
             )
             model.eval()
             drafter, target = model.eagle_layer, model.base_model
+            if torch.device(self._config.device).type == "cuda":
+                drafter.to(self._config.device)
         else:
             drafter, target = self._model_loader(self.paths)
         if self._config.contract.scale_layout == "group128":
@@ -342,7 +347,9 @@ class NativeCaptureProvider:
             hidden_size=drafter.config.hidden_size,
         )
         bind_frozen_norms(drafter, operands.norm_arrays)
-        return NativeStepAdapter(drafter, embedding_lookup=operands)
+        if torch.device(self._config.device).type == "cpu":
+            return NativeStepAdapter(drafter, embedding_lookup=operands)
+        return NativeStepAdapter(drafter)
 
     def rounds(self) -> Iterable[ProviderRound]:
         for key in sorted(self.capture.anchors):

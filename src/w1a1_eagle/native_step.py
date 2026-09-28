@@ -1,4 +1,4 @@
-"""Strict, differentiable CPU reference for one native EAGLE-3 W1Ax step.
+"""Differentiable Torch reference for one native EAGLE-3 W1Ax step.
 
 This adapter consumes the pinned AngelSlim drafter after all nine linears have
 been replaced by group128/A16 or row-scale W1Ax trainable modules. It reproduces the
@@ -8,8 +8,9 @@ half-rotation RoPE, F16 cache storage, GQA attention, residual and SiLU FFN,
 then the F32 output norm and binary draft head. The cache is an immutable,
 contiguous one-token causal prefix and retains autograd links during unroll.
 
-This is a structural CPU reference. Native GGML full-drafter numeric parity,
-cache scheduling and GPU graph behavior remain unverified.
+This is a structural Torch reference. Native GGML full-drafter numeric parity,
+cache scheduling and accelerator throughput remain unverified. Standard F32
+attention follows the row linears' device; native oracle modes remain CPU-only.
 """
 
 from __future__ import annotations
@@ -58,7 +59,7 @@ def bind_frozen_norms(drafter: nn.Module, norm_arrays: Mapping[str, Tensor]) -> 
             raise ValueError(f"{name}: native norm must be one finite CPU F32 row")
         if not isinstance(getattr(module, "weight", None), nn.Parameter):
             raise ValueError(f"{path}: expected an existing norm parameter")
-        pending.append((module, weight.detach().clone()))
+        pending.append((module, weight.detach().clone().to(module.weight.device)))
     for module, weight in pending:
         module.weight = nn.Parameter(weight, requires_grad=False)
 
@@ -193,6 +194,14 @@ class NativeStepAdapter(nn.Module):
                 raise ValueError("row projections must share one activation contract")
         elif len({module.arithmetic for module in linears.values()}) != 1:
             raise ValueError("group projections must use one declared arithmetic")
+        devices = {module.latent_sign.device for module in linears.values()}
+        if len(devices) != 1:
+            raise ValueError("binary projections must share one execution device")
+        self.device = next(iter(devices))
+        if self.device.type != "cpu" and (
+            attention_mode != "f32" or isinstance(next(iter(linears.values())), GroupedBinaryLinear)
+        ):
+            raise ValueError("accelerator reference requires row W1Ax and F32 Torch attention")
         if attention_mode == "native_cpu_diagnostic" and any(
             not isinstance(module, GroupedBinaryLinear) or module.arithmetic != "native_order"
             for module in linears.values()
@@ -201,8 +210,8 @@ class NativeStepAdapter(nn.Module):
 
         if embedding_lookup is None:
             embedding = getattr(drafter, "embed_tokens", None)
-            if not isinstance(embedding, nn.Embedding) or embedding.weight.device.type != "cpu":
-                raise ValueError("borrowed token embedding must be a CPU nn.Embedding")
+            if not isinstance(embedding, nn.Embedding) or embedding.weight.device != self.device:
+                raise ValueError("borrowed token embedding must share the binary device")
             if embedding.weight.dtype != torch.float16 or embedding.embedding_dim != hidden:
                 raise ValueError("borrowed token embedding must be F16 with hidden_size columns")
 
@@ -235,10 +244,10 @@ class NativeStepAdapter(nn.Module):
             eps = getattr(norm, "variance_epsilon", None)
             if (
                 not isinstance(weight, Tensor)
-                or weight.device.type != "cpu"
+                or weight.device != self.device
                 or weight.dtype != torch.float32
                 or weight.shape != (hidden,)
-                or not torch.isfinite(weight).all()
+                or (self.device.type == "cpu" and not torch.isfinite(weight).all())
                 or not isinstance(eps, (int, float))
                 or not math.isfinite(eps)
                 or eps <= 0
@@ -273,8 +282,18 @@ class NativeStepAdapter(nn.Module):
     def new_cache(self) -> NativeStepCache:
         shape = (self.kv_heads, 0, self.head_dim)
         return NativeStepCache(
-            torch.empty(shape, dtype=torch.float32, device="cpu"),
-            torch.empty(shape, dtype=torch.float32, device="cpu"),
+            torch.empty(shape, dtype=torch.float32, device=self.device),
+            torch.empty(shape, dtype=torch.float32, device=self.device),
+        )
+
+    def _rms_norm(self, x: Tensor, module: nn.Module) -> Tensor:
+        if self.device.type == "cpu":
+            return _frozen_rms_norm(x, module)
+        # F32 Torch surrogate avoids F64 reductions in accelerator QAT.
+        return (
+            x
+            * torch.rsqrt(x.square().mean(dim=-1, keepdim=True) + module.variance_epsilon)
+            * module.weight
         )
 
     def _validate_cache(self, cache: NativeStepCache, position: int) -> None:
@@ -284,13 +303,14 @@ class NativeStepAdapter(nn.Module):
         for name, value in (("key", cache.key), ("value", cache.value)):
             if (
                 not isinstance(value, Tensor)
-                or value.device.type != "cpu"
+                or value.device != self.device
                 or value.dtype != torch.float32
                 or value.shape != shape
             ):
                 raise ValueError(f"{name} cache must contain exactly decoder_position prior rows")
-            if not torch.isfinite(value).all() or not torch.equal(
-                value, value.to(torch.float16).to(torch.float32)
+            if self.device.type == "cpu" and (
+                not torch.isfinite(value).all()
+                or not torch.equal(value, value.to(torch.float16).to(torch.float32))
             ):
                 raise ValueError(f"{name} cache must be finite and F16-exact")
 
@@ -299,10 +319,10 @@ class NativeStepAdapter(nn.Module):
     ) -> Tensor:
         if (
             not isinstance(raw, Tensor)
-            or raw.device.type != "cpu"
+            or raw.device != self.device
             or raw.dtype != torch.float32
             or raw.shape != (self.drafter.fc.in_features,)
-            or not torch.isfinite(raw).all()
+            or (self.device.type == "cpu" and not torch.isfinite(raw).all())
         ):
             raise ValueError("raw target feature must be one finite F32 CPU row")
         encoded = self.drafter.fc(raw)
@@ -339,10 +359,10 @@ class NativeStepAdapter(nn.Module):
             raise ValueError("tree mask cannot be used with contiguous one-step cache")
         if (
             not isinstance(feature, Tensor)
-            or feature.device.type != "cpu"
+            or feature.device != self.device
             or feature.dtype != torch.float32
             or feature.shape != (self.hidden_size,)
-            or not torch.isfinite(feature).all()
+            or (self.device.type == "cpu" and not torch.isfinite(feature).all())
         ):
             raise ValueError("feature must be one finite F32 CPU hidden row")
         self._validate_cache(cache, decoder_position)
@@ -354,18 +374,18 @@ class NativeStepAdapter(nn.Module):
         embedding_f16 = self.embedding_lookup(token)
         if (
             not isinstance(embedding_f16, Tensor)
-            or embedding_f16.device.type != "cpu"
+            or embedding_f16.device != self.device
             or embedding_f16.dtype != torch.float16
             or embedding_f16.shape != (self.hidden_size,)
             or embedding_f16.requires_grad
-            or not torch.isfinite(embedding_f16).all()
+            or (self.device.type == "cpu" and not torch.isfinite(embedding_f16).all())
         ):
             raise ValueError("embedding lookup must return a frozen finite CPU F16 row")
         embedding = embedding_f16.to(torch.float32)
         trace("inp_embd", embedding)
-        normalized_embedding = _frozen_rms_norm(embedding, layer.input_layernorm)
+        normalized_embedding = self._rms_norm(embedding, layer.input_layernorm)
         trace("embd_norm-0", normalized_embedding)
-        normalized_feature = _frozen_rms_norm(feature, layer.hidden_norm)
+        normalized_feature = self._rms_norm(feature, layer.hidden_norm)
         trace("g_norm-0", normalized_feature)
         fused = torch.cat((normalized_embedding, normalized_feature), dim=-1)
         trace("concat_embd-0", fused)
@@ -384,14 +404,22 @@ class NativeStepAdapter(nn.Module):
         else:
             # ggml builds RoPE frequencies by repeated F32 multiplication. A
             # direct power at every channel changes some F16-rounded cache keys.
-            theta_scale = torch.tensor(self.rope_theta, dtype=torch.float32).pow(
-                -2.0 / self.head_dim
-            )
-            angle = torch.empty(self.head_dim // 2, dtype=torch.float32)
-            theta = torch.tensor(float(decoder_position), dtype=torch.float32)
-            for index in range(angle.numel()):
-                angle[index] = theta
-                theta = theta * theta_scale
+            theta_scale = torch.tensor(
+                self.rope_theta, dtype=torch.float32, device=self.device
+            ).pow(-2.0 / self.head_dim)
+            if self.device.type == "cpu":
+                angle = torch.empty(self.head_dim // 2, dtype=torch.float32, device=self.device)
+                theta = torch.tensor(
+                    float(decoder_position), dtype=torch.float32, device=self.device
+                )
+                for index in range(angle.numel()):
+                    angle[index] = theta
+                    theta = theta * theta_scale
+            else:
+                # Vectorized training surrogate; native proposal trajectories
+                # remain the deployment/numeric gate after accelerator access.
+                channels = torch.arange(self.head_dim // 2, device=self.device)
+                angle = float(decoder_position) * theta_scale.pow(channels)
             full_angle = torch.cat((angle, angle))
             cos, sin = full_angle.cos(), full_angle.sin()
             half = self.head_dim // 2
@@ -426,7 +454,7 @@ class NativeStepAdapter(nn.Module):
         trace("kqv_out-0", attention)
         residual = feature + attn.o_proj(attention)
         trace("ffn_inp-0", residual)
-        post_attention = _frozen_rms_norm(residual, layer.post_attention_layernorm)
+        post_attention = self._rms_norm(residual, layer.post_attention_layernorm)
         trace("post_attn_norm-0", post_attention)
         gate = mlp.gate_proj(post_attention)
         activated = (
@@ -439,7 +467,7 @@ class NativeStepAdapter(nn.Module):
         pre_norm = residual + ffn
         trace("eagle3_prenorm-0", pre_norm)
         normalized_output = (
-            _frozen_rms_norm(pre_norm, self.drafter.norm)
+            self._rms_norm(pre_norm, self.drafter.norm)
             if compute_logits or trace_callback is not None
             else None
         )
@@ -448,7 +476,7 @@ class NativeStepAdapter(nn.Module):
         logits = (
             self.drafter.lm_head(normalized_output)
             if compute_logits
-            else torch.empty(0, dtype=torch.float32, device="cpu")
+            else torch.empty(0, dtype=torch.float32, device=self.device)
         )
         return DraftStep(logits=logits, pre_norm=pre_norm, cache=next_cache)
 

@@ -1,6 +1,7 @@
 """Injected CPU provider checks; no model snapshot or capture is opened."""
 
 import unittest
+from dataclasses import replace
 from types import SimpleNamespace
 
 import numpy as np
@@ -9,7 +10,12 @@ from torch import nn
 
 from w1a1_eagle.native_step import NativeStepAdapter
 from w1a1_eagle.recurrent_binary import CANDIDATE_D_BASE_TO_PATH, GroupedBinaryLinear, pack_signs
-from w1a1_eagle.recurrent_provider import ProviderRound, bind_teacher_rows, train_from_provider
+from w1a1_eagle.recurrent_provider import (
+    ProviderRound,
+    bind_teacher_rows,
+    forward_torch_round,
+    train_from_provider,
+)
 from w1a1_eagle.recurrent_qat import (
     JointQATConfig,
     RowBinaryLinear,
@@ -226,6 +232,25 @@ class ProviderTests(unittest.TestCase):
             install_joint_linears(drafter, target, JointQATConfig(W1AxContract(8)))
         self.assertIs(drafter.fc, original)
 
+    def test_meta_device_f32_row_step_shapes_without_accelerator(self):
+        drafter = dense_drafter(native_shape=True)
+        config = JointQATConfig(W1AxContract(4))
+        install_joint_linears(drafter, nn.Linear(4, 4), config)
+        drafter.to("meta")
+        adapter = NativeStepAdapter(drafter)
+        feature = adapter.encode_feature(torch.empty(12, device="meta"))
+        step = adapter.decode_step(1, feature, 0, adapter.new_cache())
+        self.assertEqual(step.logits.shape, (3,))
+        self.assertEqual(step.pre_norm.shape, (4,))
+        self.assertEqual(step.cache.key.shape, (1, 1, 2))
+        batch = replace(provider_round(), raw_target_features=torch.empty((1, 12), device="meta"))
+        self.assertEqual(forward_torch_round(batch, adapter, 3).shape, (2, 3))
+        invalid = list(batch.rows)
+        invalid[1] = dict(invalid[1], valid=False, proposed_token_id=None)
+        terminal = forward_torch_round(replace(batch, rows=tuple(invalid)), adapter, 3)
+        self.assertEqual(terminal.device.type, "meta")
+        self.assertEqual(terminal.shape, (2, 3))
+
     def test_group_install_requires_explicit_candidate_d_arrays(self):
         drafter = dense_drafter()
         drafter.midlayer.self_attn.q_proj = nn.Linear(4, 64, bias=False)
@@ -249,12 +274,11 @@ class ProviderTests(unittest.TestCase):
             train_from_provider(provider, JointQATConfig(W1AxContract(4)), max_rounds=1)
         self.assertEqual(provider.load_calls, 0)
 
-    def test_provider_accelerator_requires_future_rollout(self):
-        provider = TinyProvider()
+    def test_provider_accelerator_requires_explicit_opt_in(self):
+        with self.assertRaisesRegex(ValueError, "explicit allow_accelerator"):
+            JointQATConfig(W1AxContract(4), device="cuda")
         config = JointQATConfig(W1AxContract(4), device="cuda", allow_accelerator=True)
-        with self.assertRaisesRegex(ValueError, "explicit CPU only"):
-            train_from_provider(provider, config, max_rounds=1)
-        self.assertEqual(provider.load_calls, 0)
+        self.assertEqual(config.device, "cuda:0")
 
     def test_provider_training_preserves_first_state_and_cache_gradients(self):
         for objective in ("hard_ce", "compact_probability"):

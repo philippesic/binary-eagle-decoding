@@ -1,4 +1,4 @@
-"""Differentiable CPU reference for a captured native EAGLE proposal chain.
+"""Differentiable Torch rollout for a captured native EAGLE proposal chain.
 
 The feature encoder and decoder step are supplied by the caller. A step must
 return the decoder's pre-norm state for the next proposal, its head logits,
@@ -58,10 +58,12 @@ def rebuild_prefix_cache(
     ):
         raise ValueError("accepted prefix tokens do not match parent position")
     if (
-        raw_target_features.device.type != "cpu"
-        or raw_target_features.ndim != 2
+        raw_target_features.ndim != 2
         or raw_target_features.shape[0] != parent_position + 1
-        or not torch.isfinite(raw_target_features).all()
+        or (
+            raw_target_features.device.type == "cpu"
+            and not torch.isfinite(raw_target_features).all()
+        )
     ):
         raise ValueError("raw target features must cover every context and deferred row")
     if tuple(feature_positions) != tuple(range(parent_position + 1)):
@@ -71,9 +73,9 @@ def rebuild_prefix_cache(
         for position in range(parent_position):
             feature = encode_feature(raw_target_features[position])
             if (
-                feature.device.type != "cpu"
+                feature.device != raw_target_features.device
                 or feature.ndim != 1
-                or not torch.isfinite(feature).all()
+                or (feature.device.type == "cpu" and not torch.isfinite(feature).all())
             ):
                 raise ValueError("feature encoder returned an invalid context row")
             result = decode_context(prefix_token_ids[position + 1], feature, position, cache)
@@ -101,11 +103,15 @@ def rollout_captured_prefix(
     recurrence and fills only a terminal invalid row with zero, ignored logits
     so its output aligns with the trace CE mask.
     """
-    if not rows or draft_vocab_size < 1 or raw_target_features.device.type != "cpu":
-        raise ValueError("one nonempty CPU round and positive draft vocabulary are required")
+    if not rows or draft_vocab_size < 1:
+        raise ValueError("one nonempty round and positive draft vocabulary are required")
     feature = encode_feature(raw_target_features)
-    if feature.device.type != "cpu" or feature.ndim != 1 or not torch.isfinite(feature).all():
-        raise ValueError("feature encoder must return one finite CPU state")
+    if (
+        feature.device != raw_target_features.device
+        or feature.ndim != 1
+        or (feature.device.type == "cpu" and not torch.isfinite(feature).all())
+    ):
+        raise ValueError("feature encoder must return one valid state on the input device")
     cache = initial_cache
     logits_rows = []
     first = rows[0]
@@ -127,19 +133,21 @@ def rollout_captured_prefix(
         if row.get("valid") is not True:
             if depth != len(rows) - 1:
                 raise ValueError("invalid proposal row must be terminal")
-            logits_rows.append(torch.zeros(draft_vocab_size, dtype=torch.float32, device="cpu"))
+            logits_rows.append(
+                torch.zeros(draft_vocab_size, dtype=torch.float32, device=feature.device)
+            )
             continue
         # Native decoder memory/RoPE position is one before the shifted token.
         result = decode_step(token, feature, row["input_position"] - 1, cache)
         if not isinstance(result, DraftStep):
             raise TypeError("decoder must return DraftStep")
         if (
-            result.logits.device.type != "cpu"
+            result.logits.device != feature.device
             or result.logits.shape != (draft_vocab_size,)
-            or not torch.isfinite(result.logits).all()
-            or result.pre_norm.device.type != "cpu"
+            or (feature.device.type == "cpu" and not torch.isfinite(result.logits).all())
+            or result.pre_norm.device != feature.device
             or result.pre_norm.shape != feature.shape
-            or not torch.isfinite(result.pre_norm).all()
+            or (feature.device.type == "cpu" and not torch.isfinite(result.pre_norm).all())
         ):
             raise ValueError("decoder returned invalid logits or pre-norm state")
         logits_rows.append(result.logits)

@@ -85,11 +85,13 @@ def hard_activation(input: Tensor, bits: ActivationBits) -> tuple[Tensor, Tensor
     """Return hard dequantized values, per-token scale and saturation mask."""
     if bits not in (1, 4, 8, 16):
         raise ValueError("unsupported activation width")
-    if not input.is_floating_point() or not bool(torch.isfinite(input).all()):
+    if not input.is_floating_point() or (
+        input.device.type == "cpu" and not bool(torch.isfinite(input).all())
+    ):
         raise ValueError("activations must be finite floating point")
     if bits == 16:
         cast = input.float().to(torch.float16).float()
-        if not bool(torch.isfinite(cast).all()):
+        if input.device.type == "cpu" and not bool(torch.isfinite(cast).all()):
             raise ValueError("A16 boundary cast overflow")
         return cast, torch.ones_like(cast[..., :1]), torch.zeros_like(cast, dtype=torch.bool)
     return _HardActivationSTE.apply(input, bits)
@@ -140,7 +142,7 @@ class RowBinaryLinear(nn.Module):
     @torch.no_grad()
     def project_scales_(self) -> None:
         raw = self.initial_scale + self.scale_offset
-        if not bool(torch.isfinite(raw).all()):
+        if raw.device.type == "cpu" and not bool(torch.isfinite(raw).all()):
             raise ValueError("weight scales became nonfinite")
         self.scale_offset.copy_(torch.where(raw < 0, -self.initial_scale, self.scale_offset))
 
@@ -150,7 +152,7 @@ class RowBinaryLinear(nn.Module):
         if input.device != self.latent_sign.device:
             raise ValueError("input and linear must share device")
         quantized, _, saturated = hard_activation(input, self.contract.activation_bits)
-        self.last_saturation_fraction = float(saturated.float().mean().detach())
+        self.last_saturation_fraction = saturated.float().mean().detach()
         signs = hard_sign_ste(self.latent_sign)
         return F.linear(quantized, signs) * self.effective_scales() + (
             0 if self.frozen_bias is None else self.frozen_bias
@@ -170,6 +172,9 @@ class JointQATConfig:
 
     def __post_init__(self) -> None:
         device = torch.device(self.device)
+        if device.type == "cuda" and device.index is None:
+            device = torch.device("cuda:0")
+            object.__setattr__(self, "device", str(device))
         if device.type != "cpu" and not self.allow_accelerator:
             raise ValueError("accelerator use requires explicit allow_accelerator")
         if self.contract.scale_layout == "group128" and device.type != "cpu":
@@ -344,8 +349,24 @@ def joint_train_step(
     if not loss.requires_grad or not bool(torch.isfinite(loss)):
         raise ValueError("joint loss must be finite and differentiable")
     loss.backward()
-    gradient_tensors = sum(p.grad is not None and bool((p.grad != 0).any()) for p in params)
-    if any(p.grad is not None and not bool(torch.isfinite(p.grad).all()) for p in params):
+    active = torch.stack(
+        [
+            (p.grad != 0).any()
+            if p.grad is not None
+            else torch.zeros((), dtype=torch.bool, device=logits.device)
+            for p in params
+        ]
+    )
+    gradient_tensors = int(active.sum())
+    finite_grads = torch.stack(
+        [
+            torch.isfinite(p.grad).all()
+            if p.grad is not None
+            else torch.ones((), dtype=torch.bool, device=logits.device)
+            for p in params
+        ]
+    )
+    if not bool(finite_grads.all()):
         raise ValueError("nonfinite joint QAT gradient")
     norm = torch.nn.utils.clip_grad_norm_(params, config.max_grad_norm, error_if_nonfinite=True)
     optimizer.step()
@@ -356,16 +377,35 @@ def joint_train_step(
         with torch.no_grad():
             module.latent_sign.clamp_(-1, 1)
         module.project_scales_()
-    sign_flips = sum(
-        int(((m.latent_sign.detach() < 0) != old).sum())
-        for m, old in zip(linears.values(), before_signs)
+    finite_parameters = torch.stack([torch.isfinite(p).all() for p in params])
+    if not bool(finite_parameters.all()):
+        raise ValueError("joint QAT update produced nonfinite parameters")
+    sign_flips = int(
+        torch.stack(
+            [
+                ((m.latent_sign.detach() < 0) != old).sum()
+                for m, old in zip(linears.values(), before_signs)
+            ]
+        ).sum()
     )
-    scale_movement = sum(
-        float((m.effective_scales().detach() - old).abs().sum())
-        for m, old in zip(linears.values(), before_scales)
+    scale_movement = float(
+        torch.stack(
+            [
+                (m.effective_scales().detach() - old).abs().sum()
+                for m, old in zip(linears.values(), before_scales)
+            ]
+        ).sum()
     )
-    latent_outside_clip = sum(
-        int((m.latent_sign.detach().abs() > 1).sum()) for m in linears.values()
+    latent_outside_clip = int(
+        torch.stack([(m.latent_sign.detach().abs() > 1).sum() for m in linears.values()]).sum()
+    )
+    saturation_mean = float(
+        torch.stack(
+            [
+                torch.as_tensor(getattr(m, "last_saturation_fraction", 0.0), device=logits.device)
+                for m in linears.values()
+            ]
+        ).mean()
     )
     return {
         "loss": float(loss.detach()),
@@ -374,10 +414,7 @@ def joint_train_step(
         "sign_flips": sign_flips,
         "scale_l1_movement": scale_movement,
         "latent_outside_clip": latent_outside_clip,
-        "saturation_mean": sum(
-            getattr(m, "last_saturation_fraction", 0.0) for m in linears.values()
-        )
-        / 9,
+        "saturation_mean": saturation_mean,
     }
 
 

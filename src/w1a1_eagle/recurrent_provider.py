@@ -1,7 +1,7 @@
 """Audited native-prefix provider boundary for joint EAGLE W1Ax training.
 
 Providers own model/capture loading, file hash verification and source policy.
-This module never reads a model or capture on import. The CPU path reconstructs
+This module never reads a model or capture on import. The Torch path reconstructs
 the current student cache and unrolls exact proposal prefixes without detaching
 the proposal state or K/V graph. Accelerator rollout needs a separate provider
 implementation and is deliberately not exercised by Phase 1A checks.
@@ -10,7 +10,7 @@ implementation and is deliberately not exercised by Phase 1A checks.
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any, Protocol
 
 import numpy as np
@@ -184,7 +184,9 @@ def audit_provider_round(batch: ProviderRound, provider: JointTrainingProvider) 
     )
 
 
-def forward_cpu_round(batch: ProviderRound, adapter: StepAdapter, draft_vocab_size: int) -> Tensor:
+def forward_torch_round(
+    batch: ProviderRound, adapter: StepAdapter, draft_vocab_size: int
+) -> Tensor:
     """Rebuild context cache, then retain proposal-state/K/V autograd links."""
     rebuilt = rebuild_prefix_cache(
         batch.prefix_token_ids,
@@ -210,12 +212,10 @@ def train_from_provider(
 ) -> tuple[Mapping[str, nn.Module], list[dict[str, float | int]]]:
     """Install nine linears and train on injected audited native-prefix rounds.
 
-    This executable provider path is CPU-only until a separate accelerator
-    rollout preserves the same cache and mask semantics. The factory/loader
-    is outside this module so importing or unit testing does no model work.
+    Accelerator execution still requires `JointQATConfig.allow_accelerator`.
+    The provider chooses the official model device; this function moves only
+    audited native feature rows to that device. Importing does no model work.
     """
-    if config.device != "cpu":
-        raise ValueError("provider rollout currently supports explicit CPU only")
     if max_rounds < 1:
         raise ValueError("max_rounds must be positive")
     if provider.training_eligible is not True:
@@ -236,7 +236,10 @@ def train_from_provider(
         teacher = (
             bind_teacher_rows(batch, audit) if config.objective == "compact_probability" else None
         )
-        logits = forward_cpu_round(batch, adapter, provider.draft_vocab_size)
+        device_batch = replace(
+            batch, raw_target_features=batch.raw_target_features.to(config.device)
+        )
+        logits = forward_torch_round(device_batch, adapter, provider.draft_vocab_size)
         metrics.append(joint_train_step(linears, logits, audit, optimizer, config, teacher=teacher))
         if len(metrics) >= max_rounds:
             break

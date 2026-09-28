@@ -17,8 +17,11 @@ last-position loss reaches the first state and K/V cache.
 `scripts/train_joint_w1ax.py` runs a synthetic three-position CPU fixture by
 default and accepts an audited provider with `--provider`. The fixture is not
 captured data or model inference. Its `--device` option requires
-`--allow-accelerator` outside CPU; the current provider path explicitly
-requires CPU while a separate accelerator rollout is pending.
+`--allow-accelerator` outside CPU. Row-scale provider rollout follows the
+installed Torch linears' device; group128/A16 and native CPU oracle modes
+remain CPU-only. The accelerator branch uses vectorized F32 Torch RoPE/norm
+surrogates and has passed only CPU/meta shape checks, not CUDA execution or
+native trajectory gates.
 
 The existing `GroupedBinaryLinear` and schema-v1 exporter remain the separate
 group-128/A16 candidate-D reference. Row checkpoints use schema v2 with explicit
@@ -100,6 +103,7 @@ preparer and use `--objective compact_probability`. The provider verifies all
 teacher shard/index hashes with `iter_verified_shards` before model loading,
 then joins prompt, capture ID, exact prefix, raw logit row and verifier label.
 The factory is present but no larger eligible native capture exists yet.
-Actual capture, long QAT and native acceptance/throughput measurements wait
-for restored GPU access. The current provider runner executes only CPU rollout;
-future accelerator providers need a separately validated cache path.
+Actual capture, CUDA QAT calibration, long training and native
+acceptance/throughput measurements wait for restored GPU access. A future CUDA
+run must use `--device cuda:0 --allow-accelerator`; the prepared Torch path is
+still subject to a bounded native proposal/cache check before a training claim.
