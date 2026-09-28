@@ -763,6 +763,17 @@ and total-throughput baseline.
   tensor-by-tensor target parity proof. Target-feature numeric parity and
   any predeclared tolerance remain open. No optimizer, development/final
   prompt or Q4_0 measurement ran. The native Goal remains active.
+- A second supervised CUDA/F16 forward changed only Hugging Face attention
+  to SDPA (parent commit `95b924d`, four focused tests). Its median
+  native-feature relative row errors were 0.306/0.434/0.382%, versus
+  0.311/0.426/0.385% under eager. The small mixed changes do not isolate
+  the native discrepancy. The SDPA report SHA256 is
+  `fb333b9e76238a46ebddb875bc2a351ae66f589dae8a433ba5314745197ddb60`.
+  Its supervisor exited zero, process group stopped and RTX 5080 returned
+  idle; no other project GPU job was created. Both tmux-only SSH sessions
+  used for this turn were closed after process and device checks. The
+  isolated remote checkout retains the ignored capture and diagnostic
+  reports; no active GPU owner or remote experiment remains.
 
 **Next action:** keep the full 96-prompt capture sealed; isolate the
 remaining target-feature difference at the first divergent layer/row and

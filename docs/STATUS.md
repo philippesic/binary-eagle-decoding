@@ -63,8 +63,10 @@ rows still differed from native execution by median relative row L2 errors
 of roughly 0.3–0.6% across taps 2, 18 and 33; the largest checked row
 reached 2.088% in the CPU reasoning capture. The
 [target-feature report](../experiments/recurrent-binary-target-feature-parity.md)
-records per-tap measurements, hardware, versions and source hashes. The
-CUDA diagnostic stopped and the GPU is free. Exact target-feature and
+records per-tap measurements, hardware, versions and source hashes. Switching
+the independent CUDA forward from eager to SDPA attention barely changed
+the differences. Both CUDA diagnostics stopped and the GPU is free. Exact
+target-feature and
 whole-drafter state/logit parity remain open; the capture bundle is still
 training-ineligible pending a user-owned numeric gate and training budget.
 

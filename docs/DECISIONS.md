@@ -232,6 +232,9 @@ match the pinned FP16 GGUF, but the independent eager and native attention
 paths differ. The [target-feature note](../experiments/recurrent-binary-target-feature-parity.md)
 records exact metrics and limits. This evidence does not by itself select
 an acceptable training tolerance or an alternate exact backend path.
+Changing only the independent 5080 F16 attention from eager to PyTorch SDPA
+left median errors at 0.306/0.434/0.382%, a small mixed change from
+0.311/0.426/0.385%; attention implementation alone did not close the gap.
 
 **Exact-prefix row clarification (2026-09-28):** the native verifier computes
 target logits for every proposed prefix in a speculative batch, and the cloned

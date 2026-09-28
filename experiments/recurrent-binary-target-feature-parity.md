@@ -55,6 +55,15 @@ nonzero differences keep target-feature numerical parity **open**. No
 state/logit tolerance has been declared from them, and no training or
 Q4_0 performance conclusion follows.
 
+A second supervised CUDA/F16 forward changed only Hugging Face attention
+from eager to PyTorch SDPA (commit `95b924d`, four focused tests). Median
+relative row L2 errors became **0.306%, 0.434%, 0.382%** at taps 2, 18 and
+33, versus 0.311%, 0.426%, 0.385% under eager. Largest rows were 0.789%,
+1.388% and 1.775%, versus 0.789%, 1.367% and 1.753%. The small and mixed
+changes do not resolve the native gap or isolate one cause. The SDPA report
+SHA256 is `fb333b9e76238a46ebddb875bc2a351ae66f589dae8a433ba5314745197ddb60`;
+its supervised process exited zero and the GPU returned idle.
+
 The CUDA report is preserved outside Git at
 `checkouts/recurrent-gpu-capture-20260928/runs/recurrent-target-feature-cuda-20260928/comparison.json`
 on the registered RTX 5080 host, SHA256
@@ -63,3 +72,5 @@ It records target/draft/Hugging Face shard and native capture hashes. The
 supervised diagnostic exited zero and the process group stopped; final GPU
 check showed 0% utilization, 1,372 MiB whole-device use and no compute app.
 No development or final prompt was used.
+The SDPA counterpart is preserved beside it under
+`runs/recurrent-target-feature-sdpa-cuda-20260928/comparison.json`.
