@@ -94,6 +94,17 @@ int main(int argc, char ** argv) {
         if (!state.index) throw std::runtime_error("cannot open block-0 capture index");
 
         llama_backend_init();
+        bool expected_gpu = false;
+        for (size_t i = 0; i < ggml_backend_dev_count(); ++i) {
+            auto * device = ggml_backend_dev_get(i);
+            const std::string description = ggml_backend_dev_description(device);
+            if (ggml_backend_dev_type(device) == GGML_BACKEND_DEVICE_TYPE_GPU &&
+                description.find("RTX 5080") != std::string::npos) {
+                expected_gpu = true;
+                printf("target backend device: %s\n", description.c_str());
+            }
+        }
+        if (!expected_gpu) throw std::runtime_error("RTX 5080 CUDA backend not registered");
         llama_model_params model_params = llama_model_default_params();
         model_params.n_gpu_layers = 99;
         llama_model * model = llama_model_load_from_file(argv[1], model_params);
