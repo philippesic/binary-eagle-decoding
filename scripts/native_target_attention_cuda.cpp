@@ -33,17 +33,24 @@ std::vector<char> read_exact(const std::string & path, size_t size) {
 } // namespace
 
 int main(int argc, char ** argv) {
-    if (argc != 3) return 2; // operand directory, qf32 or qf16roundtrip
+    if (argc != 3) return 2; // operand directory and replay mode
     try {
         const std::string dir = argv[1];
         const std::string mode = argv[2];
-        if (mode != "qf32" && mode != "qf16roundtrip") return 2;
+        const bool o_mode = mode == "o_native" || mode == "o_torch" || mode == "o_f16cast";
+        if (mode != "qf32" && mode != "qf16roundtrip" && mode != "attn_only" && !o_mode) return 2;
         auto q_bytes = read_exact(dir + "/q_rope.f32", TOKENS * Q_WIDTH * sizeof(float));
         auto k_bytes = read_exact(dir + "/k_cache.f16", KV_SLOTS * KV_WIDTH * sizeof(ggml_fp16_t));
         auto v_bytes = read_exact(dir + "/v_cache.f16", KV_SLOTS * KV_WIDTH * sizeof(ggml_fp16_t));
         auto mask_bytes = read_exact(dir + "/causal_mask.f16", TOKENS * KV_SLOTS * sizeof(ggml_fp16_t));
         auto weight_bytes = read_exact(dir + "/o_weight.f16", HIDDEN * Q_WIDTH * sizeof(ggml_fp16_t));
         auto residual_bytes = read_exact(dir + "/layer_input.f32", TOKENS * HIDDEN * sizeof(float));
+        std::vector<char> attn_input_bytes;
+        if (o_mode) {
+            attn_input_bytes = read_exact(
+                dir + (mode == "o_torch" ? "/torch_attn.f32" : "/native_attn.f32"),
+                TOKENS * Q_WIDTH * sizeof(float));
+        }
 
         ggml_backend_load_all();
         ggml_backend_t backend = ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_GPU, nullptr);
@@ -62,6 +69,7 @@ int main(int argc, char ** argv) {
         ggml_tensor * mask = ggml_new_tensor_4d(ctx, GGML_TYPE_F16, KV_SLOTS, TOKENS, 1, 1);
         ggml_tensor * weight = ggml_new_tensor_2d(ctx, GGML_TYPE_F16, Q_WIDTH, HIDDEN);
         ggml_tensor * residual = ggml_new_tensor_2d(ctx, GGML_TYPE_F32, HIDDEN, TOKENS);
+        ggml_tensor * attn_input = ggml_new_tensor_2d(ctx, GGML_TYPE_F32, Q_WIDTH, TOKENS);
         ggml_tensor * q_operand = mode == "qf16roundtrip"
             ? ggml_cast(ctx, ggml_cast(ctx, q_raw, GGML_TYPE_F16), GGML_TYPE_F32) : q_raw;
         ggml_tensor * q = ggml_permute(ctx, q_operand, 0, 2, 1, 3);
@@ -73,11 +81,15 @@ int main(int argc, char ** argv) {
         ggml_tensor * heads = ggml_reshape_2d(ctx, attn, Q_WIDTH, TOKENS);
         ggml_tensor * projected = ggml_mul_mat(ctx, weight, heads);
         ggml_tensor * output = ggml_add(ctx, projected, residual);
+        ggml_tensor * o_operand = mode == "o_f16cast"
+            ? ggml_cast(ctx, attn_input, GGML_TYPE_F16) : attn_input;
+        ggml_tensor * o_output = ggml_add(ctx, ggml_mul_mat(ctx, weight, o_operand), residual);
+        ggml_tensor * selected = mode == "attn_only" ? heads : o_mode ? o_output : output;
         if (output->type != GGML_TYPE_F32 || output->ne[0] != HIDDEN || output->ne[1] != TOKENS) {
             throw std::runtime_error("ggml attention residual returned wrong geometry");
         }
         ggml_cgraph * graph = ggml_new_graph_custom(ctx, 32, false);
-        ggml_build_forward_expand(graph, output);
+        ggml_build_forward_expand(graph, selected);
         ggml_backend_buffer_t buffer = ggml_backend_alloc_ctx_tensors(ctx, backend);
         if (!buffer) throw std::runtime_error("ggml CUDA tensor allocation failed");
         ggml_backend_tensor_set(q_raw, q_bytes.data(), 0, q_bytes.size());
@@ -86,12 +98,14 @@ int main(int argc, char ** argv) {
         ggml_backend_tensor_set(mask, mask_bytes.data(), 0, mask_bytes.size());
         ggml_backend_tensor_set(weight, weight_bytes.data(), 0, weight_bytes.size());
         ggml_backend_tensor_set(residual, residual_bytes.data(), 0, residual_bytes.size());
+        if (o_mode) ggml_backend_tensor_set(attn_input, attn_input_bytes.data(), 0, attn_input_bytes.size());
         if (ggml_backend_graph_compute(backend, graph) != GGML_STATUS_SUCCESS) {
             throw std::runtime_error("ggml CUDA attention graph failed");
         }
-        std::vector<char> result(ggml_nbytes(output));
-        ggml_backend_tensor_get(output, result.data(), 0, result.size());
-        std::ofstream file(dir + "/ggml_attn_" + mode + "_residual.f32", std::ios::binary);
+        std::vector<char> result(ggml_nbytes(selected));
+        ggml_backend_tensor_get(selected, result.data(), 0, result.size());
+        const std::string suffix = mode == "attn_only" ? ".f32" : "_residual.f32";
+        std::ofstream file(dir + "/ggml_attn_" + mode + suffix, std::ios::binary);
         file.write(result.data(), result.size());
         if (!file) throw std::runtime_error("cannot write ggml attention residual");
         printf("%s: %zu bytes on %s\n", mode.c_str(), result.size(), device.c_str());
