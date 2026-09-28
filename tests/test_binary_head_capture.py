@@ -293,12 +293,17 @@ class RunnerTests(unittest.TestCase):
             ),
         ):
             runner.validate_inputs(self.args, prompts, variants)
+            with (
+                mock.patch.object(self.args, "target_logits_limit", 65_536),
+                mock.patch.object(self.args, "target_features_limit", 131_072),
+            ):
+                runner.validate_inputs(self.args, prompts, variants)
             self.assertIn("--no-context-shift", runner.server_command(self.args, self.spec))
             for value, name in [
                 (0, "target logits"),
                 (-1, "target features"),
-                (8193, "target logits"),
-                (65_537, "target features"),
+                (65_537, "target logits"),
+                (131_073, "target features"),
             ]:
                 with self.subTest(limit=name, value=value):
                     key = (

@@ -115,9 +115,11 @@ def validate_inputs(args, prompts: list[dict], variants: dict) -> None:
 
         if hashlib.sha256(mapping.tobytes()).hexdigest() != DRAFT_D_D2T_SHA256:
             raise ValueError("recurrent train d2t map differs from candidate D")
+        # These explicit caps cover the frozen 96 x 128-token run even at
+        # five proposals per round; files still contain only actual rows.
         for value, name, maximum in (
-            (args.target_logits_limit, "target logits", 8192),
-            (args.target_features_limit, "target features", 65_536),
+            (args.target_logits_limit, "target logits", 65_536),
+            (args.target_features_limit, "target features", 131_072),
         ):
             if type(value) is not int or not 1 <= value <= maximum:
                 raise ValueError(f"recurrent {name} limit must be in 1..{maximum}")
