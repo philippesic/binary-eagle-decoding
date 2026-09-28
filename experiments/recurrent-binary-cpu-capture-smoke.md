@@ -44,9 +44,12 @@ be used to choose a training loss or claim population coverage.
 The recorded seed plus each round's emitted verifier IDs equal the first
 seven response IDs: `[32, 3283, 38921, 646, 1824, 2176, 7557]`. The eighth
 response ID was `323` from the terminal target-only path. The response reported
-`finish_reason=length` and eight completion tokens. There is no independent
-raw target-logit row for that terminal sample, nor a target-feature numerical
-reference. Full request sampling correctness, whole-drafter numeric/KV parity,
+`finish_reason=length` and eight completion tokens. The fifth native round
+trace has `status=no_proposal` and `emitted_token_ids=[323]`; a separate
+CPU response audit joined all eight response IDs to the four canonical
+rounds, that terminal trace, request cap and complete prefill. There is no
+independent raw target-logit row for that terminal sample, nor a numerical
+target-feature reference. Full request sampling correctness, whole-drafter numeric/KV parity,
 trained-export loading, native Q4_0 acceptance and timing remain open.
 
 Ignored evidence directory:
@@ -55,6 +58,7 @@ Ignored evidence directory:
 | File | SHA256 |
 | --- | --- |
 | `forced-rounds.jsonl` | `1847aa3fc6e0364a12ab88c965c75d91d54eef76e51a4baba8d79f65333bed78` |
+| `rounds.jsonl` | `f7a81beba2e94dd99b3ae8c368eea60697730f925c11c14809c861bfa8ad2133` |
 | `heads.jsonl` | `14f3da6379b7888a223bc1abb0126edd5a088764adf37dff229259e492fe3d60` |
 | `heads.target_features.jsonl` | `6ea22d4c62a3bcfbb32194e3eb2d49b1cbd379c693be9a202fd72d6c8caf6a17` |
 | `heads.target_features.f32` | `f5c4189cae56f9f6470e44b1ddd285788c4b95d8974dd261c323bd610aa793dc` |
@@ -63,6 +67,7 @@ Ignored evidence directory:
 | `continuity.json` | `4370502acd45c76947f7cc6752d1b99d3967d5f3023347d1ec3a8a362ac3e7de` |
 | `bundle/manifest.json` | `52a6f718922c15c46c7bfaa2a2754795322652f7a7ee0d975a21af19c2f51649` |
 | `bundle/audit.json` | `58fdb01e7d1a917a05f384957051fe51874ffc16dbb25c5ad83e6b77eeefe369` |
+| `response_round_join.json` | `60548c5ccfcfe50249cf3ed5a9b31e664e1d44efb80e18483c86afe36d8222e1` |
 
 This one-request diagnostic used an explicit one-prompt audit override. The
 future frozen training capture still requires all 96 prompts, the full

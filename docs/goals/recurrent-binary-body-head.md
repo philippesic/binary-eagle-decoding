@@ -67,7 +67,7 @@ file and `docs/STATUS.md` are the durable project checkpoint.
   positions are `P+1`, `P+2`; invalid terminal rows create no decoder call. This checks the
   training interface, not actual EAGLE mask or K/V byte parity.
 
-**Latest CPU checks:** 73 recurrent tests, 16 capture-runner tests, seven explicit decoder-step tests,
+**Latest CPU checks:** 77 recurrent tests, 16 capture-runner tests, seven explicit decoder-step tests,
 five frozen-operand tests, eight native loader fixtures, eight existing
 scale-fitting tests, Ruff
 lint/format and `git diff --check` pass. No local Metal/MPS or CUDA
@@ -259,8 +259,9 @@ established.
   out. The server stopped cleanly. It recorded four rounds, 16 head states,
   16 raw target-logit rows and 53 raw target-feature rows. The actual raw
   streams passed internal continuity, both native preparers and the final
-  preparation-only bundle audit. The first seven response IDs match the
-  native seed and round emissions; the terminal eighth token has no
+  preparation-only bundle audit. A new response auditor joined all eight
+  raw response IDs to the initial seed, four native round emissions and a
+  terminal `no_proposal` trace. The terminal eighth token still has no
   independent raw target-logit check. The [CPU capture report](../../experiments/recurrent-binary-cpu-capture-smoke.md)
   has pinned identities, counts, SHA256s, hardware and limitations. Raw
   files remain ignored under `results/recurrent-binary-cpu-smoke-20260928-a16/`.
@@ -290,7 +291,7 @@ restriction. Do not request or infer that change.
 ## CPU stop gate and next actions
 
 1. Extend the one-request real CPU capture with an independent numerical
-   target-feature check and a response-to-round/terminal audit. Keep the
+   target-feature and full-drafter cache/state check. Keep the
    preparation bundle ineligible until full request, model and drafter
    parity gates pass; do not infer the 96-prompt training result from one
    prompt.

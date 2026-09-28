@@ -153,7 +153,9 @@ now exercises the native writers end to end with the pinned target and D
 draft. It exposed a missing `GGML_W1AX_ACT_BITS=16` setting in the runner;
 the corrected diagnostic passed continuity, both preparers and the final
 bundle audit. This validates capture format and the local joins for one real
-request. It does not establish numerical target-feature or drafter-cache
+request. A separate response audit joins its raw output IDs to the seed,
+canonical verifier emissions and terminal no-proposal trace. It does not
+establish independent target sampling, numerical target-feature or drafter-cache
 parity, full 96-prompt capture completeness, training quality or Q4_0 gates.
 
 ## Bounded proposed first trial and stop gates

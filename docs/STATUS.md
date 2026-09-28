@@ -75,10 +75,12 @@ missing A16 activation setting initially stopped draft loading; the runner
 now sets it explicitly. The eight-token frozen-training-prompt diagnostic
 captured four native rounds, 16 head and raw target-logit rows, and 53 raw
 target-feature rows. Internal continuity, both preparers and the final
-preparation-only bundle audit passed. The first seven response IDs match the
-recorded seed and round emissions; the final target-only sample lacks an
-independent logit check. See the [CPU capture report](../experiments/recurrent-binary-cpu-capture-smoke.md)
-for hashes and limits. No training, GPU/accelerator or Q4_0 comparison ran.
+preparation-only bundle audit passed. A response audit joined all eight
+output IDs to the seed, four round emissions and the terminal no-proposal
+trace; the final sample lacks an independent logit check. See the
+[CPU capture report](../experiments/recurrent-binary-cpu-capture-smoke.md)
+for hashes and limits. The focused 77 recurrent and 16 capture-runner CPU
+tests pass. No training, GPU/accelerator or Q4_0 comparison ran.
 
 **Current milestone:** the [final rescue/readout report](../experiments/binary-rescue-head-5080.md) records a negative result against Q4_0 EAGLE. Q4_0 reached 1.042 accepted drafts/round and 135.1 full-request tokens/s; the admitted attention+fusion Q8_0 rescue reached 0.696 and 83.3 (0.616×), and the fitted frozen-D-body FP16 head reached 0.555 and 60.8 (0.450×). All 120 primary measured raw outputs per path matched Q4_0 and target-only. The 264-request speculative round calibration, 92 graph-verified server blocks across final primary/diagnostic runs, and separate six-prompt longer-context comparison are complete. The longer-context client rates were 127.0 Q4_0, 68.5 combined rescue, 47.1 fitted head and 93.8 target-only tokens/s. Neither endpoint beat target-only. Full raw results, logs, binaries and model artifacts are indexed in the remote archive named in the report. Final RTX 5080 check found no owned process or compute app, 1,916 MiB whole-device use and 0% utilization. The user owns any future body-aware QAT or final-set decision; none was started.
 
