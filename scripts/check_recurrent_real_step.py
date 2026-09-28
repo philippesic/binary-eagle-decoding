@@ -28,7 +28,11 @@ from prepare_recurrent_native_rows import read_jsonl, sha256  # noqa: E402
 
 from w1a1_eagle.frozen_operands import FrozenOperands  # noqa: E402
 from w1a1_eagle.native_attention_oracle import NativeCPUAttentionOracle  # noqa: E402
-from w1a1_eagle.native_step import NativeStepAdapter, bind_frozen_norms  # noqa: E402
+from w1a1_eagle.native_step import (  # noqa: E402
+    NativeStepAdapter,
+    NativeStepCache,
+    bind_frozen_norms,
+)
 from w1a1_eagle.recurrent_binary import (  # noqa: E402
     CANDIDATE_D_BASE_TO_PATH,
     GroupedBinaryLinear,
@@ -142,6 +146,27 @@ def _retained_feature_indices(events: list[dict], prefix: list[int], task_id: in
     return indices
 
 
+def _post_seed_cache_arrays(cache: NativeStepCache, positions: int) -> dict[str, np.ndarray]:
+    """Snapshot the first proposal's post-write cache without changing the rollout."""
+    if type(positions) is not int or not 1 <= positions <= 256:
+        raise ValueError("post-seed cache positions must be in 1..256")
+    if not isinstance(cache, NativeStepCache):
+        raise ValueError("post-seed cache must be NativeStepCache")
+    arrays = {}
+    for name, value in (("key", cache.key), ("value", cache.value)):
+        if (
+            not isinstance(value, torch.Tensor)
+            or value.device.type != "cpu"
+            or value.dtype != torch.float32
+            or value.shape != (8, positions, 128)
+            or not torch.isfinite(value).all()
+            or not torch.equal(value, value.to(torch.float16).to(torch.float32))
+        ):
+            raise ValueError(f"post-seed {name} cache must be finite F16-exact [8,T,128]")
+        arrays[name] = value.detach().cpu().numpy().astype("<f4", copy=True)
+    return arrays
+
+
 def check_round(
     capture_dir: Path,
     target_gguf: Path,
@@ -149,6 +174,7 @@ def check_round(
     drafter_config: Path,
     arithmetic: str = "group_matmul",
     tap_output: Path | None = None,
+    cache_output: Path | None = None,
     round_index: int = 0,
     attention_mode: str = "f32",
     native_attention_helper: Path | None = None,
@@ -159,6 +185,13 @@ def check_round(
         or round_index < 0
     ):
         raise ValueError("unknown CPU binary arithmetic")
+    if tap_output is not None and tap_output.exists():
+        raise ValueError("adapter tap output must be new")
+    if cache_output is not None and (
+        cache_output.exists()
+        or (tap_output is not None and cache_output.resolve() == tap_output.resolve())
+    ):
+        raise ValueError("post-seed cache output must be new and distinct from taps")
     start = time.monotonic()
     rounds = read_jsonl(capture_dir / "forced-rounds.jsonl")
     heads = read_jsonl(capture_dir / "heads.jsonl")
@@ -220,6 +253,7 @@ def check_round(
     mapping = np.asarray(Model(draft_gguf).tensors["d2t"].data)
     depth_rows = []
     taps: dict[str, np.ndarray] = {}
+    post_seed_cache: dict[str, np.ndarray] | None = None
 
     def record_tap(name: str, value: torch.Tensor) -> None:
         if name in taps:
@@ -254,6 +288,10 @@ def check_round(
             )
             if tap_output is not None and depth == 0:
                 record_tap("draft_logits", result.logits)
+            if cache_output is not None and depth == 0:
+                post_seed_cache = _post_seed_cache_arrays(
+                    result.cache, rebuilt.decoder_position + 1
+                )
             state = result.pre_norm
             normalized = (
                 state * torch.rsqrt(state.square().mean() + norm.variance_epsilon) * norm.weight
@@ -282,10 +320,15 @@ def check_round(
             cache = result.cache
     first_depth = depth_rows[0]
     if tap_output is not None:
-        if tap_output.exists():
-            raise ValueError("adapter tap output must be new")
         tap_output.parent.mkdir(parents=True, exist_ok=True)
-        np.savez(tap_output, **taps)
+        with tap_output.open("xb") as stream:
+            np.savez(stream, **taps)
+    if cache_output is not None:
+        if post_seed_cache is None:
+            raise ValueError("selected round had no first proposal cache")
+        cache_output.parent.mkdir(parents=True, exist_ok=True)
+        with cache_output.open("xb") as stream:
+            np.savez(stream, **post_seed_cache)
     return {
         "schema": "recurrent_real_step_cpu_diagnostic_v1",
         "execution_device": "cpu",
@@ -313,6 +356,20 @@ def check_round(
                 }
             }
             if tap_output is not None
+            else {}
+        ),
+        **(
+            {
+                "adapter_post_seed_cache": {
+                    "path": str(cache_output),
+                    "sha256": sha256(cache_output),
+                    "shape": [8, post_seed_cache["key"].shape[1], 128],
+                    "dtype": "f32_f16_exact",
+                    "keys": ["key", "value"],
+                    "decoder_position": post_seed_cache["key"].shape[1] - 1,
+                }
+            }
+            if cache_output is not None and post_seed_cache is not None
             else {}
         ),
         "elapsed_seconds": time.monotonic() - start,
@@ -344,6 +401,7 @@ def main() -> None:
         "--arithmetic", choices=("native_order", "group_matmul"), default="group_matmul"
     )
     parser.add_argument("--tap-output", type=Path)
+    parser.add_argument("--cache-output", type=Path)
     parser.add_argument("--round-index", type=int, default=0)
     parser.add_argument(
         "--attention-mode", choices=("f32", "native_forward_f32_backward"), default="f32"
@@ -360,6 +418,7 @@ def main() -> None:
         args.drafter_config,
         args.arithmetic,
         args.tap_output,
+        args.cache_output,
         args.round_index,
         args.attention_mode,
         args.native_attention_helper,
