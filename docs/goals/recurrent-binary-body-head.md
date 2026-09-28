@@ -643,3 +643,41 @@ the preparation bundle before any training use. The all-body optimizer
 budget and numeric tolerance remain user-owned; no training or reserved
 final evaluation is authorized by this capture setup. The native Goal
 remains active.
+
+## Fifteenth goal turn: frozen 96-prompt CUDA capture, audit pending
+
+- The user-authorized RTX 5080 ran the frozen 96-prompt, 128-output-token
+  candidate-D own-history cell under supervisor
+  `recurrent-full96-20260928` in the isolated remote checkout recorded
+  above. Source checkout `dbdca38` includes the expanded explicit capture
+  limits. The run started 2026-09-28 07:42:44 UTC and ended 07:50:00 UTC
+  with supervisor exit code zero. All 96 requests have unique task/prompt
+  ownership; target/draft/train/map identities passed the runner's pinned
+  gates. Capture and cell manifests have SHA256
+  `2b2f49861c010214d2e424ad49053c829acdd6c6dafccbad721406390ed888fd`
+  and `f2f65984d6fc6857bc1857d9f484a0a2dbe371ea4c47a477a77687bdc621607b`.
+- The raw capture has **40,815 head rows and 40,815 raw verifier-logit rows**
+  (24,805,071,360 logit bytes), 52,297 raw target-feature rows
+  (1,606,563,840 feature bytes), and 8,295 native rounds. Neither
+  65,536/131,072 cap was reached. The native row preparer found all
+  40,815 rows valid, 39,705 supported and 1,110 outside draft vocabulary;
+  12,061 labels were reached by the live verifier. The feature preparer
+  selected 15,042 rows for accepted-prefix anchors. Frozen-prompt
+  continuity passed all 8,295 rounds. These are capture/alignment counts,
+  not training quality or Q4_0 performance.
+- The GPU supervisor and its process group are stopped. Final host check
+  found 0% utilization, 1,372 MiB whole-device use, no compute app and no
+  project server. No other GPU owner or remote job was started. The
+  24.8 GB raw logit file and other source artifacts remain outside Git
+  under this run directory.
+- The final preparation bundle is still being built and audited. A new
+  full-request auditor was pushed in parent commit `ed06972`; it has not
+  yet run on these 96 requests. Do not mark the capture training-eligible
+  from the runner's success alone. The all-body optimizer budget, numeric
+  tolerance and reserved final evaluation remain user-owned.
+
+**Immediate CPU actions:** finish the bundle audit, run the 96-request
+raw-response auditor against the sealed files, record source/output hashes
+and any rejection, then isolate native F16 attention arithmetic using the
+captured CPU graph inputs. Keep the RTX 5080 free unless a specific new
+bounded experiment is required.

@@ -34,6 +34,15 @@ remote checkout; it has not started. The [goal checkpoint](goals/recurrent-binar
 records the owner, tmux session, remote directory, commits, source hashes
 and stop procedure. No training budget or final-set use has been approved.
 
+**Full frozen-training capture (2026-09-28 UTC):** the supervised RTX 5080
+run finished all 96 training requests with 40,815 joined head/verifier-logit
+rows, 52,297 raw target-feature rows and 8,295 native rounds. Its process
+group stopped and the GPU is free. Internal continuity and native row/feature
+preparers passed; the bundle and all-request response audits remain in
+progress. The [active goal checkpoint](goals/recurrent-binary-body-head.md#fifteenth-goal-turn-frozen-96-prompt-cuda-capture-audit-pending)
+records counts, hashes, limitations and the next CPU checks. The raw capture
+is not yet training-eligible; no optimization or final-set evaluation ran.
+
 **Handoff checkpoint (2026-09-28 06:35 UTC):** the active goal file records
 the current objective, pushed commits, CPU tests, projected K/V write
 comparison, pending 5080 clarification and exact next actions. Code round 2
