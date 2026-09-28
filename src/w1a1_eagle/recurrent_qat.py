@@ -22,7 +22,13 @@ import torch
 from torch import Tensor, nn
 from torch.nn import functional as F
 
-from .recurrent_binary import CANDIDATE_D_BASE_TO_PATH, GroupedBinaryLinear, hard_sign_ste
+from .adapter import GROUP_PATHS, _validated_linears
+from .recurrent_binary import (
+    CANDIDATE_D_BASE_TO_PATH,
+    GroupedBinaryLinear,
+    hard_sign_ste,
+    install_candidate_d_linears,
+)
 from .recurrent_loss import supported_prefix_ce
 from .recurrent_trace import TraceAudit
 
@@ -172,6 +178,56 @@ class JointQATConfig:
             raise ValueError("unknown joint QAT objective")
         if self.sign_lr <= 0 or self.scale_lr <= 0 or self.max_grad_norm <= 0:
             raise ValueError("learning rates and gradient bound must be positive")
+
+
+def install_joint_linears(
+    drafter: nn.Module,
+    target: nn.Module,
+    config: JointQATConfig,
+    *,
+    candidate_d: Mapping[str, tuple[np.ndarray, np.ndarray]] | None = None,
+) -> dict[str, RowBinaryLinear | GroupedBinaryLinear]:
+    """Install all nine paths after the pinned official drafter has loaded.
+
+    Row weights initialize from each original dense F16 weight: hard signs and
+    F32 mean-absolute row scales. This is a fresh row representation, not a
+    conversion of candidate-D group scales. The group path requires the exact
+    candidate-D packed arrays and retains its existing Q/K inverse permutation.
+    All paths and target aliases are checked before mutation.
+    """
+    if target is None:
+        raise ValueError("target is required for alias protection")
+    if config.contract.scale_layout == "group128":
+        if candidate_d is None:
+            raise ValueError("group128 initialization needs candidate-D arrays")
+        if config.device != "cpu":
+            raise ValueError("group128 installation is CPU-only")
+        return install_candidate_d_linears(
+            drafter, candidate_d, target=target, arithmetic="group_matmul"
+        )
+    if candidate_d is not None:
+        raise ValueError("row initialization uses original dense weights, not candidate D")
+    pending = _validated_linears(drafter, GROUP_PATHS.keys(), target, "joint row W1Ax")
+    if set(pending) != set(CANDIDATE_D_BASE_TO_PATH.values()):
+        raise ValueError("pinned drafter must expose exactly nine selected linears")
+    target_parameter_ids = {id(parameter) for parameter in target.parameters()}
+    replacements = {}
+    for path, (_, _, linear) in pending.items():
+        if any(id(parameter) in target_parameter_ids for parameter in linear.parameters()):
+            raise ValueError(f"{path}: target owns a selected drafter parameter")
+        weight = linear.weight.detach().to(dtype=torch.float32, device="cpu")
+        if not bool(torch.isfinite(weight).all()):
+            raise ValueError(f"{path}: original dense weight is nonfinite")
+        initial_scale = weight.abs().mean(dim=1)
+        latent = torch.where(weight < 0, -torch.full_like(weight, 0.5), 0.5)
+        bias = None if linear.bias is None else linear.bias.detach().to(torch.float32, device="cpu")
+        replacements[path] = RowBinaryLinear(latent, initial_scale, config.contract, bias=bias).to(
+            config.device
+        )
+    for path, replacement in replacements.items():
+        parent, name, _ = pending[path]
+        setattr(parent, name, replacement)
+    return replacements
 
 
 def validate_joint_linears(

@@ -1,7 +1,7 @@
-"""Strict, differentiable CPU reference for one native EAGLE-3 W1A16 step.
+"""Strict, differentiable CPU reference for one native EAGLE-3 W1Ax step.
 
-This adapter consumes the pinned AngelSlim drafter after all nine candidate-D
-linears have been replaced by :class:`GroupedBinaryLinear`. It reproduces the
+This adapter consumes the pinned AngelSlim drafter after all nine linears have
+been replaced by group128/A16 or row-scale W1Ax trainable modules. It reproduces the
 one-token structure of ``llama_model_eagle3::graph<false>``: borrowed F16 token
 embedding, separate F32 RMS norms, embedding-first concatenation, Q/K/V with
 half-rotation RoPE, F16 cache storage, GQA attention, residual and SiLU FFN,
@@ -26,6 +26,7 @@ from torch.nn import functional as F
 from .native_attention_oracle import NativeAttentionForward, native_forward_f32_backward
 from .native_cpu_diagnostic import NativeCPUDiagnosticOperators
 from .recurrent_binary import CANDIDATE_D_BASE_TO_PATH, GroupedBinaryLinear
+from .recurrent_qat import RowBinaryLinear
 from .recurrent_rollout import DraftStep
 
 NATIVE_NORM_PATHS = {
@@ -176,17 +177,25 @@ class NativeStepAdapter(nn.Module):
                 module = drafter.get_submodule(path)
             except AttributeError as exc:
                 raise ValueError(f"missing binary projection {path}") from exc
-            if not isinstance(module, GroupedBinaryLinear) or module.group_size != 128:
-                raise ValueError(f"{path} must be a group-128 GroupedBinaryLinear")
+            if not isinstance(module, (GroupedBinaryLinear, RowBinaryLinear)):
+                raise ValueError(f"{path} must be group-128 or row-scale W1Ax binary linear")
+            if isinstance(module, GroupedBinaryLinear) and module.group_size != 128:
+                raise ValueError(f"{path} group binary linear must use group size 128")
             if (out_features is not None and module.out_features != out_features) or (
                 in_features is not None and module.in_features != in_features
             ):
                 raise ValueError(f"{path} has incompatible dimensions")
             linears[path] = module
-        if len({module.arithmetic for module in linears.values()}) != 1:
-            raise ValueError("binary projections must use one declared arithmetic")
+        if len({type(module) for module in linears.values()}) != 1:
+            raise ValueError("binary projections must share row or group layout")
+        if isinstance(next(iter(linears.values())), RowBinaryLinear):
+            if len({module.contract for module in linears.values()}) != 1:
+                raise ValueError("row projections must share one activation contract")
+        elif len({module.arithmetic for module in linears.values()}) != 1:
+            raise ValueError("group projections must use one declared arithmetic")
         if attention_mode == "native_cpu_diagnostic" and any(
-            module.arithmetic != "native_order" for module in linears.values()
+            not isinstance(module, GroupedBinaryLinear) or module.arithmetic != "native_order"
+            for module in linears.values()
         ):
             raise ValueError("native CPU diagnostic requires ordered binary projections")
 

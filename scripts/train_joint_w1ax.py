@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
-"""CPU-only tiny joint W1Ax trainer fixture and configuration entry point.
+"""Joint W1Ax trainer with injected audited provider or tiny CPU fixture.
 
-Real training supplies an audited native-prefix rollout and captured teacher
-rows to `joint_train_step`; this fixture makes the optimizer, quantizer and
-checkpoint boundary executable without opening models or legacy final prompts.
+The provider loads official models and audited native-prefix captures only
+when --provider is selected. The default fixture checks the optimizer,
+quantizer and checkpoint boundary without opening models or final prompts.
 Accelerator execution requires an explicit opt-in flag; Phase 1A checks use CPU.
 """
 
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import sys
 from pathlib import Path
@@ -20,6 +21,7 @@ sys.path.insert(0, str(ROOT / "src"))
 import torch  # noqa: E402
 
 from w1a1_eagle.recurrent_binary import CANDIDATE_D_BASE_TO_PATH, GroupedBinaryLinear  # noqa: E402
+from w1a1_eagle.recurrent_provider import train_from_provider  # noqa: E402
 from w1a1_eagle.recurrent_qat import (  # noqa: E402
     JointQATConfig,
     RowBinaryLinear,
@@ -99,6 +101,9 @@ def main() -> None:
     )
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--output-dir", type=Path)
+    parser.add_argument(
+        "--provider", help="importable MODULE:FACTORY returning a training provider"
+    )
     parser.add_argument("--base-gguf-sha256", default="0" * 64)
     args = parser.parse_args()
     if args.steps < 1:
@@ -110,39 +115,56 @@ def main() -> None:
         objective=args.objective,
         seed=args.seed,
     )
-    linears, audit = tiny_joint_fixture(config)
-    optimizer = joint_optimizer(linears, config)
-    metrics = []
-    for _ in range(args.steps):
-        logits, _, _ = tiny_rollout(linears, config.device)
-        teacher = None
-        if config.objective == "compact_probability":
-            # Synthetic unconditional target masses for interface smoke only.
-            teacher = {
-                "draft_topk_ids": torch.tensor([[1, 0]] * 3, dtype=torch.int32),
-                "draft_topk_probs": torch.tensor([[0.5, 0.2]] * 3),
-                "draft_tail_mass": torch.tensor([0.2] * 3),
-                "outside_draft_mass": torch.tensor([0.1] * 3),
-            }
-        metrics.append(joint_train_step(linears, logits, audit, optimizer, config, teacher=teacher))
+    if args.provider:
+        module_name, separator, factory_name = args.provider.partition(":")
+        if not separator or not module_name or not factory_name:
+            parser.error("--provider must be importable MODULE:FACTORY")
+        factory = getattr(importlib.import_module(module_name), factory_name)
+        provider = factory(config)
+        linears, metrics = train_from_provider(provider, config, max_rounds=args.steps)
+        base_hash = provider.base_gguf_sha256
+        execution = "audited_provider_rounds"
+        source = {"factory": args.provider, "split": provider.split, "base_gguf_sha256": base_hash}
+    else:
+        linears, audit = tiny_joint_fixture(config)
+        optimizer = joint_optimizer(linears, config)
+        metrics = []
+        for _ in range(args.steps):
+            logits, _, _ = tiny_rollout(linears, config.device)
+            teacher = None
+            if config.objective == "compact_probability":
+                # Synthetic unconditional target masses for interface smoke only.
+                teacher = {
+                    "draft_topk_ids": torch.tensor([[1, 0]] * 3, dtype=torch.int32),
+                    "draft_topk_probs": torch.tensor([[0.5, 0.2]] * 3),
+                    "draft_tail_mass": torch.tensor([0.2] * 3),
+                    "outside_draft_mass": torch.tensor([0.1] * 3),
+                }
+            metrics.append(
+                joint_train_step(linears, logits, audit, optimizer, config, teacher=teacher)
+            )
+        base_hash = args.base_gguf_sha256
+        execution = "synthetic_fixture"
+        source = {"kind": "deterministic_tiny_fixture"}
     result = {
         "contract": vars(config.contract),
-        "steps": args.steps,
+        "steps": len(metrics),
+        "max_rounds_requested": args.steps,
+        "execution": execution,
+        "source": source,
         "metrics": metrics,
         "checkpoint_kind": config.contract.export_status,
-        "hardware": "CPU F32 hard-quant simulation",
+        "hardware": "CPU F32 hard-quant simulation" if config.device == "cpu" else config.device,
     }
     if args.output_dir is not None:
         args.output_dir.mkdir(parents=True, exist_ok=True)
         checkpoint, manifest = args.output_dir / "joint.npz", args.output_dir / "joint.json"
         if args.scale_layout == "row":
             result["saved"] = save_joint_checkpoint(
-                linears, config, args.base_gguf_sha256, checkpoint, manifest
+                linears, config, base_hash, checkpoint, manifest
             )
         else:
-            result["saved"] = save_training_checkpoint(
-                linears, args.base_gguf_sha256, checkpoint, manifest
-            )
+            result["saved"] = save_training_checkpoint(linears, base_hash, checkpoint, manifest)
     print(json.dumps(result, sort_keys=True))
 
 
