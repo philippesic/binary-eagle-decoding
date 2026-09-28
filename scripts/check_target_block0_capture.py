@@ -14,7 +14,7 @@ import numpy as np
 LADDER_MANIFEST_SHA256 = "72410d35fae0b1561fca0546e8e3b6e58a30506af75fd0802d10da865db6151d"
 LADDER_F32_SHA256 = "242a5a748a2a62e7480363c6bd80688563f63b59a37c3ec1bd884782664a2d9e"
 TARGET_GGUF_SHA256 = "05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6"
-PROMPT_ID = "qat-revisit-train-reasoning-rate-and-work-01"
+PROMPT_ID = "qat-revisit-train-code-data-validation-03"
 TOKENS = 29
 HIDDEN = 2560
 LAYERS = (*range(19), 33)

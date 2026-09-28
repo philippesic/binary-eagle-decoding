@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
+import shutil
 import subprocess
 import sys
 import time
@@ -24,6 +26,7 @@ def main() -> None:
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--ladder-dir", type=Path, required=True)
     parser.add_argument("--target-gguf", type=Path, required=True)
+    parser.add_argument("--reuse-build-run-id")
     args = parser.parse_args()
     run_dir = ROOT / "runs" / args.run_id
     if not (run_dir / "state.json").is_file():
@@ -72,30 +75,56 @@ def main() -> None:
         "build_target": ["llama", "ggml-cuda"],
         "target_gguf": str(target),
         "ladder_dir": str(ladder),
+        "reused_build_run_id": args.reuse_build_run_id,
     }
     (run_dir / "recipe.json").write_text(json.dumps(recipe, indent=2, sort_keys=True) + "\n")
-    _run(cmake, timeout=900)
-    _run(
-        [str(cmake_exe), "--build", str(build), "--target", "llama", "ggml-cuda", "-j", "8"],
-        timeout=900,
-    )
-    compiler = [
-        "g++",
-        "-std=c++17",
-        "-O2",
-        "-I" + str(ROOT / "third_party/llama.cpp/include"),
-        "-I" + str(ROOT / "third_party/llama.cpp/ggml/include"),
-        str(ROOT / "scripts/native_target_block0_capture.cpp"),
-        "-L" + str(build / "bin"),
-        "-Wl,-rpath,$ORIGIN",
-        "-lllama",
-        "-lggml",
-        "-lggml-base",
-        "-lggml-cpu",
-        "-o",
-        str(helper),
-    ]
-    _run(compiler, timeout=120)
+    if args.reuse_build_run_id is not None:
+        if (
+            not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,79}", args.reuse_build_run_id)
+            or args.reuse_build_run_id == args.run_id
+        ):
+            parser.error("reuse-build-run-id must name a distinct existing run")
+        source_run = ROOT / "runs" / args.reuse_build_run_id
+        source_state = json.loads((source_run / "state.json").read_text())
+        source_recipe = json.loads((source_run / "recipe.json").read_text())
+        if (
+            source_state.get("status") != "finished"
+            or source_recipe.get("source_sha256", {}).get("helper")
+            != recipe["source_sha256"]["helper"]
+            or not (source_run / "build/CMakeCache.txt").is_file()
+            or not (source_run / "build/bin/native-target-block0-capture").is_file()
+        ):
+            raise ValueError("reused build is unfinished or differs from pinned helper source")
+        build.mkdir(parents=True, exist_ok=False)
+        shutil.copy2(source_run / "build/CMakeCache.txt", build / "CMakeCache.txt")
+        shutil.copytree(source_run / "build/bin", build / "bin", symlinks=True)
+        recipe["source_sha256"]["reused_helper_binary"] = sha256(
+            source_run / "build/bin/native-target-block0-capture"
+        )
+        (run_dir / "recipe.json").write_text(json.dumps(recipe, indent=2, sort_keys=True) + "\n")
+    else:
+        _run(cmake, timeout=900)
+        _run(
+            [str(cmake_exe), "--build", str(build), "--target", "llama", "ggml-cuda", "-j", "8"],
+            timeout=900,
+        )
+        compiler = [
+            "g++",
+            "-std=c++17",
+            "-O2",
+            "-I" + str(ROOT / "third_party/llama.cpp/include"),
+            "-I" + str(ROOT / "third_party/llama.cpp/ggml/include"),
+            str(ROOT / "scripts/native_target_block0_capture.cpp"),
+            "-L" + str(build / "bin"),
+            "-Wl,-rpath,$ORIGIN",
+            "-lllama",
+            "-lggml",
+            "-lggml-base",
+            "-lggml-cpu",
+            "-o",
+            str(helper),
+        ]
+        _run(compiler, timeout=120)
     prepare(ladder, target, capture)
     _run([str(helper), str(target), str(capture / "tokens.i32"), str(capture)], timeout=300)
     report = audit(ladder, target, capture, helper)
