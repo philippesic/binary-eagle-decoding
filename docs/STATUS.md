@@ -15,6 +15,14 @@ candidate D group-128/A16 stays separately labeled; the native learned-row
 loader gate needs a bounded fix before lower-width export. The options and
 provisional practical numeric gate are in [DECISIONS.md](DECISIONS.md#phase-1a-implementation-defaults-and-pending-research-choices).
 
+The archived-latency and capture-readiness report, larger-data preparers and
+compact-teacher schema, and synthetic joint W1Ax QAT path are now integrated
+and pushed (`e5bd3dc`, `0b5fce7`, `6db186f`). CPU fixtures pass. The data
+owner is pinning real source choices, the QAT owner is wiring captured-data
+training, and the native runtime owner is correcting an opt-in decoder-graph
+placement found during review before integration. No new GPU work or model
+inference has occurred.
+
 **Latest handoff (2026-09-28):** the user requested an overarching plan and a fresh team to continue the existing EAGLE work with no GPU access. Parent starting point is `d111335`, following the predecessor's `5110257`; native gitlink is `21f617d4ef3f5dc383d3ab8dc619daaa87db7ff8`. Both host pause flags are set. The plan supersedes the old next action to continue target block-14 parity. Reuse existing capture/export/CPU tests; use practical numerical gates and direct native evaluation. The old 96 prompts are smoke/regression data, not an adequate full-body QAT corpus. The [active-goal handoff](goals/recurrent-binary-body-head.md#fresh-team-handoff-eagle-w1-cpu-phase) gives the new team's assignment. Its coordinator will record fresh task/worker IDs there.
 
 **Latest completed goal:** [mixed precision rescue and frozen-body head adaptation on RTX 5080](goals/binary-rescue-head-5080.md), completed 2026-09-28 UTC. The preceding [binary scale fitting goal](goals/binary-scale-fitting-5080.md) completed 2026-09-27 UTC.

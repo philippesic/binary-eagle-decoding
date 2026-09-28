@@ -2024,6 +2024,28 @@ checkpoint; do not create more open-ended numerical investigations.
   the old 96-prompt bundle as an audited smoke fixture without changing its
   inherited `training_eligible: false` metadata. No new benchmark or model
   run occurred. Its test plan awaits the implementation owners' CLIs.
+- The data owner committed `8dd23cb` on `w1a-data-prep`, reviewed and
+  integrated as main `0b5fce7` and pushed. It provides source-hashed catalog
+  ingestion, deterministic exact/near deduplication, grouped nested train
+  tiers plus independent development/final splits, and compact native teacher
+  shards with exact-prefix and outside-draft mass checks. Four synthetic CPU
+  tests and Ruff passed in the repository environment. No public source or
+  target-token counts are claimed yet; the owner is preparing pinned real
+  source choices and a catalog under ignored data storage.
+- The QAT owner committed `9d58840` on `work/joint-w1ax-qat`, reviewed and
+  integrated as main `6db186f` and pushed. Row-scale A16/A8/A4/A1 hard
+  forwards, a separate group-128/A16 path, joint optimizer and sign/scale
+  metrics, compact teacher loss, schema-v2 row export and synthetic CPU runner
+  are present. Thirteen focused CPU tests and Ruff passed on main. The owner is
+  adding a captured-data/real-drafter adapter; the current runner alone is a
+  smoke fixture, not a real training command.
+- The runtime owner first pushed native `25e31b6` and parent `4a6eb78` on
+  `codex/w1-runtime-latency`. Review found the opt-in unused-head branch in the
+  encoder graph, which has no draft head. That candidate is **not integrated**.
+  The owner is moving it to the decoder before the output norm/head, then will
+  rebuild, retest and republish the native commit before the parent gitlink can
+  advance. Offline latency analysis and the learned row loader gate in the
+  same branch remain under review.
 - Boundaries: legacy final-set contents stay sealed; the 96-prompt capture is
   smoke/regression evidence only. Group-128/A16 and row-scale W1Ax are distinct
   representation contracts. GPU timing, capture and training wait for explicit
