@@ -844,3 +844,38 @@ target operation and the large tap-18 outlier. Preserve the sealed
 96-request source. Keep the full-drafter parity and user-owned numeric gate,
 training budget, and final-set evaluation open. No optimization or Q4_0
 performance comparison ran in this turn.
+
+## Nineteenth goal turn: native tap-2 input intervention
+
+- Parent commit `f5825e8` adds a bounded CUDA/F16 intervention on the sealed
+  29-token outlier training prefix. It validates frozen capture ownership,
+  source hashes and complete prefill, then replaces the input to independent
+  Hugging Face decoder layer 2 with native tap-2 F32 rows cast to F16. Four
+  synthetic tests, Ruff and formatting passed. The supervised RTX 5080 eager
+  run exited zero; its ignored report SHA256 is
+  `cebef815e90de17a8a5d4b597758422ef84f5bfe705e65a0032ea6a87c227a45`.
+  At position 3, relative row L2 error fell from 0.324% to 0.020% at tap 2,
+  but rose from 10.014% to 11.659% at tap 18. Median tap-18 error over all
+  29 rows fell only from 0.611% to 0.573%. The early tap-2 difference alone
+  does not explain the outlier under this independent forward. The F16 cast
+  and downstream backend difference limit causal interpretation.
+- The frozen full96 runner uses `--parallel 1`. Source tracing found that
+  one-stream `split_simple` preserves caller row order through internal
+  microbatches; sparse output reordering needs more scrutiny, but ordinary
+  single-output prefill should not invoke its swap path. This lowers the
+  likelihood of a prefill row permutation without proving capture indexing
+  for every execution. The same-prefix differences remain unexplained.
+- The CUDA supervisor stopped, GPU returned to 0% utilization and 1,372 MiB
+  whole-device use with no compute app. No optimization or final-set prompt
+  was used. The isolated intervention worktree was retired after equivalent
+  code reached `main`. A separate isolated worker is preparing a strictly
+  opt-in native target-layer input ladder to locate where layers 2–17 amplify
+  the gap; it has not been integrated or run. The current tmux-only 5080
+  session is `recurrent-tap2-intervention-5080` (`$20`) with no active job.
+
+**Next gate:** review and CPU-build the bounded native ladder; then capture
+one frozen 29-token prompt under supervision, prove original taps 2/18/33
+unchanged, and compare layer-by-layer against the same F16 independent
+forward. If the ladder changes old taps or fails its bounds, stop and keep
+the existing capture sealed. Do not choose a numeric tolerance or begin the
+all-body optimizer without the user's research decision.

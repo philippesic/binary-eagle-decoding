@@ -248,6 +248,13 @@ row L2 at tap 33); the execution/capture cause is unresolved.
 A same-binary CUDA recapture of the outlier prompt reproduced all 222,720
 native prefill values bitwise; the independent-forward gap is therefore
 reproducible on that native path, without identifying its operator cause.
+A bounded F16 intervention that substituted native tap-2 input into the
+independent forward reduced the outlier's tap-2 error from 0.324% to 0.020%
+but increased its tap-18 error from 10.014% to 11.659%. This favors
+investigating the intervening target blocks before setting any tolerance;
+the intervention's F16 cast and backend difference preclude an exact causal
+attribution. The pending exact-parity versus predeclared-tolerance decision
+and all-body budget remain with the user.
 See the [feature report](../experiments/recurrent-binary-target-feature-parity.md).
 
 **Exact-prefix row clarification (2026-09-28):** the native verifier computes

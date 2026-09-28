@@ -174,3 +174,34 @@ small input-cast effect leaves an independent projection arithmetic difference
 before attention. This is a CPU operand graph, not the native target's entire
 CUDA graph, and it does not explain the tap-18 outlier or define a training
 tolerance.
+
+## Native tap-2 input intervention on the outlier
+
+Parent commit `f5825e8` adds a bounded independent-forward intervention. It
+reuses the sealed 96-request ownership, hash and prefill checks, then runs the
+29-token outlier prompt twice on RTX 5080 in CUDA F16 eager computation. The
+second forward replaces the complete input to Hugging Face decoder layer 2
+with the captured native F32 tap-2 rows **cast to F16**; a scoped pre-hook is
+removed after the forward. The same pinned GGUF/source embedding and sampled
+weight checks pass. Four synthetic tests, Ruff and format checks passed.
+
+| Tap and position 3 | Baseline relative row L2 | With native tap-2 input |
+| --- | ---: | ---: |
+| 2 | 0.324% | 0.020% |
+| 18 | 10.014% | 11.659% |
+| 33 | 0.835% | 0.948% |
+
+Across the 29 rows, median tap-18 error changed from 0.611% to 0.573%.
+Replacing the earlier input nearly eliminates the tap-2 input difference,
+but does **not** close the position-3 tap-18 gap. The remaining F16 cast and
+distinct downstream arithmetic prevent a claim of exact native causality;
+the result directs the next check to the target layers after tap 2.
+
+The ignored report remains on the registered 5080 host at
+`checkouts/recurrent-gpu-capture-20260928/runs/recurrent-tap2-intervention-20260928/comparison.json`,
+SHA256 `cebef815e90de17a8a5d4b597758422ef84f5bfe705e65a0032ea6a87c227a45`.
+It records the capture manifest and raw feature hashes, prompt row IDs,
+hardware and software versions, and per-row baseline/intervention errors.
+The supervised run exited zero, its process group stopped, and the 5080
+returned to 0% utilization, 1,372 MiB whole-device use and no compute app.
+No training or development/final prompt ran.

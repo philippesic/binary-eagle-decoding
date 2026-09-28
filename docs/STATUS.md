@@ -88,6 +88,17 @@ record hashes, hardware and limits. Both supervised GPU comparisons exited
 zero and released the 5080. Exact target-feature and whole-drafter parity,
 numeric gate, training budget and Q4_0 evaluation remain open.
 
+**Tap-2 intervention checkpoint (2026-09-28 UTC):** on the reproducible
+29-token outlier training prompt, substituting captured native tap-2 input
+into an independent RTX 5080 F16 forward cut position-3 tap-2 error from
+0.324% to 0.020%, while tap-18 error rose from 10.014% to 11.659%.
+Thus the early tap-2 mismatch alone does not explain the later outlier.
+The [goal checkpoint](goals/recurrent-binary-body-head.md#nineteenth-goal-turn-native-tap-2-input-intervention)
+and [feature report](../experiments/recurrent-binary-target-feature-parity.md#native-tap-2-input-intervention-on-the-outlier)
+record bounds, source hash and limits. The supervised GPU run stopped;
+target layer-by-layer parity, the numeric gate, training and Q4_0 evaluation
+remain open.
+
 **Handoff checkpoint (2026-09-28 06:35 UTC):** the active goal file records
 the current objective, pushed commits, CPU tests, projected K/V write
 comparison, pending 5080 clarification and exact next actions. Code round 2
