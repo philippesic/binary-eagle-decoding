@@ -1,9 +1,12 @@
 # Joint binary body and head: CPU preparation and frozen trial protocol
 
-**Status:** CPU implementation in progress. The user has prohibited all GPU and
-accelerator access for this goal. No real-model training, capture, native model
-run, or quality measurement is authorized under that restriction. The first
-future GPU step below is conditional on an explicit change to that restriction.
+**Status:** CPU implementation and parity work in progress. The user has
+authorized use of the free RTX 5080 for needed capture and diagnostic work.
+The frozen 96-prompt native training capture is complete and audited, but its
+bundle remains `training_eligible: false`. The proposed all-body optimization
+budget, numeric parity gate, and reserved-final use remain user decisions;
+no model training or new quality measurement has run for this goal. See the
+[active goal](../docs/goals/recurrent-binary-body-head.md) for current evidence.
 
 ## Objective and representation
 
