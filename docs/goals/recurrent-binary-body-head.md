@@ -1158,3 +1158,35 @@ arithmetic choice; (2) update this file and `docs/STATUS.md` with evidence,
 commit and push; (3) then consider the next drafter state/cache difference
 without consuming training or final-set gates. The user still owns the
 numeric/trajectory policy and all-body training budget.
+
+## Twenty-seventh goal turn: CPU SiLU arithmetic replay
+
+- Commit `2db7625` adds a sealed one-row SiLU arithmetic probe and
+  [report](../../experiments/recurrent-binary-silu-arithmetic.md). It checks
+  the capture ledger, prior stage-report identity, native revision and
+  server/CMake build hashes, then invokes `ggml_vec_silu_f32` from that
+  same pinned Apple M3 Max CPU build. The ggml vector call matches the
+  native reasoning first-seed SiLU output **9,728/9,728 bitwise**. Torch
+  SiLU matches 6,557; the ggml scalar tail 6,519; Torch sigmoid/multiply
+  5,358; NumPy F32 exp/divide 6,519. All non-vector choices have maximum
+  absolute error `4.76837158203125e-7`; the report gives RMS values.
+- The pinned AArch64 ggml CPU path uses NEON vector `exp(-x)` approximation
+  and F32 division; its scalar tail uses `expf`. The exact built-vector
+  replay locates this one-row stage difference in activation arithmetic,
+  after the previously exact ordered gate/up projections. It does not
+  establish full FFN, whole-drafter or CUDA/SM75 parity. The ignored
+  machine report is
+  `results/recurrent-ffn-stage-capture-20260928/silu-arithmetic.json`,
+  SHA256 `16e5f25b06d40ba039882dae801b3b9b7018b11483fbee59d6fb0d0cddfb479b`.
+  Pinned CPU library SHA256 is
+  `0d499359a40900596b172556bebd1aad1fa69aaf1cb3e46bf962a98ccf2a0600`.
+  The probe did not alter ggml, the default student or the frozen capture.
+- Ruff lint/format passed and the bounded real-input replay exited zero.
+  No local server, GPU job, optimizer, final prompt or Q4_0 evaluation ran.
+  The RTX 5080 remains free. Exact parity versus a numeric/trajectory
+  tolerance and any all-body optimizer budget remain user-owned.
+
+**Next gate:** feed the exact native SiLU vector into the captured up product
+and ordered binary down projection to determine whether their remaining
+one-row difference disappears; then resume the draft cache/state audit.
+Keep results CPU-scoped and do not infer a training gate from this row.
