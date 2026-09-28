@@ -806,6 +806,24 @@ user-owned research decision before any all-body training budget is used.
   zero; no project process or compute app remained, and the GPU returned to
   0% utilization and 1,372 MiB whole-device use. The tmux SSH session was
   closed. These independent forwards do not establish a safe numeric gate.
+- A read-only check of the same native capture found 103/427 cross-request
+  prefill-row pairs with identical token prefixes but different feature bytes.
+  First-token pairs matched; differences appeared at positions 1–5 and
+  reached 0.473/0.801/0.821% relative row L2 at taps 2/18/33. The large
+  tap-18 outlier's four-token prefix had no duplicate request. Numeric
+  dispatch, batch shape and capture indexing remain open explanations; do
+  not infer causal dependence on future tokens from this observation.
+- A supervised one-prompt CUDA repeat of the 10–12% tap-18 outlier matched
+  the full-run native prefill exactly: 29 token/position/prefix rows and all
+  222,720 F32 feature values. The native binary SHA256 also matched the
+  full capture. The passing eight-token repeat manifest SHA256 is
+  `b5d4f5fae6b59c752742b9c45e6e770436c28fbbf1f48ba5fa3cc1cd148f6611`.
+  An initial one-token capture produced identical prefill bytes but its
+  runner audit failed because no speculative draft round was generated;
+  failure logs remain. The second supervisor and native server exited zero,
+  and the GPU returned idle with no compute app. The outlier is reproducible
+  under this native backend, though its independent-forward cause remains
+  unknown.
 - Parent commit `c798fd3` adds an Apple M3 Max CPU ggml layer-0 norm/QKV
   operator probe. The pinned 32-token prose prefix embeddings, layer-0 norm
   and Q/K/V weights matched the F16 GGUF source. Native norm versus an F32
@@ -821,8 +839,8 @@ user-owned research decision before any all-body training budget is used.
   the 10–12% tap-18 outlier. The probe worktree and branch were retired after
   equivalent content reached `main`.
 
-**Next gate:** investigate the first divergent target operation and the
-large tap-18 outlier on the captured training prefix. Preserve the sealed
+**Next gate:** investigate native same-prefix differences, the first divergent
+target operation and the large tap-18 outlier. Preserve the sealed
 96-request source. Keep the full-drafter parity and user-owned numeric gate,
 training budget, and final-set evaluation open. No optimization or Q4_0
 performance comparison ran in this turn.

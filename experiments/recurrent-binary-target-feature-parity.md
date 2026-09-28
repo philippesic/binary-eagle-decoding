@@ -118,6 +118,38 @@ Both supervisors finished with exit zero, process groups stopped, and the
 device returned to 0% utilization, 1,372 MiB whole-device use and no compute
 app. No training or development/final prompts were used.
 
+A read-only cross-request check grouped the same sealed native prefill rows
+by exact token prefix. Among 427 pairs sharing a prefix, 103 raw feature
+rows were not bitwise identical across requests; all first-token pairs were
+identical, while differences began at positions 1–5. The largest relative
+row L2 difference within a shared prefix was 0.473/0.801/0.821% at taps
+2/18/33. This is an observed dependence on the request execution context,
+not evidence that future tokens should causally affect earlier positions.
+Batch geometry, numeric dispatch and capture indexing remain possible causes.
+The 10–12% tap-18 outlier has no duplicate four-token prefix in this capture,
+so this check does not explain it.
+
+A bounded repeat of that one frozen training prompt used the **same native
+CUDA server binary SHA256**
+`0e49bbfa0514bf037dbf1c9f5dadf959e87f5c793ebd79db5bc753f97d1df8f9`
+and the same pinned target, D draft and training split. All 29 prefill token
+IDs, positions and prefix ancestries matched the full capture. All
+**222,720 F32 feature values** (29 × 7,680), including the outlier at
+position 3, matched the full capture bitwise. A one-token first attempt
+captured identical prefill bytes but failed the runner's final audit because
+the one-token response created no speculative draft round; its logs remain
+preserved. The eight-token repeat passed its continuity and response audits,
+and its manifest SHA256 is
+`b5d4f5fae6b59c752742b9c45e6e770436c28fbbf1f48ba5fa3cc1cd148f6611`.
+The repeat's raw feature file SHA256 is
+`80b3cbea77d579c01d4ff61aa62a733892816f67c72f18baf771cea38ef85749`.
+Its files remain outside Git under
+`checkouts/recurrent-gpu-capture-20260928/runs/recurrent-outlier-recapture8-20260928/`.
+The supervised repeat exited zero; the native server returned zero and
+stopped, with no project process or compute app remaining. This rules out a
+one-off native capture of the outlier under the same backend and prompt, but
+does not identify which operator creates the independent-forward difference.
+
 ## Layer-0 ggml CPU operator probe
 
 Parent commit `c798fd3` adds a standalone ggml graph for the pinned 32-token

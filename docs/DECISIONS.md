@@ -242,6 +242,12 @@ layer-0 probe found projection differences before attention despite nearly
 exact norm and bitwise source operands. These results strengthen the case for
 investigating exact operator behavior before setting a tolerance; they do
 not themselves authorize a threshold, optimization budget or final-set use.
+In the native full capture, 103/427 pairs of rows with the same token prefix
+also differ across requests after the first token (up to 0.821% relative
+row L2 at tap 33); the execution/capture cause is unresolved.
+A same-binary CUDA recapture of the outlier prompt reproduced all 222,720
+native prefill values bitwise; the independent-forward gap is therefore
+reproducible on that native path, without identifying its operator cause.
 See the [feature report](../experiments/recurrent-binary-target-feature-parity.md).
 
 **Exact-prefix row clarification (2026-09-28):** the native verifier computes

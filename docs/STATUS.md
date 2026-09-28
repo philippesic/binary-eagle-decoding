@@ -77,6 +77,11 @@ median relative row L2 of 0.293/0.538/0.488%. One tap-18 row reached
 10.014%; the same row reached 12.135% with independent SDPA attention.
 An Apple M3 Max ggml CPU layer-0 operator probe found near-exact RMS norm
 but nonzero pre-attention Q/K/V projection differences from F32 references.
+The native capture also has 103/427 cross-request prefill-row pairs with
+identical token prefixes but different feature bytes, beginning after the
+first token; the cause needs investigation. A bounded recapture of the
+tap-18 outlier prompt matched all 222,720 native prefill F32 values bitwise,
+so that row is reproducible under the same native CUDA binary.
 The [goal checkpoint](goals/recurrent-binary-body-head.md#eighteenth-goal-turn-full-training-prefix-feature-distribution-and-layer-0-probe)
 and [feature report](../experiments/recurrent-binary-target-feature-parity.md)
 record hashes, hardware and limits. Both supervised GPU comparisons exited
