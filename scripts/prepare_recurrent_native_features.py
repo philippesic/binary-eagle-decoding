@@ -27,6 +27,7 @@ from audit_recurrent_binary_capture import (  # noqa: E402
     TRAIN_PROMPTS,
     TRAIN_PROMPTS_SHA256,
     read_jsonl,
+    resolve_prompt_expectation,
     sha256,
 )
 
@@ -300,6 +301,7 @@ def prepare_native_features(
         "schema": "recurrent_native_feature_selection_v1",
         "execution_device": "cpu",
         "training_prompts_sha256": expected_prompt_hash,
+        "training_prompt_count": expected_prompt_count,
         "sources": {
             "metadata_sha256": sha256(metadata_path),
             "values_sha256": sha256(values_path),
@@ -330,8 +332,13 @@ def main() -> None:
     parser.add_argument("--task-prompts", type=Path, required=True)
     parser.add_argument("--cell-manifest", type=Path)
     parser.add_argument("--train-prompts", type=Path, required=True)
+    parser.add_argument("--expected-prompt-sha256")
+    parser.add_argument("--expected-prompt-count", type=int)
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args()
+    expected_hash, expected_count = resolve_prompt_expectation(
+        args.expected_prompt_sha256, args.expected_prompt_count
+    )
     result = prepare_native_features(
         args.native_jsonl,
         args.native_f32,
@@ -340,6 +347,8 @@ def main() -> None:
         args.train_prompts,
         args.output_dir,
         cell_manifest_path=args.cell_manifest,
+        expected_prompt_hash=expected_hash,
+        expected_prompt_count=expected_count,
     )
     print(json.dumps({"selected_feature_rows": result["selected_feature_rows"]}))
 

@@ -26,6 +26,8 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from audit_recurrent_binary_capture import resolve_prompt_expectation  # noqa: E402
+
 from w1a1_eagle.recurrent_trace import (  # noqa: E402
     LABEL_SOURCE,
     VERIFIER_LOGITS_SOURCE,
@@ -442,6 +444,7 @@ def prepare(
         "schema": "recurrent_native_rows_preparation_v1",
         "split": "train",
         "prompts_sha256": expected_prompt_hash,
+        "prompt_count": expected_prompt_count,
         "source_sha256": sources,
         "absolute_map_raw_sha256": hashlib.sha256(
             np.asarray(np.load(absolute_map_path, allow_pickle=False), dtype="<i8").tobytes()
@@ -500,6 +503,8 @@ def main() -> None:
     )
     parser.add_argument("--cell-manifest", type=Path)
     parser.add_argument("--prompts", type=Path, required=True)
+    parser.add_argument("--expected-prompt-sha256")
+    parser.add_argument("--expected-prompt-count", type=int)
     parser.add_argument("--absolute-d2t", type=Path, required=True)
     parser.add_argument("--target-vocab-size", type=int, required=True)
     parser.add_argument("--target-logits", type=Path)
@@ -507,6 +512,9 @@ def main() -> None:
     parser.add_argument("--native-t2d", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
+    expected_hash, expected_count = resolve_prompt_expectation(
+        args.expected_prompt_sha256, args.expected_prompt_count
+    )
     report = write_prepared(
         args.output,
         prepare(
@@ -520,6 +528,8 @@ def main() -> None:
             target_logits_path=args.target_logits,
             offset_path=args.native_offsets,
             t2d_path=args.native_t2d,
+            expected_prompt_hash=expected_hash,
+            expected_prompt_count=expected_count,
         ),
     )
     print(json.dumps({"rounds": report["rounds"], "rows": report["rows"]}, sort_keys=True))

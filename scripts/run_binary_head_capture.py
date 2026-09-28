@@ -44,6 +44,75 @@ DEFAULT_TARGET_LOGITS_LIMIT = 32
 DEFAULT_TARGET_FEATURES_LIMIT = 32_768
 
 
+def _frozen_shard(args, prompts: list[dict]) -> dict | None:
+    """Return a new train shard contract, or None for the inherited 96 prompts."""
+    shard_path = getattr(args, "shard_manifest", None)
+    expected_hash = getattr(args, "expected_prompt_sha256", None)
+    expected_count = getattr(args, "expected_prompt_count", None)
+    if shard_path is None and expected_hash is None and expected_count is None:
+        return None
+    if args.mode != "recurrent-train" or any(
+        value is None for value in (shard_path, expected_hash, expected_count)
+    ):
+        raise ValueError("recurrent shard requires manifest, expected SHA256 and count")
+    if getattr(args, "prompt_manifest", None) is not None or getattr(args, "prompts_sha256", None):
+        raise ValueError("shard and legacy prompt manifest/hash options cannot be combined")
+    if (
+        not isinstance(expected_hash, str)
+        or len(expected_hash) != 64
+        or any(character not in "0123456789abcdef" for character in expected_hash)
+        or type(expected_count) is not int
+        or expected_count < 1
+    ):
+        raise ValueError("invalid expected shard prompt SHA256/count")
+    shard_path = Path(shard_path)
+    shard = json.loads(shard_path.read_text())
+    ids = [prompt.get("id") for prompt in prompts]
+    if (
+        not isinstance(shard, dict)
+        or shard.get("schema") != "w1ax_capture_shard_v1"
+        or shard.get("prompts_path") != args.prompts.name
+        or (shard_path.resolve().parent / shard["prompts_path"]) != args.prompts.resolve()
+        or shard.get("prompts_sha256") != expected_hash
+        or sha256(args.prompts) != expected_hash
+        or shard.get("prompt_count") != expected_count
+        or len(ids) != expected_count
+        or len(set(ids)) != expected_count
+        or shard.get("prompt_ids") != ids
+        or not isinstance(shard.get("parent"), dict)
+        or shard["parent"].get("split") not in ("train_small", "train_large")
+    ):
+        raise ValueError("shard manifest/hash/count/ordered prompt IDs disagree")
+    parent = shard["parent"]
+    if (
+        any(
+            not isinstance(parent.get(key), str)
+            or len(parent[key]) != 64
+            or any(character not in "0123456789abcdef" for character in parent[key])
+            for key in ("manifest_sha256", "prompts_sha256", "index_sha256")
+        )
+        or type(parent.get("count")) is not int
+        or parent["count"] < expected_count
+    ):
+        raise ValueError("shard parent freeze record is incomplete")
+    caps = shard.get("caps")
+    row_bytes = args.target_vocab_size * 4 if args.target_vocab_size else 0
+    if (
+        shard.get("target_vocab_size") != args.target_vocab_size
+        or shard.get("bytes_per_raw_logit_row") != row_bytes
+        or not isinstance(caps, dict)
+        or type(caps.get("max_verifier_logit_rows")) is not int
+        or caps["max_verifier_logit_rows"] < 1
+        or type(caps.get("max_prompts")) is not int
+        or expected_count > caps["max_prompts"]
+        or type(caps.get("max_raw_logit_bytes")) is not int
+        or caps["max_raw_logit_bytes"] < row_bytes
+        or args.target_logits_limit != caps["max_verifier_logit_rows"]
+    ):
+        raise ValueError("shard raw-logit cap/vocabulary differs from capture settings")
+    return shard
+
+
 def write(path: Path, value):
     path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n")
 
@@ -57,10 +126,11 @@ def validate_inputs(args, prompts: list[dict], variants: dict) -> None:
         raise ValueError("reserved-final prompts prohibited")
     if sys.byteorder != "little":
         raise ValueError("training preparation currently requires little-endian native captures")
+    shard = _frozen_shard(args, prompts)
     if args.mode == "diagnostic":
         if len(prompts) > 3 or any(p["id"].startswith("qat-") for p in prompts):
             raise ValueError("diagnostic requires at most3 historical prompts")
-    else:
+    elif shard is None:
         split, expected = (
             ("train", 96) if args.mode in ("train", "recurrent-train") else ("development", 24)
         )
@@ -97,7 +167,7 @@ def validate_inputs(args, prompts: list[dict], variants: dict) -> None:
     if args.mode in ("train", "recurrent-train") and (not args.d2t or not args.target_vocab_size):
         raise ValueError("train requires --d2t and --target-vocab-size")
     if args.mode == "recurrent-train":
-        if sha256(args.prompts) != TRAIN_PROMPTS_SHA256:
+        if shard is None and sha256(args.prompts) != TRAIN_PROMPTS_SHA256:
             raise ValueError("recurrent train requires the pinned frozen96 prompt SHA256")
         if (
             sha256(args.target) != TARGET_F16_SHA256
@@ -182,7 +252,8 @@ def server_command(args, spec):
 
 
 def audit_recurrent_files(
-    cell: Path, manifest: dict, target_vocab_size: int, logit_limit: int, feature_limit: int
+    cell: Path, manifest: dict, target_vocab_size: int, logit_limit: int, feature_limit: int,
+    *, require_full_logits: bool = False,
 ) -> None:
     """Reject incomplete raw streams before marking a recurrent cell complete."""
     heads = read_jsonl(cell / "heads.jsonl")
@@ -210,6 +281,8 @@ def audit_recurrent_files(
         raise ValueError("ambiguous target feature task/row join")
     indexes = [row.get("target_logits_row") for row in heads]
     count = min(len(heads), logit_limit)
+    if require_full_logits and len(heads) > logit_limit:
+        raise ValueError("shard verifier logits exceed frozen raw-logit cap")
     if indexes != [*range(count), *([None] * (len(heads) - count))]:
         raise ValueError("truncated or misindexed target verifier logits")
     if logit_path.stat().st_size != count * target_vocab_size * 4:
@@ -317,6 +390,12 @@ def run_cell(args, name, spec, prompts, forced=None):
         "target_sha256": sha256(args.target),
         "draft_sha256": sha256(Path(spec["draft"])),
         "prompts_sha256": sha256(args.prompts),
+        "prompt_count": len(prompts),
+        "ordered_prompt_ids": [prompt["id"] for prompt in prompts],
+        "shard_manifest_sha256": (
+            sha256(Path(args.shard_manifest))
+            if getattr(args, "shard_manifest", None) is not None else None
+        ),
         "task_prompt_ids": {},
         "requests": [],
         "kind": "instrumented_quality_capture_not_timing",
@@ -447,6 +526,7 @@ def run_cell(args, name, spec, prompts, forced=None):
             args.target_vocab_size,
             args.target_logits_limit,
             args.target_features_limit,
+            require_full_logits=getattr(args, "shard_manifest", None) is not None,
         )
     manifest["files"] = {
         p.name: {"bytes": p.stat().st_size, "sha256": sha256(p)}
@@ -484,6 +564,11 @@ def run(args):
             "tokens": args.tokens,
             "variants": variants,
             "prompts_sha256": sha256(args.prompts),
+            "prompt_count": len(prompts),
+            "shard_manifest_sha256": (
+                sha256(Path(args.shard_manifest))
+                if getattr(args, "shard_manifest", None) is not None else None
+            ),
         },
     )
     if args.mode in ("train", "recurrent-train"):
@@ -500,6 +585,11 @@ def run(args):
                     "body": "D",
                     "head": "D",
                     "train_prompts_sha256": sha256(args.prompts),
+                    "train_prompt_count": len(prompts),
+                    "shard_manifest_sha256": (
+                        sha256(Path(args.shard_manifest))
+                        if getattr(args, "shard_manifest", None) is not None else None
+                    ),
                     "task_prompt_ids_path": task_map.name,
                     "task_prompt_ids_sha256": sha256(task_map),
                     "cell_manifest_path": "d_d/manifest.json",
@@ -575,6 +665,9 @@ def main():
     for name in ("binary", "target", "prompts", "variants", "output"):
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--prompt-manifest", type=Path)
+    parser.add_argument("--shard-manifest", type=Path)
+    parser.add_argument("--expected-prompt-sha256")
+    parser.add_argument("--expected-prompt-count", type=int)
     parser.add_argument(
         "--prompts-sha256", help="frozen split hash, alternative to prompt manifest"
     )

@@ -175,6 +175,67 @@ class RecurrentCaptureBundleTests(unittest.TestCase):
             1,
         )
 
+    def test_frozen_shard_bundle_retains_raw_logits_and_parent_manifest(self):
+        train_prompts = self.root / "train_prompts.jsonl"
+        train_prompts.write_bytes(self.native.prompts.read_bytes())
+        prompt_ids = [json.loads(line)["id"] for line in train_prompts.read_text().splitlines()]
+        shard_path = self.root / "shard.json"
+        shard_path.write_text(json.dumps({
+            "schema": "w1ax_capture_shard_v1",
+            "prompts_path": train_prompts.name,
+            "prompts_sha256": self.prompt_hash,
+            "prompt_count": 2,
+            "prompt_ids": prompt_ids,
+            "parent": {
+                "split": "train_small", "manifest_sha256": "a" * 64,
+                "prompts_sha256": "b" * 64, "index_sha256": "c" * 64, "count": 2000,
+            },
+            "target_vocab_size": 8,
+            "bytes_per_raw_logit_row": 32,
+            "caps": {
+                "max_prompts": 96, "max_verifier_logit_rows": 2,
+                "max_raw_logit_bytes": 64,
+            },
+        }))
+        cell = json.loads(self.native.cell.read_text())
+        cell.update(
+            prompt_count=2, ordered_prompt_ids=prompt_ids,
+            shard_manifest_sha256=sha256(shard_path),
+        )
+        self.native.cell.write_text(json.dumps(cell))
+        row_report_path = self.rows_dir / "preparation.json"
+        row_report = json.loads(row_report_path.read_text())
+        row_report["source_sha256"]["cell_manifest"] = sha256(self.native.cell)
+        row_report_path.write_text(json.dumps(row_report))
+        feature_report_path = self.features_dir / "report.json"
+        feature_report = json.loads(feature_report_path.read_text())
+        feature_report["sources"]["cell_manifest_sha256"] = sha256(self.native.cell)
+        feature_report_path.write_text(json.dumps(feature_report))
+        result = build_bundle(
+            self.rows_dir, self.features_dir, self.native.logits,
+            self.native.cell, train_prompts, self.output,
+            shard_manifest_path=shard_path,
+            expected_prompt_hash=self.prompt_hash, expected_prompt_count=2,
+            expected_target_hash=self.target_hash, expected_draft_hash=self.draft_hash,
+            expected_map_raw_hash=self.map_raw_hash,
+        )
+        manifest = json.loads(result["manifest"].read_text())
+        self.assertIn("shard_manifest", manifest)
+        self.assertTrue(manifest["raw_target_logits_retained"])
+        self.assertFalse(manifest["raw_retirement_allowed"])
+        self.assertEqual(
+            (self.output / "target_logits.f32").read_bytes(),
+            self.native.logits.read_bytes(),
+        )
+        self.assertEqual(result["audit"]["shard_manifest_sha256"], sha256(shard_path))
+        manifest["shard_manifest"]["sha256"] = "0" * 64
+        result["manifest"].write_text(json.dumps(manifest))
+        with self.assertRaisesRegex(ValueError, "shard manifest SHA256"):
+            audit_capture(
+                result["manifest"], self.output / "train_prompts.jsonl",
+                self.prompt_hash, expected_prompt_count=2,
+            )
+
     def test_rejects_cross_source_anchors_task_map_and_cell(self):
         report_path = self.features_dir / "report.json"
         original = json.loads(report_path.read_text())

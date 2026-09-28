@@ -35,6 +35,58 @@ FEATURE_BOUNDARY = "native_target_block_inputs_concat_before_draft_fc"
 FEATURE_SOURCE = "native_target_features_on_accepted_prefix"
 
 
+def resolve_prompt_expectation(
+    expected_hash: str | None, expected_count: int | None
+) -> tuple[str, int]:
+    """Keep legacy 96 defaults; custom frozen splits require an explicit pair."""
+    if expected_hash is None and expected_count is None:
+        return TRAIN_PROMPTS_SHA256, TRAIN_PROMPTS
+    if expected_hash is None or expected_count is None:
+        raise ValueError("custom prompts require both expected SHA256 and count")
+    if (
+        len(expected_hash) != 64
+        or any(character not in "0123456789abcdef" for character in expected_hash)
+        or type(expected_count) is not int
+        or expected_count < 1
+    ):
+        raise ValueError("expected prompt SHA256/count is invalid")
+    return expected_hash, expected_count
+
+
+def validate_shard_manifest(
+    shard_path: Path, prompts_path: Path, expected_hash: str, expected_count: int,
+    prompt_ids: list[str],
+) -> dict:
+    """Bind a frozen train shard to its exact ordered prompts and parent split."""
+    shard = json.loads(shard_path.read_text())
+    if (
+        not isinstance(shard, dict)
+        or shard.get("schema") != "w1ax_capture_shard_v1"
+        or shard.get("prompts_path") != prompts_path.name
+        or shard.get("prompts_sha256") != expected_hash
+        or shard.get("prompt_count") != expected_count
+        or shard.get("prompt_ids") != prompt_ids
+        or not isinstance(shard.get("parent"), dict)
+        or shard["parent"].get("split") not in ("train_small", "train_large")
+    ):
+        raise ValueError("shard manifest does not match frozen training prompts")
+    parent = shard["parent"]
+    if (
+        any(
+            not isinstance(parent.get(key), str)
+            or len(parent[key]) != 64
+            or any(character not in "0123456789abcdef" for character in parent[key])
+            for key in ("manifest_sha256", "prompts_sha256", "index_sha256")
+        )
+        or type(parent.get("count")) is not int
+        or parent["count"] < expected_count
+    ):
+        raise ValueError("shard parent freeze record is incomplete")
+    if shard_path.resolve().parent / shard["prompts_path"] != prompts_path.resolve():
+        raise ValueError("shard prompt path must identify the supplied JSONL")
+    return shard
+
+
 @dataclass(frozen=True)
 class CapturedRound:
     anchor: RoundAnchor
@@ -205,6 +257,7 @@ def audit_capture(
     expected_prompt_hash: str,
     *,
     expected_prompt_count: int = TRAIN_PROMPTS,
+    shard_manifest_path: Path | None = None,
 ) -> dict:
     manifest = json.loads(manifest_path.read_text())
     if not isinstance(manifest, dict) or manifest.get("schema") != "recurrent_binary_capture_v1":
@@ -213,6 +266,8 @@ def audit_capture(
         raise ValueError("capture requires the frozen training prompt split")
     if manifest.get("prompts_sha256") != expected_prompt_hash:
         raise ValueError("manifest prompt hash differs from frozen training prompts")
+    if "prompt_count" in manifest and manifest["prompt_count"] != expected_prompt_count:
+        raise ValueError("manifest prompt count differs from frozen training prompts")
     prompts = read_jsonl(prompts_path)
     prompt_ids = [row.get("id") for row in prompts]
     if (
@@ -221,6 +276,27 @@ def audit_capture(
         or len(set(prompt_ids)) != expected_prompt_count
     ):
         raise ValueError(f"expected {expected_prompt_count} unique frozen training prompt IDs")
+    shard_record = manifest.get("shard_manifest")
+    if shard_record is not None:
+        if not isinstance(shard_record, dict) or set(shard_record) != {"path", "sha256"}:
+            raise ValueError("invalid shard manifest file record")
+        embedded = _owned_file(manifest_path.parent, shard_record["path"])
+        if sha256(embedded) != shard_record["sha256"]:
+            raise ValueError("shard manifest SHA256 mismatch")
+        if shard_manifest_path is not None and sha256(shard_manifest_path) != sha256(embedded):
+            raise ValueError("supplied shard manifest differs from bundle")
+        shard_manifest_path = embedded
+    shard = None
+    if shard_manifest_path is not None:
+        shard = validate_shard_manifest(
+            shard_manifest_path, prompts_path, expected_prompt_hash,
+            expected_prompt_count, prompt_ids,
+        )
+        if (
+            shard.get("target_vocab_size") != manifest.get("target_vocab_size")
+            or shard.get("bytes_per_raw_logit_row") != manifest["target_vocab_size"] * 4
+        ):
+            raise ValueError("shard target vocabulary differs from captured bundle")
     files = {}
     for field in ("rows", "anchors", "offsets", "t2d", "features", "feature_rows"):
         record = manifest.get(field)
@@ -245,11 +321,25 @@ def audit_capture(
             rows, path, manifest["target_vocab_size"]
         )
         target_logit_path = path
+        if shard is not None:
+            caps = shard.get("caps")
+            if (
+                not isinstance(caps, dict)
+                or type(caps.get("max_prompts")) is not int
+                or expected_prompt_count > caps["max_prompts"]
+                or type(caps.get("max_verifier_logit_rows")) is not int
+                or type(caps.get("max_raw_logit_bytes")) is not int
+                or target_logit_rows > caps["max_verifier_logit_rows"]
+                or path.stat().st_size > caps["max_raw_logit_bytes"]
+            ):
+                raise ValueError("raw target logits exceed frozen shard cap")
     elif any(
         row.get("target_logits_row") is not None or row.get("verifier_logits") is not None
         for row in rows
     ):
         raise ValueError("target logits require the native raw target-logit file")
+    if shard is not None and target_logit_path is None:
+        raise ValueError("sharded capture requires retained raw target logits")
     anchor_rows = read_jsonl(files["anchors"])
     anchors = [RoundAnchor(**row) for row in anchor_rows]
     offsets = np.load(files["offsets"], allow_pickle=False)
@@ -294,6 +384,10 @@ def audit_capture(
         "execution_device": "cpu",
         "capture_manifest_sha256": sha256(manifest_path),
         "training_prompts_sha256": expected_prompt_hash,
+        "training_prompt_count": expected_prompt_count,
+        "shard_manifest_sha256": (
+            sha256(shard_manifest_path) if shard_manifest_path is not None else None
+        ),
         "source_sha256": {field: sha256(path) for field, path in files.items()},
         "counts": counts,
         "per_depth": trace.per_depth,
@@ -347,11 +441,20 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--prompts", type=Path, required=True)
+    parser.add_argument("--expected-prompt-sha256")
+    parser.add_argument("--expected-prompt-count", type=int)
+    parser.add_argument("--shard-manifest", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if args.output.exists():
         parser.error("audit output must be a new path")
-    report = audit_capture(args.manifest, args.prompts, TRAIN_PROMPTS_SHA256)
+    expected_hash, expected_count = resolve_prompt_expectation(
+        args.expected_prompt_sha256, args.expected_prompt_count
+    )
+    report = audit_capture(
+        args.manifest, args.prompts, expected_hash,
+        expected_prompt_count=expected_count, shard_manifest_path=args.shard_manifest,
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
     print(json.dumps(report["counts"], sort_keys=True))

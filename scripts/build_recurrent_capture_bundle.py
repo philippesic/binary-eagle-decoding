@@ -22,7 +22,10 @@ from audit_recurrent_binary_capture import (
     TRAIN_PROMPTS,
     TRAIN_PROMPTS_SHA256,
     audit_capture,
+    read_jsonl,
+    resolve_prompt_expectation,
     sha256,
+    validate_shard_manifest,
 )
 from prepare_recurrent_native_rows import MAX_DEPTH
 from run_binary_head_capture import (
@@ -132,6 +135,7 @@ def build_bundle(
     output_dir: Path,
     *,
     continuity_report: Path | None = None,
+    shard_manifest_path: Path | None = None,
     expected_prompt_hash: str = TRAIN_PROMPTS_SHA256,
     expected_prompt_count: int = TRAIN_PROMPTS,
     expected_target_hash: str = TARGET_F16_SHA256,
@@ -146,10 +150,17 @@ def build_bundle(
     train_prompts = Path(train_prompts)
     output_dir = Path(output_dir)
     continuity_report = Path(continuity_report) if continuity_report is not None else None
+    shard_manifest_path = Path(shard_manifest_path) if shard_manifest_path is not None else None
     if output_dir.exists():
         raise ValueError("bundle output directory must be new")
     prompt_hash = _hash_matches(train_prompts, expected_prompt_hash, "frozen train prompts")
     prompt_ids = _read_prompt_ids(train_prompts, expected_prompt_count)
+    if shard_manifest_path is not None:
+        ordered_ids = [row["id"] for row in read_jsonl(train_prompts)]
+        validate_shard_manifest(
+            shard_manifest_path, train_prompts, prompt_hash,
+            expected_prompt_count, ordered_ids,
+        )
     rows_report = _json_object(
         rows_dir / "preparation.json", "recurrent_native_rows_preparation_v1"
     )
@@ -158,6 +169,14 @@ def build_bundle(
     )
     cell = _json_object(cell_manifest, "binary_head_capture_cell_v1")
     _verify_cell(cell, prompt_hash, prompt_ids)
+    if cell.get("shard_manifest_sha256") is not None and shard_manifest_path is None:
+        raise ValueError("sharded cell requires its frozen shard manifest")
+    if shard_manifest_path is not None and (
+        cell.get("shard_manifest_sha256") != sha256(shard_manifest_path)
+        or cell.get("prompt_count") != expected_prompt_count
+        or cell.get("ordered_prompt_ids") != ordered_ids
+    ):
+        raise ValueError("cell capture differs from frozen shard manifest")
     if (
         cell.get("target_sha256") != expected_target_hash
         or cell.get("draft_sha256") != expected_draft_hash
@@ -172,6 +191,11 @@ def build_bundle(
         or feature_report.get("execution_device") != "cpu"
     ):
         raise ValueError("preparer reports disagree with frozen train split or CPU execution")
+    if shard_manifest_path is not None and (
+        rows_report.get("prompt_count") != expected_prompt_count
+        or feature_report.get("training_prompt_count") != expected_prompt_count
+    ):
+        raise ValueError("preparer reports disagree with frozen shard prompt count")
     if rows_report.get("request_prompt_ownership") != "cell_manifest_request_ranges_verified":
         raise ValueError("native row task ownership is unverified")
     if (
@@ -255,9 +279,12 @@ def build_bundle(
             "schema": "recurrent_binary_capture_v1",
             "split": "train",
             "prompts_sha256": prompt_hash,
+            "prompt_count": expected_prompt_count,
             "target_vocab_size": rows_report["target_vocab_size"],
             "draft_vocab_size": rows_report["draft_vocab_size"],
             "max_depth": MAX_DEPTH,
+            "raw_target_logits_retained": True,
+            "raw_retirement_allowed": False,
             "training_eligible": False,
             "readiness": "preparation_only",
             "pinned_source_artifact_hashes_verified": True,
@@ -291,6 +318,12 @@ def build_bundle(
             shutil.copyfile(source, stage / dest_name)
             if field == "target_logits":
                 manifest[field] = {"path": dest_name, "sha256": sha256(stage / dest_name)}
+        if shard_manifest_path is not None:
+            shutil.copyfile(shard_manifest_path, stage / "source_shard_manifest.json")
+            manifest["shard_manifest"] = {
+                "path": "source_shard_manifest.json",
+                "sha256": sha256(stage / "source_shard_manifest.json"),
+            }
         if continuity_report is not None:
             shutil.copyfile(continuity_report, stage / "internal_continuity.json")
             manifest["internal_continuity"] = {
@@ -328,9 +361,15 @@ def main() -> None:
     parser.add_argument("--target-logits", type=Path, required=True)
     parser.add_argument("--cell-manifest", type=Path, required=True)
     parser.add_argument("--train-prompts", type=Path, required=True)
+    parser.add_argument("--expected-prompt-sha256")
+    parser.add_argument("--expected-prompt-count", type=int)
+    parser.add_argument("--shard-manifest", type=Path)
     parser.add_argument("--continuity-report", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args()
+    expected_hash, expected_count = resolve_prompt_expectation(
+        args.expected_prompt_sha256, args.expected_prompt_count
+    )
     result = build_bundle(
         args.rows_dir,
         args.features_dir,
@@ -339,6 +378,9 @@ def main() -> None:
         args.train_prompts,
         args.output_dir,
         continuity_report=args.continuity_report,
+        shard_manifest_path=args.shard_manifest,
+        expected_prompt_hash=expected_hash,
+        expected_prompt_count=expected_count,
     )
     print(json.dumps({"manifest": str(result["manifest"]), "training_eligible": False}))
 
