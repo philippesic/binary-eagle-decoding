@@ -67,7 +67,7 @@ file and `docs/STATUS.md` are the durable project checkpoint.
   positions are `P+1`, `P+2`; invalid terminal rows create no decoder call. This checks the
   training interface, not actual EAGLE mask or K/V byte parity.
 
-**Latest CPU checks:** 77 recurrent tests, 16 capture-runner tests, nine explicit decoder-step tests,
+**Latest CPU checks:** 80 recurrent tests, 16 capture-runner tests, nine explicit decoder-step tests,
 five frozen-operand tests, eight native loader fixtures, eight existing
 scale-fitting tests, Ruff
 lint/format and `git diff --check` pass. No local Metal/MPS or CUDA
@@ -300,7 +300,31 @@ established.
   not establish numerical target-feature parity, whole-drafter state/KV
   parity, 96-prompt capture completeness, training quality or native Q4_0
   acceptance and throughput. The native Goal stays active. No GPU,
-  accelerator, remote host, final prompt or training step ran.
+  accelerator, remote host, final prompt or approved training trial ran.
+
+## Eighth goal turn: independent CPU target-feature comparison
+
+- A CPU-only rerun with `--flash-attn off` retained the eight raw output
+  IDs and passed continuity/response audits, but changed target-feature
+  values versus `auto`. Grouped-matmul first/fifth-depth normalized state
+  max differences fell from `0.002105/0.003462` to `0.001696/0.002143`;
+  native scalar order under `off` measured `0.001756/0.002401`. All five
+  mapped top IDs still matched. This implicates attention execution as a
+  possible source of drift, without proving its cause or closing parity.
+- An independent local Hugging Face Qwen3 forward on the Apple M3 Max CPU
+  used F16-rounded source weights and F32 eager computation. The 32 prompt
+  embedding rows and sampled target FFN gate matrices at layers 2, 18 and
+  33 matched the pinned GGUF bitwise. Against the native `off` capture,
+  median relative row L2 errors at those taps were 0.579%, 0.382% and
+  0.280%; the largest relative row error was 1.628%. The exceptional
+  first-token absolute error was small relative to that row's >335 RMS.
+  The repeatable CPU checker hashes the source shards and rejects changed
+  feature ancestry or payload size. Its three focused tests pass.
+- The [capture report](../../experiments/recurrent-binary-cpu-capture-smoke.md)
+  records exact SHA256s and numerical limits. This independent path is
+  alignment evidence, not exact target-feature or full-drafter parity.
+  No GPU, accelerator, remote host, final prompt, new training step or
+  Q4_0 performance measurement ran. The native Goal remains active.
 
 **Published checkpoints:** `7744d8e` created the goal/protocol; `1e3742d`
 integrated the trace contract; `a4dd003` integrated learned GGUF export;
@@ -321,8 +345,10 @@ restriction. Do not request or infer that change.
 
 ## CPU stop gate and next actions
 
-1. Locate the measured full-drafter state drift with independent native
-   intermediate outputs or a CPU target-feature reference. Keep the
+1. Locate the remaining full-drafter state drift at Q/K/V, attention,
+   residual and FFN boundaries with bounded native CPU intermediate values.
+   The independent target-feature comparison constrains the input side but
+   does not certify exact parity. Keep the
    preparation bundle ineligible until full request, model and drafter
    parity gates pass; do not infer the 96-prompt training result from one
    prompt.
@@ -333,7 +359,7 @@ restriction. Do not request or infer that change.
 3. Recheck CPU gates and record hashes/commits at the next milestone. Keep
    model files/raw captures out of Git. Audit whether remaining local work
    can still advance the goal. This is the
-   **seventh** goal turn under the no-GPU restriction. Do not mark the Goal
+   **eighth** goal turn under the no-GPU restriction. Do not mark the Goal
    blocked until the same GPU-only impasse persists across at least three
    consecutive goal turns and no meaningful CPU-only work remains.
 

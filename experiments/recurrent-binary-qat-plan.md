@@ -172,6 +172,12 @@ backpropagated to all nine binary sign/scale pairs, wrote the 18-array
 checkpoint, exported truthful learned-scale metadata, and loaded the output
 GGUF in the native CPU server. It did not use the proposed full budget,
 estimate live acceptance gains or meet the native Q4_0 performance gate.
+An [independent CPU target-feature comparison](recurrent-binary-cpu-capture-smoke.md)
+now checks local Hugging Face target inputs against native layer taps 2,
+18 and 33 after verifying prompt embeddings and sampled F16-rounded GGUF
+weights. The measured relative row drift is bounded for one prompt, while
+exact feature and whole-drafter numeric parity remain open. A non-flash
+native replay narrows, but does not eliminate, state drift.
 
 ## Bounded proposed first trial and stop gates
 

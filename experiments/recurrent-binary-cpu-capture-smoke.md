@@ -153,3 +153,43 @@ Ignored files are under `results/recurrent-binary-cpu-smoke-20260928-a16/diagnos
 | `export_audit.json` | `39a497299912090c6332b36c70b3d282a33d6116bea0e76813b2fc4898389c4e` |
 | `export_delta.json` | `ea7e70763d8e34be62b90e7349631cf546fc547f405ef2e8e7448ae728080167` |
 | `native-smoke/response.json` | `3abf697d9cc6ad50f4e50baf8dc392154399c623e248902c536e824e69428c3b` |
+
+## Attention-path and independent target-feature checks
+
+The identical CPU request was captured with `--flash-attn off` in both
+contexts. It emitted the same eight raw IDs and passed continuity and
+response-emission audits. Native raw feature values changed versus the
+default `flash_attn=auto` capture (53-by-7,680 maximum absolute difference
+`0.308945`), so these are distinct arithmetic paths. Replaying each
+capture's own features with the grouped-matmul CPU drafter reduced the
+first/fifth-depth head-state maximum differences from `0.002105/0.003462`
+under `auto` to `0.001696/0.002143` under `off`; all five mapped top IDs
+still matched. The native-order path under `off` measured
+`0.001756/0.002401`. The attention path plausibly contributes to drift,
+but both settings remain numerically different from the adapter.
+
+An independent Hugging Face Qwen3 CPU forward used the local BF16 source
+weights rounded to F16, then computed in F32 with eager attention. All 32
+prompt embedding rows and sampled FFN gate
+weight matrices at target layers 2, 18 and 33 matched the pinned GGUF
+**bitwise**. The native capture's declared prefill ancestry was checked
+before comparing its ordered `[2,18,33]` feature taps. The median relative
+row L2 differences versus the `off` capture were 0.579%, 0.382% and
+0.280% respectively; the worst row was 1.628% at layer 33. The largest
+absolute difference (`64.785`) was at the first prompt position, whose
+native layer-18/33 row RMS exceeded 335; its relative row error was about
+0.397%. These measurements support feature identity and order, but do not
+meet an exact target-feature parity gate. The Python and GGML forwards use
+different arithmetic paths, and no acceptance or training decision is based
+on this single prompt.
+
+The ignored `--flash-attn off` capture is
+`results/recurrent-binary-cpu-smoke-20260928-no-flash/`. Its grouped and
+native-order replay reports have SHA256
+`1de6ce3a7be4a147ad7779d48b1d80110811b4aa294b988bfdc9dd3bdbbb95c9`
+and `2f8269635a4ff19511c2b373d7259b17044ee3342d53245e227569bdb6ca6d64`.
+The independent comparison report is
+`results/recurrent-binary-cpu-smoke-20260928-a16/hf_target_feature_comparison_audit.json`
+(SHA256 `4820b720d0f7b1e27296760f9380ec515fc7dfd71aab062c66eff45814dca719`).
+It records source hashes, Transformers 4.57.1, PyTorch 2.14.0, per-tap
+absolute and relative errors, and both capture identities.
