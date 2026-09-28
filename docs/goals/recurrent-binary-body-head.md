@@ -2139,6 +2139,20 @@ checkpoint; do not create more open-ended numerical investigations.
   A single eligible shard can support the first 100-step calibration; the QAT
   owner is coordinating a multi-shard iterator with the data planner for a
   continuous 2k-prompt training run and optimizer state.
+- The data shard planner `f1f7276` was reviewed, integrated as main `08c70b0`
+  and pushed. Ignored `data/w1ax-capture-shards/plan-003/plan.json` has SHA256
+  `a20a9f8e3a48c65dfc754c0598c1c256f77c9754d874caa04dabcb60b4095c1d`:
+  65 ordered shards cover all 2,000 frozen train prompts, preserving declared
+  conversation/topic families. Per-shard caps are 96 prompts, 16,384 target
+  logit rows and 12 GiB raw bytes; the current largest estimated shard is
+  32 prompts/16,384 rows/9.96 GB. Estimates are planning values; the `observe`
+  command fails on actual row/byte cap or ancestry mismatch. Four synthetic
+  CPU tests and Ruff pass. [The report](../../experiments/w1ax-sharded-capture-plan.md)
+  estimates 633.26 GB raw across 2k at its conservative row assumption and
+  19.91 GB transient peak for the largest shard when source+bundle raw copies
+  coexist. Current v1 bundle re-audit requires raw logits, so the planner
+  explicitly prohibits raw retirement; full-tier storage remains an open
+  capture-schema decision, not a solved compact-storage claim.
 - Boundaries: legacy final-set contents stay sealed; the 96-prompt capture is
   smoke/regression evidence only. Group-128/A16 and row-scale W1Ax are distinct
   representation contracts. GPU timing, capture and training wait for explicit

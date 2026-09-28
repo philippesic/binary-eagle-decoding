@@ -41,7 +41,10 @@ rechecks trace and exact-prefix compact-teacher ancestry, and retains recurrent
 state/cache gradients in CPU fixtures. The concrete future-capture factory is
 integrated as `83e72d6`; it still awaits eligible larger captures. A guarded
 device-aware Torch rollout is integrated as `4d0684d`; bounded raw-logit
-sharding and the capture-tool prompt-contract extension are active CPU tasks.
+sharding is integrated as `08c70b0` (65 capped train shards), and the
+capture-tool prompt-contract extension is active CPU work. The v1 bundle still
+requires raw logits for re-audit; the full-tier compact/label-only storage
+choice is recorded in [DECISIONS.md](DECISIONS.md#phase-1a-implementation-defaults-and-pending-research-choices).
 Native training quality and throughput remain unmeasured.
 
 **Latest handoff (2026-09-28):** the user requested an overarching plan and a fresh team to continue the existing EAGLE work with no GPU access. Parent starting point is `d111335`, following the predecessor's `5110257`; native gitlink is `21f617d4ef3f5dc383d3ab8dc619daaa87db7ff8`. Both host pause flags are set. The plan supersedes the old next action to continue target block-14 parity. Reuse existing capture/export/CPU tests; use practical numerical gates and direct native evaluation. The old 96 prompts are smoke/regression data, not an adequate full-body QAT corpus. The [active-goal handoff](goals/recurrent-binary-body-head.md#fresh-team-handoff-eagle-w1-cpu-phase) gives the new team's assignment. Its coordinator will record fresh task/worker IDs there.

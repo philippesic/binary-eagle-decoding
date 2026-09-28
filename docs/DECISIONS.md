@@ -68,6 +68,21 @@ and tolerances must be frozen before the GPU run. This replaces open-ended
 independent HF target arithmetic parity as a training prerequisite; actual
 native acceptance versus Q4_0 is the decisive quality test.
 
+**Pending full-tier teacher-storage choice:** the CPU [shard plan](../experiments/w1ax-sharded-capture-plan.md)
+splits the candidate 2k training prompts into 65 bounded captures. The old
+96-prompt raw full-vocabulary logit file was 24.8 GB; the current conservative
+2k plan estimates 633.26 GB of raw logits, and v1 bundles duplicate that raw
+file before re-audit. The first small capture/calibration can retain raw bytes
+within a 12-GiB-per-shard cap. Before capturing the full tier, choose an
+auditable label-only bundle for hard CE, a compact top-k/tail bundle with a new
+re-audit contract, or explicitly provision raw storage. The actionable default
+is to design a re-auditable compact/label-only path rather than silently
+accumulating more than 1 TB of raw copies. Do not delete v1 raw files: their
+current audit depends on them. Capture commands remain paused until GPU access
+is explicitly restored; the storage representation is a user-owned fork before
+the full 2k capture, not a reason to delay CPU interfaces or the first bounded
+GPU calibration.
+
 Record research or infrastructure forks when evidence could lead to different
 next steps. Keep the current decision and the reason; revisit when new data
 changes the tradeoff. Routine implementation choices belong in commits.
