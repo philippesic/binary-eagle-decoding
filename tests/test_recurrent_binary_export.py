@@ -74,6 +74,7 @@ class RecurrentBinaryExportTests(unittest.TestCase):
         manifest = {
             "schema_version": 1,
             "base_gguf_sha256": sha256(self.base),
+            "training_arithmetic": "native_order",
             "projections": {
                 base: {"checkpoint_name": SOURCE_NAMES[base], "shape": list(shape)}
                 for base, shape in self.shapes.items()
@@ -126,6 +127,7 @@ class RecurrentBinaryExportTests(unittest.TestCase):
         self.assertEqual(report["base_gguf"]["sha256"], sha256(self.base))
         self.assertEqual(report["checkpoint"]["sha256"], sha256(self.checkpoint))
         self.assertEqual(report["output"]["sha256"], sha256(self.output))
+        self.assertEqual(report["training_arithmetic"], "native_order")
         self.assertTrue(report["serialization_audit_passed"])
 
     def test_nonfinite_negative_scale_shape_and_extra_checkpoint_key_are_rejected(self):
@@ -163,6 +165,9 @@ class RecurrentBinaryExportTests(unittest.TestCase):
             self.export()
         self.save_manifest(override=lambda m: m.update(base_gguf_sha256="0" * 64))
         with self.assertRaisesRegex(ValueError, "hash mismatch"):
+            self.export()
+        self.save_manifest(override=lambda m: m.update(training_arithmetic="dense"))
+        with self.assertRaisesRegex(ValueError, "training arithmetic"):
             self.export()
         del self.arrays[SOURCE_NAMES["fc"] + ".latent"]
         self.save_checkpoint()

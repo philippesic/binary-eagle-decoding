@@ -63,6 +63,18 @@ class RecurrentTrainingTests(unittest.TestCase):
                 modules, torch.zeros((2, 2), device="cpu", requires_grad=True), audit(), optimizer
             )
 
+    def test_mixed_training_arithmetic_rejected(self):
+        modules = linears()
+        modules["fc"].arithmetic = "group_matmul"
+        with tempfile.TemporaryDirectory() as temporary:
+            with self.assertRaisesRegex(ValueError, "same training arithmetic"):
+                save_training_checkpoint(
+                    modules,
+                    "a" * 64,
+                    Path(temporary) / "trained.npz",
+                    Path(temporary) / "trained.json",
+                )
+
     def test_checkpoint_matches_exporter_schema_and_copies_arrays(self):
         modules = linears()
         with tempfile.TemporaryDirectory() as temporary:
@@ -71,6 +83,7 @@ class RecurrentTrainingTests(unittest.TestCase):
             result = save_training_checkpoint(modules, "a" * 64, checkpoint, manifest_path)
             self.assertEqual(result["projections"], 9)
             manifest = json.loads(manifest_path.read_text())
+            self.assertEqual(manifest["training_arithmetic"], "native_order")
             self.assertEqual(set(manifest["projections"]), set(CHECKPOINT_NAMES))
             with np.load(checkpoint, allow_pickle=False) as archive:
                 self.assertEqual(len(archive.files), 18)

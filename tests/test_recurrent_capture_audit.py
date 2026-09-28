@@ -8,7 +8,7 @@ from pathlib import Path
 
 import numpy as np
 
-from w1a1_eagle.recurrent_trace import LABEL_SOURCE
+from w1a1_eagle.recurrent_trace import LABEL_SOURCE, VERIFIER_LOGITS_SOURCE
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
@@ -50,6 +50,7 @@ class RecurrentCaptureAuditTests(unittest.TestCase):
             "proposed_token_id": 5,
             "label_supported": True,
             "verifier_logits": [0.0] * 8,
+            "verifier_logits_source": VERIFIER_LOGITS_SOURCE,
         }
         self.save()
 

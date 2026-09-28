@@ -174,6 +174,33 @@ class RecurrentBinaryTests(unittest.TestCase):
         weight = torch.ones((1, 2), device="cpu")
         with self.assertRaisesRegex(ValueError, "nonnegative"):
             GroupedBinaryLinear(weight, -torch.ones((1, 1), device="cpu"))
+        with self.assertRaisesRegex(ValueError, "arithmetic"):
+            GroupedBinaryLinear(weight, torch.ones((1, 1), device="cpu"), arithmetic="dense")
+
+    def test_explicit_group_matmul_keeps_hard_signs_and_gradients(self):
+        rng = np.random.default_rng(82)
+        weights = rng.normal(size=(3, 257)).astype(np.float32)
+        scales = rng.uniform(0.1, 1.5, size=(3, 3)).astype(np.float32)
+        inputs = rng.normal(size=(4, 257)).astype(np.float32)
+        exact = GroupedBinaryLinear(
+            torch.from_numpy(weights), torch.from_numpy(scales), arithmetic="native_order"
+        )
+        grouped = GroupedBinaryLinear(
+            torch.from_numpy(weights), torch.from_numpy(scales), arithmetic="group_matmul"
+        )
+        exact_input = torch.tensor(inputs, device="cpu", requires_grad=True)
+        grouped_input = torch.tensor(inputs, device="cpu", requires_grad=True)
+        exact_output = exact(exact_input)
+        grouped_output = grouped(grouped_input)
+        torch.testing.assert_close(grouped_output, exact_output, rtol=2e-5, atol=2e-5)
+        exact_output.sum().backward()
+        grouped_output.sum().backward()
+        torch.testing.assert_close(grouped.latent_sign.grad, exact.latent_sign.grad)
+        torch.testing.assert_close(
+            grouped.scale_offset.grad, exact.scale_offset.grad, rtol=2e-5, atol=2e-5
+        )
+        torch.testing.assert_close(grouped_input.grad, exact_input.grad)
+        np.testing.assert_array_equal(grouped.export_arrays()[0], exact.export_arrays()[0])
 
     def test_nine_linear_install_restores_qk_row_order_and_preserves_bias(self):
         drafter, candidate, originals = self.candidate_fixture()

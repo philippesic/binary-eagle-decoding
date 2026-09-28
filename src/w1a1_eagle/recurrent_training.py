@@ -47,6 +47,8 @@ def _validate_linears(linears: Mapping[str, GroupedBinaryLinear]) -> None:
         raise TypeError("all nine linears must use the hard-binary W1A16 forward")
     if any(module.group_size != 128 for module in linears.values()):
         raise ValueError("the joint training contract requires group size 128")
+    if len({module.arithmetic for module in linears.values()}) != 1:
+        raise ValueError("all nine linears must declare the same training arithmetic")
 
 
 def train_step(
@@ -120,6 +122,7 @@ def save_training_checkpoint(
     manifest = {
         "schema_version": 1,
         "base_gguf_sha256": base_gguf_sha256,
+        "training_arithmetic": next(iter(linears.values())).arithmetic,
         "projections": projections,
     }
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")

@@ -8,6 +8,7 @@ import numpy as np
 
 from w1a1_eagle.recurrent_trace import (
     LABEL_SOURCE,
+    VERIFIER_LOGITS_SOURCE,
     RoundAnchor,
     validate_offset_d2t,
     validate_recurrent_trace,
@@ -157,7 +158,7 @@ class RecurrentTraceTests(unittest.TestCase):
 
     def test_optional_logits_and_exact_label_source_are_checked(self):
         base = row(0, [0, 1, 3])
-        good = dict(base, verifier_logits=[0.0] * 8)
+        good = dict(base, verifier_logits=[0.0] * 8, verifier_logits_source=VERIFIER_LOGITS_SOURCE)
         result = self.audit([good])
         self.assertEqual(result.counts["valid"], 1)
         self.assertEqual(result.counts["logit_rows"], 1)
@@ -166,6 +167,7 @@ class RecurrentTraceTests(unittest.TestCase):
             {"verifier_logits": [0.0] * 7},
             {"verifier_logits": [float("nan")] * 8},
             {"verifier_logits": [-float("inf")] * 8},
+            {"verifier_logits": [0.0] * 8, "verifier_logits_source": "draft_head_logits"},
             {"label_source": "cached_head_label"},
             {"label_supported": False},
         ):

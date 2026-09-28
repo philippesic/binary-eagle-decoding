@@ -24,6 +24,67 @@ class DraftStep:
     cache: Any
 
 
+@dataclass(frozen=True)
+class RebuiltPrefix:
+    cache: Any
+    seed_token: int
+    seed_raw_features: Tensor
+    decoder_position: int
+
+
+def rebuild_prefix_cache(
+    prefix_token_ids: Sequence[int],
+    raw_target_features: Tensor,
+    feature_positions: Sequence[int],
+    *,
+    parent_position: int,
+    encode_feature: Callable[[Tensor], Tensor],
+    decode_context: Callable[[int, Tensor, int, Any], DraftStep],
+    new_cache: Callable[[], Any],
+) -> RebuiltPrefix:
+    """Recompute current-student cache from accepted-prefix target features.
+
+    For every context position ``j < P``, native ``process()`` decodes
+    ``(token[j+1], encode_feature(target_features[j]))`` at memory position
+    ``j``. The final feature row ``target_features[P]`` is deferred for the
+    draft seed ``token[P+1]`` at position ``P``. Context reconstruction is a
+    declared truncated-gradient boundary; the proposal unroll retains its
+    own student-state and cache gradients.
+    """
+    if type(parent_position) is not int or parent_position < 0:
+        raise ValueError("parent_position must be nonnegative")
+    if len(prefix_token_ids) != parent_position + 2 or any(
+        type(token) is not int or token < 0 for token in prefix_token_ids
+    ):
+        raise ValueError("accepted prefix tokens do not match parent position")
+    if (
+        raw_target_features.device.type != "cpu"
+        or raw_target_features.ndim != 2
+        or raw_target_features.shape[0] != parent_position + 1
+        or not torch.isfinite(raw_target_features).all()
+    ):
+        raise ValueError("raw target features must cover every context and deferred row")
+    if tuple(feature_positions) != tuple(range(parent_position + 1)):
+        raise ValueError("raw target feature positions are missing or misordered")
+    cache = new_cache()
+    with torch.no_grad():
+        for position in range(parent_position):
+            feature = encode_feature(raw_target_features[position])
+            if (
+                feature.device.type != "cpu"
+                or feature.ndim != 1
+                or not torch.isfinite(feature).all()
+            ):
+                raise ValueError("feature encoder returned an invalid context row")
+            result = decode_context(prefix_token_ids[position + 1], feature, position, cache)
+            if not isinstance(result, DraftStep):
+                raise TypeError("context decoder must return DraftStep")
+            cache = result.cache
+    return RebuiltPrefix(
+        cache, prefix_token_ids[-1], raw_target_features[parent_position], parent_position
+    )
+
+
 def rollout_captured_prefix(
     rows: Sequence[Mapping[str, object]],
     raw_target_features: Tensor,
@@ -68,7 +129,8 @@ def rollout_captured_prefix(
                 raise ValueError("invalid proposal row must be terminal")
             logits_rows.append(torch.zeros(draft_vocab_size, dtype=torch.float32, device="cpu"))
             continue
-        result = decode_step(token, feature, row["input_position"], cache)
+        # Native decoder memory/RoPE position is one before the shifted token.
+        result = decode_step(token, feature, row["input_position"] - 1, cache)
         if not isinstance(result, DraftStep):
             raise TypeError("decoder must return DraftStep")
         if (

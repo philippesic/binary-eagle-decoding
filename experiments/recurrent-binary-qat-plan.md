@@ -123,10 +123,30 @@ projects any negative update back to zero. The CPU reference also matches
 430/430 **archived D native sampled outputs** across all nine projections;
 these are previously recorded training-capture operands, not a trained model.
 The sequential per-feature PyTorch forward is deliberately an exact CPU
-reference and is too slow for the full nine-linear model. This is necessary
+reference and is too slow for the full nine-linear model. An explicitly
+selected grouped-F32-matmul training path retains the hard signs, A16 casts,
+F32 group scales and ordered group accumulation, with different in-group
+reduction order. On the same 430 archived D outputs it matched 395 exactly;
+maximum absolute discrepancy was `0.0001220703125` and maximum
+`|delta|/(1+|native|)` was `7.422315e-7`. This is a numerical diagnostic,
+not evidence of equal proposal IDs or acceptance near ties. The training
+checkpoint records which arithmetic path was used. Replacing the exact
+forward with grouped matmul for a full run remains a documented research
+choice requiring a fixed-input native argmax/trajectory parity gate.
+
+A CPU prefix-rebuild helper now recomputes the current student cache from
+accepted-prefix token `t[j+1]` and raw target feature `f[j]` at decoder
+position `j`, then defers `f[P]` and seed `t[P+1]` for position `P`. It
+recreates context under an explicit truncated-gradient boundary; new proposal
+states and K/V stay differentiable. Native `input_position=P+d+1` is the
+shifted **token** index, while decoder memory/RoPE position is `P+d`.
+Synthetic tests cover this pairing and stale-cache elimination. Native
+feature extraction and actual cache parity remain unverified.
+
+This is necessary
 preparation, not evidence about real-model quality or throughput. The native
 model capture of raw target features, an efficient hard-binary training
-forward with bounded numerical differences, student cache parity, the
+forward with accepted numerical differences, student cache parity, the
 trained-scale GGUF loader amendment, real-model training, and matched native
 evaluation remain unverified. The first future GPU-owner operation,
 **only if the user changes the no-GPU restriction and approves the budget,**

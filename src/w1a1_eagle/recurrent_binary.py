@@ -15,10 +15,12 @@ from __future__ import annotations
 
 import math
 from collections.abc import Mapping
+from typing import Literal
 
 import numpy as np
 import torch
 from torch import Tensor, nn
+from torch.nn import functional as F
 
 from .adapter import GROUP_PATHS, _validated_linears
 
@@ -33,6 +35,7 @@ CANDIDATE_D_BASE_TO_PATH = {
     "blk.0.ffn_down": "midlayer.mlp.down_proj",
     "output": "lm_head",
 }
+Arithmetic = Literal["native_order", "group_matmul"]
 
 
 class _HardSignSTE(torch.autograd.Function):
@@ -99,9 +102,12 @@ class GroupedBinaryLinear(nn.Module):
     """Trainable CPU W1A16 linear with hard signs and groupwise F32 scales.
 
     Input of any leading shape is cast to F16, then F32. For each output row,
-    input features are added sequentially within each group in F32. Each group
-    sum is multiplied by its F32 scale, then products are added in group order
-    in F32. Zero scales are valid in candidate D; a trainable additive F32
+    the default ``native_order`` adds input features sequentially within each
+    group in F32. Explicit ``group_matmul`` retains hard signs, A16 casts,
+    group scales and ordered group accumulation, but uses F32 matrix
+    multiplication inside groups and may differ by reduction roundoff. Each
+    group sum is multiplied by its F32 scale, then products are added in group
+    order in F32. Zero scales are valid in candidate D; a trainable additive F32
     offset is clamped in forward and can be projected after each optimizer
     step. No dense floating weight is used by the forward pass.
     """
@@ -113,6 +119,7 @@ class GroupedBinaryLinear(nn.Module):
         *,
         group_size: int = 128,
         bias: Tensor | None = None,
+        arithmetic: Arithmetic = "native_order",
     ) -> None:
         super().__init__()
         if weight.device.type != "cpu" or scales.device.type != "cpu":
@@ -121,9 +128,12 @@ class GroupedBinaryLinear(nn.Module):
             raise ValueError("weight must have shape (out_features, in_features)")
         if not torch.isfinite(weight).all():
             raise ValueError("weight must be finite")
+        if arithmetic not in ("native_order", "group_matmul"):
+            raise ValueError("arithmetic must be native_order or group_matmul")
         initial_scales = scales.detach().to(dtype=torch.float32, device="cpu")
         _check_scales(initial_scales.numpy(), weight.shape[0], weight.shape[1], group_size)
         self.group_size = group_size
+        self.arithmetic = arithmetic
         self.in_features = weight.shape[1]
         self.out_features = weight.shape[0]
         self.latent_sign = nn.Parameter(
@@ -151,6 +161,7 @@ class GroupedBinaryLinear(nn.Module):
         in_features: int,
         group_size: int = 128,
         bias: Tensor | None = None,
+        arithmetic: Arithmetic = "native_order",
     ) -> GroupedBinaryLinear:
         """Initialize directly from candidate-D arrays, without F16 signs."""
         signs = unpack_signs(packed, in_features)
@@ -162,6 +173,7 @@ class GroupedBinaryLinear(nn.Module):
             torch.from_numpy(np.ascontiguousarray(scales).copy()),
             group_size=group_size,
             bias=bias,
+            arithmetic=arithmetic,
         )
 
     @property
@@ -205,9 +217,13 @@ class GroupedBinaryLinear(nn.Module):
             raise ValueError("trained scales must be finite")
         result = torch.zeros((*x.shape[:-1], self.out_features), dtype=torch.float32, device="cpu")
         for group, start in enumerate(range(0, self.in_features, self.group_size)):
-            subtotal = torch.zeros_like(result)
-            for feature in range(start, min(start + self.group_size, self.in_features)):
-                subtotal = subtotal + x[..., feature, None] * signs[:, feature]
+            end = min(start + self.group_size, self.in_features)
+            if self.arithmetic == "group_matmul":
+                subtotal = F.linear(x[..., start:end], signs[:, start:end])
+            else:
+                subtotal = torch.zeros_like(result)
+                for feature in range(start, end):
+                    subtotal = subtotal + x[..., feature, None] * signs[:, feature]
             result = result + subtotal * scales[:, group]
         if self.frozen_bias is not None:
             result = result + self.frozen_bias
@@ -303,6 +319,7 @@ def install_candidate_d_linears(
     candidate_d: Mapping[str, tuple[np.ndarray, np.ndarray]],
     *,
     target: nn.Module,
+    arithmetic: Arithmetic = "native_order",
 ) -> dict[str, GroupedBinaryLinear]:
     """Replace the nine drafter-owned linears from candidate-D GGUF arrays.
 
@@ -341,6 +358,7 @@ def install_candidate_d_linears(
             torch.from_numpy(np.ascontiguousarray(scales)),
             group_size=128,
             bias=linear.bias,
+            arithmetic=arithmetic,
         )
     for path, replacement in replacements.items():
         parent, name, _ = pending[path]

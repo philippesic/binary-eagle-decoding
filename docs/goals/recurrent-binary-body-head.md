@@ -60,14 +60,44 @@ file and `docs/STATUS.md` are the durable project checkpoint.
 - A model-independent CPU rollout contract now feeds each proposed token and
   the previous **pre-norm** student state into the next step without detaching
   the functional cache. Three tiny causal-cache tests pass: a later-only CE
-  loss reaches the first key, value, state, fusion and head; positions advance
-  2 then 3; invalid terminal rows create no decoder call. This checks the
+  loss reaches the first key, value, state, fusion and head; decoder
+  memory/RoPE positions advance from `P` to `P+1` while shifted input-token
+  positions are `P+1`, `P+2`; invalid terminal rows create no decoder call. This checks the
   training interface, not actual EAGLE mask or K/V byte parity.
 
-**Latest CPU checks:** 35 recurrent tests, eight existing scale-fitting tests,
+**Latest CPU checks:** 40 recurrent tests, eight existing scale-fitting tests,
 Ruff lint/format and `git diff --check` pass. No local Metal/MPS or CUDA
 runtime was selected. The complete native Q4_0 quality/throughput gates
 remain unrun under this goal.
+
+## Second goal turn: CPU alignment and arithmetic work
+
+- Corrected a rollout position error: trace `input_position` is the shifted
+  token index `P+d+1`; native decoder memory/RoPE position is `P+d`.
+- Added accepted-prefix cache reconstruction from `(token[j+1], raw target
+  feature[j])` at decoder position `j`, with a fresh cache for each round and
+  the final feature row deferred for the seed. Rebuild is a declared
+  truncated-gradient boundary; proposal states/K/V remain differentiable.
+  Synthetic tests cover missing/misordered feature positions and discarded
+  stale proposals. Actual EAGLE K/V, mask and RoPE parity remain unverified.
+- Distinguished **raw target verifier logits** from the existing native head
+  capture's draft logits mapped into target vocabulary. The trace validator
+  now requires explicit raw-target provenance before computing mapped mass.
+  This prevents using `EAGLE_CAPTURE_FULL_LOGITS` as a target-mass source.
+- Added an explicit CPU `group_matmul` training arithmetic option that keeps
+  hard signs/A16/group scales but changes in-group F32 reduction order. On
+  430 archived native D outputs, 395 matched exactly; max absolute discrepancy
+  `0.0001220703125`, max scaled discrepancy `7.422315e-7`. The ignored
+  diagnostic report is `results/binary-scale-fitting-5080/recurrent-binary-group-matmul-drift.json`
+  (SHA256 `aa5f8c5de8789eaee1911264aec131d5be28ac60ca92f4268ef1c33bcdbf1550`).
+  Checkpoint manifests now declare the training arithmetic. Its effect on
+  argmax, gradients at scale, and native recurrence has no real-model gate.
+
+This is the **second consecutive goal turn** under the user's no-GPU
+restriction. It made substantive CPU progress; a GPU-only impasse has not
+been established. Meaningful local work remains on capture-ledger schema,
+prefix/cache parity fixtures, and a faithful full-drafter adapter. Do not
+mark the native Goal blocked on this turn.
 
 **Published checkpoints:** `7744d8e` created the goal/protocol; `1e3742d`
 integrated the trace contract; `a4dd003` integrated learned GGUF export;
@@ -88,15 +118,17 @@ restriction. Do not request or infer that change.
 
 ## CPU stop gate and next actions
 
-1. Review the corrected CPU arithmetic, recurrent loss, training-step and
-   checkpoint/export integration; run their focused CPU gates together.
-2. Prepare the missing real-model capture/recurrent graph contract without
-   substituting saved normalized head states. The exact sequential CPU forward
-   is intentionally slow and is not a practical full-model training kernel.
-3. Test CPU-only commands with explicit CPU devices and record results,
-   hashes and commits. Keep model files/raw captures out of Git.
-4. Audit whether remaining local work can still advance the goal. This is the
-   **first** goal turn under the no-GPU restriction. Do not mark the Goal
+1. Define and CPU-test a native capture ledger for accepted-prefix raw target
+   feature rows, absolute positions, true verifier sampler labels and separate
+   raw target logits. The present head-only capture cannot serve that purpose.
+2. Connect prefix rebuilding to the pinned full drafter only with verified
+   attention/RoPE/KV rounding and mask semantics; do not substitute saved
+   normalized head states. Keep the sequential reference and grouped-matmul
+   training forward distinct in all reports.
+3. Recheck CPU gates and record hashes/commits at the next milestone. Keep
+   model files/raw captures out of Git. Audit whether remaining local work
+   can still advance the goal. This is the
+   **second** goal turn under the no-GPU restriction. Do not mark the Goal
    blocked until the same GPU-only impasse persists across at least three
    consecutive goal turns and no meaningful CPU-only work remains.
 

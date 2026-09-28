@@ -4,8 +4,9 @@
 The checkpoint is an uncompressed NPZ with exactly two F32 arrays per original
 checkpoint weight: ``<source name>.latent`` with shape [rows, K] and
 ``<source name>.scale`` with shape [rows, ceil(K/128)]. Its JSON manifest has
-``schema_version: 1``, ``base_gguf_sha256``, and ``projections`` mapping each
-GGUF base to ``{"checkpoint_name": ..., "shape": [rows, K]}``. All arrays
+``schema_version: 1``, ``base_gguf_sha256``, ``training_arithmetic``, and
+``projections`` mapping each GGUF base to
+``{"checkpoint_name": ..., "shape": [rows, K]}``. All arrays
 are in original checkpoint row order. Q and K rows are permuted here into the
 GGUF RoPE layout before packing. No accelerator or model execution is used.
 
@@ -55,11 +56,14 @@ def check_manifest(manifest: dict, base_hash: str) -> dict[str, tuple[str, tuple
     if not isinstance(manifest, dict) or set(manifest) != {
         "schema_version",
         "base_gguf_sha256",
+        "training_arithmetic",
         "projections",
     }:
-        raise ValueError("manifest requires schema_version, base_gguf_sha256, projections")
+        raise ValueError("manifest requires version, base GGUF hash, arithmetic and projections")
     if manifest["schema_version"] != 1 or manifest["base_gguf_sha256"] != base_hash:
         raise ValueError("manifest version or base GGUF hash mismatch")
+    if manifest["training_arithmetic"] not in ("native_order", "group_matmul"):
+        raise ValueError("unknown declared training arithmetic")
     projections = manifest["projections"]
     if not isinstance(projections, dict) or set(projections) != set(SOURCE_NAMES):
         raise ValueError("manifest must declare exactly nine selected projections")
@@ -246,6 +250,7 @@ def export_model(base_path: Path, checkpoint: Path, manifest_path: Path, output:
             "checkpoint_manifest": {"path": str(manifest_path), "sha256": sha256(manifest_path)},
             "output": {"path": str(output), "sha256": output_hash},
             "scale_rule": "f32_learned_nonnegative",
+            "training_arithmetic": manifest["training_arithmetic"],
             "native_loader_gate": (
                 "loader support and CPU numeric parity are required before execution"
             ),

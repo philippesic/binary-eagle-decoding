@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from numbers import Integral, Real
 
 LABEL_SOURCE = "cloned_native_verifier_sampler_at_actual_proposal_prefix"
+VERIFIER_LOGITS_SOURCE = "raw_target_verifier_at_exact_proposal_prefix"
 INVALID_REASONS = frozenset({"padding", "pruned", "eos", "unreached"})
 
 
@@ -217,6 +218,8 @@ def validate_recurrent_trace(
         logits = row.get("verifier_logits")
         probability_mass = None
         if logits is not None:
+            if row.get("verifier_logits_source") != VERIFIER_LOGITS_SOURCE:
+                raise ValueError("full logits are not raw target verifier logits")
             if (
                 not valid
                 or not isinstance(logits, (list, tuple))
