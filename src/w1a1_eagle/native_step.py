@@ -1,0 +1,250 @@
+"""Strict, differentiable CPU reference for one native EAGLE-3 W1A16 step.
+
+This adapter consumes the pinned AngelSlim drafter after all nine candidate-D
+linears have been replaced by :class:`GroupedBinaryLinear`. It reproduces the
+one-token structure of ``llama_model_eagle3::graph<false>``: borrowed F16 token
+embedding, separate F32 RMS norms, embedding-first concatenation, Q/K/V with
+half-rotation RoPE, F16 cache storage, GQA attention, residual and SiLU FFN,
+then the F32 output norm and binary draft head. The cache is an immutable,
+contiguous one-token causal prefix and retains autograd links during unroll.
+
+This is a structural CPU reference. Native GGML full-drafter numeric parity,
+cache scheduling and GPU graph behavior remain unverified.
+"""
+
+from __future__ import annotations
+
+import math
+from dataclasses import dataclass
+
+import torch
+from torch import Tensor, nn
+from torch.nn import functional as F
+
+from .recurrent_binary import CANDIDATE_D_BASE_TO_PATH, GroupedBinaryLinear
+from .recurrent_rollout import DraftStep
+
+
+@dataclass(frozen=True)
+class NativeStepCache:
+    """Post-RoPE K and raw V in F32 storage, each exactly representable as F16.
+
+    Shape is ``(kv_heads, decoder_positions, head_dim)``. The current step is
+    appended without detach so later draft losses reach earlier K/V.
+    """
+
+    key: Tensor
+    value: Tensor
+
+
+def _frozen_rms_norm(x: Tensor, module: nn.Module) -> Tensor:
+    # The pinned Python RMSNorm computes variance in F32. Every input to this
+    # adapter is F32, so its output and its frozen weight multiplication are F32.
+    variance = x.square().mean(dim=-1, keepdim=True)
+    return x * torch.rsqrt(variance + module.variance_epsilon) * module.weight
+
+
+class NativeStepAdapter(nn.Module):
+    """One-step binary drafter callable by ``rebuild_prefix_cache`` and rollout.
+
+    ``decode_step`` returns draft-vocabulary logits; the frozen d2t/t2d map
+    belongs to the trace/verifier boundary, not the differentiable head. Tree
+    masks, holes in a prefix and nondefault RoPE are intentionally rejected.
+    """
+
+    def __init__(self, drafter: nn.Module) -> None:
+        super().__init__()
+        config = getattr(drafter, "config", None)
+        if config is None or getattr(config, "pretraining_tp", None) != 1:
+            raise ValueError("one-step adapter requires pretraining_tp=1")
+        if getattr(drafter, "early_stop_method", None) is not None:
+            raise ValueError("early stop is unsupported")
+        if any(
+            bool(getattr(source, flag, False))
+            for source in (drafter, config)
+            for flag in ("norm_before_fc", "norm_before_residual")
+        ):
+            raise ValueError("norm_before_fc/residual is unsupported")
+        if getattr(config, "rope_scaling", None) is not None:
+            raise ValueError("scaled RoPE is unsupported")
+        if getattr(config, "hidden_act", None) != "silu":
+            raise ValueError("the pinned drafter requires SiLU")
+
+        hidden = getattr(config, "hidden_size", None)
+        heads = getattr(config, "num_attention_heads", None)
+        kv_heads = getattr(config, "num_key_value_heads", None)
+        intermediate = getattr(config, "intermediate_size", None)
+        head_dim = getattr(config, "head_dim", None)
+        if head_dim is None and type(hidden) is int and type(heads) is int and heads > 0:
+            head_dim = hidden // heads
+        max_positions = getattr(config, "max_position_embeddings", None)
+        theta = getattr(config, "rope_theta", 10000.0)
+        if not all(type(value) is int and value > 0 for value in (hidden, heads, kv_heads, intermediate, head_dim, max_positions)):
+            raise ValueError("drafter dimensions must be positive integers")
+        if head_dim % 2 or hidden != heads * head_dim or heads % kv_heads:
+            raise ValueError("unsupported attention head geometry")
+        if not isinstance(theta, (int, float)) or not math.isfinite(theta) or theta <= 0:
+            raise ValueError("rope_theta must be positive and finite")
+
+        expected = {
+            "fc": (hidden, None),
+            "midlayer.self_attn.q_proj": (heads * head_dim, 2 * hidden),
+            "midlayer.self_attn.k_proj": (kv_heads * head_dim, 2 * hidden),
+            "midlayer.self_attn.v_proj": (kv_heads * head_dim, 2 * hidden),
+            "midlayer.self_attn.o_proj": (hidden, heads * head_dim),
+            "midlayer.mlp.gate_proj": (intermediate, hidden),
+            "midlayer.mlp.up_proj": (intermediate, hidden),
+            "midlayer.mlp.down_proj": (hidden, intermediate),
+            "lm_head": (None, hidden),
+        }
+        if set(expected) != set(CANDIDATE_D_BASE_TO_PATH.values()):
+            raise RuntimeError("candidate-D projection paths changed")
+        linears = {}
+        for path, (out_features, in_features) in expected.items():
+            try:
+                module = drafter.get_submodule(path)
+            except AttributeError as exc:
+                raise ValueError(f"missing binary projection {path}") from exc
+            if not isinstance(module, GroupedBinaryLinear) or module.group_size != 128:
+                raise ValueError(f"{path} must be a group-128 GroupedBinaryLinear")
+            if (out_features is not None and module.out_features != out_features) or (
+                in_features is not None and module.in_features != in_features
+            ):
+                raise ValueError(f"{path} has incompatible dimensions")
+            linears[path] = module
+        if len({module.arithmetic for module in linears.values()}) != 1:
+            raise ValueError("binary projections must use one declared arithmetic")
+
+        embedding = getattr(drafter, "embed_tokens", None)
+        if not isinstance(embedding, nn.Embedding) or embedding.weight.device.type != "cpu":
+            raise ValueError("borrowed token embedding must be a CPU nn.Embedding")
+        if embedding.weight.dtype != torch.float16 or embedding.embedding_dim != hidden:
+            raise ValueError("borrowed token embedding must be F16 with hidden_size columns")
+        norm_paths = (
+            "midlayer.input_layernorm",
+            "midlayer.hidden_norm",
+            "midlayer.post_attention_layernorm",
+            "norm",
+        )
+        for path in norm_paths:
+            try:
+                norm = drafter.get_submodule(path)
+            except AttributeError as exc:
+                raise ValueError(f"missing frozen norm {path}") from exc
+            weight = getattr(norm, "weight", None)
+            eps = getattr(norm, "variance_epsilon", None)
+            if (
+                not isinstance(weight, Tensor)
+                or weight.device.type != "cpu"
+                or weight.dtype != torch.float32
+                or weight.shape != (hidden,)
+                or not torch.isfinite(weight).all()
+                or not isinstance(eps, (int, float))
+                or not math.isfinite(eps)
+                or eps <= 0
+            ):
+                raise ValueError(f"{path} must have a finite F32 weight and positive epsilon")
+
+        binary_parameter_ids = {
+            id(parameter)
+            for module in linears.values()
+            for parameter in (module.latent_sign, module.scale_offset)
+        }
+        # The borrowed target embedding and every original norm are frozen.
+        # This also protects any unused drafter parameters from optimization.
+        for parameter in drafter.parameters():
+            if id(parameter) not in binary_parameter_ids:
+                parameter.requires_grad_(False)
+
+        self.drafter = drafter
+        self.hidden_size = hidden
+        self.heads = heads
+        self.kv_heads = kv_heads
+        self.head_dim = head_dim
+        self.max_positions = max_positions
+        self.rope_theta = float(theta)
+
+    def new_cache(self) -> NativeStepCache:
+        shape = (self.kv_heads, 0, self.head_dim)
+        return NativeStepCache(torch.empty(shape, dtype=torch.float32, device="cpu"),
+                               torch.empty(shape, dtype=torch.float32, device="cpu"))
+
+    def _validate_cache(self, cache: NativeStepCache, position: int) -> None:
+        if not isinstance(cache, NativeStepCache):
+            raise ValueError("decoder cache must be NativeStepCache")
+        shape = (self.kv_heads, position, self.head_dim)
+        for name, value in (("key", cache.key), ("value", cache.value)):
+            if not isinstance(value, Tensor) or value.device.type != "cpu" or value.dtype != torch.float32 or value.shape != shape:
+                raise ValueError(f"{name} cache must contain exactly decoder_position prior rows")
+            if not torch.isfinite(value).all() or not torch.equal(value, value.to(torch.float16).to(torch.float32)):
+                raise ValueError(f"{name} cache must be finite and F16-exact")
+
+    def encode_feature(self, raw: Tensor) -> Tensor:
+        if (
+            not isinstance(raw, Tensor)
+            or raw.device.type != "cpu"
+            or raw.dtype != torch.float32
+            or raw.shape != (self.drafter.fc.in_features,)
+            or not torch.isfinite(raw).all()
+        ):
+            raise ValueError("raw target feature must be one finite F32 CPU row")
+        return self.drafter.fc(raw)
+
+    def decode_step(
+        self, token: int, feature: Tensor, decoder_position: int, cache: NativeStepCache
+    ) -> DraftStep:
+        if type(token) is not int or token < 0 or token >= self.drafter.embed_tokens.num_embeddings:
+            raise ValueError("token must index the borrowed embedding")
+        if type(decoder_position) is not int or not 0 <= decoder_position < self.max_positions:
+            raise ValueError("decoder_position is outside the supported RoPE context")
+        if getattr(self.drafter, "tree_mask", None) is not None:
+            raise ValueError("tree mask cannot be used with contiguous one-step cache")
+        if (
+            not isinstance(feature, Tensor)
+            or feature.device.type != "cpu"
+            or feature.dtype != torch.float32
+            or feature.shape != (self.hidden_size,)
+            or not torch.isfinite(feature).all()
+        ):
+            raise ValueError("feature must be one finite F32 CPU hidden row")
+        self._validate_cache(cache, decoder_position)
+
+        layer = self.drafter.midlayer
+        attn = layer.self_attn
+        mlp = layer.mlp
+        embedding = self.drafter.embed_tokens.weight[token].to(torch.float32)
+        normalized_embedding = _frozen_rms_norm(embedding, layer.input_layernorm)
+        normalized_feature = _frozen_rms_norm(feature, layer.hidden_norm)
+        fused = torch.cat((normalized_embedding, normalized_feature), dim=-1)
+        q = attn.q_proj(fused).reshape(self.heads, self.head_dim)
+        k = attn.k_proj(fused).reshape(self.kv_heads, self.head_dim)
+        v = attn.v_proj(fused).reshape(self.kv_heads, self.head_dim)
+
+        freq = torch.arange(0, self.head_dim, 2, dtype=torch.float32, device="cpu")
+        angle = decoder_position / (self.rope_theta ** (freq / self.head_dim))
+        full_angle = torch.cat((angle, angle))
+        cos, sin = full_angle.cos(), full_angle.sin()
+        half = self.head_dim // 2
+        q = q * cos + torch.cat((-q[:, half:], q[:, :half]), dim=-1) * sin
+        k = k * cos + torch.cat((-k[:, half:], k[:, :half]), dim=-1) * sin
+
+        # Native KV cache writes F16 and reads F32. Include casts in autograd;
+        # current K/V must take this boundary before both attention and append.
+        k = k.to(torch.float16).to(torch.float32)
+        v = v.to(torch.float16).to(torch.float32)
+        next_cache = NativeStepCache(
+            torch.cat((cache.key, k[:, None, :]  ), dim=1),
+            torch.cat((cache.value, v[:, None, :]), dim=1),
+        )
+        repeat = self.heads // self.kv_heads
+        keys = next_cache.key.repeat_interleave(repeat, dim=0)
+        values = next_cache.value.repeat_interleave(repeat, dim=0)
+        scores = torch.einsum("hd,htd->ht", q, keys) / math.sqrt(self.head_dim)
+        probabilities = F.softmax(scores, dim=-1, dtype=torch.float32)
+        attention = torch.einsum("ht,htd->hd", probabilities, values).reshape(-1)
+        residual = feature + attn.o_proj(attention)
+        post_attention = _frozen_rms_norm(residual, layer.post_attention_layernorm)
+        ffn = mlp.down_proj(F.silu(mlp.gate_proj(post_attention)) * mlp.up_proj(post_attention))
+        pre_norm = residual + ffn
+        logits = self.drafter.lm_head(_frozen_rms_norm(pre_norm, self.drafter.norm))
+        return DraftStep(logits=logits, pre_norm=pre_norm, cache=next_cache)
