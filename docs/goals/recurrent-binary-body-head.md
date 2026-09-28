@@ -1292,3 +1292,43 @@ binary projections and pinned native attention, RoPE and SiLU, including
 cache writes and mapped draft logits. Separate the diagnostic native
 forward from its F32 surrogate backward. Do not train or open final/Q4_0
 gates before the user-owned numeric policy and optimizer budget.
+
+## Thirty-first goal turn: five-depth CPU forward parity
+
+- Commit `2afb0f9` adds a [sealed five-depth reasoning
+  replay](../../experiments/recurrent-binary-reasoning-multidepth-cpu.md).
+  It starts from the audited native 46-position context K/V cache, feeds
+  the captured raw seed feature and native proposal tokens, and returns
+  each corrected pre-norm state to the next depth. Ordered candidate-D
+  binary projections, pinned ggml attention, query RoPE and vector SiLU
+  then match all five depths: 5,120/5,120 new F16 keys and values each,
+  20,480/20,480 F32 query-RoPE and attention values each,
+  12,800/12,800 F32 FFN outputs and normalized head states each, and
+  40/40 captured head-logit probes. All five mapped argmax IDs,
+  argmax/label logits and verifier-label ranks match native.
+- With the adapter's Python query RoPE, depths 0–3 remain exact at
+  attention and normalized state. At depth 4, attention has 3,968/4,096
+  exact values (one 128-wide head differs) and the state has 11/2,560
+  exact values. One F16 threshold at query head 1/channel 52 is
+  sufficient to restore that attention head and downstream checks.
+  The pinned ggml RoPE helper reproduces all 20,480 native F32 query
+  values and restores the complete five-depth diagnostic without using
+  a captured-value patch. The ignored report SHA256 is
+  `3259d01947dc5196b0f5eb46dd6cf02d4154e00d88165f90183cdde908bda455`.
+- The real-input run and Ruff lint/format passed on Apple M3 Max CPU.
+  The diagnostic used the pinned native attention forward with its
+  declared F32 surrogate backward, but did not execute backward or an
+  optimizer. The default student was not changed. This one
+  native-token-forced first-round chain starts from captured context
+  cache bytes, although the prior cache report verified their ordered
+  reconstruction. Full mapped-vocabulary logits, another prefix,
+  free-running recurrent trajectories, CUDA/SM75 behavior, training
+  tolerance and Q4_0 evaluation remain open. No GPU, local server,
+  final prompt or training run occurred; the 5080 is free.
+
+**Next gate:** replay a second frozen training prefix or post-acceptance
+round with the same CPU operator oracles and reconstruct its context cache
+from ordered candidate-D arithmetic. Then assess whether the CPU forward
+can be integrated without captured-cache injection before proposing any
+user-owned numeric policy or optimizer budget. Keep final prompts and
+Q4_0 acceptance/speed evaluation gated.

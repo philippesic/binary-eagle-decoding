@@ -6,19 +6,19 @@ The target/verifier model precision remains as frozen for each experiment.
 
 **Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), parity and capture preparation. The user has authorized the free RTX 5080 for needed work; no all-body training budget has been approved. **Latest completed goal:** [mixed precision rescue and frozen-body head adaptation on RTX 5080](goals/binary-rescue-head-5080.md), completed 2026-09-28 UTC. The preceding [binary scale fitting goal](goals/binary-scale-fitting-5080.md) completed 2026-09-27 UTC.
 
-**Latest checkpoint (2026-09-28 UTC):** a pinned ggml CPU RoPE graph matched
-all 47,104 reasoning context key outputs in F32 and their actual F16 cache
-bytes; the seed row was already exact. In a corrected-cache first-seed
-intervention, ggml attention, FFN input, vector SiLU, every FFN stage and
-the normalized head state matched native bitwise. Eight captured head-logit
-probes and the argmax/label logits also matched. The
-[RoPE report](../experiments/recurrent-binary-reasoning-rope-oracle.md),
-[seed report](../experiments/recurrent-binary-reasoning-seed-intervention.md)
-and [goal checkpoint](goals/recurrent-binary-body-head.md#thirtieth-goal-turn-exact-cpu-rope-and-first-seed-intervention)
-record evidence and limits. This is one Apple M3 Max CPU prefix and seed;
-multi-depth trajectory and CUDA/SM75 parity remain open. No worker, local
-server or remote job is active; the 5080 is free. Training, final-set and
-Q4_0 evaluation remain gated.
+**Latest checkpoint (2026-09-28 UTC):** a native-token-forced Apple M3 Max
+CPU replay of the frozen reasoning first round matched all five draft
+depths with ordered binary projections and pinned ggml attention, RoPE
+and vector SiLU. All 10,240 new F16 K/V writes, 20,480 query-RoPE and
+attention F32 values, 12,800 FFN outputs and normalized head-state values,
+and 40 captured head-logit probes matched native bitwise. The adapter's
+Python query RoPE first diverges at depth 4; the ggml operator restores
+it. The [five-depth report](../experiments/recurrent-binary-reasoning-multidepth-cpu.md)
+and [goal checkpoint](goals/recurrent-binary-body-head.md#thirty-first-goal-turn-five-depth-cpu-forward-parity)
+record evidence and limits. A second prefix, general trajectory, and
+CUDA/SM75 parity remain open. No worker, local server or remote job is
+active; the 5080 is free. Training, final-set and Q4_0 evaluation remain
+gated.
 
 **Prior CPU arithmetic checkpoint (2026-09-28 UTC):** corrected CPU RMS norm and RoPE
 frequency arithmetic matched all 619,520 F16 fused-input and 123,904 raw
