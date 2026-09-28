@@ -37,6 +37,12 @@ HEAD_WIDTH = 128
 HEADS = K_WIDTH // HEAD_WIDTH
 
 
+def _qwen3_norm(raw: torch.Tensor, weight: torch.Tensor) -> torch.Tensor:
+    variance = raw.float().pow(2).mean(-1, keepdim=True)
+    normalized = raw.float() * torch.rsqrt(variance + 1e-6)
+    return weight * normalized.to(raw.dtype)
+
+
 def _safe_rows(run: Path, mode: str, name: str, width: int) -> tuple[np.ndarray, dict]:
     report_path = run / "comparison.json"
     report = json.loads(report_path.read_text())
@@ -176,18 +182,33 @@ def probe(
         input_half = torch.from_numpy(native_norm.astype("<f2")).to(device="cuda")
         weight_half = torch.from_numpy(weight).to(device="cuda")
         torch_raw = F.linear(input_half, weight_half).reshape(TOKENS, HEADS, HEAD_WIDTH)
-        # Match Qwen3RMSNorm's F32 variance and cast-before-weight order.
-        variance = torch_raw.float().pow(2).mean(-1, keepdim=True)
-        normalized = torch_raw.float() * torch.rsqrt(variance + 1e-6)
-        torch_norm = torch.from_numpy(norm_weight.astype("<f2")).to(device="cuda") * (
-            normalized.to(torch_raw.dtype)
+        norm_half = torch.from_numpy(norm_weight.astype("<f2")).to(device="cuda")
+        torch_norm = _qwen3_norm(torch_raw, norm_half)
+        ggml_raw_cuda = torch.from_numpy(ggml_raw.copy()).to(device="cuda")
+        norm_float = torch.from_numpy(norm_weight).to(device="cuda")
+        same_raw_norm_f32 = _qwen3_norm(
+            ggml_raw_cuda.reshape(TOKENS, HEADS, HEAD_WIDTH), norm_float
+        )
+        same_raw_norm_f16 = _qwen3_norm(
+            ggml_raw_cuda.to(torch.float16).reshape(TOKENS, HEADS, HEAD_WIDTH), norm_half
         )
         torch_raw_cpu = torch_raw.float().cpu().numpy().reshape(TOKENS, K_WIDTH)
         torch_output = torch_norm.float().cpu().numpy().reshape(TOKENS, K_WIDTH)
+        same_raw_f32 = same_raw_norm_f32.float().cpu().numpy().reshape(TOKENS, K_WIDTH)
+        same_raw_f16 = same_raw_norm_f16.float().cpu().numpy().reshape(TOKENS, K_WIDTH)
         torch.cuda.synchronize()
     if torch_output.shape != native_k.shape or not all(
         np.isfinite(array).all()
-        for array in (ggml_raw, ggml_f32, ggml_cast_raw, ggml_cast, torch_raw_cpu, torch_output)
+        for array in (
+            ggml_raw,
+            ggml_f32,
+            ggml_cast_raw,
+            ggml_cast,
+            torch_raw_cpu,
+            torch_output,
+            same_raw_f32,
+            same_raw_f16,
+        )
     ):
         raise ValueError("projection operator returned wrong or nonfinite shape")
     metrics = {
@@ -198,6 +219,8 @@ def probe(
         "torch_vs_ggml_cast": _metrics(torch_output, ggml_cast),
         "ggml_cast_raw_vs_ggml_raw": _metrics(ggml_cast_raw, ggml_raw),
         "torch_raw_vs_ggml_raw": _metrics(torch_raw_cpu, ggml_raw),
+        "torch_norm_same_ggml_raw_f32_vs_server": _metrics(same_raw_f32, native_k),
+        "torch_norm_same_ggml_raw_f16_vs_server": _metrics(same_raw_f16, native_k),
     }
     old_torch = prior["same_input_kv_intervention"]["Kcur_normed-0"]
     same_input_reproduced = all(
