@@ -276,6 +276,17 @@ features and verifier logits can be reused while independent drafter parity
 work continues.
 See the [feature report](../experiments/recurrent-binary-target-feature-parity.md).
 
+The drafter now has a **bitwise native CPU attention oracle** for the archived
+prose/reasoning captures: 593,920/593,920 F32 outputs match from stored F16
+cache bytes and masks, including later rewrites. A real-size later-only CE
+probe also proved gradient reaches the earlier proposal's pre-norm state
+and appended K/V without an optimizer step. These close operand/oracle and
+causal-gradient preparation gaps, but the current Python student still uses
+F32 attention. An exact-forward/surrogate-backward diagnostic mode is a
+possible preparation path, with its derivative explicitly labeled a
+surrogate. Neither finding sets the numeric gate or transfers the earlier
+head-only optimizer budget to all-body training.
+
 **Exact-prefix row clarification (2026-09-28):** the native verifier computes
 target logits for every proposed prefix in a speculative batch, and the cloned
 sampler advances along each proposed token even after an earlier live

@@ -982,3 +982,43 @@ numeric/trajectory policy. Continue independent full-drafter attention,
 state, logit and cache checks while that decision is pending. The captured
 native target features and verifier logits remain sealed and are not yet
 training-eligible.
+
+## Twenty-third goal turn: native CPU attention oracle and real causal gradient
+
+- Parent commit `22bf7ce` adds a standalone ggml CPU Flash Attention replay
+  from archived same-run graph Q/output, actual F16 stored K/V cache bytes
+  and exact-prefix masks. The Apple M3 Max helper matched **593,920/593,920
+  native F32 attention elements bitwise** across 46 executions and 145
+  query rows in the frozen prose and reasoning captures, including context
+  batches and later physical slot rewrites. Maximum/RMS and every per-head
+  relative L2 error were zero. Six focused tests with compiled native
+  fixtures, Ruff and formatting passed. Reports SHA256:
+  `b7ea8ca93f3e294770eb65d992ab2b3ce9b47735e2b13eb6fe264d89e2364fa4`
+  (prose) and
+  `b4cc1c95c17ec0326a17f23c56e8c159138fd2bbd182f6e1cfd7e021b02c47ee`
+  (reasoning). The [oracle report](../../experiments/recurrent-binary-cpu-attention-oracle.md)
+  records source/build hashes, 10-thread Apple CPU hardware and limits.
+  This supplies an exact native operator reference for those captured
+  operands; it does not yet replace the differentiable Python attention.
+- Parent commit `ba96343` adds a no-optimizer, real-size depth-1-only CE
+  probe on the audited one-prompt D bundle. On Apple M3 Max CPU, the
+  later loss was `2.106572151184082`; the earlier proposal's pre-norm
+  state had 2,560/2,560 nonzero gradient values and its appended F16-rounded
+  key/value rows had 1,024/1,024 each. Depth-0 logits had zero gradient.
+  All nine binary sign/scale groups had finite nonzero gradients in the
+  shared graph, though those shared-weight gradients alone cannot attribute
+  a depth-0 path. Six focused tests, Ruff and formatting passed. The ignored
+  report SHA256 is
+  `295c22adfae8b1bd0102769eddd0e5b51a0be6bf3c0807ef7d0ef3166101dc33`.
+  The [causal-gradient report](../../experiments/recurrent-binary-real-later-gradient.md)
+  records pinned source/map hashes and exact limitations. No optimizer,
+  trained checkpoint, GPU work, final prompt or Q4_0 evaluation occurred.
+
+**Next gate:** use the native CPU attention oracle to distinguish the
+student's Q/K/V operand gap from its F32 attention arithmetic gap on the
+same captured steps. If an optional exact-forward/surrogate-backward
+attention mode is prepared, keep its arithmetic explicit and prove both
+native output agreement and finite later-position Q/K/V/body gradients
+before any training decision. The user still owns the full numeric gate
+and all-body optimizer budget; captured native training data remains
+preparation-only.

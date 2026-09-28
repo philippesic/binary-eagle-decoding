@@ -133,6 +133,19 @@ and [feature report](../experiments/recurrent-binary-target-feature-parity.md#sa
 record source hashes and limits. The supervised run stopped and the GPU is
 free. Full-drafter parity, training budget and Q4_0 evaluation remain open.
 
+**CPU drafter checkpoint (2026-09-28 UTC):** a standalone ggml replay using
+actual stored F16 draft K/V bytes, captured masks and native queries matched
+all **593,920** F32 attention output elements bitwise across 46 prose and
+reasoning decoder executions on Apple M3 Max. A separate no-optimizer
+real-size two-step D probe applied CE only at the later proposal and found
+nonzero gradients in the earlier pre-norm state and appended K/V rows, with
+zero gradient on the earlier logits. The [goal checkpoint](goals/recurrent-binary-body-head.md#twenty-third-goal-turn-native-cpu-attention-oracle-and-real-causal-gradient),
+[attention report](../experiments/recurrent-binary-cpu-attention-oracle.md) and
+[gradient report](../experiments/recurrent-binary-real-later-gradient.md)
+record hashes, hardware and limits. The Python student still uses a different
+F32 attention forward, and exact whole-drafter parity, training budget and
+Q4_0 evaluation remain open. No GPU was used for these two checks.
+
 **Handoff checkpoint (2026-09-28 06:35 UTC):** the active goal file records
 the current objective, pushed commits, CPU tests, projected K/V write
 comparison, pending 5080 clarification and exact next actions. Code round 2
