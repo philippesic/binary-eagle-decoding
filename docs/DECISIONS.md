@@ -454,6 +454,20 @@ alone does not assign the amplification to attention or FFN, set a
 numeric tolerance or authorize all-body training. See the
 [block-14 report](../experiments/recurrent-target-block14-safe-stages.md).
 
+**Block-14 stage intervention and GPU availability (2026-09-28):**
+with accumulated HF input, the position-3 error is 1.2157% at FFN
+input, 12.1527% at FFN branch output and 4.1478% at block output.
+Replacing only the full block input with native rows cast to F16
+leaves 0.1015%, 0.5045% and 0.1491% at those boundaries. This
+localizes the observed amplification mainly to the FFN path on that
+row, while leaving the causal FFN operation, other rows and global
+target-feature policy unresolved. The prior block-14 intervention
+metrics and eleven source weights reproduce. The user has now made
+the RTX 5080 unavailable; the local host pause blocks new runs and
+the completed supervisor's process group is absent. No training
+budget or numeric/trajectory gate is selected by this evidence.
+See the [stage report](../experiments/recurrent-target-block14-stage-intervention.md).
+
 **Exact-prefix row clarification (2026-09-28):** the native verifier computes
 target logits for every proposed prefix in a speculative batch, and the cloned
 sampler advances along each proposed token even after an earlier live

@@ -5,9 +5,9 @@ draft body and binary head, then evaluate it against Q4_0 EAGLE when a later
 user decision permits the required GPU work. The pinned FP16 target/verifier
 and draft vocabulary map stay frozen. [Trial protocol](../../experiments/recurrent-binary-qat-plan.md).
 
-**State (2026-09-28 UTC): active, parity and capture preparation.** The user
-lifted the earlier GPU restriction for the free RTX 5080. The frozen training
-capture and bounded feature diagnostics have run there; no model training,
+**State (2026-09-28 UTC): active, parity and capture preparation; RTX 5080
+work paused at the user's availability notice.** The earlier authorization
+covered bounded capture/parity work, which has run there; no model training,
 final-set use, or model-quality result exists for this goal. The native Codex
 Goal in this task has the same objective; this file and `docs/STATUS.md` are
 the durable project checkpoint.
@@ -1897,3 +1897,44 @@ captured native layer-14 input. Reproduce the earlier 4.148% versus
 0.149% position-3 output errors before attributing amplification to
 attention or FFN. The numeric policy and all-body budget remain
 user-owned.
+
+## Forty-seventh goal turn: block-14 stage attribution; GPU paused
+
+- Commit `6212603` adds the bounded [block-14 stage
+  comparison](../../experiments/recurrent-target-block14-stage-intervention.md).
+  A supervised RTX 5080/SM120 run on the frozen 29-token training
+  prefix compared six output-preserving native F32 taps against source
+  HF CUDA/F16 eager under accumulated and native-cast layer-14 inputs.
+  Eleven source weights match the pinned GGUF. The prior position-3
+  layer-14 input/output intervention reproduces exactly: baseline
+  block output error **4.1478%**, native-input error **0.1491%**.
+- At position 3, accumulated HF error is 1.2157% at the
+  post-attention residual/FFN input, 2.1931% at FFN norm, 12.1527%
+  at FFN branch output and 4.1478% at block output. With native block
+  input cast to F16, these are 0.1015%, 0.1904%, 0.5045% and
+  0.1491%. The accumulated absolute RMS error rises from `0.011395`
+  at FFN input to `0.033592` at FFN branch output and `0.042182`
+  at complete output; with native input these are `0.000952`,
+  `0.001394` and `0.001516`. This localizes the observed
+  amplification chiefly to the FFN path on that row; it does not
+  prove which FFN operation or input direction is causal.
+- Ignored report
+  `checkouts/target-block0-operator-20260928/runs/target-block14-hf-stages-a-20260928/comparison.json`
+  has SHA256 `ad8e719a77667da86b74fc269d2a40cddab1b7cb66df84f12792a1b85d7c95c6`.
+  The supervisor finished with exit zero at 2026-09-28 15:10 UTC;
+  process group 417 is absent. The user then said the RTX 5080 is
+  unavailable. `scripts/agent_env.py pause rtx5080` now blocks new
+  project runs. The later device observation was 95% utilization and
+  8,011 MiB whole-device use; no project process was restarted or
+  interrupted. Local Ruff and Python checks passed. No optimizer,
+  final prompt or Q4_0 serving evaluation ran. The full96 bundle
+  remains training-ineligible; numeric policy and all-body budget
+  remain user-owned.
+
+**Next gate when GPU access resumes:** intervene at native block-14
+FFN input and inspect FFN gate/up/activation/down boundaries to
+separate sensitivity to upstream state from local arithmetic. Also
+broaden target-feature parity across representative training rows and
+later blocks before proposing a numeric/trajectory gate. While the
+5080 is paused, continue only CPU analysis and checkpoint work; do
+not start GPU jobs without an explicit availability update.

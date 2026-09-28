@@ -4,23 +4,26 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-**Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), parity and capture preparation. The user has authorized the free RTX 5080 for needed work; no all-body training budget has been approved. **Latest completed goal:** [mixed precision rescue and frozen-body head adaptation on RTX 5080](goals/binary-rescue-head-5080.md), completed 2026-09-28 UTC. The preceding [binary scale fitting goal](goals/binary-scale-fitting-5080.md) completed 2026-09-27 UTC.
+**Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), parity and capture preparation. RTX 5080 work is paused after the user's availability notice; no all-body training budget has been approved. **Latest completed goal:** [mixed precision rescue and frozen-body head adaptation on RTX 5080](goals/binary-rescue-head-5080.md), completed 2026-09-28 UTC. The preceding [binary scale fitting goal](goals/binary-scale-fitting-5080.md) completed 2026-09-27 UTC.
 
-**Latest checkpoint (2026-09-28 UTC):** a bounded RTX 5080 native
-block-14 capture on the frozen 29-token training prefix recorded six
-F32 attention/FFN stage tensors while matching the sealed layer-15
-input **74,240/74,240 values bitwise**. These output-preserving
-boundaries enable the next same-input test of the position-3
-amplification, where accumulated HF error rose from 1.209% at
-layer-14 input to 4.148% at layer-15 input, but native-input
-intervention left only 0.149% local output error. The [block-14
-report](../experiments/recurrent-target-block14-safe-stages.md),
-[block-0 attention split](../experiments/recurrent-target-attention-stage-split.md)
-and [goal checkpoint](goals/recurrent-binary-body-head.md#forty-sixth-goal-turn-output-preserving-block-14-stages)
-record hashes and limits. Stage attribution at block 14, global
-target-feature parity and a training numeric policy remain open. The
-Apple CPU drafter forward has 18 exact diagnostic depths. No worker,
-local server or remote job is active; the 5080 is free. Training,
+**Latest checkpoint (2026-09-28 UTC):** the output-preserving RTX 5080
+block-14 stage capture was compared with source HF CUDA/F16 eager on
+the frozen 29-token training prefix. At position 3, accumulated HF
+error grows from 1.2157% at FFN input to 12.1527% at FFN branch
+output and 4.1478% at complete block output. Replacing the full
+block-14 input with native rows cast to F16 leaves 0.1015%, 0.5045%
+and 0.1491% at those boundaries; the earlier intervention controls
+reproduce exactly. This locates the observed amplification chiefly
+in the FFN path on that row, without identifying the causal FFN
+operation. The [stage report](../experiments/recurrent-target-block14-stage-intervention.md),
+[safe capture](../experiments/recurrent-target-block14-safe-stages.md)
+and [goal checkpoint](goals/recurrent-binary-body-head.md#forty-seventh-goal-turn-block-14-stage-attribution-gpu-paused)
+record hashes and limits. Our supervised job finished and process
+group 417 is absent. New RTX 5080 runs are locally blocked; a later
+read showed 95% GPU utilization and 8,011 MiB whole-device use from
+a workload outside this project run. The Apple CPU drafter forward
+has 18 exact diagnostic depths. Full target-feature parity, a
+training numeric policy and all-body budget remain open. Training,
 final-set and Q4_0 evaluation remain gated.
 
 **Prior CPU arithmetic checkpoint (2026-09-28 UTC):** corrected CPU RMS norm and RoPE
