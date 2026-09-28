@@ -21,6 +21,7 @@ constexpr size_t MAX_BYTES = 16 * 1024 * 1024;
 const std::map<std::string, int64_t> SELECTED = {
     {"attn_norm-0", 2560}, {"Qcur_normed-0", 4096}, {"Kcur_normed-0", 1024},
     {"Qcur-0", 4096}, {"Kcur-0", 1024}, {"Vcur-0", 1024},
+    {"kqv_out-0", 4096},
     {"ffn_inp-0", 2560}, {"ffn_norm-0", 2560}, {"ffn_out-0", 2560},
     {"l_out-0", 2560},
 };
@@ -141,6 +142,8 @@ int main(int argc, char ** argv) {
             state.deferred_q_mode = true;
         } else if (mode == "v_only") {
             state.enabled = {"Vcur-0", "l_out-0"};
+        } else if (mode == "attn_output") {
+            state.enabled = {"kqv_out-0", "l_out-0"};
         } else if (mode == "ffn") {
             state.enabled = {"ffn_inp-0", "ffn_norm-0", "ffn_out-0", "l_out-0"};
         } else {

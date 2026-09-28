@@ -25,6 +25,7 @@ SELECTED = {
     "Qcur-0",
     "Kcur-0",
     "Vcur-0",
+    "kqv_out-0",
     "ffn_inp-0",
     "ffn_norm-0",
     "ffn_out-0",
@@ -40,6 +41,7 @@ CAPTURE_MODES = {
     "k_rope": {"Kcur-0", "l_out-0"},
     "q_deferred_k_norm": {"Qcur-0", "Kcur_normed-0", "l_out-0"},
     "v_only": {"Vcur-0", "l_out-0"},
+    "attn_output": {"kqv_out-0", "l_out-0"},
     "ffn": {"ffn_inp-0", "ffn_norm-0", "ffn_out-0", "l_out-0"},
 }
 
@@ -165,7 +167,7 @@ def _index(root: Path, *, mode: str = "all") -> tuple[dict[str, list[dict]], dic
             != TOKENS
             * (
                 4096
-                if name.startswith("Qcur")
+                if name.startswith("Qcur") or name == "kqv_out-0"
                 else 1024
                 if name.startswith(("Kcur", "Vcur"))
                 else HIDDEN
