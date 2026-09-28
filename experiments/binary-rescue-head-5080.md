@@ -496,7 +496,11 @@ and fitted-head draft
 The primary manifest retains hashes for every other draft and exact block order.
 The measured GPU was an RTX 5080 (compute capability 12.0, 16,303 MiB) under
 WSL with driver/KMD 616.92 and CUDA user-mode driver 13.4. No RTX 2080 Ti
-performance is inferred.
+performance is inferred. The CUDA build used nvcc 13.1.115 for SM120 with
+`GGML_CUDA=ON`, `GGML_CUDA_FORCE_CUBLAS=OFF`, Release mode, and a private
+glibc-compatibility include path recorded in the environment manifest. The
+one training fit used PyTorch 2.14.0+cu130 (reported CUDA 13.0). Nsight
+Systems 2025.5.2 supplied the separate kernel trace.
 
 Quality runtime `a38e9d428218fa5f845363eb25499e1a51a274ca`, parent
 `1cb78ed`. Remote project
