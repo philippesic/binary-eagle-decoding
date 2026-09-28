@@ -560,3 +560,46 @@ mask/reduction arithmetic. Keep the preparation bundle ineligible and the
 96-prompt capture/final-set gates separate. Use the authorized RTX 5080 only
 for a specific bounded parity/capture need under the host and run protocol;
 do not start the unapproved all-body training trial.
+
+## Thirteenth goal turn: actual stored draft cache and mask
+
+- The published fork commit `0abe6e586` adds an opt-in, bounded CPU-only
+  capture after EAGLE draft graph completion. It synchronizes the graph,
+  reads actual F16 K/V cache rows at physical slots after native writes,
+  and records the causal mask input. It rejects nonhost, transposed,
+  multi-sequence or unexpected geometry. The parent integration commit
+  `0c2ddc1` points to the published fork commit and adds a strict offline
+  byte/mask auditor, three corruption fixtures and the
+  [cache report](../../experiments/recurrent-binary-cpu-cache-parity.md).
+  Both commits are pushed to their respective remotes.
+- Final committed-source CPU runs on the pinned prose and reasoning training
+  prompts passed continuity, response and cache audits. Across 26/20
+  decoder executions and 69/76 stored rows, **70,656/70,656** and
+  **77,824/77,824** native F16 key and value elements matched the same
+  graph execution's F16-rounded projected write operands. All 145 masks
+  allowed exactly physical slots `0..position` and blocked later slots,
+  including after eight rewritten positions in each request. Two dummy
+  reserve rows per run are included in those totals. Both eight-token raw
+  responses and all checked raw graph/feature/head/logit streams matched
+  their earlier uninstrumented captures bitwise.
+- The Apple M3 Max server build disabled every optional accelerator,
+  BLAS and Accelerate backend; both model GPU layer counts were zero.
+  Server process groups stopped with code zero. Synthetic audit corruption
+  checks passed 3/3, CPU runner policy checks 2/2, Ruff and diff hygiene
+  passed. The final manifests have SHA256
+  `4ad342145a1b77deb5f48cac4e00671e26b691850f398be56687ef05830b7169`
+  (prose) and
+  `99b9003698bcdf5505421a1667dac4d21a8545471d91330c04181c9f2a931d40`
+  (reasoning); raw files remain ignored. No GPU job, remote run, model
+  training, final prompt or Q4_0 measurement ran.
+- The stored-byte and simple contiguous-prefix mask gaps are closed for
+  these two CPU requests only. Attention reduction still produces nonzero
+  normalized state drift; general cache/rollback behavior beyond this
+  single-sequence geometry, exact target-feature parity and full 96-prompt
+  capture are open. The preparation bundle remains training-ineligible.
+
+**Next action:** use the captured native mask and F16 cache bytes to isolate
+the first attention-output discrepancy. Then prepare a bounded full frozen-96
+capture under the user-authorized RTX 5080 with its live host registry,
+tmux-only SSH, isolated run directory and one GPU owner. Do not infer the
+all-body training budget or numeric tolerance from hardware availability.
