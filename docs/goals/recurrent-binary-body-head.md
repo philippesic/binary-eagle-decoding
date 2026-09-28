@@ -1982,3 +1982,27 @@ loss, prompt/token scaling, and later GPU budgets based on measured training
 step time. These do not block CPU implementation. No DFlash/DSpark work starts.
 Stop at a concrete GPU-only validation/training boundary with a reviewable
 checkpoint; do not create more open-ended numerical investigations.
+
+## Fresh-team execution: CPU Phase 1A
+
+- Coordinator task `01a0e9d0-1273-70a1-972e-8d1381f72701` resumes this same
+  project goal from plan commit `8bd1b91`. Its native task Goal covers only
+  CPU Phase 1A. Main checkout was clean at takeover. No GPU or remote model
+  operations are assigned.
+- Initial file ownership: coordinator owns `docs/STATUS.md`, this goal file,
+  `docs/DECISIONS.md`, integration and final checks. The runtime owner alone
+  writes the `llama.cpp` submodule, and owns new latency tooling and its tests.
+  The QAT owner owns `src/w1a1_eagle/recurrent_*` changes, a new joint trainer
+  entry point and its tests. The data owner owns new data ingestion, manifests,
+  compact-teacher tools and their tests. The CPU verification owner reads
+  archived traces, owns a separate accounting/validation report and adds
+  disjoint tests by coordination. The representation advisor is read-only.
+  Fresh bounded subagents: `/root/runtime` (Sol high, sole native writer),
+  `/root/qat` (Sol high), `/root/data` (Sol high), `/root/verify` (Luna high),
+  and `/root/advice` (Astra medium, read-only). Each implementation owner is
+  preparing an isolated managed worktree; paths/branches will be recorded at
+  the first implementation checkpoint.
+- Boundaries: legacy final-set contents stay sealed; the 96-prompt capture is
+  smoke/regression evidence only. Group-128/A16 and row-scale W1Ax are distinct
+  representation contracts. GPU timing, capture and training wait for explicit
+  restored access.
