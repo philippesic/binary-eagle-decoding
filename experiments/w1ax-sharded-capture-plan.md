@@ -76,13 +76,11 @@ raw retirement disabled pending a verified compact-evidence handoff.
 
 ## Native command sequence and current interface gate
 
-The capture, row/feature preparer, bundle builder and audit CLIs inherited
-hard-coded 96-prompt/hash defaults. The runtime owner is adding a bounded
-manifest-aware path with runner `--shard-manifest` and paired
+The capture, row/feature preparer, bundle builder and audit CLIs now accept a
+manifest-aware path (`a18e5a9`) with runner `--shard-manifest` and paired
 `--expected-prompt-sha256`/`--expected-prompt-count` flags across those tools.
-The commands below use that **pending** interface and must not run until its
-commit is integrated, the pinned model/map files and variants are supplied,
-and GPU access is explicitly restored. The first shard values are shown;
+The commands below require pinned model/map files and variants plus explicit
+restored GPU access. The first shard values are shown;
 repeat from the ordered plan rather than discovering directories by glob.
 
 ```sh
@@ -132,6 +130,7 @@ python3 scripts/build_recurrent_capture_bundle.py \
   --target-logits "$RAW_RUN/d_d/heads.target_logits.f32" \
   --cell-manifest "$RAW_RUN/d_d/manifest.json" \
   --train-prompts "$SHARD/train_prompts.jsonl" \
+  --shard-manifest "$SHARD/manifest.json" \
   --expected-prompt-sha256 "$PROMPT_SHA" --expected-prompt-count "$PROMPT_COUNT" \
   --output-dir "$BUNDLE"
 
@@ -145,8 +144,8 @@ The builder's audit and an independent recheck must agree, including exact
 prefix, mask/cache, request and target-logit row joins. The current builder
 marks bundles preparation-only (`training_eligible:false`); further native
 model identity, full drafter parity and request completeness gates remain.
-The runtime extension may change interface details; verify its final CLI
-before using this block.
+The manifest-aware CPU contract has synthetic tests; this command block has
+not run with model data and needs its first supervised native shard audit.
 
 After a bundle is audited, this CPU adapter emits a row map from its audited
 `rows.jsonl` and raw target-logit file. It requires the bundle `audit.json`
