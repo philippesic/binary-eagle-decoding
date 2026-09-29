@@ -515,9 +515,13 @@ def _bridge_roots(
             or seed["seq_id"] != head["slot_id"]
             or seed.get("position") != head["parent_position"]
             or seed.get("token") != head["input_token_id"]
-            or seed.get("kv_max_before") != head["parent_position"] - 1
+            or type(seed.get("kv_max_before")) is not int
+            or type(seed.get("kv_max_after")) is not int
+            or seed["kv_max_after"] != head["parent_position"] - 1
+            or seed["kv_max_before"] < seed["kv_max_after"]
+            or seed["kv_max_before"] > head["parent_position"]
         ):
-            raise ValueError("chronological native seed does not match its depth-zero head")
+            raise ValueError("chronological native seed or reserve-row trim differs from its head")
         seed_ordinals[key] = ordinal
 
     rounds = _jsonl(capture_dir / "rounds.jsonl")
@@ -604,6 +608,20 @@ def _bridge_roots(
                 )
             seed_ordinal = seed_ordinals[round_key]
             seed = seed_events[seed_ordinal]
+            kv_max_before = seed.get("kv_max_before")
+            kv_max_after = seed.get("kv_max_after")
+            if (
+                type(kv_max_before) is not int
+                or type(kv_max_after) is not int
+                or kv_max_after != parent - 1
+                or kv_max_before < kv_max_after
+                or kv_max_before > parent
+            ):
+                raise ValueError(
+                    "native seed reserve-row trim does not expose the logical cache boundary"
+                )
+            if len(context) != kv_max_after + 1:
+                raise ValueError("Torch cache length differs from the native post-trim cache")
             preceding = root.get("preceding_student_round_outcome")
             if head["round_index"] > 0 and preceding in {"accepted", "rejected"}:
                 previous_key = (head["task_id"], head["round_index"] - 1)
@@ -646,8 +664,9 @@ def _bridge_roots(
                     "state_seed_ordinal": seed_ordinal,
                     "parent_position": parent,
                     "prefix_token_ids": prefix,
-                    "kv_max_before": seed["kv_max_before"],
-                    "torch_cache_length_before_seed": len(context),
+                    "kv_max_before": kv_max_before,
+                    "kv_max_after": kv_max_after,
+                    "logical_cache_length_before_seed": kv_max_after + 1,
                     "matching_globally_audited_cache_writes": len(writes),
                     "cache_execution": graph_execution,
                     "cache_column": graph_column,

@@ -471,7 +471,7 @@ class CalibrationReadinessTests(unittest.TestCase):
             for execution, (domain, prompt) in enumerate(EXPECTED_DOMAINS.items()):
                 task_id = 11 + execution
                 task_map[task_id] = prompt
-                parent = 2 + execution
+                parent = (0, 3, 4)[execution]
                 prefix = list(range(parent + 2))
                 token = prefix[-1]
                 state = np.asarray([execution + 0.25, -execution - 0.5], dtype=np.float32)
@@ -502,7 +502,8 @@ class CalibrationReadinessTests(unittest.TestCase):
                         "seq_id": 0,
                         "position": parent,
                         "token": token,
-                        "kv_max_before": parent - 1,
+                        "kv_max_before": parent if parent > 0 else -1,
+                        "kv_max_after": parent - 1,
                     }
                 )
                 states.append(
@@ -617,9 +618,13 @@ class CalibrationReadinessTests(unittest.TestCase):
             self.assertEqual(len(bridge), 3)
             self.assertTrue(all(row["native_result_norm_state_exact"] for row in bridge))
             self.assertEqual([row["state_seed_ordinal"] for row in bridge], [0, 1, 2])
+            self.assertEqual([row["logical_cache_length_before_seed"] for row in bridge], [0, 3, 4])
+            self.assertEqual(bridge[0]["kv_max_before"], bridge[0]["kv_max_after"])
+            self.assertEqual(bridge[1]["kv_max_before"], 3)
+            self.assertEqual(bridge[1]["kv_max_after"], 2)
 
-            states[0]["kv_max_before"] = 0
-            with self.assertRaisesRegex(ValueError, "chronological native seed"):
+            states[0]["kv_max_after"] = 0
+            with self.assertRaisesRegex(ValueError, "reserve-row trim"):
                 _bridge_roots(
                     numeric,
                     gradients,
