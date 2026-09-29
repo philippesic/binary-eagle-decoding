@@ -151,6 +151,25 @@ def _task_map(manifest: dict, aliases: dict[str, str]) -> dict[int, str]:
     return normalized
 
 
+def _measured_row_a16_task_ids(manifest: dict, aliases: dict[str, str]) -> set[int]:
+    """Return task IDs for the three measured row-A16 prompts, excluding warmups."""
+    prompt_to_source = {alias: source for alias, source in aliases.items()}
+    task_to_prompt: dict[int, str] = {}
+    for row in _read_benchmark_records(manifest):
+        if row.get("variant") != "row_a16_checkpoint_zero" or row.get("warmup") is True:
+            continue
+        task = (row.get("request_digest") or {}).get("task_id")
+        prompt = row.get("prompt_id")
+        if type(task) is not int or type(prompt) is not str or prompt not in prompt_to_source:
+            raise ValueError("measured row-A16 record lacks frozen task-to-prompt ownership")
+        if task in task_to_prompt:
+            raise ValueError("measured row-A16 task ID is duplicated")
+        task_to_prompt[task] = prompt
+    if len(task_to_prompt) != 3 or set(task_to_prompt.values()) != set(prompt_to_source):
+        raise ValueError("measured row-A16 tasks do not identify each frozen prompt exactly once")
+    return set(task_to_prompt)
+
+
 def _read_benchmark_records(manifest: dict) -> list[dict]:
     records = manifest.get("records")
     if not isinstance(records, list) or any(not isinstance(row, dict) for row in records):
@@ -189,7 +208,7 @@ def _exact_response_pairs(manifest: dict) -> list[dict]:
     return pairs
 
 
-def _wrong_accepted_labels(capture_dir: Path) -> tuple[int, int]:
+def _wrong_accepted_labels(capture_dir: Path, task_ids: set[int]) -> tuple[int, int]:
     heads = _jsonl(capture_dir / "heads.jsonl")
     rounds = _jsonl(capture_dir / "rounds.jsonl")
     by_key: dict[tuple[int, int, int], list[dict]] = {}
@@ -199,6 +218,8 @@ def _wrong_accepted_labels(capture_dir: Path) -> tuple[int, int]:
         ).append(row)
     accepted = wrong = 0
     for event in rounds:
+        if event.get("task_id") not in task_ids:
+            continue
         status = event.get("status")
         if status == "no_proposal":
             if event.get("n_accepted") != 0 or event.get("n_proposed") != 0:
@@ -776,15 +797,23 @@ def assemble(args) -> dict:
     if old_manifest["hashes"]["drafts"]["q4_0"] != native_manifest["hashes"]["drafts"]["q4_0"]:
         raise ValueError("old and cache-run Q4_0 model hashes differ")
     new_task_map = _task_map(native_manifest, aliases)
+    new_measured_task_ids = _measured_row_a16_task_ids(native_manifest, aliases)
     task_map_hash = sha256(paths["native_manifest"])
     new_pairs = _exact_response_pairs(native_manifest)
     if old_pairs != new_pairs:
         raise ValueError("new CUDA cache capture responses differ from frozen exact Q4_0/A16 pairs")
-    new_accepted, new_wrong_accepted = _wrong_accepted_labels(paths["native_capture_dir"])
-    if new_accepted < 1 or new_wrong_accepted != 0:
-        raise ValueError("new native capture has no accepted labels or a wrong accepted label")
+    new_accepted, new_wrong_accepted = _wrong_accepted_labels(
+        paths["native_capture_dir"], new_measured_task_ids
+    )
+    if new_accepted != 31 or new_wrong_accepted != 0:
+        raise ValueError(
+            "new measured row-A16 accepted rows differ from the 31-row verifier-label gate"
+        )
 
-    accepted, wrong_accepted = _wrong_accepted_labels(paths["old_native_capture_dir"])
+    old_measured_task_ids = _measured_row_a16_task_ids(old_manifest, aliases)
+    accepted, wrong_accepted = _wrong_accepted_labels(
+        paths["old_native_capture_dir"], old_measured_task_ids
+    )
     if accepted != 31 or wrong_accepted != 0:
         raise ValueError("old native accepted rows do not all match verifier labels")
 

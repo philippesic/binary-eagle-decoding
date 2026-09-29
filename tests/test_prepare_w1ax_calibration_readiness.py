@@ -23,6 +23,7 @@ from prepare_w1ax_calibration_readiness import (  # noqa: E402
     _bridge_roots,
     _exact_response_pairs,
     _identity,
+    _measured_row_a16_task_ids,
     _task_map,
     _validate_runner_manifest,
     _wrong_accepted_labels,
@@ -146,10 +147,89 @@ class CalibrationReadinessTests(unittest.TestCase):
                     },
                 ],
             )
-            self.assertEqual(_wrong_accepted_labels(capture), (2, 0))
+            self.assertEqual(_wrong_accepted_labels(capture, {7}), (2, 0))
             heads[1]["verifier_reached"] = False
             write_jsonl(capture / "heads.jsonl", heads)
-            self.assertEqual(_wrong_accepted_labels(capture), (2, 1))
+            self.assertEqual(_wrong_accepted_labels(capture, {7}), (2, 1))
+
+    def test_accepted_label_gate_scopes_to_measured_tasks_not_warmups(self):
+        aliases = {
+            "pilot-prose": "dolly:line-005896",
+            "pilot-reasoning": "gsm8k:train-000315",
+            "pilot-code": "mbpp:task-496",
+        }
+        task_ids = (181244361, 181244362, 181244363)
+        records = [
+            {
+                "variant": "row_a16_checkpoint_zero",
+                "warmup": False,
+                "prompt_id": alias,
+                "request_digest": {"task_id": task},
+            }
+            for task, alias in zip(task_ids, aliases)
+        ]
+        records.append(
+            {
+                "variant": "row_a16_checkpoint_zero",
+                "warmup": True,
+                "prompt_id": "pilot-prose",
+                "request_digest": {"task_id": 9001},
+            }
+        )
+        measured_ids = _measured_row_a16_task_ids({"records": records}, aliases)
+        self.assertEqual(measured_ids, set(task_ids))
+
+        with tempfile.TemporaryDirectory() as temporary:
+            capture = Path(temporary)
+            rounds, heads = [], []
+            for index in range(31):
+                task, round_index = task_ids[index % len(task_ids)], index
+                rounds.append(
+                    {
+                        "status": "complete",
+                        "task_id": task,
+                        "round_index": round_index,
+                        "n_accepted": 1,
+                        "n_proposed": 1,
+                    }
+                )
+                heads.append(
+                    {
+                        "task_id": task,
+                        "round_index": round_index,
+                        "depth": 0,
+                        "proposed_token_id": 42,
+                        "verifier_token_id": 42,
+                        "verifier_reached": True,
+                    }
+                )
+            for round_index in range(2):
+                rounds.append(
+                    {
+                        "status": "complete",
+                        "task_id": 9001,
+                        "round_index": round_index,
+                        "n_accepted": 1,
+                        "n_proposed": 1,
+                    }
+                )
+                heads.append(
+                    {
+                        "task_id": 9001,
+                        "round_index": round_index,
+                        "depth": 0,
+                        "proposed_token_id": 7,
+                        "verifier_token_id": 8,
+                        "verifier_reached": True,
+                    }
+                )
+            write_jsonl(capture / "rounds.jsonl", rounds)
+            write_jsonl(capture / "heads.jsonl", heads)
+            self.assertEqual(_wrong_accepted_labels(capture, measured_ids), (31, 0))
+            self.assertEqual(_wrong_accepted_labels(capture, {9001}), (2, 2))
+
+        with self.assertRaisesRegex(ValueError, "duplicated|exactly once"):
+            _measured_row_a16_task_ids({"records": records[:-1] + [dict(records[0])]}, aliases)
 
     def test_canonical_benchmark_records_supply_measured_task_map(self):
         with tempfile.TemporaryDirectory() as temporary:
