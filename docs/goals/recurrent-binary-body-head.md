@@ -8,13 +8,13 @@ data. Evaluate native draft quality and speed against Q4_0 when GPU work is
 explicitly permitted. Preserve the pinned FP16 target/verifier and draft map.
 This continues the existing goal rather than opening a second goal.
 
-**State: active Phase 1B and authorized engineering.** RTX 5080 access is
+**State: bounded GPU Phase 1B complete; broader project at a research decision boundary.** RTX 5080 access is
 restored; RTX 2080 Ti remains paused. Fixed native quality/timing A/B, CUDA
 operator contracts, first-shard capture/audit and the gated real-model 100-step
 row-A16 calibration have completed. The [calibration checkpoint](#real-model-calibration-completed)
 records measurements and limits. Sealed final data is unopened. Shared packing,
-resident state and remaining instrumentation/refresh integration are still
-queued for reviewed native validation; expanded training remains user-owned.
+resident state, instrumentation and bounded refresh preparation are implemented
+and tested at the reported scopes; expanded capture/training remains user-owned.
 The original trial protocol and earlier next-action lists are historical.
 
 ## Current findings and work
