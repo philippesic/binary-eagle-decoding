@@ -3,6 +3,7 @@
 import unittest
 from dataclasses import replace
 from types import SimpleNamespace
+from unittest.mock import patch
 
 import numpy as np
 import torch
@@ -11,8 +12,10 @@ from torch import nn
 from w1a1_eagle.native_step import NativeStepAdapter
 from w1a1_eagle.recurrent_binary import CANDIDATE_D_BASE_TO_PATH, GroupedBinaryLinear, pack_signs
 from w1a1_eagle.recurrent_provider import (
+    CALIBRATION_ONLY_SCOPE,
     ProviderRound,
     bind_teacher_rows,
+    calibration_measurement_metadata,
     forward_torch_round,
     train_from_provider,
 )
@@ -291,6 +294,42 @@ class ProviderTests(unittest.TestCase):
             self.assertEqual(len(linears), 9)
             for item in provider.adapter.first:
                 self.assertGreater(float(item.grad.abs().sum()), 0)
+
+    def test_calibration_metrics_are_scoped_and_report_byte_units(self):
+        provider = TinyProvider()
+        provider.readiness_scope = CALIBRATION_ONLY_SCOPE
+        _, metrics = train_from_provider(provider, JointQATConfig(W1AxContract(16)), max_rounds=1)
+        item = metrics[0]
+        self.assertGreaterEqual(item["calibration_step_wall_seconds"], 0)
+        self.assertIsNone(item["calibration_cuda_allocator_peak_allocated_bytes"])
+        self.assertIsNone(item["calibration_cuda_allocator_peak_reserved_bytes"])
+        self.assertIsInstance(item["calibration_process_peak_rss_bytes"], int)
+        self.assertGreater(item["calibration_process_peak_rss_bytes"], 0)
+
+        ordinary_provider = TinyProvider()
+        _, ordinary_metrics = train_from_provider(
+            ordinary_provider, JointQATConfig(W1AxContract(16)), max_rounds=1
+        )
+        self.assertFalse(any(key.startswith("calibration_") for key in ordinary_metrics[0]))
+        metadata = calibration_measurement_metadata("cpu")
+        self.assertEqual(metadata["device_name"], "CPU")
+        self.assertIsNone(metadata["compute_capability"])
+        self.assertIn("not whole-device usage", metadata["cuda_memory_source"])
+
+    def test_calibration_process_rss_linux_and_macos_unit_conversions(self):
+        from w1a1_eagle import recurrent_provider
+
+        usage = SimpleNamespace(ru_maxrss=1234)
+        with (
+            patch.object(recurrent_provider.resource, "getrusage", return_value=usage),
+            patch.object(recurrent_provider.platform, "system", return_value="Linux"),
+        ):
+            self.assertEqual(recurrent_provider._process_peak_rss_bytes(), 1234 * 1024)
+        with (
+            patch.object(recurrent_provider.resource, "getrusage", return_value=usage),
+            patch.object(recurrent_provider.platform, "system", return_value="Darwin"),
+        ):
+            self.assertEqual(recurrent_provider._process_peak_rss_bytes(), 1234)
 
     def test_wrong_teacher_prefix_rejected(self):
         from dataclasses import replace

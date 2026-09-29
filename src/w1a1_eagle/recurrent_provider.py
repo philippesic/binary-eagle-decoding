@@ -9,6 +9,9 @@ implementation and is deliberately not exercised by Phase 1A checks.
 
 from __future__ import annotations
 
+import platform
+import resource
+import time
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from typing import Any, Protocol
@@ -22,6 +25,64 @@ from .recurrent_rollout import rebuild_prefix_cache, rollout_captured_prefix
 from .recurrent_trace import RoundAnchor, TraceAudit, validate_recurrent_trace
 
 TEACHER_FIELDS = ("draft_topk_ids", "draft_topk_probs", "draft_tail_mass", "outside_draft_mass")
+CALIBRATION_ONLY_SCOPE = "row_a16_hard_ce_100_steps"
+
+
+def calibration_measurement_metadata(device: str) -> dict[str, object]:
+    """Describe the actual runtime source for calibration-only measurements."""
+    torch_device = torch.device(device)
+    if torch_device.type == "cuda":
+        if not torch.cuda.is_available():
+            raise RuntimeError("CUDA calibration instrumentation requires an available CUDA device")
+        index = torch_device.index
+        if index is None:
+            index = torch.cuda.current_device()
+        properties = torch.cuda.get_device_properties(index)
+        device_name = torch.cuda.get_device_name(index)
+        capability = [int(properties.major), int(properties.minor)]
+    else:
+        device_name = "CPU"
+        capability = None
+    return {
+        "scope": CALIBRATION_ONLY_SCOPE,
+        "device": str(torch_device),
+        "device_name": device_name,
+        "compute_capability": capability,
+        "cuda_memory_source": (
+            "torch CUDA allocator peak allocated/reserved bytes since per-step reset; "
+            "not whole-device usage"
+        ),
+        "process_memory_source": (
+            "resource.getrusage(RUSAGE_SELF).ru_maxrss process-lifetime high-water mark"
+        ),
+        "process_memory_units": "bytes",
+        "process_memory_raw_unit_conversion": (
+            "ru_maxrss is KiB on Linux and bytes on macOS; unsupported platforms report null"
+        ),
+        "timing_scope": "feature transfer, prefix rebuild, forward, backward, and optimizer step",
+        "timing_synchronization": (
+            "CUDA synchronized immediately before timing and after optimizer step"
+        ),
+    }
+
+
+def _process_peak_rss_bytes() -> int | None:
+    """Return process-lifetime peak RSS in bytes across Linux and macOS."""
+    try:
+        peak = int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
+    except (AttributeError, OSError, ValueError):
+        return None
+    system = platform.system()
+    if system == "Linux":
+        return peak * 1024
+    if system == "Darwin":
+        return peak
+    return None
+
+
+def _sync_calibration_device(device: torch.device) -> None:
+    if device.type == "cuda":
+        torch.cuda.synchronize(device)
 
 
 @dataclass(frozen=True)
@@ -234,17 +295,42 @@ def train_from_provider(
     ):
         raise ValueError("step adapter does not use installed joint linears")
     optimizer = joint_optimizer(linears, config)
+    calibration_metrics = getattr(provider, "readiness_scope", None) == CALIBRATION_ONLY_SCOPE
+    measurement_device = torch.device(config.device)
     metrics = []
     for batch in provider.rounds():
         audit = audit_provider_round(batch, provider)
         teacher = (
             bind_teacher_rows(batch, audit) if config.objective == "compact_probability" else None
         )
+        if calibration_metrics:
+            _sync_calibration_device(measurement_device)
+            if measurement_device.type == "cuda":
+                torch.cuda.reset_peak_memory_stats(measurement_device)
+            started = time.perf_counter()
         device_batch = replace(
             batch, raw_target_features=batch.raw_target_features.to(config.device)
         )
         logits = forward_torch_round(device_batch, adapter, provider.draft_vocab_size)
         item = joint_train_step(linears, logits, audit, optimizer, config, teacher=teacher)
+        if calibration_metrics:
+            _sync_calibration_device(measurement_device)
+            item.update(
+                {
+                    "calibration_step_wall_seconds": time.perf_counter() - started,
+                    "calibration_cuda_allocator_peak_allocated_bytes": (
+                        int(torch.cuda.max_memory_allocated(measurement_device))
+                        if measurement_device.type == "cuda"
+                        else None
+                    ),
+                    "calibration_cuda_allocator_peak_reserved_bytes": (
+                        int(torch.cuda.max_memory_reserved(measurement_device))
+                        if measurement_device.type == "cuda"
+                        else None
+                    ),
+                    "calibration_process_peak_rss_bytes": _process_peak_rss_bytes(),
+                }
+            )
         item.update(
             {
                 "prompt_id": batch.anchor.prompt_id,

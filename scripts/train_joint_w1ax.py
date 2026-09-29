@@ -21,7 +21,11 @@ sys.path.insert(0, str(ROOT / "src"))
 import torch  # noqa: E402
 
 from w1a1_eagle.recurrent_binary import CANDIDATE_D_BASE_TO_PATH, GroupedBinaryLinear  # noqa: E402
-from w1a1_eagle.recurrent_provider import train_from_provider  # noqa: E402
+from w1a1_eagle.recurrent_provider import (  # noqa: E402
+    CALIBRATION_ONLY_SCOPE,
+    calibration_measurement_metadata,
+    train_from_provider,
+)
 from w1a1_eagle.recurrent_qat import (  # noqa: E402
     JointQATConfig,
     RowBinaryLinear,
@@ -145,6 +149,11 @@ def main() -> None:
             "split": provider.split,
             "base_gguf_sha256": base_hash,
         }
+        calibration_measurement = (
+            calibration_measurement_metadata(config.device)
+            if getattr(provider, "readiness_scope", None) == CALIBRATION_ONLY_SCOPE
+            else None
+        )
     else:
         linears, audit = tiny_joint_fixture(config)
         optimizer = joint_optimizer(linears, config)
@@ -168,6 +177,7 @@ def main() -> None:
         source = {"kind": "deterministic_tiny_fixture"}
         max_rounds = args.steps
         training_complete = False
+        calibration_measurement = None
     result = {
         "contract": vars(config.contract),
         "steps": len(metrics),
@@ -179,6 +189,8 @@ def main() -> None:
         "checkpoint_kind": config.contract.export_status,
         "hardware": "CPU F32 hard-quant simulation" if config.device == "cpu" else config.device,
     }
+    if calibration_measurement is not None:
+        result["calibration_measurement"] = calibration_measurement
     if args.output_dir is not None:
         args.output_dir.mkdir(parents=True, exist_ok=True)
         checkpoint, manifest = args.output_dir / "joint.npz", args.output_dir / "joint.json"
