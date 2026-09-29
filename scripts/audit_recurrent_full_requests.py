@@ -13,8 +13,20 @@ from audit_recurrent_response import audit_response
 from run_binary_head_capture import TRAIN_PROMPTS_SHA256
 
 
-def audit_full_requests(capture_root: Path) -> dict:
+def audit_full_requests(
+    capture_root: Path,
+    *,
+    expected_prompt_sha256: str = TRAIN_PROMPTS_SHA256,
+    expected_prompt_count: int = 96,
+) -> dict:
     capture_root = Path(capture_root)
+    if (
+        len(expected_prompt_sha256) != 64
+        or any(c not in "0123456789abcdef" for c in expected_prompt_sha256)
+        or type(expected_prompt_count) is not int
+        or expected_prompt_count < 1
+    ):
+        raise ValueError("expected prompt SHA256/count must be explicit valid values")
     cell = capture_root / "d_d"
     capture_manifest_path = capture_root / "capture-manifest.json"
     cell_manifest_path = cell / "manifest.json"
@@ -25,13 +37,16 @@ def audit_full_requests(capture_root: Path) -> dict:
     requests = manifest.get("requests")
     if (
         capture.get("schema") != "recurrent_binary_native_capture_v1"
-        or capture.get("train_prompts_sha256") != TRAIN_PROMPTS_SHA256
+        or capture.get("train_prompts_sha256") != expected_prompt_sha256
+        or capture.get("train_prompt_count") != expected_prompt_count
         or capture.get("complete") is not True
         or manifest.get("complete") is not True
+        or manifest.get("prompts_sha256") != expected_prompt_sha256
+        or manifest.get("prompt_count") != expected_prompt_count
         or not isinstance(requests, list)
-        or len(requests) != 96
+        or len(requests) != expected_prompt_count
         or not isinstance(task_map, dict)
-        or len(task_map) != 96
+        or len(task_map) != expected_prompt_count
     ):
         raise ValueError("full recurrent capture is incomplete or not the frozen training split")
     if set(task_map) != {item.get("task_id") for item in requests if isinstance(item, dict)}:
@@ -109,10 +124,16 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--capture-root", type=Path, required=True)
     parser.add_argument("--report", type=Path, required=True)
+    parser.add_argument("--expected-prompt-sha256", default=TRAIN_PROMPTS_SHA256)
+    parser.add_argument("--expected-prompt-count", type=int, default=96)
     args = parser.parse_args()
     if args.report.exists():
         parser.error("report must be a new file")
-    result = audit_full_requests(args.capture_root)
+    result = audit_full_requests(
+        args.capture_root,
+        expected_prompt_sha256=args.expected_prompt_sha256,
+        expected_prompt_count=args.expected_prompt_count,
+    )
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
     print(json.dumps({"requests": result["requests"], "totals": result["totals"]}))
