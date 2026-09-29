@@ -2679,3 +2679,26 @@ resumed and no project GPU process is running. The sealed final set remains
 unopened. On user direction, resume this same project goal, assess the chosen
 gate against the pinned evidence, create a versioned eligible capture only
 if it passes, and then run the supervised 100-step real-model calibration.
+
+## GPU Phase 1B short-pilot resume
+
+At 2026-09-29 18:17 UTC the user chose the recommended short practical
+pilot. The native Goal resumed automatically. This authorizes focused native
+ancestry/state/student-trajectory checks, followed **only if they pass** by a
+separate versioned shard-0000 eligibility record and one supervised 100-step
+row-A16 hard-CE calibration. Preserve the preparation bundle, raw logits,
+source hashes, sealed final set and Q4_0 primary comparison. No full-tier
+capture or four-width training sweep is approved by this choice.
+
+The coordinator remains sole RTX 5080 GPU owner. Existing tmux MCP session
+`$35`, execution pane `%57` and monitor pane `%58` remain available. The
+saved host registry and local `rtx5080` flag were checked: 5080 is resumed,
+2080 Ti paused. Fresh WSL check found no project supervisor/server/trainer;
+the RTX 5080 was 0% utilized with about 2,909 MiB whole-device baseline.
+Read-only advisor `/root/readiness_advice` is assigned only to identify the
+minimum defensible gate; it owns no files or GPU. The first task is to freeze
+the focused check criteria and verify the pinned artifacts before any
+eligibility change. If a check fails, do not run captured-data QAT or silently
+relax the gate. If the user requests a GPU pause, mark the local flag,
+interrupt any active tmux MCP supervisor, verify its process group and fresh
+device state, and checkpoint before reporting project GPU use stopped.

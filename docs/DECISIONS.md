@@ -31,7 +31,7 @@ gain yet; changes shared with Q4_0 must benefit that comparison path too.
 
 ## Phase 1A implementation defaults and pending research choices
 
-**Pending Phase 1B first-shard readiness choice (2026-09-29):** the frozen
+**Phase 1B first-shard readiness choice (2026-09-29):** the frozen
 31-prompt RTX 5080 shard has 12,610 audited verifier rows and 7,796 selected
 native target-feature rows. Its independent bundle audit is byte-identical to
 the builder audit; compact-teacher, internal-continuity and 31/31 full-request
@@ -73,6 +73,16 @@ fork: revise the initial row representation or scale fitting before allocating
 the full four-width QAT budget. Candidate D's fitted group scales are not an
 identical-initialization control. This choice remains user-owned and does not
 change the capture's ineligible metadata.
+
+**User choice, 2026-09-29 18:17 UTC:** proceed with the short practical pilot.
+Run the focused native ancestry/state/student-trajectory checks first. If the
+predeclared gate passes, publish a separately versioned eligibility record for
+only shard-0000, retain the original preparation bundle and raw logits, and
+run one supervised 100-step row-A16 hard-CE calibration on RTX 5080. Measure
+real-model step time, peak memory, finite loss/gradients and checkpoint
+integrity. A failure in the focused gate stops the real-data run and is
+reported without relaxing it. This choice does not authorize a full 2k data
+capture, a four-width training sweep, final-set use or a quality/speed claim.
 
 The CPU implementation uses a **row-scale W1Ax interface** for a comparable
 A16/A8/A4/A1 sweep; candidate D's group-128/A16 remains a separate reference.

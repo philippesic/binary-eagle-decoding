@@ -6,7 +6,16 @@ The target/verifier model precision remains as frozen for each experiment.
 
 **Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), continued as Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). The user has now **restored RTX 5080 access**; the RTX 2080 Ti remains paused. No joint GPU training has run. DFlash/DSpark are future roadmap items, not active work.
 
-**Current decision boundary:** the native GPU Phase 1B task has completed its
+**Pilot resumed (2026-09-29 18:17 UTC):** the user chose the short practical
+native gate followed by one 100-step row-A16 hard-CE calibration if it passes.
+The original capture remains ineligible until a versioned gate record proves
+the focused checks. RTX 5080 access remains resumed; a fresh check found 0%
+utilization, about 2.9 GiB baseline use and no project process. The
+[decision](DECISIONS.md#phase-1a-implementation-defaults-and-pending-research-choices)
+and [goal checkpoint](goals/recurrent-binary-body-head.md#gpu-phase-1b-short-pilot-resume)
+record the limited scope and stop condition.
+
+**Prior decision boundary:** the native GPU Phase 1B task has completed its
 fixed A/B, CUDA, first-shard capture/audit, synthetic device gate and untrained
 checkpoint-zero quality checks. The first-shard provider still rejects
 captured-data QAT because its readiness flag is false. The user owns the
