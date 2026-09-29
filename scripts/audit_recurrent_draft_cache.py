@@ -55,6 +55,9 @@ def audit(capture_dir: Path) -> dict:
         raise ValueError("draft cache capture limits are missing, exceeded or invalid")
 
     graph_records, graph_values, graph_footer = _read_graph(graph_index_path, graph_values_path)
+    graph_scope = graph_footer.get("scope")
+    if graph_scope not in {"all", "cache"}:
+        raise ValueError("native draft graph capture scope metadata is missing or invalid")
     if graph_footer.get("decoder_groups") != len(executions):
         raise ValueError("draft cache executions do not join graph decoder groups")
     groups: dict[int, dict[str, dict]] = {}
@@ -63,6 +66,26 @@ def audit(capture_dir: Path) -> dict:
             groups.setdefault(record["group_execution"], {})[record["tensor_name"]] = record
     if set(groups) != set(range(len(executions))):
         raise ValueError("draft graph decoder executions are missing or duplicated")
+    if graph_footer.get("result_output_markers") != len(executions):
+        raise ValueError("draft graph capture lacks decoder output boundary markers")
+    required_cache_inputs = {
+        "inp_embd",
+        "embd_norm-0",
+        "Kcur_rope-0",
+        "Vcur-0",
+        "eagle3_prenorm-0",
+        "result_norm",
+    }
+    for group in groups.values():
+        group_end = group.get("result_norm" if graph_scope == "cache" else "result_output")
+        if (
+            not required_cache_inputs <= set(group)
+            or group_end is None
+            or group_end.get("group_end") is not True
+            or group["inp_embd"].get("n_tokens") != group["Kcur_rope-0"].get("n_tokens")
+            or group["inp_embd"].get("n_tokens") != group["Vcur-0"].get("n_tokens")
+        ):
+            raise ValueError("draft graph scope lacks cache projection inputs or group boundaries")
 
     cache_bits = np.memmap(rows_path, dtype="<u2", mode="r")
     mask_bytes = np.memmap(masks_path, dtype="u1", mode="r")
@@ -160,6 +183,7 @@ def audit(capture_dir: Path) -> dict:
     return {
         "schema": "recurrent_stored_draft_cache_audit_v2",
         "status": "stored_f16_rows_and_exact_prefix_masks_compared",
+        "graph_capture_scope": graph_scope,
         "execution_device": next(iter(cache_devices)) if len(cache_devices) == 1 else "mixed",
         "mask_device": next(iter(mask_devices)) if len(mask_devices) == 1 else "mixed",
         "cache_buffer_types": sorted({event["cache_buffer_type"] for event in executions}),

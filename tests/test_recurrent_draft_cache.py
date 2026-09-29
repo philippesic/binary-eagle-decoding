@@ -21,13 +21,22 @@ class StoredDraftCacheAuditTests(unittest.TestCase):
         self.root = Path(self.temporary.name)
         graph = []
         values = []
-        for name, width in (("inp_embd", 1), ("Kcur_rope-0", 1024), ("Vcur-0", 1024)):
+        graph_specs = (
+            ("inp_embd", 1, False),
+            ("embd_norm-0", 1, False),
+            ("Kcur_rope-0", 1024, False),
+            ("Vcur-0", 1024, False),
+            ("eagle3_prenorm-0", 1, False),
+            ("result_norm", 1, True),
+        )
+        for name, width, group_end in graph_specs:
             graph.append(
                 {
                     "schema": "eagle_draft_graph_v1",
                     "event": "tensor",
                     "group_kind": "decoder",
                     "group_execution": 0,
+                    "group_end": group_end,
                     "tensor_name": name,
                     "ne": [width, 1],
                     "token_axis": 1,
@@ -43,10 +52,12 @@ class StoredDraftCacheAuditTests(unittest.TestCase):
             {
                 "schema": "eagle_draft_graph_v1",
                 "event": "capture_end",
+                "scope": "cache",
+                "result_output_markers": 1,
                 "status": "complete",
                 "reason": "",
-                "tensor_rows": 3,
-                "execution_count": 3,
+                "tensor_rows": len(graph_specs),
+                "execution_count": len(graph_specs),
                 "decoder_groups": 1,
                 "bytes_written": len(values) * 4,
             }
@@ -134,6 +145,22 @@ class StoredDraftCacheAuditTests(unittest.TestCase):
         self.write_jsonl("heads.draft_cache.jsonl", self.events)
         result = audit(self.root)
         self.assertEqual(result["mask_device"], "cuda_host")
+
+    def test_cache_scope_requires_projection_and_boundary_records(self):
+        graph_path = self.root / "heads.draft_graph.jsonl"
+        graph = [json.loads(line) for line in graph_path.read_text().splitlines()]
+        next(row for row in graph if row.get("tensor_name") == "Kcur_rope-0")["tensor_name"] = "other"
+        graph_path.write_text("".join(json.dumps(row) + "\n" for row in graph))
+        with self.assertRaisesRegex(ValueError, "cache projection inputs or group boundaries"):
+            audit(self.root)
+
+    def test_invalid_graph_scope_is_rejected(self):
+        graph_path = self.root / "heads.draft_graph.jsonl"
+        graph = [json.loads(line) for line in graph_path.read_text().splitlines()]
+        graph[-1]["scope"] = "projections"
+        graph_path.write_text("".join(json.dumps(row) + "\n" for row in graph))
+        with self.assertRaisesRegex(ValueError, "scope metadata"):
+            audit(self.root)
 
     def test_changed_stored_key_is_rejected(self):
         path = self.root / "heads.draft_cache.f16"
