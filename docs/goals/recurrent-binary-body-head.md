@@ -3191,8 +3191,12 @@ with `scripts/make_eagle_runtime_fixture.py`; run CUDA-built `test-sampling
 `test-backend-ops -b CUDA0 -o W1A1_MUL_MAT` (133 cases) then
 `test-backend-ops -b CUDA0 -o ADD -p shared=1` (three fanout cases), each in
 a unique supervised run. Inspect resident backend placement in actual logs,
-following logits/prenorm and serialized cache comparisons. Only after these
-pass prepare bounded real native selector off/on quality comparisons.
+following logits/prenorm and serialized cache comparisons. The packed fixture
+requires separate runs with `GGML_W1AX_ACT_BITS=1`, `4`, and `8`, each with
+`GGML_EAGLE_SHARED_PACK=0` and `1`; the fixture toggles the other selectors
+through APIs, while shared packing/precision are environment-fixed. Fixture
+generation requires NumPy and native gguf-py (explicit `--llama-dir` supported).
+Only after these pass prepare bounded real native selector off/on quality comparisons.
 Instrumentation `c3c548d2e` and warp reduction `dfc9c5d2a` remain worker-owned
 and unintegrated pending their checkpoint/review. Sealed final data remains
 untouched; no further training is authorized by this engineering gate.
