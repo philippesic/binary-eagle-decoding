@@ -22,7 +22,17 @@ performance baseline. No final prompt is used.
   shard order** for prose, reasoning and code: `dolly:line-005896`,
   `gsm8k:train-000315`, `mbpp:task-496`. Its ignored JSONL SHA256 is
   `b3f3570cf2e45c570678b98f135257a609de319b01232ce4353e4286eb595703`.
-  It is a sample, not a replacement training split. The diagnostic config is
+  The benchmark runner requires directory-safe IDs, so the diagnostic uses
+  `pilot-prose`, `pilot-reasoning` and `pilot-code` aliases. The alias JSONL
+  SHA256 is
+  `93f61ae9160bbb59739ca81efa002e10cd5bddbddcf3d02ae2b33f9ac117f992`;
+  its original-ID/message hash map SHA256 is
+  `e4a0a142868b48355fcf29160acc48814ae39d20b95ebb6d24ec037ee3470b49`.
+  All three message arrays and source IDs were independently checked equal.
+  The first launch stopped before server startup because `:` was rejected in
+  source IDs; no model request ran. This alias correction was frozen before
+  the retried native diagnostic. The three prompts are a sample, not a
+  replacement training split. The diagnostic config is
   [w1_phase1b_pilot_student_diagnostic.json](../configs/w1_phase1b_pilot_student_diagnostic.json).
 
 For each prompt, compare the first exact-prefix proposal root. Then, in

@@ -8,8 +8,8 @@
       "p_min": 0,
       "tokens": 128
     },
-    "prompts": "runs/w1-pilot-sample-freeze-20260929/prompts.jsonl",
-    "prompts_sha256": "b3f3570cf2e45c570678b98f135257a609de319b01232ce4353e4286eb595703"
+    "prompts": "runs/w1-pilot-sample-freeze-20260929/prompts-safe.jsonl",
+    "prompts_sha256": "93f61ae9160bbb59739ca81efa002e10cd5bddbddcf3d02ae2b33f9ac117f992"
   },
   "graph_env": {
     "GGML_EAGLE_PRUNE_UNUSED_HEAD": "0"

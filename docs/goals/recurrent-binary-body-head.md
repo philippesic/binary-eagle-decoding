@@ -2702,3 +2702,13 @@ eligibility change. If a check fails, do not run captured-data QAT or silently
 relax the gate. If the user requests a GPU pause, mark the local flag,
 interrupt any active tmux MCP supervisor, verify its process group and fresh
 device state, and checkpoint before reporting project GPU use stopped.
+
+The [pilot gate](../../experiments/w1ax-phase1b-pilot-gate.md) and first
+per-domain sample were frozen before a model request. The initial supervised
+diagnostic `runs/w1-pilot-student-native-20260929/` exited 1 during prompt
+validation, before server startup: the generic benchmark runner forbids `:`
+in source IDs used as path components. Its process group stopped and the
+RTX 5080 remained at 0%/about 2,909 MiB. The coordinator generated safe
+aliases for the same three message arrays, independently verified messages
+and source IDs unchanged, and froze the alias map and JSONL hashes in the
+pilot gate. No native comparison or QAT result came from the failed launch.
