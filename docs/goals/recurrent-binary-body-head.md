@@ -2484,3 +2484,13 @@ PID/process group 10756. GPU preflight was 0%, 2,899 MiB and 39 W. This is
 the sole active project GPU job. After its terminal state and process-group
 check, run prune **off** with the same config and a new supervisor ID, then
 compare both blocks and their target-only drift before deciding what to keep.
+
+The reverse-order prune-on supervisor finished exit 0 at 2026-09-29
+07:39:35 UTC: 480 measured requests and all 20 graph blocks marked
+`verified_launches`. The process group stopped and the GPU returned to 0%,
+2,899 MiB and 40 W. The reverse-order prune-off supervisor then started at
+2026-09-29 07:40:52 UTC as `runs/w1-prune-off-timed-b-20260929/`, pane `%57`,
+PID/process group 11639. It is the sole active project GPU job; pane `%58`
+monitors it. Once finished, run the same behavior/timing comparator with
+these second-block manifests and assess order-dependent drift before deciding
+whether to retain the opt-in patch.
