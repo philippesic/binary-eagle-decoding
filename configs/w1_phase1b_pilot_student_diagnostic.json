@@ -1,0 +1,39 @@
+{
+  "binary": "build/llama-cuda/bin/llama-server",
+  "diagnostic": {
+    "label": "w1ax-shard0000-three-domain-student-gate",
+    "policy": {
+      "context": 2048,
+      "draft_length": 5,
+      "p_min": 0,
+      "tokens": 128
+    },
+    "prompts": "runs/w1-pilot-sample-freeze-20260929/prompts.jsonl",
+    "prompts_sha256": "b3f3570cf2e45c570678b98f135257a609de319b01232ce4353e4286eb595703"
+  },
+  "graph_env": {
+    "GGML_EAGLE_PRUNE_UNUSED_HEAD": "0"
+  },
+  "instrumented_env": {
+    "EAGLE_CAPTURE_PREFIX": "{output}/heads",
+    "EAGLE_STATE_TRACE_JSONL": "{output}/state.jsonl"
+  },
+  "port": 18091,
+  "prompts": "data/qat-revisit/development.jsonl",
+  "q4_variant": "q4_0",
+  "repetitions": 5,
+  "schema_version": 1,
+  "target": "models/gguf/Qwen3-4B-f16.gguf",
+  "variants": {
+    "q4_0": {
+      "draft": "models/gguf/Qwen3-4B-eagle3-q4_0.gguf"
+    },
+    "row_a16_checkpoint_zero": {
+      "draft": "runs/w1-row-a16-checkpoint-zero-export-20260929/model.gguf",
+      "env": {
+        "GGML_W1AX_ACT_BITS": "16"
+      }
+    }
+  },
+  "warmups": 2
+}
