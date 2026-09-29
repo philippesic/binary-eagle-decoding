@@ -2263,3 +2263,35 @@ parity diagnostics or start another architecture while GPU access is paused.
 The next action is the supervised native A/B and first-shard calibration after
 explicit access restoration and user-owned research choices at their stated
 gates.
+
+## GPU Phase 1B startup
+
+On 2026-09-28 the user said the GPU is free and authorized continuing this
+same EAGLE goal. The coordinator task
+`01a0e9d0-1273-70a1-972e-8d1381f72701` owns the sole RTX 5080 experiment;
+its native task Goal is now scoped to the first native A/B and bounded shard
+calibration. The local `rtx5080` pause flag was resumed; `rtx2080ti` remains
+paused. The saved host registry supplied the current RTX 5080 address and
+workdir. All SSH is through tmux MCP session `$34` (`w1-phase1b-5080`), pane
+`%54`, into WSL. First `nvidia-smi` showed RTX 5080, 3,365 MiB whole-device
+use, 2% utilization and no listed running GPU processes; WSL process check
+found no project `remote_job.py`, `llama-server` or joint trainer. These are
+fresh startup observations, not a reserved-capacity guarantee.
+
+The remote project checkout fast-forwarded from `6a8e3b3` to `81a2a96` and
+updated the native submodule to published `14c188e`. Existing untracked
+`checkouts/` and `rescue-head-20260927/` directories were left untouched.
+The remote D group-128/A16 and Q4_0 artifacts were found in the preserved
+scale-fitting archive, with SHA256
+`10e8e98e616480b25ff7600f195ba7ea3e0fd7c24832765013f960783c7609cf`
+and `2db40f99d27e404298b80b2865671b9fd0136060ffb503007cb2ae23759e7280`;
+the pinned A/B config paths need verified local links to those archive files.
+Target, FP16 and both A/B config SHA256 values matched the Phase 1A checkpoint.
+The remote pinned Q4_0 and D artifacts had different ignored directory paths;
+after hash verification, the coordinator added symlinks at the tracked-config
+paths pointing into their preserved scale-fitting archive. Existing artifacts
+were not overwritten. A supervised SM120 CUDA rebuild is next. No new GPU
+job has started in this phase yet. The first model run will be the off/on quality pair;
+timing follows only after comparing outputs and counts. Each run gets its own
+remote supervisor directory, and the process group must stop before the GPU
+is reported free.
