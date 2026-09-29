@@ -2582,7 +2582,7 @@ as expected with `training manifest is not eligible` before model loading.
 The user-owned practical-versus-strict first-shard readiness choice is now
 recorded in [DECISIONS.md](../DECISIONS.md#phase-1a-implementation-defaults-and-pending-research-choices).
 
-## Phase 1B checkpoint-zero validation in progress
+## Phase 1B checkpoint-zero validation
 
 The separate hard-CE provider manifest was prepared without the optional
 compact teacher (`runs/w1-shard0000-provider-hardce-20260929/provider.json`,
@@ -2619,3 +2619,33 @@ GPU job. On a user pause, set the local RTX 5080 flag first, interrupt this
 supervisor through tmux MCP, verify process group/server absence and device
 state, then checkpoint before reporting the GPU free. RTX 2080 Ti remains
 paused. The sealed final set remains unopened.
+
+The row-A4 quality supervisor finished exit zero at 08:22:51 UTC, with 24
+measured Q4_0 and 24 row-A4 requests plus two warmups per variant. All 24
+paired raw output ID sequences matched. Q4_0 accepted 1,555 drafts in 1,493
+rounds; row-A4 accepted 131 in 2,917. The row block had 21,590 verified
+W1Ax CUDA graph launches over its server lifetime, including warmups. The
+benchmark manifest SHA256 is
+`691c82738a799ce1db53b7ce3b7b1d7c2d88790adc9a59a124e75990bbb7455d`.
+The process group stopped and device returned to baseline.
+
+To isolate activation width at checkpoint zero, the coordinator prepared a
+second row-A16 checkpoint from the same dense weights. Its **NPZ bytes match
+A4 exactly** (SHA256
+`5b371f79831c4c8da0ffc4bc5a0a4b9a6817a1fdf7c2bddfeaec6b001c4f6b78`);
+only the manifest activation-width contract differs. The A16 manifest SHA256
+is `6866b63710fa044cf49ebf4c3e1934380eb5d6078f52cf050220257ea1f26ce1`.
+Its GGUF export passed the same structural audit, output SHA256
+`fa9406b72fb6ef19e2eca0bc0891bc20099dc318283721af3f540e056ebd3f45`.
+Supervised A16 quality run `runs/w1-row-a16-ckpt0-quality-20260929/` then
+finished exit zero: Q4_0 again 1,555/1,493 accepted/rounds; A16 323/2,725.
+All 24 paired raw output sequences matched. The row block recorded 20,187
+verified W1Ax CUDA graph launches over its full server lifetime. Benchmark
+manifest SHA256 is
+`d08ba0901de3a109563af036941f3e88321b6aacc855c941bc39e64559234632`.
+No project process remains; RTX 5080 returned to 0%, about 2,900 MiB and
+40 W. The [report](../../experiments/w1ax-checkpoint-zero-native-5080.md)
+records config/model hashes and limitations. A16 improved checkpoint-zero
+acceptance over A4 by 2.47×, but both trail the Q4_0 primary baseline badly.
+Quality mode does not establish throughput. This narrows the first-calibration
+choice; no captured-data QAT has run and the first shard stays ineligible.

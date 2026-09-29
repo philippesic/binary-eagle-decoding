@@ -59,6 +59,21 @@ training failure. Neither option authorizes the full 2k capture or a final
 quality claim. The user owns this readiness decision; no flag has been
 promoted and no captured-data QAT has run.
 
+**New checkpoint-zero evidence:** The pinned dense drafter produced identical
+untrained row-scale checkpoint bytes for A4 and A16. Both GGUFs passed native
+load/CUDA graph checks and matched Q4_0 raw outputs on all 24 old development
+prompts, but accepted only 131/2,917 (A4) and 323/2,725 (A16)
+drafts/rounds versus Q4_0's 1,555/1,493. See the
+[native checkpoint-zero report](../experiments/w1ax-checkpoint-zero-native-5080.md).
+The stronger A16 result supports using A16 for the first real-model 100-step
+**rate and memory calibration** if the practical readiness gate is selected;
+it does not justify substantive training or final quality evaluation by
+itself. The small accepted/round values also support an alternative research
+fork: revise the initial row representation or scale fitting before allocating
+the full four-width QAT budget. Candidate D's fitted group scales are not an
+identical-initialization control. This choice remains user-owned and does not
+change the capture's ineligible metadata.
+
 The CPU implementation uses a **row-scale W1Ax interface** for a comparable
 A16/A8/A4/A1 sweep; candidate D's group-128/A16 remains a separate reference.
 Collapsing D group scales to one row scale would be a new, lossy initialization,
