@@ -2722,3 +2722,20 @@ request is promoted. A diagnostic-only command switch now adds
 trace, matching the prior candidate-D training capture. The primary quality
 and timed benchmark commands stay unchanged. Seventeen focused CPU tests and
 Ruff passed before retry.
+
+The third supervised diagnostic
+`runs/w1-pilot-student-native-nosample-20260929/` finished exit zero with
+five requests each for Q4_0 and row-A16 (two warmups, three measured). Both
+native blocks verified CUDA graph launches, and the row block retained head
+state, round and state traces. Benchmark manifest SHA256 is
+`a974172cfdd36c994d0315a3b2e7232a1c96342fbd37c8d98c7d9cd845be573e`;
+row head metadata SHA256 is
+`d98464166c709590a0d0e266eb60fcd36374690c95659de4d1158e8bea32319d`.
+All three measured row-A16 generated ID streams matched the earlier native
+candidate-D capture on those prompts. A CPU exact-prefix join found 41 of
+59 row-A16 roots in prose, 75/112 in reasoning and 83/115 in code also
+present as candidate-D captured roots. This gives a predeclared shared-prefix
+sample without relabeling changed student prefixes. The process group and
+server stopped; RTX 5080 returned to 0% and about 2,909 MiB. The numeric
+gate now has frozen 0.10 relative-RMS state/logit limits in the pilot protocol
+before running the Torch comparison. The original bundle remains ineligible.

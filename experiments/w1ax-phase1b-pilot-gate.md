@@ -69,8 +69,12 @@ gate to a favorable outcome.
    top choice with margin above **0.02 raw logit units** blocks. A disagreement
    at or below 0.02 is a recorded near tie and requires the bounded native
    verifier trace to show no wrong acceptance and the matched Q4_0 response
-   IDs to remain exact. Measure logit/state error where native head states are
-   captured; do not assert bitwise backend parity from this gate.
+   IDs to remain exact. On each sampled root, compare the Torch CUDA
+   normalized pre-head state and logits to the captured native pre-head state
+   and its independently replayed packed row-A16 head. Relative RMS error
+   is RMS(delta)/max(RMS(native), 1e-8); **both state and logits must be at most
+   0.10**. Report maximum absolute error and native-head replay top-two
+   margins. This is a bounded numeric check, not bitwise backend parity.
 4. Before training, enumerate eligible provider rounds, supported labels and
    exact-prefix joins under a new calibration-only readiness contract. The
    hard-CE provider manifest must have no compact-teacher attachment. A

@@ -14,6 +14,10 @@ utilization, about 2.9 GiB baseline use and no project process. The
 [decision](DECISIONS.md#phase-1a-implementation-defaults-and-pending-research-choices)
 and [goal checkpoint](goals/recurrent-binary-body-head.md#gpu-phase-1b-short-pilot-resume)
 record the limited scope and stop condition.
+The three-domain native row-A16 diagnostic has now completed with exact
+response-ID matches to the candidate-D capture and 199 shared proposal roots
+across the three prompts. The focused Torch-versus-native check is next; no
+eligibility flag has changed.
 
 **Prior decision boundary:** the native GPU Phase 1B task has completed its
 fixed A/B, CUDA, first-shard capture/audit, synthetic device gate and untrained
