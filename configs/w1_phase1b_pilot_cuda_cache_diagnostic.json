@@ -1,0 +1,47 @@
+{
+  "binary": "build/llama-cuda/bin/llama-server",
+  "diagnostic": {
+    "label": "w1ax-three-domain-cuda-cache-readback-gate",
+    "no_spec_draft_backend_sampling": true,
+    "policy": {
+      "context": 2048,
+      "draft_length": 5,
+      "p_min": 0,
+      "tokens": 128
+    },
+    "prompts": "runs/w1-pilot-sample-freeze-20260929/prompts-safe.jsonl",
+    "prompts_sha256": "93f61ae9160bbb59739ca81efa002e10cd5bddbddcf3d02ae2b33f9ac117f992"
+  },
+  "graph_env": {
+    "GGML_EAGLE_PRUNE_UNUSED_HEAD": "0"
+  },
+  "instrumented_env": {
+    "EAGLE_CAPTURE_DRAFT_CACHE": "1",
+    "EAGLE_CAPTURE_DRAFT_GRAPH": "1",
+    "EAGLE_CAPTURE_DRAFT_GRAPH_MAX_BYTES": "536870912",
+    "EAGLE_CAPTURE_DRAFT_GRAPH_MAX_EXECUTIONS": "4096",
+    "EAGLE_CAPTURE_MAX_BYTES": "536870912",
+    "EAGLE_CAPTURE_MAX_ROWS": "8192",
+    "EAGLE_CAPTURE_PREFIX": "{output}/heads",
+    "EAGLE_STATE_TRACE_JSONL": "{output}/state.jsonl",
+    "GGML_CUDA_DISABLE_GRAPHS": "1"
+  },
+  "port": 18091,
+  "prompts": "data/qat-revisit/development.jsonl",
+  "q4_variant": "q4_0",
+  "repetitions": 5,
+  "schema_version": 1,
+  "target": "models/gguf/Qwen3-4B-f16.gguf",
+  "variants": {
+    "q4_0": {
+      "draft": "models/gguf/Qwen3-4B-eagle3-q4_0.gguf"
+    },
+    "row_a16_checkpoint_zero": {
+      "draft": "runs/w1-row-a16-checkpoint-zero-export-20260929/model.gguf",
+      "env": {
+        "GGML_W1AX_ACT_BITS": "16"
+      }
+    }
+  },
+  "warmups": 2
+}
