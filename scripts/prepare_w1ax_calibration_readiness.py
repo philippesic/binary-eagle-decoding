@@ -29,7 +29,11 @@ from audit_recurrent_binary_capture import (  # noqa: E402
     validate_recurrent_trace,
 )
 from compare_recurrent_draft_graph import _column, _read_graph  # noqa: E402
-from w1ax_capture_provider import sha256  # noqa: E402
+from run_binary_rescue_benchmark import CLEAR_PREFIXES  # noqa: E402
+from run_binary_rescue_benchmark import command as runner_command  # noqa: E402
+from run_binary_rescue_benchmark import server_env as runner_server_env  # noqa: E402
+from run_binary_rescue_benchmark import validate_config as validate_runner_config  # noqa: E402
+from w1ax_capture_provider import TARGET_GGUF_SHA256, sha256  # noqa: E402
 
 EXPECTED_ALIASES = {
     "pilot-prose": "dolly:line-005896",
@@ -118,41 +122,20 @@ def _alias_map(path: Path) -> dict[str, str]:
     raise ValueError("frozen diagnostic alias map differs from the three source prompts")
 
 
-def _task_map(manifest: dict, manifest_path: Path, aliases: dict[str, str]) -> dict[int, str]:
-    mapping = manifest.get("task_prompt_ids", manifest.get("task_map"))
-    if mapping is None:
-        record = manifest.get("files", {}).get("task_prompt_ids")
-        if isinstance(record, dict) and isinstance(record.get("path"), str):
-            task_path = Path(record["path"])
-            if not task_path.is_absolute():
-                task_path = manifest_path.parent / task_path
-            if record.get("sha256") != sha256(task_path):
-                raise ValueError("native task-to-prompt map hash differs from run manifest")
-            mapping = _json(task_path)
-    if mapping is None and isinstance(manifest.get("records"), list):
-        mapping = {}
-        for row in manifest["records"]:
-            if (
-                not isinstance(row, dict)
-                or row.get("variant") != "row_a16_checkpoint_zero"
-                or row.get("warmup") is True
-            ):
-                continue
-            task = (row.get("request_digest") or {}).get("task_id")
-            prompt = row.get("prompt_id")
-            if type(task) is not int or type(prompt) is not str:
-                raise ValueError("measured row-A16 record lacks task-to-prompt ownership")
-            prior = mapping.get(task)
-            if prior is not None and prior != prompt:
-                raise ValueError("native task ID is reused for different prompt aliases")
-            mapping[task] = prompt
-    if isinstance(mapping, list):
-        mapping = {
-            row.get("task_id"): row.get("prompt_id", row.get("id"))
-            for row in mapping
-            if isinstance(row, dict)
-        }
-    if not isinstance(mapping, dict) or not mapping:
+def _task_map(manifest: dict, aliases: dict[str, str]) -> dict[int, str]:
+    mapping = {}
+    for row in _read_benchmark_records(manifest):
+        if row.get("variant") != "row_a16_checkpoint_zero" or row.get("warmup") is True:
+            continue
+        task = (row.get("request_digest") or {}).get("task_id")
+        prompt = row.get("prompt_id")
+        if type(task) is not int or type(prompt) is not str:
+            raise ValueError("measured row-A16 record lacks task-to-prompt ownership")
+        prior = mapping.get(task)
+        if prior is not None and prior != prompt:
+            raise ValueError("native task ID is reused for different prompt aliases")
+        mapping[task] = prompt
+    if not mapping:
         raise ValueError("native run manifest lacks its task-to-prompt map")
     normalized: dict[int, str] = {}
     for task, prompt in mapping.items():
@@ -168,46 +151,15 @@ def _task_map(manifest: dict, manifest_path: Path, aliases: dict[str, str]) -> d
     return normalized
 
 
-def _read_benchmark_records(manifest_path: Path, manifest: dict) -> list[dict]:
+def _read_benchmark_records(manifest: dict) -> list[dict]:
     records = manifest.get("records")
-    if isinstance(records, list):
-        return records
-    record = manifest.get("files", {}).get("records")
-    path = (
-        Path(record["path"])
-        if isinstance(record, dict) and record.get("path")
-        else (manifest_path.parent / "records.json")
-    )
-    if not path.is_absolute():
-        path = manifest_path.parent / path
-    if isinstance(record, dict) and record.get("sha256") != sha256(path):
-        raise ValueError("benchmark records hash differs from manifest")
-    value = json.loads(path.read_text())
-    if isinstance(value, dict):
-        value = value.get("records")
-    if not isinstance(value, list) or any(not isinstance(row, dict) for row in value):
+    if not isinstance(records, list) or any(not isinstance(row, dict) for row in records):
         raise ValueError("benchmark manifest has no measured request records")
-    return value
+    return records
 
 
-def _records_path(manifest_path: Path, manifest: dict) -> Path | None:
-    if isinstance(manifest.get("records"), list):
-        return None
-    record = manifest.get("files", {}).get("records")
-    path = (
-        Path(record["path"])
-        if isinstance(record, dict) and record.get("path")
-        else manifest_path.parent / "records.json"
-    )
-    return path.resolve() if path.is_absolute() else (manifest_path.parent / path).resolve()
-
-
-def _exact_response_pairs(manifest_path: Path, manifest: dict) -> list[dict]:
-    records = [
-        row
-        for row in _read_benchmark_records(manifest_path, manifest)
-        if row.get("warmup") is not True
-    ]
+def _exact_response_pairs(manifest: dict) -> list[dict]:
+    records = [row for row in _read_benchmark_records(manifest) if row.get("warmup") is not True]
     variants = {"q4_0", "row_a16_checkpoint_zero"}
     grouped: dict[tuple[str, str], list[list[int]]] = {}
     for row in records:
@@ -568,8 +520,10 @@ def _identity(identity: dict, identity_hash: str, old_manifest: dict) -> dict:
         or len(identity.get("export_projection_bits_scales", {})) != 9
         or any(value is not True for value in identity["export_projection_bits_scales"].values())
         or identity.get("checkpoint_sha256") != CALIBRATION_PINNED_INPUT_SHA256["checkpoint_zero"]
-        or identity.get("exportstudent_gguf") != CALIBRATION_PINNED_INPUT_SHA256["exported_gguf"]
-        or identity.get("server_sha256") != old_manifest["files"]["binary"]["sha256"]
+        or identity.get("student_gguf_sha256") != CALIBRATION_PINNED_INPUT_SHA256["exported_gguf"]
+        or old_manifest.get("schema") != "binary_rescue_benchmark_v1"
+        or old_manifest.get("status") != "complete"
+        or identity.get("server_sha256") != old_manifest["hashes"]["binary"]
     ):
         raise ValueError("frozen pilot identity report is missing, mismatched or failed")
     return {
@@ -577,9 +531,86 @@ def _identity(identity: dict, identity_hash: str, old_manifest: dict) -> dict:
         "model_snapshots_verified": True,
         "exported_projection_pairs_checked": 9,
         "checkpoint_sha256": identity["checkpoint_sha256"],
-        "exported_gguf_sha256": identity["exportstudent_gguf"],
+        "exported_gguf_sha256": identity["student_gguf_sha256"],
         "server_sha256": identity["server_sha256"],
     }
+
+
+def _validate_runner_manifest(
+    manifest_path: Path,
+    manifest: dict,
+    config_path: Path,
+    capture_dir: Path,
+    binary_path: Path | None = None,
+) -> dict:
+    """Check a completed run against run_binary_rescue_benchmark's real schema."""
+    if (
+        manifest.get("schema") != "binary_rescue_benchmark_v1"
+        or manifest.get("status") != "complete"
+        or manifest.get("prompt_sha256") != DIAGNOSTIC_SAFE_PROMPTS_SHA256
+        or manifest.get("q4_variant", "q4_0") != "q4_0"
+    ):
+        raise ValueError("native benchmark manifest is incomplete or uses another prompt set")
+    config = _json(config_path)
+    saved_config = _json(manifest_path.parent / "config.json")
+    if saved_config != config:
+        raise ValueError("saved benchmark config differs from the frozen source config")
+    policy = validate_runner_config(config, diagnostic=True)
+    if manifest.get("policy") != policy or config.get("q4_variant", "q4_0") != "q4_0":
+        raise ValueError("native benchmark policy differs from the frozen diagnostic")
+    variants = config.get("variants", {})
+    if not {"q4_0", "row_a16_checkpoint_zero"}.issubset(variants):
+        raise ValueError("native benchmark config omits Q4_0 or row-A16")
+    block = _json(capture_dir / "manifest.json")
+    matched = [
+        item
+        for item in manifest.get("blocks", [])
+        if item.get("variant") == "row_a16_checkpoint_zero"
+        and Path(item.get("directory", "")).resolve() == capture_dir.resolve()
+    ]
+    if len(matched) != 1:
+        raise ValueError("capture block is not uniquely owned by the native benchmark manifest")
+    manifest_block = matched[0]
+    spec = variants["row_a16_checkpoint_zero"]
+    expected_command = runner_command(config, spec, policy, diagnostic=True)
+    expected_env = runner_server_env(config, spec, "instrumented", capture_dir)
+    expected_env = {
+        key: value
+        for key, value in expected_env.items()
+        if key.startswith((*CLEAR_PREFIXES, "CUDA_VISIBLE"))
+    }
+    binary = Path(expected_command[0]).resolve()
+    if (
+        block.get("variant") != "row_a16_checkpoint_zero"
+        or block.get("directory") != manifest_block.get("directory")
+        or block.get("command") != expected_command
+        or manifest_block.get("command") != expected_command
+        or block.get("env") != expected_env
+        or manifest_block.get("env") != expected_env
+        or (binary_path is not None and binary != binary_path.resolve())
+        or block.get("server_exit_code") != 0
+        or manifest_block.get("server_exit_code") != 0
+        or not isinstance(block.get("graph_status"), str)
+        or block.get("graph_status") != manifest_block.get("graph_status")
+    ):
+        raise ValueError("executed row-A16 block command, environment or stop evidence differs")
+    hashes = manifest.get("hashes", {})
+    if not isinstance(hashes.get("binary"), str) or len(hashes["binary"]) != 64:
+        raise ValueError("native benchmark manifest lacks its binary hash")
+    if binary_path is not None and sha256(binary_path) != hashes["binary"]:
+        raise ValueError("native benchmark binary hash differs from the executed binary")
+    if hashes.get("target") != TARGET_GGUF_SHA256:
+        raise ValueError("native benchmark target hash differs from the pinned target")
+    drafts = hashes.get("drafts", {})
+    if (
+        not isinstance(drafts.get("q4_0"), str)
+        or len(drafts["q4_0"]) != 64
+        or drafts.get("row_a16_checkpoint_zero") != CALIBRATION_PINNED_INPUT_SHA256["exported_gguf"]
+    ):
+        raise ValueError(
+            "native benchmark Q4_0 or row-A16 draft hash differs from the frozen model"
+        )
+    return block
 
 
 def assemble(args) -> dict:
@@ -651,6 +682,12 @@ def assemble(args) -> dict:
         raise ValueError("diagnostic prompt/config hash differs from the frozen pilot")
     identity = _json(paths["identity_report"])
     old_manifest = _json(paths["old_native_manifest"])
+    old_block = _validate_runner_manifest(
+        paths["old_native_manifest"],
+        old_manifest,
+        paths["diagnostic_config"],
+        paths["old_native_capture_dir"],
+    )
     identity_result = _identity(identity, sha256(paths["identity_report"]), old_manifest)
     if (
         sha256(paths["old_native_manifest"])
@@ -712,21 +749,21 @@ def assemble(args) -> dict:
             raise ValueError(f"independent bundle audit source differs: {field}")
     inventory = _provider_inventory(provider)
 
-    old_pairs = _exact_response_pairs(paths["old_native_manifest"], old_manifest)
+    old_pairs = _exact_response_pairs(old_manifest)
     native_manifest = _json(paths["native_manifest"])
-    if not native_manifest.get("prompt_ids") or set(native_manifest["prompt_ids"]) != set(
-        EXPECTED_ALIASES
-    ):
-        raise ValueError("new native cache run does not use the frozen alias prompts")
     cache_config_path = ROOT / "configs/w1_phase1b_pilot_cuda_cache_diagnostic.json"
-    if native_manifest.get("config_sha256") != sha256(cache_config_path):
-        raise ValueError("new native cache run does not use the frozen 3-prompt, 128-token config")
-    if not {"q4_0", "row_a16_checkpoint_zero"}.issubset(set(native_manifest.get("variants", []))):
-        raise ValueError("new native cache run omits Q4_0 or row-A16 responses")
-    native_capture_manifest = _json(paths["native_capture_manifest"])
-    new_task_map = _task_map(native_manifest, paths["native_manifest"], aliases)
+    native_block = _validate_runner_manifest(
+        paths["native_manifest"],
+        native_manifest,
+        cache_config_path,
+        paths["native_capture_dir"],
+        paths["native_server_binary"],
+    )
+    if old_manifest["hashes"]["drafts"]["q4_0"] != native_manifest["hashes"]["drafts"]["q4_0"]:
+        raise ValueError("old and cache-run Q4_0 model hashes differ")
+    new_task_map = _task_map(native_manifest, aliases)
     task_map_hash = sha256(paths["native_manifest"])
-    new_pairs = _exact_response_pairs(paths["native_manifest"], native_manifest)
+    new_pairs = _exact_response_pairs(native_manifest)
     if old_pairs != new_pairs:
         raise ValueError("new CUDA cache capture responses differ from frozen exact Q4_0/A16 pairs")
     new_accepted, new_wrong_accepted = _wrong_accepted_labels(paths["native_capture_dir"])
@@ -834,24 +871,9 @@ def assemble(args) -> dict:
         raise ValueError("native CUDA audit source hashes differ from captured payloads")
     native_binary = paths["native_server_binary"]
     binary_hash = sha256(native_binary)
-    manifest_binary_hash = native_manifest.get("files", {}).get("binary", {}).get("sha256")
+    manifest_binary_hash = native_manifest.get("hashes", {}).get("binary")
     if not manifest_binary_hash or manifest_binary_hash != binary_hash:
         raise ValueError("new native capture binary hash differs from its benchmark manifest")
-    capture_source_hashes = native_capture_manifest.get("source_sha256", {})
-    captured_binary_hash = next(
-        (
-            capture_source_hashes.get(name)
-            for name in ("native_binary", "server_binary", "binary")
-            if capture_source_hashes.get(name) is not None
-        ),
-        None,
-    )
-    if captured_binary_hash is None:
-        captured_binary_hash = (
-            native_capture_manifest.get("files", {}).get("binary", {}).get("sha256")
-        )
-    if captured_binary_hash != binary_hash:
-        raise ValueError("new native cache capture does not bind the current native binary")
 
     state_rows = _jsonl(cache_dir / "state.jsonl")
     cache_rows = cache_events
@@ -881,6 +903,7 @@ def assemble(args) -> dict:
             "wrong_accepted_labels": wrong_accepted,
             "new_accepted_drafts": new_accepted,
             "new_wrong_accepted_labels": new_wrong_accepted,
+            "old_runtime_graph_status": old_block["graph_status"],
         },
         "selected_root_mapping_and_operands": {
             "selected_roots": len(bridge_rows),
@@ -905,6 +928,7 @@ def assemble(args) -> dict:
             "root_position_cache_bridges": bridge_rows,
             "native_cache_audit_decoder_executions": cache_audit["decoder_executions"],
             "native_graph_result_output_markers": footer["result_output_markers"],
+            "native_runtime_graph_status": native_block["graph_status"],
         },
         "student_native_proposal_and_response_agreement": {
             "shared_roots": len(bridge_rows),
@@ -957,18 +981,17 @@ def assemble(args) -> dict:
         "alias_map": sha256(paths["alias_map"]),
         "old_native_heads": sha256(paths["old_native_capture_dir"] / "heads.jsonl"),
         "old_native_rounds": sha256(paths["old_native_capture_dir"] / "rounds.jsonl"),
+        "old_native_capture_block_manifest": sha256(
+            paths["old_native_capture_dir"] / "manifest.json"
+        ),
         "old_native_manifest": sha256(paths["old_native_manifest"]),
-        "old_native_records": sha256(
-            _records_path(paths["old_native_manifest"], old_manifest)
-            or paths["old_native_manifest"]
-        ),
+        "old_native_records": sha256(paths["old_native_manifest"]),
         "native_manifest": sha256(paths["native_manifest"]),
-        "native_benchmark_records": sha256(
-            _records_path(paths["native_manifest"], native_manifest) or paths["native_manifest"]
-        ),
+        "native_benchmark_records": sha256(paths["native_manifest"]),
         "native_task_map": task_map_hash,
         "native_cache_config": sha256(cache_config_path),
-        "native_cache_capture_manifest": sha256(paths["native_capture_manifest"]),
+        "native_cache_capture_manifest": sha256(paths["native_manifest"]),
+        "native_cache_capture_block_manifest": sha256(cache_dir / "manifest.json"),
         "native_cache_audit": sha256(paths["cache_audit_report"]),
         "native_cache_binary": binary_hash,
         "native_cache_heads": sha256(cache_dir / "heads.jsonl"),
@@ -1041,7 +1064,6 @@ def main() -> None:
         "old-native-manifest",
         "old-native-capture-dir",
         "native-manifest",
-        "native-capture-manifest",
         "native-capture-dir",
         "native-server-binary",
         "cache-audit-report",

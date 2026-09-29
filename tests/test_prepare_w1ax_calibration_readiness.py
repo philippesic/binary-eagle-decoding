@@ -13,16 +13,25 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from prepare_w1ax_calibration_readiness import (  # noqa: E402
+    CALIBRATION_PINNED_INPUT_SHA256,
     DIAGNOSTIC_SAFE_PROMPTS_SHA256,
     DIAGNOSTIC_SOURCE_PROMPTS_SHA256,
     EXPECTED_DOMAINS,
+    IDENTITY_REPORT_SHA256,
+    ROOT,
     _alias_map,
     _bridge_roots,
     _exact_response_pairs,
-    _records_path,
+    _identity,
     _task_map,
+    _validate_runner_manifest,
     assemble,
 )
+from run_binary_rescue_benchmark import CLEAR_PREFIXES  # noqa: E402
+from run_binary_rescue_benchmark import command as runner_command  # noqa: E402
+from run_binary_rescue_benchmark import server_env as runner_server_env  # noqa: E402
+from run_binary_rescue_benchmark import validate_config as validate_runner_config  # noqa: E402
+from w1ax_capture_provider import TARGET_GGUF_SHA256, sha256  # noqa: E402
 
 
 def write_jsonl(path: Path, rows: list[dict]) -> None:
@@ -93,13 +102,11 @@ class CalibrationReadinessTests(unittest.TestCase):
                         }
                     )
             manifest_path.write_text(json.dumps({"records": records}))
-            self.assertEqual(
-                len(_exact_response_pairs(manifest_path, json.loads(manifest_path.read_text()))), 3
-            )
+            self.assertEqual(len(_exact_response_pairs(json.loads(manifest_path.read_text()))), 3)
             records[-1]["generated_token_ids"] = [1, 3, 6]
             manifest_path.write_text(json.dumps({"records": records}))
             with self.assertRaisesRegex(ValueError, "response IDs differ"):
-                _exact_response_pairs(manifest_path, json.loads(manifest_path.read_text()))
+                _exact_response_pairs(json.loads(manifest_path.read_text()))
 
     def test_canonical_benchmark_records_supply_measured_task_map(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -133,14 +140,98 @@ class CalibrationReadinessTests(unittest.TestCase):
                 "pilot-code": "mbpp:task-496",
             }
             self.assertEqual(
-                _task_map(manifest, path, aliases),
+                _task_map(manifest, aliases),
                 {
                     181244361: "dolly:line-005896",
                     181244362: "gsm8k:train-000315",
                     181244363: "mbpp:task-496",
                 },
             )
-            self.assertIsNone(_records_path(path, manifest))
+
+    def test_identity_report_uses_canonical_student_gguf_key(self):
+        identity = {
+            "schema": "w1ax_pilot_identity_v1",
+            "passed": True,
+            "provider_hashes": {f"source_{index}": True for index in range(7)},
+            "snapshots_verified": True,
+            "export_projection_bits_scales": {f"projection_{index}": True for index in range(9)},
+            "checkpoint_sha256": CALIBRATION_PINNED_INPUT_SHA256["checkpoint_zero"],
+            "student_gguf_sha256": CALIBRATION_PINNED_INPUT_SHA256["exported_gguf"],
+            "server_sha256": "c" * 64,
+        }
+        manifest = {
+            "schema": "binary_rescue_benchmark_v1",
+            "status": "complete",
+            "hashes": {"binary": "c" * 64},
+        }
+        result = _identity(identity, IDENTITY_REPORT_SHA256, manifest)
+        self.assertEqual(
+            result["exported_gguf_sha256"],
+            CALIBRATION_PINNED_INPUT_SHA256["exported_gguf"],
+        )
+        wrong_identity = dict(identity)
+        wrong_identity.pop("student_gguf_sha256")
+        wrong_identity["exportstudent_gguf"] = CALIBRATION_PINNED_INPUT_SHA256["exported_gguf"]
+        with self.assertRaisesRegex(ValueError, "identity report"):
+            _identity(wrong_identity, IDENTITY_REPORT_SHA256, manifest)
+
+    def test_actual_runner_manifest_binds_inline_records_and_block(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            config = json.loads(
+                (ROOT / "configs/w1_phase1b_pilot_cuda_cache_diagnostic.json").read_text()
+            )
+            binary = root / "llama-server"
+            binary.write_bytes(b"native server fixture")
+            config["binary"] = str(binary)
+            config_path = root / "source-config.json"
+            config_path.write_text(json.dumps(config))
+            run_dir = root / "benchmark"
+            run_dir.mkdir()
+            (run_dir / "config.json").write_text(json.dumps(config))
+            cell = run_dir / "r00-s01-row_a16_checkpoint_zero"
+            cell.mkdir()
+            policy = validate_runner_config(config, diagnostic=True)
+            spec = config["variants"]["row_a16_checkpoint_zero"]
+            command = runner_command(config, spec, policy, diagnostic=True)
+            env = runner_server_env(config, spec, "instrumented", cell)
+            env = {
+                key: value
+                for key, value in env.items()
+                if key.startswith((*CLEAR_PREFIXES, "CUDA_VISIBLE"))
+            }
+            block = {
+                "variant": "row_a16_checkpoint_zero",
+                "directory": str(cell),
+                "command": command,
+                "env": env,
+                "server_exit_code": 0,
+                "graph_status": "unverified",
+            }
+            (cell / "manifest.json").write_text(json.dumps(block))
+            manifest = {
+                "schema": "binary_rescue_benchmark_v1",
+                "status": "complete",
+                "prompt_sha256": DIAGNOSTIC_SAFE_PROMPTS_SHA256,
+                "q4_variant": "q4_0",
+                "policy": policy,
+                "hashes": {
+                    "binary": sha256(binary),
+                    "target": TARGET_GGUF_SHA256,
+                    "drafts": {
+                        "q4_0": "d" * 64,
+                        "row_a16_checkpoint_zero": CALIBRATION_PINNED_INPUT_SHA256["exported_gguf"],
+                    },
+                },
+                "blocks": [block],
+                "records": [],
+            }
+            manifest_path = run_dir / "manifest.json"
+            manifest_path.write_text(json.dumps(manifest))
+            self.assertEqual(
+                _validate_runner_manifest(manifest_path, manifest, config_path, cell, binary),
+                block,
+            )
 
     def test_selected_roots_join_head_seed_torch_cache_and_graph_state(self):
         with tempfile.TemporaryDirectory() as temporary:
