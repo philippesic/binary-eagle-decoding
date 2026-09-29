@@ -321,6 +321,19 @@ def check_cache_contract(cache, expected_length: int, device: torch.device) -> d
     return result
 
 
+def cache_checked_step(original_step, proposal_positions: list[int], device: torch.device):
+    """Preserve NativeStepAdapter keyword arguments while checking each write."""
+
+    def checked_step(token, feature, position, cache, **kwargs):
+        result = original_step(token, feature, position, cache, **kwargs)
+        check_cache_contract(result.cache, position + 1, device)
+        if kwargs.get("compute_logits", True):
+            proposal_positions.append(position)
+        return result
+
+    return checked_step
+
+
 def _frozen_identity_check(
     operands: FrozenOperands,
     drafter,
@@ -449,14 +462,8 @@ def _gradient_check(
                 check_cache_contract(result.cache, position + 1, device)
                 return result
 
-            def checked_step(token, feature, position, cache):
-                result = original_step(token, feature, position, cache)
-                step_positions.append(position)
-                check_cache_contract(result.cache, position + 1, device)
-                return result
-
             adapter.decode_context = checked_context
-            adapter.decode_step = checked_step
+            adapter.decode_step = cache_checked_step(original_step, step_positions, device)
             try:
                 logits = forward_torch_round(batch, adapter, provider_contract.draft_vocab_size)
             finally:

@@ -82,6 +82,33 @@ class TrajectoryGateTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "F16"):
             trajectory.check_cache_contract(cache, 2, torch.device("cpu"))
 
+    def test_context_decode_passes_compute_logits_false_through_checked_step(self):
+        class FakeAdapter:
+            def decode_step(self, token, feature, position, cache, *, compute_logits=True):
+                self.last_compute_logits = compute_logits
+                return SimpleNamespace(
+                    cache=SimpleNamespace(
+                        key=torch.zeros((8, position + 1, 128)),
+                        value=torch.ones((8, position + 1, 128)),
+                    )
+                )
+
+            def decode_context(self, token, feature, position, cache):
+                return self.decode_step(token, feature, position, cache, compute_logits=False)
+
+        adapter = FakeAdapter()
+        proposal_positions = []
+        adapter.decode_step = trajectory.cache_checked_step(
+            adapter.decode_step, proposal_positions, torch.device("cpu")
+        )
+        cache = SimpleNamespace(key=torch.empty((8, 0, 128)), value=torch.empty((8, 0, 128)))
+        adapter.decode_context(1, torch.zeros(1), 0, cache)
+        self.assertFalse(adapter.last_compute_logits)
+        self.assertEqual(proposal_positions, [])
+        adapter.decode_step(1, torch.zeros(1), 0, cache)
+        self.assertTrue(adapter.last_compute_logits)
+        self.assertEqual(proposal_positions, [0])
+
     def test_join_uses_full_prefix_and_first_two_common_roots(self):
         prefixes = [(10, 11), (10, 11, 12), (10, 11, 13)]
         anchors = {}
