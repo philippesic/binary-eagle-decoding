@@ -17,6 +17,7 @@ import json
 import sys
 import time
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import torch
@@ -39,6 +40,12 @@ from w1ax_capture_provider import (  # noqa: E402
 from w1a1_eagle.frozen_operands import FrozenOperands  # noqa: E402
 from w1a1_eagle.native_step import NativeStepAdapter, bind_frozen_norms  # noqa: E402
 from w1a1_eagle.official_loader import load_official_eagle3  # noqa: E402
+from w1a1_eagle.recurrent_loss import supported_prefix_ce  # noqa: E402
+from w1a1_eagle.recurrent_provider import (  # noqa: E402
+    ProviderRound,
+    audit_provider_round,
+    forward_torch_round,
+)
 from w1a1_eagle.recurrent_qat import (  # noqa: E402
     JointQATConfig,
     W1AxContract,
@@ -287,11 +294,259 @@ def packed_head_replay(
     return result
 
 
+def check_cache_contract(cache, expected_length: int, device: torch.device) -> dict:
+    """Check the Torch cache is finite, F16-storable, and position contiguous."""
+    key, value = getattr(cache, "key", None), getattr(cache, "value", None)
+    if expected_length < 0:
+        raise ValueError("expected cache length must be nonnegative")
+    result = {"expected_length": expected_length, "key": {}, "value": {}}
+    for name, tensor in (("key", key), ("value", value)):
+        if (
+            not isinstance(tensor, torch.Tensor)
+            or tensor.device != device
+            or tensor.dtype != torch.float32
+            or tensor.shape != (8, expected_length, 128)
+        ):
+            raise ValueError(f"{name} cache has wrong device, dtype or contiguous length")
+        if not torch.isfinite(tensor).all().item():
+            raise ValueError(f"{name} cache contains nonfinite values")
+        restored = tensor.to(torch.float16).to(torch.float32)
+        if not torch.equal(tensor, restored):
+            raise ValueError(f"{name} cache is not exactly representable in F16")
+        result[name] = {
+            "shape": list(tensor.shape),
+            "dtype": "float32_f16_exact",
+            "finite": True,
+        }
+    return result
+
+
+def _frozen_identity_check(
+    operands: FrozenOperands,
+    drafter,
+    row_export_gguf: Path,
+    candidate_d_gguf: Path,
+    capture_offsets: np.ndarray,
+    tokens: set[int],
+) -> dict:
+    embedding = drafter.embed_tokens.weight
+    embedding_rows = []
+    for token in sorted(tokens):
+        captured = operands(token)
+        model_row = embedding[token].detach().cpu()
+        if not torch.equal(model_row, captured):
+            raise ValueError(f"borrowed F16 embedding differs at token {token}")
+        embedding_rows.append(token)
+    norm_checks = {}
+    row_export = Model(row_export_gguf)
+    for gguf_name, path in (
+        ("blk.0.attn_norm.weight", "midlayer.input_layernorm"),
+        ("blk.0.attn_norm_2.weight", "midlayer.hidden_norm"),
+        ("blk.0.ffn_norm.weight", "midlayer.post_attention_layernorm"),
+        ("output_norm.weight", "norm"),
+    ):
+        observed = drafter.get_submodule(path).weight.detach().cpu()
+        expected = operands.norm_arrays[gguf_name]
+        if not torch.equal(observed, expected):
+            raise ValueError(f"frozen norm differs from candidate-D GGUF: {gguf_name}")
+        exported = row_export.tensors.get(gguf_name)
+        if exported is None or not np.array_equal(
+            np.asarray(exported.data, dtype=np.float32), expected.numpy()
+        ):
+            raise ValueError(f"row export norm differs from candidate-D GGUF: {gguf_name}")
+        norm_checks[gguf_name] = "exact_f32"
+
+    absolute = np.arange(len(capture_offsets), dtype=np.int64) + np.asarray(
+        capture_offsets, dtype=np.int64
+    )
+    row_mapping = np.asarray(row_export.tensors["d2t"].data, dtype=np.int64)
+    candidate_mapping = np.asarray(Model(candidate_d_gguf).tensors["d2t"].data, dtype=np.int64)
+    if (
+        row_mapping.shape != absolute.shape
+        or candidate_mapping.shape != absolute.shape
+        or not np.array_equal(row_mapping, absolute)
+        or not np.array_equal(candidate_mapping, absolute)
+    ):
+        raise ValueError("row and candidate-D absolute d2t maps differ from audited native offsets")
+    return {
+        "embedding_tokens_checked": embedding_rows,
+        "embedding_dtype": "f16_exact",
+        "norms": norm_checks,
+        "d2t_entries": int(len(absolute)),
+        "d2t": "candidate_and_row_absolute_maps_exact_to_native_offsets",
+    }
+
+
+def _gradient_check(
+    *,
+    roots_by_domain,
+    task_to_prompt: dict[int, str],
+    adapter: NativeStepAdapter,
+    linears: dict,
+    candidate_manifest: Path,
+    candidate_prompts: Path,
+    report_sha256: dict,
+    operands: FrozenOperands,
+    drafter,
+    candidate_d_gguf: Path,
+    row_export_gguf: Path,
+) -> dict:
+    capture_manifest = json.loads(candidate_manifest.read_text())
+    offsets_path = candidate_manifest.parent / capture_manifest["offsets"]["path"]
+    offsets = np.load(offsets_path, allow_pickle=False)
+    prompt_ids = {
+        json.loads(line)["id"]
+        for line in candidate_prompts.read_text().splitlines()
+        if line.strip()
+    }
+    sample_tokens = set()
+    for roots in roots_by_domain.values():
+        for _student_row, captured, _outcome in roots:
+            sample_tokens.update(captured.prefix_token_ids)
+            sample_tokens.update(
+                row["input_token_id"] for row in captured.rows if row.get("valid") is True
+            )
+    identity = _frozen_identity_check(
+        operands, drafter, row_export_gguf, candidate_d_gguf, offsets, sample_tokens
+    )
+    if any(len(roots) < 2 for roots in roots_by_domain.values()):
+        raise ValueError("gradient gate needs at least two shared roots in every frozen domain")
+
+    provider_contract = SimpleNamespace(
+        d2t_offsets=offsets,
+        target_vocab_size=capture_manifest["target_vocab_size"],
+        draft_vocab_size=capture_manifest["draft_vocab_size"],
+        max_depth=capture_manifest["max_depth"],
+        allowed_prompt_ids=prompt_ids,
+        split="train",
+    )
+    device = next(iter(linears.values())).latent_sign.device
+    root_results = []
+    for domain, roots in roots_by_domain.items():
+        for root_index, (_student_row, captured, prior_outcome) in enumerate(roots):
+            batch = ProviderRound(
+                anchor=captured.anchor,
+                rows=captured.rows,
+                prefix_token_ids=captured.prefix_token_ids,
+                raw_target_features=captured.raw_target_features.to(device),
+                feature_positions=captured.feature_positions,
+                capture_id="candidate-d-audited-bundle",
+            )
+            audit = audit_provider_round(batch, provider_contract)
+            if not any(audit.ce_mask):
+                raise ValueError(f"{domain} selected root has no supported native hard-CE label")
+
+            # Instrument each model cache write during exact-prefix rebuild and
+            # attached proposal unroll. Positions start at zero and remain dense.
+            original_context = adapter.decode_context
+            original_step = adapter.decode_step
+            context_positions = []
+            step_positions = []
+
+            def checked_context(token, feature, position, cache):
+                result = original_context(token, feature, position, cache)
+                context_positions.append(position)
+                check_cache_contract(result.cache, position + 1, device)
+                return result
+
+            def checked_step(token, feature, position, cache):
+                result = original_step(token, feature, position, cache)
+                step_positions.append(position)
+                check_cache_contract(result.cache, position + 1, device)
+                return result
+
+            adapter.decode_context = checked_context
+            adapter.decode_step = checked_step
+            try:
+                logits = forward_torch_round(batch, adapter, provider_contract.draft_vocab_size)
+            finally:
+                adapter.decode_context = original_context
+                adapter.decode_step = original_step
+
+            parent = len(captured.anchor.prefix_token_ids) - 1
+            expected_context = list(range(parent))
+            expected_steps = [
+                row["input_position"] - 1 for row in captured.rows if row.get("valid") is True
+            ]
+            if context_positions != expected_context or step_positions != expected_steps:
+                raise ValueError("decoder positions differ from contiguous exact-prefix trace")
+            if not torch.isfinite(logits).all().item():
+                raise ValueError("selected-root Torch logits are nonfinite")
+
+            for module in linears.values():
+                module.latent_sign.grad = None
+                module.scale_offset.grad = None
+            loss = supported_prefix_ce(logits, audit)
+            if not torch.isfinite(loss).item():
+                raise ValueError("selected-root hard CE loss is nonfinite")
+            loss.backward()
+            grads = [
+                grad
+                for module in linears.values()
+                for grad in (module.latent_sign.grad, module.scale_offset.grad)
+            ]
+            finite = [grad is not None and torch.isfinite(grad).all().item() for grad in grads]
+            if len(grads) != 18 or not all(finite):
+                raise ValueError(
+                    "selected-root backward did not produce 18 finite gradient tensors"
+                )
+            root_results.append(
+                {
+                    "domain": domain,
+                    "root_index": root_index,
+                    "round_index": captured.anchor.round_index,
+                    "preceding_student_round_outcome": prior_outcome,
+                    "loss": float(loss.detach().item()),
+                    "gradient_tensors": len(grads),
+                    "finite_gradient_tensors": sum(finite),
+                    "supported_ce_rows": sum(audit.ce_mask),
+                    "context_decoder_positions": context_positions,
+                    "proposal_decoder_positions": step_positions,
+                    "final_cache_length": (step_positions[-1] + 1 if step_positions else parent),
+                    "f16_cache_writes": len(context_positions) + len(step_positions),
+                }
+            )
+            for module in linears.values():
+                module.latent_sign.grad = None
+                module.scale_offset.grad = None
+
+    return {
+        "schema": "w1ax_pilot_gradient_contract_v1",
+        "status": "finite_gradient_and_torch_cache_contract_passed",
+        "optimizer_steps": 0,
+        "roots": root_results,
+        "frozen_operand_identity": identity,
+        "checks": {
+            "all_selected_roots_have_supported_hard_ce": len(root_results)
+            == sum(len(roots) for roots in roots_by_domain.values()),
+            "all_selected_roots_have_18_finite_gradients": all(
+                row["finite_gradient_tensors"] == 18 for row in root_results
+            ),
+            "all_torch_cache_writes_are_finite_f16_exact": True,
+            "all_torch_cache_lengths_and_positions_match_trace": True,
+            "borrowed_embedding_norm_and_d2t_exact": True,
+        },
+        "unverified": [
+            "native stored K/V rows and CUDA projection operand equality; "
+            "coordinator-owned native cache capture is required",
+            "native attention mask payload; only the Torch contiguous causal cache "
+            "schedule is checked here",
+        ],
+        "input_sha256": report_sha256,
+    }
+
+
 def run(args) -> dict:
     if not torch.cuda.is_available():
         raise RuntimeError("this bounded trajectory checker requires CUDA")
     if args.report.exists():
         raise FileExistsError(args.report)
+    if args.check_gradients and args.gradient_report is None:
+        raise ValueError("--check-gradients requires --gradient-report")
+    if args.gradient_report is not None and not args.check_gradients:
+        raise ValueError("--gradient-report requires --check-gradients")
+    if args.gradient_report is not None and args.gradient_report.exists():
+        raise FileExistsError(args.gradient_report)
     started = time.monotonic()
     task_map_raw = json.loads(args.student_task_map.read_text())
     if not isinstance(task_map_raw, dict):
@@ -452,6 +707,51 @@ def run(args) -> dict:
             "roots": rows,
         }
 
+    source_hashes = {
+        "candidate_manifest": sha256(args.candidate_manifest),
+        "candidate_prompts": sha256(args.candidate_prompts),
+        "student_heads": sha256(args.student_heads),
+        "student_rounds": sha256(args.student_rounds),
+        "student_states": sha256(args.student_states),
+        "student_task_map": sha256(args.student_task_map),
+        "checkpoint": sha256(args.checkpoint),
+        "checkpoint_manifest": sha256(args.checkpoint_manifest),
+        "row_export_gguf": sha256(args.row_export_gguf),
+        "base_draft_gguf": sha256(args.base_draft_gguf),
+        "target_gguf": sha256(args.target_gguf),
+        "candidate_d_gguf": sha256(args.candidate_d_gguf),
+        "model_snapshot_manifest": sha256(args.model_snapshot_manifest),
+    }
+    gradient_report = None
+    if args.check_gradients:
+        capture_manifest = json.loads(args.candidate_manifest.read_text())
+        offset_path = args.candidate_manifest.parent / capture_manifest["offsets"]["path"]
+        gradient_report = _gradient_check(
+            roots_by_domain=selected,
+            task_to_prompt=task_to_prompt,
+            adapter=adapter,
+            linears=linears,
+            candidate_manifest=args.candidate_manifest,
+            candidate_prompts=args.candidate_prompts,
+            report_sha256={
+                **source_hashes,
+                "model_snapshot_files": {
+                    role: {item["path"]: item["sha256"] for item in entry["files"]}
+                    for role, entry in snapshot["models"].items()
+                },
+                "candidate_native_sources": candidate_capture.report["source_sha256"],
+                "candidate_native_offsets": sha256(offset_path),
+            },
+            operands=operands,
+            drafter=drafter,
+            candidate_d_gguf=args.candidate_d_gguf,
+            row_export_gguf=args.row_export_gguf,
+        )
+        args.gradient_report.parent.mkdir(parents=True, exist_ok=True)
+        args.gradient_report.write_text(
+            json.dumps(gradient_report, indent=2, sort_keys=True) + "\n"
+        )
+
     limits = {"relative_rms": 0.10, "changed_top_choice_block_margin": 0.02}
     all_rows = [row for item in per_domain.values() for row in item.get("roots", [])]
     report = {
@@ -486,26 +786,22 @@ def run(args) -> dict:
             ),
         },
         "unverified_by_this_checker": [
-            "selected-root cache values, cache lengths, causal masks and decoder-position parity",
-            "F16 K/V operand identity and finite training gradients",
+            "native stored K/V values, native cache lengths and native attention mask parity",
             "near-tie verifier acceptance and matched Q4_0 response-ID condition",
             "source and response ancestry hashes beyond the audited candidate-D capture",
+            *(
+                []
+                if gradient_report is not None
+                else [
+                    "finite training gradients and Torch F16-exact cache writes; "
+                    "run --check-gradients for this separate contract"
+                ]
+            ),
         ],
-        "input_sha256": {
-            "candidate_manifest": sha256(args.candidate_manifest),
-            "candidate_prompts": sha256(args.candidate_prompts),
-            "student_heads": sha256(args.student_heads),
-            "student_rounds": sha256(args.student_rounds),
-            "student_states": sha256(args.student_states),
-            "student_task_map": sha256(args.student_task_map),
-            "checkpoint": sha256(args.checkpoint),
-            "checkpoint_manifest": sha256(args.checkpoint_manifest),
-            "row_export_gguf": sha256(args.row_export_gguf),
-            "base_draft_gguf": sha256(args.base_draft_gguf),
-            "target_gguf": sha256(args.target_gguf),
-            "candidate_d_gguf": sha256(args.candidate_d_gguf),
-            "model_snapshot_manifest": sha256(args.model_snapshot_manifest),
-        },
+        "input_sha256": source_hashes,
+        "gradient_contract_report": str(args.gradient_report)
+        if gradient_report is not None
+        else None,
         "elapsed_seconds": time.monotonic() - started,
     }
     args.report.parent.mkdir(parents=True, exist_ok=True)
@@ -535,6 +831,8 @@ def main() -> None:
     parser.add_argument("--candidate-d-gguf", type=Path, required=True)
     parser.add_argument("--row-export-gguf", type=Path, required=True)
     parser.add_argument("--report", type=Path, required=True)
+    parser.add_argument("--check-gradients", action="store_true")
+    parser.add_argument("--gradient-report", type=Path)
     args = parser.parse_args()
     report = run(args)
     print(

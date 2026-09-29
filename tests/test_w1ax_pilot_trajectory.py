@@ -71,6 +71,17 @@ class TrajectoryGateTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             trajectory.top_two_margin(torch.tensor([float("nan"), 0.0]))
 
+    def test_cache_contract_requires_finite_f16_exact_contiguous_rows(self):
+        cache = SimpleNamespace(
+            key=torch.zeros((8, 2, 128), dtype=torch.float32),
+            value=torch.ones((8, 2, 128), dtype=torch.float32),
+        )
+        result = trajectory.check_cache_contract(cache, 2, torch.device("cpu"))
+        self.assertEqual(result["key"]["shape"], [8, 2, 128])
+        cache.key[0, 0, 0] = 0.1
+        with self.assertRaisesRegex(ValueError, "F16"):
+            trajectory.check_cache_contract(cache, 2, torch.device("cpu"))
+
     def test_join_uses_full_prefix_and_first_two_common_roots(self):
         prefixes = [(10, 11), (10, 11, 12), (10, 11, 13)]
         anchors = {}
