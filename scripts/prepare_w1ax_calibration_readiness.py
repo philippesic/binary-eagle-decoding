@@ -9,6 +9,7 @@ manifest or infers a passing result from a missing artifact.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import sys
@@ -29,6 +30,7 @@ from audit_recurrent_binary_capture import (  # noqa: E402
     validate_recurrent_trace,
 )
 from compare_recurrent_draft_graph import _column, _read_graph  # noqa: E402
+from export_binary_rescue import Model  # noqa: E402
 from run_binary_rescue_benchmark import CLEAR_PREFIXES  # noqa: E402
 from run_binary_rescue_benchmark import command as runner_command  # noqa: E402
 from run_binary_rescue_benchmark import server_env as runner_server_env  # noqa: E402
@@ -429,6 +431,81 @@ def _ordered_head_cache_joins(
     return {(head["task_id"], head["round_index"]): pair for head, pair in zip(ordered, assignment)}
 
 
+def _frozen_output_norm(path: Path, expected_gguf_sha256: str) -> tuple[np.ndarray, str, float]:
+    if sha256(path) != expected_gguf_sha256:
+        raise ValueError("output-norm source GGUF differs from its frozen hash")
+    model = Model(path)
+    tensor = model.tensors.get("output_norm.weight")
+    if tensor is None:
+        raise ValueError("frozen output-norm source GGUF lacks output_norm.weight")
+    norm = np.asarray(tensor.data, dtype=np.float32)
+    if norm.dtype != np.float32 or norm.ndim != 1 or not np.isfinite(norm).all():
+        raise ValueError("frozen output norm must be one finite F32 vector")
+    architecture = model.value("general.architecture")
+    epsilon = model.value(f"{architecture}.attention.layer_norm_rms_epsilon")
+    if (
+        isinstance(epsilon, bool)
+        or not isinstance(epsilon, (int, float, np.number))
+        or not math.isfinite(float(epsilon))
+        or float(epsilon) <= 0
+    ):
+        raise ValueError("frozen GGUF has an invalid RMS normalization epsilon")
+    canonical = np.ascontiguousarray(norm.astype("<f4", copy=False))
+    return norm, hashlib.sha256(canonical.tobytes()).hexdigest(), float(epsilon)
+
+
+def _join_head_state(
+    captured_state: np.ndarray,
+    group: dict[str, dict],
+    column: int,
+    graph_values: np.ndarray,
+    output_norm: np.ndarray,
+    output_norm_sha256: str,
+    rms_norm_epsilon: float,
+) -> dict:
+    result_norm = group.get("result_norm")
+    if result_norm is not None:
+        result = _column(result_norm, graph_values, column)
+        if result.shape == captured_state.shape and np.array_equal(result, captured_state):
+            return {
+                "state_join_method": "captured_result_norm_exact",
+                "native_result_norm_state_exact": True,
+                "state_relative_rms": 0.0,
+                "state_max_abs_error": 0.0,
+                "output_norm_tensor_sha256": output_norm_sha256,
+                "rms_norm_epsilon": None,
+            }
+    prenorm_record = group.get("eagle3_prenorm-0")
+    if prenorm_record is None or prenorm_record.get("dtype") != "f32":
+        raise ValueError("selected graph lacks result_norm and the native prenorm fallback")
+    prenorm = _column(prenorm_record, graph_values, column).astype(np.float64)
+    norm = np.asarray(output_norm, dtype=np.float64)
+    reference = np.asarray(captured_state, dtype=np.float64)
+    if (
+        prenorm.shape != reference.shape
+        or norm.shape != reference.shape
+        or not np.isfinite(prenorm).all()
+        or not np.isfinite(norm).all()
+        or not np.isfinite(reference).all()
+    ):
+        raise ValueError("native prenorm, frozen output norm and head state are misaligned")
+    epsilon = rms_norm_epsilon
+    reconstructed = prenorm * (1.0 / np.sqrt(np.mean(prenorm**2) + epsilon)) * norm
+    delta = reconstructed - reference
+    relative_rms = float(np.sqrt(np.mean(delta**2)) / max(np.sqrt(np.mean(reference**2)), 1e-8))
+    max_abs = float(np.max(np.abs(delta)))
+    if not math.isfinite(relative_rms) or relative_rms > 0.10 or not math.isfinite(max_abs):
+        raise ValueError("native prenorm reconstruction exceeds the frozen 0.10 relative-RMS gate")
+    return {
+        "state_join_method": "eagle3_prenorm_output_norm_reconstruction",
+        "native_result_norm_state_exact": False,
+        "state_relative_rms": relative_rms,
+        "state_max_abs_error": max_abs,
+        "output_norm_tensor_sha256": output_norm_sha256,
+        "rms_norm_epsilon": epsilon,
+    }
+
+
 def _validate_mask_placement(cache_audit: dict) -> None:
     """Accept CUDA masks or the audited host-pinned causal-mask buffer."""
     placement = str(cache_audit.get("mask_device", "")).lower()
@@ -452,6 +529,9 @@ def _bridge_roots(
     cache_rows: list[dict],
     graph_index_path: Path,
     graph_values_path: Path,
+    output_norm: np.ndarray,
+    output_norm_sha256: str,
+    rms_norm_epsilon: float,
 ) -> list[dict]:
     heads = _jsonl(capture_dir / "heads.jsonl")
     state_payload = np.memmap(capture_dir / "heads.f32", dtype="<f4", mode="r")
@@ -656,11 +736,15 @@ def _bridge_roots(
                 for write in writes
             ):
                 raise ValueError("selected head does not own its chronological cache graph join")
-            result_norm = graph_groups.get(graph_execution, {}).get("result_norm")
-            if result_norm is None or not np.array_equal(
-                _column(result_norm, graph_values, graph_column), captured_state
-            ):
-                raise ValueError("selected head state differs from its chronological graph result")
+            state_join = _join_head_state(
+                captured_state,
+                graph_groups.get(graph_execution, {}),
+                graph_column,
+                graph_values,
+                output_norm,
+                output_norm_sha256,
+                rms_norm_epsilon,
+            )
             bridges.append(
                 {
                     "domain": domain,
@@ -672,10 +756,10 @@ def _bridge_roots(
                     "kv_max_before": kv_max_before,
                     "kv_max_after": kv_max_after,
                     "logical_cache_length_before_seed": kv_max_after + 1,
+                    **state_join,
                     "matching_globally_audited_cache_writes": len(writes),
                     "cache_execution": graph_execution,
                     "cache_column": graph_column,
-                    "native_result_norm_state_exact": True,
                 }
             )
     return bridges
@@ -1025,6 +1109,7 @@ def assemble(args) -> dict:
         gradient_inputs.get("candidate_manifest") != provider_hashes["capture_manifest"]
         or gradient_inputs.get("candidate_prompts") != provider_hashes["prompts"]
         or gradient_inputs.get("checkpoint") != CALIBRATION_PINNED_INPUT_SHA256["checkpoint_zero"]
+        or gradient_inputs.get("candidate_d_gguf") != provider_hashes["candidate_d_gguf"]
         or gradient_inputs.get("row_export_gguf")
         != CALIBRATION_PINNED_INPUT_SHA256["exported_gguf"]
     ):
@@ -1098,6 +1183,9 @@ def assemble(args) -> dict:
 
     state_rows = _jsonl(cache_dir / "state.jsonl")
     cache_rows = cache_events
+    output_norm, output_norm_sha256, rms_norm_epsilon = _frozen_output_norm(
+        Path(provider_paths["candidate_d_gguf"]), provider_hashes["candidate_d_gguf"]
+    )
     bridge_rows = _bridge_roots(
         numeric_roots,
         gradient_roots,
@@ -1107,9 +1195,10 @@ def assemble(args) -> dict:
         cache_rows,
         graph_index_path,
         cache_dir / "heads.draft_graph.f32",
+        output_norm,
+        output_norm_sha256,
+        rms_norm_epsilon,
     )
-    if footer["result_output_markers"] < len(bridge_rows):
-        raise ValueError("native graph output-boundary markers omit a selected root")
     if inventory["compact_teacher_attached"]:
         raise ValueError("hard-CE calibration may not attach a compact teacher")
     checks = {
@@ -1147,6 +1236,35 @@ def assemble(args) -> dict:
             "hard_sign_bits_exact": True,
             "row_scales_exact": True,
             "root_position_cache_bridges": bridge_rows,
+            "native_head_state_join_methods": sorted(
+                {row["state_join_method"] for row in bridge_rows}
+            ),
+            "captured_result_norm_exact_roots": sum(
+                row["native_result_norm_state_exact"] for row in bridge_rows
+            ),
+            "reconstructed_prenorm_roots": sum(
+                row["state_join_method"] == "eagle3_prenorm_output_norm_reconstruction"
+                for row in bridge_rows
+            ),
+            "max_reconstructed_state_relative_rms": max(
+                (
+                    row["state_relative_rms"]
+                    for row in bridge_rows
+                    if row["state_join_method"] == "eagle3_prenorm_output_norm_reconstruction"
+                ),
+                default=0.0,
+            ),
+            "max_reconstructed_state_absolute_error": max(
+                (
+                    row["state_max_abs_error"]
+                    for row in bridge_rows
+                    if row["state_join_method"] == "eagle3_prenorm_output_norm_reconstruction"
+                ),
+                default=0.0,
+            ),
+            "frozen_output_norm_tensor_sha256": output_norm_sha256,
+            "frozen_output_norm_source_gguf_sha256": provider_hashes["candidate_d_gguf"],
+            "frozen_rms_norm_epsilon": rms_norm_epsilon,
             "native_cache_audit_decoder_executions": cache_audit["decoder_executions"],
             "native_graph_result_output_markers": footer["result_output_markers"],
             "native_runtime_graph_status": native_block["graph_status"],
@@ -1198,6 +1316,7 @@ def assemble(args) -> dict:
         "bundle_audit_report": sha256(paths["bundle_audit_report"]),
         "source_cell_manifest": source_cell_hash,
         "shard_manifest": sha256(shard_path),
+        "frozen_output_norm_weight": output_norm_sha256,
         **{f"capture_{name}": digest for name, digest in bundle_source_hashes.items()},
         "alias_map": sha256(paths["alias_map"]),
         "old_native_heads": sha256(paths["old_native_capture_dir"] / "heads.jsonl"),

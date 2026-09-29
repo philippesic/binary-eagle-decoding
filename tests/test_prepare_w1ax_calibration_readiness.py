@@ -1,5 +1,6 @@
 """CPU contracts for the frozen W1Ax calibration readiness assembler."""
 
+import hashlib
 import json
 import sys
 import tempfile
@@ -24,6 +25,7 @@ from prepare_w1ax_calibration_readiness import (  # noqa: E402
     _exact_response_pairs,
     _gradient_roots,
     _identity,
+    _join_head_state,
     _measured_row_a16_task_ids,
     _ordered_head_cache_joins,
     _task_map,
@@ -403,6 +405,46 @@ class CalibrationReadinessTests(unittest.TestCase):
                 cache_writes[:1],
             )
 
+    def test_prenorm_reconstruction_uses_bounded_relative_rms(self):
+        prenorm = np.asarray([1.0, -2.0], dtype=np.float32)
+        output_norm = np.asarray([0.5, 1.5], dtype=np.float32)
+        graph_record = {
+            "dtype": "f32",
+            "n_tokens": 1,
+            "token_width": 2,
+            "ne": [2, 1],
+            "token_axis": 1,
+            "f32_offset": 0,
+            "f32_count": 2,
+        }
+        graph_values = prenorm.astype(np.float64)
+        expected = (graph_values / np.sqrt(np.mean(graph_values**2) + 1e-6) * output_norm).astype(
+            np.float32
+        )
+        report = _join_head_state(
+            expected,
+            {"eagle3_prenorm-0": graph_record},
+            0,
+            graph_values,
+            output_norm,
+            "a" * 64,
+            1e-6,
+        )
+        self.assertEqual(report["state_join_method"], "eagle3_prenorm_output_norm_reconstruction")
+        self.assertFalse(report["native_result_norm_state_exact"])
+        self.assertLessEqual(report["state_relative_rms"], 0.10)
+        self.assertEqual(report["output_norm_tensor_sha256"], "a" * 64)
+        with self.assertRaisesRegex(ValueError, "0.10 relative-RMS"):
+            _join_head_state(
+                expected + 1.0,
+                {"eagle3_prenorm-0": graph_record},
+                0,
+                graph_values,
+                output_norm,
+                "a" * 64,
+                1e-6,
+            )
+
     def test_actual_runner_manifest_binds_inline_records_and_block(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -467,14 +509,23 @@ class CalibrationReadinessTests(unittest.TestCase):
             heads, states, cache_rows, rounds = [], [], [], []
             numeric, gradients, task_map = {}, {}, {}
             graph_rows, graph_values = [], []
+            head_states = []
             offset = 0
+            output_norm = np.asarray([0.5, 1.5], dtype=np.float32)
+            rms_norm_epsilon = 1e-6
             for execution, (domain, prompt) in enumerate(EXPECTED_DOMAINS.items()):
                 task_id = 11 + execution
                 task_map[task_id] = prompt
                 parent = (0, 3, 4)[execution]
                 prefix = list(range(parent + 2))
                 token = prefix[-1]
-                state = np.asarray([execution + 0.25, -execution - 0.5], dtype=np.float32)
+                prenorm = np.asarray([execution + 1.0, -(execution + 2.0)], dtype=np.float32)
+                state = (
+                    prenorm.astype(np.float64)
+                    / np.sqrt(np.mean(prenorm.astype(np.float64) ** 2) + rms_norm_epsilon)
+                    * output_norm.astype(np.float64)
+                ).astype(np.float32)
+                head_states.append(state)
                 heads.append(
                     {
                         "schema": "eagle_head_state_v1",
@@ -548,7 +599,8 @@ class CalibrationReadinessTests(unittest.TestCase):
                     {
                         "schema": "eagle_draft_graph_v1",
                         "event": "tensor",
-                        "tensor_name": "result_norm",
+                        "tensor_name": "eagle3_prenorm-0",
+                        "dtype": "f32",
                         "group_kind": "decoder",
                         "group_execution": execution,
                         "n_tokens": 1,
@@ -560,7 +612,7 @@ class CalibrationReadinessTests(unittest.TestCase):
                         "f32_bytes": 8,
                     }
                 )
-                graph_values.extend(state.tolist())
+                graph_values.extend(prenorm.tolist())
                 offset += 2
                 numeric[domain] = [
                     {
@@ -584,11 +636,7 @@ class CalibrationReadinessTests(unittest.TestCase):
             write_jsonl(heads_path, heads)
             (capture_dir / "heads.f32").write_bytes(
                 np.asarray(
-                    [
-                        value
-                        for index in range(len(heads))
-                        for value in (index + 0.25, -index - 0.5)
-                    ],
+                    [value for state in head_states for value in state.tolist()],
                     dtype="<f4",
                 ).tobytes()
             )
@@ -620,9 +668,20 @@ class CalibrationReadinessTests(unittest.TestCase):
                 cache_rows,
                 graph_path,
                 graph_values_path,
+                output_norm,
+                hashlib.sha256(output_norm.astype("<f4").tobytes()).hexdigest(),
+                rms_norm_epsilon,
             )
             self.assertEqual(len(bridge), 3)
-            self.assertTrue(all(row["native_result_norm_state_exact"] for row in bridge))
+            self.assertTrue(all(not row["native_result_norm_state_exact"] for row in bridge))
+            self.assertTrue(
+                all(
+                    row["state_join_method"] == "eagle3_prenorm_output_norm_reconstruction"
+                    and row["state_relative_rms"] <= 0.10
+                    and len(row["output_norm_tensor_sha256"]) == 64
+                    for row in bridge
+                )
+            )
             self.assertEqual([row["state_seed_ordinal"] for row in bridge], [0, 1, 2])
             self.assertEqual([row["logical_cache_length_before_seed"] for row in bridge], [0, 3, 4])
             self.assertEqual(bridge[0]["kv_max_before"], bridge[0]["kv_max_after"])
@@ -640,6 +699,9 @@ class CalibrationReadinessTests(unittest.TestCase):
                     cache_rows,
                     graph_path,
                     graph_values_path,
+                    output_norm,
+                    hashlib.sha256(output_norm.astype("<f4").tobytes()).hexdigest(),
+                    rms_norm_epsilon,
                 )
 
 
