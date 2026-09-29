@@ -337,3 +337,36 @@ opt-ins off, Q4_0 and untrained row-A16, 128-token cap, draft length five and
 `p_min=0`. The original fixed four-variant pruning result is a separate
 completed experiment. These new quality pairs make no timing, nonzero-p_min
 or sealed-final quality claim. Their results are pending.
+
+### Real quality gate result
+
+All six inference supervisors completed exit zero. Compact sampling and K/V-only
+catch-up each matched **6/6** measured request pairs, with zero raw-ID, text,
+finish, acceptance or checked round-field mismatches. Each pair covers Q4_0
+and untrained row-A16 over the same prose/reasoning/code sample. Q4_0 accepted
+183 over 138 observed rounds; row-A16 accepted 31 over 288 observed rounds.
+These are bounded regression results at p_min=0, not broad quality or speed.
+
+Resident state **failed** this gate: output IDs/text still match all six pairs
+and Q4_0's counts/rounds match, but all three row-A16 requests change proposal/
+acceptance counts and round count (nine reported field mismatches). Row-A16
+accepted counts changed from prose/reasoning/code `6/14/11` to `10/18/10`.
+Prose and reasoning first proposals already differ in round zero; code diverges
+at the second proposal of round zero. No gain is attributed to resident state
+and its timing is withheld. The separate packed A16 tiny fixture passed,
+showing the tiny synthetic gate did not cover this real-model divergence.
+
+| Comparison report under `runs/` | SHA256 |
+| --- | --- |
+| `w1-runtime-compact_logits-quality-compare-20260929/report.json` | `7f09fb8a6f4fea1ac488609326b223821de348abcdfca98cbfc933e4dc04468b` |
+| `w1-runtime-kv_only-quality-compare-20260929/report.json` | `741caffe9f85e7925230f54d1a8359ceb5610f27c31f5fdf06d345d34cf2b5eb` |
+| `w1-runtime-device_state-quality-compare-20260929/report.json` | `f17cb223ba7ddb67b74d3989d57517f7b3fb83763ef9e85cf7c4360656ea6518` |
+
+The resident report directory also retains `first-divergence.json` with exact
+off/on round records. All supervisors are terminal and GPU returned to
+0%/2,843 MiB. Native owner is investigating the input-leaf placement/copy
+structure under a bounded placement-only diagnostic; no numerical assumption
+is a proven cause yet. Keep resident off and preserve the failed evidence.
+No exact comparator or numeric threshold is being relaxed. Event/warp source
+`82b7379d` is coherently published with the fixture fix but remains unintegrated
+behind this investigation.

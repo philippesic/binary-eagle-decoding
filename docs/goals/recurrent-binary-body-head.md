@@ -3284,3 +3284,33 @@ and per-round provider preparation are emitted. Plans re-audit original sources,
 remain ineligible, have no loader factory, and authorize no capture. Actual
 trained-student collection, changed-prefix capture budget, feature/label audits
 and learning-curve/provider gates remain future research execution steps.
+
+## Real selector quality results and resident divergence
+
+Compact sampling and K/V-only catch-up quality pairs each passed 6/6 measured
+requests exactly, including raw outputs, acceptance and checked round fields.
+Q4_0 accepted 183/138 observed rounds; row-A16 accepted 31/288. Resident-state
+comparison failed with nine field mismatches: raw IDs/text all match and Q4_0
+counts match, but all three row-A16 requests change proposal/acceptance and
+round counts. Row-A16 accepted prose/reasoning/code goes `6/14/11` to `10/18/10`.
+First differing round is zero in every domain; first proposal already differs
+in prose/reasoning. Packed A16 tiny CUDA fixture also passes, so it does not
+cover the real-model issue. Timing for resident is withheld, selector stays off.
+
+The [runtime report](../../experiments/eagle-runtime-optimizations.md#real-quality-gate-result)
+records report hashes and preserved first divergence. Quality queue handle
+`140da7e6-7a8b-41a1-aaef-8fbdcec3ba4e` is terminal after its comparator exit1;
+all six inference jobs exited zero. No GPU process remains, 0%/2,843 MiB.
+Native owner `/root/runtime_optimizations` is preparing a bounded default-off
+placement-only diagnostic on stable `1e7625635`: skip forced input-leaf GPU
+assignment while retaining resident capture/API and normal synchronized
+fallback. Do not use stage/head capture to infer active resident recurrence;
+stage inspection disables it. Run the diagnostic flag identically in both
+conditions on one new binary and inspect scheduling/first-root semantics.
+Investigate further only if this concrete proposal decision risk remains.
+
+Coherent event/warp branch `82b7379d04a5c168b72e87149571433faab0806a` is
+published on `codex/eagle-runtime-instrumentation`, preserving `1e7625635`.
+CPU build/sampler/dense/packed A4 shared fixture passed; no CUDA proof yet.
+Keep that source unintegrated until the current resident diagnostic checkpoint.
+No new training, final evaluation or full-tier capture was launched.
