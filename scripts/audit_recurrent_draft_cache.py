@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Audit stored CPU EAGLE draft K/V bytes and causal masks against graph writes.
+"""Audit stored EAGLE draft K/V bytes and causal masks against graph writes.
 
 This accepts only the single-sequence, contiguous-slot diagnostic capture.
 It compares post-write cache bytes, not merely projected graph operands.
@@ -42,6 +42,17 @@ def audit(capture_dir: Path) -> dict:
         or rows_path.stat().st_size != 4096 * len(cache_rows)
     ):
         raise ValueError("draft cache counts or binary payload lengths differ")
+    max_rows = footer.get("max_rows")
+    max_bytes = footer.get("max_bytes")
+    if (
+        type(max_rows) is not int
+        or not 1 <= max_rows <= 65536
+        or type(max_bytes) is not int
+        or not 1 <= max_bytes <= 1024 * 1024 * 1024
+        or len(cache_rows) > max_rows
+        or footer["row_bytes"] + footer["mask_bytes"] > max_bytes
+    ):
+        raise ValueError("draft cache capture limits are missing, exceeded or invalid")
 
     graph_records, graph_values, graph_footer = _read_graph(graph_index_path, graph_values_path)
     if graph_footer.get("decoder_groups") != len(executions):
@@ -58,10 +69,27 @@ def audit(capture_dir: Path) -> dict:
     next_row_offset = next_mask_offset = row_index = 0
     matched_keys = matched_values = mask_prefix_rows = 0
     position_rewrites: dict[int, int] = {}
+    cache_devices: set[str] = set()
+    mask_devices: set[str] = set()
     for execution_index, execution in enumerate(executions):
         n_tokens = execution.get("n_tokens")
         n_kv = execution.get("n_kv")
         dtype_name = execution.get("mask_dtype")
+        cache_buffer_type = execution.get("cache_buffer_type")
+        cache_buffer_is_host = execution.get("cache_buffer_is_host")
+        mask_buffer_type = execution.get("mask_buffer_type")
+        mask_buffer_is_host = execution.get("mask_buffer_is_host")
+        def classify_buffer(buffer_type: object, is_host: object) -> str:
+            if not isinstance(buffer_type, str) or not buffer_type or type(is_host) is not bool:
+                raise ValueError("draft cache backend buffer metadata is invalid")
+            if buffer_type.startswith("CUDA"):
+                return "cuda_host" if is_host else "cuda"
+            if is_host:
+                return "cpu"
+            raise ValueError("draft cache capture used an unsupported non-host backend")
+
+        cache_devices.add(classify_buffer(cache_buffer_type, cache_buffer_is_host))
+        mask_devices.add(classify_buffer(mask_buffer_type, mask_buffer_is_host))
         if (
             execution.get("execution") != execution_index
             or type(n_tokens) is not int
@@ -130,9 +158,12 @@ def audit(capture_dir: Path) -> dict:
     if matched_keys != elements or matched_values != elements:
         raise ValueError("stored draft cache bytes differ from native projected writes")
     return {
-        "schema": "recurrent_cpu_stored_draft_cache_audit_v1",
+        "schema": "recurrent_stored_draft_cache_audit_v2",
         "status": "stored_f16_rows_and_exact_prefix_masks_compared",
-        "execution_device": "cpu",
+        "execution_device": next(iter(cache_devices)) if len(cache_devices) == 1 else "mixed",
+        "mask_device": next(iter(mask_devices)) if len(mask_devices) == 1 else "mixed",
+        "cache_buffer_types": sorted({event["cache_buffer_type"] for event in executions}),
+        "mask_buffer_types": sorted({event["mask_buffer_type"] for event in executions}),
         "decoder_executions": len(executions),
         "captured_rows": len(cache_rows),
         "key_elements": elements,

@@ -60,6 +60,10 @@ class StoredDraftCacheAuditTests(unittest.TestCase):
                 "execution": 0,
                 "n_tokens": 1,
                 "n_kv": 1,
+                "cache_buffer_type": "CPU",
+                "cache_buffer_is_host": True,
+                "mask_buffer_type": "CPU",
+                "mask_buffer_is_host": True,
                 "mask_dtype": "f16",
                 "mask_offset": 0,
                 "mask_bytes": 2,
@@ -83,6 +87,8 @@ class StoredDraftCacheAuditTests(unittest.TestCase):
                 "rows": 1,
                 "row_bytes": 4096,
                 "mask_bytes": 2,
+                "max_rows": 8192,
+                "max_bytes": 512 * 1024 * 1024,
             },
         ]
         self.write_jsonl("heads.draft_cache.jsonl", self.events)
@@ -97,6 +103,37 @@ class StoredDraftCacheAuditTests(unittest.TestCase):
         self.assertEqual(result["key_equal_elements"], 1024)
         self.assertEqual(result["value_equal_elements"], 1024)
         self.assertEqual(result["exact_prefix_mask_rows"], 1)
+        self.assertEqual(result["execution_device"], "cpu")
+
+    def test_cuda_buffer_metadata_is_reported(self):
+        self.events[0]["cache_buffer_type"] = "CUDA0"
+        self.events[0]["cache_buffer_is_host"] = False
+        self.events[0]["mask_buffer_type"] = "CUDA0"
+        self.events[0]["mask_buffer_is_host"] = False
+        self.write_jsonl("heads.draft_cache.jsonl", self.events)
+        result = audit(self.root)
+        self.assertEqual(result["execution_device"], "cuda")
+        self.assertEqual(result["mask_device"], "cuda")
+        self.assertEqual(result["cache_buffer_types"], ["CUDA0"])
+
+    def test_unbounded_or_unsupported_capture_metadata_is_rejected(self):
+        self.events[-1]["max_rows"] = 65537
+        self.write_jsonl("heads.draft_cache.jsonl", self.events)
+        with self.assertRaisesRegex(ValueError, "capture limits"):
+            audit(self.root)
+        self.events[-1]["max_rows"] = 8192
+        self.events[0]["cache_buffer_type"] = "Vulkan0"
+        self.events[0]["cache_buffer_is_host"] = False
+        self.write_jsonl("heads.draft_cache.jsonl", self.events)
+        with self.assertRaisesRegex(ValueError, "unsupported non-host backend"):
+            audit(self.root)
+
+    def test_cuda_host_buffer_is_not_reported_as_cuda_execution(self):
+        self.events[0]["mask_buffer_type"] = "CUDA_Host"
+        self.events[0]["mask_buffer_is_host"] = True
+        self.write_jsonl("heads.draft_cache.jsonl", self.events)
+        result = audit(self.root)
+        self.assertEqual(result["mask_device"], "cuda_host")
 
     def test_changed_stored_key_is_rejected(self):
         path = self.root / "heads.draft_cache.f16"
