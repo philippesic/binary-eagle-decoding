@@ -309,3 +309,31 @@ assertion and rerun all packed precision/sharing combinations after explicit
 metadata initialization. The owner is testing that fix independently on the
 stable ancestry. Real selector A/B, event/warp CUDA checks and performance
 remain pending. The original calibration/capture evidence stays pinned.
+
+### Corrected fixture gate
+
+Published fixture-only native `1e7625635149deff85d1e5ff9b2f167b61fec4b0`
+(parent integration `35c8b27`) initializes the encoder batch's position,
+sequence count, sequence ID and logits flag. All original assertions remain.
+The explicit CUDA sampling-test target rebuild passed, followed by dense A16
+and **all six packed A1/A4/A8 × shared-off/on fixtures**, each exit zero and
+`EAGLE runtime fixture OK` on actual RTX 5080. Every run reported resident
+CUDA0 storage and passed following-state/cache and lifetime checks.
+
+Combined per-run results, state/log hashes and placement evidence:
+`runs/w1-runtime-cuda-fixture-fix-build-20260929/fixture-results.json`, SHA256
+`ea79b224a6853555303727e9a712d17f955ec2026d5dffaec1a82807eea779a5`.
+Corrected sampling executable SHA256:
+`4ea2ca542290240558d149d4237c4660ed423a1070d79abd428568704a4262ad`.
+Dense/packed input GGUF SHA256 respectively:
+`f55d2b5f62dc7187d741a3d9abc259839f82a94d7122544bdace0170b8c92495` /
+`b287e1040a7521608d7809492fda310b462aa1bf0d49116cd557129e89b429ae`.
+Server/library runtime is unchanged from the stable preserved build.
+All seven process groups were absent afterward; GPU was idle at 0%/2,843 MiB.
+
+Real three-domain diagnostic quality pairs now run sequentially for compact
+sampling, K/V-only catch-up and resident state. Each pair holds all other
+opt-ins off, Q4_0 and untrained row-A16, 128-token cap, draft length five and
+`p_min=0`. The original fixed four-variant pruning result is a separate
+completed experiment. These new quality pairs make no timing, nonzero-p_min
+or sealed-final quality claim. Their results are pending.

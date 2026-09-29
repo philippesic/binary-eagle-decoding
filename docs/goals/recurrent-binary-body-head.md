@@ -3254,3 +3254,33 @@ build only `test-sampling`, run dense plus packed A1/A4/A8 sharing off/on
 under unique supervisor IDs, then real native selector quality comparisons.
 Event/warp integration remains behind that gate. Refresh bridge CPU work
 continues independently; no final prompt or new training budget is opened.
+
+## Corrected CUDA fixtures and native quality queue
+
+Fixture-only native `1e7625635` is integrated as `35c8b27`; four explicit
+encoder batch metadata assignments fix the setup defect with assertions
+unchanged. CUDA target build passed, then dense plus all six packed
+A1/A4/A8 sharing off/on runs passed. Combined evidence/hash record
+`runs/w1-runtime-cuda-fixture-fix-build-20260929/fixture-results.json` SHA256
+is `ea79b224a6853555303727e9a712d17f955ec2026d5dffaec1a82807eea779a5`.
+All residents are CUDA0 and all seven groups terminated; GPU returned to
+0%/2,843 MiB. Server SHA remains the stable `6d855804...bc34b9`.
+
+Sequential real native quality queue runs in `$35` pane `%58`, command handle
+`140da7e6-7a8b-41a1-aaef-8fbdcec3ba4e`: each of `compact_logits`, `kv_only`,
+`device_state` has off/on supervised runs and its own offline comparator. IDs
+are `w1-runtime-<selector>-quality-<off|on|compare>-20260929`; benchmark outputs
+are under each inference run's `benchmark/`. All prepared configs use the
+frozen three-domain sample and Q4_0/untrained row-A16, D=5, p_min=0,128 tokens.
+Root is sole GPU owner; queue stops on the first nonzero job/comparison. First
+compact off completed exit zero, on was confirmed live. Monitor actual
+state/processes through `%59`; do not start event/warp tests concurrently.
+
+Native refresh bridge worker `c5912d9` is integrated as `b0ba383`. Twenty CPU
+tests, Ruff and independent Luna review passed. Canonical completed native
+head/forced-round/state/task-map/prompt cells are bound to checkpoint/export,
+model/cache execution and raw file hashes; exact token-array capture templates
+and per-round provider preparation are emitted. Plans re-audit original sources,
+remain ineligible, have no loader factory, and authorize no capture. Actual
+trained-student collection, changed-prefix capture budget, feature/label audits
+and learning-curve/provider gates remain future research execution steps.
