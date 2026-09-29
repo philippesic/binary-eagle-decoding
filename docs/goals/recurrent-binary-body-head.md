@@ -2889,3 +2889,91 @@ monitor pane `%59` is connected through the registry host's SSH and WSL.
 Monitor the same state/handle, never restart on observation timeout. On pause,
 mark the host flag first, interrupt its supervisor, verify the group/server
 absence and device state. No captured-data QAT or final-set use has occurred.
+
+## Phase 1B completed backward and native cache evidence
+
+Backward-only retry `runs/w1-pilot-torch-gradients-retry-20260929/` exited
+zero with all nine selected roots passing: 18 finite sign/scale gradient
+tensors per root, supported hard-CE rows, exact borrowed F16 embedding rows,
+F32 norms and both absolute d2t maps, and finite F16-exact Torch cache writes
+with the expected decoder lengths/positions. No optimizer step ran. Gradient
+report SHA256 is
+`c4fc8c18e3b70c770ebd628767ae8cf453f66cfc2a23c8521f0ea30c6de7d050`.
+Prefix rebuilding is an explicit no-grad conditioning boundary; proposal
+state/K/V recurrence remains differentiable. Focused Astra memory review
+found no reason to change this before measurement; reusable differentiable
+weight signs are a bounded fallback only if actual optimizer memory fails.
+
+The cache-only graph capture initially stopped during startup because an
+encoder/sequence-removal result-output callback appeared outside a decoder
+group. The native fix preserves that ignored case and records real decoder
+output boundaries against captured norm/prenorm tensors. It is published as
+`0be8d5ba0ac0b663ae588fedcf17ec38b0603902`, retaining the runtime owner's
+compact-sampling and K/V-only catch-up commits in ancestry. Their flags are
+explicitly `0` in the pilot config; no optimization A/B result is claimed.
+A subsequent GCC build found the new cache-only eligibility helper missing
+its explicit `<algorithm>` include; `83a070ec19dbe683203400f2cfbb104a4328c5de`
+fixes that header and is published before parent `9ff6c61`. The supervised
+CUDA rebuild finished exit zero (152 Ninja steps).
+
+`runs/w1-pilot-cuda-cache-boundary-20260929/` then completed with two
+warmups and three measured requests for both Q4_0 and row-A16. All three
+paired raw response ID streams match. Benchmark manifest SHA256 is
+`873d875a47764442193f05a72b11ad31972fbc87e3a80791fd06304a7146dd4a`;
+row block manifest SHA256 is
+`46d3a5a7180bc91361037f3cceec68f852053789b0e92a25eeefa24a7edc1001`.
+Independent `runs/w1-pilot-cuda-cache-audit-20260929/` exited zero:
+**5,533,696/5,533,696** native projected-to-stored F16 key elements and the
+same count of value elements matched, and all **5,404** captured query masks
+allowed exactly the causal prefix. This compares actual CUDA cache storage;
+masks were in CUDA-host buffers. Audit SHA256 is
+`8b2c88d1ee9f8655d523c89b8404443e5ae9fc8ab83f11788e434b2565beb5cc`.
+Original and current executables/shared libraries have an additional hash
+inventory at the cache run's `runtime-hashes.json`; the original runtime
+copy remains retained. This is correctness instrumentation, not timing.
+
+The versioned readiness assembler is integrated as `e5c92f9`; its actual
+canonical alias-map/inline-record adapters are fixed in `fc080ef`. Initial
+assembly attempts stopped on schema mismatches before publishing any report
+or provider overlay. The frozen source hashes and pass criteria are unchanged;
+canonical identity/block-manifest adapters are being corrected using the
+actual runner outputs. No passing readiness overlay exists yet, so the
+100-step optimizer calibration has not started. Coordinator `/root` remains
+sole GPU owner; all listed inference/backward supervisors are terminal.
+
+## Compact storage and refresh engineering checkpoint
+
+The exact-prefix refresh planner/auditor, v1 normalized-index adapter, gates
+and capture caps are integrated as `39d8a13` from worker `2694a35`. Fourteen
+CPU tests and Ruff passed; plans remain training-ineligible. Actual native
+collector/provider integration and authorized refresh capture are future
+queue items, not jobs launched by this checkpoint.
+
+V2 hard-CE label-only conversion, independent audit, round-input adapter and
+direct no-raw-copy builder are integrated as `fddc633` from `15cbb33`.
+Thirty-three CPU capture checks passed. The legacy v1 builder still copies
+raw logits by default; its explicit hardlink option is for owned transient
+staging, refuses cross-device fallback, and verifies the original inode/hash/
+link count after cleanup. Source raw files and v1 bundles are never retired.
+The DECISIONS subsection preserves the user-owned full-tier storage choice.
+
+The real 31-prompt source was converted in CPU-only supervised run
+`runs/w1-shard0000-v2-conversion-20260929/`; separate
+`runs/w1-shard0000-v2-audit-20260929/` passed byte-identically to its builder
+audit. V2 retains 12,610 labels (12,250 supported), 7,796 feature rows and
+31-request/3,836-response-token ancestry, while omitting **7,663,651,840**
+bytes of duplicated full-vocabulary logits. Manifest SHA256 is
+`e3790fea79650a2429a21badf522e9dce8582713a0fe2c83e6b38b0c4c645ecb`;
+audit SHA256 is
+`42520130bab0147bad8966a25f2392e759d0bda4d01dcd822f03198169793c57`.
+Its eligibility and raw-retirement flags remain false. Raw probabilities
+cannot be recomputed from v2 alone; initial/terminal sampler arithmetic
+remains explicitly unverified. The pilot permission cannot transfer to v2.
+
+Native owner `/root/runtime_optimizations` continues shared A1/A4/A8 packing,
+bounded resident state and fine-grained measurement preparation. Published
+shared-pack CPU checks report 133 operator and three fanout cases; CUDA
+validation/performance remain queued. Compact sampling and K/V-only catch-up
+are in main's native ancestry with pilot flags disabled; their CPU fixture
+reports and A/B preparation remain with the owner. No sealed final prompt
+was opened and no full-tier capture or substantive training sweep started.
