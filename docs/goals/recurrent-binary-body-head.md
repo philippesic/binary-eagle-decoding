@@ -2332,3 +2332,12 @@ interrupted. The operator test is valid as a correctness check, but these
 conditions preclude a clean timing claim. The user separately clarified not
 to pause GPU work. Proceed with supervised quality checks and keep throughput
 timing diagnostic or delayed until the external load clears.
+
+The first off-path native quality job started at 2026-09-29 05:33:09 UTC as
+`runs/w1-prune-off-quality-20260928/`, supervised in tmux MCP pane `%54` with
+PID/process group 7482. It uses the pinned `prune_off` config, 24 old
+development prompts, Q4_0/D group-128/A16/FP16/target-only and one diagnostic
+repetition. The job is progressing through requests; this is quality and
+trajectory evidence, not an uncontended timing measurement. Monitor from pane
+`%56`; interrupt the supervisor and verify process group/GPU state if the
+user asks to pause or the job must stop.
