@@ -3314,3 +3314,31 @@ published on `codex/eagle-runtime-instrumentation`, preserving `1e7625635`.
 CPU build/sampler/dense/packed A4 shared fixture passed; no CUDA proof yet.
 Keep that source unintegrated until the current resident diagnostic checkpoint.
 No new training, final evaluation or full-tier capture was launched.
+
+## Resident placement isolated
+
+Default-off diagnostic native `be09f61c5` / parent `e361f74` passed CUDA
+context/server/test rebuild. Common `GGML_EAGLE_DEVICE_HOST_INPUT=1` in both
+fresh quality conditions restored 6/6 exact request pairs and all acceptance/
+round fields. Report SHA256 is
+`b0081838b0c66d9eae60b45b74bbbb2212c51cf65a5d9d9a6fd484630d8867ad`.
+Actual resident transfer fallback is observed 864/1,828 times in Q4_0/row-A16
+on logs (warmups included). This isolates forced input placement as the trigger;
+the exact numerical mechanism remains unproven. Host fallback is not a
+device-only fix, speed claim or resident promotion. All jobs stopped, GPU idle.
+
+Current sole-owner job is `w1-resident-scheduler-debug-20260929` in `$35` pane
+`%58`, handle `eb47576a-d9eb-4e0c-b0ca-a785d241fa5a`. It uses the same host-input
+diagnostic config and frozen sample with a literal command wrapper changing
+only server `-lv` from three to five; actual commands remain in block manifests.
+Scheduler DEBUG output was otherwise suppressed. Next action: extract bounded
+raw-input/g_norm/residual/concat split excerpts for native owner to audit direct
+CPU consumers and existing GPU copy destinations. Preserve original placement/
+splits and reject unsupported graphs rather than guess new norm assignments.
+No new training/final/capture budget is opened. Event/warp branch remains queued.
+
+Integrated refresh-bridge worktree was clean, its patch was present in main,
+and only disposable caches/environments were ignored. Complete branch history
+was saved/verified as
+`.git/goal-worktree-archives/feature-trajectory-refresh-bridge.bundle`, then
+that worktree/branch was removed. GPU raw sources/checkpoints remain retained.

@@ -370,3 +370,33 @@ is a proven cause yet. Keep resident off and preserve the failed evidence.
 No exact comparator or numeric threshold is being relaxed. Event/warp source
 `82b7379d` is coherently published with the fixture fix but remains unintegrated
 behind this investigation.
+
+### Placement isolation
+
+The tested default-off diagnostic native `be09f61c5460a77b79f51fc0bd8af285f0ee6371`
+is integrated as `e361f74`. `GGML_EAGLE_DEVICE_HOST_INPUT=1` only skips forced
+input-leaf assignment, retaining resident capture/API and synchronized existing
+cross-backend fallback. The flag and scheduler debug level were identical
+in both fresh quality conditions; stage/head capture remained absent.
+
+This probe restored **6/6 exact request pairs**, including every checked
+proposal/acceptance/round field. Counts returned to Q4_0 183 accepted and
+row-A16 31 accepted. Report
+`runs/w1-resident-host-input-compare-20260929/report.json` SHA256 is
+`b0081838b0c66d9eae60b45b74bbbb2212c51cf65a5d9d9a6fd484630d8867ad`.
+On logs contain 864 Q4_0 and 1,828 row-A16 transfer-fallback markers across
+warmup/measured requests, proving resident recurrence remained active. This
+isolates forced input placement as the trigger, without proving which
+numerical/scheduling change it introduces. It preserves host traffic and is
+**not** a device-only solution or timing candidate. Both jobs stopped and
+GPU returned to 0%/2,843 MiB.
+
+Scheduler debug was suppressed by the runner's standard `-lv 3`. A single
+bounded follow-up run `w1-resident-scheduler-debug-20260929` raises only the
+recorded server command's verbosity to five, retaining the same sample,
+models, policy and diagnostic flags. It seeks admission evidence for original
+CPU consumers and existing GPU input-copy destinations; no proposal-margin
+or exact comparison gate is weakened. Permanent changes must preserve
+original graph placement/split semantics, reject unsupported CPU/alias/mixed
+destination graphs, and retain explicit host fallback. No bit-exact norm
+reimplementation is planned.

@@ -6,6 +6,12 @@ The target/verifier model precision remains as frozen for each experiment.
 
 **Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), continued as Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). The user has now **restored RTX 5080 access**; the RTX 2080 Ti remains paused. The gated 100-step row-A16 GPU calibration has completed; substantive training and final evaluation have not run. DFlash/DSpark are future roadmap items, not active work.
 
+**Resident diagnostic (2026-09-29):** restoring original input placement
+restored all six request pairs exactly, isolating forced placement as the
+trigger. The passing path still uses host traffic and is not a speed claim.
+One bounded scheduler-log probe is live to audit device-only admission; the
+resident selector remains gated. See the [checkpoint](goals/recurrent-binary-body-head.md#resident-placement-isolated).
+
 **Native quality gate (2026-09-29):** compact sampling and K/V-only
 catch-up each matched 6/6 request pairs exactly. Resident state preserved
 outputs but changed row-A16 proposals/acceptance and failed the gate; it
