@@ -2739,3 +2739,40 @@ sample without relabeling changed student prefixes. The process group and
 server stopped; RTX 5080 returned to 0% and about 2,909 MiB. The numeric
 gate now has frozen 0.10 relative-RMS state/logit limits in the pilot protocol
 before running the Torch comparison. The original bundle remains ineligible.
+
+## GPU Phase 1B pilot revalidation and implementation
+
+The continuation revalidated session `$35` and both panes `%57`/`%58`.
+A fresh RTX 5080 check found 0% utilization and 2,909 MiB whole-device use;
+no project supervisor, server or trainer was present. The previous turn
+made progress by completing the native three-domain trace and exact-prefix
+intersection, rather than waiting on an unobserved GPU job.
+
+Supervised CPU re-audit `runs/w1-pilot-reaudit-20260929/` exited zero.
+The audit is byte-identical to the original independent audit, SHA256
+`832325813eefea67dc97dc0d251b1e37b3a7b4a7349a4e26eb3aa9663198508b`: all
+12,610 rows, 12,250 supported labels, 3,776 verifier-reached rows and 7,796
+feature rows remain audited. No original eligibility field changed.
+
+Supervised identity retry `runs/w1-pilot-identity-retry-20260929/` exited
+zero at 18:45:49 UTC. All seven provider input hashes matched, both model
+snapshots passed their complete file audits, and all nine exported hard-sign
+bit tensors and row-scale tensors matched the original checkpoint exactly,
+including Q/K row permutation. Checkpoint, exported student and server hashes
+matched the frozen pilot protocol. Identity report SHA256 is
+`2317a1fafa8ea0afe5316dc3a674ccc864a088d1392e4a1da248a084c47b32ae`.
+The first identity command exited 1 due to a diagnostic dictionary-key
+error after model-file verification; it performed no model inference and
+did not produce an eligibility record. The corrected retry used the
+exporter's already-permuted packed arrays.
+
+Coordinator `/root` remains sole GPU owner. Bounded workers own separate
+implementation areas: `/root/pilot_checker` owns the Torch/native numerical
+checker; `/root/calibration_contract` owns the calibration-only provider
+contract; `/root/cuda_cache_capture` owns the opt-in native stored-cache
+readback extension. They have no authorization to run remote GPU jobs.
+Existing native cache capture requires host storage; it cannot currently
+prove CUDA stored-cache and mask values. The numerical checker is next;
+if it passes, close the selected-root CUDA cache/mask gap before any
+eligibility promotion. Preserve the original preparation bundle and sealed
+final data. No captured-data QAT has started.
