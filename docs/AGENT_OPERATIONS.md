@@ -3,7 +3,7 @@
 ## Starting and coordinating a goal
 
 The user starts one goal at a time by invoking `$start-goal-team` in Codex
-desktop with a rough objective. The Sol high orchestrator translates it into a
+desktop with a rough objective. The GPT-6.1 Sol high orchestrator translates it into a
 native Codex Goal and a concise `docs/goals/<slug>.md` checkpoint, linked from
 `docs/STATUS.md`. The Goal sustains its task; the file sustains the project when
 tasks or agents change. A native Goal is scoped to its Codex task, so every
@@ -17,7 +17,7 @@ research forks. Record a pending decision with options and current evidence in
 Use a separate Codex task for a feature or investigation the user may want to
 inspect or steer. Use a native subagent for a bounded disposable assignment.
 Start only as many workers as can make independent progress. Assign files and
-one GPU owner explicitly. Sol high owns coordination and features; Luna high
+one GPU owner explicitly. GPT-6.1 Sol high owns coordination and features; Luna high
 handles tests, logs, and long experiment supervision; Astra medium is an
 advisor on hard questions. A feature owner can ask a Luna worker to check its
 implementation, but the owner remains responsible for the result.

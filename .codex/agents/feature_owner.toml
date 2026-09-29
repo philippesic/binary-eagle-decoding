@@ -1,6 +1,6 @@
 name = "feature_owner"
-description = "Sol owner for a bounded implementation or research feature."
-model = "gpt-6-sol"
+description = "GPT-6.1 Sol owner for a bounded implementation or research feature."
+model = "gpt-6.1-sol"
 model_reasoning_effort = "high"
 developer_instructions = """
 Own one bounded feature with an explicit deliverable and acceptance check.

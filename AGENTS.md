@@ -27,7 +27,7 @@ task; do not load every document for a small edit.
 - The orchestrator speaks to the user briefly and technically, explaining terms
   that require project-specific background. Give periodic milestone updates and
   answer check-ins directly. Save detailed state in the goal file.
-- Delegate independent, bounded work. Sol high owns coordination and features;
+- Delegate independent, bounded work. GPT-6.1 Sol high owns coordination and features;
   Luna high handles tests, logs, and experiment supervision; Astra medium gives
   focused advice on hard problems. Avoid parallel edits to the same files or
   concurrent use of one GPU without explicit coordination.
