@@ -298,6 +298,18 @@ def _numeric_roots(report: dict) -> dict[str, list[dict]]:
     return roots
 
 
+def _contract_outcome_summary(numeric_roots: dict[str, list[dict]]) -> dict[str, list[str]]:
+    """Translate numeric-report labels to the readiness contract vocabulary."""
+    labels = {"accepted": "accepted_continuation", "rejected": "verifier_rejection"}
+    summary = {}
+    for domain, rows in numeric_roots.items():
+        selected = [row.get("preceding_student_round_outcome") for row in rows[1:]]
+        if any(outcome not in labels for outcome in selected):
+            raise ValueError(f"numeric report has an unsupported selected outcome in {domain}")
+        summary[domain] = sorted({labels[outcome] for outcome in selected})
+    return summary
+
+
 def _gradient_roots(report: dict) -> dict[str, list[dict]]:
     if (
         report.get("schema") != "w1ax_pilot_gradient_contract_v1"
@@ -1092,16 +1104,7 @@ def assemble(args) -> dict:
         or numeric_inputs.get("row_export_gguf") != CALIBRATION_PINNED_INPUT_SHA256["exported_gguf"]
     ):
         raise ValueError("Torch numeric report is not bound to frozen provider/checkpoint inputs")
-    outcomes = {
-        domain: sorted(
-            {
-                row.get("preceding_student_round_outcome")
-                for row in rows[1:]
-                if row.get("preceding_student_round_outcome") in {"accepted", "rejected"}
-            }
-        )
-        for domain, rows in numeric_roots.items()
-    }
+    outcomes = _contract_outcome_summary(numeric_roots)
     gradient = _json(gradient_path)
     gradient_roots = _gradient_roots(gradient)
     gradient_inputs = gradient.get("input_sha256", {})

@@ -174,40 +174,53 @@ def validate_calibration_readiness_report(
         "hard_sign_bits_exact",
         "row_scales_exact",
     )
-    if (
-        type(roots.get("selected_roots")) is not int
-        or roots["selected_roots"] < 6
-        or not isinstance(counts_by_domain, dict)
-        or set(counts_by_domain) != domains
-        or any(
-            type(counts_by_domain[domain]) is not int or counts_by_domain[domain] < 2
-            for domain in domains
+    if type(roots.get("selected_roots")) is not int or roots["selected_roots"] < 6:
+        raise ValueError("calibration readiness selected_roots must be an integer of at least six")
+    if not isinstance(counts_by_domain, dict) or set(counts_by_domain) != domains:
+        raise ValueError(
+            "calibration readiness selected_roots_by_domain must cover prose/reasoning/code"
         )
-        or sum(counts_by_domain.values()) != roots["selected_roots"]
-        or not isinstance(available_outcomes, dict)
-        or set(available_outcomes) != domains
-        or not isinstance(selected_outcomes, dict)
-        or set(selected_outcomes) != domains
-        or any(
-            not isinstance(available_outcomes[domain], list)
-            or not isinstance(selected_outcomes[domain], list)
-            or any(
-                outcome not in {"accepted_continuation", "verifier_rejection"}
-                for outcome in available_outcomes[domain]
-            )
-            or not set(selected_outcomes[domain]).issubset(set(available_outcomes[domain]))
-            or not set(available_outcomes[domain]).issubset(set(selected_outcomes[domain]))
-            or (
-                set(available_outcomes[domain]) == {"accepted_continuation", "verifier_rejection"}
-                and not {"accepted_continuation", "verifier_rejection"}.issubset(
-                    set(selected_outcomes[domain])
-                )
-            )
-            for domain in domains
-        )
-        or any(roots.get(field) is not True for field in root_flags)
+    if any(
+        type(counts_by_domain[domain]) is not int or counts_by_domain[domain] < 2
+        for domain in domains
     ):
-        raise ValueError("calibration readiness selected-root measurements do not pass")
+        raise ValueError("calibration readiness requires at least two selected roots per domain")
+    if sum(counts_by_domain.values()) != roots["selected_roots"]:
+        raise ValueError(
+            "calibration readiness selected root domain counts do not sum to selected_roots"
+        )
+    if not isinstance(available_outcomes, dict) or set(available_outcomes) != domains:
+        raise ValueError(
+            "calibration readiness available_outcomes_by_domain has an invalid domain set"
+        )
+    if not isinstance(selected_outcomes, dict) or set(selected_outcomes) != domains:
+        raise ValueError(
+            "calibration readiness selected_outcomes_by_domain has an invalid domain set"
+        )
+    allowed_outcomes = {"accepted_continuation", "verifier_rejection"}
+    for domain in domains:
+        available, selected = available_outcomes[domain], selected_outcomes[domain]
+        if not isinstance(available, list) or not isinstance(selected, list):
+            raise ValueError(f"calibration readiness outcomes for {domain} must be lists")
+        if any(outcome not in allowed_outcomes for outcome in available + selected):
+            raise ValueError(
+                f"calibration readiness outcome labels for {domain} must use "
+                "the contract vocabulary"
+            )
+        if set(available) != set(selected):
+            raise ValueError(
+                f"calibration readiness selected outcomes for {domain} "
+                "differ from available outcomes"
+            )
+        if set(available) == allowed_outcomes and not allowed_outcomes.issubset(selected):
+            raise ValueError(
+                f"calibration readiness selected {domain} roots omit an available outcome"
+            )
+    failed_root_flags = [field for field in root_flags if roots.get(field) is not True]
+    if failed_root_flags:
+        raise ValueError(
+            "calibration readiness selected-root checks failed: " + ", ".join(failed_root_flags)
+        )
     proposals = checks["student_native_proposal_and_response_agreement"].get("result", {})
     disagreements = proposals.get("top_choice_disagreements")
     near_ties = proposals.get("near_tie_disagreements")

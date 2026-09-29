@@ -22,6 +22,7 @@ from prepare_w1ax_calibration_readiness import (  # noqa: E402
     ROOT,
     _alias_map,
     _bridge_roots,
+    _contract_outcome_summary,
     _exact_response_pairs,
     _gradient_roots,
     _identity,
@@ -361,6 +362,26 @@ class CalibrationReadinessTests(unittest.TestCase):
         broken["roots"][0]["proposal_decoder_positions"] = [9]
         with self.assertRaisesRegex(ValueError, "cache ancestry"):
             _gradient_roots(broken)
+
+    def test_numeric_outcomes_translate_to_readiness_contract_vocabulary(self):
+        numeric_roots = {
+            domain: [
+                {"preceding_student_round_outcome": "unknown"},
+                {"preceding_student_round_outcome": "accepted"},
+                {"preceding_student_round_outcome": "rejected"},
+            ]
+            for domain in EXPECTED_DOMAINS
+        }
+        self.assertEqual(
+            _contract_outcome_summary(numeric_roots),
+            {
+                domain: ["accepted_continuation", "verifier_rejection"]
+                for domain in EXPECTED_DOMAINS
+            },
+        )
+        numeric_roots["prose"][2]["preceding_student_round_outcome"] = "unknown"
+        with self.assertRaisesRegex(ValueError, "unsupported selected outcome in prose"):
+            _contract_outcome_summary(numeric_roots)
 
     def test_cache_audit_accepts_consistent_cuda_host_causal_mask(self):
         audit = {

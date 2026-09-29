@@ -399,14 +399,14 @@ class ProviderFixture(unittest.TestCase):
                         "selected_roots": 6,
                         "selected_roots_by_domain": {"prose": 2, "reasoning": 2, "code": 2},
                         "available_outcomes_by_domain": {
-                            "prose": [],
-                            "reasoning": [],
-                            "code": [],
+                            "prose": ["accepted_continuation", "verifier_rejection"],
+                            "reasoning": ["accepted_continuation", "verifier_rejection"],
+                            "code": ["accepted_continuation", "verifier_rejection"],
                         },
                         "selected_outcomes_by_domain": {
-                            "prose": [],
-                            "reasoning": [],
-                            "code": [],
+                            "prose": ["accepted_continuation", "verifier_rejection"],
+                            "reasoning": ["accepted_continuation", "verifier_rejection"],
+                            "code": ["accepted_continuation", "verifier_rejection"],
                         },
                         **{
                             field: True
@@ -480,6 +480,12 @@ class ProviderFixture(unittest.TestCase):
             (lambda value: value["budget"].__setitem__("steps", 99), "budget"),
             (lambda value: value.__setitem__("objective", "compact_probability"), "objective"),
             (lambda value: value["contract"].__setitem__("activation_bits", 8), "width"),
+            (
+                lambda value: value["checks"]["selected_root_mapping_and_operands"]["result"][
+                    "available_outcomes_by_domain"
+                ].__setitem__("prose", ["accepted", "rejected"]),
+                "outcome labels for prose",
+            ),
             (lambda value: value.__setitem__("full_body_qat_eligible", True), "scope"),
             (
                 lambda value: value["checks"]["student_native_numeric_tolerance"][
