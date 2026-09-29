@@ -73,8 +73,9 @@ class RuntimePreparationTests(unittest.TestCase):
             prepare.prepare(source, "kv_only")
         source = self.source()
         source["variants"]["row_A4"]["env"]["GGML_W1AX_ACT_BITS"] = "16"
-        with self.assertRaisesRegex(ValueError, "A1/A4/A8"):
-            prepare.prepare(source, "shared_pack")
+        for selector in ("shared_pack", "warp_reduce"):
+            with self.assertRaisesRegex(ValueError, "A1/A4/A8"):
+                prepare.prepare(source, selector)
 
     def comparison_inputs(self, root, mode, selector):
         off, on = prepare.prepare(self.source(), "compact_logits")

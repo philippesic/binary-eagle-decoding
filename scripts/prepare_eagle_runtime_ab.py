@@ -13,6 +13,8 @@ SELECTORS = {
     "compact_logits": "GGML_EAGLE_COMPACT_LOGITS",
     "kv_only": "GGML_EAGLE_KV_ONLY_CATCHUP",
     "shared_pack": "GGML_EAGLE_SHARED_PACK",
+    "device_state": "GGML_EAGLE_DEVICE_STATE",
+    "warp_reduce": "GGML_W1AX_WARP_REDUCE",
 }
 
 
@@ -24,12 +26,12 @@ def prepare(source: dict, name: str) -> tuple[dict, dict]:
     variants = source.get("variants", {})
     if source.get("q4_variant", "q4_0") not in variants:
         raise ValueError("source must include the Q4_0 primary control")
-    if name == "shared_pack" and not any(
+    if name in ("shared_pack", "warp_reduce") and not any(
         spec.get("env", {}).get("GGML_W1AX_ACT_BITS", "") in ("1", "4", "8")
         for spec in variants.values()
         if spec.get("draft")
     ):
-        raise ValueError("shared packing needs an explicit A1/A4/A8 packed variant")
+        raise ValueError("packing/reduction needs an explicit A1/A4/A8 packed variant")
     baseline = copy.deepcopy(source)
     env = baseline.setdefault("graph_env", {})
     for selector in SELECTORS.values():

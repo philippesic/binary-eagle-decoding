@@ -183,6 +183,7 @@ class ProtocolTests(unittest.TestCase):
         for key, value in (
             ("EAGLE_DRAFT_STAGE_JSONL", "{output}/draft-stages.jsonl"),
             ("GGML_CUDA_MATMUL_AUDIT", "1"),
+            ("GGML_CUDA_EAGLE_EVENTS", "1"),
         ):
             with self.subTest(key=key):
                 config = self.config()
