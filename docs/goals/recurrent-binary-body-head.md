@@ -2977,3 +2977,32 @@ validation/performance remain queued. Compact sampling and K/V-only catch-up
 are in main's native ancestry with pilot flags disabled; their CPU fixture
 reports and A/B preparation remain with the owner. No sealed final prompt
 was opened and no full-tier capture or substantive training sweep started.
+
+## Runtime preparation and integrated-worker cleanup
+
+Parent runtime fixture generation and immutable A/B preparation are integrated
+as `91dd0b0` (worker `c6ba643`): five new preparation/comparison tests and 17
+existing runner tests passed. The optional CPU-sampling selector defaults to
+the original behavior. Compact off/on pairs explicitly disable backend
+sampling in both conditions; they must not be compared as a speedup against
+historical backend-sampling timing. Native optimization GPU validations remain
+queued after the pilot; its current cache config disables both compact
+sampling and K/V-only catch-up.
+
+The integrated compact-v2 and trajectory-refresh worktrees were clean and
+`git cherry main` proved their patches already present. Their complete branch
+histories were saved and verified as bundles under
+`.git/goal-worktree-archives/feature-compact-capture-v2.bundle` and
+`.git/goal-worktree-archives/feature-student-refresh.bundle`, then those two
+worktrees/branches were removed. No ignored model/data artifact was held in
+them; native/runtime and active readiness worktrees remain available.
+
+Readiness assembly now uses canonical runner schemas and measured task IDs.
+The hard-coded 31 accepted rows refer to the three measured requests, excluding
+the two warmups; source frames are unchanged. The numerical input is the
+original pinned ED04 report, with the separately hashed passing gradient
+report. The measured-scope retry is
+`runs/w1-pilot-readiness-measured-20260929/` in pane `%57`. It is CPU-only
+and creates no eligibility permission until every check and evidence binding
+passes. No optimizer step has yet run; there is no project GPU process active
+from the completed cache/backward runs.

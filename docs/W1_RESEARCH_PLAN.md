@@ -14,12 +14,21 @@ kernel labels. FP16 EAGLE is diagnostic context; target-only is a required
 end-to-end control. Keep the Qwen3-4B target/verifier precision frozen within
 each experiment.
 
-The user authorized the first EAGLE phase and a fresh team, with **no GPU
-access**. Start CPU-only implementation, data preparation, analysis and tests
-now. Do not use CUDA, Metal, MPS, remote GPUs, cloud accelerators, or remote
-model inference. Both local GPU pause flags are set. GPU access must be
-explicitly restored before the later experiment stage. CPU results cannot
-establish CUDA correctness, speed or training convergence.
+The initial 2026-09-28 authorization covered CPU preparation while both GPUs
+were paused. That boundary is historical: the user restored **RTX 5080 access**
+on 2026-09-29, while RTX 2080 Ti remains paused. Phase 1B's fixed pruning A/B,
+first bounded shard, and checkpoint-zero checks have completed. The user chose
+the short practical readiness gate followed, only if it passes, by one 100-step
+row-A16 hard-CE calibration. STATUS.md and the active goal checkpoint hold the
+current GPU owner and jobs. CPU results cannot establish CUDA correctness,
+speed or training convergence.
+
+The user's 2026-09-29 companion-chat request also authorizes parallel CPU
+implementation of the remaining runtime, measurement, compact-storage and
+student-refresh backlog below. Keep the bounded pilot first and one native
+integration owner; queue CUDA validation under the sole GPU experiment owner.
+This does not authorize full 2k capture, a substantive four-width training sweep,
+final-set opening, group-128 lower-width formats or another architecture.
 
 DFlash/DSpark are a later roadmap phase, not active work. Do not start a second
 architecture, new model training from scratch, or a broad unrelated search.
@@ -89,7 +98,7 @@ experiment over a growing chain of prerequisite micro-experiments. Keep routine
 engineering autonomous; report major representation/objective choices with
 evidence in DECISIONS.md instead of repeatedly asking about implementation details.
 
-## Phase 1A — EAGLE preparation and implementation, CPU only (active)
+## Phase 1A — EAGLE preparation and implementation, CPU only (initial preparation complete)
 
 Workstreams can proceed in parallel with explicit file ownership.
 
