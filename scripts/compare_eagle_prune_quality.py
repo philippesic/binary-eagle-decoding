@@ -9,6 +9,8 @@ import json
 from collections import Counter, defaultdict
 from pathlib import Path
 
+from prepare_eagle_runtime_ab import SELECTORS
+
 ROUND_FIELDS = (
     "n_proposed",
     "n_accepted",
@@ -18,6 +20,7 @@ ROUND_FIELDS = (
     "status",
     "replay",
     "stopped_low_confidence",
+    "stop_probability",
 )
 
 
@@ -29,14 +32,16 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def load(path: Path, expected_prune: str) -> tuple[dict, dict, dict]:
+def load(
+    path: Path, expected_prune: str, selector: str = "GGML_EAGLE_PRUNE_UNUSED_HEAD"
+) -> tuple[dict, dict, dict]:
     manifest = json.loads(path.read_text())
     config = json.loads((path.parent / "config.json").read_text())
     if (
         manifest.get("schema") != "binary_rescue_benchmark_v1"
         or manifest.get("mode") != "quality"
         or manifest.get("status") != "complete"
-        or config.get("graph_env", {}).get("GGML_EAGLE_PRUNE_UNUSED_HEAD") != expected_prune
+        or config.get("graph_env", {}).get(selector) != expected_prune
     ):
         raise ValueError(f"{path}: incomplete or wrong prune-mode quality run")
     records = {}
@@ -59,13 +64,15 @@ def rounds(row: dict) -> list[dict]:
     return json.loads(path.read_text())
 
 
-def compare(off_path: Path, on_path: Path) -> dict:
-    off, off_config, off_rows = load(off_path, "0")
-    on, on_config, on_rows = load(on_path, "1")
-    off_config["graph_env"].pop("GGML_EAGLE_PRUNE_UNUSED_HEAD")
-    on_config["graph_env"].pop("GGML_EAGLE_PRUNE_UNUSED_HEAD")
+def compare(off_path: Path, on_path: Path, selector: str = "GGML_EAGLE_PRUNE_UNUSED_HEAD") -> dict:
+    if selector not in ("GGML_EAGLE_PRUNE_UNUSED_HEAD", *SELECTORS.values()):
+        raise ValueError("unknown runtime selector")
+    off, off_config, off_rows = load(off_path, "0", selector)
+    on, on_config, on_rows = load(on_path, "1", selector)
+    off_config["graph_env"].pop(selector)
+    on_config["graph_env"].pop(selector)
     if off_config != on_config:
-        raise ValueError("paired configurations differ beyond the prune switch")
+        raise ValueError("paired configurations differ beyond the runtime switch")
     for field in ("workload", "policy", "q4_variant", "prompt_sha256", "hashes"):
         if off[field] != on[field]:
             raise ValueError(f"paired run {field} differs")
@@ -101,7 +108,12 @@ def compare(off_path: Path, on_path: Path) -> dict:
             for field in ("rounds", "proposed", "accepted", "emitted"):
                 counts[variant][field] += left["quality"][field]
     result = {
-        "schema": "eagle_prune_quality_comparison_v1",
+        "schema": (
+            "eagle_prune_quality_comparison_v1"
+            if selector == "GGML_EAGLE_PRUNE_UNUSED_HEAD"
+            else "eagle_runtime_quality_comparison_v1"
+        ),
+        **({"selector": selector} if selector != "GGML_EAGLE_PRUNE_UNUSED_HEAD" else {}),
         "off_manifest_sha256": sha256(off_path),
         "on_manifest_sha256": sha256(on_path),
         "matched_requests": len(off_rows),
@@ -118,10 +130,15 @@ def main() -> None:
     parser.add_argument("--off", type=Path, required=True)
     parser.add_argument("--on", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument(
+        "--selector",
+        default="GGML_EAGLE_PRUNE_UNUSED_HEAD",
+        choices=("GGML_EAGLE_PRUNE_UNUSED_HEAD", *SELECTORS.values()),
+    )
     args = parser.parse_args()
     if args.output.exists():
         parser.error("comparison output must be new")
-    report = compare(args.off, args.on)
+    report = compare(args.off, args.on, args.selector)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
     print(

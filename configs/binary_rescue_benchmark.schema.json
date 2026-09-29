@@ -10,6 +10,7 @@
     "target": {"type": "string", "description": "Frozen FP16 target, SHA256 checked by runner"},
     "prompts": {"type": "string", "description": "Frozen 24 development prompts, SHA256 checked by runner"},
     "q4_variant": {"type": "string", "default": "q4_0"},
+    "draft_backend_sampling": {"type": "boolean", "default": true, "description": "Common sampling policy for both paired conditions; false selects CPU draft sampling"},
     "warmups": {"type": "integer", "minimum": 2, "default": 2},
     "repetitions": {"type": "integer", "minimum": 5, "default": 5},
     "port": {"type": "integer", "minimum": 1024, "maximum": 65535},

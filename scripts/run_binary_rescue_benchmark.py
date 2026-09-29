@@ -48,6 +48,8 @@ write = streaming.write_json
 def validate_config(config: dict, diagnostic: bool = False) -> dict:
     if config.get("schema_version") != 1:
         raise ValueError("schema_version must be 1")
+    if "draft_backend_sampling" in config and type(config["draft_backend_sampling"]) is not bool:
+        raise ValueError("draft_backend_sampling must be boolean")
     variants = config.get("variants", {})
     if not variants or config.get("q4_variant", "q4_0") not in variants:
         raise ValueError("variants must include the named Q4_0 primary control")
@@ -543,7 +545,7 @@ def command(config: dict, spec: dict, policy: dict, *, diagnostic: bool = False)
             "--spec-draft-type-v",
             "f16",
         ]
-        if (
+        if config.get("draft_backend_sampling", True) is False or (
             diagnostic
             and config.get("diagnostic", {}).get("no_spec_draft_backend_sampling") is True
         ):
