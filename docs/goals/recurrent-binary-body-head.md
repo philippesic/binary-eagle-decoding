@@ -2455,3 +2455,15 @@ second project GPU job while it runs. On completion, verify terminal state,
 process-group absence and resource use before the matched prune-on run. If
 the user requests another pause, mark the host paused first, interrupt this
 supervisor through tmux MCP, then verify its process group has stopped.
+
+The prune-off supervisor finished exit 0 at 2026-09-29 07:08:41 UTC. Its
+manifest is complete: 480 measured requests across Q4_0, D group-128/A16,
+FP16 and target-only (24 prompts × 5 repetitions each); all 20 server blocks
+record `verified_launches` for CUDA graphs. WSL showed no remaining project
+supervisor/server process, and the GPU returned to 0% utilization, 2,899 MiB
+whole-device baseline and 40.5 W. The matched prune-on timed run started at
+2026-09-29 07:09:52 UTC as
+`runs/w1-prune-on-timed-20260928/`, tmux MCP pane `%57`, PID/process group
+9554. Monitor from pane `%58`; do not start another project GPU job until it
+finishes and the process group is absent. An offline paired comparator was
+committed as `d9c5e96` and pulled into the remote checkout before this run.
