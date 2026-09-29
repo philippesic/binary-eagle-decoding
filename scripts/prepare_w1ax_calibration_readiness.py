@@ -361,6 +361,20 @@ def _gradient_roots(report: dict) -> dict[str, list[dict]]:
     return result
 
 
+def _validate_mask_placement(cache_audit: dict) -> None:
+    """Accept CUDA masks or the audited host-pinned causal-mask buffer."""
+    placement = str(cache_audit.get("mask_device", "")).lower()
+    if placement == "cuda":
+        return
+    buffer_types = cache_audit.get("mask_buffer_types")
+    if placement != "cuda_host" or not isinstance(buffer_types, list) or not buffer_types:
+        raise ValueError("native cache audit has an unsupported causal-mask placement")
+    if any(not isinstance(kind, str) for kind in buffer_types) or set(buffer_types) != {
+        "CUDA_Host"
+    }:
+        raise ValueError("host-pinned causal-mask placement metadata is inconsistent")
+
+
 def _bridge_roots(
     numeric_roots: dict[str, list[dict]],
     gradient_roots: dict[str, list[dict]],
@@ -879,12 +893,12 @@ def assemble(args) -> dict:
 
     cache_dir = paths["native_capture_dir"]
     cache_audit = _json(paths["cache_audit_report"])
+    _validate_mask_placement(cache_audit)
     if (
         cache_audit.get("schema") != "recurrent_stored_draft_cache_audit_v2"
         or cache_audit.get("status") != "stored_f16_rows_and_exact_prefix_masks_compared"
         or cache_audit.get("graph_capture_scope") != "cache"
         or str(cache_audit.get("execution_device", "")).lower() != "cuda"
-        or str(cache_audit.get("mask_device", "")).lower() != "cuda"
     ):
         raise ValueError("new native cache audit must be the completed CUDA v2 audit")
     for kind in ("key", "value"):

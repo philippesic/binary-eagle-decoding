@@ -26,6 +26,7 @@ from prepare_w1ax_calibration_readiness import (  # noqa: E402
     _identity,
     _measured_row_a16_task_ids,
     _task_map,
+    _validate_mask_placement,
     _validate_runner_manifest,
     _wrong_accepted_labels,
     assemble,
@@ -357,6 +358,25 @@ class CalibrationReadinessTests(unittest.TestCase):
         broken["roots"][0]["proposal_decoder_positions"] = [9]
         with self.assertRaisesRegex(ValueError, "cache ancestry"):
             _gradient_roots(broken)
+
+    def test_cache_audit_accepts_consistent_cuda_host_causal_mask(self):
+        audit = {
+            "execution_device": "cuda",
+            "mask_device": "cuda_host",
+            "mask_buffer_types": ["CUDA_Host"],
+        }
+        _validate_mask_placement(audit)
+        _validate_mask_placement({"mask_device": "cuda"})
+        for invalid in (
+            {"mask_device": "cuda_host"},
+            {"mask_device": "cuda_host", "mask_buffer_types": ["CUDA"]},
+            {"mask_device": "cpu", "mask_buffer_types": ["CPU"]},
+        ):
+            with (
+                self.subTest(invalid=invalid),
+                self.assertRaisesRegex(ValueError, "mask placement|placement metadata"),
+            ):
+                _validate_mask_placement(invalid)
 
     def test_actual_runner_manifest_binds_inline_records_and_block(self):
         with tempfile.TemporaryDirectory() as temporary:
