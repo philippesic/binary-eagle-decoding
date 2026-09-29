@@ -3384,3 +3384,48 @@ No resident timing or cross-policy speed claim is authorized by this queue.
 GPU was freshly idle at 0%/2,843 MiB before launch. Sole owner remains `/root`;
 monitor via `%59`. Do not compile new libraries or start another GPU test until
 this queue terminates. CPU native API work can proceed independently.
+
+## Scheduler-copy candidate and combined runtime integrated
+
+Native `477ba7be81c011187b13a51df6d6828ead4817da` is integrated as parent
+`6d23809`. It removes forced raw-input assignment and registers the retained
+F32 row as a temporary source for existing same-backend scheduler copies,
+preserving original graph nodes, edges, split count, input flags and allocation.
+Admission rejects CPU/alias/mixed-backend consumers, pipeline copies, evaluation
+callbacks, incompatible rows and graph-owned source buffers. Registrations
+clear on reset and every compute exit/failure; rejected graphs keep explicit
+synchronized host fallback. No norm/cast/weight or gate threshold changed.
+
+Worker CPU evidence is 19 allocator/routing cases (14 existing and five new
+routing groups), dense/A16 fixtures and diagnostic host-input control; source
+review found no blocker. Dummy backends prove routing/lifetime bookkeeping,
+not CUDA streams or accepted device-copy arithmetic. Actual CUDA success
+markers and exact native quality remain required.
+
+Published combined native `b4e366d4f0a30cac07f14d51c54c5b1329b3f485` is
+integrated as `c005f75`. It extends `477ba7be` with unchanged event and warp
+patches (`bf244c4d` then `b4e366d4`), both default off. Focused CPU compilation
+and source checks passed; scheduling/fixture tests are identical to the
+separately tested fix, and forced leaf assignment is absent. No CUDA claim
+follows yet. Root has fetched/integrated locally; remote immutable timing
+continues on the frozen be09 executable/libraries and is unaffected.
+
+First compact timing block matched all 30 request pairs with zero behavior
+mismatches; reverse block also now has a passing comparator. K/V-only timing
+continues in the same queue. Final ratios, telemetry and graph-count audit are
+pending all blocks. A hard-coded comparator uncertainty label incorrectly
+said 24 prompts on this three-prompt workload. `78b7382` fixes reporting only:
+actual counts remain `paired_prompts` per variant, bootstrap arithmetic unchanged.
+After the queue terminates, create fresh CPU comparison reports with this
+label fix and preserve the original report hashes. Do not mutate run artifacts.
+
+Next GPU action after queue terminal: pull main/pin combined source, compile
+SM120 CUDA (server, backend tests, sampling and allocator targets), run
+fixed CUDA fixtures/routing proof, then matched resident off/on quality.
+The accepted-copy INFO marker uses log verbosity four, while the standard
+runner is three; use an explicitly recorded -lv4 diagnostic command wrapper
+in both quality conditions to observe admission, without stage/head capture.
+Require the real CUDA0 existing-copy success marker, inspect fallback reasons
+and exact proposal/acceptance/response/cache proof before resident timing.
+Event/warp CUDA gates follow with separate opt-in flags and no intrusive
+events in throughput measurements. Sole GPU owner remains `/root`.
