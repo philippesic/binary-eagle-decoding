@@ -2494,3 +2494,30 @@ PID/process group 11639. It is the sole active project GPU job; pane `%58`
 monitors it. Once finished, run the same behavior/timing comparator with
 these second-block manifests and assess order-dependent drift before deciding
 whether to retain the opt-in patch.
+
+The reverse-order prune-off supervisor finished exit 0 at 2026-09-29
+07:54:35 UTC: 480 measured requests and 20/20 verified graph blocks. The
+process group stopped and the GPU returned to 0%, about 2,900 MiB and 40 W.
+The second paired comparison finished exit zero with **480/480** exact raw
+outputs and speculative counters. [The timing report](../../experiments/eagle-prune-timing-5080.md)
+now includes both orders: order-balanced on/off server decode ratios Q4_0
+**1.0085×**, D **1.0513×**, FP16 **1.0112×**, target-only **1.0013×**. The
+reverse comparison JSON SHA256 is
+`e452374ceaa9c125310ff79eb9f1ec25424916e9f253455a2567c93499104488`.
+These data support keeping the shared patch opt-in for this RTX 5080 workload;
+exact cache bytes and `process()` stage attribution remain open before a
+default change. D still trails Q4_0 strongly because of acceptance.
+
+With the GPU clear, the first bounded larger-data capture started at
+2026-09-29 07:57:32 UTC as
+`runs/w1-shard0000-capture-20260929/`, supervised in tmux MCP pane `%57`,
+PID/process group 12597. It uses the frozen shard-0000 plan (31 training
+prompts; SHA256
+`17b8c65c47b335449e7573e42ec644f0682a7b5dfb97bb1874f1bc8eb05cd8b6`),
+the pinned F16 target and D group-128/A16, absolute I64 d2t map, 16,384
+raw target-logit-row cap and 131,072 target-feature-row cap. The runner's
+static preflight passed before launch. Pane `%58` monitors `state.json`,
+stdout, raw row/byte growth and GPU use. No other project GPU job may start
+while capture is active. If interrupted, stop this supervisor and its process
+group before reporting the GPU free; retain any partial raw artifacts for
+diagnosis, never silently promote an incomplete bundle.
