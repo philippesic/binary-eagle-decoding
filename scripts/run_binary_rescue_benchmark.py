@@ -85,6 +85,10 @@ def validate_config(config: dict, diagnostic: bool = False) -> dict:
                 raise ValueError("graphs must remain enabled in every mode")
             if section == "graph_env" and any(x in key for x in HEAVY):
                 raise ValueError("heavy instrumentation prohibited in graph_env")
+    if "EAGLE_STATE_TRACE_JSONL" in config.get("instrumented_env", {}) and not (
+        diagnostic and config["diagnostic"].get("no_spec_draft_backend_sampling") is True
+    ):
+        raise ValueError("EAGLE state trace requires diagnostic backend sampling disabled")
     return policy
 
 
@@ -495,7 +499,7 @@ def server_env(config: dict, spec: dict, mode: str, cell: Path) -> dict:
     return env
 
 
-def command(config: dict, spec: dict, policy: dict) -> list[str]:
+def command(config: dict, spec: dict, policy: dict, *, diagnostic: bool = False) -> list[str]:
     cmd = [
         str(Path(config["binary"]).resolve()),
         "-m",
@@ -539,6 +543,11 @@ def command(config: dict, spec: dict, policy: dict) -> list[str]:
             "--spec-draft-type-v",
             "f16",
         ]
+        if (
+            diagnostic
+            and config.get("diagnostic", {}).get("no_spec_draft_backend_sampling") is True
+        ):
+            cmd.append("--no-spec-draft-backend-sampling")
     else:
         cmd += ["--spec-type", "none"]
     return cmd
@@ -602,7 +611,7 @@ def run(config: dict, mode: str, output: Path, diagnostic: bool = False) -> None
                 cell = output / f"r{rep:02d}-s{slot:02d}-{name}"
                 cell.mkdir()
                 env = server_env(config, spec, mode, cell)
-                cmd = command(config, spec, policy)
+                cmd = command(config, spec, policy, diagnostic=diagnostic)
                 block = {
                     "variant": name,
                     "repetition": rep,

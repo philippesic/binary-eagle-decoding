@@ -2,6 +2,7 @@
   "binary": "build/llama-cuda/bin/llama-server",
   "diagnostic": {
     "label": "w1ax-shard0000-three-domain-student-gate",
+    "no_spec_draft_backend_sampling": true,
     "policy": {
       "context": 2048,
       "draft_length": 5,

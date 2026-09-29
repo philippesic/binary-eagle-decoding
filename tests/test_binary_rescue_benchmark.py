@@ -204,6 +204,24 @@ class ProtocolTests(unittest.TestCase):
                 )
                 self.assertEqual(traced[key], value.replace("{output}", "/tmp/block"))
 
+    def test_diagnostic_can_disable_backend_sampling_without_changing_primary(self):
+        config = self.config() | {
+            "binary": "server",
+            "target": "target.gguf",
+            "diagnostic": {"no_spec_draft_backend_sampling": True},
+        }
+        spec = {"draft": "draft.gguf"}
+        primary = runner.command(config, spec, runner.PRIMARY)
+        diagnostic = runner.command(config, spec, runner.PRIMARY, diagnostic=True)
+        self.assertNotIn("--no-spec-draft-backend-sampling", primary)
+        self.assertIn("--no-spec-draft-backend-sampling", diagnostic)
+        config["instrumented_env"] = {"EAGLE_STATE_TRACE_JSONL": "{output}/state.jsonl"}
+        config["diagnostic"].update({"label": "x", "prompts_sha256": "a" * 64})
+        runner.validate_config(config, diagnostic=True)
+        config["diagnostic"]["no_spec_draft_backend_sampling"] = False
+        with self.assertRaisesRegex(ValueError, "backend sampling disabled"):
+            runner.validate_config(config, diagnostic=True)
+
     def test_orders_balance_full_cycle(self):
         names = ["a", "b", "c", "d"]
         schedule = runner.orders(names, 8)

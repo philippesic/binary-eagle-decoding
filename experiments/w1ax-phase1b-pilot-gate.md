@@ -35,6 +35,13 @@ performance baseline. No final prompt is used.
   replacement training split. The diagnostic config is
   [w1_phase1b_pilot_student_diagnostic.json](../configs/w1_phase1b_pilot_student_diagnostic.json).
 
+The second launch reached native server startup but exited before any request:
+the `EAGLE_STATE_TRACE_JSONL` hook requires draft backend sampling disabled.
+The diagnostic-only command now adds `--no-spec-draft-backend-sampling`,
+matching the original candidate-D capture policy. The primary quality/timing
+runner path remains unchanged; the bounded diagnostic config and CPU tests
+freeze this switch before the third launch.
+
 For each prompt, compare the first exact-prefix proposal root. Then, in
 ascending output-position order, compare the first later root whose complete
 accepted-prefix token IDs appear in both the candidate-D capture and native

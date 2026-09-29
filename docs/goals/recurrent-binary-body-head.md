@@ -2712,3 +2712,13 @@ RTX 5080 remained at 0%/about 2,909 MiB. The coordinator generated safe
 aliases for the same three message arrays, independently verified messages
 and source IDs unchanged, and froze the alias map and JSONL hashes in the
 pilot gate. No native comparison or QAT result came from the failed launch.
+
+The safe-ID retry `runs/w1-pilot-student-native-safe-20260929/` reached
+native server startup but failed before a request. The `EAGLE_STATE_TRACE_JSONL`
+hook asserts that draft backend sampling is off. The server and supervisor
+stopped, with RTX 5080 returning to 0% and about 2,909 MiB; no partial
+request is promoted. A diagnostic-only command switch now adds
+`--no-spec-draft-backend-sampling` when the frozen config asks for the state
+trace, matching the prior candidate-D training capture. The primary quality
+and timed benchmark commands stay unchanged. Seventeen focused CPU tests and
+Ruff passed before retry.
