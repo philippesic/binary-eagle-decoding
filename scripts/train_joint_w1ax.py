@@ -131,6 +131,9 @@ def main() -> None:
             factory(config, args.provider_manifest) if args.provider_manifest else factory(config)
         )
         max_rounds = provider.total_rounds if args.all_rounds else args.steps
+        validate_budget = getattr(provider, "validate_training_budget", None)
+        if callable(validate_budget):
+            validate_budget(config, max_rounds, all_rounds=args.all_rounds)
         linears, metrics = train_from_provider(provider, config, max_rounds=max_rounds)
         if args.require_complete and len(metrics) != getattr(provider, "total_rounds", None):
             raise ValueError("provider run did not consume every audited training round")

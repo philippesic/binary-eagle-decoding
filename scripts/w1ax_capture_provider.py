@@ -17,11 +17,16 @@ from typing import Any
 
 import numpy as np
 import torch
-from audit_recurrent_binary_capture import load_audited_capture
+from audit_recurrent_binary_capture import (
+    CALIBRATION_ONLY_SCOPE,
+    load_audited_capture,
+    validate_calibration_readiness_report,
+)
 from compact_w1a_teacher import iter_verified_shards
 
 from w1a1_eagle.native_step import NativeStepAdapter, bind_frozen_norms
 from w1a1_eagle.recurrent_provider import TEACHER_FIELDS, ProviderRound
+from w1a1_eagle.recurrent_trace import validate_recurrent_trace
 
 SCHEMA = "w1ax_native_train_provider_v1"
 TARGET_REPO = "Qwen/Qwen3-4B"
@@ -31,6 +36,8 @@ DRAFT_REVISION = "fd331e59626c8e95c392381a16ee59d518727fbb"
 ANGELSLIM_REVISION = "0358da9c651e6a7d7ccafea26ced4b9c98d11681"
 TARGET_GGUF_SHA256 = "05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6"
 CANDIDATE_D_SHA256 = "10e8e98e616480b25ff7600f195ba7ea3e0fd7c24832765013f960783c7609cf"
+SHARD0000_CAPTURE_SHA256 = "3ee7a8f4526f1dbcca1b6e0ea0756e42eff81333d7a88137afebe7213d3c1947"
+SHARD0000_PROMPTS_SHA256 = "968ffbb21b23f934912862ef6f7add7d03bf0cfbbb3910492f2f0f50075fc18a"
 
 
 def sha256(path: Path) -> str:
@@ -147,7 +154,9 @@ class NativeCaptureProvider:
         spec = json.loads(manifest_path.read_text())
         if not isinstance(spec, dict) or spec.get("schema") != SCHEMA:
             raise ValueError("unsupported native train-provider manifest")
-        if spec.get("training_eligible") is not True:
+        calibration_record = spec.get("calibration_readiness")
+        calibration_mode = calibration_record is not None
+        if not calibration_mode and spec.get("training_eligible") is not True:
             raise ValueError("training manifest is not eligible")
         if (
             spec.get("split") != "train"
@@ -186,14 +195,85 @@ class NativeCaptureProvider:
             if sha256(self.paths[name]) != self.hashes[name]:
                 raise ValueError(f"provider {name} SHA256 mismatch")
         capture_manifest = json.loads(self.paths["capture_manifest"].read_text())
-        if (
-            capture_manifest.get("schema") != "recurrent_binary_capture_v1"
-            or capture_manifest.get("training_eligible") is not True
-            or capture_manifest.get("readiness") != "full_body_qat_eligible"
-            or capture_manifest.get("prompts_sha256") != self.hashes["prompts"]
-            or capture_manifest.get("pinned_source_artifact_hashes_verified") is not True
-            or capture_manifest.get("unverified_gates") != []
-        ):
+        full_body_ready = (
+            capture_manifest.get("schema") == "recurrent_binary_capture_v1"
+            and capture_manifest.get("training_eligible") is True
+            and capture_manifest.get("readiness") == "full_body_qat_eligible"
+            and capture_manifest.get("prompts_sha256") == self.hashes["prompts"]
+            and capture_manifest.get("pinned_source_artifact_hashes_verified") is True
+            and capture_manifest.get("unverified_gates") == []
+        )
+        self.calibration_readiness = None
+        self.calibration_readiness_sha256 = None
+        self.full_body_qat_eligible = full_body_ready
+        if calibration_mode:
+            if (
+                spec.get("training_eligible") is not False
+                or capture_manifest.get("training_eligible") is not False
+                or capture_manifest.get("readiness") != "preparation_only"
+                or capture_manifest.get("schema") != "recurrent_binary_capture_v1"
+                or capture_manifest.get("prompts_sha256") != self.hashes["prompts"]
+                or capture_manifest.get("pinned_source_artifact_hashes_verified") is not True
+                or not isinstance(capture_manifest.get("unverified_gates"), list)
+                or not capture_manifest["unverified_gates"]
+                or not isinstance(calibration_record, dict)
+                or set(calibration_record) != {"path", "sha256"}
+            ):
+                raise ValueError(
+                    "calibration contract requires an unchanged ineligible preparation bundle"
+                )
+            if (
+                self.hashes["capture_manifest"] != SHARD0000_CAPTURE_SHA256
+                or self.hashes["prompts"] != SHARD0000_PROMPTS_SHA256
+            ):
+                raise ValueError("calibration contract is frozen to audited shard-0000")
+            report_path = _path(calibration_record["path"], "calibration readiness report")
+            report_hash = _hash(calibration_record["sha256"], "calibration readiness report hash")
+            if sha256(report_path) != report_hash:
+                raise ValueError("calibration readiness report SHA256 mismatch")
+            readiness = json.loads(report_path.read_text())
+            validate_calibration_readiness_report(
+                readiness,
+                capture_manifest_sha256=self.hashes["capture_manifest"],
+                unresolved_full_body_gates=capture_manifest["unverified_gates"],
+            )
+            for check in readiness["checks"].values():
+                result_is_evidenced = False
+                for evidence in check["evidence"]:
+                    evidence_path = _path(evidence["path"], "calibration evidence")
+                    if sha256(evidence_path) != evidence["sha256"]:
+                        raise ValueError("calibration evidence SHA256 mismatch")
+                    try:
+                        evidence_data = json.loads(evidence_path.read_text())
+                    except (UnicodeDecodeError, json.JSONDecodeError):
+                        continue
+                    result_is_evidenced |= evidence_data == check.get("result")
+                if not result_is_evidenced:
+                    raise ValueError("calibration check result is not present in hashed evidence")
+            bound_inputs = {
+                "capture_manifest": self.hashes["capture_manifest"],
+                "prompts": self.hashes["prompts"],
+                "absolute_d2t": self.hashes["absolute_d2t"],
+                "target_gguf": self.hashes["target_gguf"],
+                "candidate_d_gguf": self.hashes["candidate_d_gguf"],
+                "base_draft_gguf": self.hashes["base_draft_gguf"],
+                "model_snapshot_manifest": self.hashes["model_snapshot_manifest"],
+            }
+            if any(
+                readiness["inputs"].get(name) != digest for name, digest in bound_inputs.items()
+            ):
+                raise ValueError("calibration readiness input hashes differ from provider sources")
+            if config.objective != "hard_ce" or (
+                config.contract.activation_bits != 16 or config.contract.scale_layout != "row"
+            ):
+                raise ValueError("calibration contract allows only row-A16 hard CE")
+            if spec.get("teacher") is not None:
+                raise ValueError(
+                    "calibration-only hard CE provider must not attach a compact teacher"
+                )
+            self.calibration_readiness = readiness
+            self.calibration_readiness_sha256 = report_hash
+        elif not full_body_ready:
             raise ValueError("native capture bundle remains training-ineligible")
         cell_path = self.paths["capture_manifest"].parent / "source_cell_manifest.json"
         source_hashes = capture_manifest.get("source_report_sha256", {})
@@ -208,7 +288,10 @@ class NativeCaptureProvider:
         self.capture_id = spec.get("capture_id")
         if not isinstance(self.capture_id, str) or not self.capture_id:
             raise ValueError("provider needs a named native capture ID")
+        # The shared loop uses this permission bit. The separate scope below
+        # keeps bounded permission distinct from full-body readiness.
         self.training_eligible = True
+        self.readiness_scope = CALIBRATION_ONLY_SCOPE if calibration_mode else "full_body_qat"
         self.split = "train"
         self.base_gguf_sha256 = self.hashes["base_draft_gguf"]
         self.candidate_d = None
@@ -245,7 +328,12 @@ class NativeCaptureProvider:
         self.allowed_prompt_ids = {key[0] for key in self.capture.anchors}
         if not self.allowed_prompt_ids:
             raise ValueError("audited native capture has no prompt IDs")
-        self.total_rounds = len(self.capture.anchors)
+        self.capture_round_count = len(self.capture.anchors)
+        if calibration_mode and self.capture_round_count < 100:
+            raise ValueError("calibration capture has fewer than 100 audited rounds")
+        self.total_rounds = (
+            min(self.capture_round_count, 100) if calibration_mode else self.capture_round_count
+        )
         self.source_metadata = {
             "factory": "w1ax_capture_provider:create_provider",
             "capture_id": self.capture_id,
@@ -258,6 +346,9 @@ class NativeCaptureProvider:
             "prompt_count": len(self.allowed_prompt_ids),
             "round_count": self.total_rounds,
             "teacher_manifest_sha256": (spec.get("teacher") or {}).get("manifest_sha256"),
+            "readiness_scope": self.readiness_scope,
+            "full_body_qat_eligible": self.full_body_qat_eligible,
+            "calibration_readiness_sha256": self.calibration_readiness_sha256,
         }
         capture_data = json.loads(self.paths["capture_manifest"].read_text())
         self.target_vocab_size = capture_data["target_vocab_size"]
@@ -297,6 +388,57 @@ class NativeCaptureProvider:
             )
         elif spec.get("teacher") is not None:
             raise ValueError("hard CE provider must not silently attach compact teacher")
+        if calibration_mode:
+            self._validate_calibration_round_inventory()
+
+    def _validate_calibration_round_inventory(self) -> None:
+        supported_labels = 0
+        eligible_rounds = 0
+        exact_prefix_joins = 0
+        for key in sorted(self.capture.anchors)[:100]:
+            round_data = self.capture.round_inputs(*key)
+            audit = validate_recurrent_trace(
+                round_data.rows,
+                [round_data.anchor],
+                offsets=self.d2t_offsets,
+                target_vocab_size=self.target_vocab_size,
+                allowed_prompt_ids=self.allowed_prompt_ids,
+                split=self.split,
+                draft_vocab_size=self.draft_vocab_size,
+                max_depth=self.max_depth,
+            )
+            labels = sum(audit.ce_mask)
+            supported_labels += labels
+            eligible_rounds += int(labels > 0)
+            exact_prefix_joins += len(round_data.feature_positions)
+        expected = self.calibration_readiness["checks"][
+            "provider_round_label_and_teacher_contract"
+        ]["result"]
+        if (
+            eligible_rounds != 100
+            or expected.get("eligible_rounds") != eligible_rounds
+            or expected.get("supported_labels") != supported_labels
+            or expected.get("exact_prefix_joins") != exact_prefix_joins
+            or expected.get("compact_teacher_attached") is not False
+        ):
+            raise ValueError("calibration provider round inventory differs from readiness evidence")
+
+    def validate_training_budget(self, config, max_rounds: int | None, *, all_rounds: bool = False):
+        """Enforce the frozen calibration run before any model weights load."""
+        if self.readiness_scope != CALIBRATION_ONLY_SCOPE:
+            return
+        if all_rounds or type(max_rounds) is not int or max_rounds != 100:
+            raise ValueError(
+                "calibration-only training requires --steps 100 and forbids --all-rounds"
+            )
+        if (
+            self.total_rounds != 100
+            or config.objective != "hard_ce"
+            or config.contract.activation_bits != 16
+            or config.contract.scale_layout != "row"
+            or self.calibration_readiness.get("budget") != {"steps": 100, "rounds": 100}
+        ):
+            raise ValueError("calibration run differs from the approved row-A16 hard-CE budget")
 
     def load_models(self):
         """Hash pinned weights, then load official CPU target and drafter once."""
@@ -366,7 +508,10 @@ class NativeCaptureProvider:
         return NativeStepAdapter(drafter)
 
     def rounds(self) -> Iterable[ProviderRound]:
+        yielded = 0
         for key in sorted(self.capture.anchors):
+            if yielded >= self.total_rounds:
+                break
             round_data = self.capture.round_inputs(*key)
             rows = round_data.rows
             if self.teacher is None:
@@ -378,6 +523,7 @@ class NativeCaptureProvider:
                     round_data.feature_positions,
                     self.capture_id,
                 )
+                yielded += 1
                 continue
             metadata = []
             values = {field: [] for field in (*TEACHER_FIELDS, "next_target_id")}
@@ -408,6 +554,7 @@ class NativeCaptureProvider:
                 tuple(metadata),
                 arrays,
             )
+            yielded += 1
 
 
 def create_provider(config, manifest_path: Path | None = None):

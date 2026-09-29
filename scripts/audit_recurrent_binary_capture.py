@@ -34,6 +34,247 @@ FEATURE_TAPS = [2, 18, 33]
 FEATURE_BOUNDARY = "native_target_block_inputs_concat_before_draft_fc"
 FEATURE_SOURCE = "native_target_features_on_accepted_prefix"
 
+CALIBRATION_READINESS_SCHEMA = "recurrent_binary_calibration_readiness_v1"
+CALIBRATION_ONLY_SCOPE = "row_a16_hard_ce_100_steps"
+CALIBRATION_CHECKS = frozenset(
+    {
+        "pinned_inputs_and_response_ancestry",
+        "selected_root_mapping_and_operands",
+        "student_native_proposal_and_response_agreement",
+        "student_native_numeric_tolerance",
+        "provider_round_label_and_teacher_contract",
+    }
+)
+CALIBRATION_PINNED_INPUT_SHA256 = {
+    "checkpoint_zero": "5b371f79831c4c8da0ffc4bc5a0a4b9a6817a1fdf7c2bddfeaec6b001c4f6b78",
+    "exported_gguf": "fa9406b72fb6ef19e2eca0bc0891bc20099dc318283721af3f540e056ebd3f45",
+    "diagnostic_prompts_jsonl": "93f61ae9160bbb59739ca81efa002e10cd5bddbddcf3d02ae2b33f9ac117f992",
+    "diagnostic_id_map": "e4a0a142868b48355fcf29160acc48814ae39d20b95ebb6d24ec037ee3470b49",
+    "diagnostic_config": "a05244377f9b69fe7b6454d05253c0299c3d2b967e8f539ddf1a439b52da172c",
+    "native_diagnostic_manifest": (
+        "a974172cfdd36c994d0315a3b2e7232a1c96342fbd37c8d98c7d9cd845be573e"
+    ),
+    "native_head_metadata": "d98464166c709590a0d0e266eb60fcd36374690c95659de4d1158e8bea32319d",
+}
+_CALIBRATION_REQUIRED_INPUTS = frozenset(
+    {
+        "capture_manifest",
+        "prompts",
+        "absolute_d2t",
+        "target_gguf",
+        "candidate_d_gguf",
+        "model_snapshot_manifest",
+        "base_draft_gguf",
+        "checkpoint_zero",
+        "exported_gguf",
+        "diagnostic_prompts_jsonl",
+        "diagnostic_id_map",
+        "diagnostic_config",
+        "native_diagnostic_manifest",
+        "native_head_metadata",
+        "native_trace",
+        "torch_numeric_report",
+    }
+)
+
+
+def validate_calibration_readiness_report(
+    report: object,
+    *,
+    capture_manifest_sha256: str,
+    unresolved_full_body_gates: object,
+) -> dict:
+    """Validate a separate, bounded QAT authorization without promoting a bundle.
+
+    Evidence interpretation happens in the focused native audits; this contract
+    binds their hashes and pass results to one immutable preparation manifest.
+    K/V checks cover native projected-to-stored F16 rounding and Torch F16 cache
+    storage. They do not require Torch and native projected K/V values to match.
+    """
+    if not isinstance(report, dict) or report.get("schema") != CALIBRATION_READINESS_SCHEMA:
+        raise ValueError("unsupported calibration readiness report")
+    if (
+        report.get("scope") != CALIBRATION_ONLY_SCOPE
+        or report.get("training_eligible") is not False
+        or report.get("full_body_qat_eligible") is not False
+        or report.get("capture_manifest_sha256") != capture_manifest_sha256
+        or report.get("unresolved_full_body_gates") != unresolved_full_body_gates
+        or report.get("relative_rms_definition") != "rms_delta_over_max_rms_native_1e-8"
+    ):
+        raise ValueError("calibration readiness scope or original capture binding differs")
+    budget = report.get("budget")
+    if budget != {"steps": 100, "rounds": 100}:
+        raise ValueError("calibration readiness budget must be exactly 100 steps and rounds")
+    if report.get("objective") != "hard_ce" or report.get("contract") != {
+        "activation_bits": 16,
+        "scale_layout": "row",
+    }:
+        raise ValueError("calibration readiness objective or W1Ax width differs")
+    inputs = report.get("inputs")
+    if not isinstance(inputs, dict) or not _CALIBRATION_REQUIRED_INPUTS.issubset(inputs):
+        raise ValueError("calibration readiness report omits required input hashes")
+    for name, digest in inputs.items():
+        if (
+            not isinstance(name, str)
+            or not isinstance(digest, str)
+            or len(digest) != 64
+            or any(c not in "0123456789abcdef" for c in digest)
+        ):
+            raise ValueError("calibration readiness input hashes must be lowercase SHA256")
+    if any(inputs.get(name) != digest for name, digest in CALIBRATION_PINNED_INPUT_SHA256.items()):
+        raise ValueError("calibration readiness differs from frozen pilot artifacts")
+    checks = report.get("checks")
+    if not isinstance(checks, dict) or set(checks) != CALIBRATION_CHECKS:
+        raise ValueError("calibration readiness report has missing or unexpected checks")
+    for name, result in checks.items():
+        evidence = result.get("evidence") if isinstance(result, dict) else None
+        if (
+            not isinstance(result, dict)
+            or result.get("status") != "pass"
+            or not isinstance(evidence, list)
+            or not evidence
+            or any(
+                not isinstance(item, dict)
+                or set(item) != {"path", "sha256"}
+                or not isinstance(item.get("path"), str)
+                or not Path(item["path"]).is_absolute()
+                or not isinstance(item.get("sha256"), str)
+                or len(item["sha256"]) != 64
+                or any(c not in "0123456789abcdef" for c in item["sha256"])
+                for item in evidence
+            )
+        ):
+            raise ValueError(f"calibration readiness check is missing, failed, or unhashed: {name}")
+    ancestry = checks["pinned_inputs_and_response_ancestry"].get("result", {})
+    if (
+        ancestry.get("prompt_hash_match") is not True
+        or ancestry.get("bundle_audit_hash_match") is not True
+        or ancestry.get("model_hashes_match") is not True
+        or ancestry.get("response_requests") != 3
+        or ancestry.get("response_exact_matches") != 3
+    ):
+        raise ValueError("calibration readiness ancestry measurements do not pass")
+    roots = checks["selected_root_mapping_and_operands"].get("result", {})
+    counts_by_domain = roots.get("selected_roots_by_domain")
+    available_outcomes = roots.get("available_outcomes_by_domain")
+    selected_outcomes = roots.get("selected_outcomes_by_domain")
+    domains = {"prose", "reasoning", "code"}
+    root_flags = (
+        "token_ids_exact",
+        "absolute_d2t_exact",
+        "decoder_positions_exact",
+        "causal_visibility_exact",
+        "cache_lengths_exact",
+        "finite_target_features",
+        "finite_student_logits",
+        "finite_gradients",
+        "native_projected_kv_matches_stored_f16",
+        "torch_cache_uses_f16_storage_rounding",
+        "embedding_rows_exact",
+        "hard_sign_bits_exact",
+        "row_scales_exact",
+    )
+    if (
+        type(roots.get("selected_roots")) is not int
+        or roots["selected_roots"] < 6
+        or not isinstance(counts_by_domain, dict)
+        or set(counts_by_domain) != domains
+        or any(
+            type(counts_by_domain[domain]) is not int or counts_by_domain[domain] < 2
+            for domain in domains
+        )
+        or sum(counts_by_domain.values()) != roots["selected_roots"]
+        or not isinstance(available_outcomes, dict)
+        or set(available_outcomes) != domains
+        or not isinstance(selected_outcomes, dict)
+        or set(selected_outcomes) != domains
+        or any(
+            not isinstance(available_outcomes[domain], list)
+            or not isinstance(selected_outcomes[domain], list)
+            or any(
+                outcome not in {"accepted_continuation", "verifier_rejection"}
+                for outcome in available_outcomes[domain]
+            )
+            or not set(selected_outcomes[domain]).issubset(set(available_outcomes[domain]))
+            or not set(available_outcomes[domain]).issubset(set(selected_outcomes[domain]))
+            or (
+                set(available_outcomes[domain]) == {"accepted_continuation", "verifier_rejection"}
+                and not {"accepted_continuation", "verifier_rejection"}.issubset(
+                    set(selected_outcomes[domain])
+                )
+            )
+            for domain in domains
+        )
+        or any(roots.get(field) is not True for field in root_flags)
+    ):
+        raise ValueError("calibration readiness selected-root measurements do not pass")
+    proposals = checks["student_native_proposal_and_response_agreement"].get("result", {})
+    disagreements = proposals.get("top_choice_disagreements")
+    near_ties = proposals.get("near_tie_disagreements")
+    changed_margins = proposals.get("changed_proposal_margins")
+    if (
+        type(proposals.get("shared_roots")) is not int
+        or proposals["shared_roots"] < 1
+        or type(disagreements) is not int
+        or disagreements < 0
+        or type(near_ties) is not int
+        or not 0 <= near_ties <= disagreements
+        or not isinstance(changed_margins, list)
+        or len(changed_margins) != disagreements
+        or any(
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not np.isfinite(value)
+            or value < 0
+            for value in changed_margins
+        )
+        or near_ties != sum(value <= 0.02 for value in changed_margins)
+        or proposals.get("high_margin_changed_proposals")
+        != sum(value > 0.02 for value in changed_margins)
+        or proposals.get("high_margin_changed_proposals") != 0
+        or proposals.get("q4_response_ids_exact") is not True
+        or (
+            near_ties > 0
+            and proposals.get("bounded_native_verifier_no_wrong_acceptance") is not True
+        )
+    ):
+        raise ValueError("calibration readiness proposal measurements do not pass")
+    numeric = checks["student_native_numeric_tolerance"].get("result", {})
+    for field in ("max_state_relative_rms", "max_logits_relative_rms"):
+        value = numeric.get(field)
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not np.isfinite(value)
+            or not 0 <= value <= 0.10
+        ):
+            raise ValueError("calibration readiness numeric tolerance exceeds 0.10 relative RMS")
+    margins = numeric.get("native_head_replay_top_two_margins")
+    if (
+        not isinstance(margins, list)
+        or not margins
+        or any(
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not np.isfinite(value)
+            or value < 0
+            for value in margins
+        )
+    ):
+        raise ValueError("calibration readiness omits finite native-head replay margins")
+    provider = checks["provider_round_label_and_teacher_contract"].get("result", {})
+    if (
+        type(provider.get("eligible_rounds")) is not int
+        or provider["eligible_rounds"] != 100
+        or type(provider.get("supported_labels")) is not int
+        or provider["supported_labels"] < 1
+        or type(provider.get("exact_prefix_joins")) is not int
+        or provider["exact_prefix_joins"] < 100
+        or provider.get("compact_teacher_attached") is not False
+    ):
+        raise ValueError("calibration readiness provider measurements do not pass")
+    return report
+
 
 def resolve_prompt_expectation(
     expected_hash: str | None, expected_count: int | None

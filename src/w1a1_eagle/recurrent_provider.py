@@ -217,10 +217,13 @@ def train_from_provider(
     The provider chooses the official model device; this function moves only
     audited native feature rows to that device. Importing does no model work.
     """
-    if max_rounds < 1:
+    if type(max_rounds) is not int or max_rounds < 1:
         raise ValueError("max_rounds must be positive")
     if provider.training_eligible is not True:
         raise ValueError("provider capture is not approved for substantive training")
+    validate_budget = getattr(provider, "validate_training_budget", None)
+    if callable(validate_budget):
+        validate_budget(config, max_rounds)
     if provider.split != "train" or not provider.allowed_prompt_ids:
         raise ValueError("provider must declare an eligible training split and prompt set")
     drafter, target = provider.load_models()
