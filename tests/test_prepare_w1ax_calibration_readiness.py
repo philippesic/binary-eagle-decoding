@@ -22,6 +22,7 @@ from prepare_w1ax_calibration_readiness import (  # noqa: E402
     _alias_map,
     _bridge_roots,
     _exact_response_pairs,
+    _gradient_roots,
     _identity,
     _measured_row_a16_task_ids,
     _task_map,
@@ -298,6 +299,65 @@ class CalibrationReadinessTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "identity report"):
             _identity(wrong_identity, IDENTITY_REPORT_SHA256, manifest)
 
+    def test_gradient_report_uses_source_domains_and_candidate_round_indices(self):
+        roots = []
+        candidate_rounds = {
+            "prose": (0, 5, 1),
+            "reasoning": (0, 14, 1),
+            "code": (0, 9, 1),
+        }
+        for domain, prompt in EXPECTED_DOMAINS.items():
+            for root_index, round_index in enumerate(candidate_rounds[domain]):
+                parent = 4 + root_index
+                roots.append(
+                    {
+                        "domain": prompt,
+                        "root_index": root_index,
+                        "round_index": round_index,
+                        "gradient_tensors": 18,
+                        "finite_gradient_tensors": 18,
+                        "supported_ce_rows": 2,
+                        "context_decoder_positions": list(range(parent)),
+                        "proposal_decoder_positions": [parent, parent + 1],
+                        "final_cache_length": parent + 2,
+                        "f16_cache_writes": parent + 2,
+                        "preceding_student_round_outcome": "accepted",
+                    }
+                )
+        report = {
+            "schema": "w1ax_pilot_gradient_contract_v1",
+            "status": "finite_gradient_and_torch_cache_contract_passed",
+            "optimizer_steps": 0,
+            "checks": {
+                "all_selected_roots_have_supported_hard_ce": True,
+                "all_selected_roots_have_18_finite_gradients": True,
+                "all_torch_cache_writes_are_finite_f16_exact": True,
+                "all_torch_cache_lengths_and_positions_match_trace": True,
+                "borrowed_embedding_norm_and_d2t_exact": True,
+            },
+            "frozen_operand_identity": {
+                "embedding_tokens_checked": 12,
+                "embedding_dtype": "f16_exact",
+                "d2t": "candidate_and_row_absolute_maps_exact_to_native_offsets",
+                "norms": {
+                    "blk.0.attn_norm.weight": "exact_f32",
+                    "blk.0.attn_norm_2.weight": "exact_f32",
+                    "blk.0.ffn_norm.weight": "exact_f32",
+                    "output_norm.weight": "exact_f32",
+                },
+            },
+            "roots": roots,
+        }
+        normalized = _gradient_roots(report)
+        self.assertEqual(set(normalized), set(EXPECTED_DOMAINS))
+        self.assertEqual([row["round_index"] for row in normalized["reasoning"]], [0, 14, 1])
+        self.assertEqual(normalized["reasoning"][1]["preceding_student_round_outcome"], "accepted")
+        broken = dict(report)
+        broken["roots"] = [dict(row) for row in roots]
+        broken["roots"][0]["proposal_decoder_positions"] = [9]
+        with self.assertRaisesRegex(ValueError, "cache ancestry"):
+            _gradient_roots(broken)
+
     def test_actual_runner_manifest_binds_inline_records_and_block(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -439,7 +499,7 @@ class CalibrationReadinessTests(unittest.TestCase):
                 gradients[domain] = [
                     {
                         "root_index": 0,
-                        "round_index": 0,
+                        "round_index": 99,
                         "context_decoder_positions": list(range(parent)),
                         "proposal_decoder_positions": [parent],
                         "final_cache_length": parent + 1,

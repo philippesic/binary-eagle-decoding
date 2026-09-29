@@ -309,19 +309,40 @@ def _gradient_roots(report: dict) -> dict[str, list[dict]]:
     ):
         raise ValueError("gradient report is missing a required passing contract")
     result = {domain: [] for domain in EXPECTED_DOMAINS}
+    domain_by_prompt = {prompt: domain for domain, prompt in EXPECTED_DOMAINS.items()}
     for root in report.get("roots", []):
-        domain = root.get("domain")
+        # The gradient producer records the frozen source prompt ID, while the
+        # numeric trajectory report groups roots by its prose/reasoning/code label.
+        domain = domain_by_prompt.get(root.get("domain"))
         if (
             domain not in result
+            or type(root.get("root_index")) is not int
+            or root["root_index"] < 0
+            or type(root.get("round_index")) is not int
             or root.get("gradient_tensors") != 18
             or root.get("finite_gradient_tensors") != 18
+            or type(root.get("supported_ce_rows")) is not int
+            or root["supported_ce_rows"] < 1
         ):
             raise ValueError("gradient report has an invalid selected root")
+        context = root.get("context_decoder_positions")
+        proposals = root.get("proposal_decoder_positions")
+        if (
+            not isinstance(context, list)
+            or any(type(position) is not int for position in context)
+            or context != list(range(len(context)))
+            or not isinstance(proposals, list)
+            or any(type(position) is not int for position in proposals)
+            or proposals != list(range(len(context), len(context) + len(proposals)))
+            or root.get("final_cache_length") != (proposals[-1] + 1 if proposals else len(context))
+            or root.get("f16_cache_writes") != len(context) + len(proposals)
+        ):
+            raise ValueError("gradient report has invalid contiguous Torch cache ancestry")
         result[domain].append(root)
     if any(len(result[d]) < 2 for d in result) or sum(map(len, result.values())) != 9:
         raise ValueError("gradient report must cover the same nine roots")
     for rows in result.values():
-        rows.sort(key=lambda row: row.get("root_index", -1))
+        rows.sort(key=lambda row: row["root_index"])
     identity = report.get("frozen_operand_identity", {})
     if (
         not identity.get("embedding_tokens_checked")
@@ -393,8 +414,8 @@ def _bridge_roots(
         gradients = gradient_roots[domain]
         for index, root in enumerate(numeric):
             gradient = gradients[index]
-            if gradient.get("round_index") != root["round_index"]:
-                raise ValueError("numeric and gradient reports disagree on selected root order")
+            if gradient.get("root_index") != index:
+                raise ValueError("gradient report disagrees on frozen selected-root order")
             prefix = root["prefix_token_ids"]
             matches = [
                 row
@@ -853,7 +874,7 @@ def assemble(args) -> dict:
         raise ValueError("gradient report is not bound to frozen provider/checkpoint inputs")
     for domain in EXPECTED_DOMAINS:
         for index, (nrow, grow) in enumerate(zip(numeric_roots[domain], gradient_roots[domain])):
-            if grow.get("root_index") != index or grow.get("round_index") != nrow["round_index"]:
+            if grow.get("root_index") != index:
                 raise ValueError("gradient report does not match numeric selected-root ordering")
 
     cache_dir = paths["native_capture_dir"]
