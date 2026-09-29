@@ -3342,3 +3342,45 @@ and only disposable caches/environments were ignored. Complete branch history
 was saved/verified as
 `.git/goal-worktree-archives/feature-trajectory-refresh-bridge.bundle`, then
 that worktree/branch was removed. GPU raw sources/checkpoints remain retained.
+
+## Scheduler evidence and frozen timing queue
+
+Bounded scheduler-debug run completed exit zero. Raw-state RMS norm and residual
+ADD in sampled later real-request layouts (five-row catch-up and one-row seed)
+use existing CUDA0 input copies for Q4_0 and row-A16; CPU token lookup is a
+separate input. These samples support the native owner's guarded one-compute
+source-copy override, without proving admission for every layout. It must
+inspect every executable split and preserve ordinary placement/fusion, reject
+CPU/alias/mixed destinations, pipeline/eval callbacks and unsafe source
+ownership, clear temporary registration after each computation/failure, and
+retain host fallback. No norm arithmetic reimplementation is proposed.
+
+Hashed remote scheduler logs remain under
+`runs/w1-resident-scheduler-debug-20260929/benchmark/`. Bounded node presentation
+excerpts with source hashes are retained as `decoder-excerpts.json` and
+`executed-decoder-excerpts.json` in that run, and locally at
+`/tmp/eagle-resident-decoder-excerpts.json` and
+`/tmp/eagle-resident-executed-decoder-excerpts.json`. Raw logs interleave UTF8
+messages; replacement decoding is only for presentation, never source hashing
+or numeric data. Root is not claiming CPU consumers from reserve frames alone.
+
+Root froze native `be09f61c5` server plus 25 library entries under
+`runs/w1-runtime-timing-freeze-20260929/runtime/`, with manifest/config hashes.
+Explicit LD_LIBRARY_PATH and `ldd` prove every llama/ggml library resolves in
+that immutable directory, so later development cannot mutate these measurements.
+Timing configs derive from the two passing quality pairs, add only lightweight
+CUDA graph stats and required launch markers in both conditions, and keep
+resident/shared/warp opt-ins zero. Intrusive captures/events are absent.
+
+Sequential order-balanced timing is now in `$35` pane `%58`, handle
+`9a8ada98-8938-4d20-a656-c5489114bfa8`. For each `compact_logits` and `kv_only`,
+block a runs off→on and block b on→off; each condition has five repetitions
+over three frozen prompts, Q4_0 plus untrained row-A16, and two warmups per
+variant/server block. IDs are
+`w1-runtime-<selector>-timed-<a|b>-<off|on|compare>-20260929`; benchmark outputs
+are per inference run and each block has its offline comparator. Expected
+matched requests are 30 per off/on comparison. The loop stops on any failure.
+No resident timing or cross-policy speed claim is authorized by this queue.
+GPU was freshly idle at 0%/2,843 MiB before launch. Sole owner remains `/root`;
+monitor via `%59`. Do not compile new libraries or start another GPU test until
+this queue terminates. CPU native API work can proceed independently.

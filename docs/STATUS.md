@@ -6,6 +6,12 @@ The target/verifier model precision remains as frozen for each experiment.
 
 **Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), continued as Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). The user has now **restored RTX 5080 access**; the RTX 2080 Ti remains paused. The gated 100-step row-A16 GPU calibration has completed; substantive training and final evaluation have not run. DFlash/DSpark are future roadmap items, not active work.
 
+**Passing-selector timing underway (2026-09-29):** compact sampling and
+K/V-only catch-up are in a supervised order-balanced, five-repetition timing
+queue on the frozen three-domain sample and immutable runtime/libraries.
+Resident state remains off while its scheduler-copy fix is CPU-tested.
+See the [checkpoint](goals/recurrent-binary-body-head.md#scheduler-evidence-and-frozen-timing-queue).
+
 **Resident diagnostic (2026-09-29):** restoring original input placement
 restored all six request pairs exactly, isolating forced placement as the
 trigger. The passing path still uses host traffic and is not a speed claim.
