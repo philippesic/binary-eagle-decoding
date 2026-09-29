@@ -25,6 +25,7 @@ from prepare_w1ax_calibration_readiness import (  # noqa: E402
     _identity,
     _task_map,
     _validate_runner_manifest,
+    _wrong_accepted_labels,
     assemble,
 )
 from run_binary_rescue_benchmark import CLEAR_PREFIXES  # noqa: E402
@@ -107,6 +108,48 @@ class CalibrationReadinessTests(unittest.TestCase):
             manifest_path.write_text(json.dumps({"records": records}))
             with self.assertRaisesRegex(ValueError, "response IDs differ"):
                 _exact_response_pairs(json.loads(manifest_path.read_text()))
+
+    def test_canonical_complete_round_status_counts_accepted_labels(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            capture = Path(temporary)
+            heads = [
+                {
+                    "schema": "eagle_head_state_v1",
+                    "task_id": 7,
+                    "round_index": 0,
+                    "depth": depth,
+                    "proposed_token_id": token,
+                    "verifier_token_id": token,
+                    "verifier_reached": True,
+                }
+                for depth, token in ((0, 101), (1, 202))
+            ]
+            write_jsonl(capture / "heads.jsonl", heads)
+            write_jsonl(
+                capture / "rounds.jsonl",
+                [
+                    {
+                        "schema": "w1ax_eagle_round_v1",
+                        "status": "complete",
+                        "task_id": 7,
+                        "round_index": 0,
+                        "n_accepted": 2,
+                        "n_proposed": 3,
+                    },
+                    {
+                        "schema": "w1ax_eagle_round_v1",
+                        "status": "no_proposal",
+                        "task_id": 7,
+                        "round_index": 1,
+                        "n_accepted": 0,
+                        "n_proposed": 0,
+                    },
+                ],
+            )
+            self.assertEqual(_wrong_accepted_labels(capture), (2, 0))
+            heads[1]["verifier_reached"] = False
+            write_jsonl(capture / "heads.jsonl", heads)
+            self.assertEqual(_wrong_accepted_labels(capture), (2, 1))
 
     def test_canonical_benchmark_records_supply_measured_task_map(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -249,6 +292,7 @@ class CalibrationReadinessTests(unittest.TestCase):
                 state = np.asarray([execution + 0.25, -execution - 0.5], dtype=np.float32)
                 heads.append(
                     {
+                        "schema": "eagle_head_state_v1",
                         "task_id": task_id,
                         "round_index": 0,
                         "depth": 0,
@@ -267,6 +311,7 @@ class CalibrationReadinessTests(unittest.TestCase):
                 )
                 states.append(
                     {
+                        "schema": "eagle_state_v1",
                         "event": "seed",
                         "seq_id": task_id,
                         "position": parent,
@@ -276,10 +321,12 @@ class CalibrationReadinessTests(unittest.TestCase):
                 )
                 cache_rows.append(
                     {
+                        "schema": "eagle_draft_cache_v1",
                         "event": "row",
                         "execution": execution,
                         "column": 0,
                         "position": parent,
+                        "slot": parent,
                         "token_id": token,
                     }
                 )

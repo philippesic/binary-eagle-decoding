@@ -199,13 +199,21 @@ def _wrong_accepted_labels(capture_dir: Path) -> tuple[int, int]:
         ).append(row)
     accepted = wrong = 0
     for event in rounds:
-        if event.get("complete") is not True:
+        status = event.get("status")
+        if status == "no_proposal":
+            if event.get("n_accepted") != 0 or event.get("n_proposed") != 0:
+                raise ValueError("native no-proposal round has nonzero draft counts")
             continue
+        if status != "complete":
+            raise ValueError("native round has an unsupported completion status")
         count = event.get("n_accepted")
+        proposed = event.get("n_proposed")
         task, round_index = event.get("task_id"), event.get("round_index")
         if (
             type(count) is not int
             or count < 0
+            or type(proposed) is not int
+            or proposed < count
             or type(task) is not int
             or type(round_index) is not int
         ):
@@ -341,6 +349,8 @@ def _bridge_roots(
     seeds: dict[int, list[dict]] = {}
     accepts: dict[int, list[dict]] = {}
     for event in state_rows:
+        if event.get("schema") != "eagle_state_v1":
+            raise ValueError("native state trace has an unsupported schema")
         if type(event.get("seq_id")) is not int:
             continue
         bucket = (
@@ -369,6 +379,7 @@ def _bridge_roots(
                 row
                 for row in heads
                 if row.get("task_id") == task_id
+                and row.get("schema") == "eagle_head_state_v1"
                 and row.get("depth") == 0
                 and row.get("parent_position") == root["parent_position"]
                 and row.get("prefix_token_ids") == prefix
@@ -423,7 +434,10 @@ def _bridge_roots(
             writes = [
                 row
                 for row in cache_writes
-                if row.get("position") == parent and row.get("token_id") == head["input_token_id"]
+                if row.get("schema") == "eagle_draft_cache_v1"
+                and row.get("position") == parent
+                and row.get("slot") == parent
+                and row.get("token_id") == head["input_token_id"]
             ]
             if not writes:
                 raise ValueError("selected native seed has no globally audited cache write")
