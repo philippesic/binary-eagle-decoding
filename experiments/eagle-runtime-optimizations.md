@@ -461,3 +461,73 @@ process/draft component attribution. Both compact conditions use common CPU
 draft sampling; do not compare their rates as a gain over the historical
 backend-sampling policy. The earlier fixed four-variant pruning experiment
 is separate and unchanged.
+
+## Combined CUDA and resident fix validation
+
+Native `b4e366d4f0a30cac07f14d51c54c5b1329b3f485` completed the SM120 CUDA
+build plus explicit sampling/allocator targets. CUDA-linked allocator tests
+passed; their dummy backends test routing/lifetime rather than CUDA streams.
+Dense and packed-A16 fixtures passed exact following logits/prenorm and
+serialized used-cache comparisons, with genuine
+`existing scheduler copy backend=CUDA0 (ordinary placement)` markers.
+
+Real resident off/on quality then matched **6/6 request pairs** exactly across
+Q4_0 and row-A16 on the frozen three-domain sample. Q4_0 accepted 183 drafts
+over 138 observed rounds; row-A16 accepted 31 over 288, restoring the baseline.
+Both on logs have the accepted CUDA0-copy marker and **zero transfer-fallback
+markers**. Only the server log verbosity was raised to four in both conditions
+to observe INFO markers; no stage/head capture, events or warp reduction ran.
+Report `runs/w1-resident-fixed-quality-compare-20260929/report.json` SHA256:
+`7f727172be9ba56a7c02305ee4dfde5f497f7c4f04f22a87bd00571013b84dba`.
+The earlier failed forced-placement evidence remains retained. This closes the
+concrete decision divergence for this bounded sample, not every possible
+context or a resident speed claim.
+
+Opt-in warp32 reduction passed **133/133** CUDA operator cases plus **3/3**
+fanout graphs with `GGML_W1AX_ASSERT_INT_DOT=1`, actual warp dispatch and events
+off. It changes A1/A4/A8 integer reduction only; A16 remains unchanged.
+The corresponding stdout hashes are
+`247614722bb7b12822f933d20f893f146f598796fb9a4be427230d6bde9474d7` and
+`cdd25f699fd55ff407cc2778181dc30ce983b63d0191cb09b213fbba7a012d97`.
+Kernel/end-to-end speed for warp reduction remains unmeasured.
+
+## CUDA event safety and actual-model tracing
+
+A4/shared-pack fixture passes with events on under graphs enabled and under a
+separately labelled graph-disabled direct-node control. A corresponding event-off
+fixture passes and emits no event records. Their audit contains 2,132 event
+records, 806 frames and 62 graph inventory records: zero missing parents,
+outside-root intervals, orphan inventory or truncation. Eighty-four captured
+inventory events have null GPU times; 15 graph replay frames are present.
+Direct-node execution includes 117 pack and 187 dot markers. Event analysis
+SHA256: `a837f6e4c19c34fc12f3d8ea8aca0c9e5ba01a0a3761cc5d7f7f332b2a6eccc1`.
+
+One actual-model intrusive trace then completed with Q4_0, row-A16 and row-A4
+checkpoint zero over the frozen sample, five requests per variant including
+warmups. It uses unchanged F16 target/KV, graphs enabled, no head/state capture
+and no warp/resident/compact/cache-only selectors; row-A4 alone enables shared
+packing to expose its operand preparation. A4 export SHA256 was reverified as
+`a6081a5120d246435f53a3d3711607e156d3332b3ec75780019c842e85f169b1`.
+Config SHA256 is
+`ab2d4df637b3070ab6899d4585099af1bd8a2cde95480aca78c58a0fbc3cd190`.
+Event cap is one million per process; node inventories retain their independent
+limits. This configuration is an intrusive diagnostic, not official timing.
+
+The actual trace audit found 152,710 events, 19,784 graph inventory records
+and 86,277 frames, with zero missing parents, outside-root intervals, orphan
+inventory or truncation. Frames include `process`, `draft`, `target_or_other`
+and explicitly unassigned stages. Fifteen same-run monotonic client intervals
+join to event records, preserving their unassigned host remainder.
+Manifest SHA256:
+`3a30ad7fcc15c928a744d68454eaa4b203f1ddf19604017d348a34d380c68baa`;
+analysis SHA256:
+`52f6f9f80def35b78df82a5a9e7a7c6b4b810da3531ffaface7e687109622bde`.
+Runs are `w1-real-events-instrumented-20260929` and
+`w1-real-events-analysis-20260929`. GPU returned to idle at 0%/2,763 MiB.
+
+Event spans synchronize and include stream idle/dispatch and capture setup;
+they are not pure kernel busy time and cannot be substituted for throughput.
+Captured graph nodes have inventory without individual timing. Nested/overlapping
+spans are partitioned per frame; independent origins are not summed. Transfer
+annotations remain hints. These results validate the tracing/accounting path
+without attributing all serving time or promoting any selector to default.

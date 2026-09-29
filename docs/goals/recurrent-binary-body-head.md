@@ -3456,3 +3456,36 @@ explicit sampling/allocator targets, prove accepted CUDA source copies in
 fixtures and real resident off/on quality, then validate event capture/replay
 and warp integer paths. Preserve failure evidence and exact gates. Root is
 sole GPU owner; pending feature worktrees remain retained until CUDA validation.
+
+## Resident fix and event/warp CUDA gates passed
+
+Combined `b4e366d4` CUDA build (335 steps), explicit allocator/sampling target
+build and CUDA-linked allocator suite passed. Dense and packed-A16 CUDA
+fixtures show accepted existing CUDA0 source copies, preserve exact following
+state/logits and serialized cache, and emit no event records with events off.
+Real resident quality matches 6/6 pairs exactly, baseline acceptance restored,
+with accepted CUDA0 markers and zero fallback markers in both model on logs.
+Report SHA256 is
+`7f727172be9ba56a7c02305ee4dfde5f497f7c4f04f22a87bd00571013b84dba`.
+Keep the old failed-placement evidence; this bounded gate does not establish
+resident performance or all-context correctness.
+
+Warp reduction with integer assertions passed 133 operator and three fanout
+cases on actual RTX 5080. Event graph/direct/off fixtures passed; audited
+2,132 records have valid references, null captured timings, actual replay and
+pack/dot markers, no cap loss and no event-off output. Actual-model event run
+then passed on Q4_0/row-A16/row-A4 with graphs enabled: 152,710 events,
+19,784 inventory records, 86,277 frames, zero missing/orphan/outside/cap issues
+and 15 request joins. Process/draft/target/unassigned scopes are explicit.
+[Runtime report](../../experiments/eagle-runtime-optimizations.md#combined-cuda-and-resident-fix-validation)
+records flags, precision, hashes and measurement limits. No intrusive event
+rate is a throughput measurement; warp speed and shared/resident timing remain
+unmeasured. GPU is idle at 0%/2,763 MiB, all these supervisors terminal.
+
+Remaining bounded engineering validation: native shared-pack/warp off/on
+trajectory comparison on the pinned A4 source, resident (and applicable packed
+selector) paired timing, then preserve compiled runtime/artifact inventory and
+clean merged worker worktrees. The refresh/data tooling stays preparation-only;
+full capture/training/final decisions remain user-owned and untouched. Root
+remains sole GPU owner. Do not add optional parity archaeology or expand
+training budget while completing these explicit gates.
