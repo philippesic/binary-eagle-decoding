@@ -2390,3 +2390,14 @@ telemetry reached 13,415 MiB whole-device memory used while external load
 was present; a fresh post-run reading remained at 4,731 MiB, 91% utilization
 and 265.6 W. These facts make a 31-prompt feature/logit capture risky until
 the non-project workload clears. No timed A/B or shard capture has begun.
+
+Latest resource gate: with every project supervisor stopped, a later RTX 5080
+reading was 4,824 MiB whole-device use, 93% utilization and 308.4 W.
+`ps` found no project supervisor, `llama-server` or joint trainer process.
+The user has an asynchronous question asking whether this competing workload
+will be cleared or GPU sharing is intended. The local RTX 5080 pause flag
+remains **resumed** per the user's explicit instruction not to pause GPU work;
+tmux MCP session `$34` remains available. Hold fair timed A/B and the
+memory-heavy first-shard capture until resource intent/capacity is clear.
+The off/on quality evidence and CPU first-shard preflight are preserved, so no
+completed experiment needs rerunning merely to resume.
