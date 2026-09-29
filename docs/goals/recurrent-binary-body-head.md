@@ -3364,7 +3364,7 @@ excerpts with source hashes are retained as `decoder-excerpts.json` and
 messages; replacement decoding is only for presentation, never source hashing
 or numeric data. Root is not claiming CPU consumers from reserve frames alone.
 
-Root froze native `be09f61c5` server plus 25 library entries under
+Root froze native `be09f61c5` server and its library entries under
 `runs/w1-runtime-timing-freeze-20260929/runtime/`, with manifest/config hashes.
 Explicit LD_LIBRARY_PATH and `ldd` prove every llama/ggml library resolves in
 that immutable directory, so later development cannot mutate these measurements.
