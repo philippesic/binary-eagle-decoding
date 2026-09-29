@@ -2359,3 +2359,18 @@ progressing through the same pinned prompts under
 Compare exact per-request token IDs, proposals, accepted counts, round rows
 and verifier outcomes against the off-path manifest after exit. Do not start
 another project GPU job concurrently.
+
+The on-path supervisor finished exit 0 at 2026-09-29 05:43:22 UTC. The
+[paired quality report](../../experiments/eagle-prune-quality-5080.md) records
+the result: **96/96 measured request pairs matched** in raw generated IDs,
+completion hashes, speculative counters and checked per-round proposal,
+acceptance and emission fields. Q4_0/D/FP16 totals stayed exactly
+1,555/909/1,552 accepted drafts with 3,048 emitted tokens per variant. The
+comparison JSON in `runs/w1-prune-ab-compare-20260928/report.json` has SHA256
+`891e8cfb979752cb49c77f5c3fa130142a2d40f568e94abfe5dc84ab079c5f63`.
+Both model supervisors and the CPU comparison supervisor exited zero; no
+project process group remains active. Exact cache bytes were not captured.
+Afterward the device still showed external 87% utilization, 4,755 MiB use and
+323 W. The user was asked asynchronously whether this competing workload
+can be cleared; timed A/B and a large capture remain resource-gated, while
+CPU preparation continues. The local GPU pause flag remains resumed.
