@@ -13,9 +13,14 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from prepare_w1ax_calibration_readiness import (  # noqa: E402
+    DIAGNOSTIC_SAFE_PROMPTS_SHA256,
+    DIAGNOSTIC_SOURCE_PROMPTS_SHA256,
     EXPECTED_DOMAINS,
+    _alias_map,
     _bridge_roots,
     _exact_response_pairs,
+    _records_path,
+    _task_map,
     assemble,
 )
 
@@ -25,6 +30,38 @@ def write_jsonl(path: Path, rows: list[dict]) -> None:
 
 
 class CalibrationReadinessTests(unittest.TestCase):
+    def test_frozen_safe_id_alias_map_schema(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "alias-map.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "source_sha256": DIAGNOSTIC_SOURCE_PROMPTS_SHA256,
+                        "safe_sha256": DIAGNOSTIC_SAFE_PROMPTS_SHA256,
+                        "mapping": [
+                            {
+                                "source_id": source,
+                                "safe_id": alias,
+                                "messages_sha256": "a" * 64,
+                            }
+                            for alias, source in (
+                                ("pilot-prose", "dolly:line-005896"),
+                                ("pilot-reasoning", "gsm8k:train-000315"),
+                                ("pilot-code", "mbpp:task-496"),
+                            )
+                        ],
+                    }
+                )
+            )
+            self.assertEqual(
+                _alias_map(path),
+                {
+                    "pilot-prose": "dolly:line-005896",
+                    "pilot-reasoning": "gsm8k:train-000315",
+                    "pilot-code": "mbpp:task-496",
+                },
+            )
+
     def test_missing_provider_artifact_emits_no_readiness_or_overlay(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -63,6 +100,47 @@ class CalibrationReadinessTests(unittest.TestCase):
             manifest_path.write_text(json.dumps({"records": records}))
             with self.assertRaisesRegex(ValueError, "response IDs differ"):
                 _exact_response_pairs(manifest_path, json.loads(manifest_path.read_text()))
+
+    def test_canonical_benchmark_records_supply_measured_task_map(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "manifest.json"
+            records = []
+            task_ids = (181244361, 181244362, 181244363)
+            for task_id, (alias, source) in zip(
+                task_ids,
+                (
+                    ("pilot-prose", "dolly:line-005896"),
+                    ("pilot-reasoning", "gsm8k:train-000315"),
+                    ("pilot-code", "mbpp:task-496"),
+                ),
+            ):
+                records.append(
+                    {
+                        "variant": "row_a16_checkpoint_zero",
+                        "warmup": False,
+                        "prompt_id": alias,
+                        "request_digest": {"task_id": task_id},
+                    }
+                )
+            manifest = {
+                "prompt_ids": ["pilot-prose", "pilot-reasoning", "pilot-code"],
+                "records": records,
+            }
+            path.write_text(json.dumps(manifest))
+            aliases = {
+                "pilot-prose": "dolly:line-005896",
+                "pilot-reasoning": "gsm8k:train-000315",
+                "pilot-code": "mbpp:task-496",
+            }
+            self.assertEqual(
+                _task_map(manifest, path, aliases),
+                {
+                    181244361: "dolly:line-005896",
+                    181244362: "gsm8k:train-000315",
+                    181244363: "mbpp:task-496",
+                },
+            )
+            self.assertIsNone(_records_path(path, manifest))
 
     def test_selected_roots_join_head_seed_torch_cache_and_graph_state(self):
         with tempfile.TemporaryDirectory() as temporary:

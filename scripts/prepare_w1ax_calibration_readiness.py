@@ -44,6 +44,10 @@ EXPECTED_DOMAINS = {
 IDENTITY_REPORT_SHA256 = "2317a1fafa8ea0afe5316dc3a674ccc864a088d1392e4a1da248a084c47b32ae"
 NUMERIC_REPORT_SHA256 = "ed04cd752e01e87c71a18990fec04bcc45f6a9d9afb88c70c21ca5a3a9586a81"
 BUNDLE_AUDIT_SHA256 = "832325813eefea67dc97dc0d251b1e37b3a7b4a7349a4e26eb3aa9663198508b"
+DIAGNOSTIC_SOURCE_PROMPTS_SHA256 = (
+    "b3f3570cf2e45c570678b98f135257a609de319b01232ce4353e4286eb595703"
+)
+DIAGNOSTIC_SAFE_PROMPTS_SHA256 = "93f61ae9160bbb59739ca81efa002e10cd5bddbddcf3d02ae2b33f9ac117f992"
 
 
 def _json(path: Path) -> dict:
@@ -63,6 +67,33 @@ def _jsonl(path: Path) -> list[dict]:
 
 def _alias_map(path: Path) -> dict[str, str]:
     raw = _json(path)
+    if "mapping" in raw:
+        if (
+            raw.get("source_sha256") != DIAGNOSTIC_SOURCE_PROMPTS_SHA256
+            or raw.get("safe_sha256") != DIAGNOSTIC_SAFE_PROMPTS_SHA256
+            or not isinstance(raw["mapping"], list)
+        ):
+            raise ValueError("frozen alias map source/safe prompt hashes differ")
+        rows = {}
+        for item in raw["mapping"]:
+            if not isinstance(item, dict):
+                raise ValueError("frozen alias map contains a malformed row")
+            safe_id = item.get("safe_id")
+            source_id = item.get("source_id")
+            message_hash = item.get("messages_sha256")
+            if (
+                type(safe_id) is not str
+                or type(source_id) is not str
+                or not isinstance(message_hash, str)
+                or len(message_hash) != 64
+                or any(character not in "0123456789abcdef" for character in message_hash)
+                or safe_id in rows
+            ):
+                raise ValueError("frozen alias map contains invalid or duplicate IDs")
+            rows[safe_id] = source_id
+        if rows != EXPECTED_ALIASES:
+            raise ValueError("frozen diagnostic safe IDs do not map to the selected source prompts")
+        return rows
     candidates = [raw.get("alias_to_source"), raw.get("aliases"), raw.get("mapping"), raw]
     for candidate in candidates:
         if isinstance(candidate, list):
@@ -98,6 +129,23 @@ def _task_map(manifest: dict, manifest_path: Path, aliases: dict[str, str]) -> d
             if record.get("sha256") != sha256(task_path):
                 raise ValueError("native task-to-prompt map hash differs from run manifest")
             mapping = _json(task_path)
+    if mapping is None and isinstance(manifest.get("records"), list):
+        mapping = {}
+        for row in manifest["records"]:
+            if (
+                not isinstance(row, dict)
+                or row.get("variant") != "row_a16_checkpoint_zero"
+                or row.get("warmup") is True
+            ):
+                continue
+            task = (row.get("request_digest") or {}).get("task_id")
+            prompt = row.get("prompt_id")
+            if type(task) is not int or type(prompt) is not str:
+                raise ValueError("measured row-A16 record lacks task-to-prompt ownership")
+            prior = mapping.get(task)
+            if prior is not None and prior != prompt:
+                raise ValueError("native task ID is reused for different prompt aliases")
+            mapping[task] = prompt
     if isinstance(mapping, list):
         mapping = {
             row.get("task_id"): row.get("prompt_id", row.get("id"))
@@ -142,7 +190,9 @@ def _read_benchmark_records(manifest_path: Path, manifest: dict) -> list[dict]:
     return value
 
 
-def _records_path(manifest_path: Path, manifest: dict) -> Path:
+def _records_path(manifest_path: Path, manifest: dict) -> Path | None:
+    if isinstance(manifest.get("records"), list):
+        return None
     record = manifest.get("files", {}).get("records")
     path = (
         Path(record["path"])
@@ -674,17 +724,8 @@ def assemble(args) -> dict:
     if not {"q4_0", "row_a16_checkpoint_zero"}.issubset(set(native_manifest.get("variants", []))):
         raise ValueError("new native cache run omits Q4_0 or row-A16 responses")
     native_capture_manifest = _json(paths["native_capture_manifest"])
-    new_task_map = _task_map(native_capture_manifest, paths["native_capture_manifest"], aliases)
-    task_record = native_capture_manifest.get("files", {}).get("task_prompt_ids")
-    if isinstance(task_record, dict) and isinstance(task_record.get("path"), str):
-        task_map_path = Path(task_record["path"])
-        if not task_map_path.is_absolute():
-            task_map_path = paths["native_capture_manifest"].parent / task_map_path
-        task_map_hash = sha256(task_map_path)
-        if task_record.get("sha256") != task_map_hash:
-            raise ValueError("native task map hash differs from its capture manifest")
-    else:
-        task_map_hash = sha256(paths["native_capture_manifest"])
+    new_task_map = _task_map(native_manifest, paths["native_manifest"], aliases)
+    task_map_hash = sha256(paths["native_manifest"])
     new_pairs = _exact_response_pairs(paths["native_manifest"], native_manifest)
     if old_pairs != new_pairs:
         raise ValueError("new CUDA cache capture responses differ from frozen exact Q4_0/A16 pairs")
@@ -917,10 +958,13 @@ def assemble(args) -> dict:
         "old_native_heads": sha256(paths["old_native_capture_dir"] / "heads.jsonl"),
         "old_native_rounds": sha256(paths["old_native_capture_dir"] / "rounds.jsonl"),
         "old_native_manifest": sha256(paths["old_native_manifest"]),
-        "old_native_records": sha256(_records_path(paths["old_native_manifest"], old_manifest)),
+        "old_native_records": sha256(
+            _records_path(paths["old_native_manifest"], old_manifest)
+            or paths["old_native_manifest"]
+        ),
         "native_manifest": sha256(paths["native_manifest"]),
         "native_benchmark_records": sha256(
-            _records_path(paths["native_manifest"], native_manifest)
+            _records_path(paths["native_manifest"], native_manifest) or paths["native_manifest"]
         ),
         "native_task_map": task_map_hash,
         "native_cache_config": sha256(cache_config_path),
