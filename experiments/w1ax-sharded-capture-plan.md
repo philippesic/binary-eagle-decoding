@@ -144,8 +144,10 @@ The builder's audit and an independent recheck must agree, including exact
 prefix, mask/cache, request and target-logit row joins. The current builder
 marks bundles preparation-only (`training_eligible:false`); further native
 model identity, full drafter parity and request completeness gates remain.
-The manifest-aware CPU contract has synthetic tests; this command block has
-not run with model data and needs its first supervised native shard audit.
+The manifest-aware CPU contract has synthetic tests. The first supervised
+native `shard-0000` command sequence completed on RTX 5080 on 2026-09-29;
+the [run report](w1ax-shard0000-capture-5080.md) records exact observed
+rows/bytes, independent audit, compact teacher and remaining readiness gates.
 
 After a bundle is audited, this CPU adapter emits a row map from its audited
 `rows.jsonl` and raw target-logit file. It requires the bundle `audit.json`

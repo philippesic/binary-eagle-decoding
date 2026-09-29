@@ -31,6 +31,34 @@ gain yet; changes shared with Q4_0 must benefit that comparison path too.
 
 ## Phase 1A implementation defaults and pending research choices
 
+**Pending Phase 1B first-shard readiness choice (2026-09-29):** the frozen
+31-prompt RTX 5080 shard has 12,610 audited verifier rows and 7,796 selected
+native target-feature rows. Its independent bundle audit is byte-identical to
+the builder audit; compact-teacher, internal-continuity and 31/31 full-request
+emission audits pass. The versioned bundle still declares
+`training_eligible:false`, with model execution identity, numeric feature
+parity, full drafter mask/position/KV parity and cross-round ancestry
+unverified. The provider correctly rejects it before model loading. A
+model-independent row-A4 CUDA fixture completed 100 finite steps, but does not
+measure real-model rate or memory. See the [capture report](../experiments/w1ax-shard0000-capture-5080.md).
+
+Recommended decision: permit a **bounded 100-step calibration on this shard**
+only after a versioned readiness record verifies pinned native model/server
+execution identity, closes initial/terminal response ancestry as needed for
+training rows, and passes a frozen small-sample student checkpoint-zero
+operand/trajectory gate (exact prefixes, masks, mapping, quantized signs and
+finite logits; count proposal disagreements and judge near ties by native
+acceptance). Use captured native target features/logits as teacher, retain the
+original preparation manifest and raw logits, and label the resulting
+eligibility specifically for this calibration. This follows the project's
+practical numeric policy: independent Hugging Face versus native F16 drift
+alone does not block when it does not change labels, student decisions,
+gradients or conclusions. A strict alternative requires broad backend
+feature/FFN numeric parity first, delaying calibration without an identified
+training failure. Neither option authorizes the full 2k capture or a final
+quality claim. The user owns this readiness decision; no flag has been
+promoted and no captured-data QAT has run.
+
 The CPU implementation uses a **row-scale W1Ax interface** for a comparable
 A16/A8/A4/A1 sweep; candidate D's group-128/A16 remains a separate reference.
 Collapsing D group scales to one row scale would be a new, lossy initialization,

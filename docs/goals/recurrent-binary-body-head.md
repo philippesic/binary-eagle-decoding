@@ -2521,3 +2521,63 @@ stdout, raw row/byte growth and GPU use. No other project GPU job may start
 while capture is active. If interrupted, stop this supervisor and its process
 group before reporting the GPU free; retain any partial raw artifacts for
 diagnosis, never silently promote an incomplete bundle.
+
+## GPU Phase 1B first-shard audit
+
+The sole supervised shard-0000 capture finished exit zero at 2026-09-29
+07:59:33 UTC. All 31 frozen train prompts completed. The WSL project process
+group stopped and RTX 5080 returned to 0% utilization, about 2,900 MiB
+whole-device baseline. CPU follow-ups under unique `w1-shard0000-*` run IDs
+then passed: static/observed cell cap and SHA checks, native row preparation
+(2,562 rounds, 12,610 logit rows), feature preparation (7,796 selected
+accepted-prefix rows), bundle build, independent byte-identical re-audit,
+12,610-row compact teacher creation and verification, internal round
+continuity, and 31/31 full-request emission audit. Raw F32 logits are
+7,663,651,840 bytes and remain in the source cell and bundle; no raw
+retirement is allowed. The [capture report](../../experiments/w1ax-shard0000-capture-5080.md)
+records artifact hashes, counts, hardware, precision and limits.
+
+The bundle manifest SHA256 is
+`3ee7a8f4526f1dbcca1b6e0ea0756e42eff81333d7a88137afebe7213d3c1947`.
+Independent audit SHA256 is
+`832325813eefea67dc97dc0d251b1e37b3a7b4a7349a4e26eb3aa9663198508b`;
+it matched builder audit byte for byte. Compact teacher manifest SHA256 is
+`2d4b39867e2199c39116d98491baf5b46c706c17709b13d0efdebf910255fc52`.
+The full-request auditor was extended to accept an explicit frozen prompt
+hash/count while preserving its old 96-prompt defaults (`4db0440`, pushed
+and pulled to WSL). It verified 3,836 response tokens, 1,220 accepted drafts
+and 2,562 rounds; initial/terminal sampler parity is still unverified.
+
+The bundle deliberately remains `training_eligible:false` and
+`readiness:preparation_only`. Its declared gaps are model execution identity,
+numeric target-feature parity, full drafter mask/position/KV parity and
+cross-round ancestry. The new continuity and full-request evidence narrows
+the last item but cannot silently promote this inherited v1 manifest. The
+provider rejects it before model loading, so no captured-data 100-step QAT
+has started. A model-independent 100-step row-A4 CUDA trainer fixture ran as
+the sole GPU job in tmux MCP pane `%58`:
+`runs/w1-joint-cuda-fixture-a4-20260929/`. It finished exit zero at 08:08:33
+UTC in 19.5 seconds with finite metrics and 18 gradient tensors at every
+step; its loss moved 1.40130 to 1.40134 and no signs flipped. This checks
+the accelerator training path only, not native model memory, real step rate,
+convergence or quality. Its `training_run.json` SHA256 is
+`4515af9a865a3dab6607b310de68d735ffeb855e04acf0e3d455b1154c2dcda8`.
+Its process group stopped; RTX 5080 returned to 0%, about 2,900 MiB and
+41 W, with no project supervisor/server/trainer process. RTX 2080 Ti remains
+paused. Next: record concrete readiness options, then run only the bounded
+native checks needed for the selected eligibility contract before any real
+100-step calibration. Keep the raw bundle and final set untouched.
+
+An independent read-only identity check matched the capture cell's native
+server SHA256 `a57f9e784eb2528d2de954d12ebcb9ff57c1ee24cd8b11e3df55e526125e52f0`
+to the current CUDA binary. The cell pins target/D hashes, CUDA device 0,
+all-GPU model layers, F16 K/V cache and graph-disabled capture. Both pinned
+Hugging Face model snapshots passed a full file-list and SHA256 recheck
+against archived snapshot manifest SHA256
+`2db1c860f059bd8702ca6bb523e64f0c7d064c7a95f59919a001fc88168a91e3`.
+The prepared 31-prompt provider manifest SHA256 is
+`4ce8a76f41f1aeecd7f953951dbe3782d9ae2c27b6794234c7c28d39dabc7d47`;
+it copied `training_eligible:false`. A supervised one-step CPU attempt exited
+as expected with `training manifest is not eligible` before model loading.
+The user-owned practical-versus-strict first-shard readiness choice is now
+recorded in [DECISIONS.md](../DECISIONS.md#phase-1a-implementation-defaults-and-pending-research-choices).
