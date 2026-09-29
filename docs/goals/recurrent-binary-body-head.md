@@ -2467,3 +2467,20 @@ whole-device baseline and 40.5 W. The matched prune-on timed run started at
 9554. Monitor from pane `%58`; do not start another project GPU job until it
 finishes and the process group is absent. An offline paired comparator was
 committed as `d9c5e96` and pulled into the remote checkout before this run.
+
+The first matched prune-on supervisor finished exit 0 at 2026-09-29
+07:23:19 UTC, again with 480 measured requests and 20/20 verified CUDA-graph
+blocks. Both runs returned the GPU to 0% and 2,899 MiB baseline with no
+remaining project process. [The paired timing report](../../experiments/eagle-prune-timing-5080.md)
+records zero behavior mismatches across 480 request pairs. On/off server
+decode throughput ratios were Q4_0 **1.0088×**, D **1.0528×**, FP16 **1.0113×**
+and target-only **1.0026×**. D remained only about 0.403× Q4_0 decode rate;
+acceptance recovery is still the principal gap. Target-only drift and the
+off-then-on ordering prohibit a final speed claim from this one block.
+
+The reverse-order confirmation started with prune **on** at 2026-09-29
+07:26:10 UTC: `runs/w1-prune-on-timed-b-20260929/`, tmux MCP pane `%57`,
+PID/process group 10756. GPU preflight was 0%, 2,899 MiB and 39 W. This is
+the sole active project GPU job. After its terminal state and process-group
+check, run prune **off** with the same config and a new supervisor ID, then
+compare both blocks and their target-only drift before deciding what to keep.
