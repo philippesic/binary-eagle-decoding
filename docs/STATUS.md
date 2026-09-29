@@ -6,6 +6,13 @@ The target/verifier model precision remains as frozen for each experiment.
 
 **Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), continued as Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). The user has now **restored RTX 5080 access**; the RTX 2080 Ti remains paused. No joint GPU training has run. DFlash/DSpark are future roadmap items, not active work.
 
+**Calibration started (2026-09-29):** all five readiness gates passed,
+including nine ordered cache/head bridges. The sole GPU owner launched the
+authorized supervised 100-step row-A16 hard-CE calibration on RTX 5080.
+Completion and timing/memory measurements remain pending. Original data
+and full-body training eligibility remain false. See the
+[launch checkpoint](goals/recurrent-binary-body-head.md#calibration-readiness-passed-and-optimizer-launched).
+
 **Readiness adapter integrated (2026-09-29):** the selected-head prenorm
 observer adapter passed 13 CPU tests and is pushed as `fd8e1a1`. The supervised
 CPU readiness retry is running against the existing capture; no optimizer step

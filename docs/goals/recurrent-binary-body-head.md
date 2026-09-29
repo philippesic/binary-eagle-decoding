@@ -3103,3 +3103,33 @@ CPU-only supervised readiness retry is
 step has started. After inspecting a passing report and provider overlay,
 coordinator `/root` will run the authorized 100-step row-A16 hard-CE calibration
 on RTX 5080. Native optimization GPU checks remain queued behind it.
+
+## Calibration readiness passed and optimizer launched
+
+Outcome vocabulary normalization is integrated as `82fb9cc` (worker
+`af833fc`), with 14 assembler and five provider/readiness tests plus Ruff
+passing. All original count, outcome coverage, hash, numeric and cache gates
+remain required. The final CPU assembler completed with exit zero at
+`runs/w1-pilot-readiness-final-20260929/`. All five versioned checks pass;
+readiness SHA256 is
+`103396b1f25ca127da8ab2b13326a3db085e1629dcdedb479bc100698fbf1dcd`;
+provider overlay SHA256 is
+`e11ebb8806c8fb65caeb526da54da45c9ab7e99b5282d16b1f100985051adb94`.
+All nine selected prenorm bridges pass (maximum relative RMS `8.242505e-8`,
+maximum absolute error `9.846686e-7`). The first 100 rounds contain 495 supported
+labels and 9,393 exact prefix joins. Original bundle/provider eligibility
+and full-body eligibility remain false. Scope is only
+`row_a16_hard_ce_100_steps`, with a 100-round/100-step budget.
+
+Fresh RTX 5080 check showed 0% utilization and 2,843 MiB whole-device use.
+Coordinator `/root` launched supervised
+`runs/w1-row-a16-hardce-calibration-20260929/` in tmux session `$35`, pane `%57`,
+with CUDA `cuda:0`, row scales, A16, hard CE, `--steps 100 --require-complete`,
+and the passing provider overlay. Command handle is
+`262669c5-6d28-43fa-bb98-9ae9fb370470`. Monitor via `%59`; the run's state file
+records its PID/process group and must be checked before treating it terminal.
+No native optimization job may run concurrently. Next action: supervise this
+exact run, inspect its terminal status, checkpoint hashes, all 100 losses/18
+gradients, sign/scale movement, synchronized step times and allocator/RSS peaks.
+If a concrete memory failure occurs, retain its evidence and apply only a
+bounded math-preserving fix before a documented retry.
