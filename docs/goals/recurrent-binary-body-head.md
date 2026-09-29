@@ -2432,3 +2432,26 @@ fast-forward the remote checkout, then perform the first-shard capture or a
 clean timed A/B as appropriate. Keep the old 24 development prompts as
 regression data and the new final set sealed. The active project goal remains
 the joint binary EAGLE body/head study; this task's native GPU Goal is paused.
+
+## GPU Phase 1B resume and timed A/B
+
+At 2026-09-29 06:53 UTC the user explicitly restored GPU access. The native
+task Goal resumed and the local `rtx5080` pause flag was cleared; the
+`rtx2080ti` flag remains paused. The coordinator remains the sole project GPU
+owner. New tmux MCP session `$35` (`w1-phase1b-resume-5080`), execution pane
+`%57` and monitor pane `%58`, reconnected through the current saved host
+registry into WSL. A fresh pre-run device reading was **0% utilization**,
+2,899 MiB whole-device memory and 48 W; WSL showed no project supervisor,
+server, trainer or backend test. The remote checkout fast-forwarded to
+`a8492ee` without touching ignored artifacts or untracked directories.
+
+The first clean timed run started at 2026-09-29 06:54:48 UTC:
+`runs/w1-prune-off-timed-20260928/`, supervised through
+`scripts/remote_job.py` in pane `%57`, PID/process group 8574. It uses the
+pinned prune-off config, Q4_0/D group-128/A16/FP16/target-only, 24 old
+development prompts, two warmups and five measured repetitions. Pane `%58`
+monitors `state.json`, stdout, server blocks and GPU state. Do not start a
+second project GPU job while it runs. On completion, verify terminal state,
+process-group absence and resource use before the matched prune-on run. If
+the user requests another pause, mark the host paused first, interrupt this
+supervisor through tmux MCP, then verify its process group has stopped.

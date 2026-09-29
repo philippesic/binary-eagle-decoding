@@ -4,7 +4,9 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-**Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), continued as Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). The user subsequently asked to **pause GPU work** on 2026-09-28; both RTX 5080 and RTX 2080 Ti pause flags are set. No joint GPU training has run. DFlash/DSpark are future roadmap items, not active work.
+**Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), continued as Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). The user has now **restored RTX 5080 access**; the RTX 2080 Ti remains paused. No joint GPU training has run. DFlash/DSpark are future roadmap items, not active work.
+
+**RTX 5080 resume (2026-09-29 06:54 UTC):** a fresh tmux MCP session found 0% utilization, about 2.9 GiB baseline memory and no project process. The local RTX 5080 pause flag was resumed, remote main fast-forwarded, and the five-repetition prune-off timed run started under `remote_job.py` as the sole project GPU job. The [goal checkpoint](goals/recurrent-binary-body-head.md#gpu-phase-1b-resume-and-timed-ab) records run ID, owner and stop procedure. The prior pause checkpoint below remains historical.
 
 **GPU pause checkpoint (2026-09-29 05:55 UTC):** an earlier reply misread “No pause gpu work actually” as a direction to continue. The coordinator corrected that interpretation, set the RTX 5080 pause flag, verified every Phase 1B supervisor terminal and no project `llama-server`, trainer or supervisor process on WSL, and closed tmux MCP session `$34`. The GPU still has Windows game/display workload; no project GPU process remains. The completed CUDA build, 112/112 operator check and exact 96-pair quality comparison are preserved. Timed A/B, first-shard capture and training calibration did not run. See the [goal checkpoint](goals/recurrent-binary-body-head.md#gpu-phase-1b-pause-checkpoint).
 
