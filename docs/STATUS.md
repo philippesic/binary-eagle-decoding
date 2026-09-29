@@ -10,7 +10,8 @@ The target/verifier model precision remains as frozen for each experiment.
 all-nine gradients and exact frozen operands; the CUDA audit matched
 5,533,696 key and value elements each and 5,404 causal masks. Q4_0 and
 row-A16 response IDs match on the three prompts. Versioned readiness
-assembly is correcting artifact-schema adapters before any optimizer run;
+assembly is completing the ordered sequence/task/cache ancestry join before
+any optimizer run;
 original eligibility remains false. Real label-only v2 conversion/audit
 passed on the 31-prompt shard without copying 7.66 GB of raw logits. See the
 [latest evidence](goals/recurrent-binary-body-head.md#phase-1b-completed-backward-and-native-cache-evidence)

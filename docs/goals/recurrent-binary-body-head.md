@@ -3006,3 +3006,36 @@ report. The measured-scope retry is
 and creates no eligibility permission until every check and evidence binding
 passes. No optimizer step has yet run; there is no project GPU process active
 from the completed cache/backward runs.
+
+## Readiness trace-join checkpoint
+
+Main is pushed through `c00542a` and the actual GPU/cache/gradient evidence
+above is unchanged. The remaining readiness assembler corrections preserve
+the frozen ED04 numerical report and the passing gradient report. Measured
+accepted-label counts now exclude the two warmups and match the declared
+31 rows; gradient roots normalize their source prompt IDs and preserve
+candidate-D round indices separately from student round indices. Audited
+CUDA-host pinned causal masks are accepted with consistent buffer metadata;
+K/V storage must still be CUDA and exact projected-to-stored F16.
+
+The last CPU-only attempt `runs/w1-pilot-readiness-mask-20260929/` stopped
+at the selected seed join, before any report/overlay publication. The state
+trace has one `seq_id=0` across multiple RPC task IDs, so task IDs cannot be
+used as sequence keys. `/root/calibration_contract` owns the pending ordered
+bridge: pair all chronological depth-zero heads (including warmups) with
+seed/accept events under the one-sequence contract, validate position/token/
+cache length, and map measured tasks to the corresponding globally audited
+cache execution and exact normalized state. Repeated warmup requests may
+have identical states; their ordering must resolve ancestry, not arbitrary
+global value matching. Gate limits and source hashes remain unchanged.
+
+Fresh tmux MCP check on RTX 5080 found no project experiment process,
+0% utilization and 3,143 MiB whole-device use. Session `$35` and panes `%57`,
+`%58`, `%59` remain available; coordinator `/root` is sole GPU owner. The
+original provider/bundle remain ineligible, and no 100-step optimizer run
+has started. After the bridge passes, inspect and hash the readiness record
+and overlay, then execute exactly the already authorized supervised 100-step
+row-A16 hard-CE calibration with the integrated time/memory instrumentation.
+Do not launch a new native optimization test concurrently. The native owner
+continues CPU implementation in its isolated worktree; GPU validation for
+shared packing/resident state and the remaining measurement work is queued.
