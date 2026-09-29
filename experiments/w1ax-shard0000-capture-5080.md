@@ -51,6 +51,21 @@ row ranges, prefix hashes, shapes and probability mass. The source and bundle
 copies of the full raw F32 logits remain retained; the compact shards do not
 yet replace either raw copy under the v1 re-audit contract.
 
+The audited rows span all three frozen train domains. A CPU-only count from
+the hashed bundle's prompt metadata and `rows.jsonl` is preserved at
+`runs/w1-shard0000-domain-coverage-20260929/stdout.log`, SHA256
+`8c532fb32466609d902984bb992863b090f6bde6056990affab95609bd245151`:
+
+| Domain | Prompts | Rows | Supported labels | Verifier-reached rows | Distinct target labels |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Prose | 12 | 4,815 | 4,659 | 1,382 | 1,235 |
+| Reasoning | 10 | 4,020 | 3,926 | 1,260 | 510 |
+| Code | 9 | 3,775 | 3,665 | 1,134 | 659 |
+
+These sums reproduce the audit's 12,610 total, 12,250 supported and 3,776
+verifier-reached rows. They show broad-domain coverage in this small shard,
+not dataset sufficiency for body QAT or a learned-quality claim.
+
 An internal native round-continuity audit verified 2,562 rounds, 4,065 prefill
 inputs, 15,172 speculative inputs and 11,390 rejected suffix inputs. Its
 report SHA256 is

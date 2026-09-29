@@ -2649,3 +2649,16 @@ records config/model hashes and limitations. A16 improved checkpoint-zero
 acceptance over A4 by 2.47×, but both trail the Q4_0 primary baseline badly.
 Quality mode does not establish throughput. This narrows the first-calibration
 choice; no captured-data QAT has run and the first shard stays ineligible.
+
+The coordinator then counted audited shard-0000 training rows by frozen
+domain metadata without opening any final text. Prose/reasoning/code had
+respectively 4,815/4,020/3,775 rows,
+4,659/3,926/3,665 supported labels and 1,382/1,260/1,134 verifier-reached
+rows. The totals reproduce the independent 12,610-row audit exactly.
+The CPU coverage log SHA256 is
+`8c532fb32466609d902984bb992863b090f6bde6056990affab95609bd245151`;
+the [capture report](../../experiments/w1ax-shard0000-capture-5080.md)
+has the table. This bounds the small calibration shard but does not promote
+it to a full training tier. The first-shard readiness and initialization
+choice is still user-owned. No new GPU job started; RTX 5080 remains available,
+with no project process at the last fresh check.

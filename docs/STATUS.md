@@ -18,6 +18,9 @@ records hashes and limits. This is low checkpoint-zero acceptance, not a QAT
 or timing result. The first-shard provider remains ineligible; the
 [readiness/initialization choice](DECISIONS.md#phase-1a-implementation-defaults-and-pending-research-choices)
 is pending. No project GPU process is running and RTX 5080 is at baseline.
+The first-shard CPU domain check confirmed all 12,610 audited rows across
+prose (4,815), reasoning (4,020) and code (3,775), with 12,250 supported
+labels in total; see the capture report. This does not change eligibility.
 
 **GPU pause checkpoint (2026-09-29 05:55 UTC):** an earlier reply misread “No pause gpu work actually” as a direction to continue. The coordinator corrected that interpretation, set the RTX 5080 pause flag, verified every Phase 1B supervisor terminal and no project `llama-server`, trainer or supervisor process on WSL, and closed tmux MCP session `$34`. The GPU still has Windows game/display workload; no project GPU process remains. The completed CUDA build, 112/112 operator check and exact 96-pair quality comparison are preserved. Timed A/B, first-shard capture and training calibration did not run. See the [goal checkpoint](goals/recurrent-binary-body-head.md#gpu-phase-1b-pause-checkpoint).
 
