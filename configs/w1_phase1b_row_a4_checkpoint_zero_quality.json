@@ -1,0 +1,28 @@
+{
+  "binary": "build/llama-cuda/bin/llama-server",
+  "graph_env": {
+    "GGML_CUDA_GRAPH_STATS": "1",
+    "GGML_EAGLE_PRUNE_UNUSED_HEAD": "0"
+  },
+  "graph_required_markers": [
+    "CUDA_GRAPH_STATS"
+  ],
+  "port": 18091,
+  "prompts": "data/qat-revisit/development.jsonl",
+  "q4_variant": "q4_0",
+  "repetitions": 5,
+  "schema_version": 1,
+  "target": "models/gguf/Qwen3-4B-f16.gguf",
+  "variants": {
+    "q4_0": {
+      "draft": "models/gguf/Qwen3-4B-eagle3-q4_0.gguf"
+    },
+    "row_a4_checkpoint_zero": {
+      "draft": "runs/w1-row-a4-checkpoint-zero-export-20260929/model.gguf",
+      "env": {
+        "GGML_W1AX_ACT_BITS": "4"
+      }
+    }
+  },
+  "warmups": 2
+}
