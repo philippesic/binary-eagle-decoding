@@ -180,9 +180,11 @@ def build_plan(spec: dict) -> dict:
         "teacher_manifest",
         "train_prompts",
     }
-    if set(inputs) not in (required, required | {"learning_curve"}):
+    if not required <= set(inputs) or set(inputs) - required - {"learning_curve", "native_bridge"}:
         raise ValueError("unexpected refresh input inventory")
     paths = {name: verify_file(record) for name, record in inputs.items()}
+    if "native_bridge" in paths:
+        audit_native_bridge(paths["native_bridge"], paths["student_rows"])
     policy = json.loads(paths["policy"].read_text())
     allowed, caps = validate_policy(policy)
     if inputs["train_prompts"]["sha256"] != policy["train_prompts_sha256"]:
@@ -361,3 +363,349 @@ def audit_plan(path: Path) -> dict:
         "training_eligible": False,
         "capture_queue_ready": expected["capture_queue_ready"],
     }
+
+
+def audit_native_source(spec: dict) -> dict:
+    """Bridge canonical native own-history head/round captures on CPU.
+
+    This binds declared execution identity and verifies metadata/payload ancestry.
+    It never treats diagnostic state bytes or copied head labels as training data.
+    """
+    import array
+    import sys
+
+    if spec.get("schema") != "w1ax_native_refresh_source_v1":
+        raise ValueError("unsupported native refresh source")
+    files = spec.get("files", {})
+    required = {
+        "cell_manifest",
+        "heads",
+        "rounds",
+        "states",
+        "task_map",
+        "checkpoint_manifest",
+        "export_report",
+        "execution_binding",
+        "binary",
+        "capture_prompts",
+    }
+    if set(files) != required:
+        raise ValueError("native source requires canonical head/state/round capture inventory")
+    paths = {name: verify_file(record) for name, record in files.items()}
+    request = spec.get("request", {})
+    base = request.get("inputs", {})
+    if request.get("schema") != "w1ax_refresh_request_v1" or set(base) not in (
+        {"policy", "checkpoint", "student_export", "teacher_manifest", "train_prompts"},
+        {
+            "policy",
+            "checkpoint",
+            "student_export",
+            "teacher_manifest",
+            "train_prompts",
+            "learning_curve",
+        },
+    ):
+        raise ValueError("bridge requires a refresh request before normalized student rows")
+    base_paths = {name: verify_file(record) for name, record in base.items()}
+    policy = json.loads(base_paths["policy"].read_text())
+    allowed, caps = validate_policy(policy)
+    train_ids = [row.get("id") for row in read_jsonl(base_paths["train_prompts"])]
+    if (
+        base["train_prompts"]["sha256"] != policy["train_prompts_sha256"]
+        or len(set(train_ids)) != len(train_ids)
+        or not allowed.issubset(set(train_ids))
+    ):
+        raise ValueError("native sample differs from actual frozen training prompts")
+    identity = {
+        "checkpoint_sha256": base["checkpoint"]["sha256"],
+        "export_sha256": base["student_export"]["sha256"],
+    }
+    if request.get("student") != identity:
+        raise ValueError("native selected student identity differs from checkpoint/export")
+    checkpoint = json.loads(paths["checkpoint_manifest"].read_text())
+    exported = json.loads(paths["export_report"].read_text())
+    if (
+        checkpoint.get("schema_version") != 2
+        or checkpoint.get("checkpoint_sha256") != identity["checkpoint_sha256"]
+        or exported.get("schema_version") != 1
+        or exported.get("serialization_audit_passed") is not True
+        or exported.get("checkpoint", {}).get("sha256") != identity["checkpoint_sha256"]
+        or exported.get("output", {}).get("sha256") != identity["export_sha256"]
+        or exported.get("checkpoint_manifest", {}).get("sha256")
+        != files["checkpoint_manifest"]["sha256"]
+        or exported.get("scale_layout") != checkpoint.get("scale_layout")
+        or exported.get("activation_bits") != checkpoint.get("activation_bits")
+    ):
+        raise ValueError("native export report does not bind selected checkpoint contract")
+    cell = json.loads(paths["cell_manifest"].read_text())
+    if cell.get("schema") != "binary_head_capture_cell_v1" or cell.get("complete") is not True:
+        raise ValueError(
+            "native cell must be complete; benchmark summary alone lacks prefix ancestry"
+        )
+    contract = request.get("native_teacher_contract", {})
+    vocab = _positive(contract.get("target_vocab_size"))
+    if (
+        cell.get("draft_sha256") != identity["export_sha256"]
+        or cell.get("target_sha256") != contract.get("target_gguf_sha256")
+        or cell.get("binary_sha256") != files["binary"]["sha256"]
+    ):
+        raise ValueError("native cell ran a different student, target or executable")
+    binding = json.loads(paths["execution_binding"].read_text())
+    cache_policy = {
+        "student_state_source": "current_checkpoint_rebuild",
+        "kv_storage_dtype": "f16",
+        "position_policy": "absolute_prefix_contiguous",
+        "attention_mask": "causal_exact_prefix",
+    }
+    if (
+        binding.get("schema") != "w1ax_native_refresh_execution_binding_v1"
+        or binding.get("cell_manifest_sha256") != files["cell_manifest"]["sha256"]
+        or binding.get("native_teacher_contract_sha256") != digest(contract)
+        or binding.get("binary_sha256") != files["binary"]["sha256"]
+        or binding.get("native_revision") != contract.get("native_revision")
+        or binding.get("command_sha256") != digest(cell.get("command"))
+        or binding.get("environment_sha256") != digest(cell.get("env"))
+        or binding.get("cache_policy") != cache_policy
+        or binding.get("state_byteorder") not in ("little", "big")
+    ):
+        raise ValueError("native execution/cache binding differs from captured cell")
+    evidence = binding.get("evidence")
+    if not isinstance(evidence, dict) or not {"native_revision", "execution_policy"} <= set(
+        evidence
+    ):
+        raise ValueError("native execution binding requires source and execution-policy evidence")
+    evidence_paths = {name: verify_file(record) for name, record in evidence.items()}
+    if evidence_paths["native_revision"].read_text().strip() != contract[
+        "native_revision"
+    ] or evidence["execution_policy"]["sha256"] != contract.get("execution_policy_sha256"):
+        raise ValueError("native revision or execution-policy evidence differs")
+    for name in ("heads", "rounds", "states"):
+        record = cell.get("files", {}).get(paths[name].name, {})
+        if (
+            record.get("sha256") != files[name]["sha256"]
+            or record.get("bytes") != paths[name].stat().st_size
+        ):
+            raise ValueError("canonical native trace does not match cell file hashes")
+    mapping = json.loads(paths["task_map"].read_text())
+    if (
+        not isinstance(mapping, dict)
+        or not mapping
+        or any(not isinstance(task, str) or not task.isdecimal() for task in mapping)
+        or set(mapping.values()) != allowed
+        or len(mapping) != len(allowed)
+    ):
+        raise ValueError("native task ownership must cover exactly the frozen training sample")
+    capture_prompts = read_jsonl(paths["capture_prompts"])
+    capture_ids = [row.get("id") for row in capture_prompts]
+    captured_prompt_map = {row.get("id"): row for row in capture_prompts}
+    frozen_prompt_map = {row.get("id"): row for row in read_jsonl(base_paths["train_prompts"])}
+    cell_mapping = cell.get("task_prompt_ids", {})
+    if (
+        cell.get("prompts_sha256") != files["capture_prompts"]["sha256"]
+        or cell.get("prompt_count") != len(capture_prompts)
+        or cell.get("ordered_prompt_ids") != capture_ids
+        or len(set(capture_ids)) != len(capture_ids)
+        or set(cell_mapping) != set(mapping)
+        or set(cell_mapping.values()) != set(capture_ids)
+    ):
+        raise ValueError("native capture prompts or source task map differ from cell")
+    for task, prompt_id in mapping.items():
+        captured = captured_prompt_map[cell_mapping[task]]
+        frozen = frozen_prompt_map[prompt_id]
+        if (
+            not isinstance(frozen.get("messages"), list)
+            or not frozen["messages"]
+            or captured.get("messages") != frozen["messages"]
+        ):
+            raise ValueError("native captured prompt content differs from frozen training sample")
+    if "EAGLE_FORCE_ROUNDS_JSONL" in cell.get("env", {}):
+        raise ValueError("forced round execution is ineligible for student trajectory refresh")
+    heads, rounds = read_jsonl(paths["heads"]), read_jsonl(paths["rounds"])
+    if not 1 <= len(heads) <= caps["max_student_rows"]:
+        raise ValueError("native head row cap exceeded or empty")
+    requests = cell.get("requests")
+    if not isinstance(requests, list) or len(requests) != len(mapping):
+        raise ValueError("native requests have ambiguous task ownership")
+    head_cursor = round_cursor = 0
+    seen_tasks = set()
+    for item in requests:
+        task = item.get("task_id")
+        if task not in mapping or task in seen_tasks or item.get("id") != cell_mapping[task]:
+            raise ValueError("native request task/prompt ownership differs")
+        seen_tasks.add(task)
+        for key, trace, cursor in (
+            ("capture_rows", heads, head_cursor),
+            ("forced_round_rows", rounds, round_cursor),
+        ):
+            span = item.get(key)
+            if (
+                not isinstance(span, list)
+                or len(span) != 2
+                or span[0] != cursor
+                or type(span[1]) is not int
+                or not cursor < span[1] <= len(trace)
+                or any(str(row.get("task_id")) != task for row in trace[cursor : span[1]])
+            ):
+                raise ValueError(
+                    "native request row range is incomplete or belongs to another task"
+                )
+        head_cursor, round_cursor = item["capture_rows"][1], item["forced_round_rows"][1]
+    if head_cursor != len(heads) or round_cursor != len(rounds):
+        raise ValueError("unclaimed native trace rows cannot be silently dropped")
+    recorded, last, gaps = {}, {}, []
+    for row in rounds:
+        task, index = str(row.get("task_id")), row.get("round_index")
+        if (
+            row.get("schema") != "eagle_forced_round_v1"
+            or task not in mapping
+            or type(index) is not int
+            or index != len(last.get(task, []))
+        ):
+            raise ValueError("native proposal rounds must be canonical and contiguous from zero")
+        root = prefix(row.get("prefix_token_ids"), vocab, caps["max_prefix_tokens"])
+        seed, accepted = row.get("seed_token_id"), row.get("accepted_drafts")
+        draft, verifier = row.get("draft_token_ids"), row.get("verifier_token_ids")
+        if (
+            type(seed) is not int
+            or not 0 <= seed < vocab
+            or type(row.get("pos0")) is not int
+            or row.get("pos0") != len(root)
+            or not isinstance(draft, list)
+            or not 1 <= len(draft) <= 5
+            or any(type(token) is not int or not 0 <= token < vocab for token in draft)
+            or type(accepted) is not int
+            or not 0 <= accepted <= len(draft)
+            or not isinstance(verifier, list)
+            or len(verifier) != accepted + 1
+            or any(type(token) is not int or not 0 <= token < vocab for token in verifier)
+            or verifier[:accepted] != draft[:accepted]
+        ):
+            raise ValueError("native round token/position/acceptance ancestry differs")
+        previous = last.setdefault(task, [])
+        if previous:
+            old = previous[-1]
+            expected_root = (
+                old["prefix_token_ids"] + [old["seed_token_id"]] + old["verifier_token_ids"][:-1]
+            )
+            if list(root) != expected_root or seed != old["verifier_token_ids"][-1]:
+                gaps.append(
+                    {
+                        "task_id": task,
+                        "round_index": index,
+                        "gate": "native_feature_disposition_continuity_audit_required",
+                    }
+                )
+        previous.append(row)
+        recorded[(task, index)] = row
+    normalized, seen_heads, width = [], set(), _positive(heads[0].get("state_dim"))
+    for state_row, row in enumerate(heads):
+        task, index, depth = str(row.get("task_id")), row.get("round_index"), row.get("depth")
+        record = recorded.get((task, index))
+        if (
+            row.get("schema") != "eagle_head_state_v1"
+            or type(row.get("state_row")) is not int
+            or row.get("state_row") != state_row
+            or type(row.get("state_dim")) is not int
+            or row.get("state_dim") != width
+            or row.get("state_dtype") != "float32_native_endian"
+            or row.get("state_boundary") != "native_output_norm_f32_before_head_operand_conversion"
+            or row.get("forced") is not False
+            or row.get("finite") is not True
+            or row.get("valid") is not True
+            or row.get("alignment_valid") is not True
+            or row.get("is_bonus") is not False
+            or record is None
+            or type(index) is not int
+            or type(depth) is not int
+            or not 0 <= depth < len(record["draft_token_ids"])
+        ):
+            raise ValueError("native head state/own-history contract differs")
+        key = (task, index, depth)
+        if key in seen_heads:
+            raise ValueError("duplicate native head round/depth")
+        seen_heads.add(key)
+        tokens = prefix(row.get("prefix_token_ids"), vocab, caps["max_prefix_tokens"])
+        expected = (
+            record["prefix_token_ids"]
+            + [record["seed_token_id"]]
+            + record["draft_token_ids"][:depth]
+        )
+        parent = len(record["prefix_token_ids"]) - 1
+        if (
+            any(
+                type(row.get(field)) is not int
+                for field in ("parent_position", "input_position", "label_position", "verifier_row")
+            )
+            or list(tokens) != expected
+            or row.get("parent_position") != parent
+            or row.get("input_position") != parent + depth + 1
+            or row.get("label_position") != parent + depth + 2
+            or row.get("verifier_row") != depth
+            or row.get("input_token_id") != tokens[-1]
+            or row.get("proposed_token_id") != record["draft_token_ids"][depth]
+        ):
+            raise ValueError("native head prefix or absolute position differs from proposal round")
+        normalized.append(
+            {
+                "id": f"native:{task}:{index}:{depth}",
+                "prompt_id": mapping[task],
+                "split": "train",
+                **identity,
+                "prefix_token_ids": list(tokens),
+                "feature_prefix_token_ids": record["prefix_token_ids"],
+                "native_head_row": state_row,
+                "native_round_index": index,
+                "native_task_id": task,
+                "native_depth": depth,
+            }
+        )
+    expected_heads = {
+        (task, index, depth)
+        for (task, index), row in recorded.items()
+        for depth in range(len(row["draft_token_ids"]))
+    }
+    if seen_heads != expected_heads:
+        raise ValueError("native capture omits a computed proposal depth")
+    if paths["states"].stat().st_size != len(heads) * width * 4:
+        raise ValueError("native F32 state payload does not match head row inventory")
+    with paths["states"].open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            values = array.array("f")
+            values.frombytes(block)
+            if binding["state_byteorder"] != sys.byteorder:
+                values.byteswap()
+            if not all(math.isfinite(value) for value in values):
+                raise ValueError("native state payload contains nonfinite values")
+    return {
+        "schema": "w1ax_native_refresh_bridge_v1",
+        "source": spec,
+        "source_sha256": digest(spec),
+        "student_rows": normalized,
+        "student_rows_sha256": digest(normalized),
+        "counts": {
+            "heads": len(heads),
+            "rounds": len(rounds),
+            "prompts": len(mapping),
+            "state_dim": width,
+        },
+        "continuity_gaps": gaps,
+        "training_eligible": False,
+        "unresolved_gates": [
+            "native_response_and_cross_round_continuity_audit",
+            "changed_prefix_native_teacher_capture",
+            "provider_label_feature_payload_and_readiness_audit",
+        ],
+        "limits": [
+            "execution binding declares source/build policy; this is no numeric gate",
+            "native state bytes and head labels are diagnostics only and never reused",
+        ],
+    }
+
+
+def audit_native_bridge(path: Path, student_rows_path: Path) -> dict:
+    bridge = json.loads(path.read_text())
+    if bridge != audit_native_source(bridge["source"]):
+        raise ValueError("native bridge differs from recomputed source ancestry")
+    if read_jsonl(student_rows_path) != bridge["student_rows"]:
+        raise ValueError("normalized student rows differ from native trace ancestry")
+    return bridge

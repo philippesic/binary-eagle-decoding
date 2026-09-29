@@ -3,8 +3,8 @@
 This implements backlog item 8 from `docs/W1_RESEARCH_PLAN.md`. The CPU planner
 creates an immutable capture queue and can re-audit it from the original files.
 It does not load models, start inference, authorize a training budget or change
-the eligibility of the existing pilot. The current approved pilot remains the
-100-step row-A16 calibration. Refresh capture and substantive training remain
+the eligibility of the existing pilot. The approved 100-step row-A16 calibration has completed; see
+[its report](w1ax-row-a16-calibration-5080.md). Refresh capture and substantive training remain
 separate user-owned decisions.
 
 ## Strategy and acceptance
@@ -112,8 +112,8 @@ Student JSONL rows carry `id`, `prompt_id`, `split: "train"`,
 prefix) and `feature_prefix_token_ids` (the complete accepted feature root).
 Rows must cover exactly the frozen training sample. IDs cannot be duplicated;
 repeated same-prefix requirements across different student rows are deduplicated.
-Native collector output must be mapped to these fields by audited task ownership,
-not by row order or reconstructed text. Token IDs avoid tokenizer round trips.
+The `bridge-native` command maps canonical native collector output to these
+fields using source-bound request/task ownership and complete round prefixes. Token IDs avoid tokenizer round trips.
 This worker does not modify the existing native collector.
 
 ## Teacher storage seam
@@ -168,5 +168,112 @@ re-audit command, meaningful frozen-sample tests and this protocol. No target
 inference, GPU measurement, new capture/training approval or final-set opening
 occurred. Native collection of selected trained-student trajectories, changed
 prefix teacher capture, v2 normalized-index emission and provider eligibility
-remain downstream integration/measurement work. A 100-step pilot alone does
+remain downstream execution/measurement work. The canonical native trace bridge
+and capture/provider preparation artifacts are now implemented and CPU-tested.
+A 100-step pilot alone does
 not satisfy a substantive learning-curve gate.
+
+
+## Canonical native trace bridge
+
+Use the existing native instrumented capture artifacts to prepare refresh work:
+
+```sh
+python3 scripts/plan_w1ax_trajectory_refresh.py bridge-native \
+  --source "$RUN/native-refresh-source.json" --output "$RUN/refresh-bridge"
+python3 scripts/plan_w1ax_trajectory_refresh.py audit \
+  --plan "$RUN/refresh-bridge/refresh-plan.json" \
+  --output "$RUN/refresh-bridge/independent-plan-audit.json"
+```
+
+The source schema is `w1ax_native_refresh_source_v1`. `request` contains the
+ordinary `w1ax_refresh_request_v1` object described above, initially without
+`student_rows` or `native_bridge` inputs. `files` is an exact dictionary of
+absolute file records:
+
+| File key | Authoritative contents |
+| --- | --- |
+| `cell_manifest` | Completed `binary_head_capture_cell_v1` |
+| `heads` | Full `heads.jsonl`, schema `eagle_head_state_v1` |
+| `rounds` | Full `forced-rounds.jsonl`, schema `eagle_forced_round_v1`, unforced execution |
+| `states` | `heads.f32`, normalized native student state payload |
+| `task_map` | Decimal native task IDs to original frozen training prompt IDs |
+| `capture_prompts` | Actual prompt JSONL passed to this native capture |
+| `checkpoint_manifest` | Row schema-v2 checkpoint manifest |
+| `export_report` | Existing `export_recurrent_binary.py` serialization audit report |
+| `execution_binding` | Execution/cache identity record below |
+| `binary` | Captured native executable bytes |
+
+The bridge binds the cell's student, target and executable hashes, native
+prompt file hash/count/order, file hashes/byte counts and contiguous request
+head/round ranges. Capture prompt IDs may be diagnostic aliases only when
+their **entire messages** match the frozen source prompt bound through the task
+map. The sample must cover exactly the frozen policy; warmup or unrelated rows
+are rejected rather than dropped. Export report/checkpoint metadata must bind
+the selected checkpoint and exported bytes with the same activation/scale
+contract. Native execution must be unforced.
+
+The `execution_binding` schema is `w1ax_native_refresh_execution_binding_v1`:
+`cell_manifest_sha256`, `native_teacher_contract_sha256` (canonical JSON
+digest), `binary_sha256`, `native_revision`, `command_sha256`,
+`environment_sha256`, `state_byteorder: "little"|"big"`, and `cache_policy`:
+
+```json
+{
+  "student_state_source": "current_checkpoint_rebuild",
+  "kv_storage_dtype": "f16",
+  "position_policy": "absolute_prefix_contiguous",
+  "attention_mask": "causal_exact_prefix"
+}
+```
+
+`evidence` contains file records including `native_revision` (the exact full
+commit SHA as text) and `execution_policy` (the hashed frozen teacher execution
+policy). Additional evidence records may pin build or numeric/cache reports.
+Command/environment digests use the actual cell metadata. This binds declared
+source and execution policy; it does not independently establish that a binary
+was built from the declared revision, nor prove K/V or mask numerical behavior.
+Those execution gates remain explicit. Unsupported cache contracts are rejected.
+
+The bridge verifies every recorded proposal depth against its round:
+`head.prefix = accepted_prefix + [seed] + draft_tokens[:depth]`, with exact
+parent/input/label/verifier positions. Each normalized row's feature root is
+that round's accepted prefix **before the seed**. This matches the existing
+provider's cache rebuild boundary. All computed depths must be present, state
+rows contiguous, and F32 payload shape/endian/finite values valid. Per-round
+absolute ancestry is preserved even when a cross-round jump needs the separate
+native feature-disposition audit; such gaps are retained in `continuity_gaps`.
+Native cloned labels, logits, hidden states and cached K/V are never copied into
+teacher or provider training records by this bridge.
+
+The immutable output directory contains:
+
+| Artifact | Purpose |
+| --- | --- |
+| `native-bridge.json` | Embedded source specification, normalized rows, counts and unresolved gates |
+| `student-rows.jsonl` | Current-checkpoint exact-prefix rows |
+| `refresh-request.json` | Source-bound request passed to the planner |
+| `refresh-plan.json` / `refresh-plan-audit.json` | Scheduling decisions and CPU re-audit |
+| `capture-inputs.json` | Deduplicated exact token-array request templates for missing labels/features |
+| `provider-preparation.json` | Per-round label/feature bindings and explicit missing capture entries |
+
+When auditing a plan with `native_bridge`, the bridge is recomputed from every
+original source file and the emitted student rows must match exactly. Editing
+source files, the bridge, or normalized rows invalidates the audit. Provider
+preparation groups rows by prompt/round and references exact-prefix teachers
+only through the existing audited index. It marks missing ancestry visibly,
+keeps `training_eligible: false` and has `loader_factory: null`.
+
+`capture-inputs.json` provides `/completion` request templates with absolute
+token-array `prompt`, one next token, deterministic sampling and disabled prompt
+cache. These are preparation artifacts, with `execution_authorized: false`.
+A sole GPU owner must still validate token-array API handling, frozen verifier
+sampler options and target-feature instrumentation on a bounded native request
+before executing an authorized capture. The ordinary benchmark round summary
+`w1ax_eagle_round_v1` has no complete head/state/prefix ancestry and cannot be
+substituted for canonical capture. The bridge adds no launcher or GPU operation.
+
+The extension passes 20 CPU tests and independent Luna review. Native selected
+trained-student collection, changed-prefix teacher capture/storage audit,
+response/continuity and numeric/cache gates, learning-curve evidence and actual
+provider eligibility remain required before refreshed training.

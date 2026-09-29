@@ -12,8 +12,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from w1a1_eagle.trajectory_refresh import (  # noqa: E402
     INDEX_SCHEMA,
+    audit_native_source,
     audit_plan,
     build_plan,
+    digest,
     file_record,
     read_jsonl,
     sha256,
@@ -138,6 +140,144 @@ def index_v1(args) -> dict:
     return result
 
 
+def bridge_native(args) -> dict:
+    """Materialize source-bound refresh and pending capture/provider artifacts."""
+    if args.output.exists():
+        raise ValueError("native bridge output must be new")
+    source = json.loads(args.source.read_text())
+    bridge = audit_native_source(source)
+    args.output.mkdir(parents=True)
+    rows_path = args.output / "student-rows.jsonl"
+    rows_path.write_text(
+        "".join(json.dumps(row, sort_keys=True) + "\n" for row in bridge["student_rows"])
+    )
+    bridge_path = args.output / "native-bridge.json"
+    write_new(bridge_path, bridge)
+    request = json.loads(json.dumps(source["request"]))
+    request["inputs"] = {
+        **request["inputs"],
+        "student_rows": file_record(rows_path),
+        "native_bridge": file_record(bridge_path),
+    }
+    write_new(args.output / "refresh-request.json", request)
+    plan = build_plan(request)
+    plan_path = args.output / "refresh-plan.json"
+    write_new(plan_path, plan)
+    write_new(args.output / "refresh-plan-audit.json", audit_plan(plan_path))
+    # Capture work is grouped only by exact prompt/prefix, never by text, row
+    # position or a candidate-D proposal. These are HTTP preparation templates.
+    capture = {}
+    for row in plan["capture_requests"]:
+        key = (row["prompt_id"], tuple(row["prefix_token_ids"]))
+        entry = capture.setdefault(
+            key,
+            {
+                "prompt_id": row["prompt_id"],
+                "prefix_token_ids": row["prefix_token_ids"],
+                "prefix_sha256": row["prefix_sha256"],
+                "required_outputs": [],
+                "student_row_ids": [],
+                "request_template": {
+                    "endpoint": "/completion",
+                    "body": {
+                        "prompt": row["prefix_token_ids"],
+                        "n_predict": 1,
+                        "temperature": 0,
+                        "seed": 42,
+                        "cache_prompt": False,
+                        "return_tokens": True,
+                    },
+                },
+            },
+        )
+        entry["required_outputs"].append(row["kind"])
+        entry["student_row_ids"] = sorted(set(entry["student_row_ids"] + row["student_row_ids"]))
+    write_new(
+        args.output / "capture-inputs.json",
+        {
+            "schema": "w1ax_refresh_native_capture_preparation_v1",
+            "split": "train",
+            "refresh_plan": file_record(plan_path),
+            "requests": list(capture.values()),
+            "native_teacher_contract": request["native_teacher_contract"],
+            "capture_queue_ready": plan["capture_queue_ready"],
+            "execution_authorized": False,
+            "training_eligible": False,
+            "unresolved_gates": [
+                "explicit_capture_budget_and_sole_gpu_owner_schedule",
+                "native_token_array_request_and_teacher_feature_instrumentation_validation",
+                "frozen_verifier_sampler_options_must_bind_request_template",
+                "exact_prefix_label_and_feature_storage_audit",
+            ],
+        },
+    )
+    references = {
+        row["kind"] + ":" + row["prompt_id"] + ":" + row["prefix_sha256"]: {
+            "status": "captured",
+            "teacher": row["teacher"],
+        }
+        for row in plan["reused"]
+    }
+    references.update(
+        {
+            row["kind"] + ":" + row["prompt_id"] + ":" + row["prefix_sha256"]: {
+                "status": "missing_native_capture"
+            }
+            for row in plan["capture_requests"]
+        }
+    )
+    rounds = {}
+    for row in bridge["student_rows"]:
+        key = (row["prompt_id"], row["native_round_index"])
+        group = rounds.setdefault(
+            key,
+            {
+                "prompt_id": row["prompt_id"],
+                "round_index": row["native_round_index"],
+                "feature_prefix_token_ids": row["feature_prefix_token_ids"],
+                "cache_policy": "rebuild_all_positions_with_current_checkpoint_f16_kv",
+                "student_row_ids": [],
+                "labels": [],
+                "features": [
+                    references["feature:" + row["prompt_id"] + ":" + digest(tokens)]
+                    for tokens in [
+                        row["feature_prefix_token_ids"][:n]
+                        for n in range(1, len(row["feature_prefix_token_ids"]) + 1)
+                    ]
+                ],
+            },
+        )
+        group["student_row_ids"].append(row["id"])
+        group["labels"].append(
+            {
+                "student_row_id": row["id"],
+                "depth": row["native_depth"],
+                "prefix_token_ids": row["prefix_token_ids"],
+                **references["label:" + row["prompt_id"] + ":" + digest(row["prefix_token_ids"])],
+            }
+        )
+    write_new(
+        args.output / "provider-preparation.json",
+        {
+            "schema": "w1ax_refresh_provider_preparation_v1",
+            "split": "train",
+            "refresh_plan": file_record(plan_path),
+            "student": request["student"],
+            "native_bridge": file_record(bridge_path),
+            "rounds": list(rounds.values()),
+            "training_eligible": False,
+            "loader_factory": None,
+            "unresolved_gates": bridge["unresolved_gates"],
+        },
+    )
+    return {
+        "counts": plan["counts"],
+        "learning_gate": plan["learning_gate"],
+        "continuity_gaps": bridge["continuity_gaps"],
+        "training_eligible": False,
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -154,6 +294,9 @@ def main() -> None:
     index.add_argument("--prompt-count", type=int, required=True)
     index.add_argument("--native-contract", type=Path, required=True)
     index.add_argument("--output", type=Path, required=True)
+    bridge = commands.add_parser("bridge-native")
+    bridge.add_argument("--source", type=Path, required=True)
+    bridge.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if args.command == "plan":
         result = build_plan(json.loads(args.request.read_text()))
@@ -172,6 +315,8 @@ def main() -> None:
         result = audit_plan(args.plan)
         write_new(args.output, result)
         print(json.dumps(result, sort_keys=True))
+    elif args.command == "bridge-native":
+        print(json.dumps(bridge_native(args), sort_keys=True))
     else:
         result = index_v1(args)
         print(json.dumps({"schema": result["schema"], "index": result["index"]}, sort_keys=True))

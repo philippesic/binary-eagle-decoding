@@ -2,6 +2,7 @@
 
 import copy
 import json
+import struct
 import subprocess
 import sys
 import tempfile
@@ -10,7 +11,13 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from w1a1_eagle.trajectory_refresh import audit_plan, build_plan, digest, file_record
+from w1a1_eagle.trajectory_refresh import (
+    audit_native_source,
+    audit_plan,
+    build_plan,
+    digest,
+    file_record,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -127,7 +134,10 @@ class RefreshTests(unittest.TestCase):
         }
         prompt_path = self.directory / "train.jsonl"
         prompt_path.write_text(
-            "".join(json.dumps({"id": domain}) + "\n" for domain in ("prose", "code", "reasoning"))
+            "".join(
+                json.dumps({"id": domain, "messages": [{"role": "user", "content": domain}]}) + "\n"
+                for domain in ("prose", "code", "reasoning")
+            )
         )
         self.spec["inputs"]["train_prompts"] = file_record(prompt_path)
         self.policy["train_prompts_sha256"] = file_record(prompt_path)["sha256"]
@@ -328,6 +338,285 @@ class RefreshTests(unittest.TestCase):
         self.assertIn("audit", result["artifacts"])
         self.assertIn("source_cell", result["artifacts"])
         self.assertFalse(result["training_eligible"])
+
+    def native_source(self):
+        checkpoint_manifest = self.write(
+            "checkpoint-manifest.json",
+            {
+                "schema_version": 2,
+                "checkpoint_sha256": self.identity["checkpoint_sha256"],
+                "scale_layout": "row",
+                "activation_bits": 16,
+            },
+        )
+        export_report = self.write(
+            "export-report.json",
+            {
+                "schema_version": 1,
+                "serialization_audit_passed": True,
+                "checkpoint": self.spec["inputs"]["checkpoint"],
+                "checkpoint_manifest": checkpoint_manifest,
+                "output": self.spec["inputs"]["student_export"],
+                "scale_layout": "row",
+                "activation_bits": 16,
+            },
+        )
+        heads, rounds, requests, mapping = [], [], [], {}
+        for task, domain in enumerate(("prose", "code", "reasoning"), 1):
+            mapping[str(task)] = domain
+            rounds.append(
+                {
+                    "schema": "eagle_forced_round_v1",
+                    "task_id": task,
+                    "round_index": 0,
+                    "prefix_token_ids": [1, 2],
+                    "seed_token_id": 4,
+                    "pos0": 2,
+                    "draft_token_ids": [8, 9],
+                    "accepted_drafts": 0,
+                    "verifier_token_ids": [7],
+                }
+            )
+            start = len(heads)
+            for depth in range(2):
+                tokens = [1, 2, 4] + [8][:depth]
+                heads.append(
+                    {
+                        "schema": "eagle_head_state_v1",
+                        "task_id": task,
+                        "round_index": 0,
+                        "depth": depth,
+                        "state_row": len(heads),
+                        "state_dim": 2,
+                        "state_dtype": "float32_native_endian",
+                        "state_boundary": "native_output_norm_f32_before_head_operand_conversion",
+                        "forced": False,
+                        "finite": True,
+                        "valid": True,
+                        "alignment_valid": True,
+                        "is_bonus": False,
+                        "prefix_token_ids": tokens,
+                        "parent_position": 1,
+                        "input_position": 2 + depth,
+                        "label_position": 3 + depth,
+                        "verifier_row": depth,
+                        "input_token_id": tokens[-1],
+                        "proposed_token_id": [8, 9][depth],
+                        "verifier_token_id": 99,
+                    }
+                )
+            requests.append(
+                {
+                    "task_id": str(task),
+                    "id": domain,
+                    "capture_rows": [start, len(heads)],
+                    "forced_round_rows": [len(rounds) - 1, len(rounds)],
+                }
+            )
+
+        def jsonl(name, rows):
+            return self.write(name, "".join(json.dumps(row) + "\n" for row in rows).encode())
+
+        files = {
+            "heads": jsonl("heads.jsonl", heads),
+            "rounds": jsonl("forced-rounds.jsonl", rounds),
+            "states": self.write("heads.f32", struct.pack("<12f", *range(12))),
+            "task_map": self.write("task-map.json", mapping),
+            "checkpoint_manifest": checkpoint_manifest,
+            "export_report": export_report,
+            "binary": self.write("native-server", b"pinned-executable"),
+            "capture_prompts": self.write(
+                "capture-prompts.jsonl",
+                Path(self.spec["inputs"]["train_prompts"]["path"]).read_bytes(),
+            ),
+        }
+        cell = {
+            "schema": "binary_head_capture_cell_v1",
+            "complete": True,
+            "draft_sha256": self.identity["export_sha256"],
+            "target_sha256": "c" * 64,
+            "binary_sha256": files["binary"]["sha256"],
+            "prompts_sha256": files["capture_prompts"]["sha256"],
+            "prompt_count": 3,
+            "ordered_prompt_ids": ["prose", "code", "reasoning"],
+            "task_prompt_ids": mapping,
+            "requests": requests,
+            "command": ["native-server", "-md", "student.gguf"],
+            "env": {"GGML_W1AX_ACT_BITS": "16"},
+            "files": {
+                Path(files[key]["path"]).name: {
+                    "sha256": files[key]["sha256"],
+                    "bytes": Path(files[key]["path"]).stat().st_size,
+                }
+                for key in ("heads", "rounds", "states")
+            },
+        }
+        files["cell_manifest"] = self.write("native-cell.json", cell)
+        execution_policy = self.write(
+            "execution-policy.json", {"cache_dtype": "f16", "backend": "CPU-fixture"}
+        )
+        self.contract["execution_policy_sha256"] = execution_policy["sha256"]
+        self.sync()
+        files["execution_binding"] = self.write(
+            "execution-binding.json",
+            {
+                "schema": "w1ax_native_refresh_execution_binding_v1",
+                "cell_manifest_sha256": files["cell_manifest"]["sha256"],
+                "native_teacher_contract_sha256": digest(self.contract),
+                "binary_sha256": files["binary"]["sha256"],
+                "native_revision": "0" * 40,
+                "command_sha256": digest(cell["command"]),
+                "environment_sha256": digest(cell["env"]),
+                "cache_policy": {
+                    "student_state_source": "current_checkpoint_rebuild",
+                    "kv_storage_dtype": "f16",
+                    "position_policy": "absolute_prefix_contiguous",
+                    "attention_mask": "causal_exact_prefix",
+                },
+                "state_byteorder": "little",
+                "evidence": {
+                    "native_revision": self.write("native-revision.txt", ("0" * 40).encode()),
+                    "execution_policy": execution_policy,
+                },
+            },
+        )
+        request = copy.deepcopy(self.spec)
+        del request["inputs"]["student_rows"]
+        return {"schema": "w1ax_native_refresh_source_v1", "files": files, "request": request}
+
+    def update_native(self, source, name, value):
+        record = source["files"][name]
+        path = Path(record["path"])
+        if name in ("heads", "rounds"):
+            path.write_text("".join(json.dumps(row) + "\n" for row in value))
+        elif isinstance(value, bytes):
+            path.write_bytes(value)
+        else:
+            path.write_text(json.dumps(value))
+        source["files"][name] = file_record(path)
+        if name in ("heads", "rounds", "states"):
+            cell_path = Path(source["files"]["cell_manifest"]["path"])
+            cell = json.loads(cell_path.read_text())
+            cell["files"][path.name] = {
+                "sha256": file_record(path)["sha256"],
+                "bytes": path.stat().st_size,
+            }
+            self.update_native(source, "cell_manifest", cell)
+        if name == "cell_manifest":
+            binding_path = Path(source["files"]["execution_binding"]["path"])
+            binding = json.loads(binding_path.read_text())
+            binding["cell_manifest_sha256"] = source["files"][name]["sha256"]
+            self.update_native(source, "execution_binding", binding)
+
+    def test_native_bridge_exact_depths_and_root_exclude_seed(self):
+        result = audit_native_source(self.native_source())
+        self.assertEqual(result["counts"]["heads"], 6)
+        self.assertEqual(result["student_rows"][0]["feature_prefix_token_ids"], [1, 2])
+        self.assertEqual(result["student_rows"][1]["prefix_token_ids"], [1, 2, 4, 8])
+        self.assertNotIn("verifier_token_id", result["student_rows"][0])
+        self.assertFalse(result["training_eligible"])
+
+    def test_native_bridge_rejects_changed_prefix_position_or_forced(self):
+        for field, value in (
+            ("prefix_token_ids", [1, 2, 3]),
+            ("label_position", 99),
+            ("forced", True),
+        ):
+            with self.subTest(field=field):
+                source = self.native_source()
+                heads = [
+                    json.loads(line)
+                    for line in Path(source["files"]["heads"]["path"]).read_text().splitlines()
+                ]
+                heads[0][field] = value
+                self.update_native(source, "heads", heads)
+                with self.assertRaises(ValueError):
+                    audit_native_source(source)
+
+    def test_native_prompt_alias_requires_exact_frozen_content(self):
+        source = self.native_source()
+        prompts = [
+            json.loads(line)
+            for line in Path(source["files"]["capture_prompts"]["path"]).read_text().splitlines()
+        ]
+        for row in prompts:
+            row["id"] = "diagnostic-" + row["id"]
+        path = Path(source["files"]["capture_prompts"]["path"])
+        path.write_text("".join(json.dumps(row) + "\n" for row in prompts))
+        source["files"]["capture_prompts"] = file_record(path)
+        cell = json.loads(Path(source["files"]["cell_manifest"]["path"]).read_text())
+        cell["prompts_sha256"] = file_record(path)["sha256"]
+        cell["ordered_prompt_ids"] = [row["id"] for row in prompts]
+        cell["task_prompt_ids"] = {
+            task: "diagnostic-" + domain for task, domain in cell["task_prompt_ids"].items()
+        }
+        for request in cell["requests"]:
+            request["id"] = "diagnostic-" + request["id"]
+        self.update_native(source, "cell_manifest", cell)
+        self.assertEqual(audit_native_source(source)["student_rows"][0]["prompt_id"], "prose")
+        prompts[0]["messages"][0]["content"] = "unrelated prompt"
+        path.write_text("".join(json.dumps(row) + "\n" for row in prompts))
+        source["files"]["capture_prompts"] = file_record(path)
+        cell["prompts_sha256"] = file_record(path)["sha256"]
+        self.update_native(source, "cell_manifest", cell)
+        with self.assertRaisesRegex(ValueError, "content differs"):
+            audit_native_source(source)
+
+    def test_native_bridge_rejects_export_and_native_cache_contract_drift(self):
+        source = self.native_source()
+        report = json.loads(Path(source["files"]["export_report"]["path"]).read_text())
+        report["output"]["sha256"] = "0" * 64
+        self.update_native(source, "export_report", report)
+        with self.assertRaisesRegex(ValueError, "export report"):
+            audit_native_source(source)
+        source = self.native_source()
+        binding = json.loads(Path(source["files"]["execution_binding"]["path"]).read_text())
+        binding["cache_policy"]["kv_storage_dtype"] = "f32"
+        self.update_native(source, "execution_binding", binding)
+        with self.assertRaisesRegex(ValueError, "execution/cache"):
+            audit_native_source(source)
+
+    def test_native_bridge_rejects_state_nan_and_request_ownership(self):
+        source = self.native_source()
+        self.update_native(source, "states", struct.pack("<12f", float("nan"), *range(11)))
+        with self.assertRaisesRegex(ValueError, "nonfinite"):
+            audit_native_source(source)
+        source = self.native_source()
+        cell = json.loads(Path(source["files"]["cell_manifest"]["path"]).read_text())
+        cell["requests"][0]["capture_rows"] = [0, 1]
+        self.update_native(source, "cell_manifest", cell)
+        with self.assertRaisesRegex(ValueError, "range"):
+            audit_native_source(source)
+
+    def test_native_bridge_cli_capture_and_provider_preparation_reaudit_sources(self):
+        source = self.native_source()
+        path = self.directory / "source.json"
+        path.write_text(json.dumps(source))
+        output = self.directory / "bridged"
+        command = [sys.executable, str(ROOT / "scripts/plan_w1ax_trajectory_refresh.py")]
+        subprocess.run(
+            command + ["bridge-native", "--source", str(path), "--output", str(output)],
+            check=True,
+            capture_output=True,
+        )
+        plan_path = output / "refresh-plan.json"
+        plan = json.loads(plan_path.read_text())
+        self.assertEqual(plan["counts"]["new_label_rows"], 6)
+        self.assertEqual(plan["counts"]["new_feature_rows"], 0)
+        self.assertFalse(plan["capture_queue_ready"])
+        capture = json.loads((output / "capture-inputs.json").read_text())
+        self.assertEqual(capture["requests"][0]["request_template"]["body"]["prompt"], [1, 2, 4])
+        self.assertFalse(capture["execution_authorized"])
+        provider = json.loads((output / "provider-preparation.json").read_text())
+        self.assertIsNone(provider["loader_factory"])
+        self.assertEqual(provider["rounds"][0]["labels"][0]["status"], "missing_native_capture")
+        self.assertTrue(
+            all(row["status"] == "captured" for row in provider["rounds"][0]["features"])
+        )
+        self.assertEqual(audit_plan(plan_path)["status"], "pass")
+        Path(source["files"]["states"]["path"]).write_bytes(b"changed")
+        with self.assertRaisesRegex(ValueError, "SHA256"):
+            audit_plan(plan_path)
 
     def test_cli_prepares_and_audits_immutable_artifacts(self):
         request = self.directory / "request.json"
