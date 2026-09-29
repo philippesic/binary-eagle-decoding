@@ -2329,9 +2329,10 @@ Before a model run, fresh RTX 5080 readings rose from the initial 2% to
 55–61% utilization, about 4,136 MiB whole-device use and 204–206 W while no
 WSL GPU process was listed; this appears to be non-project load. It was not
 interrupted. The operator test is valid as a correctness check, but these
-conditions preclude a clean timing claim. The user separately clarified not
-to pause GPU work. Proceed with supervised quality checks and keep throughput
-timing diagnostic or delayed until the external load clears.
+conditions preclude a clean timing claim. An earlier reply misread the user's
+follow-up as a direction not to pause; the later pause checkpoint below
+corrects this. The completed supervised quality checks are retained, while
+throughput timing remains unrun.
 
 The first off-path native quality job started at 2026-09-29 05:33:09 UTC as
 `runs/w1-prune-off-quality-20260928/`, supervised in tmux MCP pane `%54` with
@@ -2394,10 +2395,40 @@ the non-project workload clears. No timed A/B or shard capture has begun.
 Latest resource gate: with every project supervisor stopped, a later RTX 5080
 reading was 4,824 MiB whole-device use, 93% utilization and 308.4 W.
 `ps` found no project supervisor, `llama-server` or joint trainer process.
-The user has an asynchronous question asking whether this competing workload
-will be cleared or GPU sharing is intended. The local RTX 5080 pause flag
-remains **resumed** per the user's explicit instruction not to pause GPU work;
-tmux MCP session `$34` remains available. Hold fair timed A/B and the
-memory-heavy first-shard capture until resource intent/capacity is clear.
+An asynchronous resource question was sent under the earlier mistaken reading
+of the user's follow-up; the pause checkpoint below supersedes it. At this
+historical observation the local RTX 5080 flag was still resumed and tmux MCP
+session `$34` remained open. Fair timed A/B and the memory-heavy first-shard
+capture were held for capacity.
 The off/on quality evidence and CPU first-shard preflight are preserved, so no
 completed experiment needs rerunning merely to resume.
+
+## GPU Phase 1B pause checkpoint
+
+At 2026-09-29 05:54 UTC the coordinator recognized that the user's “No pause
+gpu work actually” corrected the earlier go-ahead and requested a pause. The
+prior response had misinterpreted it. The local `rtx5080` flag was immediately
+set to paused; `rtx2080ti` was already paused. No project GPU job was running
+at that point. Through tmux MCP, a fresh WSL process check found no
+`remote_job.py`, `llama-server`, joint trainer or backend-ops process; all
+Phase 1B `w1-*` supervisor `state.json` records were terminal. The paired
+quality supervisors, comparison, CUDA build, operator test, data preparation
+and shard-plan jobs exited zero; the initial plain-Python build exited code 2
+before compilation and was superseded by the successful locked build.
+
+The final GPU reading after project jobs stopped was 4,760 MiB whole-device
+use, 75% utilization and 231 W. Windows-side `nvidia-smi` listed game and
+display processes, including Fortnite; those were not interrupted. **Project
+GPU use is stopped, but the whole device is not idle.** The tmux MCP session
+`$34` was closed after verification. The local checkout is clean, and the
+completed [quality comparison](../../experiments/eagle-prune-quality-5080.md)
+plus ignored remote run artifacts remain preserved. No timed A/B, first-shard
+capture or 100-step QAT calibration ran. The first-shard static preflight had
+passed, including the exact D map and 31 training prompt identities.
+
+Next action only after the user explicitly resumes GPU work: use the saved
+host registry and a new tmux MCP session, check fresh resource/process state,
+fast-forward the remote checkout, then perform the first-shard capture or a
+clean timed A/B as appropriate. Keep the old 24 development prompts as
+regression data and the new final set sealed. The active project goal remains
+the joint binary EAGLE body/head study; this task's native GPU Goal is paused.
