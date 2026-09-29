@@ -6,6 +6,15 @@ The target/verifier model precision remains as frozen for each experiment.
 
 **Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), continued as Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). The user has now **restored RTX 5080 access**; the RTX 2080 Ti remains paused. No joint GPU training has run. DFlash/DSpark are future roadmap items, not active work.
 
+**Torch CUDA pilot gate (2026-09-29):** nine selected roots passed the
+frozen numerical check with zero proposal disagreements. Maximum state/logit
+relative RMS was `3.55e-5`/`7.77e-5`, below `0.10`; the three Q4_0 response
+ID pairs matched exactly. The original bundle remains ineligible until
+cache/mask, gradient and versioned provider gates pass. The sole coordinator
+is building the opt-in CUDA cache diagnostic after preserving the original
+runtime. See the
+[checkpoint](goals/recurrent-binary-body-head.md#phase-1b-torch-cuda-numerical-gate).
+
 **Pilot revalidation (2026-09-29 18:45 UTC):** fresh first-shard re-audit
 passed byte-identically, all pinned provider/model snapshot hashes matched,
 and all nine exported row-A16 sign-bit/scale pairs matched checkpoint zero.

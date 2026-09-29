@@ -2776,3 +2776,48 @@ prove CUDA stored-cache and mask values. The numerical checker is next;
 if it passes, close the selected-root CUDA cache/mask gap before any
 eligibility promotion. Preserve the original preparation bundle and sealed
 final data. No captured-data QAT has started.
+
+## Phase 1B Torch CUDA numerical gate
+
+The first supervised numerical checker stopped before measurement on a
+checkpoint module-key mismatch (`fc.weight` versus `fc`), then returned GPU
+use to baseline. The fix and an all-nine loader regression test are pushed
+as `0e3a599` and `bb79256`; the checker was initially integrated as `f6165c2`.
+Six focused checker tests and Ruff passed.
+
+Retry `runs/w1-pilot-torch-trajectory-retry-20260929/` completed exit zero.
+It selected nine roots across the frozen prose/reasoning/code prompts,
+including first roots and shared roots following acceptance and rejection.
+All nine mapped Torch CUDA proposal IDs matched native row-A16 exactly.
+Maximum normalized-state relative RMS was `3.551677034887458e-5`; maximum
+head-logit relative RMS was `7.771190966692936e-5`, both below the frozen
+`0.10` bound. Maximum absolute state/logit errors were approximately
+`2.143085e-4` and `8.887053e-4`. Packed-head replay used the original exported
+sign bits and row scales, with F16 input conversion. Report SHA256 is
+`ed04cd752e01e87c71a18990fec04bcc45f6a9d9afb88c70c21ca5a3a9586a81`.
+This is bounded Torch CUDA F32 computation with row-A16 activation rounding
+against actual native CUDA states, not bitwise backend parity or training.
+
+The three measured Q4_0/student response ID pairs match exactly; all 31
+accepted student draft rows matched their verifier labels and were marked
+verifier-reached. The measured task-ID map to original source prompt IDs
+(not aliases) is `runs/w1-pilot-sample-freeze-20260929/student-task-map.json`,
+SHA256 `19bdc7df822d15f56f79b57f841a188bccfaa1c4d464de1caea8ba59dcd3893c`.
+The numeric supervisor stopped and RTX 5080 returned to 0% and 2,909 MiB.
+
+The opt-in cache readback extension is reviewed, published in llama.cpp as
+`71d2e57d6a209fea5ec1c097498148828605d4cc` and integrated in parent `48407bc`.
+It retains exact F16 contiguous one-layer/one-sequence constraints, supports
+CUDA backend readback, records actual buffer placement and enforces bounded
+row/byte limits. Six cache-auditor fixtures and the CPU native library build
+passed; CUDA capture is not yet validated. Original native runtime files
+were copied under `runs/w1-pilot-runtime-original-20260929/runtime/` before
+starting the incremental supervised CUDA server build
+`runs/w1-pilot-cuda-cache-build-20260929/` in session `$35`, pane `%58`.
+Coordinator `/root` remains sole GPU owner; no inference job overlaps this
+CPU compilation. Monitor that supervisor before starting cache capture.
+
+Remaining gates: selected-root native cache/mask/position checks, finite
+all-nine gradients and borrowed embedding operand identity, and a separate
+hashed calibration-only provider contract. The original bundle remains
+preparation-only and training-ineligible; no QAT or final evaluation ran.
