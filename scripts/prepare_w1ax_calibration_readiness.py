@@ -361,6 +361,74 @@ def _gradient_roots(report: dict) -> dict[str, list[dict]]:
     return result
 
 
+def _ordered_head_cache_joins(
+    heads: list[dict], cache_writes: list[dict]
+) -> dict[tuple[int, int], tuple[int, int]]:
+    """Uniquely join depth-zero heads to cache writes in capture order."""
+    ordered = sorted(heads, key=lambda row: row["state_row"])
+    candidates_by_head = []
+    for head in ordered:
+        state_row = head["state_row"]
+        if type(state_row) is not int or state_row < 0:
+            raise ValueError("depth-zero head has an invalid state row ordinal")
+        position = head.get("input_position")
+        token = head.get("input_token_id")
+        slot = position - 1 if type(position) is int else None
+        if type(position) is not int or type(token) is not int or type(slot) is not int:
+            raise ValueError("depth-zero head lacks cache execution identity")
+        candidates = []
+        for write in cache_writes:
+            if (
+                write.get("position") != position - 1
+                or write.get("slot") != slot
+                or write.get("token_id") != token
+            ):
+                continue
+            execution, column = write.get("execution"), write.get("column")
+            if type(execution) is not int or type(column) is not int:
+                raise ValueError("native cache write lacks ordered graph execution ownership")
+            candidates.append((execution, column))
+        if not candidates:
+            raise ValueError("depth-zero head has no cache write with matching position and token")
+        if len(set(candidates)) != len(candidates):
+            raise ValueError("depth-zero head has duplicate cache graph execution candidates")
+        candidates_by_head.append(sorted(candidates))
+
+    # Count strictly increasing assignments, capping at two so repeated exact
+    # states are accepted only when chronology gives one unambiguous mapping.
+    path_counts: list[dict[tuple[int, int], int]] = []
+    unique_parent: list[dict[tuple[int, int], tuple[int, int] | None]] = []
+    for index, candidates in enumerate(candidates_by_head):
+        counts: dict[tuple[int, int], int] = {}
+        parents: dict[tuple[int, int], tuple[int, int] | None] = {}
+        if index == 0:
+            counts = dict.fromkeys(candidates, 1)
+            parents = dict.fromkeys(candidates, None)
+        else:
+            previous = path_counts[-1]
+            for candidate in candidates:
+                predecessors = [key for key, count in previous.items() if key < candidate and count]
+                count = min(2, sum(previous[key] for key in predecessors))
+                if count:
+                    counts[candidate] = count
+                    parents[candidate] = predecessors[0] if count == 1 else None
+        path_counts.append(counts)
+        unique_parent.append(parents)
+    finals = path_counts[-1]
+    if min(2, sum(finals.values())) != 1:
+        raise ValueError("depth-zero heads do not have one unique chronological cache-write join")
+    current = next(key for key, count in finals.items() if count == 1)
+    assignment = [current]
+    for index in range(len(ordered) - 1, 0, -1):
+        parent = unique_parent[index][current]
+        if parent is None:
+            raise ValueError("chronological cache graph join is ambiguous")
+        assignment.append(parent)
+        current = parent
+    assignment.reverse()
+    return {(head["task_id"], head["round_index"]): pair for head, pair in zip(ordered, assignment)}
+
+
 def _validate_mask_placement(cache_audit: dict) -> None:
     """Accept CUDA masks or the audited host-pinned causal-mask buffer."""
     placement = str(cache_audit.get("mask_device", "")).lower()
@@ -402,22 +470,85 @@ def _bridge_roots(
         if record.get("group_kind") == "decoder":
             graph_groups.setdefault(record["group_execution"], {})[record["tensor_name"]] = record
     cache_writes = [row for row in cache_rows if row.get("event") == "row"]
-    seeds: dict[int, list[dict]] = {}
-    accepts: dict[int, list[dict]] = {}
+    seed_events = []
+    accept_events = []
     for event in state_rows:
         if event.get("schema") != "eagle_state_v1":
             raise ValueError("native state trace has an unsupported schema")
-        if type(event.get("seq_id")) is not int:
-            continue
-        bucket = (
-            seeds
-            if event.get("event") == "seed"
-            else accepts
-            if event.get("event") == "accept"
-            else None
-        )
-        if bucket is not None:
-            bucket.setdefault(event["seq_id"], []).append(event)
+        if event.get("event") == "seed":
+            seed_events.append(event)
+        elif event.get("event") == "accept":
+            accept_events.append(event)
+        else:
+            raise ValueError("native state trace has an unknown event")
+
+    if any(
+        row.get("schema") != "eagle_head_state_v1" or type(row.get("depth")) is not int
+        for row in heads
+    ):
+        raise ValueError("native capture has malformed head rows")
+    depth_zero_heads = [row for row in heads if row["depth"] == 0]
+    if any(
+        type(row.get("task_id")) is not int
+        or type(row.get("round_index")) is not int
+        or type(row.get("state_row")) is not int
+        or not 0 <= row["state_row"] < len(state_payload)
+        or type(row.get("slot_id")) is not int
+        or type(row.get("parent_position")) is not int
+        or type(row.get("input_token_id")) is not int
+        for row in depth_zero_heads
+    ):
+        raise ValueError("native depth-zero head is missing seed-join metadata")
+    depth_zero_heads.sort(key=lambda row: row["state_row"])
+    if len({row["state_row"] for row in depth_zero_heads}) != len(depth_zero_heads):
+        raise ValueError("native depth-zero head state rows are duplicated")
+    if len(depth_zero_heads) != len(seed_events):
+        raise ValueError("native depth-zero heads and state seeds are not a complete bijection")
+    seed_ordinals: dict[tuple[int, int], int] = {}
+    for ordinal, (head, seed) in enumerate(zip(depth_zero_heads, seed_events)):
+        key = (head["task_id"], head["round_index"])
+        if key in seed_ordinals:
+            raise ValueError("native task and round ownership is duplicated across seed heads")
+        if (
+            head["slot_id"] != 0
+            or type(seed.get("seq_id")) is not int
+            or seed["seq_id"] != head["slot_id"]
+            or seed.get("position") != head["parent_position"]
+            or seed.get("token") != head["input_token_id"]
+            or seed.get("kv_max_before") != head["parent_position"] - 1
+        ):
+            raise ValueError("chronological native seed does not match its depth-zero head")
+        seed_ordinals[key] = ordinal
+
+    rounds = _jsonl(capture_dir / "rounds.jsonl")
+    complete_rounds = [row for row in rounds if row.get("status") == "complete"]
+    if len(complete_rounds) != len(accept_events):
+        raise ValueError("native completed rounds and state accept events are not paired")
+    paired_accepts: dict[tuple[int, int], dict] = {}
+    for round_event, event in zip(complete_rounds, accept_events):
+        key = (round_event.get("task_id"), round_event.get("round_index"))
+        if (
+            key not in seed_ordinals
+            or key in paired_accepts
+            or type(round_event.get("slot_id")) is not int
+            or round_event["slot_id"] != 0
+            or type(event.get("seq_id")) is not int
+            or event["seq_id"] != round_event["slot_id"]
+            or type(event.get("accepted")) is not int
+            or event["accepted"] != round_event.get("n_accepted")
+            or type(round_event.get("n_proposed")) is not int
+            or round_event["n_proposed"] < 1
+            or type(round_event.get("n_accepted")) is not int
+            or not 0 <= round_event["n_accepted"] <= round_event["n_proposed"]
+            or event.get("verify_rows") != round_event["n_proposed"]
+            or event.get("selected_row")
+            != min(round_event["n_accepted"], round_event["n_proposed"] - 1)
+        ):
+            raise ValueError("chronological state accept does not match its native round")
+        paired_accepts[key] = event
+    if set(paired_accepts) != set(seed_ordinals):
+        raise ValueError("native round and seed ownership does not cover the same depth-zero heads")
+    ordered_cache_joins = _ordered_head_cache_joins(depth_zero_heads, cache_writes)
     bridges = []
     for domain, expected_prompt in EXPECTED_DOMAINS.items():
         task_ids = [task for task, prompt in task_map.items() if prompt == expected_prompt]
@@ -445,6 +576,9 @@ def _bridge_roots(
                     f"selected {domain} prefix has no unique native cache-capture head"
                 )
             head = matches[0]
+            round_key = (head["task_id"], head["round_index"])
+            if round_key not in seed_ordinals:
+                raise ValueError("selected head has no chronological state-seed ordinal")
             parent = root["parent_position"]
             context = gradient.get("context_decoder_positions")
             proposal_positions = gradient.get("proposal_decoder_positions")
@@ -468,22 +602,14 @@ def _bridge_roots(
                 raise ValueError(
                     "selected head, native seed and Torch cache positions do not bridge"
                 )
-            seq_seeds = seeds.get(task_id, [])
-            if not 0 <= head.get("round_index", -1) < len(seq_seeds):
-                raise ValueError("selected native seed ordinal is absent from state trace")
-            seed = seq_seeds[head["round_index"]]
-            if (
-                seed.get("position") != parent
-                or seed.get("token") != head.get("input_token_id")
-                or seed.get("kv_max_before") != parent - 1
-            ):
-                raise ValueError("native seed position, token or logical cache length differs")
+            seed_ordinal = seed_ordinals[round_key]
+            seed = seed_events[seed_ordinal]
             preceding = root.get("preceding_student_round_outcome")
             if head["round_index"] > 0 and preceding in {"accepted", "rejected"}:
-                seq_accepts = accepts.get(task_id, [])
-                if head["round_index"] - 1 >= len(seq_accepts):
+                previous_key = (head["task_id"], head["round_index"] - 1)
+                event = paired_accepts.get(previous_key)
+                if event is None:
                     raise ValueError("native preceding accept event is absent")
-                event = seq_accepts[head["round_index"] - 1]
                 expected = "accepted" if event.get("accepted", 0) > 0 else "rejected"
                 if expected != preceding:
                     raise ValueError("native accept event disagrees with selected-root outcome")
@@ -501,32 +627,25 @@ def _bridge_roots(
             if type(state_row) is not int or not 0 <= state_row < len(state_payload):
                 raise ValueError("selected native cache head state row is outside its payload")
             captured_state = np.asarray(state_payload[state_row])
-            exact_graph_joins = []
-            for write in writes:
-                execution = write.get("execution")
-                column = write.get("column")
-                group = graph_groups.get(execution, {})
-                result_norm = group.get("result_norm")
-                if result_norm is None or type(column) is not int:
-                    continue
-                graph_state = _column(result_norm, graph_values, column)
-                if graph_state.shape == captured_state.shape and np.array_equal(
-                    graph_state, captured_state
-                ):
-                    exact_graph_joins.append((execution, column))
-            if len(exact_graph_joins) != 1:
-                raise ValueError(
-                    "selected head state lacks one exact ordered result_norm/cache join"
-                )
-            graph_execution, graph_column = exact_graph_joins[0]
+            graph_execution, graph_column = ordered_cache_joins[round_key]
+            if not any(
+                write.get("execution") == graph_execution and write.get("column") == graph_column
+                for write in writes
+            ):
+                raise ValueError("selected head does not own its chronological cache graph join")
+            result_norm = graph_groups.get(graph_execution, {}).get("result_norm")
+            if result_norm is None or not np.array_equal(
+                _column(result_norm, graph_values, graph_column), captured_state
+            ):
+                raise ValueError("selected head state differs from its chronological graph result")
             bridges.append(
                 {
                     "domain": domain,
                     "task_id": task_id,
                     "round_index": head["round_index"],
+                    "state_seed_ordinal": seed_ordinal,
                     "parent_position": parent,
                     "prefix_token_ids": prefix,
-                    "state_seed_ordinal": head["round_index"],
                     "kv_max_before": seed["kv_max_before"],
                     "torch_cache_length_before_seed": len(context),
                     "matching_globally_audited_cache_writes": len(writes),

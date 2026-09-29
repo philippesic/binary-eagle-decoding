@@ -25,6 +25,7 @@ from prepare_w1ax_calibration_readiness import (  # noqa: E402
     _gradient_roots,
     _identity,
     _measured_row_a16_task_ids,
+    _ordered_head_cache_joins,
     _task_map,
     _validate_mask_placement,
     _validate_runner_manifest,
@@ -378,6 +379,30 @@ class CalibrationReadinessTests(unittest.TestCase):
             ):
                 _validate_mask_placement(invalid)
 
+    def test_repeated_head_states_join_by_unique_capture_order(self):
+        heads = [
+            {
+                "task_id": task_id,
+                "round_index": 0,
+                "state_row": index,
+                "input_position": 6,
+                "input_token_id": 12,
+                "slot_id": 0,
+            }
+            for index, task_id in enumerate((101, 202))
+        ]
+        cache_writes = [
+            {"position": 5, "slot": 5, "token_id": 12, "execution": execution, "column": 0}
+            for execution in (4, 9)
+        ]
+        joined = _ordered_head_cache_joins(heads, cache_writes)
+        self.assertEqual(joined, {(101, 0): (4, 0), (202, 0): (9, 0)})
+        with self.assertRaisesRegex(ValueError, "unique chronological"):
+            _ordered_head_cache_joins(
+                heads[:1] + [{**heads[1], "state_row": 1}],
+                cache_writes[:1],
+            )
+
     def test_actual_runner_manifest_binds_inline_records_and_block(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -439,7 +464,7 @@ class CalibrationReadinessTests(unittest.TestCase):
     def test_selected_roots_join_head_seed_torch_cache_and_graph_state(self):
         with tempfile.TemporaryDirectory() as temporary:
             capture_dir = Path(temporary)
-            heads, states, cache_rows = [], [], []
+            heads, states, cache_rows, rounds = [], [], [], []
             numeric, gradients, task_map = {}, {}, {}
             graph_rows, graph_values = [], []
             offset = 0
@@ -454,6 +479,7 @@ class CalibrationReadinessTests(unittest.TestCase):
                     {
                         "schema": "eagle_head_state_v1",
                         "task_id": task_id,
+                        "slot_id": 0,
                         "round_index": 0,
                         "depth": 0,
                         "parent_position": parent,
@@ -473,10 +499,31 @@ class CalibrationReadinessTests(unittest.TestCase):
                     {
                         "schema": "eagle_state_v1",
                         "event": "seed",
-                        "seq_id": task_id,
+                        "seq_id": 0,
                         "position": parent,
                         "token": token,
                         "kv_max_before": parent - 1,
+                    }
+                )
+                states.append(
+                    {
+                        "schema": "eagle_state_v1",
+                        "event": "accept",
+                        "seq_id": 0,
+                        "accepted": 0,
+                        "verify_rows": 1,
+                        "selected_row": 0,
+                    }
+                )
+                rounds.append(
+                    {
+                        "schema": "w1ax_eagle_round_v1",
+                        "status": "complete",
+                        "task_id": task_id,
+                        "slot_id": 0,
+                        "round_index": 0,
+                        "n_accepted": 0,
+                        "n_proposed": 1,
                     }
                 )
                 cache_rows.append(
@@ -539,6 +586,7 @@ class CalibrationReadinessTests(unittest.TestCase):
                 ).tobytes()
             )
             write_jsonl(capture_dir / "state.jsonl", states)
+            write_jsonl(capture_dir / "rounds.jsonl", rounds)
             write_jsonl(capture_dir / "heads.draft_cache.jsonl", cache_rows)
             graph_path = capture_dir / "heads.draft_graph.jsonl"
             footer = {
@@ -568,9 +616,10 @@ class CalibrationReadinessTests(unittest.TestCase):
             )
             self.assertEqual(len(bridge), 3)
             self.assertTrue(all(row["native_result_norm_state_exact"] for row in bridge))
+            self.assertEqual([row["state_seed_ordinal"] for row in bridge], [0, 1, 2])
 
             states[0]["kv_max_before"] = 0
-            with self.assertRaisesRegex(ValueError, "logical cache length"):
+            with self.assertRaisesRegex(ValueError, "chronological native seed"):
                 _bridge_roots(
                     numeric,
                     gradients,
