@@ -264,3 +264,48 @@ Real common EAGLE server instrumentation must separately exercise both
 `process` catch-up and `draft` plus optional same-run request joins. Keep this
 intrusive instrumentation outside official timed runs. Individual opt-in
 quality A/B gates precede paired throughput measurement; no speed claim is made.
+
+## Stable SM120 CUDA checkpoint (2026-09-29)
+
+Coordinator-built native `8fd9b399ab124eeec3b363c56eacbd690f2e75b8` passed
+the supervised RTX 5080/SM120 CUDA build. `build_llama.py --with-tests` builds
+backend tests but not `test-sampling`; its explicit target build then passed.
+An initial fixture launch stopped with exit 127 before inference because that
+executable was absent. The unique retry completed successfully.
+
+Actual CUDA results:
+
+- Dense runtime fixture: exit zero, `EAGLE runtime fixture OK`, actual device
+  NVIDIA GeForce RTX 5080. Resident state reports CUDA0 buffer, 64 logical bytes
+  and 128 allocated bytes for this tiny geometry. Following logits/prenorm
+  and serialized cache comparisons, mutation/restore and implicit-sequence
+  guards passed. This tiny size does not describe the real model's geometry.
+- `test-backend-ops -b CUDA0 -o W1A1_MUL_MAT`: **133/133** tests passed.
+- `test-backend-ops -b CUDA0 -o ADD -p shared=1`: **3/3** fanout graphs passed
+  for A1/A4/A8, with actual packed CUDA dispatch recorded.
+
+These are correctness checks, not throughput or SM75 evidence. Preserved runtime
+copy and 27-entry executable/library hash inventory are under
+`runs/w1-runtime-stable-cuda-build-20260929/runtime/` and `runtime-hashes.json`.
+Server SHA256 is
+`6d855804aa7973dce803fd55a820080a832da304a71155de1b1dcab3c6bc34b9`;
+backend-test SHA256 is
+`b18ace58d85bc20da889771b694803987fe56f9394d22e75cae96c29a7fe6901`;
+sampling-test SHA256 is
+`ca9244747e4cb5b5fb975567b5a8a88b3acb027b834e72020c4d759afe2a881f`.
+
+| Supervised run | Exit | stdout SHA256 |
+| --- | ---: | --- |
+| `w1-runtime-dense-cuda-fixture-retry-20260929` | 0 | `0e449399a48733628ab2f8aa14d75027fba3d9a91f3c88112b22a6840ff2faea` |
+| `w1-runtime-w1ax-cuda-ops-20260929` | 0 | `ae50b5e8212cf9600cc474aed3ed55bc26efeae0b7a850a65ba19495fff9d207` |
+| `w1-runtime-shared-fanout-cuda-20260929` | 0 | `868f675403b6ae97ec2824fd8fa7b330c4b2302ad94a97af3a5467866a1935ef` |
+
+The first packed A1/shared-off fixture reached its final encoder-only cleanup
+check, then aborted because the fixture's encoder batch had uninitialized
+position/sequence/logits metadata. Run
+`w1-runtime-packed-a1-shared0-cuda-20260929` records exit `-6`; no other packed
+run started after it. This is a concrete fixture setup defect; preserve every
+assertion and rerun all packed precision/sharing combinations after explicit
+metadata initialization. The owner is testing that fix independently on the
+stable ancestry. Real selector A/B, event/warp CUDA checks and performance
+remain pending. The original calibration/capture evidence stays pinned.

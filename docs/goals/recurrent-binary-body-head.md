@@ -3232,3 +3232,25 @@ refresh requests and capture/provider preparation. Source hashes, model/cache
 execution contract, checkpoint/export identity and feature/label ancestry must
 be explicit; a summary-only benchmark trace is insufficient. No GPU, capture
 or training eligibility promotion is authorized by this assignment.
+
+## Stable CUDA operator and dense fixture milestone
+
+The `8fd9b399a` CUDA build and explicit `test-sampling` target build passed.
+Dense CUDA fixture, 133/133 W1Ax scalar-reference operator cases and three
+shared-pack fanout graphs passed on actual RTX 5080/SM120. Dense resident
+state is CUDA0, with 64 logical/128 allocated bytes for the tiny fixture.
+Executable/library copies and 27 hashes are retained under the stable build
+run; the [runtime report](../../experiments/eagle-runtime-optimizations.md#stable-sm120-cuda-checkpoint-2026-09-29)
+records binary/log hashes and scope. These prove correctness on those cases,
+not native throughput or SM75 performance.
+
+Packed A1/shared-off fixture run `w1-runtime-packed-a1-shared0-cuda-20260929`
+exited `-6` at its encoder-only cleanup call: batch metadata was uninitialized.
+All subsequent packed runs were stopped by the sequential runner. Runtime
+owner is fixing explicit pos/sequence/logits initialization on a separate
+branch from stable `8fd9b399a`, retaining every assertion. GPU was idle at
+0%/2,843 MiB after failure. Next: integrate the tested published fixture fix,
+build only `test-sampling`, run dense plus packed A1/A4/A8 sharing off/on
+under unique supervisor IDs, then real native selector quality comparisons.
+Event/warp integration remains behind that gate. Refresh bridge CPU work
+continues independently; no final prompt or new training budget is opened.
