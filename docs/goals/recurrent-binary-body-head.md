@@ -3087,3 +3087,19 @@ packed-head numeric evidence remain untouched. The readiness owner owns this
 CPU adapter; no new inference or optimizer work is needed to close the observer
 gap. The original bundle/provider remain ineligible until the versioned gate
 passes completely.
+
+## Selected-head observer adapter integrated
+
+The bounded prenorm adapter is integrated and pushed as `fd8e1a1` (worker
+`f8962ae`). Ruff and 13 CPU assembler tests passed. It binds the selected
+chronological cache execution and reconstructs its head state using captured
+`eagle3_prenorm-0`, the frozen candidate-D output norm and GGUF RMS epsilon.
+The report records operand hashes, reconstruction method, relative RMS and
+maximum absolute error, and does not claim an exact normalized callback.
+The original 0.10 numerical ceiling and exact cache/mask gates are unchanged.
+
+CPU-only supervised readiness retry is
+`runs/w1-pilot-readiness-prenorm-20260929/` in tmux pane `%57`. No optimizer
+step has started. After inspecting a passing report and provider overlay,
+coordinator `/root` will run the authorized 100-step row-A16 hard-CE calibration
+on RTX 5080. Native optimization GPU checks remain queued behind it.

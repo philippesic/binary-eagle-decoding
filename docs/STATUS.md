@@ -6,6 +6,11 @@ The target/verifier model precision remains as frozen for each experiment.
 
 **Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), continued as Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). The user has now **restored RTX 5080 access**; the RTX 2080 Ti remains paused. No joint GPU training has run. DFlash/DSpark are future roadmap items, not active work.
 
+**Readiness adapter integrated (2026-09-29):** the selected-head prenorm
+observer adapter passed 13 CPU tests and is pushed as `fd8e1a1`. The supervised
+CPU readiness retry is running against the existing capture; no optimizer step
+has started. See the [checkpoint](goals/recurrent-binary-body-head.md#selected-head-observer-adapter-integrated).
+
 **Pilot cache/backward gates passed (2026-09-29):** nine roots have finite
 all-nine gradients and exact frozen operands; the CUDA audit matched
 5,533,696 key and value elements each and 5,404 causal masks. Q4_0 and
