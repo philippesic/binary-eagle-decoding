@@ -3039,3 +3039,30 @@ row-A16 hard-CE calibration with the integrated time/memory instrumentation.
 Do not launch a new native optimization test concurrently. The native owner
 continues CPU implementation in its isolated worktree; GPU validation for
 shared packing/resident state and the remaining measurement work is queued.
+
+## Native reserve-row trace interpretation
+
+The previous goal turn made concrete progress: native numerical/backward/cache
+evidence, versioned storage and refresh tools, runtime preparation and durable
+checkpoints were integrated and pushed. This continuation rechecked the host
+registry and live processes: RTX 5080 was idle at 0%/3,143 MiB, with no project
+experiment, and RTX 2080 Ti remains paused.
+
+Ordered bridge `7c0a48c` replaced the incorrect task-ID/sequence-ID join. The
+CPU attempt `runs/w1-pilot-readiness-chronology-20260929/` then exposed a
+trace-boundary assumption, not a numerical or token mismatch. Every one of
+457 depth-zero heads matches its chronological seed's position/token. Native
+`common/speculative.cpp` records `kv_max_before`, trims entries from the seed
+position onward, then records `kv_max_after` before decoding the seed. All
+457 post-trim maxima equal `parent_position-1`; most pre-trim maxima still
+include one reserve row at `parent_position`. The initial request starts
+without that reserve. The Torch rebuilt prefix has `parent_position` entries
+and therefore must be compared to `kv_max_after+1`, not `kv_max_before+1`.
+
+The original data and native execution are unchanged. The readiness owner is
+correcting the observer's comparison and retaining both maxima, with fixtures
+for initial and post-reserve states. Cache lengths, decoder positions, masks,
+source hashes, and frozen numeric thresholds remain required. No optimizer run
+or eligibility publication has occurred. The next action is to integrate this
+small interpretation fix, rerun the CPU ancestry assembler, inspect a passing
+versioned record, then start the already authorized 100-step calibration.
