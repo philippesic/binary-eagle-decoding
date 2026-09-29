@@ -2662,3 +2662,20 @@ has the table. This bounds the small calibration shard but does not promote
 it to a full training tier. The first-shard readiness and initialization
 choice is still user-owned. No new GPU job started; RTX 5080 remains available,
 with no project process at the last fresh check.
+
+This is the third consecutive GPU Phase 1B goal turn with the same readiness
+decision pending. The coordinator used the intervening turns to complete the
+supervised fixed native A/B, CUDA operator gates, first bounded shard and
+all-request audit, model snapshot verification, a real checkpoint-zero export
+and matched native A4/A16 quality checks, and domain coverage. A 100-step
+synthetic CUDA fixture passed, but it does not substitute for captured-data
+QAT. The actual first-shard provider remains `training_eligible:false` and
+rejects before model loading. Under AGENTS.md, the user owns whether to use
+the documented practical native readiness gate or require strict parity or
+a revised initialization. No further real-model training may start until that
+choice and its applicable gate are recorded. The native task is blocked on
+this specific research fork, not on GPU availability; `rtx5080` remains
+resumed and no project GPU process is running. The sealed final set remains
+unopened. On user direction, resume this same project goal, assess the chosen
+gate against the pinned evidence, create a versioned eligible capture only
+if it passes, and then run the supervised 100-step real-model calibration.

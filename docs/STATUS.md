@@ -6,6 +6,15 @@ The target/verifier model precision remains as frozen for each experiment.
 
 **Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), continued as Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). The user has now **restored RTX 5080 access**; the RTX 2080 Ti remains paused. No joint GPU training has run. DFlash/DSpark are future roadmap items, not active work.
 
+**Current decision boundary:** the native GPU Phase 1B task has completed its
+fixed A/B, CUDA, first-shard capture/audit, synthetic device gate and untrained
+checkpoint-zero quality checks. The first-shard provider still rejects
+captured-data QAT because its readiness flag is false. The user owns the
+[practical-native versus strict-parity and initialization choice](DECISIONS.md#phase-1a-implementation-defaults-and-pending-research-choices)
+before a real-model 100-step calibration. The native task is blocked on that
+choice after three consecutive goal turns; the project goal and RTX 5080
+access flag are unchanged. No GPU process is active.
+
 **RTX 5080 resume (2026-09-29 06:54 UTC):** a fresh tmux MCP session found 0% utilization, about 2.9 GiB baseline memory and no project process. The local RTX 5080 pause flag was resumed. Two full timed pairs in opposite orders completed, with 480 behavior-matched requests and 20 verified graph blocks per condition. The [timing report](../experiments/eagle-prune-timing-5080.md) gives order-balanced on/off server decode ratios of Q4_0 1.0085×, D 1.0513× and FP16 1.0112×; target-only moved 1.0013×. D remains far slower than Q4_0 overall. The first bounded 31-prompt native capture finished: 12,610 raw verifier-logit rows, 7,796 selected feature rows, byte-identical independent bundle audit, compact teacher and 31/31 response audit. A 100-step model-independent row-A4 CUDA trainer fixture exited zero with finite metrics and 18 gradient tensors per step. The [capture report](../experiments/w1ax-shard0000-capture-5080.md) records hashes and limits. Its manifest remains preparation-only and training-ineligible, so real QAT still requires a documented readiness decision. The GPU has returned to baseline with no project process. The [goal checkpoint](goals/recurrent-binary-body-head.md#gpu-phase-1b-first-shard-audit) records run IDs, owner and next gate. The prior pause checkpoint below remains historical.
 
 **Row checkpoint-zero gate (2026-09-29):** pinned dense weights produced one
