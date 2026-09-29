@@ -13,6 +13,8 @@
     "prompts_sha256": "93f61ae9160bbb59739ca81efa002e10cd5bddbddcf3d02ae2b33f9ac117f992"
   },
   "graph_env": {
+    "GGML_EAGLE_COMPACT_LOGITS": "0",
+    "GGML_EAGLE_KV_ONLY_CATCHUP": "0",
     "GGML_EAGLE_PRUNE_UNUSED_HEAD": "0"
   },
   "instrumented_env": {
