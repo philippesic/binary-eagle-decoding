@@ -3489,3 +3489,41 @@ clean merged worker worktrees. The refresh/data tooling stays preparation-only;
 full capture/training/final decisions remain user-owned and untouched. Root
 remains sole GPU owner. Do not add optional parity archaeology or expand
 training budget while completing these explicit gates.
+
+## Final selector quality passed and frozen timing live
+
+Shared-pack and warp-reduction real quality pairs each passed 6/6 requests
+exactly on Q4_0/row-A4 with all other selectors off. The pinned row-A4 model
+accepts 16 over 303 observed rounds versus Q4_0 183/138; no binary-quality
+recovery is claimed. Shared/warp comparison hashes are
+`9995bc3f90b092c010e8591265efc3e4c5e771dc076eee9a288603b7e4d3d706` and
+`83fa6f269d4076f15cbb3fb785e90bf5fcbe52009b1783a907b88f5fbc7bad23`.
+
+Validated b4 server/tests/library copy is retained under
+`runs/w1-final-runtime-timing-freeze-20260929/runtime/`, 28 entries in its
+hash inventory. Freeze manifest SHA256 is
+`a199cfdabd81b5ba7414509e31007eab338c125b881a9276a78696cd9208fd5e`;
+server SHA256 is
+`b5093749d67888bc2cafdb6a65c479f4c182f0a904820f1dae4870b6ae66d41c`.
+All six timed configs passed the runner's validation; all llama/ggml libraries
+resolve through explicit frozen LD_LIBRARY_PATH. Events/captures are absent.
+No source/library build may overlap the timed measurements.
+
+Final sequential queue is in `$35` pane `%58`, handle
+`ad6783e3-9275-4ccc-8237-712bc461e62c`. Selectors `device_state`, `shared_pack`,
+`warp_reduce` each run block a off→on and block b on→off, five repetitions,
+three prompts, two warmups per server/variant. Resident uses Q4_0/row-A16;
+packed selectors use Q4_0/row-A4. IDs are
+`w1-final-<selector>-timed-<a|b>-<off|on|compare>-20260929`, with per-run
+benchmark directories and six comparators. Expected measured pairs are
+30 per comparison /180 total. It stops on any failed job or comparator.
+First resident a/off was freshly confirmed live, PID/process group `36044`,
+about 1m32 elapsed and active GPU work. Root is sole GPU owner; inspect
+actual state/processes from `%59` before declaring terminal or starting work.
+
+After all timing completes: audit IDs/counters, CUDA graph blocks, telemetry
+and ratios without summing individual gains; record hashes and limits;
+archive/remove fully integrated worker worktrees preserving published history
+and external CPU logs. Then audit the bounded Phase 1B objective and authorized
+engineering requirements against reports before completion. Full-tier data,
+substantive training and final evaluation remain separate user decisions.

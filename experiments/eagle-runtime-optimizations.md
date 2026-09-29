@@ -531,3 +531,32 @@ Captured graph nodes have inventory without individual timing. Nested/overlappin
 spans are partitioned per frame; independent origins are not summed. Transfer
 annotations remain hints. These results validate the tracing/accounting path
 without attributing all serving time or promoting any selector to default.
+
+### Packed selector quality and final timing queue
+
+On the pinned row-A4 checkpoint-zero export, shared packing and warp reduction
+quality pairs each matched **6/6** requests exactly against their own off
+condition (Q4_0 plus row-A4 over the same three prompts). Each holds all other
+selectors off. Q4_0 accepted 183 over 138 observed rounds; row-A4 accepted 16
+over 303. The packed model remains far below the primary acceptance baseline.
+Comparison SHA256 values: shared packing
+`9995bc3f90b092c010e8591265efc3e4c5e771dc076eee9a288603b7e4d3d706`,
+warp reduction
+`83fa6f269d4076f15cbb3fb785e90bf5fcbe52009b1783a907b88f5fbc7bad23`.
+Artifacts are under `runs/w1-packed-<selector>-quality-compare-20260929/`.
+
+Final timing freezes the validated b4 runtime and all loaded libraries under
+`runs/w1-final-runtime-timing-freeze-20260929/`; manifest SHA256 is
+`a199cfdabd81b5ba7414509e31007eab338c125b881a9276a78696cd9208fd5e`,
+server SHA256
+`b5093749d67888bc2cafdb6a65c479f4c182f0a904820f1dae4870b6ae66d41c`.
+Six configs passed validation; explicit LD_LIBRARY_PATH/ldd prove all seven
+llama/ggml linkage entries resolve in the frozen directory. Intrusive event
+keys are absent and ambient experimental switches are cleared by the runner.
+A premeasurement validation manifest is retained separately.
+
+Resident-state, shared-pack and warp-reduction timing each runs off→on then
+on→off with five repetitions and the existing frozen workload. Resident
+compares Q4_0/row-A16; packed selectors compare Q4_0/row-A4. Expected pairs are
+30 per comparison, 180 across six comparisons. These measurements remain
+pending and will not be combined into an unmeasured multi-selector gain.

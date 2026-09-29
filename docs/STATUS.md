@@ -6,6 +6,12 @@ The target/verifier model precision remains as frozen for each experiment.
 
 **Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), continued as Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). The user has now **restored RTX 5080 access**; the RTX 2080 Ti remains paused. The gated 100-step row-A16 GPU calibration has completed; substantive training and final evaluation have not run. DFlash/DSpark are future roadmap items, not active work.
 
+**Final selector timing live (2026-09-29):** packed shared/warp quality
+pairs each passed 6/6, completing the bounded selector quality gates. The
+validated resident/shared/warp runtime is now in an immutable order-balanced
+timing queue. Ratios and cleanup remain pending; the goal stays active. See
+the [checkpoint](goals/recurrent-binary-body-head.md#final-selector-quality-passed-and-frozen-timing-live).
+
 **Resident and event/warp CUDA gates passed (2026-09-29):** the fixed
 resident path matched 6/6 real quality pairs with accepted CUDA0 copies and
 no transfer fallback. Warp integer assertions passed 133 operator/three
