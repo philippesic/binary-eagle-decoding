@@ -2303,6 +2303,32 @@ Corrected supervised build
 in tmux MCP pane `%54`, PID/process group 3001, with
 `uv run --locked python scripts/build_llama.py cuda --cuda-arch 120
 --cuda-include-root results/cuda-glibc-compat/include --with-tests --jobs 4`.
-It is actively compiling SM120 CUDA; stdout and `state.json` are in that run
-directory. Monitor through tmux pane `%55`; if interrupted, stop the supervisor
-and verify its process group plus GPU state before reporting availability.
+It finished with exit 0 at 2026-09-29 05:29:22 UTC; its supervised process
+group stopped. The build used 342 Ninja steps and produced the current
+`build/llama-cuda/bin/llama-server` plus backend tests. The bounded CUDA
+operator job `runs/w1-phase1b-w1ax-ops-20260928/` then finished exit 0:
+**112/112 W1A1_MUL_MAT cases passed** on RTX 5080/SM120, including A1/A4/A8/A16
+and group-128/A16 variants. This is operator correctness, not whole-model
+acceptance or speed.
+
+The remote current-source regeneration of the pinned Dolly/GSM8K/MBPP data
+produced byte-identical train/dev/sealed-final prompt files but different
+catalog/manifest hashes because the later format-only source commit changed
+the transformation script's own byte hash. The coordinator reconstructed the
+original frozen catalog and manifest metadata, verified exact SHA256
+`498017fd13a49c97f782ff50035d544dcf98bb70583ffadf68d61236c2415647`
+and `dc37f752bb137054183162dcb7ca96004edabeb752bd611996d9cb289bfdc667`,
+and preserved the regenerated metadata under `runs/w1-data-freeze-20260928/`.
+The supervised shard planner `runs/w1-shard-plan-20260928/` finished exit 0;
+plan and first child hashes match
+`a20a9f8e3a48c65dfc754c0598c1c256f77c9754d874caa04dabcb60b4095c1d`
+and `17b8c65c47b335449e7573e42ec644f0682a7b5dfb97bb1874f1bc8eb05cd8b6`.
+No final prompt content was inspected.
+
+Before a model run, fresh RTX 5080 readings rose from the initial 2% to
+55–61% utilization, about 4,136 MiB whole-device use and 204–206 W while no
+WSL GPU process was listed; this appears to be non-project load. It was not
+interrupted. The operator test is valid as a correctness check, but these
+conditions preclude a clean timing claim. The user separately clarified not
+to pause GPU work. Proceed with supervised quality checks and keep throughput
+timing diagnostic or delayed until the external load clears.
