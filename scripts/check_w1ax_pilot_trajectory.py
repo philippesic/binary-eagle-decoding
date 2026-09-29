@@ -220,7 +220,7 @@ def _load_row_checkpoint(path: Path, manifest_path: Path, linears: dict, base_ha
             raise ValueError("row checkpoint must contain exactly nine latent/scale pairs")
         with torch.no_grad():
             for name in CHECKPOINT_NAMES.values():
-                module = linears[name]
+                module = linears[name.removesuffix(".weight")]
                 latent = archive[name + ".latent"]
                 scales = archive[name + ".scale"]
                 if latent.dtype != np.float32 or latent.shape != tuple(module.latent_sign.shape):
