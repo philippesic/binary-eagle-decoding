@@ -2290,8 +2290,19 @@ Target, FP16 and both A/B config SHA256 values matched the Phase 1A checkpoint.
 The remote pinned Q4_0 and D artifacts had different ignored directory paths;
 after hash verification, the coordinator added symlinks at the tracked-config
 paths pointing into their preserved scale-fitting archive. Existing artifacts
-were not overwritten. A supervised SM120 CUDA rebuild is next. No new GPU
-job has started in this phase yet. The first model run will be the off/on quality pair;
+were not overwritten. The first model run will be the off/on quality pair;
 timing follows only after comparing outputs and counts. Each run gets its own
 remote supervisor directory, and the process group must stop before the GPU
 is reported free.
+
+The first supervised build attempt `runs/w1-phase1b-cuda-build-20260928/`
+exited code 2 before compilation because plain `python3` had no `cmake` on
+PATH. The locked project environment resolved `cmake`, `ninja` and `nvcc`.
+Corrected supervised build
+`runs/w1-phase1b-cuda-build-uv-20260928/` started at 2026-09-29 05:22:50 UTC
+in tmux MCP pane `%54`, PID/process group 3001, with
+`uv run --locked python scripts/build_llama.py cuda --cuda-arch 120
+--cuda-include-root results/cuda-glibc-compat/include --with-tests --jobs 4`.
+It is actively compiling SM120 CUDA; stdout and `state.json` are in that run
+directory. Monitor through tmux pane `%55`; if interrupted, stop the supervisor
+and verify its process group plus GPU state before reporting availability.
