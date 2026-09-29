@@ -88,3 +88,24 @@ gradient coverage, output checkpoint hashes and any early stop. The run is a
 compute and execution calibration; no Q4_0 quality or throughput claim follows
 from training loss. No full-tier capture, four-width sweep or final evaluation
 is authorized by this gate.
+
+## Cache graph observer fallback
+
+Before measuring the fallback, the completed CUDA cache capture established
+that selected decoder groups may terminate at `eagle3_prenorm-0` without a
+separate `result_norm` callback, because backend fusion can omit that observer
+node. The native model graph sets this prenorm as `t_h_nextn`, then applies the
+frozen output RMS norm before its head; the actual `heads.f32` payload remains
+the primary normalized-state observation.
+
+For the selected-head/cache execution bridge only, reconstruct the normalized
+state from the captured prenorm and the pinned GGUF output-norm weight and
+epsilon. Preserve the exact chronological token/position/cache mapping,
+projected-to-stored F16 bit comparisons and causal masks. Compare reconstruction
+to the actual normalized head state with the already declared `0.10` relative
+RMS ceiling and report its maximum absolute error. Hash the norm operands and
+record the reconstruction method. Do not label it an observed result-norm
+callback or claim bitwise equality. The original Torch-versus-native state/logit
+checks, 0.02 proposal-margin rule and frozen source hashes remain unchanged;
+this observer fallback neither promotes full-body eligibility nor replaces
+any raw captured feature, label or head state.

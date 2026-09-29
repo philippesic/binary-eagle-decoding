@@ -3066,3 +3066,24 @@ source hashes, and frozen numeric thresholds remain required. No optimizer run
 or eligibility publication has occurred. The next action is to integrate this
 small interpretation fix, rerun the CPU ancestry assembler, inspect a passing
 versioned record, then start the already authorized 100-step calibration.
+
+## Cache normalization observer fallback
+
+Native accept events have one verifier row for the seed plus each proposal.
+The assembler now validates all 457 accept events with `verify_rows ==
+n_proposed+1`, `selected_row == n_accepted`, selected position arithmetic, and
+matching selected/pending state hashes (`649c8ff`). This fixes observer formulas
+without changing native behavior or acceptance criteria.
+
+The CPU-only attempt `runs/w1-pilot-readiness-accept-20260929/` passed those
+joins and reached the selected cache-state comparison. Its ordered cache
+executions lack a standalone `result_norm` callback; cache scope's complete
+prenorm terminal boundary is already accepted by the independent CUDA audit.
+A bounded fallback was recorded in the pilot protocol before reconstruction:
+use captured `eagle3_prenorm-0` plus the pinned GGUF norm weight/epsilon, compare
+to actual `heads.f32` using the original 0.10 RMS ceiling, hash operands and
+report the measured difference. Primary Torch/native normalized-state and
+packed-head numeric evidence remain untouched. The readiness owner owns this
+CPU adapter; no new inference or optimizer work is needed to close the observer
+gap. The original bundle/provider remain ineligible until the versioned gate
+passes completely.
