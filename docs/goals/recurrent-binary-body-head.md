@@ -2374,3 +2374,19 @@ Afterward the device still showed external 87% utilization, 4,755 MiB use and
 323 W. The user was asked asynchronously whether this competing workload
 can be cleared; timed A/B and a large capture remain resource-gated, while
 CPU preparation continues. The local GPU pause flag remains resumed.
+
+First-shard readiness work continued without another GPU job. The remote
+`w1a1` Python environment synced from the lockfile, providing NumPy 2.4.6 and
+Torch 2.14.0+cu130. The new [D-only capture variant](../../configs/w1_phase1b_capture_d.json)
+has SHA256 `6d44e89844f38f98b72fa2b05eb6a4d44d090b4feb5f3066a47d36f9f1f1b120`;
+the archived candidate-D absolute I64 d2t `.npy` bytes match local SHA256
+`6dcd8cadd270000775cb04278c5f994647cc1ab2e2e762982c5ff7f31efc78f4`.
+The runner's static `validate_inputs` passed on shard-0000 with its 31 exact
+train IDs, prompt SHA `968ffbb21b23f934912862ef6f7add7d03bf0cfbbb3910492f2f0f50075fc18a`,
+target/D hashes, vocabulary map, 16,384 raw-logit-row limit and 131,072
+target-feature-row limit. This did not start inference or write a capture.
+Remote filesystem space was 795 GiB free. The archived quality run's GPU
+telemetry reached 13,415 MiB whole-device memory used while external load
+was present; a fresh post-run reading remained at 4,731 MiB, 91% utilization
+and 265.6 W. These facts make a 31-prompt feature/logit capture risky until
+the non-project workload clears. No timed A/B or shard capture has begun.
