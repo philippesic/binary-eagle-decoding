@@ -59,6 +59,70 @@ loader gate that unnecessarily required a target peer despite an owned embedding
 and packed head. Models borrowing embeddings still require their target peer.
 CUDA build, dispatch, trajectories and timing remain unverified for sharing.
 
+## Backend recurrent state
+
+Native `8fd9b399a` adds `GGML_EAGLE_DEVICE_STATE=1` for one sequence and one
+output row. A persistent F32 tensor retains the last prenorm state on its actual
+backend, copies it to the next input there, and reads back only when a host
+getter is requested. Stage inspection uses the ordinary host path. Strict
+position, normalized sequence, cache maximum and mutation-generation checks
+reject stale state after removals, position changes and successful or failed
+restores. The context owns its lifetime and accounts for its allocated bytes.
+
+The opt-in explicitly assigns its input leaf to the model layer backend. GPU
+validation must inspect this assignment and verify recurrence because input
+placement can affect the scheduler's compute choices. CPU dense and packed A4
+fixtures passed host/resident trajectories, serialized cache equality, queued
+recurrence without intermediate getters, wrong-position and nonzero-sequence
+fallbacks, earlier-row removal with unchanged maximum, different same-maximum
+cache restoration and failed restoration. This is a bounded recurrent path;
+multiple output rows and sequences keep ordinary behavior.
+
+## Integer reduction experiment
+
+Native `dfc9c5d2a` adds `GGML_W1AX_WARP_REDUCE=1` for CUDA A1 XOR/POPC and
+A4/A8 integer dot reductions. Four complete warp32 groups replace their shared
+reduction barriers with shuffle sums; invalid rows contribute zero and take
+part, and the A1 tail mask is unchanged. The default shared reduction, packing,
+scales and A16 inside-kernel cast remain as before. HIP/MUSA exclude this path
+at compile time. Shared storage is still declared, so this patch makes no
+occupancy-saving claim.
+
+Archived SM75 profiles measured large-N=37 head XOR/POPC dot at approximately
+885–1,187 us versus packing at approximately 5–9 us. These profiles do not
+measure current launch gaps, barrier savings or pilot draft/process/request
+cost. The shuffle mechanism is a hypothesis awaiting CUDA scalar-reference,
+integer assertion and paired timing gates. CPU testing cannot execute it.
+
+## Diagnostic event accounting
+
+Native `c3c548d2e` adds default-off `GGML_CUDA_EAGLE_EVENTS=1`. It emits bounded
+nested event spans, fused-node counts, tensor/operation dimensions, backend and
+model context IDs, process/draft labels, projection pack/scales and dot/output
+stages, ordinary projection spans and buffer transfers. A16 dot spans include
+the existing inside-kernel cast. Ordinary Q4/FP16 projections remain combined
+when there is no separate operand-preparation marker. Buffer annotations are
+hints; they do not establish transfer ownership.
+
+CUDA graph capture skips event creation/recording/synchronization for captured
+children, emits null timing, and records top-level CUDA graph node/type
+inventory. Graph replay retains its outer event span; captured node durations
+remain unassigned. Event limits and graph inventory limits explicitly report
+truncation. These synchronized event spans include stream idle and dispatch
+and alter overlap; they are intrusive diagnostics, not official throughput
+measurements or pure kernel busy time.
+
+`scripts/analyze_eagle_gpu_events.py` checks span consistency and reports
+missing parent IDs, partitions each frame by its deepest nested scope without
+double counting, keeps overlapping siblings explicit, and preserves unassigned
+time. Separate frame/stream clock origins are never summed. Optional same-host
+CLOCK_MONOTONIC request joins use inclusive host unions and preserve request
+remainder; they do not subtract GPU durations from host time. The benchmark
+runner retains original request boundaries and now records their clock values;
+it permits CUDA events only in `instrumented_env`, excluding them from timed
+server environments. Seven synthetic accounting tests pass; they are not GPU
+measurements. CPU compilation cannot validate CUDA event APIs.
+
 ## CPU acceptance check
 
 Apple M3 Max CPU, NumPy 1.26.4, explicit Metal/CUDA/BLAS/OpenMP disabled, one inference thread:
@@ -91,7 +155,8 @@ The ordinary sampler suite including mapped-ID/bias/probability/RNG fallbacks
 passed. The fixture passed exact serialized used-cache equality, following
 logit/prenorm equality, output-consuming fallback, compact multirow mapping,
 full-getter expansion, mode toggling and encoder-only cleanup. CPU checks do not
-validate SM120/SM75 dispatch or graphs.
+validate SM120/SM75 dispatch or graphs. The resident checks described above also
+passed in the dense and packed A4 fixtures.
 
 ## Queued GPU acceptance and timing
 
@@ -139,18 +204,63 @@ output names, and the timing comparator's same `--selector` argument. Quality
 and timing comparators require source/model/workload/policy equality plus only
 the named runtime flag changing. They retain the historical pruning selector as
 their default. Quality comparison also checks stop probability. Prepare K/V-only
-with `--selector kv_only`; shared packing requires a pinned source config with an
-explicit packed A1/A4/A8 variant (`--selector shared_pack`), as candidate D/A16 has
+with `--selector kv_only` and resident state with `--selector device_state`;
+shared packing and warp reduction require a pinned source config with an
+explicit packed A1/A4/A8 variant (`--selector shared_pack` or `warp_reduce`), as candidate D/A16 has
 no activation-pack stage. These are preparation commands, not GPU jobs started by
 the engineering worker. Preserve model hashes, precision, proposal cap, confidence,
 sampling, context, batch/KV settings and unassigned timing.
 
-## Remaining engineering
+## Coordinator CUDA gates
 
-Shared activation pack/scales is published and awaits GPU validation. A16 retains
-the inside-kernel F16 cast. A bounded resident
-recurrent state path and fine-grained event/node measurement remain to implement.
-Archived SM75 profiles measured large-N=37 head XOR/POPC dot at approximately
-885–1,187 us versus pack at approximately 5–9 us. They do not measure launch gaps
-or attribute current pilot draft/process/request costs. Reduction/launch cleanup
-must retain that distinction and await measured GPU A/B before any benefit claim.
+Stable source `8fd9b399a` includes sampler, cache-only, pilot cache boundaries,
+shared packing and resident state. Event source `c3c548d2e` and warp source
+`dfc9c5d2a` extend that ancestry and remain separate default-off patches. The
+engineering worker ran no CUDA compile, GPU job or SSH session. The coordinator
+must run these in its isolated checkout through the approved tmux supervisor.
+The fixture generator needs NumPy and the checked-out native `gguf-py` package.
+
+After building CUDA tests, use the explicit CUDA fixture mode (it requires actual
+CUDA0, offloads the tiny model with `n_gpu_layers=99`, and enables K/Q/V offload):
+
+```sh
+build-cuda/bin/test-sampling --eagle-fixture-cuda results/eagle-runtime-fixture.gguf
+GGML_EAGLE_SHARED_PACK=0 GGML_W1AX_ACT_BITS=4 \
+  build-cuda/bin/test-sampling --eagle-fixture-cuda results/eagle-runtime-packed-fixture.gguf
+GGML_EAGLE_SHARED_PACK=1 GGML_W1AX_ACT_BITS=4 \
+  build-cuda/bin/test-sampling --eagle-fixture-cuda results/eagle-runtime-packed-fixture.gguf
+build-cuda/bin/test-backend-ops -b CUDA0 -o W1A1_MUL_MAT
+build-cuda/bin/test-backend-ops -b CUDA0 -o ADD -p shared=1
+GGML_W1AX_WARP_REDUCE=1 GGML_W1AX_ASSERT_INT_DOT=1 \
+  build-cuda/bin/test-backend-ops -b CUDA0 -o W1A1_MUL_MAT
+```
+
+Repeat the packed fixture pair at bits 1 and 8. Require 133 operator cases and
+three fanout graphs, actual packed/warp dispatch markers, following logits/state
+and serialized cache equivalence. CUDA allocation, scheduling and precision
+must be identified in the report. These gates do not validate SM75 speed.
+
+For event compile/capture safety, use a short direct diagnostic fixture pass
+with graph capture/replay enabled, then a separate graph-disabled node pass:
+
+```sh
+GGML_CUDA_EAGLE_EVENTS=1 GGML_EAGLE_SHARED_PACK=1 GGML_W1AX_ACT_BITS=4 \
+  build-cuda/bin/test-sampling --eagle-fixture-cuda results/eagle-runtime-packed-fixture.gguf \
+  > results/eagle-events-graph.log 2>&1
+GGML_CUDA_EAGLE_EVENTS=1 GGML_CUDA_DISABLE_GRAPHS=1 \
+  GGML_EAGLE_SHARED_PACK=1 GGML_W1AX_ACT_BITS=4 \
+  build-cuda/bin/test-sampling --eagle-fixture-cuda results/eagle-runtime-packed-fixture.gguf \
+  > results/eagle-events-direct.log 2>&1
+python3 scripts/analyze_eagle_gpu_events.py \
+  --logs results/eagle-events-graph.log results/eagle-events-direct.log \
+  --output results/eagle-events-analysis.json
+```
+
+Require valid parent/frame references, null captured node times, nonnegative
+graph replay spans, pack/dot markers in direct execution, explicit inventory
+counts and no event records in a corresponding event-off pass. Inspect missing
+parent IDs and outside-root intervals rather than silently assigning them.
+Real common EAGLE server instrumentation must separately exercise both
+`process` catch-up and `draft` plus optional same-run request joins. Keep this
+intrusive instrumentation outside official timed runs. Individual opt-in
+quality A/B gates precede paired throughput measurement; no speed claim is made.

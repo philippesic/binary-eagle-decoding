@@ -40,6 +40,7 @@ HEAVY = (
     "DRAFT_STAGE",
     "MATMUL_AUDIT",
     "PROFILE",
+    "EVENTS",
     "REPLAY",
 )
 write = streaming.write_json
@@ -281,11 +282,20 @@ def stream_request(url: str, body: dict, directory: Path, timeout: float = 600) 
             parser.feed(line, at)
             if at > timeout:
                 raise TimeoutError("stream exceeded request timeout")
-    wall = time.perf_counter() - start
+    end = time.perf_counter()
+    wall = end - start
     # Disk persistence stays outside the measured request interval.
     (directory / "response.sse").write_bytes(b"".join(raw_lines))
     write(directory / "events.json", parser.events)
-    return parser.result(wall)
+    result = parser.result(wall)
+    result.update(
+        {
+            "client_request_begin_monotonic_s": start,
+            "client_request_end_monotonic_s": end,
+            "client_clock_implementation": time.get_clock_info("perf_counter").implementation,
+        }
+    )
+    return result
 
 
 GPU_FIELDS = (
