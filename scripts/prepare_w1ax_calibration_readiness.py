@@ -544,9 +544,14 @@ def _bridge_roots(
             or round_event["n_proposed"] < 1
             or type(round_event.get("n_accepted")) is not int
             or not 0 <= round_event["n_accepted"] <= round_event["n_proposed"]
-            or event.get("verify_rows") != round_event["n_proposed"]
-            or event.get("selected_row")
-            != min(round_event["n_accepted"], round_event["n_proposed"] - 1)
+            or event.get("verify_rows") != round_event["n_proposed"] + 1
+            or event["accepted"] >= round_event["n_proposed"] + 1
+            or event.get("selected_row") != round_event["n_accepted"]
+            or type(event.get("verify_pos_first")) is not int
+            or type(event.get("position")) is not int
+            or event["position"] != event["verify_pos_first"] + event["selected_row"]
+            or not isinstance(event.get("selected_hash"), str)
+            or event.get("selected_hash") != event.get("pending_hash")
         ):
             raise ValueError("chronological state accept does not match its native round")
         paired_accepts[key] = event

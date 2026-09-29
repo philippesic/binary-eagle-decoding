@@ -506,14 +506,20 @@ class CalibrationReadinessTests(unittest.TestCase):
                         "kv_max_after": parent - 1,
                     }
                 )
+                accepted = int(execution == 2)
+                state_hash = f"{execution:016x}"
                 states.append(
                     {
                         "schema": "eagle_state_v1",
                         "event": "accept",
                         "seq_id": 0,
-                        "accepted": 0,
-                        "verify_rows": 1,
-                        "selected_row": 0,
+                        "accepted": accepted,
+                        "verify_rows": 2,
+                        "selected_row": accepted,
+                        "verify_pos_first": parent,
+                        "position": parent + accepted,
+                        "selected_hash": state_hash,
+                        "pending_hash": state_hash,
                     }
                 )
                 rounds.append(
@@ -523,7 +529,7 @@ class CalibrationReadinessTests(unittest.TestCase):
                         "task_id": task_id,
                         "slot_id": 0,
                         "round_index": 0,
-                        "n_accepted": 0,
+                        "n_accepted": accepted,
                         "n_proposed": 1,
                     }
                 )
