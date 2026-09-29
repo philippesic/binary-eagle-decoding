@@ -560,3 +560,50 @@ on→off with five repetitions and the existing frozen workload. Resident
 compares Q4_0/row-A16; packed selectors compare Q4_0/row-A4. Expected pairs are
 30 per comparison, 180 across six comparisons. These measurements remain
 pending and will not be combined into an unmeasured multi-selector gain.
+
+## Final order-balanced selector results
+
+All 12 final inference jobs and six comparators exited zero. All **180 measured
+request pairs** matched raw IDs and speculative counts, and all **120 server
+blocks** verified CUDA-graph launches. The immutable b4 runtime/config hashes
+above apply throughout. Events and captures were absent. Each variant has
+three prompt clusters and 15 requests per comparison; all scope/uncertainty
+limitations of the preceding bounded timing apply.
+
+| Selector | Variant | Balanced on/off decode | Balanced on/off client request |
+| --- | --- | ---: | ---: |
+| Resident state | Q4_0 | 0.98814 | 0.99018 |
+| Resident state | Row-A16 | 0.99132 | 0.99243 |
+| Shared packing | Q4_0 control | 0.99943 | 0.99377 |
+| Shared packing | Row-A4 | 1.00312 | 1.00346 |
+| Warp reduction | Q4_0 control | 1.00179 | 0.99843 |
+| Warp reduction | Row-A4 | 1.00289 | 1.00126 |
+
+Resident state preserves the tested semantics but is about 1% slower here.
+Shared packing and warp reduction change A4 decode by about 0.3%; warp's
+unaffected Q4_0 control also moves about 0.18%. These small observations do
+not establish a clear general performance benefit. Keep these experimental
+selectors off by default. Compact sampling and K/V-only catch-up have the
+preceding bounded positive results; no combined-selector gain was measured.
+No result repairs the binary drafts' acceptance deficit against Q4_0.
+
+Final summary under
+`runs/w1-final-runtime-timing-summary-20260929/summary.json`, SHA256
+`fe592af605d8abd119b7b4acf93e0045c8438eefec711c47ce480dd29aa109f6`,
+records both block ratios, request/decode metrics, source report hashes,
+180 matches, 120 graph blocks and no remaining process-group members.
+Comparison hashes (block a / b):
+
+- Resident: `51f881128814ca27bcf4eb4ce3b3c7efafc47d4e6d44b30edf65b32b73d8c1fb` /
+  `248c7d01f05e6ff5a4184e9c179362c2c790ac2b4fa903b1b1a074a973fdd169`.
+- Shared: `709ba3ca863b0d62678e1792b167c099a942115086c1039793ce19e674e636c8` /
+  `ed60db3b2bf422e7b3591be6ae108634d5d3c92b8f0ae313425d2cc40b195136`.
+- Warp: `a4f4d0e39afeec599af748eaffcb0af5c30c240d52a379da2efbae62c7247bf2` /
+  `633c8f1a74027b4e046237327a0ccbd508f28f8cd4431c1a66ef734c72975ed5`.
+
+The final explicit A1/A8 shared-off/on CUDA fixture checks on b4 also passed,
+with accepted CUDA0 source-copy markers and exact state/cache assertions.
+Raw runs, runtime/library snapshots, models, data and checkpoints remain
+outside Git. Source progress is published; fully integrated runtime worker
+worktrees are archived/removed, with verified complete-history bundles and
+40 hashed CPU logs under `.git/goal-worktree-archives/`.

@@ -3527,3 +3527,43 @@ archive/remove fully integrated worker worktrees preserving published history
 and external CPU logs. Then audit the bounded Phase 1B objective and authorized
 engineering requirements against reports before completion. Full-tier data,
 substantive training and final evaluation remain separate user decisions.
+
+## Bounded GPU Phase 1B complete
+
+The final queue completed all 12 inference jobs/six comparators: 180 exact
+request pairs and 120 verified CUDA-graph blocks, with no remaining groups.
+Resident Q4_0/row-A16 balanced decode ratios are 0.98814/0.99132; shared
+Q4_0-control/row-A4 are 0.99943/1.00312; warp are 1.00179/1.00289. Resident
+is about 1% slower and packed changes are small; keep experimental paths off
+by default and make no combined gain claim. Final summary SHA256 is
+`fe592af605d8abd119b7b4acf93e0045c8438eefec711c47ce480dd29aa109f6`.
+All final A1/A8 shared-off/on CUDA fixtures also passed with real accepted
+CUDA0 source copies and exact state/cache checks.
+
+The [completion audit](../../experiments/w1-phase1b-completion-audit.md)
+inspected every scoped objective item against actual run reports/status: fixed
+four-variant quality and both timing orders, CUDA contracts, independent first
+shard audit and all 100 finite optimizer steps. Additional authorized bounded
+runtime/data/refresh preparation is implemented and validated at its declared
+scope. Broader capture, substantive training and final evaluation were not
+substituted, promoted or started. Source/model/data ancestry remains retained;
+original/full-body eligibility stays false, and final data stays sealed.
+
+Runtime parent/original/instrumentation/combined worktrees are clean, every
+patch is present by ancestry or `git cherry`, and complete histories were
+bundled/verified under `.git/goal-worktree-archives/runtime-*.bundle` before
+removing them. Forty CPU logs with hashes are retained in
+`.git/goal-worktree-archives/runtime-cpu-evidence/`. Completed calibration
+metrics, cache parent/native and boundary worktrees were similarly archived/
+removed. Older pilot-checker worktree is retained with a recovery bundle
+because its foundational patch is not equivalent to main; no unmerged work
+was dropped. Other earlier/user worktrees were left untouched.
+
+Latest native gitlink is published `b4e366d4`; frozen be09/b4 runtimes and all
+GPU models/data/checkpoints/raw runs are retained on RTX 5080 outside Git.
+Root performed the sole-owner final process/GPU audit; all jobs are terminal
+and GPU is idle. Tmux `$35` remains available with no experiment running.
+The bounded thread Goal can be completed after this checkpoint is pushed.
+The overarching project remains at the user-owned next research decision
+(full-tier storage/capture, refresh execution, initialization/objective and
+substantive training budget); do not start a new goal or experiment unasked.

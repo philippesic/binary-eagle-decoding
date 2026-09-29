@@ -6,6 +6,18 @@ The target/verifier model precision remains as frozen for each experiment.
 
 **Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), continued as Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). The user has now **restored RTX 5080 access**; the RTX 2080 Ti remains paused. The gated 100-step row-A16 GPU calibration has completed; substantive training and final evaluation have not run. DFlash/DSpark are future roadmap items, not active work.
 
+**Bounded GPU Phase 1B complete (2026-09-29):** fixed four-variant
+quality/timing A/B, CUDA deployment checks, first-shard capture/audit and
+100-step real row-A16 calibration are verified. All additional bounded
+selector quality/timing and tracing gates completed; integrated worker
+worktrees are archived, and the GPU is idle. Binary acceptance still trails
+Q4_0; no full-body eligibility or final evaluation is claimed. The broader
+project awaits the user's next research decision. See the
+[completion audit](../experiments/w1-phase1b-completion-audit.md) and
+[goal checkpoint](goals/recurrent-binary-body-head.md#bounded-gpu-phase-1b-complete).
+
+## Historical checkpoints
+
 **Final selector timing live (2026-09-29):** packed shared/warp quality
 pairs each passed 6/6, completing the bounded selector quality gates. The
 validated resident/shared/warp runtime is now in an immutable order-balanced
