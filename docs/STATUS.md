@@ -4,7 +4,16 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-**Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), continued as Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). The user has now **restored RTX 5080 access**; the RTX 2080 Ti remains paused. No joint GPU training has run. DFlash/DSpark are future roadmap items, not active work.
+**Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), continued as Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). The user has now **restored RTX 5080 access**; the RTX 2080 Ti remains paused. The gated 100-step row-A16 GPU calibration has completed; substantive training and final evaluation have not run. DFlash/DSpark are future roadmap items, not active work.
+
+**Real-model calibration complete (2026-09-29):** the gated RTX 5080 run
+finished 100/100 row-A16 hard-CE steps with finite loss and all 18 gradients.
+Mean/median synchronized step time was 0.923/0.737 s; CUDA allocator peaks
+were 8.494 GiB allocated and 10.049 GiB reserved. The GPU is idle with no
+remaining run process. Original/full-body eligibility remains false; no
+trained native quality claim has been made. The authorized engineering backlog
+remains active. See the [report](../experiments/w1ax-row-a16-calibration-5080.md)
+and [checkpoint](goals/recurrent-binary-body-head.md#real-model-calibration-completed).
 
 **Calibration started (2026-09-29):** all five readiness gates passed,
 including nine ordered cache/head bridges. The sole GPU owner launched the

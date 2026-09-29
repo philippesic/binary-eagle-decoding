@@ -8,14 +8,14 @@ data. Evaluate native draft quality and speed against Q4_0 when GPU work is
 explicitly permitted. Preserve the pinned FP16 target/verifier and draft map.
 This continues the existing goal rather than opening a second goal.
 
-**State: active CPU-only implementation and preparation; all GPU access paused.**
-The user requested a fresh team after the audit. No joint GPU training or final
-evaluation has run. The [fresh-team handoff](#fresh-team-handoff-eagle-w1-cpu-phase)
-and overarching plan supersede older next-action lists and the old numerical
-parity prerequisite. The original [trial protocol](../../experiments/recurrent-binary-qat-plan.md)
-is retained as historical design; the 96-prompt/500-step recipe is a smoke
-reference, not the enlarged full-body experiment. This file and STATUS.md remain
-the durable record.
+**State: active Phase 1B and authorized engineering.** RTX 5080 access is
+restored; RTX 2080 Ti remains paused. Fixed native quality/timing A/B, CUDA
+operator contracts, first-shard capture/audit and the gated real-model 100-step
+row-A16 calibration have completed. The [calibration checkpoint](#real-model-calibration-completed)
+records measurements and limits. Sealed final data is unopened. Shared packing,
+resident state and remaining instrumentation/refresh integration are still
+queued for reviewed native validation; expanded training remains user-owned.
+The original trial protocol and earlier next-action lists are historical.
 
 ## Current findings and work
 
@@ -3133,3 +3133,35 @@ exact run, inspect its terminal status, checkpoint hashes, all 100 losses/18
 gradients, sign/scale movement, synchronized step times and allocator/RSS peaks.
 If a concrete memory failure occurs, retain its evidence and apply only a
 bounded math-preserving fix before a documented retry.
+
+## Real-model calibration completed
+
+The supervised row-A16 hard-CE run completed 100/100 steps with exit zero at
+21:20:51 UTC on RTX 5080/SM120. All steps had finite loss/gradient norm and
+18 active gradients; the trainer also enforced finite gradients and updated
+parameters. Total synchronized step time was 92.255 s, mean 0.923 s and median
+0.737 s. Maximum allocated/reserved CUDA allocator memory was 8.494/10.049 GiB;
+process-lifetime peak RSS was 11.604 GiB. The first step was the 16.701 s
+maximum. No OOM or math/memory workaround was needed. Sign flips were zero;
+summed scale L1 movement was 23.752. Different captured rounds make first/last
+losses unsuitable as a convergence comparison. The first 100 rounds cover two
+prose prompts, while the independent numeric gate covers all three domains.
+
+The [full calibration report](../../experiments/w1ax-row-a16-calibration-5080.md)
+records output hashes, precision, command, time/memory definitions and source
+ancestry. Checkpoint SHA256 is
+`2179b29fde4b9c435e02758621b563f4f4099ac799862c4822f2ace1c0c89825`;
+training report SHA256 is
+`ff6a31e923f1b6152111ed90db01e44e6f2793b2df43bcd912a6783b3e0c7273`.
+Original training eligibility and full-body eligibility remain false. No trained
+GGUF/native quality claim follows; export status requires native validation.
+
+Run `w1-row-a16-hardce-calibration-20260929` and process group `22238` are
+terminal, with no group member left. Fresh GPU check is 0%/2,843 MiB. Sole
+owner remains coordinator `/root`; tmux `$35` panes `%57/%58/%59` are available.
+The bounded Phase 1B measurements are complete. The broader active goal retains
+the user's authorized engineering backlog: published shared-pack/resident native
+changes need reviewed integration and CUDA checks; instrumentation/kernel cleanup
+is still with `/root/runtime_optimizations`; native student-refresh collection
+and provider/v2 binding remain pending. Keep one GPU job at a time and no new
+substantive training or final evaluation without the user's decision.
