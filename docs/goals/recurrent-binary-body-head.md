@@ -2341,3 +2341,21 @@ repetition. The job is progressing through requests; this is quality and
 trajectory evidence, not an uncontended timing measurement. Monitor from pane
 `%56`; interrupt the supervisor and verify process group/GPU state if the
 user asks to pause or the job must stop.
+
+The off-path quality supervisor finished exit 0 at 2026-09-29 05:38:04 UTC.
+Its manifest is complete with 96 measured requests (24 for each variant)
+and reproduces archived Q4_0/D/FP16 totals: respectively
+1,493/2,139/1,496 rounds; 7,320/10,449/7,329 proposals;
+1,555/909/1,552 accepted; 3,048 emitted tokens per variant. These are
+quality counts on the heavily reused old development suite, not held-out
+promotion evidence or speed. Fresh GPU reading after this project job stopped
+was 86% utilization, 4,365 MiB whole-device use and 275.6 W from workload
+outside visible WSL processes. It remains a timing contamination.
+
+The on-path quality job `runs/w1-prune-on-quality-20260928/` started at
+2026-09-29 05:39:47 UTC, tmux pane `%54`, PID/process group 7800. It is
+progressing through the same pinned prompts under
+`GGML_EAGLE_PRUNE_UNUSED_HEAD=1`; pane `%56` monitors its state and log.
+Compare exact per-request token IDs, proposals, accepted counts, round rows
+and verifier outcomes against the off-path manifest after exit. Do not start
+another project GPU job concurrently.
