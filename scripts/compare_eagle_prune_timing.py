@@ -114,7 +114,7 @@ def compare(off_path: Path, on_path: Path, selector: str = "GGML_EAGLE_PRUNE_UNU
         "variants": variants,
         "behavior_mismatch_count": len(mismatches),
         "first_behavior_mismatches": mismatches[:20],
-        "uncertainty": "paired prompt-cluster bootstrap over 24 reused development prompts",
+        "uncertainty": "paired prompt-cluster bootstrap; cluster count is paired_prompts per variant",
         "scope": (
             "concurrency-one client request and server decode; "
             "not process() attribution or serving capacity"
