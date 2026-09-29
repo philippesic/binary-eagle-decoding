@@ -3165,3 +3165,34 @@ changes need reviewed integration and CUDA checks; instrumentation/kernel cleanu
 is still with `/root/runtime_optimizations`; native student-refresh collection
 and provider/v2 binding remain pending. Keep one GPU job at a time and no new
 substantive training or final evaluation without the user's decision.
+
+## Stable runtime integration after calibration
+
+Published native `8fd9b399ab124eeec3b363c56eacbd690f2e75b8` is integrated
+as parent `0261d1b`. It retains the frozen pilot `83a070ec` ancestry and adds
+`a036e5208` shared A1/A4/A8 packing, `aeda099ba` owned packed-head recognition
+and `8fd9b399a` bounded resident recurrent state. Worker CPU evidence passed
+133 operator cases, three shared-pack fanout cases and dense/packed native
+state/cache fixtures. Resident state is guarded by sequence/next-position and
+cache mutation generation, with synchronized host fallback. CUDA proof is
+pending; no performance gain or default promotion is claimed.
+
+Supervised build `runs/w1-runtime-stable-cuda-build-20260929/` started at
+21:26:04 UTC in session `$35`, pane `%58`, PID/process group `22418`; handle
+`95f0e42f-abf3-4730-9f3e-7584f9d1e4c6`. Fresh process inspection confirmed it
+live with compilation progressing (37/342 at first monitor). Coordinator
+`/root` owns the next GPU checks; no other project experiment is running.
+Use the locked build/pilot-tool-env and SM120/include compatibility flags in
+its state command. Check that supervisor before starting any test.
+
+After a successful CUDA build, generate separate dense and `--packed` fixtures
+with `scripts/make_eagle_runtime_fixture.py`; run CUDA-built `test-sampling
+--eagle-fixture-cuda <fixture>` on each (requires CUDA0, no fallback). Run
+`test-backend-ops -b CUDA0 -o W1A1_MUL_MAT` (133 cases) then
+`test-backend-ops -b CUDA0 -o ADD -p shared=1` (three fanout cases), each in
+a unique supervised run. Inspect resident backend placement in actual logs,
+following logits/prenorm and serialized cache comparisons. Only after these
+pass prepare bounded real native selector off/on quality comparisons.
+Instrumentation `c3c548d2e` and warp reduction `dfc9c5d2a` remain worker-owned
+and unintegrated pending their checkpoint/review. Sealed final data remains
+untouched; no further training is authorized by this engineering gate.

@@ -6,6 +6,11 @@ The target/verifier model precision remains as frozen for each experiment.
 
 **Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), continued as Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). The user has now **restored RTX 5080 access**; the RTX 2080 Ti remains paused. The gated 100-step row-A16 GPU calibration has completed; substantive training and final evaluation have not run. DFlash/DSpark are future roadmap items, not active work.
 
+**Stable runtime validation started (2026-09-29):** shared packing and
+bounded resident state are integrated as native `8fd9b399a` / parent `0261d1b`
+after CPU checks. The supervised CUDA build is live; actual CUDA fixtures and
+selector comparisons are next. See the [checkpoint](goals/recurrent-binary-body-head.md#stable-runtime-integration-after-calibration).
+
 **Real-model calibration complete (2026-09-29):** the gated RTX 5080 run
 finished 100/100 row-A16 hard-CE steps with finite loss and all 18 gradients.
 Mean/median synchronized step time was 0.923/0.737 s; CUDA allocator peaks
