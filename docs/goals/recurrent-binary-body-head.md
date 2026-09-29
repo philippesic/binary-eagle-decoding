@@ -2821,3 +2821,71 @@ Remaining gates: selected-root native cache/mask/position checks, finite
 all-nine gradients and borrowed embedding operand identity, and a separate
 hashed calibration-only provider contract. The original bundle remains
 preparation-only and training-ineligible; no QAT or final evaluation ran.
+
+## Parallel engineering authorization and pilot continuation
+
+At 2026-09-29 19:06 UTC the companion planning chat
+`01a0ee84-84f0-7381-89de-aa7655caaa5b` forwarded the user's explicit
+authorization to implement the remaining engineering backlog in parallel
+within this same goal. It is read-only and launches no GPU jobs. This
+adds shared activation packing/fused projection preparation, direct draft-
+vocabulary sampling, bounded device-state transport, evidenced kernel
+cleanup, K/V-only catch-up, fine GPU attribution, versioned compact/label-only
+capture and bounded exact-prefix student refresh. It does not approve full
+2k capture, substantive four-width training, final evaluation, group128 lower
+widths or another architecture. Pilot remains first in the GPU queue.
+
+Bounded CPU assignments (all preserve other edits):
+
+- `/root/runtime_optimizations` (GPT-6.1 Sol high), sole native optimization
+  integration owner, parent worktree `/tmp/eagle-runtime-opt-parent`; first
+  opt-in direct-vocabulary sampler in common/speculative/sampling. It holds
+  server-context changes until the pilot cache worker finishes; later native
+  items are serialized and opt-in. No GPU/SSH.
+- `/root/compact_capture_v2` (GPT-6.1 Sol high), new converter/auditor/schema
+  and adapter files/tests in `/tmp/binary-eagle-compact-capture-v2`, plus only
+  its compact-v2 DECISIONS subsection. V1/raw artifacts stay unchanged; no
+  raw retirement or full-tier storage choice is silently made.
+- `/root/trajectory_refresh` (GPT-6.1 Sol high), new
+  `src/w1a1_eagle/trajectory_refresh.py`, planner, tests and protocol in
+  `/Users/pippo/github/binary-eagle-refresh`. Exact-prefix feature/label reuse
+  is scoped by native execution contract; changed prefixes require capture.
+- `/root/calibration_contract`, new readiness assembler in managed worktree
+  `/Users/pippo/.codex/worktrees/calibration-readiness/binary-eagle-decoding`.
+  Its enforceable calibration-only contract is integrated as `bfea690`; no
+  actual passing readiness report or promoted provider exists yet.
+- `/root/calibration_metrics`, completed instrumentation integrated as
+  `8155437`, with ten focused tests. It records calibration-only synchronized
+  whole-step wall time, PyTorch allocator peaks (not whole-device memory),
+  process lifetime peak RSS and actual CUDA device/capability.
+
+The first cache build did not launch a child because plain Python's PATH
+contained no `cmake`; its starting-state file is not evidence of a live job.
+The locked build-tool environment (`UV_PROJECT_ENVIRONMENT=build/pilot-tool-env`)
+preserves the model Python environment. Supervised builds
+`w1-pilot-cuda-cache-build-uv-20260929` and
+`w1-pilot-cuda-graph-build-20260929` completed exit zero. The graph readback
+source is published llama.cpp `717965c56e2477c37ba785dd50733cc02af6f409`,
+parent `6c5b854`; it supports bounded F32/F16 CUDA download with logical
+stride conversion. No speed claim follows from instrumented readback.
+
+The first cache-capture launch failed config validation before server startup
+because the runner forbids disabling CUDA graphs. `3b9fb8e` removed that
+setting; primary graph policy is unchanged. The subsequent full graph
+capture `runs/w1-pilot-cuda-cache-capture-retry-20260929/` stopped at the
+frozen 512-MiB graph cap during warmups. Its footer is incomplete (197
+decoder groups, 3,348 written tensor rows, 536,459,776 bytes); it cannot
+authorize training. The server and supervisor stopped. The pilot cache worker
+is adding a separate cache-only graph scope retaining the needed projection
+and boundary tensors rather than expanding capture to irrelevant FFN data.
+
+The first opt-in gradient run stopped before backward: its checked-step
+wrapper did not accept `compute_logits=False` from context decoding. Fixed
+and regression-tested in `996000b` (eight checker tests pass). The sole GPU
+job is now `runs/w1-pilot-torch-gradients-retry-20260929/` in session `$35`,
+pane `%57`, under the existing supervisor. This is backward-only readiness
+checking, with no optimizer steps. Pane `%58` is free for CPU builds; new
+monitor pane `%59` is connected through the registry host's SSH and WSL.
+Monitor the same state/handle, never restart on observation timeout. On pause,
+mark the host flag first, interrupt its supervisor, verify the group/server
+absence and device state. No captured-data QAT or final-set use has occurred.
