@@ -23,8 +23,7 @@
     "EAGLE_CAPTURE_MAX_BYTES": "536870912",
     "EAGLE_CAPTURE_MAX_ROWS": "8192",
     "EAGLE_CAPTURE_PREFIX": "{output}/heads",
-    "EAGLE_STATE_TRACE_JSONL": "{output}/state.jsonl",
-    "GGML_CUDA_DISABLE_GRAPHS": "1"
+    "EAGLE_STATE_TRACE_JSONL": "{output}/state.jsonl"
   },
   "port": 18091,
   "prompts": "data/qat-revisit/development.jsonl",
