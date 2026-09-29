@@ -3200,3 +3200,35 @@ Only after these pass prepare bounded real native selector off/on quality compar
 Instrumentation `c3c548d2e` and warp reduction `dfc9c5d2a` remain worker-owned
 and unintegrated pending their checkpoint/review. Sealed final data remains
 untouched; no further training is authorized by this engineering gate.
+
+## Runtime tooling and refresh bridge continuation
+
+Parent tooling `7b495ea` is integrated as `3cbe768`: resident-state/warp
+selectors, event-only instrumentation guards, original request boundaries
+with monotonic clock fields, and bounded overlap/unassigned event accounting.
+Five preparation, seven analyzer and 17 runner tests plus Ruff passed.
+Native event/warp revisions remain unintegrated behind the stable CUDA gate.
+
+Both dense and packed fixture generators finished exit zero under unique
+`w1-runtime-fixture-dense-20260929` / `w1-runtime-fixture-packed-20260929` runs.
+CPU preparation also completed for `compact_logits`, `kv_only`, `device_state`
+under `runs/w1-runtime-<selector>-prepare-20260929/configs/`, using the frozen
+three-domain diagnostic source. Other opt-ins are explicit zero. These prepared
+quality pairs compare Q4_0 and untrained row-A16 with identical source policy;
+they do not replace the earlier four-variant pruning quality/timing result.
+No runtime CUDA test has started while the build is live.
+
+Completed calibration contract worktree was clean, every patch was proven
+present by `git cherry main`, and only disposable environments/caches were
+ignored. Its complete branch history was preserved and verified at
+`.git/goal-worktree-archives/agent-calibration-report-assembler.bundle` before
+removing that worktree/branch. All raw GPU artifacts remain on the host.
+
+`/root/trajectory_refresh` resumed authorized CPU integration in
+`/private/tmp/eagle-trajectory-refresh-bridge`, branch
+`feature/trajectory-refresh-bridge`, from `26f393d`. It owns the planner/CLI,
+tests and runbook, binding canonical native student trace cells to exact-prefix
+refresh requests and capture/provider preparation. Source hashes, model/cache
+execution contract, checkpoint/export identity and feature/label ancestry must
+be explicit; a summary-only benchmark trace is insufficient. No GPU, capture
+or training eligibility promotion is authorized by this assignment.
