@@ -624,3 +624,78 @@ the host, tmux and one-owner protocol. This does not authorize the proposed
 all-body training budget or final-set evaluation. The subsequently completed
 96-prompt capture and GPU release are recorded in the active goal file;
 no optimization was started.
+
+## Versioned compact capture storage preparation
+
+The CPU implementation provides `recurrent_binary_capture_v2` with the
+`recurrent_capture_storage_policy_v2` hard-CE label-only policy. This is an
+engineering option for the existing goal, not selection of the full-tier
+storage budget. It omits a second raw full-vocabulary logit copy while keeping
+the original v1 bundle and native capture unchanged. Conversion requires one
+successful retained-raw v1 audit before publishing a new immutable v2 bundle.
+For future captures, `build_recurrent_capture_v2.py` directly accepts the native
+raw stream plus prepared rows/features: it creates an owned transient v1 audit
+shadow using a same-filesystem hardlink, converts to v2, then removes only that
+shadow's metadata/link. This avoids creating a duplicated-raw v1 prerequisite.
+The original raw inode, byte count and link count are verified after cleanup;
+original hashes are checked by the v1 and v2 ancestry audits. Cross-device
+hardlink failure aborts with no copy fallback. The legacy builder's default
+remains an independent raw copy. This is not a raw-free source capture.
+`raw_retirement_allowed` is always false; neither conversion nor audit deletes
+raw artifacts. Existing v1 audit and provider behavior stays unchanged.
+
+The v2 audit rederives rows from retained native cloned-verifier-sampler head
+metadata and canonical rounds, checks exact proposal prefixes, absolute/offset
+d2t identity, unsupported-label masks, live verifier reach, source hashes,
+accepted-prefix feature coverage and every request's response emissions. It
+retains the historical raw-logit row/source joins as ancestry. Labels are the
+captured sampler labels, including valid labels beyond an earlier live
+rejection; they are never reconstructed by an argmax assumption. Original
+prepared feature bytes and source/preparer/v1 audit manifests remain hashed.
+
+Label-only storage cannot recompute target probabilities, mapped probability
+mass or the original sampling arithmetic after raw bytes become unavailable.
+The audit states those limits and leaves initial/terminal sampler parity and
+native feature/KV numerical parity unverified. Historical native cell manifests
+omit the timing round-trace hash; v2 records that trace's conversion hash and
+rechecks all its emissions against canonical rounds and raw response IDs. A
+cell trace hash, when present, must also match. This preserves response
+continuity without claiming an older manifest authenticated an omitted file.
+
+The converter and independent audit can be run on train-only artifacts (write
+the new audit outside the immutable bundle):
+
+```sh
+python3 scripts/build_recurrent_capture_v2.py \
+  --rows-dir <prepared-rows> --features-dir <prepared-features> \
+  --target-logits <native-raw-logits.f32> --capture-root <native-capture> \
+  --train-prompts <train_prompts.jsonl> --output <new-v2-bundle> \
+  --expected-prompt-sha256 <frozen-train-shard-sha256> --expected-prompt-count <count> \
+  --expected-target-sha256 <target-gguf-sha256> \
+  --expected-draft-sha256 <draft-gguf-sha256> --expected-map-raw-sha256 <d2t-raw-sha256>
+# Alternatively, convert an existing audited v1 bundle:
+python3 scripts/convert_recurrent_capture_v2.py \
+  --source-manifest <v1-bundle>/manifest.json \
+  --capture-root <native-capture> --output <new-v2-bundle> \
+  --expected-prompt-sha256 <frozen-train-shard-sha256> \
+  --expected-prompt-count <frozen-train-shard-count>
+python3 scripts/audit_recurrent_capture_v2.py \
+  --manifest <new-v2-bundle>/manifest.json --output <new-audit.json> \
+  --expected-prompt-sha256 <frozen-train-shard-sha256> \
+  --expected-prompt-count <frozen-train-shard-count>
+```
+
+`load_audited_capture_v2` exposes accepted-prefix round inputs for an explicit
+future hard-CE provider adapter. V2 remains `training_eligible: false` and
+`readiness: preparation_only`; a separately reviewed versioned eligibility
+contract and provider integration are required before training uses it. The
+pilot's v1 calibration eligibility does not carry over automatically.
+
+The full-tier choice remains among label-only hard CE, the existing versioned
+compact top-k/tail teacher with an additional probability re-audit contract,
+and provisioned retained raw storage. Top-k/tail probabilities remain an
+approximation, with outside-draft mass visible and no implicit draft
+renormalization. This implementation chooses no full-tier capture, raw
+retirement, final-data access, training budget or new objective. The next
+engineering integration is the explicit hard-CE v2 provider path; the next
+storage decision belongs to the user before the full 2k capture.

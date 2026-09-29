@@ -2,8 +2,8 @@
 """Join native recurrent preparer outputs into a CPU-audited preparation bundle.
 
 The builder accepts only a complete, cell-owned train capture. It copies every
-file needed by the recurrent capture audit into a new directory, verifies both
-preparers' source hashes and ownership claims, and runs that final audit before
+file needed by the recurrent capture audit into a new directory (or explicitly
+hardlinks the retained raw logit stream), verifies both preparers' source hashes and ownership claims, and runs that final audit before
 publishing the directory. The current preparers cannot certify pinned model
 identity or live drafter cache parity, so this output is always preparation-only.
 No model or accelerator is run.
@@ -141,8 +141,15 @@ def build_bundle(
     expected_target_hash: str = TARGET_F16_SHA256,
     expected_draft_hash: str = DRAFT_D_SHA256,
     expected_map_raw_hash: str = DRAFT_D_D2T_SHA256,
+    raw_logits_storage: str = "copy",
 ) -> dict:
-    """Create a self-contained, audited, explicitly non-trainable bundle."""
+    """Create an audited non-trainable bundle; raw defaults to an owned copy.
+
+    Explicit hardlink mode shares the retained source inode, requiring the same
+    filesystem. It is for transient v2 preparation only and never retires raw.
+    """
+    if raw_logits_storage not in {"copy", "hardlink"}:
+        raise ValueError("raw_logits_storage must be copy or hardlink")
     rows_dir = Path(rows_dir)
     features_dir = Path(features_dir)
     target_logits = Path(target_logits)
@@ -318,7 +325,18 @@ def build_bundle(
             ("rows_report", rows_dir / "preparation.json", "rows_preparation.json"),
             ("features_report", features_dir / "report.json", "features_preparation.json"),
         ):
-            shutil.copyfile(source, stage / dest_name)
+            if field == "target_logits" and raw_logits_storage == "hardlink":
+                # os.link must fail on a cross-device boundary. Never fall back
+                # to duplicating the raw payload for this explicit policy.
+                os.link(source, stage / dest_name)
+                source_stat, linked_stat = source.stat(), (stage / dest_name).stat()
+                if (source_stat.st_dev, source_stat.st_ino) != (
+                    linked_stat.st_dev, linked_stat.st_ino
+                ):
+                    raise ValueError("raw hardlink does not share the retained source inode")
+                manifest["raw_target_logits_storage"] = "hardlink_shared_retained_source_inode"
+            else:
+                shutil.copyfile(source, stage / dest_name)
             if field == "target_logits":
                 manifest[field] = {"path": dest_name, "sha256": sha256(stage / dest_name)}
         if shard_manifest_path is not None:
