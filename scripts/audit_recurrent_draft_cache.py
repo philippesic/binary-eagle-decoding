@@ -66,26 +66,54 @@ def audit(capture_dir: Path) -> dict:
             groups.setdefault(record["group_execution"], {})[record["tensor_name"]] = record
     if set(groups) != set(range(len(executions))):
         raise ValueError("draft graph decoder executions are missing or duplicated")
-    if graph_footer.get("result_output_markers") != len(executions):
-        raise ValueError("draft graph capture lacks decoder output boundary markers")
     required_cache_inputs = {
         "inp_embd",
         "embd_norm-0",
         "Kcur_rope-0",
         "Vcur-0",
-        "eagle3_prenorm-0",
-        "result_norm",
     }
-    for group in groups.values():
-        group_end = group.get("result_norm" if graph_scope == "cache" else "result_output")
+    if graph_footer.get("result_output_markers") != len(executions):
+        raise ValueError("draft graph capture lacks decoder output boundary markers")
+    boundaries = graph_footer.get("decoder_boundaries")
+    if graph_scope == "cache":
+        if not isinstance(boundaries, list) or len(boundaries) != len(executions):
+            raise ValueError("cache scoped graph lacks decoder boundary metadata")
+        boundary_by_execution = {}
+        for boundary in boundaries:
+            if (
+                not isinstance(boundary, dict)
+                or type(boundary.get("execution")) is not int
+                or boundary["execution"] in boundary_by_execution
+                or not isinstance(boundary.get("last_tensor"), str)
+                or type(boundary.get("result_norm_captured")) is not bool
+            ):
+                raise ValueError("cache scoped graph boundary metadata is invalid")
+            boundary_by_execution[boundary["execution"]] = boundary
+        if set(boundary_by_execution) != set(range(len(executions))):
+            raise ValueError("cache scoped graph boundary executions are missing or duplicated")
+    for execution_index, group in groups.items():
+        boundary = boundary_by_execution[execution_index] if graph_scope == "cache" else None
+        group_end = group.get("result_output") if graph_scope == "all" else None
         if (
             not required_cache_inputs <= set(group)
-            or group_end is None
-            or group_end.get("group_end") is not True
             or group["inp_embd"].get("n_tokens") != group["Kcur_rope-0"].get("n_tokens")
             or group["inp_embd"].get("n_tokens") != group["Vcur-0"].get("n_tokens")
+            or (graph_scope == "all" and (group_end is None or group_end.get("group_end") is not True))
         ):
             raise ValueError("draft graph scope lacks cache projection inputs or group boundaries")
+        if graph_scope == "cache":
+            ordered = sorted(group.values(), key=lambda row: row.get("execution_ordinal", -1))
+            last_tensor = ordered[-1]["tensor_name"] if ordered else ""
+            if boundary["last_tensor"] != last_tensor:
+                raise ValueError("cache scoped graph boundary does not match its last decoder tensor")
+            if boundary["result_norm_captured"]:
+                anchor = group.get("result_norm")
+                if anchor is None or anchor.get("group_end") is not True or last_tensor != "result_norm":
+                    raise ValueError("cache scoped result_norm boundary is incomplete")
+            else:
+                anchor = group.get("eagle3_prenorm-0")
+                if anchor is None or anchor.get("group_end") is not True or last_tensor != "eagle3_prenorm-0":
+                    raise ValueError("cache scoped prenorm boundary is incomplete")
 
     cache_bits = np.memmap(rows_path, dtype="<u2", mode="r")
     mask_bytes = np.memmap(masks_path, dtype="u1", mode="r")

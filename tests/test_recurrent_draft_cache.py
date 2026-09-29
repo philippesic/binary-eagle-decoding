@@ -36,6 +36,7 @@ class StoredDraftCacheAuditTests(unittest.TestCase):
                     "event": "tensor",
                     "group_kind": "decoder",
                     "group_execution": 0,
+                    "execution_ordinal": len(graph),
                     "group_end": group_end,
                     "tensor_name": name,
                     "ne": [width, 1],
@@ -54,6 +55,9 @@ class StoredDraftCacheAuditTests(unittest.TestCase):
                 "event": "capture_end",
                 "scope": "cache",
                 "result_output_markers": 1,
+                "decoder_boundaries": [
+                    {"execution": 0, "last_tensor": "result_norm", "result_norm_captured": True}
+                ],
                 "status": "complete",
                 "reason": "",
                 "tensor_rows": len(graph_specs),
@@ -161,6 +165,24 @@ class StoredDraftCacheAuditTests(unittest.TestCase):
         graph_path.write_text("".join(json.dumps(row) + "\n" for row in graph))
         with self.assertRaisesRegex(ValueError, "scope metadata"):
             audit(self.root)
+
+    def test_prenorm_boundary_allows_dummy_decoder_without_result_norm(self):
+        graph_path = self.root / "heads.draft_graph.jsonl"
+        graph = [json.loads(line) for line in graph_path.read_text().splitlines()]
+        graph = [row for row in graph if row.get("tensor_name") != "result_norm"]
+        next(row for row in graph if row.get("tensor_name") == "eagle3_prenorm-0")["group_end"] = True
+        graph[-1]["tensor_rows"] = len(graph) - 1
+        graph[-1]["execution_count"] = len(graph) - 1
+        graph[-1]["decoder_boundaries"] = [
+            {"execution": 0, "last_tensor": "eagle3_prenorm-0", "result_norm_captured": False}
+        ]
+        values_path = self.root / "heads.draft_graph.f32"
+        values = np.fromfile(values_path, dtype="<f4")[:-1]
+        graph[-1]["bytes_written"] = values.nbytes
+        graph_path.write_text("".join(json.dumps(row) + "\n" for row in graph))
+        values.tofile(values_path)
+        result = audit(self.root)
+        self.assertEqual(result["graph_capture_scope"], "cache")
 
     def test_changed_stored_key_is_rejected(self):
         path = self.root / "heads.draft_cache.f16"
