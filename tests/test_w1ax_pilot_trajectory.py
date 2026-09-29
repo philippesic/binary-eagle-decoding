@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import importlib.util
+import json
+import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -17,6 +19,45 @@ SPEC.loader.exec_module(trajectory)
 
 
 class TrajectoryGateTests(unittest.TestCase):
+    def test_checkpoint_loader_maps_weight_names_to_module_paths(self):
+        class Linear:
+            def __init__(self):
+                self.latent_sign = torch.nn.Parameter(torch.zeros((2, 4)))
+                self.initial_scale = torch.tensor([0.25, 0.5])
+                self.scale_offset = torch.nn.Parameter(torch.zeros(2))
+
+        linears = {
+            name.removesuffix(".weight"): Linear() for name in trajectory.CHECKPOINT_NAMES.values()
+        }
+        base_hash = "a" * 64
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            checkpoint = root / "joint.npz"
+            manifest = root / "joint.json"
+            arrays = {}
+            for name in trajectory.CHECKPOINT_NAMES.values():
+                arrays[name + ".latent"] = np.full((2, 4), 0.75, dtype=np.float32)
+                arrays[name + ".scale"] = np.array([0.4, 0.8], dtype=np.float32)
+            np.savez(checkpoint, **arrays)
+            manifest.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 2,
+                        "scale_layout": "row",
+                        "activation_bits": 16,
+                        "objective": "hard_ce",
+                        "base_gguf_sha256": base_hash,
+                        "checkpoint_sha256": trajectory.sha256(checkpoint),
+                    }
+                )
+            )
+
+            trajectory._load_row_checkpoint(checkpoint, manifest, linears, base_hash)
+
+        for module in linears.values():
+            torch.testing.assert_close(module.latent_sign, torch.full((2, 4), 0.75))
+            torch.testing.assert_close(module.scale_offset, torch.tensor([0.15, 0.3]))
+
     def test_relative_rms_uses_native_reference_floor(self):
         self.assertAlmostEqual(
             trajectory.relative_rms(np.array([2.0, 4.0]), np.array([1.0, 2.0])), 1.0
