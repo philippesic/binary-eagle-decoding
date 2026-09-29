@@ -400,3 +400,64 @@ or exact comparison gate is weakened. Permanent changes must preserve
 original graph placement/split semantics, reject unsupported CPU/alias/mixed
 destination graphs, and retain explicit host fallback. No bit-exact norm
 reimplementation is planned.
+
+## Order-balanced runtime timing on RTX 5080
+
+Eight supervised inference jobs completed exit zero on native `be09f61c5`,
+using a frozen executable/library copy and explicit verified LD_LIBRARY_PATH.
+For compact sampling and K/V-only catch-up separately, block a ran off then on;
+block b ran on then off. Each condition used five repetitions, three frozen
+train prompts, Q4_0 and untrained row-A16, 128 tokens, draft length five,
+p_min=0 and two warmups per variant/server block. Resident, shared packing
+and warp reduction were off. No intrusive event/capture instrumentation ran.
+
+All **120 measured request pairs** across four comparisons matched raw IDs and
+speculative counters. All **80 server blocks** recorded verified CUDA-graph
+launches. Q4_0 accepted 915 drafts over 680 proposal verification rounds per
+condition; row-A16 accepted 155 over 1,430. Timed counters exclude no-proposal
+rounds, so these are not complete-round acceptance rates.
+
+| Selector | Variant | Order-balanced on/off decode | Order-balanced on/off client request |
+| --- | --- | ---: | ---: |
+| Compact mapped sampler | Q4_0 | **1.04028** | **1.03611** |
+| Compact mapped sampler | Row-A16 checkpoint zero | 1.02666 | 1.02537 |
+| K/V-only catch-up | Q4_0 | **1.00817** | **1.00776** |
+| K/V-only catch-up | Row-A16 checkpoint zero | 1.08174 | 1.07959 |
+
+These are geometric means of the two block ratios, not new confidence
+intervals. They show gains on this bounded three-prompt workload: approximately
+4.0%/0.8% Q4_0 server decode for compact/K/V-only, respectively. Row-A16 still
+has much lower acceptance and throughput than Q4_0. This does not demonstrate
+a binary drafter beating the primary baseline.
+
+Each variant has 15 matched requests and **three prompt clusters per block**.
+The bootstrap resamples those prompt clusters and keeps their repetitions;
+it does not establish population uncertainty from three train examples. A
+historical hard-coded report label said 24 development prompts. Fresh CPU
+comparisons use the corrected scope label (`78b7382`) with unchanged arithmetic;
+original comparison files and the initial old-label re-audit remain retained.
+Only the `reaudit-final` reports below are authoritative for this summary.
+
+| Fresh comparison under `runs/` | SHA256 |
+| --- | --- |
+| `w1-runtime-timing-reaudit-final-compact_logits-a-20260929/report.json` | `273efcb440c39002b52d6b1dbf14efc399d4d640067647679a354ef5ad6d463e` |
+| `w1-runtime-timing-reaudit-final-compact_logits-b-20260929/report.json` | `07c1fb5cefc0382d13ccf8089e1d74303455efb5a4f09e8f62ce292918bad625` |
+| `w1-runtime-timing-reaudit-final-kv_only-a-20260929/report.json` | `580be25aad1621f63404799408b8866ace4d3509a149ed0da675ddfcaa81faa8` |
+| `w1-runtime-timing-reaudit-final-kv_only-b-20260929/report.json` | `50901eae3dc706ba0238b46c44766b46ca3543ab95e5ec0fd54caf86badd461a` |
+
+Summary `runs/w1-runtime-timing-summary-final-20260929/summary.json` SHA256:
+`e38ea936aa8c94c92f759cce5e2ef46f8d7c8dbe673da1134ddcdeda32949117`.
+Condition runs are `w1-runtime-<selector>-timed-<a|b>-<off|on>-20260929`;
+frozen binaries/config hashes are in `w1-runtime-timing-freeze-20260929/manifest.json`.
+Per-block telemetry includes whole-device startup/warmup/measurement/shutdown
+samples, clocks and power; polling is one second and can miss short peaks.
+The GPU was idle at 0%/2,843 MiB before and after the queue, and no other
+project experiment ran. There is no target-only drift control in this bounded
+queue, so order balance and telemetry do not exclude all external interference.
+
+These are concurrency-one request/decode observations on repeatedly used train
+prompts, not saturated serving capacity, held-out quality, SM75 results or
+process/draft component attribution. Both compact conditions use common CPU
+draft sampling; do not compare their rates as a gain over the historical
+backend-sampling policy. The earlier fixed four-variant pruning experiment
+is separate and unchanged.

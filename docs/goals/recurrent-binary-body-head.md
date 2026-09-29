@@ -3429,3 +3429,30 @@ Require the real CUDA0 existing-copy success marker, inspect fallback reasons
 and exact proposal/acceptance/response/cache proof before resident timing.
 Event/warp CUDA gates follow with separate opt-in flags and no intrusive
 events in throughput measurements. Sole GPU owner remains `/root`.
+
+## Runtime timing finished and combined CUDA build started
+
+The immutable be09 timing queue finished: all eight inference jobs and four
+comparators exited zero; all 120 measured request pairs matched IDs/counters,
+and all 80 server blocks verified CUDA-graph launches. Fresh corrected-scope
+CPU re-audit reports preserve original files; only `reaudit-final` reports are
+authoritative for the [timing summary](../../experiments/eagle-runtime-optimizations.md#order-balanced-runtime-timing-on-rtx-5080).
+Three prompt clusters and 15 requests per variant/block are explicit.
+Order-balanced on/off server decode ratios are compact Q4_0 **1.04028**,
+row-A16 **1.02666**; K/V-only Q4_0 **1.00817**, row-A16 **1.08174**. Client
+ratios are 1.03611/1.02537 and 1.00776/1.07959 respectively. No resident timing,
+cross-sampling-policy, serving-capacity or held-out/SM75 claim follows.
+Summary SHA256 is
+`e38ea936aa8c94c92f759cce5e2ef46f8d7c8dbe673da1134ddcdeda32949117`.
+GPU returned to 0%/2,843 MiB with the queue terminal.
+
+Root then pulled/pinned native `b4e366d4` and launched supervised
+`w1-runtime-combined-cuda-build-20260929` in `$35` pane `%58`, handle
+`c05f421f-11fd-48ac-bf73-af43fc7184d9`. PID/process group `31058` was freshly
+confirmed live; build progressed to 125/335 at the latest observation.
+It combines the scheduler-copy fix and default-off events/warp patches.
+No GPU inference job is active while it compiles. After build success, build
+explicit sampling/allocator targets, prove accepted CUDA source copies in
+fixtures and real resident off/on quality, then validate event capture/replay
+and warp integer paths. Preserve failure evidence and exact gates. Root is
+sole GPU owner; pending feature worktrees remain retained until CUDA validation.

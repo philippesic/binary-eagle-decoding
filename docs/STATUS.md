@@ -6,6 +6,12 @@ The target/verifier model precision remains as frozen for each experiment.
 
 **Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), continued as Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). The user has now **restored RTX 5080 access**; the RTX 2080 Ti remains paused. The gated 100-step row-A16 GPU calibration has completed; substantive training and final evaluation have not run. DFlash/DSpark are future roadmap items, not active work.
 
+**Runtime timing complete (2026-09-29):** all 120 paired requests and
+80 CUDA-graph blocks passed. On the bounded three-prompt workload, Q4_0
+order-balanced decode ratios were compact **1.04028** and K/V-only **1.00817**;
+row-A16 was 1.02666/1.08174. A combined CUDA build is now live for the
+resident-copy fix and event/warp gates. See the [checkpoint](goals/recurrent-binary-body-head.md#runtime-timing-finished-and-combined-cuda-build-started).
+
 **Resident fix integrated (2026-09-29):** the guarded scheduler-copy fix
 passed 19 CPU allocator/routing cases and is integrated with default-off event
 and warp diagnostics. CUDA proof is queued after the live immutable timing
