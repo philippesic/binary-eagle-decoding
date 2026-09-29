@@ -2581,3 +2581,41 @@ it copied `training_eligible:false`. A supervised one-step CPU attempt exited
 as expected with `training manifest is not eligible` before model loading.
 The user-owned practical-versus-strict first-shard readiness choice is now
 recorded in [DECISIONS.md](../DECISIONS.md#phase-1a-implementation-defaults-and-pending-research-choices).
+
+## Phase 1B checkpoint-zero validation in progress
+
+The separate hard-CE provider manifest was prepared without the optional
+compact teacher (`runs/w1-shard0000-provider-hardce-20260929/provider.json`,
+SHA256 `f742292d5700aabb8d536ed34f86079b732c1c0b5135c2b5cc9f9709ee34b5dd`),
+still training-ineligible. The first attempt had attached compact teacher
+metadata and would be rejected for hard CE after an eligibility promotion;
+this corrected manifest avoids that objective mismatch. Pinned AngelSlim at
+`0358da9` and Transformers 4.57.6 were installed into the remote project
+environment; the official loader import gate passed.
+
+The new [checkpoint-zero preparer](../../scripts/prepare_w1ax_checkpoint_zero.py)
+(`29bc763`) verified both model snapshots and the F16 base GGUF, loaded the
+official dense target/drafter on CPU, installed all nine row-A4 linears, and
+saved an **untrained** 833 MiB checkpoint. Supervised run
+`runs/w1-row-a4-checkpoint-zero-20260929/` exited zero; checkpoint SHA256 is
+`5b371f79831c4c8da0ffc4bc5a0a4b9a6817a1fdf7c2bddfeaec6b001c4f6b78`,
+manifest SHA256
+`78837575a967be199852c051912335f28ba191901b579a2b428ab6d7af7e136a`.
+The exporter then passed its preservation/serialization audit and wrote a
+33 MiB row-A4 GGUF at
+`runs/w1-row-a4-checkpoint-zero-export-20260929/model.gguf`, SHA256
+`a6081a5120d246435f53a3d3711607e156d3332b3ec75780019c842e85f169b1`.
+This proves checkpoint/export structure, not native model load or quality.
+
+The coordinator started the sole RTX 5080 project GPU job at 08:21:21 UTC:
+`runs/w1-row-a4-ckpt0-quality-20260929/` in tmux MCP session `$35`, pane
+`%58`, supervisor PID/process group 14249. Config
+`configs/w1_phase1b_row_a4_checkpoint_zero_quality.json` compares Q4_0 with
+the checkpoint-zero row-A4 draft on the old development prompts in quality
+mode. At this checkpoint it is running; the first Q4_0 block is present and
+the device shows 82% utilization/12,088 MiB whole-device use. Monitor its
+`state.json` and per-block manifests from pane `%57`; do not start another
+GPU job. On a user pause, set the local RTX 5080 flag first, interrupt this
+supervisor through tmux MCP, verify process group/server absence and device
+state, then checkpoint before reporting the GPU free. RTX 2080 Ti remains
+paused. The sealed final set remains unopened.
