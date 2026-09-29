@@ -12,6 +12,8 @@ primary performance baseline. No new or legacy final prompt text was opened.
   `17b8c65c47b335449e7573e42ec644f0682a7b5dfb97bb1874f1bc8eb05cd8b6`;
   prompt JSONL SHA256
   `968ffbb21b23f934912862ef6f7add7d03bf0cfbbb3910492f2f0f50075fc18a`.
+  Its metadata has 12 prose, 10 reasoning and nine code prompts. This is a
+  small calibration shard, not the full 2,000-prompt training tier.
 - Target GGUF SHA256
   `05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6`;
   candidate D GGUF SHA256
