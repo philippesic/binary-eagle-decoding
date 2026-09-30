@@ -45,9 +45,12 @@ competing project process and RTX5080 compute capability12.0. Initial baseline
 was2,617MiB/2%utilization and764GiB free disk. Packet/frozen artifact hashes match.
 A Unicode JSONL delimiter bug was fixed/tested/pushed as`41e230d`, preserving
 all data bytes; host config resolves10,000 train/1,002 dev with622,868,961,328B
-capture forecast. Supervised launch is next. Existing hourly heartbeat will
-dispatch one pinned Luna/high operator per check; activation awaits live-run
-registration. See [monitor setup](CONTINUOUS_W1AX_MONITOR.md).
+capture forecast. First supervisor reached A8 then stopped on the unchanged
+14GiB host-RAM admission. No optimizer/full corpus capture ran; Luna verified
+process cleanup and GPU baseline. Hourly heartbeat is **PAUSED** after this
+terminal failure. A bounded CPU-heap reclamation diagnostic is being added before
+numeric admission; thresholds/math stay unchanged. See [monitor setup](CONTINUOUS_W1AX_MONITOR.md)
+and the [failure checkpoint](goals/recurrent-binary-body-head.md#first-supervised-launch-and-host-ram-stop).
 
 ## Historical checkpoints
 

@@ -3833,3 +3833,39 @@ suppresses unchanged reports and handles schedule state. This does not claim the
 parent heartbeat has a Luna model override. No standalone user-owned task is
 created; activation waits for verified supervisor/registration. Details are in
 `docs/CONTINUOUS_W1AX_MONITOR.md`.
+
+### First supervised launch and host RAM stop
+
+Luna launched`luna-supervisor-a8-a1-20260930-01` at06:59:41UTC inside tmux`$36`
+pane`%60`, tracked command`d0884611-f459-4c05-a896-04faa7046393`. Supervisor
+PID/PGID1010, trainer1011, remote experiment
+`/home/philip/binary-eagle-decoding/runs/luna-continuous-a8-a1-20260929`.
+Stage config SHA`d2145092d80e555c371b306950f7b50ac5b41bc2513364f0b8646494b43cc294`,
+training config SHA`4ee4ce05139e0ae4762dfa35b6546b79a3fafc8c2b91be07b6ef76e9f5579c8e`.
+A8 initialized checkpoint zero, wrote27.8MiB export and captured three bounded
+native D_D probes (114/140/130rows); neither independent gate completed.353
+planned corpus captures remain0completed; optimizer never started.
+
+At07:01:00UTC the run exited1: numeric CPU target/draft load admission requires
+15,032,385,536B (12GiB additional+2GiB floor), and current MemAvailable was below
+it. Exact value at throw was not persisted. Health checker exited2; its additional
+disk-headroom warning is a missing terminal metric, not proved storage shortage.
+Remote supervisor log retains traceback. No supervisor/trainer/llama-server
+process remained; RTX5080 returned to2%/2,612MiB baseline. Post-exit CPU snapshot:
+MemTotal16,332,247,040B, MemAvailable15,693,475,840B; free disk818,939,166,720B.
+Failed experiment and partial gate evidence remain intact. Registration stores
+failure/cleanup and planned (not captured) prompt counts.
+
+Root briefly activated the existing hourly pinned-delegation heartbeat once
+live registration arrived, then immediately paused on terminal failure. Tool and
+saved config confirmPAUSED; no scheduled check ran. No standalone task was made.
+
+Astra `/root/gate_ram_advice` found checkpoint-zero initialization/export and
+numeric load share a Python process. Full-model retention is unproved;
+`native_capture` already callsGC, while libc heap retention is plausible with
+only162MiB initial admission margin. Sol `/root/jsonl_fix` now owns a separate
+bounded diagnostic patch: host/RSS/anonymous RSS before and afterGC+optional
+Linux/glibc malloc_trim, persisted before the unchanged numeric admission. No
+threshold/precision/objective change. Root will review/integrate, then ask Luna
+for one deliberately supervised preparation resume if safe; no automatic retry
+loop, host configuration change or guard relaxation is authorized.
