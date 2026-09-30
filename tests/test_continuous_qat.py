@@ -60,7 +60,7 @@ def config(**kwargs):
 
 
 def make(root, cfg):
-    torch.manual_seed(77)
+    torch.random.default_generator.manual_seed(77)
     provider = FixtureProvider()
     return ContinuousTrainer(provider, build_lanes(provider, cfg), cfg, root)
 
