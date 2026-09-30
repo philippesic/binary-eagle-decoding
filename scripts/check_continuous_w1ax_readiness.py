@@ -7,8 +7,10 @@ checks are restricted to exact captured roots and actionable decision margins.
 
 from __future__ import annotations
 
+import ctypes
 import gc
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -34,6 +36,64 @@ CHECKS = (
     "later_loss_reaches_earlier_student_state_and_cache",
     "torch_f16_cache_and_positions",
 )
+
+
+def _host_memory_snapshot(proc_root: Path = Path("/proc")) -> dict:
+    from w1a1_eagle.continuous_resources import _kib_field, linux_host_memory
+
+    try:
+        stats = linux_host_memory(proc_root)
+        stats["process_rss_anon_bytes"] = _kib_field(
+            (proc_root / "self/status").read_text(), "RssAnon"
+        )
+        return {"status": "recorded", **stats}
+    except (OSError, RuntimeError) as error:
+        return {"status": "unavailable", "reason": str(error)}
+
+
+def _trim_host_allocator() -> dict:
+    """Optionally ask Linux/glibc to return free CPU allocator pages."""
+    if sys.platform != "linux":
+        return {"status": "unavailable", "reason": "requires Linux/glibc"}
+    try:
+        libc = ctypes.CDLL(None)
+        version = libc.gnu_get_libc_version
+        version.argtypes = []
+        version.restype = ctypes.c_char_p
+        glibc_version = version().decode("ascii")
+        trim = libc.malloc_trim
+        trim.argtypes = [ctypes.c_size_t]
+        trim.restype = ctypes.c_int
+    except (OSError, AttributeError) as error:
+        return {"status": "unavailable", "reason": str(error)}
+    try:
+        return {
+            "status": "called",
+            "glibc_version": glibc_version,
+            "return_code": int(trim(0)),
+        }
+    except (OSError, ValueError, ctypes.ArgumentError) as error:
+        return {"status": "failed", "glibc_version": glibc_version, "reason": str(error)}
+
+
+def _reclaim_and_admit_host(output: Path, stage: str, diagnostic_filename: str) -> dict:
+    """Persist before/after CPU retention evidence, then apply the same gate."""
+    before = _host_memory_snapshot()
+    collected = gc.collect()
+    trim = _trim_host_allocator()
+    after = _host_memory_snapshot()
+    write_json(
+        output / diagnostic_filename,
+        {
+            "schema": "w1ax_gate_host_memory_diagnostic_v1",
+            "admission_stage": stage,
+            "before": before,
+            "gc_collected_objects": collected,
+            "malloc_trim": trim,
+            "after": after,
+        },
+    )
+    return host_admission(stage, 12 * 1024**3)
 
 
 def validate_gate_report(report: dict, bits: int, common: dict) -> None:
@@ -250,7 +310,11 @@ def run_gate(
     output.mkdir(parents=True, exist_ok=True)
     checkpoint_dir = output / "checkpoint-zero"
     if not checkpoint_dir.exists():
-        host_admission("bounded checkpoint-zero CPU initialization", 12 * 1024**3)
+        _reclaim_and_admit_host(
+            output,
+            "bounded checkpoint-zero CPU initialization",
+            "host-memory-checkpoint-zero-admission.json",
+        )
         checkpoint_zero(
             Path(sources["model_snapshot_manifest"]),
             Path(sources["base_draft_gguf"]),
@@ -298,7 +362,11 @@ def run_gate(
     for role in ("draft", "target"):
         verify_model_snapshot(Path(snapshot["models"][role]["directory"]), snapshot["models"][role])
     config = JointQATConfig(W1AxContract(bits, "row"), device="cuda:0", allow_accelerator=True)
-    host_admission("bounded numeric gate CPU target/draft load", 12 * 1024**3)
+    _reclaim_and_admit_host(
+        output,
+        "bounded numeric gate CPU target/draft load",
+        "host-memory-numeric-admission.json",
+    )
     model = load_official_eagle3(
         Path(snapshot["models"]["target"]["directory"]),
         Path(snapshot["models"]["draft"]["directory"]),
