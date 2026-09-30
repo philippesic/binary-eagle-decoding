@@ -4349,3 +4349,33 @@ This supports WSL lifetime termination, rather than an intentional human stop.
 The post-fix90s boundary proof remains required before real GPU resume; no
 success is asserted from config presence. Operations/manual launch recipes now
 require BOTH host-side Linux tmux and verified distro lifetime beyond SSH.
+
+### Verified WSL lifetime and coordinated capture recovery
+
+Post-fix CPUproof passed the actual90second no-SSH/no-WSL-client boundary.
+Windows reportedUbuntuRunning **before enteringWSL**; same boot64c410b2/PID1
+start71, host tmux server485, supervisor486 and child492 persisted. Heartbeat
+counter73→228 (elapsed73.46→229.60s), no received signal, same session/socket.
+Fixture source SHA`15643679725903d106291226990bee6cef9569488587d6cd40ba2b60af5645d4`,
+heartbeat SHA`03e01df3655deb9f0f204b031e6eb67acdd30204f11930b909b0abc56420cbc9`.
+This is CPU lifecycle evidence, not a GPU/learning claim. Its240s safety cap
+elapsed before attemptedSIGINT; exit2/time_limit is expected bounded fixture
+outcome, child492/group and test session verified absent. Do not label the
+negative pre-fix proof successful or hide this terminal fixture result.
+
+Root reviewed full ignored`disconnect_proof_attempt_02` record and authorized
+one coordinated real recovery/resume under the existing user objective. Luna
+must verify exact current identity/idlehardware, run existingCPUrecover-partial
+without altering originalstatus or tier, retain complete32promptshard and
+quarantine partial22request/611MB data, then resume same experiment/stages/math
+with NEWsupervisor02 in detached **host-side**tmux`binary-eagle-runtime`. If
+owner/PID/ancestry guards refuse, stop/report rather than bypass. No math,
+precision, gates, optimizer, final-access or dataset changes.
+
+Pre-recovery registered-host audit finds no project process, RTX5080/SM1202%,
+2,318MiBused/13,660MiBfree, WSL total~20.97GB/available~20.29GB, disk free
+812,314,918,912B. Config/stages/nativeb4 hashes match; only olduntracked
+checkouts/rescue paths remain. Further runtime/model identity and recovery
+guards are being checked before mutation. Real resume/handoff will require a
+fresh reconnect **after SSH closure**, current CPUhealth and advanced native
+progress, not a stale startup snapshot. Hourly monitor remainsPAUSED until then.
