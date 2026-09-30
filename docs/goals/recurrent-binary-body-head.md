@@ -3961,3 +3961,32 @@ RTX5080/SM120 reports2%/2,678MiB baseline and no project process; disk free
 runtime/data/config hashes and will use supervisor03 for the authorized resume.
 Hourly monitor prompt is prepared to derive status/supervisor paths from current
 registration, avoiding stale attempt01 paths; it remainsPAUSED until handoff.
+
+### Memory resolved; A1 aggregate gate failure
+
+Post-restart frozen hashes/counts revalidated: stages/config/corpus and all
+stage-pinned target/candidate/base models, binary/runtime libraries, Q4_0, maps,
+snapshot and legacy provider; train/dev10,000/1,002 match exact prompt/index
+bytes. Remote pulled docs-only`b96e8e1`, numerical source remains`2b87b5b`.
+Luna dispatched supervisor`luna-supervisor-a8-a1-20260930-03` in new SSH pane
+`%62`, command`99bca533-e02f-4e9d-a286-884d7aa5a36f`, same experiment and immutable
+config/stages,300second stop grace.
+
+Both unchanged A1 memory admissions passed. Checkpoint-zero before/after:
+available19,759,476,736 /19,759,235,072B, RSS604,037,120 /574,853,120B,
+anonymous363,761,664 /334,577,664B; GC33/glibc2.43 trim return1. Numeric load
+before/after: available18,154,881,024 /20,017,037,312B, RSS2,263,932,928 /
+386,437,120B, anonymous2,174,267,392 /296,574,976B; GC33/trim return1.
+The native A1 gate captured three probes (130/140/135rows) and loaded the models,
+but `validate_gate_report` rejected its aggregate candidate with a generic
+`ValueError` before `gate.json` publication. Supervisor03 exited1; one read-only
+health checker exited2. No full corpus capture/optimizer step began.
+
+Exact false metrics are lost because candidate report was not persisted before
+validation; no inferred numeric cause or relaxed criterion is justified. Root
+assigned Sol `/root/jsonl_fix` a temporary-worktree patch to save immutable
+candidate/failure diagnostics before validation, improve aggregate error detail,
+and publish `gate.json` only on success. Luna retains soleGPUownership and awaits
+reviewed patch before a coordinated bounded diagnostic; no automatic retry loop.
+All three attempts/probes remain preserved. Monitor staysPAUSED. Cleanup and
+registration follow Luna's terminal audit; no success is claimed for A1.
