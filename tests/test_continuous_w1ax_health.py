@@ -60,6 +60,18 @@ class HealthTests(unittest.TestCase):
         self.state["checkpoint"] = None
         self.assertFalse(self.check()["healthy"])
 
+    def test_declared_bounded_development_phase_is_healthy(self):
+        self.state["status"] = "development_evaluation"
+        self.assertTrue(self.check()["healthy"])
+
+    def test_recorded_host_and_cuda_headroom(self):
+        self.state["host_available_bytes"] = 3 * 1024**3
+        self.state["cuda_free_bytes"] = 2 * 1024**3
+        self.assertTrue(self.check()["healthy"])
+        self.state["host_available_bytes"] = 1
+        self.state["cuda_free_bytes"] = 1
+        self.assertEqual(len(self.check()["failures"]), 2)
+
     def test_malformed_models(self):
         self.state["models"] = None
         self.assertFalse(self.check()["healthy"])
@@ -67,6 +79,13 @@ class HealthTests(unittest.TestCase):
     def test_supervisor_failure(self):
         supervisor = self.root / "state.json"
         supervisor.write_text(json.dumps({"status": "finished", "exit_code": 137}))
+        self.assertFalse(self.check(supervisor_path=supervisor)["healthy"])
+
+    def test_supervisor_log_failure_even_after_graceful_training_stop(self):
+        self.state["status"] = "stopped"
+        supervisor = self.root / "state.json"
+        supervisor.write_text(json.dumps({"status": "failed", "exit_code": 74,
+                                          "log_error": "disk write failed"}))
         self.assertFalse(self.check(supervisor_path=supervisor)["healthy"])
 
     def test_missing_status_and_low_disk(self):
