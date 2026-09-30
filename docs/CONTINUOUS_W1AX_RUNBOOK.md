@@ -11,7 +11,8 @@ hashes, tests, estimates and limitations, including the corrected legacy RNG cal
 
 Current user-authorized run onRTX5080:
 `/home/philip/binary-eagle-decoding/runs/luna-continuous-a8-a1-native-order-20260930`,
-supervisor`luna-supervisor-a8-a1-native-order-20260930-01`, tmux`$36`/`%62`.
+supervisor`luna-supervisor-a8-a1-native-order-20260930-02`, **host-side** Linux tmux
+socket`binary-eagle-runtime`, session`continuous-a8-a1-native-order-20260930-02`.
 Both fresh A8/A1 gates passed with corrected native-order A1 forward, source
 `f0566aa`; first healthy stage is corpus capture/audit. It has not yet reached
 the full dual CUDA smoke/optimizer. Use the stable ignored local registration
@@ -23,6 +24,14 @@ and no automatic restart ran. Preserve partial native artifacts and investigate
 interruption before explicit recovery/resume. See the
 [monitor contract](CONTINUOUS_W1AX_MONITOR.md). Preserve the original failed run;
 its old math identity cannot exact-resume into this corrected experiment.
+
+That recovery is now complete: partial611MBdata quarantined intact,32completed
+prompts retained, same stages/runtime/math resumed via supervisor02. WSL
+`instanceIdleTimeout=-1` and host-side tmux passed a90s disconnect proof.
+Fresh real post-disconnect check19:35UTC is healthy,1/353shards audited and
+next32native requests complete/auditing; optimizer not started. Hourly monitor
+isACTIVE. Use registration's current supervisor/host_tmux paths, never the old
+local SSH foreground pane. All original failed run/proof data stays retained.
 
 One long-lived process keeps two independent models, Adam optimizers and RNG
 states. It advances A8 then A1 on identical audited rounds, with one autograd

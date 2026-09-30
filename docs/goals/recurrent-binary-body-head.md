@@ -4379,3 +4379,45 @@ checkouts/rescue paths remain. Further runtime/model identity and recovery
 guards are being checked before mutation. Real resume/handoff will require a
 fresh reconnect **after SSH closure**, current CPUhealth and advanced native
 progress, not a stale startup snapshot. Hourly monitor remainsPAUSED until then.
+
+### Post-disconnect real resume verified live
+
+User interrupted the preceding root turn and asked “Is it running?” Root
+requested one immediate fresh read-only observation from the existing soleLuna
+operator, not a startup-based assertion. The independently detached GPU job was
+not interrupted by the chat turn cancellation.
+
+CPU recover-partial preserved only incomplete`capture-00001/native` at
+`recovery/partial-1790796640322644370/capture-00001-native`; report states no raw
+data deleted/process started, same immutable config/stages. Completed32prompt
+`capture-00000` and both passing gates remain intact. All eight math/source,
+runtime/model/map/binary hashes still match; wrapper observability changes do
+not alter old exact-resume math identity. New supervisor
+`luna-supervisor-a8-a1-native-order-20260930-02` used`--start --allow-cuda --resume`
+in host-side tmux socket`binary-eagle-runtime`, session
+`continuous-a8-a1-native-order-20260930-02`, stopgrace300. Server847 owns
+supervisor848, which owns trainer855; new native server908 has its own group.
+This is no longer a foreground SSH supervisor.
+
+Luna closed all SSH/WSL clients, then reconnected once. **At19:35:12.802818UTC
+(12:35PDT), Windows showedUbuntuRunning before enteringWSL; same host tmux
+supervisor remained running with no receivedsignal.** One CPU health checker
+returned0/healthy, fresh heartbeat, phase`teacher_capture_audit`,1/353shards,
+32audited prompts. Next32request native capture is complete with5,254state
+events/853,932,995B and labels/features currently rebuilding/auditing. Do not
+count that nextshard as audited yet. Optimizer_started:false; no training steps.
+Free disk811,459,796,992B, availableRAM19,588,493,312B. No extraGPUquery in this
+verification; pre-recovery hardware wasRTX5080/SM120 with frozenFP16target.
+
+Ignored health snapshot`health-20260930T193512Z.json`, SHA256
+`47f46f779257dcc7549419b11f857e4ccfb9fccf7fe3c67c2291d50b18b8b681`, beside stable
+registration. Current experiment object now points to supervisor02/host_tmux;
+all prior attempts, config backup/rollback and negative/positive proofs remain.
+Luna closed SSH/WSL after verification, finished bounded handoff without more
+polling, and marked ownership ready. Root reactivated existing hourly heartbeat,
+preserving cadence/target/model delegation; tool/saved config verifyACTIVE.
+Prompt derives current paths, explicitly prohibits touching host tmux job panes,
+and uses separate local MCP SSH transport for one pinned Luna/high check per tick.
+Last-health fingerprint reset to healthy currentrun. Training still awaits full
+declared corpus coverage/audit and dual CUDA smoke; no acceptance/performance
+or final-evaluation success is claimed. Same project goal remains active.

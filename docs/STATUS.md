@@ -4,7 +4,7 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-**Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), continued as Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). The user authorized **Luna/high to launch continuous A8/A1 on RTX 5080**; the RTX 2080 Ti remains paused. Both fresh native gates passed after the A1 arithmetic correction. The first hourly check found a SIGTERM stop during capture at09:12UTC; its source is unknown. Supervisor is terminal and the monitor is **PAUSED**. No optimizer step is recorded; capture progress and GPU memory are unverified. Final evaluation has not run. DFlash/DSpark are future roadmap items, not active work.
+**Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), continued as Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). The user authorized **Luna/high to launch continuous A8/A1 on RTX 5080**; the RTX 2080 Ti remains paused. Capture resumed under host-side tmux after repairing SSH/WSL lifetime. Fresh post-disconnect check at19:35UTC is healthy:1/353shards (32prompts) audited, next32native requests complete and auditing. Optimizer training has not started. Hourly Luna monitoring is **ACTIVE**. Both precision gates remain passed; final evaluation has not run.
 
 **Bounded GPU Phase 1B complete (2026-09-29):** fixed four-variant
 quality/timing A/B, CUDA deployment checks, first-shard capture/audit and
@@ -65,7 +65,13 @@ bytes. The first hourly check at10:23UTC found supervisor interrupted/exit0 at
 the earlier live handoff report relied on stale startup evidence. Monitor is
 PAUSED, logs/data preserved, no restart. Signal origin and partial capture
 recovery require investigation before resume. See [monitor setup](CONTINUOUS_W1AX_MONITOR.md)
-and the [latest checkpoint](goals/recurrent-binary-body-head.md#first-hourly-check-found-terminal-sigterm).
+and the historical interruption checkpoint. The repair now uses WSL
+`instanceIdleTimeout=-1` plus host-side tmux`binary-eagle-runtime`, proved over
+90s with all clients closed. Complete32promptshard retained, incomplete611MB
+capture quarantined intact. Supervisor02 is running under host tmux847 with
+supervisor848/trainer855, verified after disconnect at19:35:12UTC. Capture is
+healthy; no optimizer steps. See the
+[current checkpoint](goals/recurrent-binary-body-head.md#post-disconnect-real-resume-verified-live).
 
 ## Historical checkpoints
 

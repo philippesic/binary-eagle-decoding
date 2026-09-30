@@ -1,11 +1,11 @@
 # A8/A1 hourly health monitor
 
-Prepared 2026-09-29; **PAUSED** after the first hourly check found a terminal SIGTERM stop. Automation ID:
+Prepared 2026-09-29; **ACTIVE** after repaired host-side resume and fresh post-disconnect verification at19:35UTC on2026-09-30. Automation ID:
 `a8-a1-health-check-enable-after-manual-start`. Target chat:
 `01a0f01d-65c6-7af0-9660-99c07e95cacd`.
 
 Current run:`luna-continuous-a8-a1-native-order-20260930`; supervisor
-`luna-supervisor-a8-a1-native-order-20260930-01`. Stable local ignored registration:
+`luna-supervisor-a8-a1-native-order-20260930-02`. Stable local ignored registration:
 `runs/luna-continuous-a8-a1-20260929/monitor-registration.json` (preserves the old
 failed experiment separately). Derive current remote status/supervisor paths from
 its`experiment`object; never reuse a hardcoded earlier attempt. First Luna check
@@ -19,6 +19,16 @@ metrics are missing from terminal status; secondary checker warnings are not
 proof of missing trained models or low disk. Root paused this existing heartbeat;
 tool/saved config verifyPAUSED. No restart, additional schedule or GPU query.
 Resume requires investigation of interruption and retained partial capture.
+
+Repair is verified: WSL idle shutdown disabled while preserving20GB, host-side
+Linux tmux socket`binary-eagle-runtime`/session
+`continuous-a8-a1-native-order-20260930-02` owns the supervisor. A90s CPU disconnect
+proof passed, incomplete data preserved by recovery, and real resume health
+passed after SSH closure/reconnect (1/353shards audited, next32requests complete,
+optimizer not started). Heartbeat reactivated with dynamic supervisor paths.
+Monitoring uses separate **local transport** windows/fresh SSH; never attach or
+send keys/kill a pane/session/server in the host-side job session. Saved config
+verifiesACTIVE. Original interruption and both CPU proofs remain preserved.
 
 ## Model constraint and supported setup
 
