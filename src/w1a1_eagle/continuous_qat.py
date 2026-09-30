@@ -33,6 +33,7 @@ from .continuous_resources import (
     model_storage_bytes,
     require_host_memory,
 )
+from .continuous_runtime import training_runtime_identity
 from .recurrent_provider import audit_provider_round, forward_torch_round
 from .recurrent_qat import (
     JointQATConfig,
@@ -368,6 +369,7 @@ class ContinuousTrainer:
         self.source = hashlib.sha256(
             json.dumps(provider.source_metadata, sort_keys=True, separators=(",", ":")).encode()
         ).hexdigest()
+        self.runtime_identity = training_runtime_identity(config.device)
         self.smoke_passed = False
 
     def resources(self) -> dict:
@@ -413,6 +415,7 @@ class ContinuousTrainer:
                 "unique_prompts": len(self.unique_prompts),
                 "unique_supervised_rows": len(self.unique_rows),
                 "source_sha256": self.source,
+                "training_runtime": self.runtime_identity,
                 "checkpoint": self.checkpoint,
                 "scheduling": "A8 then A1 on identical rounds; one live autograd graph",
                 **extra,
@@ -525,6 +528,7 @@ class ContinuousTrainer:
             "schema": SCHEMA,
             "config": asdict(self.config),
             "source": self.source,
+            "training_runtime": self.runtime_identity,
             "step": self.step,
             "epoch": self.epoch,
             "cursor": self.cursor,
@@ -564,6 +568,7 @@ class ContinuousTrainer:
             "epoch": self.epoch,
             "cursor": self.cursor,
             "source_sha256": self.source,
+            "training_runtime": self.runtime_identity,
             "immutable_config": immutable_config(asdict(self.config)),
             "sha256": sha256(path),
             "exports": {
@@ -635,6 +640,10 @@ class ContinuousTrainer:
             or manifest.get("immutable_config") != immutable_config(asdict(self.config))
         ):
             raise ValueError("resume changes immutable model/data/optimizer contract")
+        current_runtime = training_runtime_identity(self.config.device)
+        if manifest.get("training_runtime") != current_runtime:
+            raise ValueError("resume changes critical training math or Python/Torch/NumPy runtime")
+        self.runtime_identity = current_runtime
         path = directory / "resume.pt"
         if path.is_symlink() or not path.is_file() or sha256(path) != manifest.get("sha256"):
             raise ValueError("resume checkpoint path/hash mismatch")
@@ -662,6 +671,7 @@ class ContinuousTrainer:
             payload["schema"] != SCHEMA
             or payload["source"] != self.source
             or immutable_config(payload["config"]) != immutable_config(asdict(self.config))
+            or payload.get("training_runtime") != current_runtime
             or tuple(payload[field] for field in ("step", "epoch", "cursor")) != counters
         ):
             raise ValueError("resume payload differs from published checkpoint contract/counters")

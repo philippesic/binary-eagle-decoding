@@ -272,6 +272,26 @@ class ContinuousTests(unittest.TestCase):
                 resumed.resume()
             self.assertEqual((root / "latest.json").read_bytes(), original_latest)
 
+    def test_resume_rejects_changed_runtime_before_loading_checkpoint(self):
+        import copy
+
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            trained = make(root, config(max_steps=1))
+            trained.run(require_smoke=False)
+            original_latest = (root / "latest.json").read_bytes()
+            changed = copy.deepcopy(trained.runtime_identity)
+            changed["torch_version"] = "changed-runtime-fixture"
+            with patch("w1a1_eagle.continuous_qat.training_runtime_identity", return_value=changed):
+                resumed = make(root, config(max_steps=2))
+                with patch(
+                    "w1a1_eagle.continuous_qat.torch.load",
+                    side_effect=AssertionError("loaded before runtime gate"),
+                ):
+                    with self.assertRaisesRegex(ValueError, "critical training math"):
+                        resumed.resume()
+            self.assertEqual((root / "latest.json").read_bytes(), original_latest)
+
     def test_hash_contract_and_disk_gate_fail_safely(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)

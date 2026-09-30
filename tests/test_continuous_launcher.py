@@ -71,6 +71,27 @@ class LauncherResumeTests(unittest.TestCase):
             self.assertEqual(launcher.resume_kind(root), "checkpoint")
             # Detailed directory/hash validation belongs to trainer.resume().
 
+    def test_runtime_startup_is_preserved_and_resume_facts_are_appended(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            identity = {
+                "device_name": "fixture",
+                "compute_capability": [0, 0],
+                "torch_version": "CPU_fixture",
+                "cuda_version": None,
+                "training_runtime": {"math_source_sha256": {"fixture": "a" * 64}},
+            }
+            launcher.record_runtime_observation(root, identity)
+            original = (root / "runtime_environment.json").read_bytes()
+            launcher.record_runtime_observation(root, identity)
+            self.assertEqual((root / "runtime_environment.json").read_bytes(), original)
+            self.assertEqual(len(list(root.glob("runtime-resume-observation-*"))), 1)
+            changed = dict(identity, torch_version="changed_fixture")
+            with self.assertRaisesRegex(ValueError, "runtime identity"):
+                launcher.record_runtime_observation(root, changed)
+            self.assertEqual((root / "runtime_environment.json").read_bytes(), original)
+            self.assertEqual(len(list(root.glob("runtime-resume-observation-*"))), 2)
+
     def test_missing_project_pins_are_rejected(self):
         with tempfile.TemporaryDirectory() as folder:
             with self.assertRaisesRegex(ValueError, "resolved config"):
