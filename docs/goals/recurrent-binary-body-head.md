@@ -3791,3 +3791,15 @@ The prepared heartbeat cannot pin Luna/high via its tool schema. Root has asked
 for the supported standalone model-pinned hourly surface while Luna starts work;
 do not activate a Sol/default-model recurring task. Concrete IDs/session/run
 paths, actual gate/launch results and schedule status will be checkpointed.
+
+### Registered-host preflight
+
+Luna/high operator `/root/luna_launch` connected through tmux MCP on2026-09-30
+UTC (2026-09-29 local). Remote main fast-forwarded to`365e4e2`; native
+`b4e366d4` initialized. RTX5080 reports compute capability12.0,2%utilization
+and2,617MiB baseline use, with no project process. Existing untracked remote
+`checkouts/` and `rescue-head-20260927/` were preserved. Launch tar SHA matches
+`b5ce086e87dbdc57e7a0543607f5834ee201fb0c585572fcb63bc9379cb3dc31`.
+Transfer and retained-artifact resolver are underway; no new optimizer progress
+or passed CUDA readiness is claimed at this milestone. Root owns tracked
+checkpoints/schedule; Luna owns ignored launch registration and the sole GPU.

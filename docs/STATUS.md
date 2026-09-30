@@ -4,7 +4,7 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-**Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), continued as Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). The user has now **restored RTX 5080 access**; the RTX 2080 Ti remains paused. The gated 100-step row-A16 GPU calibration has completed; substantive training and final evaluation have not run. DFlash/DSpark are future roadmap items, not active work.
+**Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), continued as Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). The user has authorized **Luna/high to launch continuous A8/A1 on RTX 5080**; the RTX 2080 Ti remains paused. The gated 100-step row-A16 calibration has completed; the new launch is in artifact/admission preparation, with substantive training and final evaluation not yet run. DFlash/DSpark are future roadmap items, not active work.
 
 **Bounded GPU Phase 1B complete (2026-09-29):** fixed four-variant
 quality/timing A/B, CUDA deployment checks, first-shard capture/audit and
@@ -39,6 +39,13 @@ continuous paired W1A8/W1A1 training on RTX5080, then monitor with durable space
 checks. This supersedes the preparation-only boundary; RTX2080Ti remains paused.
 One Luna operator owns the GPU. No tight polling/sleep loop is authorized.
 See the [launch checkpoint](goals/recurrent-binary-body-head.md#luna-launch-authorization).
+
+Luna operator `/root/luna_launch` connected through tmux MCP, verified no
+competing project process and RTX5080 compute capability12.0, and fast-forwarded
+the host to `365e4e2` with native `b4e366d4`. Initial baseline was2,617MiB/2%
+utilization. Packet hash matches; transfer/config resolution and admissions are
+underway. Recurring model-pinned monitoring setup remains pending; the original
+heartbeat remains paused.
 
 ## Historical checkpoints
 
