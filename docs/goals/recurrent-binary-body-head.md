@@ -4055,3 +4055,16 @@ GPU/native inference. Luna will execute exactly one supervised CPU replay after
 review; root will record inputs/script hashes and conclusion. This bounded
 diagnostic distinguishes head comparison from upstream state reconstruction
 before any further GPU change. All four attempts remain preserved; monitorPAUSED.
+
+Bounded CPU helper reviewed at
+`results/continuous-w1ax-launch/a1-head-replay/replay.py`, SHA256
+`2ac30d729ded6d51f275c8e47500e5115259bc54795e8bc996ef0872961609b7`.
+Deterministic packing/tail/zero/subnormal/order/probe/tie sanity passes; no tracked
+source change. Memory estimate256MiB/process peak ceiling512MiB, single-thread
+NumPy with mapped GGUF/native states, no Torch/model/accelerator import. Inputs
+are hashed, stored expected hashes verified where present; missing expected
+hashes explicitly marked unverified. Luna owns one supervised CPU-only remote
+replay and will retain its report/hash. The scaled-before-dot comparison uses
+NumPy rather than claiming actual CUDA reduction equivalence. Sol separately
+checks deterministic CPU cancellation in current RowBinaryLinear only, without
+patching math or launching new GPU work; this is mechanism evidence, not cause.
