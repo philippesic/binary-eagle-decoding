@@ -227,7 +227,9 @@ def build_lanes(provider, config: ContinuousConfig) -> list[Lane]:
             raise ValueError("adapter bypasses installed binary linears")
         random.seed(lane_config.seed)
         np.random.seed(lane_config.seed)
-        torch.manual_seed(lane_config.seed)
+        torch.random.default_generator.manual_seed(lane_config.seed)
+        if torch.device(config.device).type == "cuda":
+            torch.cuda.manual_seed(lane_config.seed)
         lanes.append(
             Lane(
                 f"A{bits}",
