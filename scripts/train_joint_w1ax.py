@@ -40,7 +40,9 @@ from w1a1_eagle.recurrent_training import save_training_checkpoint  # noqa: E402
 
 def tiny_joint_fixture(config: JointQATConfig):
     """Three-position toy graph; each of the eight body paths and head is used."""
-    torch.manual_seed(config.seed)
+    # This fixture creates random weights on CPU before transfer. Global
+    # torch.manual_seed also touches CUDA/MPS/XPU RNGs, violating CPU-only preparation.
+    torch.random.default_generator.manual_seed(config.seed)
     width = 4
     linears = {}
     for path in CANDIDATE_D_BASE_TO_PATH.values():
