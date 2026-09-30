@@ -300,14 +300,29 @@ def _load_checkpoint(path, manifest_path, linears, bits, base_hash):
 def _replay_head(packed, scales, k, state, bits):
     from w1a1_eagle.recurrent_qat import hard_activation
 
-    activation = hard_activation(state, bits)[0]
+    if bits == 1:
+        state_f32 = state.to(dtype=torch.float32)
+        raw = state_f32.view(torch.int32)
+        negative = ((raw & -2147483648) != 0) & ((raw & 2147483647) != 0)
+        activation = torch.where(negative, -torch.ones_like(state_f32), torch.ones_like(state_f32))
+        activation_scale = state_f32.abs().double().mean(dim=-1, keepdim=True).float()
+    else:
+        activation = hard_activation(state, bits)[0]
     outputs = []
     for start in range(0, len(scales), 4096):
         words = np.ascontiguousarray(packed[start : start + 4096]).view(np.uint8)
         signs = np.unpackbits(words, axis=1, bitorder="little")[:, :k].astype(np.float32) * 2 - 1
         weight = torch.from_numpy(signs).to(state.device)
         scale = torch.from_numpy(scales[start : start + 4096]).to(state.device)
-        outputs.append(torch.nn.functional.linear(activation, weight) * scale)
+        if bits == 1:
+            # Unscaled +/-1 sums are exact integers at the native head widths.
+            # Native rounds dot*weight_scale to F32 before activation_scale.
+            outputs.append(
+                (torch.nn.functional.linear(activation, weight) * scale.to(dtype=torch.float32))
+                * activation_scale
+            )
+        else:
+            outputs.append(torch.nn.functional.linear(activation, weight) * scale)
     return torch.cat(outputs)
 
 
