@@ -70,6 +70,30 @@ def provider_pair(spec, config):
     return providers
 
 
+def resume_kind(run_dir: Path) -> str:
+    """Choose durable checkpoint recovery or an explicitly user-retried prep."""
+    if (run_dir / "latest.json").exists() or any(
+        (run_dir / "checkpoints").glob("step-*/manifest.json")
+    ):
+        return "checkpoint"
+    if not (run_dir / "resolved_config.json").is_file() or not (run_dir / "status.json").is_file():
+        raise ValueError("preparation resume requires original resolved config and status")
+    status = json.loads((run_dir / "status.json").read_text())
+    if status.get("schema") != "continuous_joint_w1ax_v1":
+        raise ValueError("preparation resume has an unsupported status contract")
+    models = status.get("models")
+    if not isinstance(models, dict) or any(
+        not isinstance(item, dict) or item.get("step") != 0 for item in models.values()
+    ):
+        raise ValueError("optimization evidence exists without a complete checkpoint")
+    for path in run_dir.glob("metrics.jsonl*"):
+        with path.open() as stream:
+            for line in stream:
+                if line.strip() and json.loads(line).get("step", 0) > 0:
+                    raise ValueError("optimization log exists without a complete checkpoint")
+    return "preparation"
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     action = parser.add_mutually_exclusive_group(required=True)
@@ -118,12 +142,12 @@ def main():
         spec["development"] = json.loads(args.development_manifest.read_text())
     if not isinstance(spec.get("stages"), dict):
         parser.error("pinned stages required: use --stages-manifest from CPU prepare-config")
-    if (
-        args.resume
-        and not (run_dir / "latest.json").exists()
-        and not any((run_dir / "checkpoints").glob("step-*/manifest.json"))
-    ):
-        parser.error("--resume requires a complete published paired checkpoint")
+    recovery = None
+    if args.resume:
+        try:
+            recovery = resume_kind(run_dir)
+        except ValueError as error:
+            parser.error(str(error))
     if not args.resume and (run_dir / "status.json").exists():
         parser.error(
             "existing run requires --resume; choose a new run directory for a new experiment"
@@ -146,6 +170,8 @@ def main():
             atomic_json(run_dir / f"resume-request-{time.time_ns()}.json", spec)
         else:
             atomic_json(resolved_path, spec)
+        if args.resume:
+            (run_dir / "STOP").unlink(missing_ok=True)
         import torch
 
         if not torch.cuda.is_available():
@@ -238,9 +264,8 @@ def main():
         trainer = ContinuousTrainer(
             provider, lanes, config, run_dir, development_evaluator=evaluator
         )
-        if args.resume:
+        if recovery == "checkpoint":
             trainer.resume()
-            (run_dir / "STOP").unlink(missing_ok=True)
         trainer.status("smoke")
         trainer.smoke(longest)
         trainer.smoke(deepest)
