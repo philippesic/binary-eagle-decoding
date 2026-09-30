@@ -4,7 +4,7 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-**Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), continued as Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). The user authorized **Luna/high to launch continuous A8/A1 on RTX 5080**; the RTX 2080 Ti remains paused. W1A8 readiness passed and increased WSL memory admissions pass. A1 stopped at its aggregate readiness check; actionable diagnostic persistence is being added. Substantive training and final evaluation have not run. DFlash/DSpark are future roadmap items, not active work.
+**Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), continued as Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). The user authorized **Luna/high to launch continuous A8/A1 on RTX 5080**; the RTX 2080 Ti remains paused. WSL memory admissions pass; a bounded A1 forward-order bug is corrected with144 CPU checks passing. Luna is preparing fresh native gates with new math provenance. Substantive training and final evaluation have not run. DFlash/DSpark are future roadmap items, not active work.
 
 **Bounded GPU Phase 1B complete (2026-09-29):** fixed four-variant
 quality/timing A/B, CUDA deployment checks, first-shard capture/audit and
@@ -53,10 +53,13 @@ Both attempts/evidence are preserved and no project process remains. Hourly
 heartbeat is **PAUSED**; it dispatches pinned Luna/high once a live run is
 verified. User-reported memory change now verified: `[wsl2] memory=20GB`,
 WSL total20,971,151,360B/available20,237,811,712B at post-restart preflight.
-Supervisor03 passed both A1 host-memory admissions but failed aggregate readiness
-after the bounded native probes. The failing metric was not persisted; root is
-adding failure evidence before one bounded diagnostic, without changing criteria.
-Monitor remainsPAUSED. See [monitor setup](CONTINUOUS_W1AX_MONITOR.md)
+Supervisor03/04 passed A1 memory admission but failed deployment-relevant state/
+decision checks. Retained head replay exactly matches native output; CPU tests
+confirm scaled-sum cancellation can flip the next A1 sign. Corrected native-order
+A1 forward/reference code is integrated as`f0566aa`/`119e418`, retaining local STE
+gradients and unchanged other widths/criteria.144 guarded CPU checks pass. Luna
+owns one fresh native gate in a new experiment, preserving old failures and
+captured bytes. Monitor remainsPAUSED. See [monitor setup](CONTINUOUS_W1AX_MONITOR.md)
 and the [latest checkpoint](goals/recurrent-binary-body-head.md#user-authorized-resume-after-wsl-memory-change).
 
 ## Historical checkpoints

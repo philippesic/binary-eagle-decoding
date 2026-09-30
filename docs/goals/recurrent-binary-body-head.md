@@ -4125,3 +4125,30 @@ subnormal and default-dtype alignment before integration. A separate verified
 A1 head-reference order patch`c8db83e` has10 CPU tests passing, other widths and
 criteria unchanged. New math requires a new experiment identity and fresh gates;
 old run cannot be exact-resumed into changed source. No GPU candidate run yet.
+
+### Native-order correction integrated; fresh gate authorized
+
+Reviewed head-reference`c8db83e` integrated/pushed as`119e418`; forward candidate
+`d39c34a`/raw-sign follow-up`06c2321` integrated as`dec3adc`/`f0566aa`. Native A1
+value uses rawF32 zero-positive sign bits (negative subnormals preserved), unscaled
+F32 sign dot, weight scale then activation scale. Original dequantized surrogate
+gradient is retained by detached value substitution, including zero-scale and
+shared-sign cases. A4/A8/A16 values/gradients are unchanged. No optimizer,
+objective, native binary, precision, teacher/data or gate-threshold change.
+
+Integrated guarded suite:144/144 localDarwin/arm64 CPU tests pass in6.980s.
+Harness/log retained at ignored`results/continuous-w1ax-launch/integrated-cpu.py`
+and`integrated-cpu.log`; it extends the original CPU-only backend guard harness.
+Initial plain systemPython attempt lackedTorch and ran no test; correct pinned
+`.venv` run above passed. These checks do not validateCUDA/SM75 or performance.
+
+Luna is instructed to create a fresh experiment
+`runs/luna-continuous-a8-a1-native-order-20260930` with new runtime/math identity,
+never bypass old exact-resume pinning. Selectively copy immutable checkpoint-zero,
+GGUF/export audit, native captures, labels and cache audit from old gate folders;
+do not copy successful gate reports, failure candidates or runtime/status/config
+registries. Both fresh Torch A8/A1 gates must run against retained unchanged native
+evidence before corpus capture. Original experiment/all attempts remain intact.
+Same frozen353capture config/10,000train/1,002dev and full dual CUDA smoke guards
+apply before optimizer. Extra A1 matmul cost/memory remains unmeasured. Root owns
+docs/hourly monitor; Luna soleGPUoperator waits for CPU-green launch handoff.
