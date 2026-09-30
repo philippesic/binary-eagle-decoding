@@ -24,6 +24,7 @@ from w1a1_eagle.continuous_qat import (  # noqa: E402
     memory_estimate,
     sha256,
 )
+from w1a1_eagle.continuous_runtime import training_runtime_identity  # noqa: E402
 from w1a1_eagle.recurrent_provider import audit_provider_round  # noqa: E402
 
 
@@ -68,6 +69,25 @@ def provider_pair(spec, config):
         if provider.training_eligible is not True or not provider.full_body_qat_eligible:
             raise ValueError("audited full-body eligibility required independently for A8 and A1")
     return providers
+
+
+def record_runtime_observation(run_dir: Path, observed: dict) -> None:
+    """Preserve startup provenance; record and validate each resume observation."""
+    original_path = run_dir / "runtime_environment.json"
+    if original_path.exists():
+        atomic_json(run_dir / f"runtime-resume-observation-{time.time_ns()}.json", observed)
+        original = json.loads(original_path.read_text())
+        for field in (
+            "device_name",
+            "compute_capability",
+            "torch_version",
+            "cuda_version",
+            "training_runtime",
+        ):
+            if original.get(field) != observed.get(field):
+                raise ValueError("resume changes recorded hardware/CUDA/training runtime identity")
+    else:
+        atomic_json(original_path, observed)
 
 
 def resume_kind(run_dir: Path) -> str:
@@ -184,6 +204,7 @@ def main():
             "cuda_version": torch.version.cuda,
             "device_total_bytes": properties.total_memory,
             "resolved_config_sha256": sha256(resolved_path),
+            "training_runtime": training_runtime_identity(config.device),
         }
         expected = spec["hardware"]
         if (
@@ -191,7 +212,7 @@ def main():
             or observed["compute_capability"] != expected["compute_capability"]
         ):
             raise RuntimeError("manual start hardware differs from frozen RTX5080 SM120 contract")
-        atomic_json(run_dir / "runtime_environment.json", observed)
+        record_runtime_observation(run_dir, observed)
         atomic_json(
             run_dir / "status.json",
             {
