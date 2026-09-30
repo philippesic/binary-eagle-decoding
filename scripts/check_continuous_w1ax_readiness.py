@@ -11,6 +11,7 @@ import ctypes
 import gc
 import json
 import sys
+import time
 from pathlib import Path
 
 import numpy as np
@@ -97,21 +98,40 @@ def _reclaim_and_admit_host(output: Path, stage: str, diagnostic_filename: str) 
 
 
 def validate_gate_report(report: dict, bits: int, common: dict) -> None:
-    if (
-        report.get("schema") != SCHEMA
-        or report.get("activation_bits") != bits
-        or bits not in {1, 8}
-        or report.get("execution_device") != "cuda:0"
-        or report.get("scale_layout") != "row"
-        or report.get("objective") != "hard_ce"
-        or report.get("optimizer_steps") != 0
-        or report.get("common_source_sha256") != common
-        or set(report.get("checks", {})) != set(CHECKS)
-        or not all(value is True for value in report["checks"].values())
-        or report.get("limits") != {"relative_rms": 0.10, "decision_margin": 0.02}
-        or len(report.get("roots", [])) < 6
-    ):
-        raise ValueError("independent A8/A1 numeric/cache/export/backward gate failed")
+    mismatches = [
+        name
+        for name, expected in {
+            "schema": SCHEMA,
+            "activation_bits": bits,
+            "execution_device": "cuda:0",
+            "scale_layout": "row",
+            "objective": "hard_ce",
+            "optimizer_steps": 0,
+            "common_source_sha256": common,
+            "limits": {"relative_rms": 0.10, "decision_margin": 0.02},
+        }.items()
+        if report.get(name) != expected
+    ]
+    if bits not in {1, 8}:
+        mismatches.append("requested activation_bits must be 1 or 8")
+    if len(report.get("roots", [])) < 6:
+        mismatches.append("roots require at least six entries")
+    checks = report.get("checks", {})
+    if not isinstance(checks, dict):
+        mismatches.append("checks must be an object")
+        failed_checks = []
+    else:
+        if set(checks) != set(CHECKS):
+            mismatches.append(
+                f"checks inventory missing={sorted(set(CHECKS) - set(checks))} "
+                f"unexpected={sorted(set(checks) - set(CHECKS))}"
+            )
+        failed_checks = sorted(name for name, value in checks.items() if value is not True)
+    if mismatches or failed_checks:
+        raise ValueError(
+            "independent A8/A1 numeric/cache/export/backward gate failed: "
+            f"metadata mismatches={mismatches}; failed checks={failed_checks}"
+        )
     for name, record in report.get("evidence", {}).items():
         checked_record(record)
     if set(report.get("evidence", {})) != {
@@ -200,6 +220,44 @@ def validate_gate_report(report: dict, bits: int, common: dict) -> None:
             or (not root["top_choice_matches"] and root["decision_margin"] > 0.02)
         ):
             raise ValueError("precision gate measured row violates numeric/backward limits")
+
+
+def _publish_gate_report(report: dict, bits: int, common: dict, report_path: Path) -> None:
+    """Preserve each diagnostic candidate; only validated reports are readiness."""
+    attempt = str(time.time_ns())
+    candidate_path = report_path.parent / f"gate-candidate-{attempt}.json"
+    write_json(
+        candidate_path,
+        {
+            **report,
+            "diagnostic_attempt": attempt,
+            "training_eligible": False,
+            "readiness_evidence": False,
+        },
+    )
+    try:
+        validate_gate_report(report, bits, common)
+    except Exception as error:
+        checks = report.get("checks", {})
+        write_json(
+            report_path.parent / f"gate-failure-{attempt}.json",
+            {
+                "schema": "w1ax_continuous_gate_failure_v1",
+                "diagnostic_attempt": attempt,
+                "activation_bits": bits,
+                "optimizer_steps": report.get("optimizer_steps"),
+                "training_eligible": False,
+                "readiness_evidence": False,
+                "candidate": file_record(candidate_path),
+                "validation_error_type": type(error).__name__,
+                "validation_error": str(error),
+                "failed_checks": sorted(
+                    name for name, value in checks.items() if value is not True
+                ) if isinstance(checks, dict) else [],
+            },
+        )
+        raise
+    write_json(report_path, report)
 
 
 def _load_checkpoint(path, manifest_path, linears, bits, base_hash):
@@ -610,8 +668,7 @@ def run_gate(
             "scope": "cache projection operands and stored writes/masks",
         },
     }
-    validate_gate_report(report, bits, common)
-    write_json(report_path, report)
+    _publish_gate_report(report, bits, common, report_path)
     del adapter, linears, drafter, target, model
     gc.collect()
     torch.cuda.empty_cache()
