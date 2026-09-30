@@ -3666,3 +3666,42 @@ signals and cleanup. Explicit preparatory partial-capture recovery must preserve
 raw artifacts and permit USER retry, not an automatic rescue loop. Root runbook
 and completion audit remain pending this integrated path. No GPU/accelerator
 operation, availability query, remote job or active monitor occurred.
+
+### Native stage integration and CPU boundary correction
+
+Published `b4606df` (worker `62823e6`) integrates fresh direct label-only v2,
+streaming providers, CPU source/config resolver, USER-start A8/A1 gates, native
+Q4_0 development evaluation, source-bound refresh, partial recovery, verified
+frozen runtime libraries and native child-session cancellation/spawn guards.
+Initial width gates precede the large capture. Current standalone focused main
+stage/readiness/config/cancellation run:35 tests pass in2.359s and Ruff passes.
+Native runtime/library hashes and Q4_0 hash match the frozen Phase1B references;
+all physical native/CUDA execution remains USER-start and untested here.
+
+Actual train/dev opaque index source forecast recomputed on CPU:11,002 prompts,
+1,664,025 input tokens; 580.0919GiB conservative capture upper estimate at128
+output tokens, before safety/checkpoints/gate artifacts. This is not measured
+teacher storage. Actual packet hash and22,016,000-byte size reverified. Root's
+runbook/report draft contains exact manual commands; final refresh-provider
+ancestry interface and final guarded suite are being completed.
+
+Boundary correction: legacy CPU `tiny_joint_fixture` used global
+`torch.manual_seed`, which invokes accelerator RNG APIs even with CPU tensors.
+Earlier blanket statements that no accelerator API was touched were too strong.
+Root changed this to CPU default-generator seeding in `3f1cd89`. New continuous
+fixtures already used CPU-only seeding. The final operator also identified a
+Torch2.14 CPU AdamW backend availability probe; final audit guards library APIs
+rather than assuming CPU tensors imply no accelerator calls. No native model
+inference/capture/training, WSL SSH/GPU run or monitor execution was launched.
+Record exact final guarded evidence and this limitation; do not erase the event
+or label these old checks stricter than evidence supports.
+
+Health now recognizes preparation phases/counters and optimizer progress
+separately; launcher marks pretraining optimization_started=false. Recurrent
+proposal gradients remain attached, accepted-prefix reconstruction is explicitly
+truncated. Source/math/Python/Torch/NumPy and CUDA precision identity are pinned
+in checkpoints, with immutable startup evidence and separate resume observations.
+Durable-directory publication recovers a missing latest registry; corruption and
+mid-pair failure preserve the previous valid state. Preparation resume requires
+no optimization evidence; user-requested partial recovery quarantines, never
+silently deletes or retries data. The saved hourly heartbeat remains PAUSED.
