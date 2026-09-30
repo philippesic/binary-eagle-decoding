@@ -4009,3 +4009,49 @@ worktree/branch removed. Root directed one bounded supervisor04 diagnostic resum
 to recover the actual A1 failure metrics, reusing validated native/checkpoint
 artifacts. Stop on failure, no retry loop/relaxation; let the already authorized
 pipeline proceed only if all criteria pass. Monitor remainsPAUSED.
+
+### Persisted A1 deployment-relevant discrepancy
+
+Supervisor04 command`13c661de-33f4-4be1-8c42-27e65b242ea0` reused validated
+checkpoint/export/native artifacts and failed with metadata mismatches empty,
+false flags`exact_prefix_states_and_logits` and
+`no_high_margin_changed_native_decisions`. Six roots all have18 finite gradient
+tensors; all other declared checks pass. State/logit relative RMS, reference
+top-two margin and choice match:
+
+| Domain/root | State RMS | Logit RMS | Margin | Choice match |
+|---|---:|---:|---:|---|
+| code/1 |0.063695|0.231061|0.387889|yes|
+| code/2 |0.044797|0.176661|0.285715|no|
+| prose/1 |0.060621|0.224654|0.001766|no|
+| prose/2 |0.059941|0.247721|0.034562|yes|
+| reasoning/1 |0.058004|0.168251|1.093522|yes|
+| reasoning/2 |0.054339|0.239735|0.009510|no|
+
+Candidate retained at remote experiment
+`stages/gate-a1/gate-candidate-1790756138217591171.json`, SHA256
+`b4393280afc773eec4db279fb59a6af4572bcbb2c5b68081d1bfb0c723e77a5`;
+matching failure receipt`gate-failure-1790756138217591171.json`, SHA256
+`07a55a2608ad002975ee7010e7c4c5b3cf03368da7040da87885c67ba90a908c`.
+Both explicitly not eligible/not readiness. Native probe/model source ancestry
+remains unchanged. Current numeric admission available19,976,499,200 /
+19,996,610,560B before/after; both20GB RAM gates pass. No full corpus/optimizer.
+Supervisor04 exited1, no PID inPGID883 or matching project process. One GPU audit
+returned RTX5080/SM1202%/2,678MiB baseline; no repeated GPU checks followed.
+
+Astra source review identified an unproven arithmetic-order discrepancy: Torch
+folds activation scale into signs before floating dot; native A1 computes exact
+integer sign dot then weight/activation scales. CPU illustration can make a
+mathematically-zero sum nonzero, but does not establish actual CUDA cause.
+State comparison boundary and d2t mapping appear correct. This is a concrete
+decision/gradient/deployment risk, not an unbounded HF/native parity request.
+No threshold relaxation or architecture change is justified.
+
+Root assigned Sol a pure NumPy/GGUF read-only head replay under ignored
+`results/continuous-w1ax-launch/a1-head-replay/`: compare six retained native
+states using exact integer-dot/native scale order against saved native argmax
+logits/probes, then compare scale-before-dot CPU replay. No model load or new
+GPU/native inference. Luna will execute exactly one supervised CPU replay after
+review; root will record inputs/script hashes and conclusion. This bounded
+diagnostic distinguishes head comparison from upstream state reconstruction
+before any further GPU change. All four attempts remain preserved; monitorPAUSED.
