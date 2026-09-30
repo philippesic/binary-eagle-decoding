@@ -620,6 +620,13 @@ def native_capture(
 
     require_unsealed_prompts(prompts, sources=sources)
     verify_sources(sources)
+    from w1ax_capture_provider import CANDIDATE_D_SHA256, TARGET_GGUF_SHA256
+
+    if (
+        sources["sha256"]["target_gguf"] != TARGET_GGUF_SHA256
+        or sources["sha256"]["candidate_d_gguf"] != CANDIDATE_D_SHA256
+    ):
+        raise ValueError("native capture changed frozen target or norm/map reference")
     if not sources.get("native_runtime"):
         raise ValueError("native capture requires the frozen executable/library inventory")
     host_admission("native teacher capture host staging", 2 * 1024**3)
@@ -779,6 +786,7 @@ def stage_progress(
         {
             "schema": "continuous_joint_w1ax_v1",
             "status": "preparing",
+            "optimization_started": False,
             "phase": phase,
             "heartbeat_unix": time.time(),
             "pid": os.getpid(),
@@ -1238,6 +1246,37 @@ def prepare_config(
     return result
 
 
+def validate_refresh_declaration(sources: dict, prompts: Path, prompts_sha256: str) -> dict:
+    """Require one declared train microshard before any requested-payload read."""
+    if not sources.get("stages_config"):
+        raise ValueError(
+            "refresh requires the hashed stage configuration and declared train microshard"
+        )
+    config_path = checked_record(sources["stages_config"])
+    config = json.loads(config_path.read_text())
+    if config.get("schema") != STAGES_SCHEMA:
+        raise ValueError("refresh stage configuration schema differs")
+    if sources.get("sha256") != config["sources"].get("sha256"):
+        raise ValueError("refresh sources differ from the typed immutable stage configuration")
+    matching = [
+        record
+        for record in config["captures"]
+        if record["split"] == "train"
+        and Path(record["prompts"]).resolve() == prompts.resolve()
+        and record["prompts_sha256"] == prompts_sha256
+    ]
+    if len(matching) != 1:
+        raise ValueError(
+            "refresh input is not one exact declared train microshard; custom inputs forbidden"
+        )
+    require_unsealed_prompts(
+        prompts,
+        sources={**sources, "corpus_manifest": config["corpus_manifest"]},
+        expected_sha256=prompts_sha256,
+    )
+    return matching[0]
+
+
 def refresh_checkpoint(
     sources: dict,
     checkpoint_dir: Path,
@@ -1256,6 +1295,7 @@ def refresh_checkpoint(
     source manifest before adoption; exact resume cannot silently change data.
     """
     require_unsealed_prompts(prompts, sources=sources, expected_sha256=prompts_sha256)
+    validate_refresh_declaration(sources, prompts, prompts_sha256)
     from export_recurrent_binary import export_model
 
     verify_sources(sources)
@@ -1295,13 +1335,72 @@ def refresh_checkpoint(
             "changed_prefix_labels_reused": False,
             "training_eligible": False,
             "adoption": (
-                "not implemented: current provider requires candidate-D captured draft; "
-                "refreshed student-prefix data need a future provider "
-                "and experiment binding"
+                "CPU make-refresh-provider requires new explicit readiness "
+                "and captured-actor binding; "
+                "exact resume cannot silently append or replace teacher data"
             ),
         },
     )
     return output / "labels/manifest.json"
+
+
+def make_refresh_provider(
+    stages_config: Path, refresh_receipt: Path, readiness: Path, output: Path
+) -> dict:
+    """CPU-only explicit new provider; unchanged exact-resume inputs are never extended."""
+    from w1ax_capture_provider import NativeCaptureProvider, validate_captured_drafter
+
+    from w1a1_eagle.recurrent_qat import JointQATConfig, W1AxContract
+
+    if output.exists():
+        raise ValueError("refresh provider output must be new")
+    config = json.loads(stages_config.read_text())
+    if config.get("schema") != STAGES_SCHEMA:
+        raise ValueError("refresh provider needs typed frozen stage sources")
+    sources = config["sources"]
+    verify_sources(sources)
+    receipt = json.loads(refresh_receipt.read_text())
+    capture = checked_record(receipt["capture_manifest"])
+    manifest = json.loads(capture.read_text())
+    common = {
+        k: sources["sha256"][k]
+        for k in (
+            "target_gguf",
+            "candidate_d_gguf",
+            "base_draft_gguf",
+            "absolute_d2t",
+            "model_snapshot_manifest",
+        )
+    }
+    permission = validate_readiness(file_record(readiness), activation_bits=8, common_hashes=common)
+    if receipt.get("stages_config") != file_record(stages_config):
+        raise ValueError("refresh receipt came from different typed stage sources")
+    if sha256(capture) not in permission["teacher_capture_manifest_sha256"]:
+        raise ValueError("new readiness does not explicitly include the refreshed capture")
+    binding = {name: receipt[name] for name in ("export", "checkpoint", "checkpoint_manifest")}
+    binding.update(
+        export_audit=file_record(refresh_receipt.parent / "export-audit.json"),
+        refresh_receipt=file_record(refresh_receipt),
+    )
+    validate_captured_drafter(
+        binding,
+        capture_manifest_sha256=sha256(capture),
+        captured_draft_sha256=manifest["draft_sha256"],
+        prompts_sha256=manifest["prompts_sha256"],
+        common_hashes=common,
+        activation_bits=manifest["activation_bits"],
+        native_binary_sha256=manifest["binary_sha256"],
+    )
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix=".refresh-provider-", dir=output.parent) as scratch:
+        staged = Path(scratch) / "provider.json"
+        spec = provider_manifest(sources, capture, readiness, staged)
+        spec["captured_drafter"] = binding
+        write_json(staged, spec)
+        for bits in (8, 1):
+            NativeCaptureProvider(JointQATConfig(W1AxContract(bits, "row")), staged)
+        os.rename(staged, output)
+    return spec
 
 
 def prune_owned_evaluations(parent: Path, keep: int, *, active: Path | None = None) -> None:
@@ -1708,6 +1807,13 @@ def main() -> None:
     recovery = sub.add_parser("recover-partial", help="CPU-only quarantine; no launch/deletion")
     recovery.add_argument("--run-dir", type=Path, required=True)
     recovery.add_argument("--stages-config", type=Path, required=True)
+    refreshed_provider = sub.add_parser(
+        "make-refresh-provider", help="CPU new explicit source binding"
+    )
+    refreshed_provider.add_argument("--stages-config", type=Path, required=True)
+    refreshed_provider.add_argument("--refresh-receipt", type=Path, required=True)
+    refreshed_provider.add_argument("--readiness", type=Path, required=True)
+    refreshed_provider.add_argument("--output", type=Path, required=True)
     refresh = sub.add_parser(
         "refresh", help="USER-start native capture; never runs during preparation"
     )
@@ -1743,11 +1849,20 @@ def main() -> None:
         }
     elif args.command == "recover-partial":
         result = recover_partial(args.run_dir, args.stages_config)
+    elif args.command == "make-refresh-provider":
+        result = make_refresh_provider(
+            args.stages_config, args.refresh_receipt, args.readiness, args.output
+        )
     else:
         if not args.allow_cuda:
             parser.error("refresh requires an explicit USER-start --allow-cuda")
         sources = json.loads(args.stages_config.read_text())["sources"]
-        sources = {**sources, "stages_config": file_record(args.stages_config)}
+        source_config = json.loads(args.stages_config.read_text())
+        sources = {
+            **sources,
+            "stages_config": file_record(args.stages_config),
+            "corpus_manifest": source_config["corpus_manifest"],
+        }
         require_unsealed_prompts(args.prompts, sources=sources, expected_sha256=args.prompts_sha256)
         import torch
         from train_continuous_w1ax import lock

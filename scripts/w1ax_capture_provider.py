@@ -61,6 +61,80 @@ def _hash(value: object, name: str) -> str:
     return value
 
 
+def validate_captured_drafter(
+    binding: object,
+    *,
+    capture_manifest_sha256: str,
+    captured_draft_sha256: str,
+    prompts_sha256: str,
+    common_hashes: dict,
+    activation_bits: int,
+    native_binary_sha256: str,
+) -> dict:
+    """CPU ancestry gate for an explicitly bound current-student native capture.
+
+    Candidate D remains the frozen norm/map reference. This permits reading
+    refreshed exact-prefix teachers only with a new external readiness binding;
+    it does not grant eligibility or mutate a resume source.
+    """
+    from w1ax_continuous_stages import checked_record
+
+    required = {"export", "export_audit", "checkpoint", "checkpoint_manifest", "refresh_receipt"}
+    if not isinstance(binding, dict) or set(binding) != required:
+        raise ValueError("non-D v2 capture requires exact captured_drafter ancestry binding")
+    paths = {name: checked_record(record) for name, record in binding.items()}
+    receipt = json.loads(paths["refresh_receipt"].read_text())
+    manifest = json.loads(paths["checkpoint_manifest"].read_text())
+    audit = json.loads(paths["export_audit"].read_text())
+    if (
+        receipt.get("schema") != "w1ax_exact_prefix_refresh_v2"
+        or receipt.get("training_eligible") is not False
+        or receipt.get("changed_prefix_labels_reused") is not False
+        or receipt.get("activation_bits") not in {1, 8}
+        or receipt["activation_bits"] != activation_bits
+        or receipt.get("capture_manifest", {}).get("sha256") != capture_manifest_sha256
+        or receipt.get("prompts", {}).get("sha256") != prompts_sha256
+        or receipt.get("native_binary", {}).get("sha256") != native_binary_sha256
+        or receipt.get("export") != binding["export"]
+        or receipt.get("checkpoint") != binding["checkpoint"]
+        or receipt.get("checkpoint_manifest") != binding["checkpoint_manifest"]
+        or captured_draft_sha256 != binding["export"]["sha256"]
+        or any(
+            receipt.get("common_source_sha256", {}).get(name) != digest
+            for name, digest in common_hashes.items()
+        )
+    ):
+        raise ValueError("refreshed capture source/actor/prefix receipt differs")
+    from w1a1_eagle.recurrent_binary import CANDIDATE_D_BASE_TO_PATH
+
+    if (
+        manifest.get("schema_version") != 2
+        or manifest.get("scale_layout") != "row"
+        or manifest.get("objective") != "hard_ce"
+        or manifest.get("activation_rule")
+        != "a16_f16_cast_a8a4_absmax_even_a1_f64_meanabs_sign_zero_positive"
+        or manifest.get("weight_rule") != "hard_sign_zero_positive_clipped_identity_ste"
+        or manifest.get("qk_row_order") != "original_checkpoint"
+        or set(manifest.get("projections", {})) != set(CANDIDATE_D_BASE_TO_PATH)
+        or set(audit.get("projections", {})) != set(CANDIDATE_D_BASE_TO_PATH)
+        or manifest.get("activation_bits") != activation_bits
+        or manifest.get("base_gguf_sha256") != common_hashes["base_draft_gguf"]
+        or manifest.get("checkpoint_sha256") != binding["checkpoint"]["sha256"]
+        or audit.get("serialization_audit_passed") is not True
+        or audit.get("scale_layout") != "row"
+        or audit.get("activation_bits") != activation_bits
+        or audit.get("output") != binding["export"]
+        or audit.get("checkpoint") != binding["checkpoint"]
+        or audit.get("checkpoint_manifest") != binding["checkpoint_manifest"]
+        or audit.get("base_gguf", {}).get("sha256") != common_hashes["base_draft_gguf"]
+    ):
+        raise ValueError("refreshed checkpoint/export contract differs")
+    checked_record(receipt["capture_manifest"])
+    checked_record(receipt["prompts"])
+    checked_record(receipt["native_binary"])
+    return receipt
+
+
 def _capture_keys(capture) -> dict[tuple[str, tuple[int, ...], int], Mapping[str, object]]:
     keys = {}
     for rows in capture.rows.values():
@@ -330,11 +404,32 @@ class NativeCaptureProvider:
         if not cell_path.is_file() or sha256(cell_path) != cell_hash:
             raise ValueError("native capture cell source manifest is missing or changed")
         cell = json.loads(cell_path.read_text())
-        if (
-            cell.get("target_sha256") != self.hashes["target_gguf"]
-            or cell.get("draft_sha256") != self.hashes["candidate_d_gguf"]
-        ):
-            raise ValueError("native capture target/draft GGUF identity differs")
+        if cell.get("target_sha256") != self.hashes["target_gguf"]:
+            raise ValueError("native capture target GGUF identity differs")
+        self.captured_drafter = None
+        if cell.get("draft_sha256") != self.hashes["candidate_d_gguf"]:
+            if not v2:
+                raise ValueError("native capture draft GGUF identity differs")
+            self.captured_drafter = validate_captured_drafter(
+                spec.get("captured_drafter"),
+                capture_manifest_sha256=self.hashes["capture_manifest"],
+                captured_draft_sha256=cell.get("draft_sha256"),
+                prompts_sha256=self.hashes["prompts"],
+                common_hashes={
+                    k: self.hashes[k]
+                    for k in (
+                        "target_gguf",
+                        "candidate_d_gguf",
+                        "base_draft_gguf",
+                        "absolute_d2t",
+                        "model_snapshot_manifest",
+                    )
+                },
+                activation_bits=capture_manifest["activation_bits"],
+                native_binary_sha256=capture_manifest["binary_sha256"],
+            )
+        elif spec.get("captured_drafter") is not None:
+            raise ValueError("candidate-D capture must not attach an unrelated student binding")
         self.capture_id = spec.get("capture_id")
         if not isinstance(self.capture_id, str) or not self.capture_id:
             raise ValueError("provider needs a named native capture ID")
@@ -409,6 +504,8 @@ class NativeCaptureProvider:
         self.source_metadata = {
             "factory": "w1ax_capture_provider:create_provider",
             "capture_id": self.capture_id,
+            "captured_draft_sha256": cell["draft_sha256"],
+            "capture_activation_bits": capture_manifest.get("activation_bits", 16),
             "capture_manifest_sha256": self.hashes["capture_manifest"],
             "prompts_sha256": self.hashes["prompts"],
             "absolute_d2t_sha256": self.hashes["absolute_d2t"],

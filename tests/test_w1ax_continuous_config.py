@@ -135,6 +135,30 @@ class ContinuousConfigTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "deleted"):
                     verify_mapped_runtime(123, runtime)
 
+    def test_renamed_mixed_refresh_input_rejected_before_payload_read(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            registered = root / "train-00000.jsonl"
+            config = root / "stages.json"
+            config.write_text(
+                json.dumps(
+                    {
+                        "schema": stages.STAGES_SCHEMA,
+                        "sources": {"sha256": {}},
+                        "captures": [
+                            {
+                                "split": "train",
+                                "prompts": str(registered),
+                                "prompts_sha256": "a" * 64,
+                            }
+                        ],
+                    }
+                )
+            )
+            sources = {"stages_config": stages.file_record(config), "sha256": {}}
+            with self.assertRaisesRegex(ValueError, "custom inputs forbidden"):
+                stages.validate_refresh_declaration(sources, root / "mixed.jsonl", "a" * 64)
+
     def test_unknown_q4_artifact_fails_before_gguf_or_accelerator_import(self):
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / "q4.gguf"
