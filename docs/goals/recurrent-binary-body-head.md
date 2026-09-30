@@ -3705,3 +3705,68 @@ Durable-directory publication recovers a missing latest registry; corruption and
 mid-pair failure preserve the previous valid state. Preparation resume requires
 no optimization evidence; user-requested partial recovery quarantines, never
 silently deletes or retries data. The saved hourly heartbeat remains PAUSED.
+
+### Continuous A8/A1 CPU preparation complete
+
+Completion audit inspected the actual required delivery against main and the
+frozen local artifacts. Native training-preparation feature commits `62823e6`/
+`0f2d2a9` are integrated as `b4606df`/`a240d77`; continuous engine/runtime/recovery
+and data/package/health/supervisor work are integrated and published. After final
+review, worker histories were merged into main (`acfec3f`), full verified Git
+bundles retained in `.git/goal-worktree-archives/continuous-preparation/`, and all
+five clean integrated preparation worktrees/branches removed. Existing/user
+worktrees were left untouched. Native gitlink is unchanged published
+`b4e366d4f0a30cac07f14d51c54c5b1329b3f485`; no native source commit was created.
+
+Required deliverables are complete at CPU-preparation scope:
+1. Actual10,000/1,002/1,002 corpus,24,507 reserve, pinned sources/licenses/
+   tokenizer, grouped/deduplicated opaque leakage audits, frozen hashes and safe
+   deterministic launch packet. Sealed payloads remain unopened.
+2. Fresh auditable label-only v2 and legacy v2 readers, exact-prefix native
+   capture/refresh, separate A8/A1 readiness checks and explicit actor/source
+   binding. Ineligible raw captures stay false; new external evidence is required.
+3. One dual-model/optimizer engine, comparable audited input/token presentations,
+   attached proposal state/K/V gradients, declared context truncation, actionable
+   optimizer/sign diagnostics, CPU estimates and real USER-start CUDA gates.
+4. Unlimited default duration with explicit caps, signals/STOP, durable paired
+   publication/resume/runtime checks, bounded retention/logs, resource guards,
+   status/coverage metrics, serialized Q4_0 development acceptance and losses.
+5. Concrete packet/resolver/start/stop/resume/status/recovery/refresh commands in
+   `docs/CONTINUOUS_W1AX_RUNBOOK.md`; no active coordinator is needed for a run.
+6. Saved hourly health automation remains PAUSED. The lack of heartbeat model/
+   reasoning override is explicit; Luna/high must be verified before activation.
+   A supported explicit model-pinned standalone schedule requires user choice,
+   and was not silently substituted or activated.
+
+Final integrated guarded suite:117/117 tests passed in6.958s on local
+Darwin/arm64 CPU, Python3.11.15/Torch2.14.0. The harness blocks accelerator
+queries/seeding/memory/streams before test imports and stubs the registry for
+CPU AdamW. Harness/log and full hashes are preserved under ignored
+`results/continuous-w1ax-preparation/final-audit/` and recorded in
+`experiments/continuous-w1ax-preparation.md`. Earlier global RNG helper API
+calls are disclosed above/in the report; they are not relabeled as a strict
+no-accelerator-API run. No native model inference/capture/training, WSL action,
+actual CUDA validation, physical GPU availability query or monitor execution
+was launched. The final task started no GPU model process.
+
+The final supported refresh CLI requires an exact declared TRAIN microshard
+path/hash before payload access; custom/mixed/renamed/sealed input is refused.
+A new source-bound receipt, current checkpoint/export/audit and new readiness
+listing the refreshed capture are audited under BOTH widths before a new
+provider is published. The low-level helper cannot bypass supported training
+admission. No automatic append to exact-resume data, eligibility promotion,
+architecture/tuning/rescue loop or final-set evaluation is performed.
+
+USER-start gates still required (intentionally not executed): artifact-host CPU
+resolver and manual transfer; actual frozen native capture/audit, each precision's
+export/numeric/cache/backward gates, real full-size dual CUDA math/memory smoke,
+substantive optimization and native learning-curve/quality measurements. Estimated
+peak9.42GiB assumes3GiB graph; checkpoint/export staging~26.0GiB; capture upper
+forecast580.09GiB plus floors before additional artifacts, with uncertainty.
+No finite prompt count or finite gradient is claimed sufficient. Primary Q4_0
+acceptance/latency/throughput success remains unproven; project goal stays active.
+
+Task native Goal may now be completed for this concrete preparation objective.
+Next action belongs to the user: start via the runbook, then enable only the
+verified Luna health monitor if desired. Do not launch GPU work or activate the
+monitor from this preparation task.
