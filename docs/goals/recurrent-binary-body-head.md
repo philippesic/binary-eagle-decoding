@@ -4536,3 +4536,26 @@ a single combined CPU checker/manifest query via **Windows SSH ->
 submit Linux shell paths directly to Windows. Monitoring remains ACTIVE every
 15minutes; host-side job ownership/socket/session and WSL settings are unchanged.
 No research decision, precision/config change, final-data action or new goal.
+
+
+### Corrected scheduled observation verified — 2026-09-30 23:05 UTC
+
+Exactly one pinned Luna/high operator `/root/health_20260930_2302` (fork none)
+completed one combined CPU checker/status/supervisor/completed-label query via
+tmux MCP and the explicit Windows SSH -> WSL bridge. At
+**23:05:33.695793 UTC**, SSH/checker both returned0: healthy, nonterminal,
+preparing `teacher_capture_audit`; supervisor03 running. Actual completed
+manifests: **40 / 1,256 train prompts**, development0. Resume ordinal40/353
+is separate from retained counts. Optimization_started:false, steps:{}.
+Disk free765,681,979,392B; available RAM19,712,577,536B. Supervision state
+pid/pgid2921 identify the supervised child, not a new supervisor observation.
+
+The prior unknown observation is resolved by this fresh check; raw snapshot
+`runs/luna-continuous-a8-a1-20260929/health-20260930T230533Z.json` includes the
+exact successful command and is parse-validated/ignored. Last-health and current
+registration now hold this verified state, retaining the prior unknown record.
+Only the dedicated local transport was closed. No GPU query, extra healthy
+log read, recovery, job/WSL change or final-data access occurred. Recovery budget
+remains1of2 used; existing15minute monitor remains ACTIVE. Healthy ordinary
+progress stays quiet. Next scheduled tick uses one bounded pinned operator and
+the same explicit WSL bridge; notify on actual optimizer start or a new failure.
