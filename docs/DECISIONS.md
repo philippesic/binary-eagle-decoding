@@ -721,3 +721,10 @@ The WSL memory setting and restart behavior are documented in
 [Microsoft's configuration reference](https://learn.microsoft.com/en-us/windows/wsl/wsl-config).
 Root awaits user choice, continues only read-only capacity evidence, and keeps
 the hourly pinned-Luna monitor paused while there is no live experiment.
+
+Capacity inventory is complete: Windows total33,477,398,528B and free
+18,851,332,096B at observation; current user's `.wslconfig` absent;
+WSL2.7.11.0/kernel6.18.33.2-2. Its default50%cap is consistent with observed
+VM total (inference). A raised ceiling is not full immediate allocation;
+actual concurrent physical headroom still requires measurement after an
+approved change. No setting/restart/change was applied.

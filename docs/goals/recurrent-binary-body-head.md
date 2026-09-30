@@ -3923,3 +3923,15 @@ processes. No threshold relaxation, WSL configuration change, restart or further
 experiment is inferred while that choice is pending. Luna performs one CPU-only
 Windows capacity/current-memory-setting inventory to support a reviewable option;
 it may not restart WSL or launch another experiment. See `docs/DECISIONS.md`.
+
+Read-only Windows inventory completed through tmux MCP: total physical
+33,477,398,528B, free18,851,332,096B at observation; current user's `.wslconfig`
+does not exist. WSL CLI2.7.11.0/kernel6.18.33.2-2. WSL's roughly-half-physical
+default cap is consistent with the observed15.21GiB VM total (inference, not a
+persisted explicit setting). A memory ceiling increase would not preallocate
+that entire amount, but actual Windows/WSL concurrent headroom must be observed
+after any user-approved change. Microsoft documents the global memory setting
+and VM restart requirement in its WSL configuration reference. No Windows/WSL
+setting changed, no restart occurred, and no GPU query was used for this inventory.
+User resource choice remains pending; launch operator is finished, monitors
+remainPAUSED, and a successor should read this checkpoint before further work.

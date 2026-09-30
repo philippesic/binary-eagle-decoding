@@ -4,7 +4,7 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-**Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), continued as Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). The user has authorized **Luna/high to launch continuous A8/A1 on RTX 5080**; the RTX 2080 Ti remains paused. The gated 100-step row-A16 calibration has completed; the new launch is in artifact/admission preparation, with substantive training and final evaluation not yet run. DFlash/DSpark are future roadmap items, not active work.
+**Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), continued as Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). The user authorized **Luna/high to launch continuous A8/A1 on RTX 5080**; the RTX 2080 Ti remains paused. W1A8 readiness passed; A1 is stopped at host-RAM admission pending the user's resource path. Substantive training and final evaluation have not run. DFlash/DSpark are future roadmap items, not active work.
 
 **Bounded GPU Phase 1B complete (2026-09-29):** fixed four-variant
 quality/timing A/B, CUDA deployment checks, first-shard capture/audit and
