@@ -3746,8 +3746,9 @@ CPU AdamW. Harness/log and full hashes are preserved under ignored
 `experiments/continuous-w1ax-preparation.md`. Earlier global RNG helper API
 calls are disclosed above/in the report; they are not relabeled as a strict
 no-accelerator-API run. No native model inference/capture/training, WSL action,
-actual CUDA validation, physical GPU availability query or monitor execution
-was launched. The final task started no GPU model process.
+actual CUDA validation or monitor execution was launched. No deliberate GPU
+availability check was performed; the disclosed earlier library API touches
+are a preparation-boundary caveat, not a verified no-backend-touch result. The final task started no GPU model process.
 
 The final supported refresh CLI requires an exact declared TRAIN microshard
 path/hash before payload access; custom/mixed/renamed/sealed input is refused.
