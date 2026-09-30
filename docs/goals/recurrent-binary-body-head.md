@@ -3891,3 +3891,35 @@ gate artifacts. This is a coordinated corrective validation under the existing
 launch authorization, not an automatic retry loop. Stop/report exact persisted
 deficit on failure; let the authorized pipeline continue only if all gates pass.
 Hourly monitor remainsPAUSED until live-run handoff is verified.
+
+### A8 gate passed; A1 host capacity blocker
+
+The sole corrective preparation resume used unchanged stages/config/runtime and
+new supervisor`luna-supervisor-a8-a1-20260930-02` in tmux`$36`/`%60`, tracked
+command`f27bfd77-8918-4962-bc53-9a3099ce91d3`. Started07:11:35UTC, exited1
+07:12:52UTC. **Row W1A8 passed its bounded native/CUDA export/cache/numeric/
+decision/backward checks** on RTX5080/SM120 with the frozen target FP16 and all
+nine binary linears. This is not trained acceptance, throughput or SM75 evidence.
+The A8 report is retained at remote experiment`stages/gate-a8/gate.json`.
+
+A8 numeric admission before/after reclamation: MemAvailable15,331,872,768 /
+15,331,229,696B; RSS622,739,456 /593,170,432B; anonymous RSS381,771,776 /
+352,202,752B. GC33, glibc2.43 trim return1; unchanged15,032,385,536B guard passed.
+A1 checkpoint-zero before/after: MemAvailable11,857,690,624 /13,890,908,160B;
+RSS3,867,230,208 /1,835,745,280B; anonymous RSS3,679,821,824 /1,648,193,536B.
+GC435, trim return1 reclaimed substantial heap, but available RAM remained
+1,141,477,376B (~1.06GiB) below guard. WSL MemTotal16,332,247,040B (~15.21GiB).
+Both JSON diagnostics persist independently beside each gate. No third attempt,
+A1 initialization, full corpus capture or optimizer step ran. Bounded process
+audit found no project supervisor/trainer/llama-server process after exit.
+No additional GPU query was used for the corrective cleanup observation.
+
+Both supervisor attempts, native A8 evidence and all original source/data hashes
+are retained. Local ignored registration stores both attempts and latest failure;
+hourly heartbeat staysPAUSED. Root asked the user to choose a concrete host
+resource path: prepare increased WSL memory for review (applying it requires
+WSL restart), or keep the cap and engineer sequential isolated readiness
+processes. No threshold relaxation, WSL configuration change, restart or further
+experiment is inferred while that choice is pending. Luna performs one CPU-only
+Windows capacity/current-memory-setting inventory to support a reviewable option;
+it may not restart WSL or launch another experiment. See `docs/DECISIONS.md`.

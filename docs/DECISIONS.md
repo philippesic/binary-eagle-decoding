@@ -699,3 +699,25 @@ renormalization. This implementation chooses no full-tier capture, raw
 retirement, final-data access, training budget or new objective. The next
 engineering integration is the explicit hard-CE v2 provider path; the next
 storage decision belongs to the user before the full 2k capture.
+
+## Continuous A8/A1 host capacity path (pending)
+
+User-authorized launch on2026-09-30UTC passed the bounded W1A8 native/CUDA gate
+on RTX5080/SM120 with frozen target FP16, but A1 initialization stopped on the
+unchanged12GiB additional+2GiB floor host admission. WSL exposes15.21GiB total;
+available RAM afterGC+glibc trim was12.94GiB,1.06GiB below the14GiB guard.
+No optimizer/full corpus capture began. Both supervisors exited and evidence
+is preserved; no further retry/guard relaxation is authorized by this checkpoint.
+
+Options presented to user:
+- Prepare a WSL memory increase for review after measuring Windows capacity
+  and current settings. Applying it requires a WSL restart; it changes host
+  resource allocation, not research math/model precision. No change applied.
+- Keep the cap and engineer sequential isolated readiness processes to release
+  model/runtime residency between stages. This needs process/stop/provenance
+  tests and actual admission validation; sufficient headroom is not guaranteed.
+
+The WSL memory setting and restart behavior are documented in
+[Microsoft's configuration reference](https://learn.microsoft.com/en-us/windows/wsl/wsl-config).
+Root awaits user choice, continues only read-only capacity evidence, and keeps
+the hourly pinned-Luna monitor paused while there is no live experiment.

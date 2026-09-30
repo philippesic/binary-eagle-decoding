@@ -45,12 +45,15 @@ competing project process and RTX5080 compute capability12.0. Initial baseline
 was2,617MiB/2%utilization and764GiB free disk. Packet/frozen artifact hashes match.
 A Unicode JSONL delimiter bug was fixed/tested/pushed as`41e230d`, preserving
 all data bytes; host config resolves10,000 train/1,002 dev with622,868,961,328B
-capture forecast. First supervisor reached A8 then stopped on the unchanged
-14GiB host-RAM admission. No optimizer/full corpus capture ran; Luna verified
-process cleanup and GPU baseline. Hourly heartbeat is **PAUSED** after this
-terminal failure. A bounded CPU-heap reclamation diagnostic is being added before
-numeric admission; thresholds/math stay unchanged. See [monitor setup](CONTINUOUS_W1AX_MONITOR.md)
-and the [failure checkpoint](goals/recurrent-binary-body-head.md#first-supervised-launch-and-host-ram-stop).
+capture forecast. First supervisor stopped on the unchanged14GiB host-RAM guard.
+Corrective validation`2b87b5b` passed the bounded W1A8 native/CUDA gate, then
+stopped at A1 initialization: available12.94GiB after reclamation,1.06GiB below
+admission; WSL exposes15.21GiB total. No optimizer/full corpus capture ran.
+Both attempts/evidence are preserved and no project process remains. Hourly
+heartbeat is **PAUSED**; it dispatches pinned Luna/high once a live run is
+verified. User choice pending: more WSL RAM (restart required) or isolated
+readiness engineering, without relaxing guards. See [monitor setup](CONTINUOUS_W1AX_MONITOR.md)
+and the [latest checkpoint](goals/recurrent-binary-body-head.md#a8-gate-passed-a1-host-capacity-blocker).
 
 ## Historical checkpoints
 
