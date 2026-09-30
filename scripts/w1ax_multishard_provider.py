@@ -241,3 +241,130 @@ def create_provider(config, manifest_path: Path | None = None):
     if manifest_path is None:
         raise ValueError("w1ax_multishard_provider requires --provider-manifest")
     return MultiShardNativeProvider(config, manifest_path)
+
+
+class StreamingNativeProvider:
+    """Audit every shard, retaining one child's trace/features at a time.
+
+    Frozen shard order is the corpus builder's balanced presentation order.
+    Both independent models consume the identical iterator. Restarting it is
+    an explicit repeated presentation, never additional unique coverage.
+    """
+
+    def __init__(self, config, execution_manifest, *, child_factory=NativeCaptureProvider):
+        self._config = config
+        self._factory = child_factory
+        spec = json.loads(Path(execution_manifest).read_text())
+        if spec.get("schema") != "w1ax_streaming_train_v2":
+            raise ValueError("wrong streaming provider schema")
+        self.data_split = spec.get("split")
+        if self.data_split not in {"train", "development"}:
+            raise ValueError("streaming provider excludes sealed finals")
+        self.split = "train"  # Exact-prefix trace vocabulary; data_split owns provenance.
+        self.training_eligible = self.data_split == "train"
+        if spec.get("training_eligible") is not self.training_eligible:
+            raise ValueError("streaming split eligibility differs")
+        self._attachments = spec.get("shards")
+        if not isinstance(self._attachments, list) or not self._attachments:
+            raise ValueError("streaming provider needs complete captured shards")
+        first = None
+        all_ids = set()
+        sources = []
+        rounds = supported = 0
+        for ordinal, record in enumerate(self._attachments):
+            if record.get("ordinal") != ordinal:
+                raise ValueError("streaming shard ordinals differ")
+            child = self._child(record)
+            if getattr(child, "data_split", None) != self.data_split:
+                raise ValueError("streaming child uses a different immutable split")
+            if not child.full_body_qat_eligible:
+                raise ValueError("streaming child lacks full-body readiness")
+            if all_ids.intersection(child.allowed_prompt_ids):
+                raise ValueError("streaming shards duplicate prompt IDs")
+            all_ids.update(child.allowed_prompt_ids)
+            if first is None:
+                first = child
+            elif (
+                any(child.hashes[k] != first.hashes[k] for k in COMMON_HASHES)
+                or tuple(child.d2t_offsets) != tuple(first.d2t_offsets)
+                or child.target_vocab_size != first.target_vocab_size
+                or child.draft_vocab_size != first.draft_vocab_size
+            ):
+                raise ValueError("streaming frozen model/map ancestry differs")
+            supported += child.capture.report["counts"]["supported"]
+            rounds += child.total_rounds
+            sources.append(
+                {
+                    "ordinal": ordinal,
+                    "provider_manifest_sha256": record["provider_manifest_sha256"],
+                    "capture_manifest_sha256": child.hashes["capture_manifest"],
+                    "prompt_count": len(child.allowed_prompt_ids),
+                    "round_count": child.total_rounds,
+                }
+            )
+            if child is not first:
+                del child
+        self._first = first
+        self.allowed_prompt_ids = all_ids
+        self.total_rounds = rounds
+        self.supervised_rows = supported
+        self.full_body_qat_eligible = True
+        self.readiness_scope = "full_body_qat"
+        self.target_vocab_size = first.target_vocab_size
+        self.draft_vocab_size = first.draft_vocab_size
+        self.max_depth = first.max_depth
+        self.d2t_offsets = first.d2t_offsets
+        self.base_gguf_sha256 = first.base_gguf_sha256
+        self.candidate_d = None
+        self.source_metadata = {
+            "factory": "w1ax_multishard_provider:create_provider",
+            "execution_manifest_sha256": sha256(Path(execution_manifest)),
+            "split": self.data_split,
+            "prompt_count": len(all_ids),
+            "round_count": rounds,
+            "supervised_rows": supported,
+            "shard_count": len(sources),
+            "shards": sources,
+            "common_source_sha256": {k: first.hashes[k] for k in COMMON_HASHES},
+            "presentation_order": "immutable_balanced_corpus_shard_then_prompt_round_order",
+            "memory_policy": "one_active_shard_plus_first_model_loading_shard",
+        }
+
+    def _child(self, record):
+        path = _absolute(record["provider_manifest"], "provider manifest")
+        if sha256(path) != record["provider_manifest_sha256"]:
+            raise ValueError("streaming child manifest changed")
+        return self._factory(self._config, path)
+
+    def load_models_cpu(self):
+        result = self._first.load_models_cpu()
+        self.candidate_d = self._first.candidate_d
+        return result
+
+    def load_models(self):
+        result = self._first.load_models()
+        self.candidate_d = self._first.candidate_d
+        return result
+
+    def make_step_adapter(self, drafter):
+        return self._first.make_step_adapter(drafter)
+
+    def rounds(self):
+        for ordinal, record in enumerate(self._attachments):
+            child = self._first if ordinal == 0 else self._child(record)
+            for batch in child.rounds():
+                yield replace(batch, shard_ordinal=ordinal)
+            if child is not self._first:
+                del child
+
+
+_original_create_provider = create_provider
+
+
+def create_provider(config, manifest_path=None):
+    if manifest_path is None:
+        raise ValueError("multi-shard provider requires a manifest")
+    spec = json.loads(Path(manifest_path).read_text())
+    if spec.get("schema") == "w1ax_streaming_train_v2":
+        return StreamingNativeProvider(config, manifest_path)
+    return _original_create_provider(config, manifest_path)

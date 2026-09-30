@@ -29,6 +29,7 @@ from w1a1_eagle.recurrent_provider import TEACHER_FIELDS, ProviderRound
 from w1a1_eagle.recurrent_trace import validate_recurrent_trace
 
 SCHEMA = "w1ax_native_train_provider_v1"
+V2_SCHEMA = "w1ax_native_train_provider_v2"
 TARGET_REPO = "Qwen/Qwen3-4B"
 TARGET_REVISION = "1cfa9a7208912126459214e8b04321603b3df60c"
 DRAFT_REPO = "AngelSlim/Qwen3-4B_eagle3"
@@ -152,14 +153,18 @@ class NativeCaptureProvider:
             raise ValueError("native capture provider requires CPU or explicit CUDA")
         manifest_path = Path(manifest_path)
         spec = json.loads(manifest_path.read_text())
-        if not isinstance(spec, dict) or spec.get("schema") != SCHEMA:
+        if not isinstance(spec, dict) or spec.get("schema") not in {SCHEMA, V2_SCHEMA}:
             raise ValueError("unsupported native train-provider manifest")
+        v2 = spec.get("schema") == V2_SCHEMA
+        if v2 and config.objective != "hard_ce":
+            raise ValueError("label-only v2 supports hard CE only")
+        development = v2 and spec.get("split") == "development"
         calibration_record = spec.get("calibration_readiness")
         calibration_mode = calibration_record is not None
-        if not calibration_mode and spec.get("training_eligible") is not True:
+        if not calibration_mode and not development and spec.get("training_eligible") is not True:
             raise ValueError("training manifest is not eligible")
         if (
-            spec.get("split") != "train"
+            spec.get("split") not in ({"train", "development"} if v2 else {"train"})
             or type(spec.get("prompt_count")) is not int
             or spec["prompt_count"] < 1
         ):
@@ -203,6 +208,44 @@ class NativeCaptureProvider:
             and capture_manifest.get("pinned_source_artifact_hashes_verified") is True
             and capture_manifest.get("unverified_gates") == []
         )
+        if v2:
+            from w1ax_continuous_stages import LABEL_SCHEMA, validate_readiness
+
+            if (
+                capture_manifest.get("schema") not in {"recurrent_binary_capture_v2", LABEL_SCHEMA}
+                or capture_manifest.get("training_eligible") is not False
+                or capture_manifest.get("readiness") != "preparation_only"
+                or capture_manifest.get("prompts_sha256") != self.hashes["prompts"]
+                or capture_manifest.get("split") != spec["split"]
+            ):
+                raise ValueError("v2 provider must preserve preparation-only source eligibility")
+            readiness = validate_readiness(
+                spec.get("continuous_readiness"),
+                activation_bits=config.contract.activation_bits,
+                common_hashes={
+                    k: self.hashes[k]
+                    for k in (
+                        "target_gguf",
+                        "candidate_d_gguf",
+                        "base_draft_gguf",
+                        "absolute_d2t",
+                        "model_snapshot_manifest",
+                    )
+                },
+            )
+            if capture_manifest.get("schema") == LABEL_SCHEMA and not readiness.get(
+                "native_runtime"
+            ):
+                raise ValueError("fresh v2 capture requires frozen native library readiness")
+            if self.hashes["capture_manifest"] not in readiness["teacher_capture_manifest_sha256"]:
+                raise ValueError("v2 capture is not bound to readiness")
+            if capture_manifest.get("schema") == LABEL_SCHEMA and capture_manifest.get(
+                "binary_sha256"
+            ) != readiness.get("native_binary_sha256"):
+                raise ValueError(
+                    "teacher capture and precision gates use different native runtimes"
+                )
+            full_body_ready = True
         self.calibration_readiness = None
         self.calibration_readiness_sha256 = None
         self.full_body_qat_eligible = full_body_ready
@@ -277,7 +320,14 @@ class NativeCaptureProvider:
             raise ValueError("native capture bundle remains training-ineligible")
         cell_path = self.paths["capture_manifest"].parent / "source_cell_manifest.json"
         source_hashes = capture_manifest.get("source_report_sha256", {})
-        if not cell_path.is_file() or sha256(cell_path) != source_hashes.get("cell_manifest"):
+        cell_hash = source_hashes.get("cell_manifest")
+        if v2:
+            cell_record = capture_manifest.get("files", {}).get(
+                "source_cell"
+            ) or capture_manifest.get("source_cell")
+            cell_path = self.paths["capture_manifest"].parent / cell_record["path"]
+            cell_hash = cell_record["sha256"]
+        if not cell_path.is_file() or sha256(cell_path) != cell_hash:
             raise ValueError("native capture cell source manifest is missing or changed")
         cell = json.loads(cell_path.read_text())
         if (
@@ -290,7 +340,8 @@ class NativeCaptureProvider:
             raise ValueError("provider needs a named native capture ID")
         # The shared loop uses this permission bit. The separate scope below
         # keeps bounded permission distinct from full-body readiness.
-        self.training_eligible = True
+        self.training_eligible = not development
+        self.data_split = spec["split"]
         self.readiness_scope = CALIBRATION_ONLY_SCOPE if calibration_mode else "full_body_qat"
         self.split = "train"
         self.base_gguf_sha256 = self.hashes["base_draft_gguf"]
@@ -319,12 +370,30 @@ class NativeCaptureProvider:
         self._model_loader = model_loader
         self._adapter_factory = adapter_factory
         self._candidate_loader = candidate_loader
-        self.capture = capture_loader(
-            self.paths["capture_manifest"],
-            self.paths["prompts"],
-            self.hashes["prompts"],
-            expected_prompt_count=spec["prompt_count"],
-        )
+        if v2:
+            if capture_manifest["schema"] == "recurrent_binary_capture_v2":
+                from audit_recurrent_capture_v2 import load_audited_capture_v2
+
+                self.capture = load_audited_capture_v2(
+                    self.paths["capture_manifest"],
+                    expected_prompt_sha256=self.hashes["prompts"],
+                    expected_prompt_count=spec["prompt_count"],
+                )
+            else:
+                from w1ax_continuous_stages import load_native_labels
+
+                self.capture = load_native_labels(
+                    self.paths["capture_manifest"],
+                    expected_prompt_sha256=self.hashes["prompts"],
+                    expected_prompt_count=spec["prompt_count"],
+                )
+        else:
+            self.capture = capture_loader(
+                self.paths["capture_manifest"],
+                self.paths["prompts"],
+                self.hashes["prompts"],
+                expected_prompt_count=spec["prompt_count"],
+            )
         self.allowed_prompt_ids = {key[0] for key in self.capture.anchors}
         if not self.allowed_prompt_ids:
             raise ValueError("audited native capture has no prompt IDs")
@@ -334,6 +403,9 @@ class NativeCaptureProvider:
         self.total_rounds = (
             min(self.capture_round_count, 100) if calibration_mode else self.capture_round_count
         )
+        self.supervised_rows = (
+            getattr(self.capture, "report", {}).get("counts", {}).get("supported", 0)
+        )
         self.source_metadata = {
             "factory": "w1ax_capture_provider:create_provider",
             "capture_id": self.capture_id,
@@ -342,7 +414,7 @@ class NativeCaptureProvider:
             "absolute_d2t_sha256": self.hashes["absolute_d2t"],
             "model_snapshot_manifest_sha256": self.hashes["model_snapshot_manifest"],
             "base_gguf_sha256": self.base_gguf_sha256,
-            "split": self.split,
+            "split": self.data_split,
             "prompt_count": len(self.allowed_prompt_ids),
             "round_count": self.total_rounds,
             "teacher_manifest_sha256": (spec.get("teacher") or {}).get("manifest_sha256"),
@@ -440,7 +512,11 @@ class NativeCaptureProvider:
         ):
             raise ValueError("calibration run differs from the approved row-A16 hard-CE budget")
 
-    def load_models(self):
+    def load_models_cpu(self):
+        """Keep initialization on CPU, including when the adapter config is CUDA."""
+        return self.load_models(device="cpu")
+
+    def load_models(self, *, device=None):
         """Hash pinned weights, then load official CPU target and drafter once."""
         from evaluate_pytorch_w1a1 import verify_model_snapshot
 
@@ -470,8 +546,9 @@ class NativeCaptureProvider:
             )
             model.eval()
             drafter, target = model.eagle_layer, model.base_model
-            if torch.device(self._config.device).type == "cuda":
-                drafter.to(self._config.device)
+            load_device = device or self._config.device
+            if torch.device(load_device).type == "cuda":
+                drafter.to(load_device)
         else:
             drafter, target = self._model_loader(self.paths)
         if self._config.contract.scale_layout == "group128":

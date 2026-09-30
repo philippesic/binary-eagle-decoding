@@ -13,9 +13,13 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
+import shutil
 import signal
 import subprocess
 import sys
+import time
+from contextlib import nullcontext
 from pathlib import Path
 
 import numpy as np
@@ -118,6 +122,9 @@ def write(path: Path, value):
 
 
 def validate_inputs(args, prompts: list[dict], variants: dict) -> None:
+    if (getattr(args, "activation_bits", 16) != 16 or getattr(args, "label_only", False)):
+        raise ValueError("new arithmetic/label-only capture uses the typed continuous stage API; "
+                         "legacy frozen capture CLI cannot change its contract")
     if not 1 <= args.tokens <= 128:
         raise ValueError("capture output token cap must be 1..128")
     if args.mode != "diagnostic" and args.tokens != 128:
@@ -259,6 +266,7 @@ def audit_recurrent_files(
     feature_limit: int,
     *,
     require_full_logits: bool = False,
+    label_only: bool = False,
 ) -> None:
     """Reject incomplete raw streams before marking a recurrent cell complete."""
     heads = read_jsonl(cell / "heads.jsonl")
@@ -285,7 +293,7 @@ def audit_recurrent_files(
     ):
         raise ValueError("ambiguous target feature task/row join")
     indexes = [row.get("target_logits_row") for row in heads]
-    count = min(len(heads), logit_limit)
+    count = 0 if label_only else min(len(heads), logit_limit)
     if require_full_logits and len(heads) > logit_limit:
         raise ValueError("shard verifier logits exceed frozen raw-logit cap")
     if indexes != [*range(count), *([None] * (len(heads) - count))]:
@@ -337,9 +345,37 @@ def audit_recurrent_files(
         raise ValueError("unclaimed recurrent capture rows")
 
 
+
+def verify_mapped_runtime(pid: int, runtime: dict) -> dict:
+    expected = {str(Path(record["path"]).resolve()): record["sha256"]
+                for record in runtime["libraries"]}
+    maps = Path(f"/proc/{pid}/maps").read_text()
+    loaded = set()
+    for line in maps.splitlines():
+        parts = line.split(maxsplit=5)
+        if len(parts) < 6:
+            continue
+        raw = re.sub(r"\\([0-7]{3})", lambda m: chr(int(m.group(1), 8)), parts[5])
+        if Path(raw).name.startswith(("libllama", "libggml")):
+            if raw.endswith(" (deleted)"):
+                raise ValueError("native server mapped a deleted/replaced runtime library")
+            loaded.add(str(Path(raw).resolve()))
+    if not loaded or not any(Path(p).name.startswith("libllama") for p in loaded):
+        raise ValueError("native server mapped no declared llama libraries")
+    if not any(Path(p).name.startswith("libggml-cuda") for p in loaded):
+        raise ValueError("native server mapped no declared CUDA backend library")
+    for path in loaded:
+        if path not in expected or sha256(Path(path)) != expected[path]:
+            raise ValueError("native server mapped an unexpected or changed llama/ggml library")
+    return {"source": f"/proc/{pid}/maps", "mapped_libraries":
+            [{"path": path, "sha256": expected[path]} for path in sorted(loaded)]}
+
 def run_cell(args, name, spec, prompts, forced=None):
     if args.mode == "recurrent-train" and (name != "d_d" or forced is not None):
         raise ValueError("recurrent train requires unforced candidate D own histories")
+    stop_file = getattr(args, "stop_file", None)
+    if stop_file is not None and Path(stop_file).exists():
+        raise InterruptedError("user STOP requested before native capture")
     cell = args.output.resolve() / name
     cell.mkdir()
     trace = cell / "rounds.jsonl"
@@ -373,15 +409,22 @@ def run_cell(args, name, spec, prompts, forced=None):
         env.setdefault("EAGLE_CAPTURE_FULL_LOGITS", "1")
         env.setdefault("EAGLE_CAPTURE_FULL_LOGITS_LIMIT", "32")
     if recurrent:
+        bits = getattr(args, "activation_bits", 16)
+        if bits not in (1, 8, 16):
+            raise ValueError("capture activation contract must be A1, A8 or frozen A16")
         env.update(
             {
-                "GGML_W1AX_ACT_BITS": "16",
+                "GGML_W1AX_ACT_BITS": str(bits),
                 "EAGLE_CAPTURE_TARGET_LOGITS": "1",
                 "EAGLE_CAPTURE_TARGET_LOGITS_LIMIT": str(args.target_logits_limit),
                 "EAGLE_CAPTURE_TARGET_FEATURES": "1",
                 "EAGLE_CAPTURE_TARGET_FEATURES_LIMIT": str(args.target_features_limit),
             }
         )
+    if recurrent and getattr(args, "label_only", False):
+        env.pop("EAGLE_CAPTURE_TARGET_LOGITS", None)
+        env.pop("EAGLE_CAPTURE_TARGET_LOGITS_LIMIT", None)
+        target_logits.touch()  # Empty compatibility sentinel, never teacher logits.
     cmd = server_command(args, spec)
     manifest = {
         "schema": "binary_head_capture_cell_v1",
@@ -389,7 +432,8 @@ def run_cell(args, name, spec, prompts, forced=None):
         "spec": spec,
         "command": cmd,
         "env": {
-            k: v for k, v in env.items() if k.startswith(("GGML_", "EAGLE_", "W1AX_", "CUDA_"))
+            k: v for k, v in env.items()
+            if k.startswith(("GGML_", "EAGLE_", "W1AX_", "CUDA_")) or k == "LD_LIBRARY_PATH"
         },
         "binary_sha256": sha256(args.binary),
         "target_sha256": sha256(args.target),
@@ -409,13 +453,32 @@ def run_cell(args, name, spec, prompts, forced=None):
     }
     write(cell / "manifest.json", manifest)
     with (cell / "server.log").open("wb") as log:
-        proc = subprocess.Popen(
-            cmd, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True
-        )
+        proc = None
+        guard = getattr(args, "cancellation_guard", None)
+        critical = guard.defer if guard is not None else nullcontext
         try:
+            with critical():
+                proc = subprocess.Popen(
+                    cmd, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT,
+                    start_new_session=True
+                )
+                manifest["server_pid"] = proc.pid
+                manifest["server_pgid"] = os.getpgid(proc.pid)
+                manifest["owner_pid"] = os.getpid()
+                write(cell / "manifest.json", manifest)
             url = f"http://127.0.0.1:{args.port}"
-            wait_ready(url, proc, 300)
+            deadline = getattr(args, "deadline", None)
+            startup_budget = min(120, max(1, deadline - time.monotonic())) if deadline else 300
+            wait_ready(url, proc, startup_budget)
+            if getattr(args, "native_runtime", None) is not None:
+                manifest["native_runtime"] = args.native_runtime
+                manifest["mapped_runtime"] = verify_mapped_runtime(proc.pid, args.native_runtime)
+                write(cell / "manifest.json", manifest)
             for index, prompt in enumerate(prompts):
+                if stop_file is not None and Path(stop_file).exists():
+                    raise InterruptedError("user STOP requested during native capture")
+                if deadline is not None and time.monotonic() >= deadline:
+                    raise TimeoutError("native development aggregate deadline exceeded")
                 before = len(read_jsonl(rows_path))
                 rounds_before = len(read_jsonl(rounds_path))
                 trace_before = len(read_jsonl(trace))
@@ -446,7 +509,10 @@ def run_cell(args, name, spec, prompts, forced=None):
                 request.mkdir()
                 write(request / "prompt.json", prompt)
                 write(request / "request.json", body)
-                response = http_json(url + "/v1/chat/completions", body, 600)
+                timeout = getattr(args, "request_timeout", 600)
+                if deadline is not None:
+                    timeout = min(timeout, max(1, deadline - time.monotonic()))
+                response = http_json(url + "/v1/chat/completions", body, timeout)
                 write(request / "response.json", response)
                 ids = generated_token_ids(response)
                 if not ids:
@@ -512,12 +578,34 @@ def run_cell(args, name, spec, prompts, forced=None):
                     )
                 manifest["requests"].append(item)
                 write(cell / "manifest.json", manifest)
+                progress_file = getattr(args, "progress_file", None)
+                if progress_file is not None:
+                    progress_path = Path(progress_file)
+                    status = json.loads(progress_path.read_text())
+                    status.update(heartbeat_unix=time.time(),
+                                  native_capture_prompt=index + 1,
+                                  native_capture_prompts=len(prompts),
+                                  native_capture_prompt_id=prompt["id"],
+                                  native_server_pid=proc.pid,
+                                  native_server_pgid=manifest["server_pgid"],
+                                  disk_free_bytes=shutil.disk_usage(args.output).free)
+                    temporary = progress_path.with_name(progress_path.name + ".native.tmp")
+                    write(temporary, status)
+                    os.replace(temporary, progress_path)
                 progress = f"{name} {index + 1}/{len(prompts)} {prompt['id']} rows={len(rows)}"
                 print(progress, flush=True)
         finally:
-            manifest["server_stop"] = stop_server(proc)
-            write(cell / "manifest.json", manifest)
-    if not manifest["server_stop"].get("stopped"):
+            if proc is not None:
+                manifest["server_stop"] = stop_server(proc)
+                try:
+                    os.killpg(proc.pid, 0)
+                except ProcessLookupError:
+                    manifest["server_stop"]["process_group_gone"] = True
+                else:
+                    manifest["server_stop"]["process_group_gone"] = False
+                write(cell / "manifest.json", manifest)
+    if (not manifest["server_stop"].get("stopped")
+            or not manifest["server_stop"].get("process_group_gone")):
         raise RuntimeError("server process group did not stop")
     for marker in spec.get("required_markers", []):
         if marker not in (cell / "server.log").read_text(errors="replace"):
@@ -533,6 +621,7 @@ def run_cell(args, name, spec, prompts, forced=None):
             args.target_logits_limit,
             args.target_features_limit,
             require_full_logits=getattr(args, "shard_manifest", None) is not None,
+            label_only=getattr(args, "label_only", False),
         )
     manifest["files"] = {
         p.name: {"bytes": p.stat().st_size, "sha256": sha256(p)}
@@ -541,13 +630,14 @@ def run_cell(args, name, spec, prompts, forced=None):
                 rows_path,
                 cell / "heads.f32",
                 rounds_path,
+                trace,
                 cell / "server.log",
                 features_metadata,
                 features_values,
                 target_logits,
             )
             if recurrent
-            else (rows_path, cell / "heads.f32", rounds_path, cell / "server.log")
+            else (rows_path, cell / "heads.f32", rounds_path, trace, cell / "server.log")
         )
     }
     manifest["complete"] = True
@@ -568,6 +658,8 @@ def run(args):
         {
             "mode": args.mode,
             "tokens": args.tokens,
+            "activation_bits": getattr(args, "activation_bits", 16),
+            "label_only": getattr(args, "label_only", False),
             "variants": variants,
             "prompts_sha256": sha256(args.prompts),
             "prompt_count": len(prompts),
@@ -681,6 +773,9 @@ def main():
     )
     parser.add_argument("--d2t", type=Path)
     parser.add_argument("--target-vocab-size", type=int)
+    parser.add_argument("--activation-bits", type=int, choices=(1, 8, 16), default=16)
+    parser.add_argument("--label-only", action="store_true",
+                        help="native hard-CE labels without target logit payloads")
     parser.add_argument("--tokens", type=int, default=128)
     parser.add_argument("--target-logits-limit", type=int, default=DEFAULT_TARGET_LOGITS_LIMIT)
     parser.add_argument("--target-features-limit", type=int, default=DEFAULT_TARGET_FEATURES_LIMIT)
