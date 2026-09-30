@@ -733,3 +733,8 @@ User chose the memory path by confirming “Should be good, go for it” after
 20GB/restart instructions. Luna is authorized to verify actual new capacity and
 resume under unchanged guards. The agent has not changed Windows settings; the
 user reports the prerequisite complete. Actual measured result is pending.
+
+Verified after restart: config`memory=20GB`, WSL total20,971,151,360B,
+available20,237,811,712B and Windows free physical21,653,372,928B. Resource path
+is resolved for the next measured admission; actual stage fit remains gated.
+The agent did not change or restart Windows/WSL.

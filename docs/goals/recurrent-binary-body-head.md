@@ -3951,3 +3951,13 @@ ID for explicit preparation resume in the same experiment. Preserve both failed
 attempts and completed A8 proof; A1 still must pass. Root owns tracked state and
 hourly heartbeat setup. No automatic retries or tight polling; hourly activation
 waits for a verified healthy live handoff. Current state: preflight delegated.
+
+Fresh tmux reconnection succeeded through the current registered host after the
+user's restart. Config now contains`[wsl2] memory=20GB`; WSL total20,971,151,360B,
+available20,237,811,712B (~18.85GiB), exceeding unchanged14GiB admission by
+5,205,426,176B. Windows free physical21,653,372,928B at this observation.
+RTX5080/SM120 reports2%/2,678MiB baseline and no project process; disk free
+818,517,393,408B. No setting was changed by the agent. Luna is verifying source/
+runtime/data/config hashes and will use supervisor03 for the authorized resume.
+Hourly monitor prompt is prepared to derive status/supervisor paths from current
+registration, avoiding stale attempt01 paths; it remainsPAUSED until handoff.

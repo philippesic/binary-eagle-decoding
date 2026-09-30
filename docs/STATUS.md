@@ -4,7 +4,7 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-**Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), continued as Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). The user authorized **Luna/high to launch continuous A8/A1 on RTX 5080**; the RTX 2080 Ti remains paused. W1A8 readiness passed; A1 is stopped at host-RAM admission pending the user's resource path. Substantive training and final evaluation have not run. DFlash/DSpark are future roadmap items, not active work.
+**Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), continued as Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). The user authorized **Luna/high to launch continuous A8/A1 on RTX 5080**; the RTX 2080 Ti remains paused. W1A8 readiness passed; the user's WSL memory increase is verified and Luna is resuming A1 preparation under unchanged guards. Substantive training and final evaluation have not run. DFlash/DSpark are future roadmap items, not active work.
 
 **Bounded GPU Phase 1B complete (2026-09-29):** fixed four-variant
 quality/timing A/B, CUDA deployment checks, first-shard capture/audit and
@@ -51,9 +51,10 @@ stopped at A1 initialization: available12.94GiB after reclamation,1.06GiB below
 admission; WSL exposes15.21GiB total. No optimizer/full corpus capture ran.
 Both attempts/evidence are preserved and no project process remains. Hourly
 heartbeat is **PAUSED**; it dispatches pinned Luna/high once a live run is
-verified. User choice pending: more WSL RAM (restart required) or isolated
-readiness engineering, without relaxing guards. See [monitor setup](CONTINUOUS_W1AX_MONITOR.md)
-and the [latest checkpoint](goals/recurrent-binary-body-head.md#a8-gate-passed-a1-host-capacity-blocker).
+verified. User-reported memory change now verified: `[wsl2] memory=20GB`,
+WSL total20,971,151,360B/available20,237,811,712B at post-restart preflight.
+Luna owns the explicit supervised resume; guards remain unchanged. See [monitor setup](CONTINUOUS_W1AX_MONITOR.md)
+and the [latest checkpoint](goals/recurrent-binary-body-head.md#user-authorized-resume-after-wsl-memory-change).
 
 ## Historical checkpoints
 
