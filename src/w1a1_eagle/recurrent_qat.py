@@ -13,6 +13,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Mapping
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -134,6 +135,7 @@ class RowBinaryLinear(nn.Module):
         self.scale_offset = nn.Parameter(torch.zeros_like(self.initial_scale))
         self.register_buffer("frozen_bias", None if bias is None else bias.detach().float().clone())
         self.last_saturation_fraction = 0.0
+        self._round_hard_signs = None
 
     def effective_scales(self) -> Tensor:
         raw = self.initial_scale + self.scale_offset
@@ -153,10 +155,33 @@ class RowBinaryLinear(nn.Module):
             raise ValueError("input and linear must share device")
         quantized, _, saturated = hard_activation(input, self.contract.activation_bits)
         self.last_saturation_fraction = saturated.float().mean().detach()
-        signs = hard_sign_ste(self.latent_sign)
+        signs = (hard_sign_ste(self.latent_sign) if self._round_hard_signs is None
+                 else self._round_hard_signs)
         return F.linear(quantized, signs) * self.effective_scales() + (
             0 if self.frozen_bias is None else self.frozen_bias
         )
+
+
+@contextmanager
+def shared_round_hard_signs(linears):
+    """Reuse attached hard signs inside exactly one forward/backward round.
+
+    Every recurrent call adds a gradient path to this tensor. Never reuse the
+    tensor across an optimizer update or backward. Clearing it does not detach
+    recurrent state/K/V; graphs own their references until backward completes.
+    """
+    modules = list(linears.values())
+    if any(not isinstance(module, RowBinaryLinear) for module in modules):
+        raise TypeError("shared signs require row W1Ax modules")
+    if any(module._round_hard_signs is not None for module in modules):
+        raise ValueError("nested or stale round sign cache")
+    try:
+        for module in modules:
+            module._round_hard_signs = hard_sign_ste(module.latent_sign)
+        yield
+    finally:
+        for module in modules:
+            module._round_hard_signs = None
 
 
 @dataclass(frozen=True)
