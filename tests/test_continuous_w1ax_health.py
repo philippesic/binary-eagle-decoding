@@ -60,6 +60,17 @@ class HealthTests(unittest.TestCase):
         self.state["checkpoint"] = None
         self.assertFalse(self.check()["healthy"])
 
+    def test_preparing_phase_has_stage_heartbeat_without_models(self):
+        self.state.update(status="preparing", models={}, phase="teacher_capture",
+                          optimization_started=False, captures_done=3, captures_total=20)
+        self.assertTrue(self.check()["healthy"])
+        self.state["heartbeat_unix"] = -2000
+        self.assertFalse(self.check()["healthy"])
+        self.state.update(status="stopped", heartbeat_unix=0)
+        self.assertTrue(self.check()["healthy"])
+        self.state["models"] = {"A8": {"step": 1}}
+        self.assertFalse(self.check()["healthy"])
+
     def test_declared_bounded_development_phase_is_healthy(self):
         self.state["status"] = "development_evaluation"
         self.assertTrue(self.check()["healthy"])

@@ -28,7 +28,8 @@ def check_health(status_path: Path, *, now: float | None = None,
     terminal = state in ("stopped", "completed", "failed")
     if state == "failed":
         failures.append(f"training failed: {status.get('error', 'see training log')}")
-    elif state not in ("running", "smoke", "development_evaluation", "stopped", "completed"):
+    elif state not in ("preparing", "running", "smoke", "development_evaluation",
+                       "stopped", "completed"):
         failures.append(f"unknown training status: {state}")
     heartbeat = status.get("heartbeat_unix")
     if not terminal and (not isinstance(heartbeat, (int, float)) or
@@ -39,8 +40,16 @@ def check_health(status_path: Path, *, now: float | None = None,
     if not isinstance(models, dict):
         failures.append("models status must be an object")
         models = {}
+    preparatory = state == "preparing" or (
+        state in ("stopped", "failed") and status.get("optimization_started") is False
+    )
+    if preparatory and any(isinstance(m, dict) and m.get("step", 0) > 0
+                           for m in models.values()):
+        failures.append("preparatory status contains optimizer progress")
+    if state == "preparing" and not isinstance(status.get("phase"), str):
+        failures.append("preparation phase is missing")
     steps = []
-    for name in ("A8", "A1"):
+    for name in (() if preparatory else ("A8", "A1")):
         model = models.get(name)
         if not isinstance(model, dict):
             failures.append(f"{name} status missing")
@@ -124,7 +133,9 @@ def check_health(status_path: Path, *, now: float | None = None,
             "failures": failures, "steps": dict(zip(("A8", "A1"), steps)),
             "checkpoint": checkpoint, "models": models,
             "heartbeat_unix": heartbeat, "disk_free_bytes": disk,
-            "host_available_bytes": host_available, "cuda_free_bytes": cuda_free}
+            "host_available_bytes": host_available, "cuda_free_bytes": cuda_free,
+            "phase": status.get("phase"), "captures_done": status.get("captures_done"),
+            "captures_total": status.get("captures_total")}
 
 
 def main() -> int:
