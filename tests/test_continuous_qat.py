@@ -203,6 +203,75 @@ class ContinuousTests(unittest.TestCase):
                     actual.rng["torch"], expected.rng["torch"], rtol=0, atol=0
                 )
 
+    def test_directory_commit_recovers_failed_latest_publication_exactly(self):
+        from w1a1_eagle.continuous_qat import atomic_json
+
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            crashed = make(root / "crashed", config(max_steps=2))
+
+            def fail_registry(path, value):
+                if path.name == "latest.json" and value["step"] == 2:
+                    raise OSError("registry publication crash fixture")
+                return atomic_json(path, value)
+
+            with patch("w1a1_eagle.continuous_qat.atomic_json", side_effect=fail_registry):
+                with self.assertRaisesRegex(OSError, "publication"):
+                    crashed.run(require_smoke=False)
+            self.assertEqual(json.loads((root / "crashed/latest.json").read_text())["step"], 1)
+            resumed = make(root / "crashed", config(max_steps=4))
+            resumed.resume()
+            self.assertEqual(resumed.step, 2)
+            self.assertEqual(resumed.cursor, 2)
+            self.assertEqual(json.loads((root / "crashed/latest.json").read_text())["step"], 2)
+            resumed.run(require_smoke=False)
+            full = make(root / "full", config(max_steps=4))
+            full.run(require_smoke=False)
+            for expected, actual in zip(full.lanes, resumed.lanes):
+                for name in expected.linears:
+                    for key, value in expected.linears[name].state_dict().items():
+                        torch.testing.assert_close(
+                            actual.linears[name].state_dict()[key], value, rtol=0, atol=0
+                        )
+                for wanted, got in zip(
+                    expected.optimizer.state.values(), actual.optimizer.state.values()
+                ):
+                    for key in wanted:
+                        torch.testing.assert_close(got[key], wanted[key], rtol=0, atol=0)
+                torch.testing.assert_close(
+                    actual.rng["torch"], expected.rng["torch"], rtol=0, atol=0
+                )
+            self.assertEqual(json.loads((root / "crashed/latest.json").read_text())["step"], 4)
+            # The directory publication can also recover when no registry exists.
+            (root / "crashed/latest.json").unlink()
+            fresh = make(root / "crashed", config(max_steps=4))
+            fresh.resume()
+            self.assertEqual(fresh.step, 4)
+            self.assertEqual(json.loads((root / "crashed/latest.json").read_text())["step"], 4)
+
+    def test_corrupted_orphan_is_rejected_without_overwriting_prior_latest(self):
+        from w1a1_eagle.continuous_qat import atomic_json
+
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            crashed = make(root, config(max_steps=2))
+
+            def fail_registry(path, value):
+                if path.name == "latest.json" and value["step"] == 2:
+                    raise OSError("registry publication crash fixture")
+                return atomic_json(path, value)
+
+            with patch("w1a1_eagle.continuous_qat.atomic_json", side_effect=fail_registry):
+                with self.assertRaises(OSError):
+                    crashed.run(require_smoke=False)
+            original_latest = (root / "latest.json").read_bytes()
+            orphan = sorted((root / "checkpoints").glob("step-*"))[-1]
+            (orphan / "A1/joint.npz").write_bytes(b"corrupt export fixture")
+            resumed = make(root, config(max_steps=4))
+            with self.assertRaisesRegex(ValueError, "export hash"):
+                resumed.resume()
+            self.assertEqual((root / "latest.json").read_bytes(), original_latest)
+
     def test_hash_contract_and_disk_gate_fail_safely(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
@@ -214,6 +283,7 @@ class ContinuousTests(unittest.TestCase):
                 resumed.resume()
             checkpoint = Path(json.loads((root / "latest.json").read_text())["path"])
             checkpoint.write_bytes(b"corrupt")
+            resumed.source = trainer.source
             with self.assertRaisesRegex(ValueError, "hash"):
                 resumed.resume()
             with patch(

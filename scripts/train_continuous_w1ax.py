@@ -118,8 +118,12 @@ def main():
         spec["development"] = json.loads(args.development_manifest.read_text())
     if not isinstance(spec.get("stages"), dict):
         parser.error("pinned stages required: use --stages-manifest from CPU prepare-config")
-    if args.resume and not (run_dir / "latest.json").exists():
-        parser.error("--resume requires an existing paired checkpoint")
+    if (
+        args.resume
+        and not (run_dir / "latest.json").exists()
+        and not any((run_dir / "checkpoints").glob("step-*/manifest.json"))
+    ):
+        parser.error("--resume requires a complete published paired checkpoint")
     if not args.resume and (run_dir / "status.json").exists():
         parser.error(
             "existing run requires --resume; choose a new run directory for a new experiment"
@@ -220,7 +224,7 @@ def main():
                 "smoke_max_depth": len(deepest.rows),
             },
         )
-        lanes = build_lanes(provider, config)
+        lanes = build_lanes(provider, config, run_dir)
         evaluator = None
         development = spec.get("development")
         if development is None or development == {"from_stages": True}:
@@ -242,6 +246,26 @@ def main():
         trainer.smoke(deepest)
         trainer.save()
         trainer.run()
+    except InterruptedError as error:
+        # Native stage cancellation only raises this after escaped-server
+        # process-group cleanup for intentional signals/STOP requests.
+        if "trainer" in locals():
+            trainer.status(
+                "stopped", intentional_native_stage_stop=True, resume_from_last_committed_pair=True
+            )
+        else:
+            atomic_json(
+                run_dir / "status.json",
+                {
+                    "schema": "continuous_joint_w1ax_v1",
+                    "status": "stopped",
+                    "heartbeat_unix": time.time(),
+                    "pid": os.getpid(),
+                    "models": {},
+                    "intentional_native_stage_stop": True,
+                    "reason": str(error),
+                },
+            )
     except BaseException as error:
         # Includes capture/readiness failures before trainer construction.
         if "trainer" not in locals():

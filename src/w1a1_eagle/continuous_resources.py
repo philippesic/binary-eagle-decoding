@@ -68,6 +68,17 @@ def require_host_memory(
     }
 
 
+def model_storage_bytes(model, *, device_type: str | None = None) -> int:
+    """Unique model parameter/buffer storage, without optimizer allocation."""
+    storages = {}
+    for tensor in [*model.parameters(), *model.buffers()]:
+        if device_type is not None and tensor.device.type != device_type:
+            continue
+        storage = tensor.untyped_storage()
+        storages[storage._cdata] = storage.nbytes()
+    return sum(storages.values())
+
+
 def lane_storage_bytes(lanes, *, device_type: str | None = None) -> int:
     """Unique tensor-storage size for drafter/Adam state, counting aliases once."""
     storages = {}
