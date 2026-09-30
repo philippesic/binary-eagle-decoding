@@ -30,6 +30,7 @@ from .continuous_resources import (
     checkpoint_host_buffer_bytes,
     lane_storage_bytes,
     linux_host_memory,
+    model_storage_bytes,
     require_host_memory,
 )
 from .recurrent_provider import audit_provider_round, forward_torch_round
@@ -132,6 +133,13 @@ def atomic_json(path: Path, value: object) -> None:
         os.close(descriptor)
 
 
+def immutable_config(config: dict) -> dict:
+    result = json.loads(json.dumps(config))
+    for field in ("max_steps", "max_tokens", "max_seconds", "max_epochs"):
+        result.pop(field, None)
+    return result
+
+
 def rng_state(device: str) -> dict:
     state = {
         "python": random.getstate(),
@@ -189,7 +197,7 @@ class Lane:
     rng: dict
 
 
-def build_lanes(provider, config: ContinuousConfig) -> list[Lane]:
+def build_lanes(provider, config: ContinuousConfig, run_dir: Path | None = None) -> list[Lane]:
     """Install on CPU before accelerator transfer; frozen target stays on CPU.
 
     Provider must expose load_models_cpu for CUDA to avoid transient two dense
@@ -199,6 +207,16 @@ def build_lanes(provider, config: ContinuousConfig) -> list[Lane]:
     loader = getattr(provider, "load_models_cpu", None)
     if config.device != "cpu" and not callable(loader):
         raise ValueError("CUDA provider requires load_models_cpu for bounded dual allocation")
+    admission = {}
+    if config.device != "cpu":
+        admission["before_frozen_model_load"] = require_host_memory(
+            linux_host_memory(),
+            floor_bytes=config.min_host_available_bytes,
+            additional_bytes=12 * 1024**3,
+            stage="frozen CPU target/drafter and binary initialization",
+        )
+        if run_dir is not None:
+            atomic_json(Path(run_dir) / "initialization_resource_admission.json", admission)
     drafter, target = loader() if callable(loader) else provider.load_models()
     if any(p.device.type != "cpu" for p in drafter.parameters()):
         raise ValueError("dual model installation requires CPU model loading")
@@ -208,6 +226,15 @@ def build_lanes(provider, config: ContinuousConfig) -> list[Lane]:
         p.requires_grad_(False)
     first_config = config.qat(8)
     linears = install_joint_linears(drafter, target, replace(first_config, device="cpu"))
+    if config.device != "cpu":
+        admission["before_independent_model_copy"] = require_host_memory(
+            linux_host_memory(),
+            floor_bytes=config.min_host_available_bytes,
+            additional_bytes=model_storage_bytes(drafter, device_type="cpu"),
+            stage="second independent binary drafter CPU copy",
+        )
+        if run_dir is not None:
+            atomic_json(Path(run_dir) / "initialization_resource_admission.json", admission)
     other = copy.deepcopy(drafter)
     other_linears = {path: other.get_submodule(path) for path in linears}
     for module in other_linears.values():
@@ -485,7 +512,11 @@ class ContinuousTrainer:
         parent.mkdir(exist_ok=True)
         destination = parent / f"step-{self.step:012d}-e{self.epoch:06d}-r{self.cursor:012d}"
         if destination.exists():
-            return
+            if self.checkpoint is not None and self.checkpoint["path"] == str(
+                destination / "resume.pt"
+            ):
+                return
+            raise RuntimeError("durable checkpoint already exists; resume recovery required")
         temp = parent / ("." + destination.name + ".tmp")
         if temp.exists():
             shutil.rmtree(temp)
@@ -530,8 +561,18 @@ class ContinuousTrainer:
         manifest = {
             "schema": SCHEMA,
             "step": self.step,
+            "epoch": self.epoch,
+            "cursor": self.cursor,
             "source_sha256": self.source,
+            "immutable_config": immutable_config(asdict(self.config)),
             "sha256": sha256(path),
+            "exports": {
+                lane.name: {
+                    "joint.npz": sha256(temp / lane.name / "joint.npz"),
+                    "joint.json": sha256(temp / lane.name / "joint.json"),
+                }
+                for lane in self.lanes
+            },
             "optimizer_rng_cursor_exact": True,
         }
         atomic_json(temp / "manifest.json", manifest)
@@ -563,26 +604,68 @@ class ContinuousTrainer:
             shutil.rmtree(old)
 
     def resume(self) -> None:
-        latest = json.loads((self.run_dir / "latest.json").read_text())
-        path = Path(latest["path"])
+        """Recover the highest complete directory; latest.json is advisory.
+
+        The fsynced directory rename commits a checkpoint. A crash before
+        registry publication must not replay optimization from an older pair.
+        Validate the candidate before promotion; never adopt current live state.
+        """
+        parent = self.run_dir / "checkpoints"
+        candidates = []
+        for directory in parent.glob("step-*"):
+            if not directory.is_dir() or directory.is_symlink():
+                raise ValueError("resume checkpoint directory is not a local publication")
+            manifest_path = directory / "manifest.json"
+            if not manifest_path.is_file():
+                raise ValueError("published checkpoint is incomplete: missing manifest")
+            manifest = json.loads(manifest_path.read_text())
+            counters = tuple(manifest.get(field) for field in ("step", "epoch", "cursor"))
+            if any(type(value) is not int or value < 0 for value in counters):
+                raise ValueError("published checkpoint counters missing or invalid")
+            expected_name = f"step-{counters[0]:012d}-e{counters[1]:06d}-r{counters[2]:012d}"
+            if directory.name != expected_name:
+                raise ValueError("published checkpoint directory/counters disagree")
+            candidates.append((counters, directory, manifest))
+        if not candidates:
+            raise ValueError("no complete published checkpoint is available for resume")
+        counters, directory, manifest = max(candidates, key=lambda item: item[0])
         if (
-            not path.is_relative_to(self.run_dir / "checkpoints")
-            or sha256(path) != latest["sha256"]
+            manifest.get("schema") != SCHEMA
+            or manifest.get("source_sha256") != self.source
+            or manifest.get("immutable_config") != immutable_config(asdict(self.config))
         ):
+            raise ValueError("resume changes immutable model/data/optimizer contract")
+        path = directory / "resume.pt"
+        if path.is_symlink() or not path.is_file() or sha256(path) != manifest.get("sha256"):
             raise ValueError("resume checkpoint path/hash mismatch")
+        if set(manifest.get("exports", {})) != {lane.name for lane in self.lanes}:
+            raise ValueError("published checkpoint export inventory is incomplete")
+        for lane in self.lanes:
+            inventory = manifest["exports"][lane.name]
+            if set(inventory) != {"joint.npz", "joint.json"}:
+                raise ValueError("published checkpoint export file inventory differs")
+            for name, digest in inventory.items():
+                exported = directory / lane.name / name
+                if exported.is_symlink() or not exported.is_file() or sha256(exported) != digest:
+                    raise ValueError("published checkpoint export hash mismatch")
+        if torch.device(self.config.device).type == "cuda":
+            admission = require_host_memory(
+                linux_host_memory(),
+                floor_bytes=self.config.min_host_available_bytes,
+                additional_bytes=(path.stat().st_size * 5 + 3) // 4,
+                stage="paired optimizer/RNG checkpoint recovery",
+            )
+            atomic_json(self.run_dir / "resume_resource_admission.json", admission)
         # Only local trusted self-created checkpoints are accepted after hashing.
         payload = torch.load(path, map_location="cpu", weights_only=False)
-        old_config = dict(payload["config"])
-        current_config = asdict(self.config)
-        for field in ("max_steps", "max_tokens", "max_seconds", "max_epochs"):
-            old_config.pop(field)
-            current_config.pop(field)
         if (
             payload["schema"] != SCHEMA
             or payload["source"] != self.source
-            or old_config != current_config
+            or immutable_config(payload["config"]) != immutable_config(asdict(self.config))
+            or tuple(payload[field] for field in ("step", "epoch", "cursor")) != counters
         ):
-            raise ValueError("resume changes immutable model/data/optimizer contract")
+            raise ValueError("resume payload differs from published checkpoint contract/counters")
+        latest = {"path": str(path), "sha256": manifest["sha256"], "step": counters[0]}
         for lane in self.lanes:
             saved = payload["lanes"][lane.name]
             for name, module in lane.linears.items():
@@ -597,6 +680,7 @@ class ContinuousTrainer:
         )
         self.metrics, self.checkpoint = payload["metrics"], latest
         restore_rng(payload["global_rng"], self.config.device)
+        atomic_json(self.run_dir / "latest.json", latest)
 
     def evaluate_development(self):
         """Release CUDA storage during native evaluation; preserve all state.
@@ -659,6 +743,8 @@ class ContinuousTrainer:
         try:
             return self.evaluator(self.checkpoint, self.lanes)
         finally:
+            if (self.run_dir / "STOP").exists():
+                self.stop_requested = True
             if torch.device(device).type == "cuda" and not self.stop_requested:
                 move(device)
                 self.resources()
@@ -679,7 +765,7 @@ class ContinuousTrainer:
             raise ValueError("dual resource/math smoke must pass before optimization")
         handlers = {}
         if __import__("threading").current_thread() is __import__("threading").main_thread():
-            for sig in (signal.SIGTERM, signal.SIGINT):
+            for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP):
                 handlers[sig] = signal.signal(sig, lambda *_: setattr(self, "stop_requested", True))
         started = time.monotonic()
         elapsed_base = self.elapsed_seconds
@@ -825,6 +911,8 @@ class ContinuousTrainer:
             self.save()
             self.status("stopped" if self.stop_requested else "completed", **self.resources())
         except InterruptedError as error:
+            if (self.run_dir / "STOP").exists():
+                self.stop_requested = True
             if self.stop_requested:
                 self.status(
                     "stopped",

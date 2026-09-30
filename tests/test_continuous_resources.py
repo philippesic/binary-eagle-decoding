@@ -14,6 +14,7 @@ from w1a1_eagle.continuous_resources import (
     checkpoint_host_buffer_bytes,
     lane_storage_bytes,
     linux_host_memory,
+    model_storage_bytes,
     require_host_memory,
 )
 from w1a1_eagle.recurrent_qat import RowBinaryLinear, W1AxContract
@@ -81,6 +82,7 @@ class HostResourceTests(unittest.TestCase):
             models.append(model)
         with patch.object(torch.cuda, "is_available", side_effect=AssertionError("GPU query")):
             self.assertEqual(lane_storage_bytes(lanes), 4 * 4 + 2 * 3 * 4 * 3)
+            self.assertEqual(model_storage_bytes(models[0], device_type="cpu"), (4 + 3) * 4)
             self.assertEqual(lane_storage_bytes(lanes, device_type="cuda"), 0)
 
     def test_checkpoint_export_bound_and_config_floor(self):
