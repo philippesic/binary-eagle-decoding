@@ -153,13 +153,30 @@ class RowBinaryLinear(nn.Module):
             raise ValueError("input last dimension differs from weight")
         if input.device != self.latent_sign.device:
             raise ValueError("input and linear must share device")
-        quantized, _, saturated = hard_activation(input, self.contract.activation_bits)
+        quantized, activation_scale, saturated = hard_activation(
+            input, self.contract.activation_bits
+        )
         self.last_saturation_fraction = saturated.float().mean().detach()
         signs = (hard_sign_ste(self.latent_sign) if self._round_hard_signs is None
                  else self._round_hard_signs)
-        return F.linear(quantized, signs) * self.effective_scales() + (
+        weight_scales = self.effective_scales()
+        surrogate = F.linear(quantized, signs) * weight_scales + (
             0 if self.frozen_bias is None else self.frozen_bias
         )
+        if self.contract.activation_bits != 1:
+            return surrogate
+        # Native A1 reduces unscaled signs to an integer dot before applying
+        # weight scale, then activation scale. F32 sums of +/-1 are exact for
+        # the deployed widths (<2**24); scaling before the dot can leave a
+        # cancellation residual that changes a later A1 sign. Keep the original
+        # dequantized-value STE, including meaningful gradients at scale zero.
+        with torch.no_grad():
+            activation_signs = torch.where(input.float() < 0, -1.0, 1.0)
+            native = (F.linear(activation_signs, signs.detach()) * weight_scales.detach())
+            native = native * activation_scale
+            if self.frozen_bias is not None:
+                native = native + self.frozen_bias
+        return native.detach() + (surrogate - surrogate.detach())
 
 
 @contextmanager
