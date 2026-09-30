@@ -3935,3 +3935,19 @@ and VM restart requirement in its WSL configuration reference. No Windows/WSL
 setting changed, no restart occurred, and no GPU query was used for this inventory.
 User resource choice remains pending; launch operator is finished, monitors
 remainPAUSED, and a successor should read this checkpoint before further work.
+
+### User-authorized resume after WSL memory change
+
+After receiving instructions to set`[wsl2] memory=20GB` and restart WSL, the
+user replied “Should be good, go for it” on2026-09-30. This authorizes Luna to
+verify the changed host and resume the existing supervised experiment. The
+resource choice is no longer pending; actual new capacity is not assumed until
+measured. No research math/precision/admission criterion changes.
+
+Luna/high `/root/luna_launch` is again the soleRTX5080operator; RTX2080Ti stays
+paused. Reconnect using the shared host registry/tmux MCP, verify actual memory,
+hardware/disk/idle process state and pinned artifacts, then use a new supervisor
+ID for explicit preparation resume in the same experiment. Preserve both failed
+attempts and completed A8 proof; A1 still must pass. Root owns tracked state and
+hourly heartbeat setup. No automatic retries or tight polling; hourly activation
+waits for a verified healthy live handoff. Current state: preflight delegated.

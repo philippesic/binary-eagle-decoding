@@ -728,3 +728,8 @@ WSL2.7.11.0/kernel6.18.33.2-2. Its default50%cap is consistent with observed
 VM total (inference). A raised ceiling is not full immediate allocation;
 actual concurrent physical headroom still requires measurement after an
 approved change. No setting/restart/change was applied.
+
+User chose the memory path by confirming “Should be good, go for it” after
+20GB/restart instructions. Luna is authorized to verify actual new capacity and
+resume under unchanged guards. The agent has not changed Windows settings; the
+user reports the prerequisite complete. Actual measured result is pending.
