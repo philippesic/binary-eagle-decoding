@@ -15,11 +15,22 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 stop_signal: int | None = None
+stop_signal_at_utc: str | None = None
 
 
 def request_stop(signum: int, _frame: object) -> None:
-    global stop_signal
-    stop_signal = signum
+    global stop_signal, stop_signal_at_utc
+    # Retain the first request even if another signal arrives during cleanup.
+    if stop_signal is None:
+        stop_signal = signum
+        stop_signal_at_utc = datetime.now(UTC).isoformat()
+
+
+def stop_receipt() -> dict | None:
+    if stop_signal is None:
+        return None
+    return {"number": stop_signal, "name": signal.Signals(stop_signal).name,
+            "received_at_utc": stop_signal_at_utc}
 
 
 def stop_group(pgid: int, process: subprocess.Popen, grace_seconds: float = 10) -> None:
@@ -133,6 +144,11 @@ def main() -> int:
         "command": command,
         "started_at_utc": datetime.now(UTC).isoformat(),
         "status": "starting",
+        "supervisor_pid": os.getpid(),
+        "supervisor_ppid": os.getppid(),
+        "supervisor_pgid": os.getpgrp(),
+        "supervisor_sid": os.getsid(0),
+        "received_signal": None,
         "stop_grace_seconds": args.stop_grace_seconds,
         "log_rotation": {"max_bytes_per_file": args.max_log_bytes,
                          "backups": args.log_backups},
@@ -163,6 +179,9 @@ def main() -> int:
         while process.poll() is None and stop_signal is None and not relay_errors:
             time.sleep(0.5)
     finally:
+        if stop_signal is not None:
+            record.update(status="stop_requested", received_signal=stop_receipt())
+            record_path.write_text(json.dumps(record, indent=2) + "\n")
         if relay_errors and stop_signal is None and process.poll() is None:
             # A log write failure must not leave a producer blocked on a full pipe.
             stop_signal_local = signal.SIGTERM
@@ -176,6 +195,7 @@ def main() -> int:
             relay_errors.append(RuntimeError("stdout relay did not exit after process-group stop"))
         record.update(
             status="interrupted" if stop_signal is not None else "finished",
+            received_signal=stop_receipt(),
             exit_code=process.poll(),
             ended_at_utc=datetime.now(UTC).isoformat(),
         )

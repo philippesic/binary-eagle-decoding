@@ -66,6 +66,17 @@ class AgentInfrastructureTests(unittest.TestCase):
                 self.assertEqual(runner.returncode, 130)
                 record = json.loads(record_path.read_text())
                 self.assertEqual(record["status"], "interrupted")
+                self.assertEqual(record["supervisor_pid"], runner.pid)
+                self.assertEqual(record["supervisor_ppid"], os.getpid())
+                self.assertEqual(record["supervisor_pgid"], os.getpgrp())
+                self.assertEqual(record["supervisor_sid"], os.getsid(0))
+                self.assertNotEqual(record["supervisor_pid"], record["pid"])
+                self.assertEqual(record["received_signal"]["number"], signal.SIGINT)
+                self.assertEqual(record["received_signal"]["name"], "SIGINT")
+                self.assertLessEqual(record["started_at_utc"],
+                                     record["received_signal"]["received_at_utc"])
+                self.assertLessEqual(record["received_signal"]["received_at_utc"],
+                                     record["ended_at_utc"])
                 self.assertIsNotNone(record["exit_code"])
                 self.assertNotEqual(record["exit_code"], 0)
                 state = subprocess.run(
@@ -131,6 +142,7 @@ class AgentInfrastructureTests(unittest.TestCase):
                 record = json.loads(record_path.read_text())
                 self.assertEqual(record["stop_grace_seconds"], 1.0)
                 self.assertEqual(record["exit_code"], 0)
+                self.assertEqual(record["received_signal"]["name"], "SIGINT")
             finally:
                 if runner.poll() is None:
                     runner.kill()
@@ -142,6 +154,63 @@ class AgentInfrastructureTests(unittest.TestCase):
                             os.killpg(record["pgid"], signal.SIGKILL)
                         except ProcessLookupError:
                             pass
+
+    def test_remote_supervisor_records_hangup_and_term_separately_from_child_stop(self) -> None:
+        for received in (signal.SIGHUP, signal.SIGTERM):
+            with self.subTest(signal=received), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                (root / "scripts").mkdir()
+                supervisor = root / "scripts/remote_job.py"
+                shutil.copyfile(ROOT / "scripts/remote_job.py", supervisor)
+                marker = root / "child-stop.txt"
+                child = root / "child.py"
+                child.write_text(
+                    "import pathlib, signal, time\n"
+                    f"marker = pathlib.Path({str(marker)!r})\n"
+                    "def stop(signum, _):\n"
+                    "    marker.write_text(signal.Signals(signum).name)\n"
+                    "    raise SystemExit(0)\n"
+                    "signal.signal(signal.SIGTERM, stop)\n"
+                    "print('ready', flush=True)\n"
+                    "while True: time.sleep(1)\n"
+                )
+                runner = subprocess.Popen(
+                    [sys.executable, str(supervisor), "signal-run", "--",
+                     sys.executable, str(child)],
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                )
+                record_path = root / "runs/signal-run/state.json"
+                log_path = record_path.with_name("stdout.log")
+                try:
+                    deadline = time.monotonic() + 10
+                    while time.monotonic() < deadline:
+                        if log_path.exists() and b"ready" in log_path.read_bytes():
+                            break
+                        time.sleep(0.05)
+                    else:
+                        self.fail("child did not install its signal handler")
+                    runner.send_signal(received)
+                    runner.communicate(timeout=15)
+                    self.assertEqual(runner.returncode, 128 + received)
+                    record = json.loads(record_path.read_text())
+                    self.assertEqual(record["status"], "interrupted")
+                    self.assertEqual(record["exit_code"], 0)
+                    self.assertEqual(record["received_signal"]["number"], received)
+                    self.assertEqual(record["received_signal"]["name"],
+                                     signal.Signals(received).name)
+                    self.assertIsNotNone(record["received_signal"]["received_at_utc"])
+                    self.assertEqual(marker.read_text(), "SIGTERM")
+                finally:
+                    if runner.poll() is None:
+                        runner.kill()
+                        runner.wait()
+                    if record_path.exists():
+                        record = json.loads(record_path.read_text())
+                        if "pgid" in record:
+                            try:
+                                os.killpg(record["pgid"], signal.SIGKILL)
+                            except ProcessLookupError:
+                                pass
 
     def test_remote_supervisor_bounds_rotated_stdout_logs(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -171,6 +240,8 @@ class AgentInfrastructureTests(unittest.TestCase):
             retained = b"".join(path.read_bytes() for path in existing)
             self.assertIn(b"29:", retained)
             state = json.loads((run_dir / "state.json").read_text())
+            self.assertEqual(state["status"], "finished")
+            self.assertIsNone(state["received_signal"])
             self.assertEqual(state["log_rotation"], {"max_bytes_per_file": 128, "backups": 2})
 
 
