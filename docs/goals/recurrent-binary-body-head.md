@@ -3595,3 +3595,35 @@ minibatch interleaving may bound live graph memory, never sequential full runs.
 Training must survive coordinator exit, resume exact state, stop gracefully and
 exclude sealed finals. Luna hourly health automation is prepared, inactive.
 Artifacts, test evidence, counts/hashes and final commands pending implementation.
+
+### First preparation milestone
+
+Published parent `fd8f9e4` adds a read-only CPU health checker (8 focused cases
+passed in 0.005 s), exact monitor setup/limitation notes and saved **PAUSED**
+heartbeat `a8-a1-health-check-enable-after-manual-start`. Tool view and saved
+configuration verify PAUSED. Heartbeat schema has no per-automation model or
+reasoning field; Luna-only execution cannot yet be guaranteed. Keep paused until
+user-started training and confirmed Luna/high configuration. No scheduler model
+override was invented; no standalone cron substituted.
+
+Astra CPU/source advice: 218,234,880 latent weights +65,280 scales per model;
+dual F32 params/Adam moments ~4.879 GiB, one active gradient ~0.813 GiB and
+shared frozen FP16 embedding ~0.724 GiB. Repeated per-step dense hard signs can
+inflate graph memory. Engine owner is implementing attached per-unroll reuse,
+step interleaving, immediate gradient release and actual USER-start CUDA smoke.
+Three resume generations plus one pending need ~19.52 GiB before export/data
+headroom. These are arithmetic estimates, not new 5080 measurements.
+
+Bounded default suggestion: sign LR1e-3/scale LR1e-5, AdamW no decay,
+foreach false, clipping1, 100-pair warmup then constant; effectiveness unproven.
+Warn on 2000 pairs with no flips; do not automatically tune or stop. Separate
+later-only gradients must reach earlier student state AND K/V. A1 saturation is
+not applicable, because its existing metric is identically zero.
+
+Source lock in progress: Databricks Dolly, GSM8K train source and Magicoder
+OSS-Instruct; exact revisions/licenses/hashes and frozen CPU tokenizer. Old
+opaque final exclusion index may be used without opening text. Historical
+legacy finals with no fingerprints cannot support a semantic-decontamination
+claim. Fresh native label-only capture is being prepared to avoid retaining
+multi-TB full-vocabulary logits; original raw captures remain unchanged.
+No GPU/remote actions, accelerator work or availability query performed.
