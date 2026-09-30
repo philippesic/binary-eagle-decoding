@@ -139,3 +139,48 @@ Remaining user-start gates: native exact-prefix teacher capture/refresh, v2
 hard-CE label audit, A8/A1 numeric/cache/backward/export eligibility and actual
 CUDA memory/resource smoke. Sealed tests remain unavailable for ongoing
 selection. Data preparation used local CPU only and activated no monitor.
+
+## Manual transfer packet
+
+`python3 scripts/pack_continuous_w1ax_inputs.py` accepts `--manifest`,
+`--source-lock`, `--output` and repeated `--exclusion-index` arguments. Use
+`data/continuous-w1ax/freeze-002/manifest.json` and the same seven opaque indexes
+listed in the reproduction command above (spell the packaging flag
+`--exclusion-index`). The actual ignored packet is
+`data/continuous-w1ax/launch-inputs.tar`: **22,016,000 bytes**, SHA256
+`b5ce086e87dbdc57e7a0543607f5834ee201fb0c585572fcb63bc9379cb3dc31`.
+Its `.tar.json` receipt records the same hash/counts. Tar member headers have
+fixed mode, timestamp, owner and sorted order; three CPU packet tests passed in
+0.011 seconds, including byte-identical repetition, malicious path rejection,
+wrong hashes/exclusions, sealed filename mislabel and zero sealed payload reads.
+Ruff and an actual packet ledger/hash audit passed on local Darwin/arm64 CPU.
+
+The packet includes the original manifest, locked source config, **train/dev
+prompt payload only**, all split opaque indexes, and all seven prior opaque
+exclusion indexes. It has 61 members and includes neither raw sources, tokenizer/
+model weights, sealed test prompt text nor default reserve prompt text. A trusted
+user may explicitly add reserve payload with `--include-reserve` into a new
+packet. Original manifest hashes of omitted sealed payloads remain preserved;
+their presence is not a training-readiness claim. Do not require or open those
+payloads when validating a training launch.
+
+Transfer this existing packet by the user's manual approved route; agents must
+follow the shared registry/tmux MCP rules for any later remote SSH operation.
+No remote action or service was started during preparation. After manually
+placing the trusted packet on the chosen host, verify and extract it from that
+host's project root:
+
+```sh
+printf '%s  %s\n' \
+  b5ce086e87dbdc57e7a0543607f5834ee201fb0c585572fcb63bc9379cb3dc31 \
+  launch-inputs.tar | sha256sum -c -
+tar -xf launch-inputs.tar
+```
+
+The primary manifest then resolves as
+`data/continuous-w1ax/freeze-002/manifest.json`, retaining its exact
+`9fc8caa8…` hash. Packet metadata is at
+`data/continuous-w1ax/launch-packet.json`; old exclusions resolve under
+`data/continuous-w1ax/exclusions/<index-sha256>/<original-index-name>`.
+Extraction only prepares files. The manual launcher must still perform native
+teacher capture/audit and A8/A1 readiness before advancing either optimizer.
