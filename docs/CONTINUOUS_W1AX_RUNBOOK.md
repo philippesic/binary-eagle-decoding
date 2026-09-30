@@ -9,6 +9,17 @@ hashes, tests, estimates and limitations, including the corrected legacy RNG cal
 
 ## What runs
 
+Current user-authorized run onRTX5080:
+`/home/philip/binary-eagle-decoding/runs/luna-continuous-a8-a1-native-order-20260930`,
+supervisor`luna-supervisor-a8-a1-native-order-20260930-01`, tmux`$36`/`%62`.
+Both fresh A8/A1 gates passed with corrected native-order A1 forward, source
+`f0566aa`; first healthy stage is corpus capture/audit. It has not yet reached
+the full dual CUDA smoke/optimizer. Use the stable ignored local registration
+`runs/luna-continuous-a8-a1-20260929/monitor-registration.json` for current paths,
+hashes and prior-run history. Hourly pinned-Luna heartbeat isACTIVE; see the
+[monitor contract](CONTINUOUS_W1AX_MONITOR.md). Preserve the original failed run;
+its old math identity cannot exact-resume into this corrected experiment.
+
 One long-lived process keeps two independent models, Adam optimizers and RNG
 states. It advances A8 then A1 on identical audited rounds, with one autograd
 graph live at a time. This interleaves minibatches; it does not run two complete

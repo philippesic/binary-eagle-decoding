@@ -4152,3 +4152,58 @@ evidence before corpus capture. Original experiment/all attempts remain intact.
 Same frozen353capture config/10,000train/1,002dev and full dual CUDA smoke guards
 apply before optimizer. Extra A1 matmul cost/memory remains unmeasured. Root owns
 docs/hourly monitor; Luna soleGPUoperator waits for CPU-green launch handoff.
+
+### Fresh gates passed; corpus capture live and hourly handoff
+
+Luna received CPU-green authorization and verified fresh source`f0566aa`/
+published native`b4e366d4`, frozen stages/config/models/provider/Q4/map hashes,
+20GB WSL capacity, idle project processes, RTX5080/SM1202%/2,678MiB baseline,
+and814,544,506,880B free disk. Selective copies of immutable gate inputs were
+recursively hash-equal to old data; no prior success/failure/runtime/status
+report was carried into the new experiment. Both native/Torch A8/A1 checks
+therefore ran fresh rather than consuming old passing reports.
+
+New run`/home/philip/binary-eagle-decoding/runs/luna-continuous-a8-a1-native-order-20260930`,
+supervisor`luna-supervisor-a8-a1-native-order-20260930-01`, named persistent
+tmux`$36`/window`@60`/pane`%62`, launch handle
+`a994e2db-b498-4a8e-baa0-649c52496530`. It used`--start --allow-cuda`, **no resume**,
+same original immutable stage/config,300second stop grace. New runtime pins
+recurrent_qat SHA`d6ca554d41e44fa6ddf83ff609d829c2d4b51b6ea543f291f68e00a23d4d58f2`
+and unchanged other math files; readiness source SHA
+`d7cfa2f20421470d7d4846ccfcf6f4659100c9e023761401622ca8eb1dc464fe`.
+Old failed experiment/all four attempts, CPU diagnostics and copied bytes remain
+intact. Both worker histories were bundled/verified in
+`.git/goal-worktree-archives/continuous-launch/a1-{native-forward,head-reference}.bundle`,
+patch-equivalent to main, then clean merged worktrees/branches removed.
+
+**Both fresh precision gates passed all seven checks on six roots each**, actual
+RTX5080/SM120, all nine binary linears with row scales, W1A8/W1A1 and frozen FP16
+target/verifier; optimizer_steps0. Reports are`stages/gate-a8/gate.json` and
+`stages/gate-a1/gate.json` in the new run. This establishes bounded bridge
+readiness, not trained Q4_0 acceptance/latency/throughput orSM75performance.
+
+One CPU-only health checker exited0/healthy:true; supervisor running, status
+preparing`teacher_capture_audit`,0/353shards, no optimizer. Free disk
+814,041,927,680B, available host RAM16,475,070,464B. Capture/audit must complete
+the declared10,000train/1,002dev coverage and full two-model CUDA smoke before
+optimization; learning quality, actual graph fit/cost and final evaluation remain
+unverified. Sealed sets stay unopened and RTX2080Ti stays paused.
+
+Stable local ignored registration
+`runs/luna-continuous-a8-a1-20260929/monitor-registration.json` points to the NEW
+experiment, preserves prior failed experiment object, and marks ownership handoff
+ready. Luna launch operator ended without additional polling; supervisor continues.
+Root activated existing hourly heartbeat`a8-a1-health-check-enable-after-manual-start`,
+tool and saved config verifyACTIVE. Prompt derives current status/supervisor paths
+from registration, dispatches exactly one pinned Luna/high read-only operator per
+tick, and stays quiet while healthy/unchanged. Terminal failure/completion is
+reported once then schedule pauses, with no tuning/restart/extra inference or
+final access. Local app/host must remain available for scheduled checks; the
+remote process is independently supervised. Last-health fingerprint is reset to
+the healthy fresh run. No standalone task or invented model override was used.
+
+Integrated CPU harness/log SHA respectively
+`6f12cc3b4410a6a4d1cb4776337c4390c3560231f3199c9e0a2388efeb87f801` /
+`721179424831d5228cdc3f7d627e236c66973a37573dd72927461ee2eae086bc`.
+Next work belongs to the live pipeline and hourly monitoring; no active agent
+needs to wait or run a sleep/poll loop. Keep this same project goal active.

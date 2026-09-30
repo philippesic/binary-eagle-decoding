@@ -1,8 +1,17 @@
 # A8/A1 hourly health monitor
 
-Prepared 2026-09-29; **PAUSED** pending verified supervisor launch. Automation ID:
+Prepared 2026-09-29; **ACTIVE** after verified fresh native-order launch on2026-09-30. Automation ID:
 `a8-a1-health-check-enable-after-manual-start`. Target chat:
 `01a0f01d-65c6-7af0-9660-99c07e95cacd`.
+
+Current run:`luna-continuous-a8-a1-native-order-20260930`; supervisor
+`luna-supervisor-a8-a1-native-order-20260930-01`. Stable local ignored registration:
+`runs/luna-continuous-a8-a1-20260929/monitor-registration.json` (preserves the old
+failed experiment separately). Derive current remote status/supervisor paths from
+its`experiment`object; never reuse a hardcoded earlier attempt. First Luna check
+passed while corpus capture/audit was preparing, both fresh precision gates
+passed, and operator handoff is ready. Last-health fingerprint is stored beside
+registration. Tool response and saved config verifyACTIVE/hourly. No sleep loop.
 
 ## Model constraint and supported setup
 
