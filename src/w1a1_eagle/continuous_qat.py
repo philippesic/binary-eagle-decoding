@@ -75,6 +75,7 @@ class ContinuousConfig:
             "development_every",
             "max_prefix_tokens",
             "max_cuda_reserved_bytes",
+            "min_cuda_free_bytes",
             "log_max_bytes",
         ):
             if not math.isfinite(getattr(self, name)) or getattr(self, name) <= 0:

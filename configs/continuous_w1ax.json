@@ -3,10 +3,13 @@
   "training": {
     "device": "cuda:0",
     "sign_lr": 0.001,
-    "scale_lr": 0.00001,
+    "scale_lr": 1e-05,
     "warmup_steps": 100,
     "max_grad_norm": 1.0,
-    "seeds": [8101, 1101],
+    "seeds": [
+      8101,
+      1101
+    ],
     "checkpoint_every": 250,
     "keep_checkpoints": 3,
     "diagnostics_every": 100,
@@ -33,17 +36,51 @@
   "stages": null,
   "development": null,
   "model_shapes": [
-    [2560, 7680],
-    [4096, 5120],
-    [1024, 5120],
-    [1024, 5120],
-    [2560, 4096],
-    [9728, 2560],
-    [9728, 2560],
-    [2560, 9728],
-    [32000, 2560]
+    [
+      2560,
+      7680
+    ],
+    [
+      4096,
+      5120
+    ],
+    [
+      1024,
+      5120
+    ],
+    [
+      1024,
+      5120
+    ],
+    [
+      2560,
+      4096
+    ],
+    [
+      9728,
+      2560
+    ],
+    [
+      9728,
+      2560
+    ],
+    [
+      2560,
+      9728
+    ],
+    [
+      32000,
+      2560
+    ]
   ],
   "frozen_drafter_bytes": 777912320,
   "assumed_graph_budget_bytes": 3221225472,
-  "preparation_note": "Host source paths and typed native capture/readiness/development manifests must be supplied from the pinned artifact registry before manual start. Downloaded prompts are not eligible teacher tensors. Continuous progress does not establish convergence; Q4_0 is the native acceptance/throughput baseline. No sealed test evaluation is scheduled."
+  "preparation_note": "Host source paths and typed native capture/readiness/development manifests must be supplied from the pinned artifact registry before manual start. Downloaded prompts are not eligible teacher tensors. Continuous progress does not establish convergence; Q4_0 is the native acceptance/throughput baseline. No sealed test evaluation is scheduled.",
+  "hardware": {
+    "device_name": "NVIDIA GeForce RTX 5080",
+    "compute_capability": [
+      12,
+      0
+    ]
+  }
 }
