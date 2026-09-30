@@ -4508,3 +4508,31 @@ Remote job is untouched: registry key`rtx5080` resolves dynamically from `~/.con
 Next: successor reads this checkpoint, current monitor contract and ignored registration/last-health/recovery-budget; acknowledges coordination handoff WITHOUT another remote check or launch. Root transfers the existing heartbeat target after acknowledgement and retires. At its next scheduled tick, dispatch exactly one experiment_operator/forknone for a single combined CPU health/retained-manifest query. Healthy ordinary progress stays quiet; notify once actual optimizer steps start or completion occurs. On new failure notify before recovery; whitelist and all safety gates in `docs/CONTINUOUS_W1AX_MONITOR.md` apply. Recovery budget currently1of2 used in window starting21:55UTC; no further retry this healthy tick. Unknown SSH health is neither failure nor GPU-free proof. Manual status questions use one direct compact read. No open user decision blocks capture; neither training quality nor end-to-end performance is established.
 
 Existing automation `a8-a1-health-check-enable-after-manual-start` remains ACTIVE/every15minutes; no additional schedule. Successor `01a0f47a-e246-75e1-a299-fcac42d34f8a` (local, GPT-6.1 Sol/high) acknowledged the exact run/ownership/counts/budget without another remote check or edits. Existing automation retargeted through automation_update; saved configuration verifies ACTIVE/every15minutes/current successor target. Old root retires after pushing this checkpoint; no in-flight subagent or command transfers, and the host-side GPU job continues unchanged.
+
+
+### Scheduled observation unavailable — 2026-09-30 22:48 UTC
+
+Successor dispatched exactly one pinned Luna/high `experiment_operator`
+(`/root/health_20260930_2247`, fork none) after verifying no other operator and
+reading current registry, registration, health and recovery budget. The dedicated
+local tmux transport returned exit1 at **22:48:51 UTC**, with
+“The system cannot find the path specified.” The recorded command sent Linux
+`cd`/Python directly to the Windows SSH shell instead of entering WSL. Thus the
+CPU checker was never reached; current health, counts and steps are **unknown**.
+This does not establish training failure, a stopped supervisor or a free GPU.
+The last verified observation remains 22:38:28 UTC: supervisor03 running,
+31 completed manifests/992 train prompts, development0, zero optimizer steps.
+
+User notified before any recovery; no recovery, launch, stop, GPU query or
+additional remote observation occurred. Only the local transport was closed.
+Ignored raw snapshot `runs/luna-continuous-a8-a1-20260929/health-20260930T224851Z.json`
+preserves the attempted command and error. Local last-health/registration retain
+last verified state separately from unknown current state, with an alert
+fingerprint for duplicate suppression. Recovery budget remains1of2 used.
+
+Next scheduled tick: one pinned operator, current registry/registration and
+a single combined CPU checker/manifest query via **Windows SSH ->
+`wsl.exe -e python3`**, using the successful base64 stdlib-query pattern. Do not
+submit Linux shell paths directly to Windows. Monitoring remains ACTIVE every
+15minutes; host-side job ownership/socket/session and WSL settings are unchanged.
+No research decision, precision/config change, final-data action or new goal.

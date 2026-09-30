@@ -33,6 +33,17 @@ Monitoring uses separate **local transport** windows/fresh SSH; never attach or
 send keys/kill a pane/session/server in the host-side job session. Saved config
 verifiesACTIVE. Original interruption and both CPU proofs remain preserved.
 
+## Windows SSH shell bridge
+
+The registered RTX5080 endpoint is Windows SSH, with Linux files inside WSL.
+Every health command must enter WSL explicitly, using `wsl.exe -e python3`
+and a compact base64-encoded stdlib query as in the prior successful snapshot.
+Do not send Linux `cd`/Python commands directly to the Windows shell. The
+22:48:51 UTC observation failed before the CPU checker because that bridge was
+omitted; it is unknown health, not evidence of a stopped or failed GPU job.
+The next scheduled tick uses the bridge; no second observation or restart was
+attempted in the failed tick.
+
 ## Model constraint and supported setup
 
 **Current policy supersedes the historical read-only/no-restart contract below.**
