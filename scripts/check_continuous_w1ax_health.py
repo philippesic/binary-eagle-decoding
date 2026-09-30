@@ -28,7 +28,7 @@ def check_health(status_path: Path, *, now: float | None = None,
     terminal = state in ("stopped", "completed", "failed")
     if state == "failed":
         failures.append(f"training failed: {status.get('error', 'see training log')}")
-    elif state not in ("running", "smoke", "stopped", "completed"):
+    elif state not in ("running", "smoke", "development_evaluation", "stopped", "completed"):
         failures.append(f"unknown training status: {state}")
     heartbeat = status.get("heartbeat_unix")
     if not terminal and (not isinstance(heartbeat, (int, float)) or
@@ -71,6 +71,18 @@ def check_health(status_path: Path, *, now: float | None = None,
         if value is not None and (not isinstance(value, (int, float)) or
                                   not math.isfinite(value) or value < 0):
             failures.append(f"{key} invalid")
+    for key in ("host_available_bytes", "host_total_bytes", "process_rss_bytes",
+                "cuda_free_bytes", "cuda_total_bytes"):
+        value = status.get(key)
+        if value is not None and (not isinstance(value, (int, float)) or
+                                  not math.isfinite(value) or value < 0):
+            failures.append(f"{key} invalid")
+    host_available = status.get("host_available_bytes")
+    if isinstance(host_available, (int, float)) and host_available < 2 * 1024**3:
+        failures.append("host available RAM below 2 GiB health floor")
+    cuda_free = status.get("cuda_free_bytes")
+    if isinstance(cuda_free, (int, float)) and cuda_free < 1024**3:
+        failures.append("whole-device free memory below 1 GiB health floor")
     checkpoint = status.get("checkpoint")
     if checkpoint is not None:
         try:
@@ -93,8 +105,12 @@ def check_health(status_path: Path, *, now: float | None = None,
     if supervisor_path is not None:
         try:
             supervisor = json.loads(supervisor_path.read_text())
-            if supervisor.get("status") in ("finished", "interrupted") and not terminal:
+            if supervisor.get("status") in ("finished", "interrupted", "failed") and not terminal:
                 failures.append("supervisor terminal but training status is nonterminal")
+            if supervisor.get("status") == "failed":
+                failures.append(
+                    f"supervisor failed: {supervisor.get('log_error', 'see supervisor log')}"
+                )
             if supervisor.get("status") == "finished" and supervisor.get("exit_code") != 0:
                 failures.append(f"supervisor exited {supervisor.get('exit_code')}")
             if check_process and not terminal:
@@ -107,7 +123,8 @@ def check_health(status_path: Path, *, now: float | None = None,
     return {"healthy": not failures, "terminal": terminal, "status": state,
             "failures": failures, "steps": dict(zip(("A8", "A1"), steps)),
             "checkpoint": checkpoint, "models": models,
-            "heartbeat_unix": heartbeat, "disk_free_bytes": disk}
+            "heartbeat_unix": heartbeat, "disk_free_bytes": disk,
+            "host_available_bytes": host_available, "cuda_free_bytes": cuda_free}
 
 
 def main() -> int:
