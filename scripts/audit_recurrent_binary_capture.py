@@ -391,7 +391,8 @@ def sha256(path: Path) -> str:
 
 
 def read_jsonl(path: Path) -> list[dict]:
-    rows = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    # JSONL records end at newlines; Unicode separators can occur inside strings.
+    rows = [json.loads(line) for line in path.read_text().split("\n") if line.strip()]
     if not rows or any(not isinstance(row, dict) for row in rows):
         raise ValueError(f"{path.name}: expected nonempty JSON object rows")
     return rows
