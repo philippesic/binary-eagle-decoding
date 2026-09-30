@@ -4275,3 +4275,31 @@ docs and monitor. Before resume, prove a supervised CPU fixture survives deliber
 SSH disconnection in a detached host-side tmux session, then preserve/quarantine
 owned partial native capture with the existing recovery tool. No training math,
 data/precision/gate/optimizer changes or new project goal.
+
+Read-only remote inventory confirms32/32 train prompts in complete
+`capture-00000` (labels manifest09:10:05UTC); `capture-00001` has22 saved request
+records, incomplete native manifest, no labels,3,718 state ledger rows and
+611,301,700B retained across100files (last09:12:05UTC).353shards planned,
+351unstarted, no dev completion and **no optimizer steps**. These22requests are
+partial raw capture, not an independently audited completed shard. Old rawdata,
+both fresh passing precision gates and runtime/math/source hashes remain intact.
+Remote process audit found no project process. LinuxWSL tmux3.6 is installed,
+but no server/session existed, confirming no host-side tmux protected the launch.
+
+Reviewed signal observability worker`8f7a7bf`/cleanupfollow-up`3d991ed` integrated
+and pushed as`b89f3fa`/`0847afc`. Supervisor now records its own PID/PPID/PGID/SID
+separately from child identity and first received signal/name/time. New failed
+stop-state write cannot bypass group cleanup. Six actual subprocess lifecycle
+tests pass in3.889s, including HUP/TERM→childTERM, interrupt grace, log rotation
+and injected state-write failure with child-group termination. Numerical source
+and exact-resume identity are unchanged. No GPU test claimed by theseCPUchecks.
+
+Luna prepared ignored stdlib-only disconnect fixture
+`results/continuous-w1ax-launch/disconnect-proof/probe.py`, SHA256
+`5b456739f5aab7128e129fbdf90b73436e527ab34ffcc211707bd8caf5e80ecd`.
+It writes fsynced heartbeat/identity/parent records, catches INT/TERM and bounds
+itself to110s. Root authorized one host-side tmux CPU boundary proof on the
+patched supervisor, with freshSSHconnection closed/reopened, then cleanup only
+the dummy process group. No model/capture launch or partial-data mutation until
+this proof is reviewed. Actual resume will remain under the existing user launch
+authorization, with no repeated permission flow or automatic rescue loop.
