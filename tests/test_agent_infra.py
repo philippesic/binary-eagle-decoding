@@ -87,6 +87,92 @@ class AgentInfrastructureTests(unittest.TestCase):
                         except ProcessLookupError:
                             pass
 
+    def test_remote_supervisor_honors_configured_stop_grace(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "scripts").mkdir()
+            supervisor = root / "scripts/remote_job.py"
+            shutil.copyfile(ROOT / "scripts/remote_job.py", supervisor)
+            marker = root / "graceful-stop.txt"
+            child = root / "child.py"
+            child.write_text(
+                "import pathlib, signal, time\n"
+                f"marker = pathlib.Path({str(marker)!r})\n"
+                "def stop(*_):\n"
+                "    marker.write_text('handled SIGTERM')\n"
+                "    time.sleep(0.35)\n"
+                "    raise SystemExit(0)\n"
+                "signal.signal(signal.SIGTERM, stop)\n"
+                "print('ready', flush=True)\n"
+                "while True: time.sleep(1)\n"
+            )
+            runner = subprocess.Popen(
+                [sys.executable, str(supervisor), "grace-run", "--stop-grace-seconds", "1",
+                 "--", sys.executable, str(child)],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            record_path = root / "runs/grace-run/state.json"
+            try:
+                deadline = time.monotonic() + 10
+                while time.monotonic() < deadline:
+                    if record_path.exists():
+                        record = json.loads(record_path.read_text())
+                        if record["status"] == "running":
+                            break
+                    time.sleep(0.05)
+                else:
+                    self.fail("supervisor did not start")
+                runner.send_signal(signal.SIGINT)
+                runner.communicate(timeout=10)
+                self.assertEqual(runner.returncode, 130)
+                self.assertEqual(marker.read_text(), "handled SIGTERM")
+                record = json.loads(record_path.read_text())
+                self.assertEqual(record["stop_grace_seconds"], 1.0)
+                self.assertEqual(record["exit_code"], 0)
+            finally:
+                if runner.poll() is None:
+                    runner.kill()
+                    runner.wait()
+                if record_path.exists():
+                    record = json.loads(record_path.read_text())
+                    if "pgid" in record:
+                        try:
+                            os.killpg(record["pgid"], signal.SIGKILL)
+                        except ProcessLookupError:
+                            pass
+
+    def test_remote_supervisor_bounds_rotated_stdout_logs(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "scripts").mkdir()
+            supervisor = root / "scripts/remote_job.py"
+            shutil.copyfile(ROOT / "scripts/remote_job.py", supervisor)
+            child = root / "child.py"
+            child.write_text(
+                "for index in range(30):\n"
+                "    print(f'{index:02d}:' + 'x' * 30, flush=True)\n"
+            )
+            result = subprocess.run(
+                [sys.executable, str(supervisor), "log-run", "--max-log-bytes", "128",
+                 "--log-backups", "2", "--", sys.executable, str(child)],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            run_dir = root / "runs/log-run"
+            logs = [run_dir / "stdout.log", run_dir / "stdout.log.1", run_dir / "stdout.log.2"]
+            existing = [path for path in logs if path.exists()]
+            self.assertEqual(len(existing), 3)
+            self.assertTrue(all(path.stat().st_size <= 128 for path in existing))
+            retained = b"".join(path.read_bytes() for path in existing)
+            self.assertIn(b"29:", retained)
+            state = json.loads((run_dir / "state.json").read_text())
+            self.assertEqual(state["log_rotation"], {"max_bytes_per_file": 128, "backups": 2})
+
 
 if __name__ == "__main__":
     unittest.main()
