@@ -3771,3 +3771,23 @@ Task native Goal may now be completed for this concrete preparation objective.
 Next action belongs to the user: start via the runbook, then enable only the
 verified Luna health monitor if desired. Do not launch GPU work or activate the
 monitor from this preparation task.
+
+## Luna launch authorization
+
+User instruction on2026-09-29: “Go launch Luna to start and monitor it, durable
+spaced checks, not spamming checking with sleep. Gpu is all yours”. This explicitly
+authorizes the prepared RTX5080 native readiness/capture/dual training launch and
+health monitoring; it supersedes the prior CPU-only/manual-start boundary.
+RTX2080Ti remains paused; no architecture/precision/final-set decision changes.
+
+Root coordinates launch handoff and durable monitoring setup only. A Luna/high
+experiment operator is the sole GPU owner and owns registered-host SSH/tmux,
+artifact transfer, pinned config, supervisor launch, first progress evidence and
+ignored monitor registration. Both models progress in one experiment; capture/
+evaluation are serialized. Health monitoring remains hourly, quiet when healthy,
+with no tuning/restart/extra inference/final evaluation. No sleep-driven polling.
+
+The prepared heartbeat cannot pin Luna/high via its tool schema. Root has asked
+for the supported standalone model-pinned hourly surface while Luna starts work;
+do not activate a Sol/default-model recurring task. Concrete IDs/session/run
+paths, actual gate/launch results and schedule status will be checkpointed.

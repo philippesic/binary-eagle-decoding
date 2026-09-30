@@ -34,8 +34,11 @@ corrected; the final audit guards library backend APIs. See the
 [preparation report](../experiments/continuous-w1ax-preparation.md),
 [manual runbook](CONTINUOUS_W1AX_RUNBOOK.md), and
 [goal checkpoint](goals/recurrent-binary-body-head.md#continuous-a8a1-cpu-preparation).
-The next action is the user's manual start; do not activate GPU work or a monitor
-from this preparation task.
+The user has now authorized Luna to start the prepared native gates, capture and
+continuous paired W1A8/W1A1 training on RTX5080, then monitor with durable spaced
+checks. This supersedes the preparation-only boundary; RTX2080Ti remains paused.
+One Luna operator owns the GPU. No tight polling/sleep loop is authorized.
+See the [launch checkpoint](goals/recurrent-binary-body-head.md#luna-launch-authorization).
 
 ## Historical checkpoints
 
