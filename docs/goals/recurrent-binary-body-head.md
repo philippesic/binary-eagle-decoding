@@ -4068,3 +4068,28 @@ replay and will retain its report/hash. The scaled-before-dot comparison uses
 NumPy rather than claiming actual CUDA reduction equivalence. Sol separately
 checks deterministic CPU cancellation in current RowBinaryLinear only, without
 patching math or launching new GPU work; this is mechanism evidence, not cause.
+
+First supervised CPU replay completed computation in~4.5s but exceeded its512MiB
+RSS guard and raised before report publication. No computed metrics or actual
+peak RSS survived; original helper/log retained, no numeric conclusion taken.
+The earlier claim of no transitive framework imports was unverified: broad GGUF
+package imports optional tokenizer dependencies. No explicit Torch/model/GPU
+operation was requested for this CPU run. Revised helper SHA256
+`195f0564182601a068e1b6d348820e592942b46e3ab74c898463f033694ff472`
+loads only GGUF reader/constants/quants/lazy, records loaded framework modules,
+and persists full computed metrics/actual peakRSS before returning0/2 for the
+unchanged512MiB guard. Chunk reduced to128; bit/order/probe and good/failed
+resource-persistence tests pass. Original2ac30d7 source is preserved separately.
+Luna owns one CPU-only corrected replay with new report/supervisor, no GPU retry.
+
+Actual RowBinaryLinear CPU mechanism test is retained under ignored replay
+folder: harness SHA`6fac0cf704f21cee2a03077a0540f413b44f64865ae73d3ef951417ad78858c8`,
+report SHA`574b2ecc84ef1a9a34797e789192ae851aee3b189d98990aa13ae756ceb0996a`.
+Sixteen balanced rows at eachK2560/K7680 have true integer dot0, but15/16 current
+scaled float sums are nonzero;9/16 and8/16 become negative and flip the next
+zero-positive A1 sign. This is local CPU mechanism evidence, not CUDA cause.
+Sol `/root/a1_native_forward` owns an isolated candidate A1 native-order forward
+value correction with the existing STE gradient retained, plus focused tests.
+No integration/GPU validation before retained-head evidence/root review. A8/A4/
+A16 remain unchanged; new numerical source would require fresh runtime ancestry,
+never bypass the failed experiment's exact-resume identity check.
