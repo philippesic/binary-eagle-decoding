@@ -4333,3 +4333,19 @@ proof with240s hardlimit,90s fully offline before a single reconnect, same boot/
 PID/counter proof, followed by dummy-only cleanup. Real pipeline recovery/resume
 is held until that proof passes; no retry loop, GPU query, math/data/precision
 change or additional automation. Monitor remainsPAUSED.
+
+Authorized reversible config edit is applied: original19byte file backed up at
+`C:\Users\philip\.wslconfig.codex-backup-20260930T191600Z`, original/backup SHA256
+`f724786c7f3c98b2dd4e1b66f8154fb5f98d9a05ff97c352b26d40ea21cb701`.
+Existing bytes preserved; only37byte`[general] instanceIdleTimeout=-1` addition.
+New SHA256`9b95c21b64fd5d99d70e2ed1041e95f2ccae8f6bb6b8ff3555cf1d1d06bdf3e3`.
+All distros wereStopped/no other work before reload; no Windows reboot. Restore
+the exact backup and reload WSL to roll back. Fresh startup has no parser warning,
+20GB limit retained, MemTotal20,479,644kB/available19,709,060kB, boot ID
+`64c410b2-4892-46b4-bc6f-2bfd8573e802`, same kernel, no project/model process.
+Journal evidence from prior boot shows systemd-shutdown SIGTERM at19:04:13UTC,
+matching CPUfixture supervisor19:04:09Z stop and UbuntuStopped observation.
+This supports WSL lifetime termination, rather than an intentional human stop.
+The post-fix90s boundary proof remains required before real GPU resume; no
+success is asserted from config presence. Operations/manual launch recipes now
+require BOTH host-side Linux tmux and verified distro lifetime beyond SSH.

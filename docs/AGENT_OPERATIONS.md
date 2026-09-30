@@ -87,8 +87,17 @@ the orchestrator explicitly coordinates sharing.
 
 Keep the remote checkout, models, caches, logs, and outputs under the host
 file's `workdir` (default `~/binary-eagle-decoding`). A run has a unique
-`runs/<run-id>/`. Start it inside a named tmux MCP-managed session with
-`python3 scripts/remote_job.py <run-id> -- <command> [args...]`. The supervisor
+`runs/<run-id>/`. Connect through tmux MCP, but start the supervisor in a detached
+**Linux tmux session on the WSL host**, not foreground inside SSH protected only
+by local tmux. Use a dedicated host socket such as`binary-eagle-runtime` and
+`tmux -L binary-eagle-runtime new-session -d -s <session> -c <project> 'exec python3 scripts/remote_job.py <run-id> -- <command> [args...]'`.
+Record the host socket/session/server and supervisor identities separately from
+the local MCP transport window. On this WSL2.7host, verify the user's
+`.wslconfig` contains`[general] instanceIdleTimeout=-1`: background Linux services
+alone did not prevent distro auto-shutdown after SSH closed. Preserve existing
+settings and backup any authorized edit. Before a long GPU launch, require one
+bounded CPU disconnect proof beyond the idle boundary and a fresh reconnect;
+do not claim durability from a startup snapshot. The supervisor
 puts the child in its own process group and places common caches and temporary
 files inside that run directory. It records `state.json` and `stdout.log`.
 Do not start detached GPU processes outside this supervisor. A run directory

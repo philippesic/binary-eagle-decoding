@@ -77,13 +77,15 @@ Use the existing pinned `.venv` (Torch2.14); no new service is needed.
 ## Manual start
 
 Choose an absolute experiment directory under the registered project and a
-unique supervisor ID. Start inside a persistent tmux MCP session:
+unique supervisor ID. Through the tmux MCP SSH connection, launch inside a
+detached Linux tmux session on the GPU host. Local tmux around SSH is insufficient.
+The WSL distro must also persist after the last client disconnects; verified
+host setting is`[general] instanceIdleTimeout=-1`, preserving`memory=20GB`.
+Use the host-side pattern (replace experiment path before execution):
 
 ```sh
-python3 scripts/remote_job.py --stop-grace-seconds 300 continuous-a8-a1-001 -- \
-  .venv/bin/python scripts/train_continuous_w1ax.py --start --allow-cuda \
-  --stages-manifest runs/continuous-preparation/stages.json \
-  --run-dir <absolute-experiment-dir>
+tmux -L binary-eagle-runtime new-session -d -s continuous-a8-a1-001 -c "$PWD" \
+  'exec python3 scripts/remote_job.py --stop-grace-seconds 300 continuous-a8-a1-001 -- .venv/bin/python scripts/train_continuous_w1ax.py --start --allow-cuda --stages-manifest runs/continuous-preparation/stages.json --run-dir /absolute/experiment-directory'
 ```
 
 The launcher checks RTX5080/SM120, then independent A8/A1 checkpoint-zero export,
@@ -115,10 +117,8 @@ allows 300 seconds to write large checkpoints and bounds stdout logs.
 Resume with a NEW supervisor ID, identical source/config/runtime and `--resume`:
 
 ```sh
-python3 scripts/remote_job.py --stop-grace-seconds 300 continuous-a8-a1-002 -- \
-  .venv/bin/python scripts/train_continuous_w1ax.py --start --allow-cuda --resume \
-  --stages-manifest runs/continuous-preparation/stages.json \
-  --run-dir <absolute-experiment-dir>
+tmux -L binary-eagle-runtime new-session -d -s continuous-a8-a1-002 -c "$PWD" \
+  'exec python3 scripts/remote_job.py --stop-grace-seconds 300 continuous-a8-a1-002 -- .venv/bin/python scripts/train_continuous_w1ax.py --start --allow-cuda --resume --stages-manifest runs/continuous-preparation/stages.json --run-dir /absolute/experiment-directory'
 ```
 
 It restores both optimizers, per-lane/global RNG, counters and cursor. A crash
