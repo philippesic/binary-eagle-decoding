@@ -23,7 +23,8 @@
     "max_cuda_reserved_bytes": 12884901888,
     "min_cuda_free_bytes": 1073741824,
     "log_max_bytes": 8388608,
-    "log_backups": 3
+    "log_backups": 3,
+    "min_host_available_bytes": 2147483648
   },
   "coverage": {
     "min_unique_train_prompts": 10000,
