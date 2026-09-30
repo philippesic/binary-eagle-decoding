@@ -182,7 +182,9 @@ def main() -> int:
         if relay_errors:
             record["log_error"] = "; ".join(str(exc) for exc in relay_errors)
             record["status"] = "failed"
-            record["exit_code"] = record["exit_code"] if record["exit_code"] not in (0, None) else 74
+            record["exit_code"] = (
+                record["exit_code"] if record["exit_code"] not in (0, None) else 74
+            )
         record_path.write_text(json.dumps(record, indent=2) + "\n")
     if relay_errors:
         return 74
