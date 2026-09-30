@@ -9,6 +9,7 @@ import importlib
 import json
 import os
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,6 +22,7 @@ from w1a1_eagle.continuous_qat import (  # noqa: E402
     atomic_json,
     build_lanes,
     memory_estimate,
+    sha256,
 )
 from w1a1_eagle.recurrent_provider import audit_provider_round  # noqa: E402
 
@@ -76,6 +78,8 @@ def main():
     parser.add_argument("--config", type=Path, default=ROOT / "configs/continuous_w1ax.json")
     parser.add_argument("--run-dir", type=Path)
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--stages-manifest", type=Path)
+    parser.add_argument("--development-manifest", type=Path)
     parser.add_argument("--allow-cuda", action="store_true")
     args = parser.parse_args()
     if args.resume and not args.start:
@@ -108,6 +112,12 @@ def main():
     if not args.allow_cuda:
         parser.error("--start requires --allow-cuda; preparation itself never starts a GPU")
     spec, config = load_config(args.config)
+    if args.stages_manifest:
+        spec["stages"] = json.loads(args.stages_manifest.read_text())
+    if args.development_manifest:
+        spec["development"] = json.loads(args.development_manifest.read_text())
+    if not isinstance(spec.get("stages"), dict):
+        parser.error("pinned stages required: use --stages-manifest from CPU prepare-config")
     if args.resume and not (run_dir / "latest.json").exists():
         parser.error("--resume requires an existing paired checkpoint")
     if not args.resume and (run_dir / "status.json").exists():
@@ -120,13 +130,44 @@ def main():
     run_lock = lock(run_dir / ".owner.lock")
     gpu_lock = lock(Path.home() / ".cache/binary-eagle-decoding/cuda-0.owner.lock")
     try:
-        atomic_json(run_dir / "resolved_config.json", spec)
+        resolved_path = run_dir / "resolved_config.json"
+        if resolved_path.exists():
+            original = json.loads(resolved_path.read_text())
+            comparison = json.loads(json.dumps(spec))
+            for key in ("max_steps", "max_tokens", "max_seconds", "max_epochs"):
+                original["training"].pop(key, None)
+                comparison["training"].pop(key, None)
+            if original != comparison:
+                raise ValueError("resume changes immutable stages/development/source configuration")
+            atomic_json(run_dir / f"resume-request-{time.time_ns()}.json", spec)
+        else:
+            atomic_json(resolved_path, spec)
+        import torch
+
+        if not torch.cuda.is_available():
+            raise RuntimeError("manual start requires declared CUDA hardware")
+        properties = torch.cuda.get_device_properties(config.device)
+        observed = {
+            "device_name": properties.name,
+            "compute_capability": [properties.major, properties.minor],
+            "torch_version": torch.__version__,
+            "cuda_version": torch.version.cuda,
+            "device_total_bytes": properties.total_memory,
+            "resolved_config_sha256": sha256(resolved_path),
+        }
+        expected = spec["hardware"]
+        if (
+            observed["device_name"] != expected["device_name"]
+            or observed["compute_capability"] != expected["compute_capability"]
+        ):
+            raise RuntimeError("manual start hardware differs from frozen RTX5080 SM120 contract")
+        atomic_json(run_dir / "runtime_environment.json", observed)
         atomic_json(
             run_dir / "status.json",
             {
                 "schema": "continuous_joint_w1ax_v1",
                 "status": "preparing",
-                "heartbeat_unix": __import__("time").time(),
+                "heartbeat_unix": time.time(),
                 "pid": os.getpid(),
                 "models": {},
                 "phase": "capture_audit_readiness",
@@ -141,6 +182,7 @@ def main():
         provider_spec["manifest"] = str(resolved)
         providers = provider_pair(provider_spec, config)
         provider = providers[0]
+        del providers  # Release the independently audited A1 provider payload.
         minimum = spec["coverage"]
         if len(provider.allowed_prompt_ids) < minimum["min_unique_train_prompts"]:
             raise ValueError("teacher data has too few independent train prompts for declared tier")
@@ -207,7 +249,7 @@ def main():
                 {
                     "schema": "continuous_joint_w1ax_v1",
                     "status": "failed",
-                    "heartbeat_unix": __import__("time").time(),
+                    "heartbeat_unix": time.time(),
                     "pid": os.getpid(),
                     "models": {},
                     "error": f"{type(error).__name__}: {error}",
