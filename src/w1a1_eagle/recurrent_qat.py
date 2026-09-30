@@ -167,11 +167,16 @@ class RowBinaryLinear(nn.Module):
             return surrogate
         # Native A1 reduces unscaled signs to an integer dot before applying
         # weight scale, then activation scale. F32 sums of +/-1 are exact for
-        # the deployed widths (<2**24); scaling before the dot can leave a
+        # the deployed widths (<2**24, F32 without autocast); scaling before the dot can leave a
         # cancellation residual that changes a later A1 sign. Keep the original
         # dequantized-value STE, including meaningful gradients at scale zero.
         with torch.no_grad():
-            activation_signs = torch.where(input.float() < 0, -1.0, 1.0)
+            # Native tests raw bits so CUDA fast-math cannot flush a negative
+            # subnormal before sign selection; both signed zeros stay positive.
+            raw = input.float().contiguous().view(torch.int32)
+            negative = ((raw & -2147483648) != 0) & ((raw & 2147483647) != 0)
+            ones = torch.ones_like(quantized)
+            activation_signs = torch.where(negative, -ones, ones)
             native = (F.linear(activation_signs, signs.detach()) * weight_scales.detach())
             native = native * activation_scale
             if self.frozen_bias is not None:

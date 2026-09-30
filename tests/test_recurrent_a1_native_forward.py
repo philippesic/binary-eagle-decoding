@@ -123,6 +123,23 @@ class A1NativeForwardTests(unittest.TestCase):
                                  W1AxContract(1))
         torch.testing.assert_close(module(torch.zeros(2560)), torch.zeros(2), rtol=0, atol=0)
 
+    def test_f32_sign_bits_preserve_subnormals_zeros_and_default_dtype(self):
+        old_dtype = torch.get_default_dtype()
+        try:
+            torch.set_default_dtype(torch.float64)
+            tiny = torch.tensor([1], dtype=torch.int32).view(torch.float32)[0]
+            x = torch.tensor([-0.0, 0.0, -tiny, tiny, 1.0], dtype=torch.float32)
+            module = RowBinaryLinear(torch.ones(1, 5, dtype=torch.float32),
+                                     torch.tensor([0.375], dtype=torch.float32), W1AxContract(1))
+            scale = x.abs().double().mean().float()
+            # Explicit signs +,+,-,+,+ give integer dot three, including -tiny.
+            expected = (torch.tensor([3.0], dtype=torch.float32) * 0.375) * scale
+            actual = module(x)
+            self.assertEqual(actual.dtype, torch.float32)
+            torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+        finally:
+            torch.set_default_dtype(old_dtype)
+
     def test_other_activation_width_values_and_gradients_are_unchanged(self):
         for bits in (4, 8, 16):
             for shared in (False, True):
