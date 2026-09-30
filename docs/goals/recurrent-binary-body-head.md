@@ -4455,3 +4455,48 @@ hourly heartbeat paused with prompt/cadence/target preserved; tool/saved config
 verifyPAUSED. User notified once in this requested report. Investigate native
 CUDA synchronization/driver failure and preserve the incomplete cell before
 any coordinated recovery; no automatic restart was done. Same goal active.
+
+### User correction: direct truthful status and bounded recovery
+
+The human user explicitly objected to stale running reports, ambiguous capture/
+training progress, fifteen-minute delegated answers to simple status questions,
+and terminal failures parked without notification/retry. Root acknowledged these
+failures and changed execution: direct compact manual reads, separate timestamped
+capture/audit/optimizer metrics, and notification plus bounded safe recovery.
+This supersedes prior read-only/no-restart monitoring policy; it does not
+authorize unsafe retries, research changes, driver resets or final access.
+
+Root directly queried GPU through tmuxMCP/currentregistry: RTX5080, driver616.92,
+0%utilization,3,031MiBused/12,947MiBfree, NVML responsive. Initial PATH-relative
+nvidia-smi command failed before querying; absolute`/usr/lib/wsl/lib/nvidia-smi`
+succeeded. This establishes capacity/driver response, not compute correctness.
+Local shared pause flag is false for5080, true for2080Ti. CPU recovery preserved
+only incomplete`capture-00026/native` at
+`recovery/partial-1790805564563254489/capture-00026-native`, no data deletion,
+unchanged stages SHA. Root verified all critical math source hashes against the
+saved runtime, noSTOP/active project process, then launched unique supervisor03
+and host session`continuous-a8-a1-native-order-20260930-03` on`binary-eagle-runtime`
+using existing supervised`--start --allow-cuda --resume`, stopgrace300. Old runs,
+passed gates and26audited label manifests are intact.
+
+One direct combined observation at22:11:53.834931UTC confirmshealthy/running,
+supervisor2920/parent2919 (host tmux), trainer2921, receivedsignal:null,
+phase`teacher_capture_audit`. **Retained audited prompts832train/0dev,
+26manifests; optimizer_started:false/0steps.** Loop ordinal12 is cached-data
+revalidation progress, not total retained capture count; do not falsely report
+12shards retained or count re-auditing as new capture/training. Diskfree
+781,721,325,568B, RAMavailable19,613,917,184B. Snapshot retained locally at
+`direct-status-20260930T221153Z.json`; no repeated completed GPU capture requested.
+
+Root updated existing automation toACTIVE/every15minutes, preserving target and
+pinned Luna delegation. New prompt notifies a detected failure before at most
+one recovery per tick, whitelists native transport/CUDA-unknown failures only
+when safe, and limits2recoveries perrun/24h (manual03used1). Budget/source/current
+paths persisted in`recovery-budget.json`/registration/last-health. Do not retry
+intentional STOP/pause, numeric/data/cache/eligibility failure, corrupt checkpoint,
+changed identity, persistentOOM or unresolvedownership; report required action.
+No silent terminal pause: keep observation active/suppress duplicates when
+recovery unsafe/exhausted; pause for completion or explicit userstop. Failures
+are detected at the next15minute check, not promised instantaneous push.
+No new schedule/chat, model/precision/data-tier/optimizer changes or restart
+loop. Signal/capture history preserved; training remains not started.

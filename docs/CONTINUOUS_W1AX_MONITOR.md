@@ -1,11 +1,11 @@
-# A8/A1 hourly health monitor
+# A8/A1 health and bounded recovery monitor
 
-Prepared 2026-09-29; **PAUSED** after native CUDA capture failure at21:09UTC on2026-09-30. Automation ID:
+Prepared 2026-09-29; **ACTIVE every15minutes** with user-authorized failure notification and bounded recovery. Automation ID:
 `a8-a1-health-check-enable-after-manual-start`. Target chat:
 `01a0f01d-65c6-7af0-9660-99c07e95cacd`.
 
 Current run:`luna-continuous-a8-a1-native-order-20260930`; supervisor
-`luna-supervisor-a8-a1-native-order-20260930-02`. Stable local ignored registration:
+`luna-supervisor-a8-a1-native-order-20260930-03`. Stable local ignored registration:
 `runs/luna-continuous-a8-a1-20260929/monitor-registration.json` (preserves the old
 failed experiment separately). Derive current remote status/supervisor paths from
 its`experiment`object; never reuse a hardcoded earlier attempt. First Luna check
@@ -31,6 +31,24 @@ send keys/kill a pane/session/server in the host-side job session. Saved config
 verifiesACTIVE. Original interruption and both CPU proofs remain preserved.
 
 ## Model constraint and supported setup
+
+**Current policy supersedes the historical read-only/no-restart contract below.**
+On2026-09-30 the human user explicitly objected to slow delegated status reads,
+stale/ambiguous progress, and failed work parked without notification/retry.
+Manual status questions use one direct compact read. Scheduled checks still
+dispatch one pinned Luna/high operator, now every15minutes. A new failure is
+reported before recovery. Whitelisted native capture transport/CUDA-unknown
+failures may get one guarded recovery per tick, at most2per24h; manual
+supervisor03 consumes one. Budget is ignored`recovery-budget.json` beside
+registration. Verify terminal ownership, noSTOP/pausedGPU, usable hardware and
+unchanged runtime/math/data/config before preserving partial data and resuming
+same experiment in a new host tmux/supervisor. Never relax a failed numerical/
+data/eligibility gate, change precision/caps/tiers, reboot/reset drivers, touch
+unrelated work or final sets. Unsafe/exhausted recovery gets an actionable alert,
+not silence. Keep observing/suppress duplicates; pause only for completion or
+explicit user stop/pause. Capture, audit and weight updates are separate metrics;
+resume loop ordinals can reset while retained manifests remain complete.
+First actual optimizer progress is a meaningful one-time notification.
 
 The installed `automation_update` heartbeat schema accepts cadence, prompt,
 status and target chat, but **no model or reasoning override**. The heartbeat
