@@ -3803,3 +3803,33 @@ and2,617MiB baseline use, with no project process. Existing untracked remote
 Transfer and retained-artifact resolver are underway; no new optimizer progress
 or passed CUDA readiness is claimed at this milestone. Root owns tracked
 checkpoints/schedule; Luna owns ignored launch registration and the sole GPU.
+
+### Config resolved and monitoring dispatch bound
+
+The intact frozen dev record contains two literal U+2028 separators. Existing
+Python `splitlines()` incorrectly split that valid JSON string; no transfer or
+dataset corruption occurred. Sol feature owner `/root/jsonl_fix` fixed both
+continuous-path JSONL readers with newline-only delimiting in`41e230d`, reviewed
+and fast-forwarded/pushed on main. Five new regressions plus38 existing CPU cases
+pass (43total); malformed/non-object/empty rejection is preserved. Integrated
+worker history is bundled/verified in
+`.git/goal-worktree-archives/continuous-launch/jsonl-fix.bundle`, then its clean
+worktree and merged local/remote branch were removed. No GPU work ran for the fix.
+
+Luna pulled`41e230d`, preserved the partial resolver directory as
+`runs/continuous-preparation/stages-inputs-failed-unicode-split-20260930T0655Z/`,
+and resolved10,000 train/1,002 dev CPU-only. Capture forecast is622,868,961,328B;
+zero vocabulary-logit storage. Host free disk is819,998,351,360B (~764GiB);
+CUDA arithmetic estimate9.42GiB assumes3GiB graph and is still unmeasured.
+Ignored local registration is
+`runs/luna-continuous-a8-a1-20260929/monitor-registration.json`; tmux`$36`, SSH
+window`@58`/pane`%60`, transfer`@59`/`%61`. Supervisor launch is next.
+
+The earlier standalone-schedule question is superseded: existing hourly root
+heartbeat coordinates exactly one bounded `experiment_operator` subagent per
+tick. The actual role pins`gpt-6-luna`/`high` in both the callable role and project
+profile. Luna performs the remote read-only check; parent persists fingerprint,
+suppresses unchanged reports and handles schedule state. This does not claim the
+parent heartbeat has a Luna model override. No standalone user-owned task is
+created; activation waits for verified supervisor/registration. Details are in
+`docs/CONTINUOUS_W1AX_MONITOR.md`.

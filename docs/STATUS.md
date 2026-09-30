@@ -41,11 +41,13 @@ One Luna operator owns the GPU. No tight polling/sleep loop is authorized.
 See the [launch checkpoint](goals/recurrent-binary-body-head.md#luna-launch-authorization).
 
 Luna operator `/root/luna_launch` connected through tmux MCP, verified no
-competing project process and RTX5080 compute capability12.0, and fast-forwarded
-the host to `365e4e2` with native `b4e366d4`. Initial baseline was2,617MiB/2%
-utilization. Packet hash matches; transfer/config resolution and admissions are
-underway. Recurring model-pinned monitoring setup remains pending; the original
-heartbeat remains paused.
+competing project process and RTX5080 compute capability12.0. Initial baseline
+was2,617MiB/2%utilization and764GiB free disk. Packet/frozen artifact hashes match.
+A Unicode JSONL delimiter bug was fixed/tested/pushed as`41e230d`, preserving
+all data bytes; host config resolves10,000 train/1,002 dev with622,868,961,328B
+capture forecast. Supervised launch is next. Existing hourly heartbeat will
+dispatch one pinned Luna/high operator per check; activation awaits live-run
+registration. See [monitor setup](CONTINUOUS_W1AX_MONITOR.md).
 
 ## Historical checkpoints
 

@@ -1,46 +1,42 @@
 # A8/A1 hourly health monitor
 
-Prepared 2026-09-29; **PAUSED**, no scheduled execution. Automation ID:
+Prepared 2026-09-29; **PAUSED** pending verified supervisor launch. Automation ID:
 `a8-a1-health-check-enable-after-manual-start`. Target chat:
 `01a0f01d-65c6-7af0-9660-99c07e95cacd`.
 
 ## Model constraint and supported setup
 
 The installed `automation_update` heartbeat schema accepts cadence, prompt,
-status and target chat, but **no model or reasoning override**. Its saved
-configuration has no model/reasoning field. The available model catalog includes
-`gpt-6-luna` with `high`, but this preparation chat currently uses Sol. Therefore
-the paused heartbeat is not a guarantee of Luna-only scheduled execution.
-A prompt naming Luna cannot select a model. Do not activate it while unresolved.
+status and target chat, but **no model or reasoning override**. The heartbeat
+therefore coordinates one bounded subagent with
+`agent_type="experiment_operator"` per hourly tick. That role explicitly pins
+`gpt-6-luna`/`high` in `.codex/agents/experiment_operator.toml` and the callable
+collaboration role definition. Only the Luna operator performs the remote health
+check; the parent records the result, suppresses duplicate reports and manages
+the schedule. If that pinned role is unavailable, report the configuration
+failure without substituting another model for remote monitoring.
 
-After manually starting training, select **GPT-6 Luna / High** for this chat in
-the desktop model picker, then inspect the Scheduled editor and a manual health
-check turn's actual model. If the app exposes model/reasoning controls for this
-heartbeat, set them explicitly and verify they persist. Otherwise verify the
-heartbeat inherits this chat's Luna/high setting with its first run; keep this
-chat on Luna/high thereafter. If the installed scheduler cannot confirm that
-behavior, leave the heartbeat paused. A standalone scheduled task supports
-explicit model/reasoning in the tool, but requires the user's explicit request
-for a standalone task; it was not silently substituted here.
-
-The supported explicit standalone configuration, should the user choose it, is:
-local project `binary-eagle-decoding`, hourly, model `gpt-6-luna`, reasoning
-`high`, the same read-only health prompt, created with `automation_update` after
-`list_projects`. No standalone schedule has been created.
+This uses the existing chat heartbeat and the user's explicit authorization to
+launch Luna for monitoring. No standalone task or invented heartbeat model field
+is needed. The earlier standalone-surface question is superseded by this bounded
+delegation design. A prompt naming Luna alone is still insufficient; actual
+dispatch must use the pinned role.
 
 [Official scheduled-task documentation](https://learn.chatgpt.com/docs/automations)
-describes explicit model/reasoning selection, local app availability requirements,
-and checking selected settings on initial runs; it does not establish this
-installed heartbeat's per-model behavior.
+describes local app availability requirements. Keep the desktop app and host
+available for local scheduled checks; the remote supervisor continues running
+independently if the app is closed. This setup does not claim that the parent
+heartbeat itself runs on Luna.
 
 ## Activation and stop
 
 1. Start capture/readiness/training manually using the runbook. Record the
    actual run ID, remote project directory, status and supervisor paths in
    `runs/<run-id>/monitor-registration.json` locally. No guessed IP or run ID.
-2. Resolve Luna/high as above. Ask in that Luna chat: “Enable the prepared A8/A1
-   health check hourly for run <run-id>.” The agent must use `automation_update`
-   to update the existing ID and preserve its prompt/cadence/target fields.
+2. Once the supervisor is verified live and registration is complete, use
+   `automation_update` to activate the existing hourly heartbeat with the pinned
+   Luna delegation prompt. Preserve its ID, target chat and cadence. The parent
+   must wait for the bounded operator's result before ending each check.
 3. To stop monitoring, ask “Pause the A8/A1 health check” or pause it in Scheduled.
    Use `automation_update` for programmatic changes, never edit its TOML directly.
    Pausing monitoring does not stop training. A terminal run pauses the schedule
@@ -69,8 +65,10 @@ The default stale threshold is 30 minutes; tune only for a declared operation
 whose bounded duration actually exceeds it. The monitor compares previous and
 current steps, suppresses duplicate reports and stays quiet when healthy.
 
-The hourly agent may report meaningful failure, completion or required action.
-It may not tune, start capture/evaluation, restart or terminate training, select
-another architecture, spawn agents, or open final data. Slow learning alone is
+The Luna health operator may report meaningful failure, completion or required
+action to its parent. It may not tune, start capture/evaluation, restart or
+terminate training, select another architecture, spawn further agents, or open
+final data. The parent may dispatch exactly one pinned operator for each check,
+with no sleep/poll loop or overlapping GPU operators. Slow learning alone is
 not failure. Immediate nonfinite, disk and memory safeguards belong in training,
 because hourly checks are too sparse to provide those safeguards.
