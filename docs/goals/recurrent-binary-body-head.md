@@ -4246,3 +4246,32 @@ history, and paused the existing heartbeat with all other fields preserved.
 Tool/saved config verifyPAUSED. This is the first notification of this terminal
 state; no restart or alternate automation was created. RTX2080Ti pause, native
 model/source ancestry and sealed data remain unchanged. Same project goal active.
+
+### User check-in; launch lifecycle repair
+
+User asked “Dude wtf so nothing ran?” on2026-09-30. Root answered directly:
+both gates and some capture ran; training did not. The stale running claim was
+root's error. Original launch/monitor objective and GPU authorization persist;
+no user pause/cancellation was requested. Root is investigating exact retained
+capture counts and correcting launch persistence before a coordinated recovery.
+
+Local MCP tmux pane`%62` retains the exact launch: direct foreground
+`python3 scripts/remote_job.py ...` inside the remote SSH shell, followed by
+`Read from remote host ... Operation timed out`, connection closed and broken
+pipe, then the local Mac prompt. **Only local tmux protected SSH; there was no
+host-side tmux protection for the supervisor.** That is a concrete launch error.
+The supervisor catches HUP/INT/TERM and forwardsSIGTERM to its child, consistent
+with the observed interruption after SSH loss. The original parent signal was
+not recorded, so precise signal origin remains an inference. Do not attribute a
+human stop request. The historical MCP command handle is no longer available;
+pane evidence and persisted supervisor/run states remain.
+
+Luna `/root/luna_launch` owns a bounded read-only remote capture inventory,
+process/lifecycle evidence and Linux tmux availability check. No new model/GPU
+query/job until coordinated repaired launch. Sol `/root/durable_supervision`
+owns isolated supervisor signal/PID/PPID/session observability and CPU tests,
+preserving cleanup/grace/log semantics. Root owns host-side tmux recipe, durable
+docs and monitor. Before resume, prove a supervised CPU fixture survives deliberate
+SSH disconnection in a detached host-side tmux session, then preserve/quarantine
+owned partial native capture with the existing recovery tool. No training math,
+data/precision/gate/optimizer changes or new project goal.
