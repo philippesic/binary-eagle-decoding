@@ -3869,3 +3869,25 @@ Linux/glibc malloc_trim, persisted before the unchanged numeric admission. No
 threshold/precision/objective change. Root will review/integrate, then ask Luna
 for one deliberately supervised preparation resume if safe; no automatic retry
 loop, host configuration change or guard relaxation is authorized.
+
+### Unchanged admission diagnostic integrated
+
+Reviewed worker`d7d04f5` is integrated/pushed as`2b87b5b`. Six CPU diagnostic
+regressions and six existing readiness cases pass; no accelerator/SSH operations
+were used. Both checkpoint-zero initialization and numeric target/draft loading
+now persist MemAvailable, process RSS/anonymous RSS before and afterGC+optional
+Linux/glibc malloc_trim. Unavailable/call failure/return value are explicit;
+no reclamation amount or admission success is inferred from the trim result.
+Original12GiB additional+2GiB floor remains unchanged. Math, labels, precision,
+source/capture and readiness criteria are untouched. Diagnostic files are
+`stages/gate-a{8,1}/host-memory-{checkpoint-zero,numeric}-admission.json`.
+
+Worker patch equivalence to main and complete recovery bundle were verified in
+`.git/goal-worktree-archives/continuous-launch/numeric-memory.bundle`; clean
+worker worktree and merged patch branch were removed. Luna was explicitly
+instructed to perform one supervised preparation resume with a new supervisor
+ID, identical stage/config/runtime and retained independently validated partial
+gate artifacts. This is a coordinated corrective validation under the existing
+launch authorization, not an automatic retry loop. Stop/report exact persisted
+deficit on failure; let the authorized pipeline continue only if all gates pass.
+Hourly monitor remainsPAUSED until live-run handoff is verified.
