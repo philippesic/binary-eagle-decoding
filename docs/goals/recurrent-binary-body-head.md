@@ -4421,3 +4421,37 @@ and uses separate local MCP SSH transport for one pinned Luna/high check per tic
 Last-health fingerprint reset to healthy currentrun. Training still awaits full
 declared corpus coverage/audit and dual CUDA smoke; no acceptance/performance
 or final-evaluation success is claimed. Same project goal remains active.
+
+### Progress report: 832 prompts captured, native CUDA abort
+
+At user request “Progress report”, root dispatched one bounded pinnedLuna/high
+operator`/root/progress_report_live`, forknone, with separate local MCP/SSH
+transport and current registry/supervisor02paths. At21:28:21UTC on2026-09-30,
+single CPU health checker foundterminalfailed`capture_audit_readiness`:
+`RemoteDisconnected: Remote end closed connection without response`.
+Supervisor02 finished/exit1 at21:09:31.005909UTC, after start19:32:01.030201UTC.
+No optimizer step began; both old precision gates remain passed.
+
+Actual label-manifest metadata:26completed train shards00000–00025, each32
+prompts = **832/10,000train (8.32%)**,0/1,002dev. Shard00026 reached30/32native
+requests; it has no labels manifest and is not counted as audited. Partial raw
+capture and completed data remain preserved. Do not call862observed requests
+862audited prompts or project an ETA from a stopped process.
+
+One follow-up bounded read of that native cell's manifest/log found
+`server_stop`stopped:true/process_group_gone:true/return_code:-6. Server log has
+`CUDA error: unknown error` at`ggml_backend_cuda_synchronize`, failing
+`cudaStreamSynchronize(cuda_ctx->stream())`, followed by backtrace/abort. HTTP
+disconnect is a downstream symptom. Underlying CUDA cause remains unknown;
+this is not evidence ofOOM or proof that the previous SSH/WSL lifetime fix
+failed. No CUDA/device query, kernel OOM log, process-group audit, restart,
+recovery, termination, tuning, further agents or sealed access occurred.
+
+Ignored snapshots`progress-20260930T2128Z.json` and`cause-20260930T2133Z.json`
+beside stable registration record exact command/result evidence. Root persisted
+terminal counts/phase/steps/errors and new failure fingerprint; current
+registration marks supervisor02terminal, preserving all history. Existing
+hourly heartbeat paused with prompt/cadence/target preserved; tool/saved config
+verifyPAUSED. User notified once in this requested report. Investigate native
+CUDA synchronization/driver failure and preserve the incomplete cell before
+any coordinated recovery; no automatic restart was done. Same goal active.

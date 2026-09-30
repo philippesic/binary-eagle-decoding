@@ -1,6 +1,6 @@
 # A8/A1 hourly health monitor
 
-Prepared 2026-09-29; **ACTIVE** after repaired host-side resume and fresh post-disconnect verification at19:35UTC on2026-09-30. Automation ID:
+Prepared 2026-09-29; **PAUSED** after native CUDA capture failure at21:09UTC on2026-09-30. Automation ID:
 `a8-a1-health-check-enable-after-manual-start`. Target chat:
 `01a0f01d-65c6-7af0-9660-99c07e95cacd`.
 
@@ -98,3 +98,12 @@ final data. The parent may dispatch exactly one pinned operator for each check,
 with no sleep/poll loop or overlapping GPU operators. Slow learning alone is
 not failure. Immediate nonfinite, disk and memory safeguards belong in training,
 because hourly checks are too sparse to provide those safeguards.
+
+## Latest terminal capture failure
+
+Latest user progress check21:28UTC found supervisor02 finished/exit1, native
+capture server aborted(return-6) with CUDA unknown error atstream synchronization.
+26completed train-label manifests total832prompts; dev0; shard00026 has30native
+requests and no labels manifest. No optimizer started. Root paused this existing
+schedule with fields preserved. This is a new native/CUDA failure, not the prior
+SSH/WSL lifetime stop. No automatic retry/recovery or GPU query occurred.

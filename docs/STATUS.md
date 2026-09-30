@@ -4,7 +4,7 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-**Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), continued as Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). The user authorized **Luna/high to launch continuous A8/A1 on RTX 5080**; the RTX 2080 Ti remains paused. Capture resumed under host-side tmux after repairing SSH/WSL lifetime. Fresh post-disconnect check at19:35UTC is healthy:1/353shards (32prompts) audited, next32native requests complete and auditing. Optimizer training has not started. Hourly Luna monitoring is **ACTIVE**. Both precision gates remain passed; final evaluation has not run.
+**Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), continued as Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). The user authorized **Luna/high to launch continuous A8/A1 on RTX 5080**; the RTX 2080 Ti remains paused. The repaired host-side run captured26shards/832train prompts before native CUDA synchronization failed at21:09UTC. Current shard has30/32requests, not audited. Dev0/1,002; optimizer0steps. Hourly monitor is **PAUSED** after terminal failure. Both precision gates remain passed; final evaluation has not run.
 
 **Bounded GPU Phase 1B complete (2026-09-29):** fixed four-variant
 quality/timing A/B, CUDA deployment checks, first-shard capture/audit and
