@@ -181,7 +181,11 @@ def main() -> int:
     finally:
         if stop_signal is not None:
             record.update(status="stop_requested", received_signal=stop_receipt())
-            record_path.write_text(json.dumps(record, indent=2) + "\n")
+            try:
+                record_path.write_text(json.dumps(record, indent=2) + "\n")
+            except OSError as exc:
+                # Observability must not bypass owned-process cleanup.
+                relay_errors.append(exc)
         if relay_errors and stop_signal is None and process.poll() is None:
             # A log write failure must not leave a producer blocked on a full pipe.
             stop_signal_local = signal.SIGTERM

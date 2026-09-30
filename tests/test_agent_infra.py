@@ -244,6 +244,67 @@ class AgentInfrastructureTests(unittest.TestCase):
             self.assertIsNone(state["received_signal"])
             self.assertEqual(state["log_rotation"], {"max_bytes_per_file": 128, "backups": 2})
 
+    def test_stop_record_write_failure_still_terminates_child_group(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "scripts").mkdir()
+            supervisor = root / "scripts/remote_job.py"
+            shutil.copyfile(ROOT / "scripts/remote_job.py", supervisor)
+            wrapper = root / "inject_write_failure.py"
+            wrapper.write_text(
+                "import json, pathlib, runpy\n"
+                "from unittest.mock import patch\n"
+                "original_write = pathlib.Path.write_text\n"
+                "def write(self, data, *args, **kwargs):\n"
+                "    if self.name == 'state.json' and json.loads(data).get('status') == 'stop_requested':\n"
+                "        raise OSError('injected stop record write failure')\n"
+                "    return original_write(self, data, *args, **kwargs)\n"
+                "with patch.object(pathlib.Path, 'write_text', write):\n"
+                f"    runpy.run_path({str(supervisor)!r}, run_name='__main__')\n"
+            )
+            runner = subprocess.Popen(
+                [sys.executable, str(wrapper), "write-failure-run", "--",
+                 sys.executable, "-c", "import time; time.sleep(60)"],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+            )
+            record_path = root / "runs/write-failure-run/state.json"
+            try:
+                deadline = time.monotonic() + 10
+                while time.monotonic() < deadline:
+                    if record_path.exists():
+                        record = json.loads(record_path.read_text())
+                        if record["status"] == "running":
+                            break
+                    time.sleep(0.05)
+                else:
+                    self.fail("supervisor did not start")
+                runner.send_signal(signal.SIGINT)
+                _, stderr = runner.communicate(timeout=15)
+                self.assertEqual(runner.returncode, 74, stderr)
+                record = json.loads(record_path.read_text())
+                self.assertEqual(record["status"], "failed")
+                self.assertIn("injected stop record write failure", record["log_error"])
+                self.assertEqual(record["received_signal"]["name"], "SIGINT")
+                self.assertEqual(record["exit_code"], -signal.SIGTERM)
+                state = subprocess.run(
+                    ["ps", "-o", "stat=", "-p", str(record["pid"])],
+                    capture_output=True, text=True, check=False,
+                ).stdout.strip()
+                self.assertTrue(not state or state.startswith("Z"), state)
+                with self.assertRaises(ProcessLookupError):
+                    os.killpg(record["pgid"], 0)
+            finally:
+                if runner.poll() is None:
+                    runner.kill()
+                    runner.wait()
+                if record_path.exists():
+                    record = json.loads(record_path.read_text())
+                    if "pgid" in record:
+                        try:
+                            os.killpg(record["pgid"], signal.SIGKILL)
+                        except ProcessLookupError:
+                            pass
+
 
 if __name__ == "__main__":
     unittest.main()
