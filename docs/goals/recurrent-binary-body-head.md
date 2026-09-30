@@ -3990,3 +3990,22 @@ and publish `gate.json` only on success. Luna retains soleGPUownership and await
 reviewed patch before a coordinated bounded diagnostic; no automatic retry loop.
 All three attempts/probes remain preserved. Monitor staysPAUSED. Cleanup and
 registration follow Luna's terminal audit; no success is claimed for A1.
+
+Supervisor03 cleanup is verified: finished1 at08:04:29UTC, no PID in PGID675
+or project supervisor/trainer/server process. One RTX5080/SM120 audit showed
+2%/2,678MiB baseline, matching prelaunch; GPU is free. Registration records all
+three attempts and exact RAM diagnostics. No additional unchanged checks ran.
+
+Reviewed candidate-persistence worker`76f87a7` integrated/pushed as`f0a4bed`:
+six new and six existing CPU tests pass. Each candidate is atomically persisted
+with a unique timestamp, full root metrics and explicit not-readiness/not-eligible
+markers before validation; a failure receipt binds its SHA/error/false flags.
+Only successful validation publishes`gate.json`. Old candidates/receipts remain
+unchanged, and aggregate metadata/flag failures are now named. No math, source
+artifacts, precision or admission criterion changes. Worker history/patch
+equivalence bundled/verified at
+`.git/goal-worktree-archives/continuous-launch/gate-evidence.bundle`; clean merged
+worktree/branch removed. Root directed one bounded supervisor04 diagnostic resume
+to recover the actual A1 failure metrics, reusing validated native/checkpoint
+artifacts. Stop on failure, no retry loop/relaxation; let the already authorized
+pipeline proceed only if all criteria pass. Monitor remainsPAUSED.
