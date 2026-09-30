@@ -92,9 +92,9 @@ def main():
             graph_budget_bytes=spec["assumed_graph_budget_bytes"],
         )
         estimate["checkpoint_retention_estimated_bytes"] = (
-            estimate["paired_resume_checkpoint_bytes"] * (config.keep_checkpoints + 1)
-            + 2 * estimate["trainable_parameters_per_model"] * 4 * config.keep_checkpoints
-        )
+            estimate["paired_resume_checkpoint_bytes"]
+            + 2 * estimate["trainable_parameters_per_model"] * 4
+        ) * (config.keep_checkpoints + 1)
         print(json.dumps(estimate, indent=2, sort_keys=True))
         return
     if args.run_dir is None:
@@ -222,13 +222,14 @@ def main():
         )
         lanes = build_lanes(provider, config)
         evaluator = None
-        if spec.get("development") is not None:
+        development = spec.get("development")
+        if development is None or development == {"from_stages": True}:
+            development = json.loads((run_dir / "stages/development.json").read_text())
+        if development is not None:
             from w1ax_continuous_stages import evaluate_development
 
             def evaluator(checkpoint, lanes):
-                return evaluate_development(
-                    spec["development"], Path(checkpoint["path"]).parent, run_dir
-                )
+                return evaluate_development(development, Path(checkpoint["path"]).parent, run_dir)
 
         trainer = ContinuousTrainer(
             provider, lanes, config, run_dir, development_evaluator=evaluator

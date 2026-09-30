@@ -34,7 +34,9 @@
     "manifest": null
   },
   "stages": null,
-  "development": null,
+  "development": {
+    "from_stages": true
+  },
   "model_shapes": [
     [
       2560,
