@@ -160,24 +160,48 @@ class ContinuousTests(unittest.TestCase):
             self.assertEqual(json.loads((root / "status.json").read_text())["status"], "stopped")
 
     def test_finite_failure_preserves_prior_paired_checkpoint(self):
+        from w1a1_eagle.continuous_qat import joint_train_step
+
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
-            trainer = make(root, config(max_steps=4))
-            original = trainer.log
+            trainer = make(root / "crashed", config(max_steps=4))
+            count = 0
 
-            def corrupt_after_pair(item):
-                original(item)
-                if item["step"] == 1:
-                    with torch.no_grad():
-                        trainer.lanes[1].linears["fc"].latent_sign.fill_(float("nan"))
+            def fail_second_a1(*args, **kwargs):
+                nonlocal count
+                count += 1
+                if count == 4:
+                    raise ValueError("nonfinite joint QAT gradient fixture")
+                return joint_train_step(*args, **kwargs)
 
-            trainer.log = corrupt_after_pair
-            with self.assertRaises(ValueError):
-                trainer.run(require_smoke=False)
-            status = json.loads((root / "status.json").read_text())
+            with patch("w1a1_eagle.continuous_qat.joint_train_step", side_effect=fail_second_a1):
+                with self.assertRaisesRegex(ValueError, "nonfinite"):
+                    trainer.run(require_smoke=False)
+            status = json.loads((root / "crashed/status.json").read_text())
             self.assertEqual(status["status"], "failed")
+            self.assertEqual(status["models"]["A8"]["step"], 2)
+            self.assertEqual(status["models"]["A1"]["step"], 1)
             self.assertTrue(status["resume_from_last_committed_pair"])
-            self.assertEqual(json.loads((root / "latest.json").read_text())["step"], 1)
+            self.assertEqual(json.loads((root / "crashed/latest.json").read_text())["step"], 1)
+            resumed = make(root / "crashed", config(max_steps=4))
+            resumed.resume()
+            resumed.run(require_smoke=False)
+            full = make(root / "full", config(max_steps=4))
+            full.run(require_smoke=False)
+            for expected, actual in zip(full.lanes, resumed.lanes):
+                for name in expected.linears:
+                    for key, value in expected.linears[name].state_dict().items():
+                        torch.testing.assert_close(
+                            actual.linears[name].state_dict()[key], value, rtol=0, atol=0
+                        )
+                for wanted, got in zip(
+                    expected.optimizer.state.values(), actual.optimizer.state.values()
+                ):
+                    for key in wanted:
+                        torch.testing.assert_close(got[key], wanted[key], rtol=0, atol=0)
+                torch.testing.assert_close(
+                    actual.rng["torch"], expected.rng["torch"], rtol=0, atol=0
+                )
 
     def test_hash_contract_and_disk_gate_fail_safely(self):
         with tempfile.TemporaryDirectory() as folder:
