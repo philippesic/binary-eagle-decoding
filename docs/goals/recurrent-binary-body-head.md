@@ -8,14 +8,7 @@ data. Evaluate native draft quality and speed against Q4_0 when GPU work is
 explicitly permitted. Preserve the pinned FP16 target/verifier and draft map.
 This continues the existing goal rather than opening a second goal.
 
-**State: bounded GPU Phase 1B complete; broader project at a research decision boundary.** RTX 5080 access is
-restored; RTX 2080 Ti remains paused. Fixed native quality/timing A/B, CUDA
-operator contracts, first-shard capture/audit and the gated real-model 100-step
-row-A16 calibration have completed. The [calibration checkpoint](#real-model-calibration-completed)
-records measurements and limits. Sealed final data is unopened. Shared packing,
-resident state, instrumentation and bounded refresh preparation are implemented
-and tested at the reported scopes; expanded capture/training remains user-owned.
-The original trial protocol and earlier next-action lists are historical.
+**State: continuous A8/A1 capture/audit is authorized and running.** Latest verified observation is 2026-09-30 22:38:28 UTC: 992 train prompts in 31 completed captures, development 0, zero optimizer steps. Native precision gates pass; training awaits full declared capture/audit and paired CUDA smoke. Q4_0 remains the primary comparison and sealed final data remains unopened. The latest handoff checkpoint below supersedes historical next-action lists.
 
 ## Current findings and work
 
@@ -4500,3 +4493,18 @@ recovery unsafe/exhausted; pause for completion or explicit userstop. Failures
 are detected at the next15minute check, not promised instantaneous push.
 No new schedule/chat, model/precision/data-tier/optimizer changes or restart
 loop. Signal/capture history preserved; training remains not started.
+
+
+### Context rotation checkpoint — 2026-09-30 22:38 UTC
+
+Objective remains the existing joint binary body/head Phase 1 goal. Complete the user-authorized continuous W1A8/W1A1 pipeline and measure native quality/speed against Q4_0 when eligible; preserve frozen target/verifier, native data ancestry, thresholds and held-out evaluation. No new research goal or model/precision/tier decision is pending.
+
+Completed: corrected A1 native-order math and both fresh precision gates; repaired WSL idle lifetime, independently supervised Linux tmux ownership and signal/cleanup observability; preserved failed partial captures and safely resumed the same corrected experiment under supervisor03. Relevant pushed commits: `f0566aa` (current numerical source), `cd52290` (durable resume), `e597b90` (832-prompt CUDA failure checkpoint), `1cf299e` (bounded recovery monitoring). Prior validation: 144 guarded CPU tests for corrected numerical gates; six CPU supervisor cleanup tests; 90-second disconnect proof. This heartbeat changes documentation/ignored observations only; no code or GPU validation is added.
+
+One pinned Luna/high operator `/root/health_20260930_2232` completed and closed its local MCP transport. No launch/recovery/feature worker remains active; earlier workers are completed. At **22:38:28.706829 UTC**, its exactly-once CPU checker returned exit0/healthy, supervisor03 running, phase `teacher_capture_audit`, loop ordinal30/353. Actual completed label manifests total **31 / 992 train prompts**, development0. Optimizer_started:false, steps:{}; do not equate corpus capture or resumed audit ordinals with training steps. Disk free775,867,355,136B and RAM available19,650,322,432B. No GPU query or extra log read. Ignored snapshot: `runs/luna-continuous-a8-a1-20260929/health-20260930T223828Z.json`; last-health and registration updated. The supervision state `pid`/`pgid`2921/2921 identify the supervised child, not the supervisor process; stale attempt02 PGIDs were removed from host_tmux. Previously observed supervisor2920/parent host-tmux2919 are retained as historical ownership evidence, not newly verified process fields.
+
+Remote job is untouched: registry key`rtx5080` resolves dynamically from `~/.config/binary-eagle-decoding/hosts.toml`; current address192.168.4.43/userphilip/port22. Remote project `/home/philip/binary-eagle-decoding`, experiment `runs/luna-continuous-a8-a1-native-order-20260930`, status`status.json`; current supervisor state`runs/luna-supervisor-a8-a1-native-order-20260930-03/state.json`. Host tmux socket`binary-eagle-runtime`, session`continuous-a8-a1-native-order-20260930-03`. Always use registration.experiment current paths, not stale historical top-level/current_attempt fields. SSH only through tmux MCP; separate local transport, never attach/send keys/kill host job panes/server for observation. WSL memory20GB and instanceIdleTimeout=-1 stay fixed; RTX2080Ti paused. Only an explicit user pause/stop permits the separate documented supervisor-interrupt procedure and process-group verification; observation does not stop the job.
+
+Next: successor reads this checkpoint, current monitor contract and ignored registration/last-health/recovery-budget; acknowledges coordination handoff WITHOUT another remote check or launch. Root transfers the existing heartbeat target after acknowledgement and retires. At its next scheduled tick, dispatch exactly one experiment_operator/forknone for a single combined CPU health/retained-manifest query. Healthy ordinary progress stays quiet; notify once actual optimizer steps start or completion occurs. On new failure notify before recovery; whitelist and all safety gates in `docs/CONTINUOUS_W1AX_MONITOR.md` apply. Recovery budget currently1of2 used in window starting21:55UTC; no further retry this healthy tick. Unknown SSH health is neither failure nor GPU-free proof. Manual status questions use one direct compact read. No open user decision blocks capture; neither training quality nor end-to-end performance is established.
+
+Existing automation `a8-a1-health-check-enable-after-manual-start` remains ACTIVE/every15minutes; no additional schedule. Successor `01a0f47a-e246-75e1-a299-fcac42d34f8a` (local, GPT-6.1 Sol/high) acknowledged the exact run/ownership/counts/budget without another remote check or edits. Existing automation retargeted through automation_update; saved configuration verifies ACTIVE/every15minutes/current successor target. Old root retires after pushing this checkpoint; no in-flight subagent or command transfers, and the host-side GPU job continues unchanged.

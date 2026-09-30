@@ -2,7 +2,10 @@
 
 Prepared 2026-09-29; **ACTIVE every15minutes** with user-authorized failure notification and bounded recovery. Automation ID:
 `a8-a1-health-check-enable-after-manual-start`. Target chat:
-`01a0f01d-65c6-7af0-9660-99c07e95cacd`.
+`01a0f47a-e246-75e1-a299-fcac42d34f8a`.
+Coordination transferred to the acknowledged successor on 2026-09-30 after
+the required context rotation; the same automation ID, prompt and cadence are
+preserved. The GPU supervisor is independent and was untouched.
 
 Current run:`luna-continuous-a8-a1-native-order-20260930`; supervisor
 `luna-supervisor-a8-a1-native-order-20260930-03`. Stable local ignored registration:
@@ -53,7 +56,7 @@ First actual optimizer progress is a meaningful one-time notification.
 The installed `automation_update` heartbeat schema accepts cadence, prompt,
 status and target chat, but **no model or reasoning override**. The heartbeat
 therefore coordinates one bounded subagent with
-`agent_type="experiment_operator"` per hourly tick. That role explicitly pins
+`agent_type="experiment_operator"` per scheduled tick. That role explicitly pins
 `gpt-6-luna`/`high` in `.codex/agents/experiment_operator.toml` and the callable
 collaboration role definition. Only the Luna operator performs the remote health
 check; the parent records the result, suppresses duplicate reports and manages
