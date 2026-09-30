@@ -1,0 +1,37 @@
+{
+  "schema": "continuous_w1ax_sources_v1",
+  "tokenizer": {
+    "repo": "Qwen/Qwen3-4B",
+    "revision": "1cfa9a7208912126459214e8b04321603b3df60c",
+    "files": {
+      "tokenizer.json": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+      "tokenizer_config.json": "d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101"
+    }
+  },
+  "sources": [
+    {
+      "id": "dolly", "domain": "prose", "format": "jsonl",
+      "revision": "bdd27f4d94b9c1f951818a7da7fd7aeea5dbff1a",
+      "uri": "https://huggingface.co/datasets/databricks/databricks-dolly-15k/resolve/bdd27f4d94b9c1f951818a7da7fd7aeea5dbff1a/databricks-dolly-15k.jsonl",
+      "sha256": "2df9083338b4abd6bceb5635764dab5d833b393b55759dffb0959b6fcbf794ec",
+      "license": "CC-BY-SA-3.0", "attribution": "Databricks, Inc. (2023), databricks-dolly-15k; includes attributed Wikipedia material",
+      "license_uri": "https://huggingface.co/datasets/databricks/databricks-dolly-15k/blob/bdd27f4d94b9c1f951818a7da7fd7aeea5dbff1a/README.md"
+    },
+    {
+      "id": "gsm8k", "domain": "reasoning", "format": "jsonl",
+      "revision": "3101c7d5072418e28b9008a6636bde82a006892c",
+      "uri": "https://raw.githubusercontent.com/openai/grade-school-math/3101c7d5072418e28b9008a6636bde82a006892c/grade_school_math/data/train.jsonl",
+      "sha256": "17f347dc51477c50d4efb83959dbb7c56297aba886e5544ee2aaed3024813465",
+      "license": "MIT", "attribution": "Cobbe et al. (2021), Training Verifiers to Solve Math Word Problems; OpenAI",
+      "license_uri": "https://github.com/openai/grade-school-math/blob/3101c7d5072418e28b9008a6636bde82a006892c/LICENSE"
+    },
+    {
+      "id": "magicoder", "domain": "code", "format": "jsonl",
+      "revision": "5f839b1f368a76b161028bb9edff055db34022b2",
+      "uri": "https://huggingface.co/datasets/ise-uiuc/Magicoder-OSS-Instruct-75K/resolve/5f839b1f368a76b161028bb9edff055db34022b2/data-oss_instruct-decontaminated.jsonl",
+      "sha256": "f988f14d3516a9f958eeea310f63903727c6d3463bc9cb435288b6ca4bb09cf9",
+      "license": "MIT (upstream dataset declaration)", "attribution": "Wei et al., Magicoder OSS-Instruct (ise-uiuc); synthetic gpt-3.5-turbo-1106 instructions from OSS seeds",
+      "license_uri": "https://huggingface.co/datasets/ise-uiuc/Magicoder-OSS-Instruct-75K/blob/5f839b1f368a76b161028bb9edff055db34022b2/README.md"
+    }
+  ]
+}

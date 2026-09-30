@@ -3595,3 +3595,74 @@ minibatch interleaving may bound live graph memory, never sequential full runs.
 Training must survive coordinator exit, resume exact state, stop gracefully and
 exclude sealed finals. Luna hourly health automation is prepared, inactive.
 Artifacts, test evidence, counts/hashes and final commands pending implementation.
+
+### First preparation milestone
+
+Published parent `fd8f9e4` adds a read-only CPU health checker (8 focused cases
+passed in 0.005 s), exact monitor setup/limitation notes and saved **PAUSED**
+heartbeat `a8-a1-health-check-enable-after-manual-start`. Tool view and saved
+configuration verify PAUSED. Heartbeat schema has no per-automation model or
+reasoning field; Luna-only execution cannot yet be guaranteed. Keep paused until
+user-started training and confirmed Luna/high configuration. No scheduler model
+override was invented; no standalone cron substituted.
+
+Astra CPU/source advice: 218,234,880 latent weights +65,280 scales per model;
+dual F32 params/Adam moments ~4.879 GiB, one active gradient ~0.813 GiB and
+shared frozen FP16 embedding ~0.724 GiB. Repeated per-step dense hard signs can
+inflate graph memory. Engine owner is implementing attached per-unroll reuse,
+step interleaving, immediate gradient release and actual USER-start CUDA smoke.
+Three resume generations plus one pending need ~19.52 GiB before export/data
+headroom. These are arithmetic estimates, not new 5080 measurements.
+
+Bounded default suggestion: sign LR1e-3/scale LR1e-5, AdamW no decay,
+foreach false, clipping1, 100-pair warmup then constant; effectiveness unproven.
+Warn on 2000 pairs with no flips; do not automatically tune or stop. Separate
+later-only gradients must reach earlier student state AND K/V. A1 saturation is
+not applicable, because its existing metric is identically zero.
+
+Source lock in progress: Databricks Dolly, GSM8K train source and Magicoder
+OSS-Instruct; exact revisions/licenses/hashes and frozen CPU tokenizer. Old
+opaque final exclusion index may be used without opening text. Historical
+legacy finals with no fingerprints cannot support a semantic-decontamination
+claim. Fresh native label-only capture is being prepared to avoid retaining
+multi-TB full-vocabulary logits; original raw captures remain unchanged.
+No GPU/remote actions, accelerator work or availability query performed.
+
+### Corpus and continuous engine integrated
+
+Published parent through `889aa5a` integrates source/data preparation, dual
+engine, host/GPU manual admission, paired crash recovery, bounded supervisor and
+health updates. Concrete corpus: 10,000 train (3,334 prose/3,333 code/3,333
+reasoning), 1,002 development, 1,002 sealed test and 24,507 reserve; 1,502,567
+train input tokens, not teacher predictions. Primary manifest SHA256:
+`9fc8caa80f2c29785eeaeff01f3875c27fee46853350de9ceebe682f8d12b8dc`.
+Tracked metadata is byte-identical to ignored manifest; current preparation
+script/source-lock hashes match its recorded values. New/old sealed payloads
+were not reopened; opaque exclusions and semantic leakage limits are reported.
+See `experiments/continuous-w1ax-data-preparation.md` for exact source revisions,
+licenses, grouping, coverage, all split hashes and reproduction commands.
+
+Deterministic USER-transfer packet is ignored
+`data/continuous-w1ax/launch-inputs.tar`, 22,016,000 bytes/61 verified members,
+SHA256 `b5ce086e87dbdc57e7a0543607f5834ee201fb0c585572fcb63bc9379cb3dc31`.
+It contains train/dev prompts, original metadata/source lock and opaque indexes;
+no sealed or reserve prompt payload. No transfer, SSH or service was started.
+
+CPU tests prove independent interleaved optimizers, attached later state/K/V,
+exact CPU optimizer/RNG/cursor resume, failure mid-pair rollback, corrupt/orphan
+checkpoint rejection and durable-directory recovery after registry publication
+failure. Host-RAM admission fixtures and supervisor process/grace/log-rotation
+checks pass. Actual CUDA fit/mathematics remain unverified and USER-start only.
+Source arithmetic peak is ~9.42 GiB with assumed 3 GiB graph budget; complete
+checkpoint/export retention plus atomic staging is ~26.0 GiB before teacher
+captures, coverage metadata and logs. Linux/WSL host floor is 2 GiB, CUDA free
+floor 1 GiB; fresh admission precedes model load, copy, recovery/export and eval
+offload. These are guards/estimates, not current machine measurements.
+
+Remaining integration: fresh label-only v2 provider/gates, CPU resolver, typed
+USER-start refresh and bounded Q4_0 development evaluator. Luna identified native
+server process-group escape on interruption; owner is testing deferred-spawn
+signals and cleanup. Explicit preparatory partial-capture recovery must preserve
+raw artifacts and permit USER retry, not an automatic rescue loop. Root runbook
+and completion audit remain pending this integrated path. No GPU/accelerator
+operation, availability query, remote job or active monitor occurred.

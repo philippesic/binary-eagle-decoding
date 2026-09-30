@@ -1,0 +1,89 @@
+{
+  "schema": "continuous_w1ax_experiment_v1",
+  "training": {
+    "device": "cuda:0",
+    "sign_lr": 0.001,
+    "scale_lr": 1e-05,
+    "warmup_steps": 100,
+    "max_grad_norm": 1.0,
+    "seeds": [
+      8101,
+      1101
+    ],
+    "checkpoint_every": 250,
+    "keep_checkpoints": 3,
+    "diagnostics_every": 100,
+    "development_every": 1000,
+    "max_steps": null,
+    "max_tokens": null,
+    "max_seconds": null,
+    "max_epochs": null,
+    "max_prefix_tokens": 2048,
+    "min_free_disk_bytes": 8589934592,
+    "max_cuda_reserved_bytes": 12884901888,
+    "min_cuda_free_bytes": 1073741824,
+    "log_max_bytes": 8388608,
+    "log_backups": 3,
+    "min_host_available_bytes": 2147483648
+  },
+  "coverage": {
+    "min_unique_train_prompts": 10000,
+    "min_unique_supervised_rows": 100000
+  },
+  "provider": {
+    "factory": "w1ax_multishard_provider:create_provider",
+    "manifest": null
+  },
+  "stages": null,
+  "development": {
+    "from_stages": true
+  },
+  "model_shapes": [
+    [
+      2560,
+      7680
+    ],
+    [
+      4096,
+      5120
+    ],
+    [
+      1024,
+      5120
+    ],
+    [
+      1024,
+      5120
+    ],
+    [
+      2560,
+      4096
+    ],
+    [
+      9728,
+      2560
+    ],
+    [
+      9728,
+      2560
+    ],
+    [
+      2560,
+      9728
+    ],
+    [
+      32000,
+      2560
+    ]
+  ],
+  "frozen_drafter_bytes": 777912320,
+  "assumed_graph_budget_bytes": 3221225472,
+  "preparation_note": "Host source paths and typed native capture/readiness/development manifests must be supplied from the pinned artifact registry before manual start. Downloaded prompts are not eligible teacher tensors. Continuous progress does not establish convergence; Q4_0 is the native acceptance/throughput baseline. No sealed test evaluation is scheduled.",
+  "hardware": {
+    "device_name": "NVIDIA GeForce RTX 5080",
+    "compute_capability": [
+      12,
+      0
+    ]
+  }
+}
