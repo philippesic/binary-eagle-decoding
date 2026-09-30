@@ -26,6 +26,12 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from .continuous_resources import (
+    checkpoint_host_buffer_bytes,
+    lane_storage_bytes,
+    linux_host_memory,
+    require_host_memory,
+)
 from .recurrent_provider import audit_provider_round, forward_torch_round
 from .recurrent_qat import (
     JointQATConfig,
@@ -59,6 +65,7 @@ class ContinuousConfig:
     min_free_disk_bytes: int = 8 * 1024**3
     max_cuda_reserved_bytes: int = 12 * 1024**3
     min_cuda_free_bytes: int = 1024**3
+    min_host_available_bytes: int = 2 * 1024**3
     log_max_bytes: int = 8 * 1024**2
     log_backups: int = 3
 
@@ -76,6 +83,7 @@ class ContinuousConfig:
             "max_prefix_tokens",
             "max_cuda_reserved_bytes",
             "min_cuda_free_bytes",
+            "min_host_available_bytes",
             "log_max_bytes",
         ):
             if not math.isfinite(getattr(self, name)) or getattr(self, name) <= 0:
@@ -341,6 +349,13 @@ class ContinuousTrainer:
             raise RuntimeError("disk free space below training safety floor")
         result = {"disk_free_bytes": free}
         if torch.device(self.config.device).type == "cuda":
+            result.update(
+                require_host_memory(
+                    linux_host_memory(),
+                    floor_bytes=self.config.min_host_available_bytes,
+                    stage="training",
+                )
+            )
             available, total = torch.cuda.mem_get_info(self.config.device)
             if available < self.config.min_cuda_free_bytes:
                 raise RuntimeError("whole-device free memory below configured CUDA safety floor")
@@ -450,6 +465,14 @@ class ContinuousTrainer:
 
     def save(self) -> None:
         resources = self.resources()
+        if torch.device(self.config.device).type == "cuda":
+            admission = require_host_memory(
+                linux_host_memory(),
+                floor_bytes=self.config.min_host_available_bytes,
+                additional_bytes=checkpoint_host_buffer_bytes(self.lanes),
+                stage="checkpoint serialization/export",
+            )
+            atomic_json(self.run_dir / "checkpoint_resource_admission.json", admission)
         tensor_bytes = sum(
             p.numel() * p.element_size() * 3
             for lane in self.lanes
@@ -613,13 +636,30 @@ class ContinuousTrainer:
                             state[key] = value.to(destination)
 
         if torch.device(device).type == "cuda":
+            admission = require_host_memory(
+                linux_host_memory(),
+                floor_bytes=self.config.min_host_available_bytes,
+                additional_bytes=lane_storage_bytes(self.lanes, device_type="cuda"),
+                stage="development model/optimizer CPU offload",
+            )
+            atomic_json(self.run_dir / "development_resource_admission.json", admission)
             move("cpu")
             torch.cuda.synchronize(device)
             torch.cuda.empty_cache()
+            after = require_host_memory(
+                linux_host_memory(),
+                floor_bytes=self.config.min_host_available_bytes,
+                stage="development native evaluation",
+            )
+            atomic_json(
+                self.run_dir / "development_resource_admission.json",
+                {**admission, "after_cpu_offload": after},
+            )
+            self.status("development_evaluation", **after)
         try:
             return self.evaluator(self.checkpoint, self.lanes)
         finally:
-            if torch.device(device).type == "cuda":
+            if torch.device(device).type == "cuda" and not self.stop_requested:
                 move(device)
                 self.resources()
 
@@ -784,6 +824,20 @@ class ContinuousTrainer:
                 self.cursor = 0
             self.save()
             self.status("stopped" if self.stop_requested else "completed", **self.resources())
+        except InterruptedError as error:
+            if self.stop_requested:
+                self.status(
+                    "stopped",
+                    intentional_stop_during_development=True,
+                    resume_from_last_committed_pair=True,
+                )
+            else:
+                self.status(
+                    "failed",
+                    error=f"{type(error).__name__}: {error}",
+                    resume_from_last_committed_pair=True,
+                )
+                raise
         except BaseException as error:
             self.status(
                 "failed",

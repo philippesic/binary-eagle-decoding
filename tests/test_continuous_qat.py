@@ -263,6 +263,25 @@ class ContinuousTests(unittest.TestCase):
                             actual.linears[name].state_dict()[key], value, rtol=0, atol=0
                         )
 
+    def test_graceful_interrupt_during_development_keeps_paired_checkpoint(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            cfg = replace(config(max_steps=4), development_every=2)
+            trainer = make(root, cfg)
+
+            def evaluator(checkpoint, lanes):
+                trainer.stop_requested = True
+                raise InterruptedError("intentional native stage signal fixture")
+
+            trainer.evaluator = evaluator
+            trainer.run(require_smoke=False)
+            status = json.loads((root / "status.json").read_text())
+            self.assertEqual(status["status"], "stopped")
+            self.assertTrue(status["intentional_stop_during_development"])
+            self.assertEqual(status["models"]["A8"]["step"], 2)
+            self.assertEqual(status["models"]["A1"]["step"], 2)
+            self.assertEqual(json.loads((root / "latest.json").read_text())["step"], 2)
+
     def test_memory_estimator_uses_cpu_shape_arithmetic_only(self):
         with patch.object(torch.cuda, "is_available", side_effect=AssertionError("GPU query")):
             result = memory_estimate([(4, 12), (3, 4)], frozen_bytes=100, graph_budget_bytes=200)
