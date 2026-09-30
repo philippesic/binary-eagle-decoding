@@ -223,6 +223,65 @@ class ContinuousTests(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, "disk"):
                     make(root / "disk", config(max_steps=1)).save()
 
+    def test_development_callback_is_serial_and_checkpoint_bound(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            cfg = replace(config(max_steps=4), development_every=2)
+            trainer = make(root / "evaluated", cfg)
+            observed = []
+
+            def evaluator(checkpoint, lanes):
+                status = json.loads((root / "evaluated/status.json").read_text())
+                self.assertEqual(status["status"], "development_evaluation")
+                self.assertEqual(lanes[0].name, "A8")
+                self.assertEqual(lanes[1].name, "A1")
+                self.assertEqual(status["models"]["A8"]["step"], checkpoint["step"])
+                self.assertEqual(status["models"]["A1"]["step"], checkpoint["step"])
+                for lane in lanes:
+                    self.assertTrue(
+                        (Path(checkpoint["path"]).parent / lane.name / "joint.npz").exists()
+                    )
+                    self.assertTrue(
+                        all(
+                            p.grad is None
+                            for group in lane.optimizer.param_groups
+                            for p in group["params"]
+                        )
+                    )
+                observed.append(checkpoint["step"])
+                return {"execution": "CPU_callback_fixture", "split": "development"}
+
+            trainer.evaluator = evaluator
+            trainer.run(require_smoke=False)
+            self.assertEqual(observed, [2, 4])
+            baseline = make(root / "baseline", cfg)
+            baseline.run(require_smoke=False)
+            for expected, actual in zip(baseline.lanes, trainer.lanes):
+                for name in expected.linears:
+                    for key, value in expected.linears[name].state_dict().items():
+                        torch.testing.assert_close(
+                            actual.linears[name].state_dict()[key], value, rtol=0, atol=0
+                        )
+
+    def test_graceful_interrupt_during_development_keeps_paired_checkpoint(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            cfg = replace(config(max_steps=4), development_every=2)
+            trainer = make(root, cfg)
+
+            def evaluator(checkpoint, lanes):
+                trainer.stop_requested = True
+                raise InterruptedError("intentional native stage signal fixture")
+
+            trainer.evaluator = evaluator
+            trainer.run(require_smoke=False)
+            status = json.loads((root / "status.json").read_text())
+            self.assertEqual(status["status"], "stopped")
+            self.assertTrue(status["intentional_stop_during_development"])
+            self.assertEqual(status["models"]["A8"]["step"], 2)
+            self.assertEqual(status["models"]["A1"]["step"], 2)
+            self.assertEqual(json.loads((root / "latest.json").read_text())["step"], 2)
+
     def test_memory_estimator_uses_cpu_shape_arithmetic_only(self):
         with patch.object(torch.cuda, "is_available", side_effect=AssertionError("GPU query")):
             result = memory_estimate([(4, 12), (3, 4)], frozen_bytes=100, graph_budget_bytes=200)
