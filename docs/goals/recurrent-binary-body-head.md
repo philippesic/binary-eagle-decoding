@@ -4030,7 +4030,7 @@ top-two margin and choice match:
 
 Candidate retained at remote experiment
 `stages/gate-a1/gate-candidate-1790756138217591171.json`, SHA256
-`b4393280afc773eec4db279fb59a6af4572bcbb2c5b68081d1bfb0c723e77a5`;
+`b4393280afc773eec4db279fb59a6af4572bcbb2c5b68081d1bfb0c723e77a51`;
 matching failure receipt`gate-failure-1790756138217591171.json`, SHA256
 `07a55a2608ad002975ee7010e7c4c5b3cf03368da7040da87885c67ba90a908c`.
 Both explicitly not eligible/not readiness. Native probe/model source ancestry
@@ -4093,3 +4093,35 @@ value correction with the existing STE gradient retained, plus focused tests.
 No integration/GPU validation before retained-head evidence/root review. A8/A4/
 A16 remain unchanged; new numerical source would require fresh runtime ancestry,
 never bypass the failed experiment's exact-resume identity check.
+
+### Retained head comparison verified; native-order candidate
+
+Corrected CPU replay completed in3.6024s, local/remote report
+`results/continuous-w1ax-launch/a1-head-replay/native-report.json`, SHA256
+`124b3e6bcaa35e45e1f5436706dbb2ad8d8cdadcb73c8af6a68f8d280e1015f3`.
+All six exact integer-dot/native-order replays match native mapped argmax,
+argmax logits and all eight probes **exactly**. NumPy scale-before-dot also
+matches all six choices; max probe/argmax-logit differences9.54e-7/1.91e-6,
+max full-logit formula difference2.86e-6. Thus the large gate discrepancy is
+upstream of the head comparison, not a bad d2t join or head reference.
+
+PeakRSS573,030,400B exceeds unchanged512MiB diagnostic ceiling by36,159,488B;
+report explicitly marks resource budget failed and process exited2. This is
+retained arithmetic evidence, not a successful memory-admission/readiness result.
+Framework-module inventory is empty. Root verified reader/constants/quants/lazy
+source hashes against local b4 and candidate/stages hashes against registration/
+receipt authority. The initial prose transcription omitted the candidate SHA's
+last`1`; full64-character SHA above is corrected from actual report/registration.
+No data bytes changed. Original CPU attempt/source/log remains preserved.
+
+Astra reviewed Sol native-order A1 candidate`d39c34a`: no serious blocker to one
+fresh bounded CUDA gate in pinned FP32/no-autocast mode.25 guarded CPU tests pass
+(5new+recurrent/continuous), old-forward negative control fails real-width tests.
+Forward values use exact unscaled signs then native scale order; original local
+STE gradients remain exact for fixed upstream gradients. End-to-end loss/gradient
+values can change with corrected states, which is expected. Additional A1 matmul
+latency/memory is unmeasured. Candidate is held for explicit raw-F32 sign/zero/
+subnormal and default-dtype alignment before integration. A separate verified
+A1 head-reference order patch`c8db83e` has10 CPU tests passing, other widths and
+criteria unchanged. New math requires a new experiment identity and fresh gates;
+old run cannot be exact-resumed into changed source. No GPU candidate run yet.
