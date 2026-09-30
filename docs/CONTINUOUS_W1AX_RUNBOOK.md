@@ -16,7 +16,11 @@ Both fresh A8/A1 gates passed with corrected native-order A1 forward, source
 `f0566aa`; first healthy stage is corpus capture/audit. It has not yet reached
 the full dual CUDA smoke/optimizer. Use the stable ignored local registration
 `runs/luna-continuous-a8-a1-20260929/monitor-registration.json` for current paths,
-hashes and prior-run history. Hourly pinned-Luna heartbeat isACTIVE; see the
+hashes and prior-run history. First hourly check found this run stopped onSIGTERM
+at09:12UTC (source unknown), supervisor interrupted/exit0. Capture progress is
+unavailable in terminal status; no optimizer step is recorded. Heartbeat isPAUSED
+and no automatic restart ran. Preserve partial native artifacts and investigate
+interruption before explicit recovery/resume. See the
 [monitor contract](CONTINUOUS_W1AX_MONITOR.md). Preserve the original failed run;
 its old math identity cannot exact-resume into this corrected experiment.
 

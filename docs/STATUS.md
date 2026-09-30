@@ -4,7 +4,7 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-**Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), continued as Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). The user authorized **Luna/high to launch continuous A8/A1 on RTX 5080**; the RTX 2080 Ti remains paused. Both fresh native gates passed after the A1 arithmetic correction. The supervised run is healthy in corpus capture/audit; hourly Luna monitoring is **ACTIVE**. Optimizer training awaits captured coverage and full dual CUDA smoke. Final evaluation has not run. DFlash/DSpark are future roadmap items, not active work.
+**Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), continued as Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). The user authorized **Luna/high to launch continuous A8/A1 on RTX 5080**; the RTX 2080 Ti remains paused. Both fresh native gates passed after the A1 arithmetic correction. The first hourly check found a SIGTERM stop during capture at09:12UTC; its source is unknown. Supervisor is terminal and the monitor is **PAUSED**. No optimizer step is recorded; capture progress and GPU memory are unverified. Final evaluation has not run. DFlash/DSpark are future roadmap items, not active work.
 
 **Bounded GPU Phase 1B complete (2026-09-29):** fixed four-variant
 quality/timing A/B, CUDA deployment checks, first-shard capture/audit and
@@ -60,13 +60,12 @@ A1 forward/reference code is integrated as`f0566aa`/`119e418`, retaining local S
 gradients and unchanged other widths/criteria.144 guarded CPU checks pass. Luna
 completed both fresh gates (seven checks/six roots each) in new experiment
 `luna-continuous-a8-a1-native-order-20260930`, preserving old failures/captured
-bytes. Supervisor`luna-supervisor-a8-a1-native-order-20260930-01` remains live in
-tmux`$36`/`%62`; healthy first snapshot is`teacher_capture_audit`,0/353shards and
-no optimizer steps. Existing hourly heartbeat isACTIVE and dispatches one pinned
-Luna/high read-only operator, using current registration paths and quiet healthy
-checks. Local app/host availability is required for scheduled checks; remote
-supervisor runs independently. See [monitor setup](CONTINUOUS_W1AX_MONITOR.md)
-and the [latest checkpoint](goals/recurrent-binary-body-head.md#fresh-gates-passed-corpus-capture-live-and-hourly-handoff).
+bytes. The first hourly check at10:23UTC found supervisor interrupted/exit0 at
+09:12UTC and trainer stopped on signal15. The stop predates monitor activation;
+the earlier live handoff report relied on stale startup evidence. Monitor is
+PAUSED, logs/data preserved, no restart. Signal origin and partial capture
+recovery require investigation before resume. See [monitor setup](CONTINUOUS_W1AX_MONITOR.md)
+and the [latest checkpoint](goals/recurrent-binary-body-head.md#first-hourly-check-found-terminal-sigterm).
 
 ## Historical checkpoints
 

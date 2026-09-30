@@ -4207,3 +4207,42 @@ Integrated CPU harness/log SHA respectively
 `721179424831d5228cdc3f7d627e236c66973a37573dd72927461ee2eae086bc`.
 Next work belongs to the live pipeline and hourly monitoring; no active agent
 needs to wait or run a sleep/poll loop. Keep this same project goal active.
+
+### First hourly check found terminal SIGTERM
+
+Heartbeat`a8-a1-health-check-enable-after-manual-start` at10:20:58UTC on2026-09-30
+dispatched exactly one pinned Luna/high operator
+`/root/hourly_health_20260930_1020`, forknone. Launch operator was completed and
+registration handoff ready. Luna read the current shared host registry and used
+separate tmux monitor window`@61` in`$36`, preserving supervisor`@60`/`%62`.
+One initial SSH shell-path command failed before checker execution; corrected
+WSL wrapper succeeded. The checker ran exactly once at10:23:16UTC, exited2.
+Temporary monitor window was closed; no GPU/framework query, sleeps, repeated
+polling, inference, restart/termination, tuning, further agents or final access.
+
+Exact observed status:`stopped`, reason`user signal 15; stopping owned native group`,
+intentional_native_stage_stop:true, PID1248. Supervisor status`interrupted`,
+PID/PGID1248, exit0; started09:05:15.711600UTC, ended09:12:08.040788UTC.
+The signal source is unknown; implementation's “user signal” label does not
+prove a human request. Terminal status omitted phase/capture/model/resource
+fields. Checker additionally reported missingA8/A1 status and disk headroom;
+these are missing terminal metrics, not demonstrated model/disk failure.
+Bounded log tail showed corpus shard processing and no optimizer step record.
+GPU memory/process cleanup was not audited in this read-only tick; do not claim
+the GPU free or that all raw capture is complete.
+
+The09:12 interruption predates root's09:19 activation/final handoff report.
+The earlier live claim relied on the initial healthy snapshot, which was stale
+by final handoff. Preserve this correction rather than asserting successful
+coordinator-exit persistence. Both precision gates remain passed; training and
+continuous-process survival are not established. Investigate the SIGTERM source
+and partial native capture state before an explicitly authorized recovery/resume.
+
+Ignored snapshot`runs/luna-continuous-a8-a1-20260929/health-20260930T102316Z.json`,
+SHA256`a1a795b59771dccf816363db4e2976877f55af4484770aa6db4740bad3c5f480`.
+Root persisted terminal health/steps(empty)/phase(null)/failures/reason and
+last-reported fingerprint, updated current registration while preserving prior
+history, and paused the existing heartbeat with all other fields preserved.
+Tool/saved config verifyPAUSED. This is the first notification of this terminal
+state; no restart or alternate automation was created. RTX2080Ti pause, native
+model/source ancestry and sealed data remain unchanged. Same project goal active.
