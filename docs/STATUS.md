@@ -12,18 +12,30 @@ quality/timing A/B, CUDA deployment checks, first-shard capture/audit and
 selector quality/timing and tracing gates completed; integrated worker
 worktrees are archived, and the GPU is idle. Binary acceptance still trails
 Q4_0; no full-body eligibility or final evaluation is claimed. The broader
-project awaits the user's next research decision. See the
+project continues with the user-authorized CPU preparation below. See the
 [completion audit](../experiments/w1-phase1b-completion-audit.md) and
 [goal checkpoint](goals/recurrent-binary-body-head.md#bounded-gpu-phase-1b-complete).
 
-## Continuous A8/A1 preparation (2026-09-29)
+## Continuous A8/A1 preparation complete (2026-09-29)
 
-The user has authorized CPU-only preparation of a continuous, simultaneous
-W1A8/W1A1 joint-QAT experiment in task `01a0f01d-65c6-7af0-9660-99c07e95cacd`.
-This continues the existing goal; Phase 1B stays complete. No GPU query,
-accelerator execution, remote capture/training or recurring monitor activation
-is authorized in this task. Capture/readiness/resource gates remain USER-started.
-See the [preparation checkpoint](goals/recurrent-binary-body-head.md#continuous-a8a1-cpu-preparation).
+CPU preparation is implemented and independently audited in task
+`01a0f01d-65c6-7af0-9660-99c07e95cacd`, continuing the same project goal.
+The initial tier has10,000 train/1,002 dev/1,002 sealed-test prompts and24,507
+reserve; all sealed payloads remain unopened. A verified22MB launch packet,
+continuous dual-model engine, exact CPU resume/recovery, label-only v2 native
+stages, refreshed-source binding, fixed Q4_0 dev evaluation and manual runbook
+are published. **117 guarded CPU tests pass**; actual CUDA/training/acceptance
+and teacher tensor volume remain unverified USER-start gates.
+
+The hourly heartbeat is **PAUSED**, with the per-heartbeat Luna model override
+limitation recorded. No native inference/capture/training or WSL GPU action was
+launched. A legacy CPU fixture's accelerator RNG API calls were identified and
+corrected; the final audit guards library backend APIs. See the
+[preparation report](../experiments/continuous-w1ax-preparation.md),
+[manual runbook](CONTINUOUS_W1AX_RUNBOOK.md), and
+[goal checkpoint](goals/recurrent-binary-body-head.md#continuous-a8a1-cpu-preparation).
+The next action is the user's manual start; do not activate GPU work or a monitor
+from this preparation task.
 
 ## Historical checkpoints
 

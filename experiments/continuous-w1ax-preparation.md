@@ -2,8 +2,7 @@
 
 Prepared in task `01a0f01d-65c6-7af0-9660-99c07e95cacd`, continuing the existing
 joint body/head goal. This report records CPU preparation, not CUDA fit,
-convergence, trained acceptance or throughput. Final CPU audit/integration is
-recorded below after it completes. Native operations and training are USER-start.
+convergence, trained acceptance or throughput. Final CPU audit:117/117 tests pass in6.958 seconds on the integrated implementation. Native operations and training are USER-start.
 Q4_0 is the primary comparison; native target/verifier F16 and frozen
 embeddings/norms/mapping remain unchanged. No final set is used for selection.
 
@@ -197,7 +196,20 @@ start a new expanded/refresh experiment remains user-owned.
 Local hardware:Darwin/arm64 CPU, Python3.11.15, Torch2.14.0. Tests cover real
 source/shard/mask/schema/serialization/cancellation/resume contracts with small
 CPU graphs and synthetic native evidence; they do not prove CUDA execution.
-Final guarded suite counts/log hashes are recorded below after integration.
+Final integrated guarded suite:117/117 tests pass in6.958 seconds at parent
+`a240d77` (later commits are documentation/integration ancestry only). Command:
+
+```sh
+PYTHONPATH=.:src:scripts:tests CUDA_VISIBLE_DEVICES='' .venv/bin/python \
+  results/continuous-w1ax-preparation/final-audit/run_cpu_tests.py
+```
+
+Ignored harness and authoritative log:
+`results/continuous-w1ax-preparation/final-audit/run_cpu_tests.py` and
+`unittest-final-main-a240d77.log`. The suite includes supervisor4, legacy
+recurrent-QAT6/provider10 and all new trainer/resource/launcher/runtime/readiness/
+label-stage/config/refresh/cancellation/corpus/packet/health contracts. Earlier
+harness setup failures remain diagnostic logs, not passing evidence.
 
 Boundary incident: earlier CPU regressions called legacy `tiny_joint_fixture`,
 which used global `torch.manual_seed`. That calls CUDA/MPS/XPU/MTIA RNG APIs even
@@ -221,3 +233,7 @@ it was not silently substituted. No Sol/Astra coordinator is required for the
 long-lived training process, and the monitor cannot tune/capture/evaluate/restart
 or terminate it. Sealed finals remain unopened; acceptance/convergence/storage/
 real CUDA fit are unverified USER-start gates.
+
+Harness SHA256: `26a9b54945871c154cde1941e9eb7de04eecd9ee22a1bf3b92e3bcdab6365141`.
+
+Log SHA256: `eedbd997903e22694a9600bdd87fb0d28b6d963fddb058e5b6313700237f7494`.

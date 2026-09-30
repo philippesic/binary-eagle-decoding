@@ -33,6 +33,18 @@ final-set opening, group-128 lower-width formats or another architecture.
 DFlash/DSpark are a later roadmap phase, not active work. Do not start a second
 architecture, new model training from scratch, or a broad unrelated search.
 
+### User-started continuous A8/A1 preparation
+
+The user separately authorized CPU preparation of an expanded simultaneous
+row-W1A8/W1A1 experiment on2026-09-29. This is prepared in the existing joint
+body/head goal; no second project goal or architecture is active. See the
+[runbook](CONTINUOUS_W1AX_RUNBOOK.md) and
+[CPU preparation report](../experiments/continuous-w1ax-preparation.md).
+Capture/readiness, real CUDA resource/math gates and training remain USER-start.
+The saved Luna health monitor is paused and its model-setting limitation is
+explicit. New10,000/1,002/1,002 prompt data does not itself qualify training
+or prove sufficiency. Prior Phase1B and frozen final sets are preserved.
+
 ## Handoff and existing assets
 
 Continue from parent `d111335` (speed-first AGENTS rule), following predecessor
