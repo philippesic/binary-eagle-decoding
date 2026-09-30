@@ -4303,3 +4303,33 @@ patched supervisor, with freshSSHconnection closed/reopened, then cleanup only
 the dummy process group. No model/capture launch or partial-data mutation until
 this proof is reviewed. Actual resume will remain under the existing user launch
 authorization, with no repeated permission flow or automatic rescue loop.
+
+### Host tmux alone failed WSL lifetime boundary
+
+First CPU proof was correctly parented by host tmux: supervisor837/PPID836,
+`tmux: server`, socket`binary-eagle-runtime`, session
+`disconnect-proof-20260930-01`, fixture843 in its own group/session. BeforeSSH
+close32heartbeat rows/counter31; afterfreshreconnect75rows/counter74, but parent
+was already interrupted onSIGTERM15 at19:04:09.583678UTC, ended19:04:09.956821,
+childexit-1 and no fixture signal/summary. Server836/socket/session absent,
+no remaining dummy group. This boundary proof is **negative**, not evidence of
+durable supervision. No realGPU/capture/recovery ran.
+
+Windows-side inventory before reenteringWSL confirmed onlyUbuntu installed,
+stateStopped, no other running distro/job. Config had only`[wsl2] memory=20GB`,
+no `[general] instanceIdleTimeout`. This establishes distro shutdown, though
+original signal sender remains unknown. Microsoft's current WSL reference says
+the default instance-idle timeout is15,000ms and`-1`disables distro auto-shutdown;
+systemd services alone do not keep WSL alive:
+[configuration](https://learn.microsoft.com/en-us/windows/wsl/wsl-config),
+[systemd lifetime](https://learn.microsoft.com/en-us/windows/wsl/systemd).
+
+Root authorized the bounded reversible operational fix under the original
+continuous-launch authorization: backup/hash existing config, append only
+`[general] instanceIdleTimeout=-1`, preserve20GB/all other contents, reload while
+allWSLinstances are stopped/no unrelated work exists, then verify parsing/capacity.
+No Windows reboot or other settings. Luna owns exactly one fresh CPU disconnect
+proof with240s hardlimit,90s fully offline before a single reconnect, same boot/
+PID/counter proof, followed by dummy-only cleanup. Real pipeline recovery/resume
+is held until that proof passes; no retry loop, GPU query, math/data/precision
+change or additional automation. Monitor remainsPAUSED.
