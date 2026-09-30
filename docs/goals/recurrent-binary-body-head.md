@@ -3567,3 +3567,31 @@ The bounded thread Goal can be completed after this checkpoint is pushed.
 The overarching project remains at the user-owned next research decision
 (full-tier storage/capture, refresh execution, initialization/objective and
 substantive training budget); do not start a new goal or experiment unasked.
+
+## Continuous A8/A1 CPU preparation
+
+User authorization: delegated from `01a0ee84-84f0-7381-89de-aa7655caaa5b`
+to new preparation task `01a0f01d-65c6-7af0-9660-99c07e95cacd` on 2026-09-29.
+Continue the joint body/head project goal; native task Goal covers this concrete
+preparation objective. CPU data downloads/tokenization, implementation, tests,
+review and Git integration are authorized. STOP before all GPU use, availability
+queries, SSH, capture/training launch or active recurring monitor. Frozen finals
+remain unopened. Existing calibration-only A16 eligibility cannot authorize A8/A1.
+
+Ownership: root integrates/reviews and owns runbook, monitor setup and durable
+state. Independent Sol-high feature owners use temporary worktrees:
+`prep/dual-engine` owns new continuous dual engine/launcher and focused tests;
+`prep/v2-provider` owns v2 provider/readiness/capture interfaces and focused tests;
+`prep/continuous-data` owns public corpus preparation, source lock and focused
+tests. Luna-high performs independent CPU review/tests; Astra-medium may advise
+on the bounded simultaneous memory/optimizer decision. No native edits planned.
+Base parent `cde643f`; native published gitlink `b4e366d4`.
+
+Required manual boundary: public prompt corpus is not captured training tensors.
+User start must execute pinned native capture/audit, distinct A8/A1 numerical,
+cache/gradient/export gates, and simultaneous CUDA memory/math smoke before any
+optimizer work. Both independent optimizers remain live in one supervisor;
+minibatch interleaving may bound live graph memory, never sequential full runs.
+Training must survive coordinator exit, resume exact state, stop gracefully and
+exclude sealed finals. Luna hourly health automation is prepared, inactive.
+Artifacts, test evidence, counts/hashes and final commands pending implementation.

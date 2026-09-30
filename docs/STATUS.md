@@ -16,6 +16,15 @@ project awaits the user's next research decision. See the
 [completion audit](../experiments/w1-phase1b-completion-audit.md) and
 [goal checkpoint](goals/recurrent-binary-body-head.md#bounded-gpu-phase-1b-complete).
 
+## Continuous A8/A1 preparation (2026-09-29)
+
+The user has authorized CPU-only preparation of a continuous, simultaneous
+W1A8/W1A1 joint-QAT experiment in task `01a0f01d-65c6-7af0-9660-99c07e95cacd`.
+This continues the existing goal; Phase 1B stays complete. No GPU query,
+accelerator execution, remote capture/training or recurring monitor activation
+is authorized in this task. Capture/readiness/resource gates remain USER-started.
+See the [preparation checkpoint](goals/recurrent-binary-body-head.md#continuous-a8a1-cpu-preparation).
+
 ## Historical checkpoints
 
 **Final selector timing live (2026-09-29):** packed shared/warp quality
