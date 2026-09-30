@@ -222,6 +222,7 @@ def main():
                 "pid": os.getpid(),
                 "models": {},
                 "phase": "capture_audit_readiness",
+                "optimization_started": False,
             },
         )
         from w1ax_continuous_stages import run_stages
@@ -323,6 +324,8 @@ def main():
                     "heartbeat_unix": time.time(),
                     "pid": os.getpid(),
                     "models": {},
+                    "phase": "capture_audit_readiness",
+                    "optimization_started": False,
                     "error": f"{type(error).__name__}: {error}",
                 },
             )

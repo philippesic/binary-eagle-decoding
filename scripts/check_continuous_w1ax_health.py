@@ -43,7 +43,8 @@ def check_health(status_path: Path, *, now: float | None = None,
     preparatory = state == "preparing" or (
         state in ("stopped", "failed") and status.get("optimization_started") is False
     )
-    if preparatory and any(isinstance(m, dict) and m.get("step", 0) > 0
+    if preparatory and any(isinstance(m, dict) and isinstance(m.get("step", 0), (int, float))
+                           and m.get("step", 0) > 0
                            for m in models.values()):
         failures.append("preparatory status contains optimizer progress")
     if state == "preparing" and not isinstance(status.get("phase"), str):

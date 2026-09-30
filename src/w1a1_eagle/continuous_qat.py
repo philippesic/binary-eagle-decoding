@@ -409,6 +409,9 @@ class ContinuousTrainer:
                 "pid": os.getpid(),
                 "models": self.metrics,
                 "step": self.step,
+                "optimization_started": self.step > 0 or any(
+                    item.get("step", 0) > 0 for item in self.metrics.values()
+                ),
                 "epoch": self.epoch,
                 "cursor": self.cursor,
                 "presented_supervised_tokens": self.tokens,
