@@ -4761,3 +4761,38 @@ pause merely for completed capture or morning. Notify first actual optimizer
 updates, new verified failures, completion or required action. Safe whitelisted
 failure recovery remains at most one per tick / two per 24h; one remains in this
 window. Keep progress quiet otherwise and checkpoint meaningful changes.
+
+
+### Monitor command repair prepared — 2026-10-01 07:45 UTC
+
+Exactly one pinned Luna/high operator `/root/health_20261001_0743` ran one
+scheduled observation attempt through local transport$73. It returned no
+checker result: raw pane contains truncated tool-output text inside the copied
+base64 command, including “679 tokens truncated” and an ellipsis. Remote Python
+rejected non-ASCII before executing the query/checker. The tool did not establish
+WSL/job failure or GPU freedom. User was notified; no GPU recovery or second
+remote observation was attempted. The current experiment/supervisor05 is untouched.
+
+Ignored observation `runs/luna-continuous-a8-a1-20260929/health-20261001T074433Z.json`
+records timestamp07:45:39Z, intended registered command and full failed raw pane.
+Local transport$73 closed. Last verified health remains07:30:41UTC: healthy,
+preparing teacher_capture_audit, re-audit ordinal82/353,119 completed labels/
+3,736train/0dev,zerooptimizer. Root saved current unknown separately from that
+verified state, with duplicate-alert fingerprint remote-health-command:truncated-base64.
+Monitor remains ACTIVE; recovery budget stays1of2 used.
+
+Root prepared a compact stdlib query in ignored monitor-query-source.py and
+monitor-query-command.json beside the registration. Local compile passed;
+sourceSHA256 b0bd69e78f2a2f24f84dfbfdba576bb95152e29546fd5cca53359614ed375b57,
+command2291ASCII characters versus prior3113. It retains the same CPU checker
+flags, current status/supervisor paths, completed-manifest prompt counts, status
+and child/supervisor identity fields. No remote file/gate/config changed. The
+command must be loaded as JSON and passed programmatically to tmux MCP, not
+copied from displayed tool text. Use max_output_tokens8000 on the local command
+read, reject ellipses/truncation/non-ASCII, and print only compact metadata.
+
+Next tick: one pinned operator, fresh registry/current registration, load the
+compact command directly and execute one bounded combined CPU check. Do not
+retry during this failed tick. Preserve frozen runtime/precision/data/tier;
+continue the overnight pipeline automatically when gates pass. Notify actual
+optimizer start/new verified failure/required action; quiet healthy progress.

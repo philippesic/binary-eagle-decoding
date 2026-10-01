@@ -49,6 +49,27 @@ Monitoring uses separate **local transport** windows/fresh SSH; never attach or
 send keys/kill a pane/session/server in the host-side job session. Saved config
 verifiesACTIVE. Original interruption and both CPU proofs remain preserved.
 
+## Exact command loading
+
+The07:45UTC unknown observation was caused by copying truncated local tool
+output into SSH: the raw pane includes “679 tokens truncated” inside base64.
+This is command construction failure; no health checker result or job failure
+is established. No second observation or GPU recovery was attempted.
+
+A compact stdlib combined query is locally compiled in ignored
+`runs/luna-continuous-a8-a1-20260929/monitor-query-source.py` (SHA256
+b0bd69e78f2a2f24f84dfbfdba576bb95152e29546fd5cca53359614ed375b57).
+The exact current command is JSON in `monitor-query-command.json` and copied
+into registration.experiment.monitor_query_command, bound to supervisor05.
+Read the command JSON with exec_command max_output_tokens8000, parse it inside
+functions.exec, and pass the resulting string directly to tmux execute_command.
+Do not print/read/copy displayed command text or reconstruct payloads by hand.
+Reject non-ASCII, ellipses or truncation markers before submitting. The shortened
+query still runs the same checker once with --check-process and counts completed
+label-manifest prompts. It changes no remote file, training configuration or gate.
+The next scheduled tick uses it; the prior verified state remains separately
+preserved in last-health/registration until fresh health returns.
+
 ## Windows SSH shell bridge
 
 The registered RTX5080 endpoint is Windows SSH, with Linux files inside WSL.
