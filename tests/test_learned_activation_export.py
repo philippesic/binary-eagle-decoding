@@ -158,6 +158,85 @@ class LearnedActivationExportTests(export_fixture.RecurrentBinaryExportTests):
                 self.export()
             self.arrays[name] = original
 
+    def affine_manifest(self, coverage="fusion", learned=True, correction=False):
+        from export_recurrent_binary import AFFINE_ARITHMETIC, SOURCE_NAMES
+
+        self.arrays = {
+            name: array
+            for name, array in self.arrays.items()
+            if not name.endswith(".w1ax_midpoint")
+        }
+        manifest = (
+            self.correction_manifest(1, True, learned) if correction else self.learned_manifest(4)
+        )
+        manifest["schema_version"] = 5
+        manifest["fusion_correction"] = manifest.get("fusion_correction")
+        if not learned:
+            manifest["activation_quantizers"] = None
+            manifest["activation_rule"] = (
+                "a16_f16_cast_a8a4_absmax_even_a1_f64_meanabs_sign_zero_positive"
+            )
+        bases = ["fc"] if coverage == "fusion" else SOURCE_NAMES
+        manifest["affine_weights"] = {
+            "version": 1,
+            "coverage": coverage,
+            "arithmetic": AFFINE_ARITHMETIC,
+            "tensors": {base: base + ".w1ax_midpoint" for base in bases},
+        }
+        for base, name in manifest["affine_weights"]["tensors"].items():
+            self.arrays[name] = np.arange(self.shapes[base][0], dtype=np.float32) * 0.125 - 1
+        self.save_checkpoint()
+        manifest["checkpoint_sha256"] = sha256(self.checkpoint)
+        return manifest
+
+    def test_affine_round_trip_and_qk_permutation(self):
+        from export_recurrent_binary import AFFINE_PREFIX, gguf_qk_row_order
+
+        for coverage, learned, correction in (("fusion", False, False), ("all", True, True)):
+            manifest = self.affine_manifest(coverage, learned, correction)
+            self.manifest.write_text(json.dumps(manifest))
+            report = self.export()
+            self.assertEqual(report["affine_weights"], manifest["affine_weights"])
+            reader = GGUFReader(self.output)
+            tensors = {t.name: t for t in reader.tensors}
+            self.assertEqual(reader.fields[AFFINE_PREFIX + "coverage"].contents(), coverage)
+            for base, name in manifest["affine_weights"]["tensors"].items():
+                expected = self.arrays[name]
+                if base in ("blk.0.attn_q", "blk.0.attn_k"):
+                    expected = gguf_qk_row_order(
+                        expected[:, None], 32 if base.endswith("_q") else 8
+                    )[:, 0]
+                np.testing.assert_array_equal(tensors[name].data, expected)
+            self.output.unlink()
+
+    def test_affine_fail_closed(self):
+        from export_recurrent_binary import check_affine_weights
+
+        manifest = self.affine_manifest("all")
+        descriptor = manifest["affine_weights"]
+        for mutation in (
+            lambda x: x.update(version=2),
+            lambda x: x["tensors"].pop("output"),
+            lambda x: x["tensors"].update(extra="extra.w1ax_midpoint"),
+            lambda x: x["tensors"].update(fc="other"),
+            lambda x: x.update(coverage="partial"),
+        ):
+            case = copy.deepcopy(descriptor)
+            mutation(case)
+            with self.assertRaises(ValueError):
+                check_affine_weights(case)
+        for replacement in (
+            np.zeros((5, 1), dtype=np.float32),
+            np.zeros((5,), dtype=np.float16),
+            np.full((5,), np.inf, dtype=np.float32),
+        ):
+            self.arrays["fc.w1ax_midpoint"] = replacement
+            self.save_checkpoint()
+            manifest["checkpoint_sha256"] = sha256(self.checkpoint)
+            self.manifest.write_text(json.dumps(manifest))
+            with self.assertRaises(ValueError):
+                self.export()
+
     def test_fail_closed_parameters(self):
         valid = self.learned_manifest()["activation_quantizers"]
         for key, value in (

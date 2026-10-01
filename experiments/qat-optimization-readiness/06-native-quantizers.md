@@ -94,3 +94,52 @@ Legacy A4/A8 reductions and reciprocal-overflow behavior are retained. Threshold
 multiplication/subtraction already uses non-FTZ RN intrinsics. These are source
 review fixes, with CUDA compilation and actual tiny-token bit/code checks still
 required on the designated GPU; the local CPU evidence is unchanged.
+
+## Opt-in affine binary weight extension
+
+The user-approved affine weight path is `mu + alpha*sign(z)` per output row,
+with `mu` initially zero. Manifest schema 5 requires `activation_quantizers`
+(null or the existing v1 object), `fusion_correction` (null or its descriptor),
+and `affine_weights` exactly `{version:1, coverage:'fusion'|'all', arithmetic,
+tensors}`. Arithmetic is
+`integer_dot_alpha_beta_plus_integer_sum_midpoint_beta_before_bias_f32`.
+Coverage is exactly FC or all nine selected GGUF bases. Each maps to its named
+F32 row vector `<base>.w1ax_midpoint`; extra/missing names, nonfinite values and
+shape/type mismatches fail closed. Q/K midpoint rows use exactly the alpha
+permutation. The existing checkpoint hash covers midpoint payloads; the export
+report records hashes of the permuted GGUF midpoint arrays. Training midpoint
+regularization has no inference/export effect.
+
+The native v1 contract under `eagle3.affine_weights.*` pins version, coverage,
+arithmetic, bases and midpoint tensor names. Native load rejects missing,
+unknown, unversioned, malformed or nonfinite payloads and forces data validation.
+The affine-only pack extension appends one F32 S slot per token after the
+existing scale slots; disabled layout/headers and arithmetic stay unchanged.
+A1/A4/A8 S is an integer sum of the exact emitted sign/code values, converted to
+F32. A16 S sums the same rounded F16 boundary inputs in sequential F32 order,
+with beta 1. The fused epilogue is `(D*alpha)*beta + (S*mu)*beta`; A16 uses
+`D*alpha + S*mu`. No extra dense matrix is introduced. CUDA uses one bounded
+code-sum kernel per shared pack and explicit RN epilogue products/additions;
+CPU computes the sum inside the token pack. Affine graphs always share the
+pack and S for QKV and gate/up by input/quantizer/affine identity, regardless of
+the optional legacy shared-pack environment toggle. Optional FC correction and
+its bounded output bias are applied after the affine binary result.
+
+Native commit `3db933346` is published on the existing worker branch. CPU
+checks pass 220 operator cases (33 affine additions), 108 actual EAGLE loader
+cases, 53 valid encoder numeric checks, and 21 standalone pack cases with exact
+code-sum/scale bytes, sign/code/plane/tail checks. They cover fixed/learned
+quantizers, fusion/all coverage, optional correction, A16, zero mu, alpha zero
+with nonzero mu, zeros/subnormals, and malformed/nonfinite midpoint payloads.
+Python passes 7 legacy and 6 learned/correction/affine serialization checks;
+Ruff and diff checks pass. Raw native outputs are
+`/private/tmp/eagle-native-affine-ops.log` and
+`/private/tmp/eagle-native-affine-final-fixture.log`; compilation log is
+`/private/tmp/eagle-native-affine-final-build.log`.
+
+Remaining gates are unchanged: CUDA source compilation, actual GPU exact
+code/S/epilogue checks and bounded native trajectories/choices, then actual
+packing-inclusive latency/acceptance/throughput against Q4_0. CPU evidence does
+not establish CUDA/SM75 correctness or speed. No GPU/remote actions, real-data
+updates, or sealed-final reads occurred. Both isolated worktrees remain intact
+for integration or validation repairs.
