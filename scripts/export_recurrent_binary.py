@@ -36,6 +36,36 @@ from gguf import GGUFReader, GGUFWriter  # noqa: E402
 PREFIX = "eagle3.w1a1."
 GROUP_SIZE = 128
 GROUPS = ("fusion", "attention", "ffn", "head")
+QUANTIZER_BOUNDARIES = ("fc", "qkv", "attn_output", "gate_up", "down", "head")
+QUANTIZER_PREFIX = PREFIX + "activation_quantizer."
+LEARNED_ACTIVATION_RULE = "learned_scalar_a1_threshold_a4a8_clip_v1"
+
+
+def check_activation_quantizers(value: dict, bits: int) -> dict:
+    """Validate effective F32 scalars, including the shared-boundary inventory."""
+    if bits not in (1, 4, 8) or not isinstance(value, dict) or set(value) != {"version", "boundaries"} or type(value["version"]) is not int or value["version"] != 1:
+        raise ValueError("unsupported learned activation quantizers")
+    boundaries = value["boundaries"]
+    if not isinstance(boundaries, dict) or set(boundaries) != set(QUANTIZER_BOUNDARIES):
+        raise ValueError("learned quantizers require exactly six shared boundaries")
+    checked = {}
+    for boundary in QUANTIZER_BOUNDARIES:
+        item = boundaries[boundary]
+        if not isinstance(item, dict) or set(item) != {"bits", "threshold_delta", "clip_ratio"} or type(item["bits"]) is not int or item["bits"] != bits:
+            raise ValueError(f"{boundary}: incompatible learned quantizer bits or fields")
+        params = {}
+        for name in ("threshold_delta", "clip_ratio"):
+            scalar = item[name]
+            if type(scalar) not in (int, float) or not np.isfinite(scalar) or abs(scalar) > np.finfo(np.float32).max:
+                raise ValueError(f"{boundary}: nonfinite or non-scalar {name}")
+            params[name] = float(np.float32(scalar))
+            if params[name] != scalar:
+                raise ValueError(f"{boundary}: {name} must be an effective F32 scalar")
+        delta, clip = params["threshold_delta"], params["clip_ratio"]
+        if not 0 < clip <= 1 or (bits == 1 and clip != 1) or (bits != 1 and delta != 0):
+            raise ValueError(f"{boundary}: incompatible learned quantizer parameters")
+        checked[boundary] = {"bits": bits, **params}
+    return {"version": 1, "boundaries": checked}
 
 
 def sha256(path: Path) -> str:
@@ -55,8 +85,8 @@ def tensor_key(base: str, suffix: str) -> str:
 
 
 def check_manifest(manifest: dict, base_hash: str) -> dict[str, tuple[str, tuple[int, int]]]:
-    if not isinstance(manifest, dict) or manifest.get("schema_version") not in (1, 2):
-        raise ValueError("manifest schema must be v1 group128 or v2 row")
+    if not isinstance(manifest, dict) or manifest.get("schema_version") not in (1, 2, 3):
+        raise ValueError("manifest schema must be v1 group128, v2 row or v3 learned row")
     if manifest["schema_version"] == 1:
         required = {"schema_version", "base_gguf_sha256", "training_arithmetic", "projections"}
         if set(manifest) != required:
@@ -77,13 +107,15 @@ def check_manifest(manifest: dict, base_hash: str) -> dict[str, tuple[str, tuple
             "objective",
             "projections",
         }
+        if manifest["schema_version"] == 3:
+            required.add("activation_quantizers")
         if set(manifest) != required:
             raise ValueError("row manifest has missing or extra contract fields")
         if (
             manifest["scale_layout"] != "row"
             or manifest["activation_bits"] not in (1, 4, 8, 16)
             or manifest["activation_rule"]
-            != "a16_f16_cast_a8a4_absmax_even_a1_f64_meanabs_sign_zero_positive"
+            != (LEARNED_ACTIVATION_RULE if manifest["schema_version"] == 3 else "a16_f16_cast_a8a4_absmax_even_a1_f64_meanabs_sign_zero_positive")
             or manifest["weight_rule"] != "hard_sign_zero_positive_clipped_identity_ste"
             or manifest["qk_row_order"] != "original_checkpoint"
             or manifest["export_status"] != "row_w1ax_requires_native_validation"
@@ -92,6 +124,8 @@ def check_manifest(manifest: dict, base_hash: str) -> dict[str, tuple[str, tuple
             or not re.fullmatch("[0-9a-f]{64}", manifest["checkpoint_sha256"])
         ):
             raise ValueError("unsupported row checkpoint contract")
+        if manifest["schema_version"] == 3:
+            check_activation_quantizers(manifest["activation_quantizers"], manifest["activation_bits"])
     if manifest["base_gguf_sha256"] != base_hash:
         raise ValueError("manifest version or base GGUF hash mismatch")
     projections = manifest["projections"]
@@ -217,7 +251,7 @@ def export_model(base_path: Path, checkpoint: Path, manifest_path: Path, output:
     base_hash = sha256(base_path)
     manifest = json.loads(manifest_path.read_text())
     expected = check_manifest(manifest, base_hash)
-    row_scale = manifest["schema_version"] == 2
+    row_scale = manifest["schema_version"] in (2, 3)
     if row_scale and sha256(checkpoint) != manifest["checkpoint_sha256"]:
         raise ValueError("row checkpoint SHA256 differs from manifest")
     reader = GGUFReader(base_path)
@@ -244,6 +278,13 @@ def export_model(base_path: Path, checkpoint: Path, manifest_path: Path, output:
         writer.add_uint32(PREFIX + "scale_group_size", 0 if row_scale else GROUP_SIZE)
         if row_scale:
             writer.add_uint32(PREFIX + "activation_bits", manifest["activation_bits"])
+        if manifest["schema_version"] == 3:
+            quantizers = check_activation_quantizers(manifest["activation_quantizers"], manifest["activation_bits"])
+            writer.add_uint32(QUANTIZER_PREFIX + "version", 1)
+            writer.add_array(QUANTIZER_PREFIX + "boundaries", list(QUANTIZER_BOUNDARIES))
+            for boundary, params in quantizers["boundaries"].items():
+                for name in ("threshold_delta", "clip_ratio"):
+                    writer.add_float32(QUANTIZER_PREFIX + boundary + "." + name, params[name])
         writer.add_array(PREFIX + "groups", list(GROUPS))
         writer.add_array(PREFIX + "tensors", sorted(selected_names))
         writer.add_string(PREFIX + "bit_order", "little")
@@ -293,6 +334,11 @@ def export_model(base_path: Path, checkpoint: Path, manifest_path: Path, output:
             or reread.fields[PREFIX + "activation_bits"].contents() != manifest["activation_bits"]
         ):
             raise ValueError("row activation or scale metadata mismatch")
+        if manifest["schema_version"] == 3:
+            for boundary, params in quantizers["boundaries"].items():
+                for name in ("threshold_delta", "clip_ratio"):
+                    if reread.fields[QUANTIZER_PREFIX + boundary + "." + name].contents() != params[name]:
+                        raise ValueError("learned activation metadata mismatch")
         output_hash = sha256(temporary)
         report = {
             "schema_version": 1,
@@ -322,6 +368,8 @@ def export_model(base_path: Path, checkpoint: Path, manifest_path: Path, output:
                 for name, tensor in preserved.items()
             },
         }
+        if manifest["schema_version"] == 3:
+            report["activation_quantizers"] = quantizers
         temporary.rename(output)
     return report
 
