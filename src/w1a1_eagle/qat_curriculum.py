@@ -18,7 +18,7 @@ from torch.nn import functional as F
 
 from .qat_optimization import (BinaryOptimizationConfig, binary_layout,
                                binary_parameter_families, make_binary_optimizer)
-from .recurrent_loss import supported_prefix_ce
+from .recurrent_loss import supported_prefix_ce, supported_prefix_rows
 from .recurrent_trace import TraceAudit
 from .trajectory_refresh import build_plan, checked_hash, digest
 
@@ -31,19 +31,18 @@ def depth_weighted_supported_ce(logits: Tensor, audit: TraceAudit, depths: Seque
     earlier states remain attached through later logits. decay=1 retains the
     baseline mean CE exactly; 0.8 is an explicit mild early-depth experiment.
     """
-    baseline = supported_prefix_ce(logits, audit)  # Reuse row/vocab/mask/finite gates.
     if isinstance(decay, bool) or not math.isfinite(decay) or not 0 < decay <= 1:
         raise ValueError("depth decay must be finite in (0,1]")
     if len(depths) != len(audit.draft_labels) or any(type(d) is not int or not 0 <= d < 5 for d in depths):
         raise ValueError("depths must align with audited rows in the supported five-step horizon")
     if decay == 1:
-        return baseline
+        return supported_prefix_ce(logits, audit)
+    supported_logits, supported_labels = supported_prefix_rows(logits, audit)
     mask = torch.tensor(audit.ce_mask, device=logits.device, dtype=torch.bool)
-    labels = torch.tensor(audit.draft_labels, device=logits.device, dtype=torch.long)
     weights = torch.tensor([decay ** d for d in depths], device=logits.device, dtype=torch.float32)[mask]
     if not bool(torch.isfinite(weights).all()) or not bool((weights > 0).all()):
         raise ValueError("depth weighting underflow; preserve every supported depth")
-    losses = F.cross_entropy(logits[mask].float(), labels[mask], reduction="none")
+    losses = F.cross_entropy(supported_logits, supported_labels, reduction="none")
     return (weights * losses).sum() / weights.sum()
 
 

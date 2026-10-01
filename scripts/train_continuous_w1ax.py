@@ -145,7 +145,7 @@ def require_preparation_resume(run_dir: Path) -> None:
 
 
 def require_zero_optimizer_progress(trainer) -> None:
-    """Check restored/live counters and Adam states, including hidden lane updates."""
+    """Require zero counters and untouched Adam/SGD moment buffers."""
     if (
         type(trainer.step) is not int or trainer.step != 0
         or set(trainer.metrics) != {"A8", "A1"}
@@ -162,6 +162,15 @@ def require_zero_optimizer_progress(trainer) -> None:
                 step = step.item()
             if step != 0:
                 raise ValueError(f"--prepare-only found {lane.name} optimizer progress")
+            for name, value in state.items():
+                if hasattr(value, "is_floating_point"):
+                    if bool((value != 0).any()):
+                        raise ValueError(f"--prepare-only found {lane.name} nonzero optimizer {name}")
+                elif isinstance(value, (int, float)) and not isinstance(value, bool):
+                    if value != 0:
+                        raise ValueError(f"--prepare-only found {lane.name} nonzero optimizer {name}")
+                else:
+                    raise ValueError(f"--prepare-only found unsupported optimizer state {name}")
 
 
 def publish_preparation_ready(trainer, run_dir: Path) -> None:

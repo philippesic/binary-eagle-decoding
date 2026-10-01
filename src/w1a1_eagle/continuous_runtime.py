@@ -23,7 +23,6 @@ MATH_FILES = (
     "qat_curriculum.py",
     "learned_activation.py",
     "fusion_correction.py",
-    "qat_curriculum_runner.py",
 )
 
 

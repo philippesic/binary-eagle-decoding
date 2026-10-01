@@ -14,7 +14,7 @@ from torch.nn import functional as F
 from .recurrent_trace import TraceAudit
 
 
-def supported_prefix_ce(logits: Tensor, audit: TraceAudit) -> Tensor:
+def supported_prefix_rows(logits: Tensor, audit: TraceAudit) -> tuple[Tensor, Tensor]:
     """Mean CE over valid mapped labels without detaching any student logits.
 
     Unsupported labels remain in ``audit.denominator_mask`` for separate
@@ -34,4 +34,10 @@ def supported_prefix_ce(logits: Tensor, audit: TraceAudit) -> Tensor:
         raise ValueError("CE mask disagrees with audited labels")
     mask = torch.tensor(audit.ce_mask, dtype=torch.bool, device=logits.device)
     labels = torch.tensor(audit.draft_labels, dtype=torch.long, device=logits.device)
-    return F.cross_entropy(logits[mask].float(), labels[mask], reduction="mean")
+    return logits[mask].float(), labels[mask]
+
+
+def supported_prefix_ce(logits: Tensor, audit: TraceAudit) -> Tensor:
+    """Mean CE on audited supported rows; every current-student graph stays attached."""
+    rows, labels = supported_prefix_rows(logits, audit)
+    return F.cross_entropy(rows, labels, reduction="mean")

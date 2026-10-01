@@ -44,7 +44,7 @@ class W1AxContract:
     scale_layout: ScaleLayout = "row"
 
     def __post_init__(self) -> None:
-        if self.activation_bits not in (1, 4, 8, 16):
+        if type(self.activation_bits) is not int or self.activation_bits not in (1, 4, 8, 16):
             raise ValueError("activation bits must be A1, A4, A8, or A16")
         if self.scale_layout not in ("row", "group128"):
             raise ValueError("scale layout must be row or group128")
@@ -320,6 +320,8 @@ class JointQATConfig:
     depth_loss_decay: float = 1.0
 
     def __post_init__(self) -> None:
+        if type(self.allow_accelerator) is not bool:
+            raise ValueError("allow_accelerator must be an explicit boolean")
         device = torch.device(self.device)
         if device.type == "cuda" and device.index is None:
             device = torch.device("cuda:0")
@@ -330,7 +332,9 @@ class JointQATConfig:
             raise ValueError("group128 reference projection is CPU-only")
         if self.objective not in ("hard_ce", "compact_probability"):
             raise ValueError("unknown joint QAT objective")
-        if any(not math.isfinite(x) or x <= 0 for x in
+        if type(self.seed) is not int or not 0 <= self.seed < 2**64:
+            raise ValueError("seed must be an integer in [0,2**64)")
+        if any(isinstance(x, bool) or not math.isfinite(x) or x <= 0 for x in
                (self.sign_lr, self.scale_lr, self.max_grad_norm,
                 self.activation_lr, self.fusion_lr)):
             raise ValueError("learning rates and gradient bound must be finite and positive")
@@ -338,7 +342,8 @@ class JointQATConfig:
             raise ValueError("unknown A1 computation implementation")
         if self.activation_quantization not in ("fixed", "learned"):
             raise ValueError("unknown activation quantization recipe")
-        if not math.isfinite(self.depth_loss_decay) or not 0 < self.depth_loss_decay <= 1:
+        if (isinstance(self.depth_loss_decay, bool) or not math.isfinite(self.depth_loss_decay)
+                or not 0 < self.depth_loss_decay <= 1):
             raise ValueError("depth loss decay must be finite in (0,1]")
         if self.activation_quantization == "learned" and self.contract.activation_bits == 16:
             raise ValueError("learned activations support A1/A4/A8 only")

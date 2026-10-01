@@ -83,10 +83,20 @@ class ContinuousConfig:
     optimize_cache: bool = False
     optimize_head: bool = False
     context_chunk_size: int = 64
+    persistent_sign_diagnostics: bool = False
 
     def __post_init__(self):
         if torch.device(self.device).type not in {"cpu", "cuda"}:
             raise ValueError("only CPU tests and explicitly user-started CUDA are supported")
+        for name in ("warmup_steps", "checkpoint_every", "keep_checkpoints",
+                     "diagnostics_every", "development_every", "max_prefix_tokens",
+                     "min_free_disk_bytes", "max_cuda_reserved_bytes", "min_cuda_free_bytes",
+                     "min_host_available_bytes", "log_max_bytes", "log_backups",
+                     "context_chunk_size"):
+            if type(getattr(self, name)) is not int:
+                raise ValueError(f"{name} must be an integer")
+        if any(type(seed) is not int or not 0 <= seed < 2**64 for seed in self.seeds):
+            raise ValueError("seeds must be integers in [0,2**64)")
         for name in (
             "sign_lr",
             "scale_lr",
@@ -101,17 +111,20 @@ class ContinuousConfig:
             "min_host_available_bytes",
             "log_max_bytes",
         ):
-            if not math.isfinite(getattr(self, name)) or getattr(self, name) <= 0:
+            if (isinstance(getattr(self, name), bool) or
+                not math.isfinite(getattr(self, name)) or getattr(self, name) <= 0):
                 raise ValueError(f"{name} must be finite and positive")
         if self.warmup_steps < 0 or self.min_free_disk_bytes < 0 or self.log_backups < 1:
             raise ValueError("invalid warmup, disk or retention bound")
         for name in ("max_steps", "max_tokens", "max_seconds", "max_epochs"):
             value = getattr(self, name)
-            if value is not None and (not math.isfinite(value) or value <= 0):
+            if value is not None and (isinstance(value, bool) or not math.isfinite(value)
+                                      or value <= 0 or (name != "max_seconds" and type(value) is not int)):
                 raise ValueError(f"{name} must be positive or null")
         if len(self.seeds) != 2 or self.seeds[0] == self.seeds[1]:
             raise ValueError("A8 and A1 need distinct seeds")
-        if type(self.optimize_cache) is not bool or type(self.optimize_head) is not bool:
+        if any(type(x) is not bool for x in
+               (self.optimize_cache, self.optimize_head, self.persistent_sign_diagnostics)):
             raise ValueError("cache/head controls must be boolean")
         if type(self.context_chunk_size) is not int or self.context_chunk_size < 1:
             raise ValueError("context chunks must be positive integers")
@@ -396,6 +409,13 @@ class ContinuousTrainer:
         ).hexdigest()
         self.runtime_identity = training_runtime_identity(config.device)
         self.smoke_passed = False
+        self.sign_diagnostics = {}
+        if config.persistent_sign_diagnostics:
+            from .qat_optimization import SignFlipDiagnostics
+            self.sign_diagnostics = {
+                lane.name: SignFlipDiagnostics(lane.linears,
+                    contract={"source_sha256": self.source, "config": asdict(lane.config)})
+                for lane in lanes}
 
     def resources(self) -> dict:
         free = shutil.disk_usage(self.run_dir).free
@@ -579,6 +599,8 @@ class ContinuousTrainer:
                     "optimizer": lane.optimizer.state_dict(),
                     "rng": lane.rng,
                     "recipes": recipe_state(lane.linears),
+                    "sign_diagnostics": (self.sign_diagnostics[lane.name].state_dict()
+                                         if lane.name in self.sign_diagnostics else None),
                 }
                 for lane in self.lanes
             },
@@ -731,6 +753,11 @@ class ContinuousTrainer:
                 module.load_state_dict(saved["linears"][name], strict=True)
             lane.optimizer.load_state_dict(saved["optimizer"])
             lane.rng = saved["rng"]
+            if lane.name in self.sign_diagnostics:
+                self.sign_diagnostics[lane.name].load_state_dict(
+                    saved["sign_diagnostics"], lane.linears, resumed_step=counters[0])
+            elif saved.get("sign_diagnostics") is not None:
+                raise ValueError("undeclared sign diagnostics checkpoint")
         self.step, self.epoch, self.cursor = payload["step"], payload["epoch"], payload["cursor"]
         self.tokens, self.elapsed_seconds = payload["tokens"], payload["elapsed_seconds"]
         self.unique_prompts, self.unique_rows = (
@@ -878,6 +905,10 @@ class ContinuousTrainer:
                         item = joint_train_step(
                             lane.linears, logits, audit, lane.optimizer, lane.config
                         )
+                        if (lane.name in self.sign_diagnostics and
+                            self.step % self.config.diagnostics_every == 0):
+                            item["persistent_sign_diagnostics"] = self.sign_diagnostics[lane.name].observe(
+                                lane.linears, step=self.step + 1)
                         lane.rng = rng_state(self.config.device)
                         lane.optimizer.zero_grad(set_to_none=True)
                         if torch.device(self.config.device).type == "cuda":
