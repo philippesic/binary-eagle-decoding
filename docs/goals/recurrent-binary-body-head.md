@@ -8,7 +8,7 @@ data. Evaluate native draft quality and speed against Q4_0 when GPU work is
 explicitly permitted. Preserve the pinned FP16 target/verifier and draft map.
 This continues the existing goal rather than opening a second goal.
 
-**State: Finish data/QAT prep only; no optimizer updates authorized.** Supervisor06 temporarily stopped to install explicit preparation-only launch boundary, verified20:27:44UTC terminal/exit0,no owned processes/GPUcomputeapps. Retained10,000train/224dev across327manifests,zeroQATsteps. Monitor temporarilyPAUSED,newpreparation-only prompt saved. Same goal,math/runtime/data/config/caps unchanged,finals sealed.
+**State: Preparation-only run healthy; no QAT optimizer updates authorized.** Supervisor07 live --prepare-only verified afterdisconnect20:44:55UTC,server1203/supervisor1204/child1205;327 manifests /10,000train /224dev,zerooptimizer,re-audit1/353. MonitorACTIVE/every15min withpreparation-only endpoint; budget1of2 unchanged. Complete prep/smoke/checkpointzero then exit beforetrainer.run. Frozenmath/runtime/config/data/caps/finals unchanged;2080Ti paused.
 
 ## Current findings and work
 
@@ -5378,3 +5378,70 @@ and the live STATUS/monitor boundary were preserved. The clean managed audit
 worktree was archived and its merged branch removed after all ten workers
 completed. No unmerged or unpublished audit output remains. This final record
 adds documentation only and authorizes no optimizer or GPU work.
+
+## Preparation-only boundary installed and run verified — 2026-10-01 20:44 UTC
+
+Human endpoint remains “stop once data and qat prep is ready, dont actually
+start qat”. Previous automatic optimizer authority is revoked. After safe
+supervisor06 stop, feature owner `/root/prepare_only_boundary` changed only
+launcher,launcher tests,runbook in isolated worktree. Commit
+`95428e0c3f0daaa7c1a168d1cce62827e7c8c217` adds CLI --prepare-only; root reviewed,
+integrated/pushed via merge5676254 and removed merged worktree/branch.
+21CPUlauncher+12health tests,Ruff,diffcheck passed: actual stubbed main preserves
+all required preparation/smoke/save, never reaches optimizer/evaluator in prep
+mode; unchanged tensors/Adam/counters,trained or hidden progress rejected,
+failed gates cannot publish readiness,default training behavior unchanged.
+
+Control boundary runs all native capture/audits/readiness/full coverage, model
+construction,both paired forward/backward CUDA smoke probes and checkpointzero
+save. Smoke computes gradients but no weight update. Global,A8,A1 and Adamsteps
+must be0; preparation-ready.json records gates/coverage/checkpoint/runtime and
+resources. Healthy terminal status stopped/preparation_complete:true/stop_reason
+prepare_only returns BEFORE ContinuousTrainer.run. Any later optimization needs
+NEW explicit human authorization, ordinary start/resume withoutflag. Nullcaps
+and immutable experiment config untouched; all existing numericalgates retained.
+
+One Luna/high operator `/root/prepare_only_resume_operator` (forknone) freshly
+verified oldterminal/groups651/653gone,no project/computeapps,RTX5080SM120idle
+12,534MiBfree,hostavailable19.7GiB,disk424.6GB,exactparent7547d253/nativeb4e366d4,
+eight criticalmath/config/stages/runtime identities. CPUrecoverpartial exit0
+preservedraw/completed data; dedicated CPUrecovery supervisor961/962groupsgone.
+Only reviewed launcher deployed atomically from pinnedcommit; SHA256
+82f0185ab9ac38bc622749d2ca5e5c5a297a72494dcbf3d16d2b08df249cdade.
+RemoteHEAD7547d253 andnative/runtime/math/data/config/caps unchanged. One tracked
+remote diff: launcher+95control lines; no broad pull/reset/submodule update.
+
+Exactlyone GPUresume launched20:43:50UTC under NEW supervisor
+`luna-supervisor-a8-a1-native-order-20261001-07`, host socketbinary-eagle-runtime /
+session `continuous-a8-a1-native-order-20261001-07`, remote_job300secgrace, child
+--start --allow-cuda --resume --prepare-only,same experiment/stages/config.
+Firsthealth20:44:26UTC healthy,ordinal0/353; firstLOCALtransport$126 closed.
+ONCEfreshLOCALMacBookreconnect$127 **20:44:55.193974UTC** CPUhealthpassed and
+independentprocessmetadata verified hostserver1203,supervisor1204/PGID1204,
+child1205/PGID1205,live --prepare-only. Retained327manifests /10,000train /224dev,
+optimization_started:false,steps:{},captureauditordinal1/353. Resetordinal is
+re-audit,not lostdata. Bothlocaltransports closed/absent; hostjobuntouched,running.
+
+Ignored completeoperation `runs/luna-continuous-a8-a1-20260929/preparation-only-operation-20261001.json`;
+originalpostdisconnectraw `postdisconnect-health-20261001.raw.txt`; parent canonical
+snapshot `preparation-only-postdisconnect-20261001.json` in same monitor dir.
+Exactcommands,CPUrecovery/deployment/source/resource/ownership/health preserved.
+Parent normalized registration host_tmux/PIDs/current07 querybinding and canonical
+commandJSONSTRING (operator had left objectwrapper/stale06binding). Routinequery
+now sameCPUcheckeronce/status/supervisor/completed labels plus small readyreceipt
+metadata ifexists; no extra /proc/tmux scan orGPUquery everyhealthy tick.
+Locallycompiled sourceSHA256
+4217aad98ba3ce1a377a27a25ef3746d44e538051ce0f2164d8c68b0e2414f11,
+commandASCIIlength2,983 stored in registration; directJSONtoolloading, no handcopy.
+Last-health healthy; training_authorized:false,preparation_only:true,
+stop_after_preparation:true,exactlaunchercontrolSHA pinned. Source hash/command
+binding equality locallyverified; no secondremotechecker needed for normalization.
+
+Existing15min monitor reactivated usingprep-onlyprompt,savedconfigACTIVE, sameID/
+target. Budget remains1of2; user scopecontrolresume consumes noautomaticrecovery.
+Everyfuturelaunch/recovery MUST--prepare-only. Atterminalprepcomplete+successful
+readyreceipt+zero counters,verify ownedgroupsgone/GPUreleased,notifydata/QATprep
+ready andpausemonitor. Positiveoptimizersteps unauthorized:notifyandgracefully
+stop. Capturecompletion alone isn'treadiness; finalssealed,2080Tipaused. Operators
+done,noactiveLOCALtransport. Docs-only checkpoint preserves concurrenttraining
+audit/team findings; sameprojectgoal,nonewgoal/experiment/schedule.
