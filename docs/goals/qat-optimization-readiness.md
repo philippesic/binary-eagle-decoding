@@ -236,14 +236,17 @@ Implementation main **eb66093** is pushed; native published head is8025a0777.
 Final CPU rerun952tests/fourskips/104.517s and changed-Python Ruff/whitespace
 checks pass. Main and the primary native checkout are clean. Reviewed worker
 history was recorded in d10a228 before cleanup, preserving all owned commits.
-Seven clean worker worktrees and root integration worktree were removed after
+Nine worker worktrees and root integration worktree were removed after
 ancestry/cleanliness checks. Logs were copied into the main ignored
 runs/qat-optimization-readiness directory before removal. Native JSON and logs
 are preserved under its native-cpu subdirectory with SHA256 inventory; JSON SHA
 c9bb1abf6fc10555c81b39b7efdbd66f5dc24c27e0e7690e12e5bef19c827076.
 
-Temporary recipes worktree has borrowed dependency copies pending a read-only
-uniqueness review; do not discard unreviewed dirty files. Native worktree
+Two independent read-only reviews confirmed the recipes worktree had no unique
+uncommitted owned work. Its15borrowed dependency copies, binary diff and SHA256
+inventory were preserved under ignored runs/qat-optimization-readiness/worker-archives
+before removing that merged worktree. All parent worker branches were retained
+in main history before removal. Native worktree
 /private/tmp/eagle-native-learned and published feature/learned-w1ax remain for
 pending actual CUDA validation; CPU build /private/tmp/eagle-native-learned-build
 and source are preserved. No workers own remote GPU jobs. Existing unrelated
