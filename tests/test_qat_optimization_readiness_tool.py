@@ -28,18 +28,19 @@ def config_spec():
             "hardware": {"device_name": "expected actual GPU", "compute_capability": [12, 0]}}
 
 
-def binding(learned=False, fusion=False):
+def binding(learned=False, fusion=False, affine=False, coverage="fusion"):
     return {"source_sha256": "1" * 64, "training_runtime": {"device_type": "cuda", "fixture": True},
         "recipe": {"activation_quantization": "learned" if learned else "fixed",
-                   "fusion_correction": {"enabled": fusion}},
+                   "fusion_correction": {"enabled": fusion},
+                   "affine_weights": {"enabled": affine, "coverage": coverage}},
         "native_commit": "c" * 40, "backend": "cuda",
         "hardware": {"device_type": "cuda", "name": "fixture hardware metadata only",
                      "compute_capability": [12, 0], "total_memory_bytes": 16 * 1024**3}}
 
 
-def native_fixture(directory, *, learned=False, fusion=False):
+def native_fixture(directory, *, learned=False, fusion=False, affine=False, coverage="fusion"):
     """Metadata validator fixtures only; not a receipt or GPU evidence."""
-    bound = binding(learned, fusion)
+    bound = binding(learned, fusion, affine, coverage)
     states = {"A8": "8" * 64, "A1": "a" * 64}
     evidence = {"schema": tool.NATIVE_SCHEMA, "split": "train", "fixture_only": False,
                 "optimizer_updates": 0, **bound, "lanes": {}}
@@ -59,9 +60,20 @@ def native_fixture(directory, *, learned=False, fusion=False):
                 "native_raw_input_sha256": "d" * 64, "zero_identity_max_abs": 0,
                 "expected_correction_delta_norm": .03, "native_correction_delta_norm": .03,
                 "nonzero_forward_relative_rms": .01}]
+        if affine:
+            bases = tool.AFFINE_BASES if coverage == "all" else {"fc"}
+            kinds["affine_weights"] = [{**ancestry, "fixture": fixture, "projection_base": base,
+                "expected_code_sum_sha256": "3" * 64, "native_code_sum_sha256": "3" * 64,
+                "expected_output_sign_sha256": "4" * 64, "native_output_sign_sha256": "4" * 64,
+                "expected_tail_sha256": "5" * 64, "native_tail_sha256": "5" * 64,
+                "native_output_relative_rms": 1e-6, "identity_max_abs": 0,
+                "alpha": 0., "mu": 0. if fixture == "mu_zero_identity" else -.02,
+                "expected_output_norm": .5, "native_output_norm": .5}
+                for fixture in sorted(tool.AFFINE_FIXTURES) for base in sorted(bases)]
         for kind, cases in kinds.items():
             path = Path(directory) / (lane + "-" + kind + ".json")
-            tool.write_new(path, {**common, "kind": kind, "cases": cases})
+            extra = {"projection_bases": sorted(bases)} if kind == "affine_weights" else {}
+            tool.write_new(path, {**common, "kind": kind, "cases": cases, **extra})
             lane_data[kind] = {"path": str(path), "sha256": tool.sha256(path)}
         evidence["lanes"][lane] = lane_data
     return evidence, bound, states
@@ -210,6 +222,37 @@ class ReadinessToolTests(unittest.TestCase):
                 record["sha256"] = tool.sha256(path)
                 with self.assertRaisesRegex(ValueError, error):
                     tool.validate_native_evidence(evidence, directory, bound, states, {"eligible-train"})
+
+    def test_affine_all_projection_coverage_exact_sum_and_nonzero_mu_are_required(self):
+        for field, value, reason in (("native_code_sum_sha256", "f" * 64, "code_sum differs"),
+                ("native_output_sign_sha256", "f" * 64, "output_sign differs"),
+                ("native_tail_sha256", "f" * 64, "tail differs"),
+                ("native_output_norm", 0, "positive native output"),
+                ("native_output_relative_rms", .001, "numeric gate")):
+            with self.subTest(field=field), tempfile.TemporaryDirectory() as directory:
+                evidence, bound, states = native_fixture(directory, affine=True, coverage="all")
+                gates = tool.validate_native_evidence(evidence, directory, bound, states, {"eligible-train"})
+                self.assertEqual(set(gates["affine_weights"]["projection_bases"]), tool.AFFINE_BASES)
+                self.assertEqual(gates["affine_weights"]["cases"], 54)
+                record = evidence["lanes"]["A8"]["affine_weights"]
+                path = Path(record["path"])
+                measured = tool.read_json(path)
+                row = next(c for c in measured["cases"] if c["fixture"] == "alpha_zero_nonzero_mu")
+                row[field] = value
+                path.write_text(json.dumps(measured))
+                record["sha256"] = tool.sha256(path)
+                with self.assertRaisesRegex(ValueError, reason):
+                    tool.validate_native_evidence(evidence, directory, bound, states, {"eligible-train"})
+        with tempfile.TemporaryDirectory() as directory:
+            evidence, bound, states = native_fixture(directory, affine=True, coverage="all")
+            record = evidence["lanes"]["A8"]["affine_weights"]
+            path = Path(record["path"])
+            measured = tool.read_json(path)
+            measured["cases"] = [c for c in measured["cases"] if c["projection_base"] == "fc"]
+            path.write_text(json.dumps(measured))
+            record["sha256"] = tool.sha256(path)
+            with self.assertRaisesRegex(ValueError, "all selected projection"):
+                tool.validate_native_evidence(evidence, directory, bound, states, {"eligible-train"})
 
     def test_mocked_factory_requires_eligible_train_bound_manifest_and_equal_sources(self):
         with tempfile.TemporaryDirectory() as directory:
