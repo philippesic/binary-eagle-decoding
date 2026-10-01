@@ -5190,3 +5190,74 @@ no pause for morning/capture completion. Notify actual optimizer start/new
 verified failure/completion/requiredaction; quiet healthy ordinary progress.
 Sealed finals unopened,Q4_0 primary,target/verifier precision and all identities
 frozen. Docs-only checkpoint follows`5bc1fd5`; diff check appropriate verification.
+
+## Five-agent training optimization audit launched — 2026-10-01
+
+The user requested one GPT-6.1 Sol/high agent for each of five training areas,
+combining source-level applicability reasoning with primary-source research of
+documented effectiveness and alternatives. This is a bounded audit within the
+existing goal; it does not authorize changing the live experiment or starting
+another training/model/architecture experiment.
+
+Source baseline: parent `d725fc88d52fc49841c2b20128d176c1e7f486d8`.
+Reports are prepared in the isolated `training-research-audit` worktree at
+`/Users/pippo/.codex/worktrees/training-research-audit/binary-eagle-decoding`.
+The root owns integration, synthesis and this checkpoint. Five workers own
+distinct report files only under `experiments/training-audit-2026-10-01/`:
+
+| Agent | Model / effort | Owned report |
+| --- | --- | --- |
+| `/root/audit_qat_kernels` | GPT-6.1 Sol / high | `01-qat-kernels.md` |
+| `/root/audit_training_batches` | GPT-6.1 Sol / high | `02-batching-cache.md` |
+| `/root/audit_binary_optimizer` | GPT-6.1 Sol / high | `03-binary-optimization.md` |
+| `/root/audit_learned_quantizers` | GPT-6.1 Sol / high | `04-learned-quantizers.md` |
+| `/root/audit_training_curricula` | GPT-6.1 Sol / high | `05-curricula.md` |
+
+All workers may read source and browse primary references; no code edits,
+remote actions, accelerator/model runs, installations, sealed data access or
+child agents are assigned. The live GPU owner, monitor, source/config/math,
+data ancestry and final-set boundary remain unchanged. No fresh remote health
+observation is claimed by this audit.
+
+The synthesis will rank feasibility, deployment/gradient compatibility,
+strength of external evidence, resource cost and the smallest decisive test.
+Published CV/BERT/weight-only results must not be presented as native W1A1
+EAGLE evidence. Source audit confirms fresh row initialization is **±0.5**, not
+the grouped candidate-D **±1** path; optimizer advice must use the real baseline.
+
+Next: finish all five reports, reconcile overlap and contradictory assumptions,
+publish a compact ranked synthesis and record proposed choices without changing
+the running experiment.
+
+## Five-agent training optimization audit completed
+
+All five GPT-6.1 Sol/high workers completed their owned reports; root reviewed
+all outputs, reconciled duplicate savings and corrected ParetoQ version/metric
+scope using v2 and pinned author code. The
+[ranked synthesis](../../experiments/training-optimization-audit-2026-10-01.md)
+links the five source-and-primary-literature audits. No code implementation,
+model/test workload, accelerator/remote action, installation, large artifact
+read or sealed-final access occurred. Documentation-only verification is
+appropriate; no training-speed or acceptance improvement is claimed.
+
+Highest-fit speed package: chunked bulk K/V-only accepted-prefix construction,
+stacked head over one captured chain, and native-only A1 no-gradient forward.
+The source bound is 77.88% fewer **prefix-stage linear MACs**, not that fraction
+of total step time. Current row latents start at ±0.5; current recurrence feeds
+student states but forces captured D tokens. These corrections narrow the
+optimizer/curriculum options. Lower-inertia Adam, ParetoQ-inspired gradients,
+learned A4 clipping/A1 thresholds and short A8-to-A1 initialization remain
+separate, compute-matched proposals in DECISIONS.md, not launched experiments.
+
+All workers are completed; no worker owns a GPU or remote transport. Root owns
+the report integration. STATUS.md's remote counts/state retain the preexisting
+observation; this audit performs no fresh live health read. The live source,
+config/math, monitor, target/verifier, cache/ancestry gates and final-set boundary
+are unchanged. Next project action is the existing capture/training pipeline;
+next audit action is user selection of a bounded implementation or quality test.
+Changing the live frozen math source is not authorized by completing this audit.
+
+Publication verification: `git diff --check` and 232 local Markdown links across
+the nine report/state documents passed. No code tests or accelerator checks were
+run. The research branch is `codex/training-research-audit`; only these nine
+Markdown files are staged for integration, with no submodule/source change.

@@ -738,3 +738,32 @@ Verified after restart: config`memory=20GB`, WSL total20,971,151,360B,
 available20,237,811,712B and Windows free physical21,653,372,928B. Resource path
 is resolved for the next measured admission; actual stage fit remains gated.
 The agent did not change or restart Windows/WSL.
+
+## Training optimization audit recommendations — 2026-10-01
+
+The user requested five GPT-6.1 Sol/high source-and-literature audits of custom
+QAT/fusion, batching/cache construction, binary optimization, learned activation
+quantizers and precision/recurrence curricula. The
+[ranked synthesis](../experiments/training-optimization-audit-2026-10-01.md)
+and its five reports are complete. These recommendations do not select a new
+training recipe or authorize modifying the live exact-resume experiment.
+
+Recommended engineering choice: prepare chunked K/V-only Torch context,
+stacked per-chain head and A1 no-gradient native-only forward. The architecture
+supports removing 77.88% of context linear MACs without changing round-level
+Adam cadence; wall-time benefit remains unmeasured. CPU contract gates and
+later same-device phase timing precede an adoption claim. Full custom backward,
+ragged minibatching and a packed training stack are lower priority.
+
+Quality choices remain user-owned and conditional on the baseline learning
+curve. The narrowest optimizer test changes latent initialization inertia
+from the current ±0.5 while preserving checkpoint-zero signs/scales; the
+strongest causal-LLM precedent is ParetoQ-inspired weight/scale gradients,
+with different activation/head/budget assumptions. Learned A4 relative clipping
+or A1 thresholds require a new deployment quantizer; positive A1 amplitude
+alone adds redundant capacity. A short A8-to-A1 warm-start and mild full-horizon
+early-depth CE weighting are separate candidates, not a combined schedule.
+Charge all warm-start/teacher/search compute, preserve data ancestry, compare
+native acceptance at equal GPU hours and report common-token learning curves.
+No current-student token may reuse a changed-prefix capture label. Q4_0 remains
+primary; final prompts stay sealed. No new experiment was launched by the audit.

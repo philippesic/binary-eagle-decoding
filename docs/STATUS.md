@@ -6,6 +6,18 @@ The target/verifier model precision remains as frozen for each experiment.
 
 **Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). **User resumed RTX5080; same pipeline healthy after disconnect/reconnect.** At **2026-10-01 19:53:24 UTC** (12:53 p.m. PDT), supervisor06 CPU health passed; independent ownership verified **19:54:03 UTC**: host tmux650, supervisor651, child653. Retained **327 completed manifests / 10,000 train / 224 dev prompts**, **zero optimizer steps**. Resume re-audit ordinal2/353 (advanced3/353 at ownership read) does not mean data loss. Monitor ACTIVE/every15minutes; budget1of2 unchanged. Full remaining development capture/audits/readiness/coverage and paired CUDA smoke precede automatic training. RTX2080Ti remains paused; frozen identity, null caps, finals unchanged. See the latest resume checkpoint.
 
+**Training optimization audit complete (2026-10-01):** five user-requested
+GPT-6.1 Sol/high agents reviewed source and primary research. The strongest
+implementation candidates are bulk K/V-only Torch prefix construction, a
+stacked per-round head and an A1 native-only no-gradient shortcut. Source
+arithmetic permits removing 77.88% of prefix-stage linear MACs; no training
+speedup or acceptance gain was measured. Binary optimizer, learned quantizer
+and curriculum changes remain bounded proposals. Reports and the
+[ranked synthesis](../experiments/training-optimization-audit-2026-10-01.md)
+are published; all workers completed. No code, remote/GPU, live experiment,
+monitor or sealed-final action occurred. See the
+[audit checkpoint](goals/recurrent-binary-body-head.md#five-agent-training-optimization-audit-completed).
+
 **Bounded GPU Phase 1B complete (2026-09-29):** fixed four-variant
 quality/timing A/B, CUDA deployment checks, first-shard capture/audit and
 100-step real row-A16 calibration are verified. All additional bounded
