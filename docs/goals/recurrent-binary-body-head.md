@@ -8,7 +8,7 @@ data. Evaluate native draft quality and speed against Q4_0 when GPU work is
 explicitly permitted. Preserve the pinned FP16 target/verifier and draft map.
 This continues the existing goal rather than opening a second goal.
 
-**State: continuous A8/A1 capture/audit is authorized and running.** Latest verified observation is 2026-09-30 22:38:28 UTC: 992 train prompts in 31 completed captures, development 0, zero optimizer steps. Native precision gates pass; training awaits full declared capture/audit and paired CUDA smoke. Q4_0 remains the primary comparison and sealed final data remains unopened. The latest handoff checkpoint below supersedes historical next-action lists.
+**State: GPU work paused at the human user's request.** At 2026-10-01 00:09:53 UTC the current run was stopped and RTX5080 project GPU usage was released;58 completed manifests/1,832train/0dev prompts preserved, zero optimizer steps. Both host controls and monitoring are paused; explicit user resume is required. Q4_0 remains the primary comparison and finals remain unopened. Latest pause checkpoint supersedes prior running next actions.
 
 ## Current findings and work
 
@@ -4559,3 +4559,34 @@ log read, recovery, job/WSL change or final-data access occurred. Recovery budge
 remains1of2 used; existing15minute monitor remains ACTIVE. Healthy ordinary
 progress stays quiet. Next scheduled tick uses one bounded pinned operator and
 the same explicit WSL bridge; notify on actual optimizer start or a new failure.
+
+
+### Human GPU pause completed — 2026-10-01 00:09 UTC
+
+Human request: “Pause gpu usage.” Root immediately marked **both** shared hosts
+paused, verified the current registry/registration, and used a separate local
+tmux MCP transport to Windows SSH -> WSL. At00:09:08UTC the current process
+command verified supervisor2920 exclusively owned the corrected run
+`luna-supervisor-a8-a1-native-order-20260930-03`; SIGINT was sent to that
+supervisor, which relayed SIGTERM to its child group2921. No host job pane/server
+was killed. Supervisor ended00:09:11.190882UTC, interrupted with child exit0.
+
+At **00:09:53.377913UTC**, trainer status was stopped with
+intentional_native_stage_stop:true. STOP was created and verified present.
+Owned group2921 had no members; no remaining experiment or project trainer/
+native-server processes were found. `/usr/lib/wsl/lib/nvidia-smi` on RTX5080
+returned no compute apps. Whole-device display/background activity was13%/
+3,100MiB; this is a project GPU-release result, not a claim of zero desktop use.
+**58 completed label manifests/1,832 train prompts, development0**, preserved;
+no optimizer steps began. Captures, partial cells and supervisor history remain
+intact; no recovery, tier/config/precision change or final-set access.
+
+Existing automation `a8-a1-health-check-enable-after-manual-start` paused through
+automation_update; saved TOML verifiesPAUSED with its target/cadence/prompt
+preserved. RTX2080Ti remains paused; no new work was launched on it. Ignored
+`runs/luna-continuous-a8-a1-20260929/pause-20261001T000953Z.json` contains stop
+state/process/GPU evidence; last-health and registration record intentional
+pause. Dedicated local transport session$47 was closed after verification.
+Recovery budget remains1of2 used. Next action: **wait for explicit human resume**;
+then fresh registry/resource/identity and retained-partial checks are mandatory
+before any permitted same-experiment resume. Do not auto-restart or recover.

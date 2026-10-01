@@ -1,11 +1,18 @@
 # A8/A1 health and bounded recovery monitor
 
-Prepared 2026-09-29; **ACTIVE every15minutes** with user-authorized failure notification and bounded recovery. Automation ID:
+Prepared 2026-09-29; **PAUSED at the human user’s GPU-pause request** with user-authorized failure notification and bounded recovery. Automation ID:
 `a8-a1-health-check-enable-after-manual-start`. Target chat:
 `01a0f47a-e246-75e1-a299-fcac42d34f8a`.
 Coordination transferred to the acknowledged successor on 2026-09-30 after
 the required context rotation; the same automation ID, prompt and cadence are
 preserved. The GPU supervisor is independent and was untouched.
+
+At 2026-10-01 00:09:53 UTC, the explicit user pause was completed: both shared
+GPU controls paused, supervisor03 interrupted after SIGINT, trainer stopped,
+owned process group absent, no project processes and no RTX5080 compute apps.
+58 completed manifests retain1,832train/0dev prompts; optimizer never started.
+STOP is present. Existing monitor pause is verified in saved automation config.
+No recovery or automatic restart is permitted until explicit user resume.
 
 Current run:`luna-continuous-a8-a1-native-order-20260930`; supervisor
 `luna-supervisor-a8-a1-native-order-20260930-03`. Stable local ignored registration:
