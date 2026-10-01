@@ -10,7 +10,10 @@ from unittest.mock import patch
 
 import torch
 from test_continuous_qat import FixtureProvider
+from test_recurrent_provider import dense_drafter
+from torch import nn
 
+from w1a1_eagle.affine_binary import AffineBinaryConfig
 from w1a1_eagle.fusion_correction import FusionCorrectionConfig
 from w1a1_eagle.qat_curriculum import CurriculumConfig, PrecisionStage
 from w1a1_eagle.qat_curriculum_runner import CurriculumRunner, RunnerConfig
@@ -21,17 +24,62 @@ class TrainProvider(FixtureProvider):
     full_body_qat_eligible = True
     readiness_scope = "full_body_qat"
 
+    def load_models(self):
+        # Eight-wide native topology avoids the exact four-wide binary
+        # cancellation that legitimately fails a strict scale-gradient gate.
+        model = dense_drafter(native_shape=True)
+        model.config.hidden_size = 8
+        model.config.head_dim = 4
+        model.config.intermediate_size = 9
+        model.embed_tokens = nn.Embedding(5, 8, dtype=torch.float16)
+        shapes = {
+            "fc": (8, 24),
+            "midlayer.self_attn.q_proj": (8, 16),
+            "midlayer.self_attn.k_proj": (4, 16),
+            "midlayer.self_attn.v_proj": (4, 16),
+            "midlayer.self_attn.o_proj": (8, 8),
+            "midlayer.mlp.gate_proj": (9, 8),
+            "midlayer.mlp.up_proj": (9, 8),
+            "midlayer.mlp.down_proj": (8, 9),
+            "lm_head": (3, 8),
+        }
+        generator = torch.Generator().manual_seed(0)
+        for path, (out_features, in_features) in shapes.items():
+            parent, _, name = path.rpartition(".")
+            module = nn.Linear(in_features, out_features, bias=False, dtype=torch.float16)
+            with torch.no_grad():
+                module.weight.copy_(torch.randn(module.weight.shape, generator=generator) * 0.2)
+            setattr(model.get_submodule(parent) if parent else model, name, module)
+        with torch.no_grad():
+            model.embed_tokens.weight.copy_(torch.randn((5, 8), generator=generator) * 0.2)
+        for path in (
+            "midlayer.input_layernorm",
+            "midlayer.hidden_norm",
+            "midlayer.post_attention_layernorm",
+            "norm",
+        ):
+            model.get_submodule(path).weight = nn.Parameter(torch.ones(8), requires_grad=False)
+        return model, nn.Linear(4, 4)
+
+    def rounds(self):
+        features = torch.randn((1, 24), generator=torch.Generator().manual_seed(0)) * 0.2
+        for batch in super().rounds():
+            yield replace(batch, raw_target_features=features)
+
 
 def stages(bits=(8, 4, 1), updates=2, seconds=1000):
     return CurriculumConfig(tuple(PrecisionStage(b, seconds, updates) for b in bits))
 
 
-def make(root, curriculum=None, *, provider=None, recipe=False, **kwargs):
+def make(root, curriculum=None, *, provider=None, recipe=False, affine=False, **kwargs):
     torch.random.default_generator.manual_seed(77)
     curriculum = curriculum or stages()
     cfg = JointQATConfig(
         W1AxContract(curriculum.stages[0].activation_bits),
         sign_lr=0.01,
+        affine_weights=AffineBinaryConfig(enabled=True, coverage="all", midpoint_bound=0.1)
+        if affine
+        else None,
         activation_quantization="learned" if recipe else "fixed",
         fusion_correction=FusionCorrectionConfig(enabled=True, output_bias=True)
         if recipe
@@ -157,6 +205,142 @@ class CurriculumRunnerTests(unittest.TestCase):
                 torch.testing.assert_close(module.effective_scales(), old[path][1], rtol=0, atol=0)
             for key, value in correction_values.items():
                 torch.testing.assert_close(correction.state_dict()[key], value, rtol=0, atol=0)
+
+    def test_combined_learned_raw_fusion_affine_exact_resume(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            full = make(root / "full-affine", recipe=True, affine=True)
+            full.run(require_smoke=False)
+            for count in (1, 2, 3, 4):
+                partial = make(root / str(count), recipe=True, affine=True)
+                partial.run(require_smoke=False, max_new_updates=count)
+                resumed = make(root / str(count), recipe=True, affine=True)
+                resumed.resume()
+                report = resumed.smoke_current()
+                self.assertEqual(report["optional_gradients"]["midpoint"]["parameter_tensors"], 9)
+                resumed.run()
+                compare_models(full, resumed)
+                self.assertEqual(resumed.state.global_updates, 6)
+                self.assertEqual(resumed.unique_rows, full.unique_rows)
+                torch.testing.assert_close(resumed.rng["torch"], full.rng["torch"], rtol=0, atol=0)
+
+    def test_combined_prepare_reports_all_nine_and_later_state_kv(self):
+        with tempfile.TemporaryDirectory() as folder:
+            trainer = make(Path(folder), recipe=True, affine=True)
+            report = trainer.prepare(next(trainer.provider.rounds()))
+            self.assertEqual(trainer.state.global_updates, 0)
+            self.assertEqual(trainer.optimizer.state, {})
+            self.assertEqual([item["activation_bits"] for item in report], [8, 4, 1])
+            for item in report:
+                self.assertTrue(item["all_nine_binary_gradients_passed"])
+                self.assertTrue(item["later_state_kv_passed"])
+                self.assertEqual(set(item["binary_gradients"]), set(trainer.linears))
+                for values in item["binary_gradients"].values():
+                    self.assertGreater(values["sign_gradient_norm"], 0)
+                    self.assertGreater(values["scale_gradient_norm"], 0)
+                for key in (
+                    "later_state_gradient_norm",
+                    "later_k_gradient_norm",
+                    "later_v_gradient_norm",
+                ):
+                    self.assertGreater(item[key], 0)
+                self.assertEqual(
+                    item["optional_gradients"]["activation"]["finite_gradient_tensors"], 6
+                )
+                self.assertEqual(item["optional_gradients"]["fusion"]["finite_gradient_tensors"], 3)
+                self.assertEqual(
+                    item["optional_gradients"]["midpoint"]["finite_gradient_tensors"], 9
+                )
+                # Raw low-rank V legitimately has an attached zero gradient at U=0.
+                self.assertIn(0.0, item["optional_gradients"]["fusion"]["gradient_norms"])
+
+    def test_zero_scale_preparation_fails_closed(self):
+        with tempfile.TemporaryDirectory() as folder:
+            trainer = make(Path(folder))
+            with torch.no_grad():
+                trainer.linears["fc"].initial_scale.zero_()
+                trainer.linears["fc"].scale_offset.zero_()
+            with self.assertRaisesRegex(ValueError, "(all-nine|attached later-position)"):
+                trainer.prepare(next(trainer.provider.rounds()))
+            self.assertFalse(trainer.smoke_passed)
+            self.assertEqual(trainer.state.global_updates, 0)
+            self.assertFalse((Path(folder) / "preparation-ready.json").exists())
+
+    def test_later_kv_disconnect_gate_refuses_readiness(self):
+        with tempfile.TemporaryDirectory() as folder:
+            trainer = make(Path(folder))
+            from w1a1_eagle.qat_curriculum_runner import later_gradient
+
+            def disconnected(*args):
+                diagnostics = later_gradient(*args)
+                diagnostics["later_k_gradient_norm"] = 0.0
+                return diagnostics
+
+            with patch("w1a1_eagle.qat_curriculum_runner.later_gradient", side_effect=disconnected):
+                with self.assertRaisesRegex(ValueError, "attached later-position"):
+                    trainer.smoke_current()
+            self.assertFalse(trainer.smoke_passed)
+            self.assertEqual(trainer.state.global_updates, 0)
+
+    def test_frozen_declared_midpoint_refuses_smoke_admission(self):
+        with tempfile.TemporaryDirectory() as folder:
+            trainer = make(Path(folder), recipe=True, affine=True)
+            trainer.linears["fc"].affine_binary.midpoint.requires_grad_(False)
+            with self.assertRaisesRegex(ValueError, "must remain trainable"):
+                trainer.smoke_current()
+            self.assertFalse(trainer.smoke_passed)
+
+    def test_one_disconnected_binary_projection_fails_gate(self):
+        with tempfile.TemporaryDirectory() as folder:
+            trainer = make(Path(folder), recipe=True, affine=True)
+            module = trainer.linears["midlayer.mlp.gate_proj"]
+
+            def eliminate(gradient):
+                return torch.zeros_like(gradient)
+
+            hook = module.scale_offset.register_hook(eliminate)
+            try:
+                with self.assertRaisesRegex(ValueError, "gate_proj.scale: all-nine"):
+                    trainer.smoke_current()
+            finally:
+                hook.remove()
+            self.assertFalse(trainer.smoke_passed)
+            self.assertEqual(trainer.state.global_updates, 0)
+
+    def test_affine_midpoint_canonical_bounds_and_transition_preservation(self):
+        from w1a1_eagle.affine_binary import _tensor_sha256
+
+        with tempfile.TemporaryDirectory() as folder:
+            trainer = make(Path(folder), recipe=True, affine=True)
+            trainer.run(require_smoke=False, max_new_updates=1)
+            bank = trainer.drafter.qat_affine_bank
+            before = {
+                path: (id(row.midpoint), row.midpoint.detach().clone())
+                for path, row in bank.midpoints.items()
+            }
+            trainer.state.finish_phase()
+            trainer._transition()
+            self.assertIs(trainer.drafter.qat_affine_bank, bank)
+            for path, row in bank.midpoints.items():
+                self.assertEqual(id(row.midpoint), before[path][0])
+                torch.testing.assert_close(row.midpoint, before[path][1], rtol=0, atol=0)
+            model = trainer._model_payload()
+            self.assertEqual(set(model["affine_bank"]["state"]), set(trainer.linears))
+            self.assertTrue(
+                all(
+                    not key.startswith("affine_binary.")
+                    for values in model["linears"].values()
+                    for key in values
+                )
+            )
+            model["affine_bank"]["state"]["fc"].fill_(0.2)
+            model["affine_bank"]["state_sha256"]["fc"] = _tensor_sha256(
+                model["affine_bank"]["state"]["fc"]
+            )
+            with self.assertRaisesRegex(ValueError, "exceeds explicit bound"):
+                trainer._load_model(model)
+            for path, row in bank.midpoints.items():
+                torch.testing.assert_close(row.midpoint, before[path][1], rtol=0, atol=0)
 
     def test_direct_a1_and_a8_to_a1_complete(self):
         with tempfile.TemporaryDirectory() as folder:

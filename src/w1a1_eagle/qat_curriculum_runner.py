@@ -25,7 +25,14 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from .continuous_qat import atomic_json, restore_rng, rng_state, sha256
+from .continuous_qat import (
+    ObservedAdapter,
+    atomic_json,
+    later_gradient,
+    restore_rng,
+    rng_state,
+    sha256,
+)
 from .continuous_resources import linux_host_memory, require_host_memory
 from .continuous_runtime import training_runtime_identity
 from .qat_curriculum import CurriculumConfig, CurriculumState
@@ -37,8 +44,10 @@ from .recurrent_qat import (
     W1AxContract,
     install_joint_linears,
     joint_optimizer,
+    joint_parameter_families,
     joint_train_step,
     shared_round_hard_signs,
+    validate_joint_linears,
 )
 
 SCHEMA = "qat_curriculum_runner_v1"
@@ -48,6 +57,7 @@ EXTRA_MATH = (
     "qat_optimization.py",
     "learned_activation.py",
     "fusion_correction.py",
+    "affine_binary.py",
 )
 
 
@@ -342,18 +352,29 @@ class CurriculumRunner:
             result[path] = {
                 k: v
                 for k, v in module.state_dict().items()
-                if not k.startswith(("activation_quantizer.", "fusion_correction."))
+                if not k.startswith(
+                    ("activation_quantizer.", "fusion_correction.", "affine_binary.")
+                )
             }
         return result
 
+    def _affine_bank(self):
+        if not any(getattr(m, "affine_binary", None) is not None for m in self.linears.values()):
+            return None
+        from .affine_binary import AffineBinaryBank
+
+        return AffineBinaryBank.from_attached(self.linears)
+
     def _model_payload(self):
         correction = getattr(self.linears["fc"], "fusion_correction", None)
+        affine = self._affine_bank()
         if self.bank is not None:
             self.bank.validate_attachment(self.linears)
         return {
             "linears": self._core_states(),
             "activation_bank": None if self.bank is None else self.bank.checkpoint(),
             "fusion_correction": None if correction is None else correction.state_payload(),
+            "affine_bank": None if affine is None else affine.state_payload(),
         }
 
     def save(self):
@@ -427,7 +448,7 @@ class CurriculumRunner:
         return pointer
 
     def _load_model(self, payload):
-        if set(payload) != {"linears", "activation_bank", "fusion_correction"}:
+        if set(payload) != {"linears", "activation_bank", "fusion_correction", "affine_bank"}:
             raise ValueError("model checkpoint inventory differs")
         core = self._core_states()
         if set(payload["linears"]) != set(core):
@@ -473,6 +494,21 @@ class CurriculumRunner:
                 correction.in_features, correction.out_features, correction.config
             )
             probe.load_payload(payload["fusion_correction"])
+        affine = self._affine_bank()
+        if (affine is None) != (payload["affine_bank"] is None):
+            raise ValueError("checkpoint affine midpoint contract differs")
+        if affine is not None:
+            from .affine_binary import AffineBinaryBank, AffineBinaryMidpoint
+
+            probe = AffineBinaryBank(
+                affine.config,
+                {
+                    path: AffineBinaryMidpoint(affine.dimensions[path][1], affine.config)
+                    for path in affine.declared_paths
+                },
+                affine.dimensions,
+            )
+            probe.load_payload(payload["affine_bank"])
         with torch.no_grad():
             for path, expected in core.items():
                 for key, value in payload["linears"][path].items():
@@ -482,6 +518,8 @@ class CurriculumRunner:
             self.bank.validate_attachment(self.linears)
         if correction is not None:
             correction.load_payload(payload["fusion_correction"])
+        if affine is not None:
+            affine.load_payload(payload["affine_bank"])
 
     def resume(self):
         self._account_occupancy()
@@ -589,63 +627,129 @@ class CurriculumRunner:
         self.transition_seconds += self.clock() - begin
         self.save()
 
-    def _forward(self, batch):
+    def _forward(self, batch, *, adapter=None):
         device_batch = replace(batch, raw_target_features=batch.raw_target_features.to(self.device))
         # forward_torch_round always constructs a new cache from current weights;
         # no recurrent cache or graph survives a backward/optimizer boundary.
         with shared_round_hard_signs(self.linears):
-            return forward_torch_round(device_batch, self.adapter, self.provider.draft_vocab_size)
+            return forward_torch_round(
+                device_batch,
+                self.adapter if adapter is None else adapter,
+                self.provider.draft_vocab_size,
+            )
+
+    def _smoke_round(self, batch):
+        """All-nine and attached later-state gates; never calls optimizer.step."""
+        audit = audit_provider_round(batch, self.provider)
+        if len(batch.prefix_token_ids) > self.config.max_prefix_tokens:
+            raise ValueError("smoke prefix exceeds memory-safe cap")
+        if not any(audit.ce_mask[1:]):
+            raise ValueError("smoke must supervise an attached later proposal")
+        self.resources()
+        validate_joint_linears(self.linears, self.qat)
+        declared = {}
+        for module in self.linears.values():
+            parameters = [module.latent_sign, module.scale_offset]
+            for name in ("activation_quantizer", "fusion_correction", "affine_binary"):
+                attached = getattr(module, name, None)
+                if attached is not None:
+                    parameters.extend(attached.parameters())
+            for parameter in parameters:
+                if not parameter.requires_grad:
+                    raise ValueError("declared smoke parameter must remain trainable")
+                declared[id(parameter)] = parameter
+        owned = [p for group in self.optimizer.param_groups for p in group["params"]]
+        if len(owned) != len(declared) or {id(p) for p in owned} != set(declared):
+            raise ValueError("smoke optimizer ownership differs from declared parameters")
+        self.optimizer.zero_grad(set_to_none=True)
+        moment_probe = []
+        if torch.device(self.device).type == "cuda":
+            moment_probe = [
+                torch.zeros_like(p)
+                for group in self.optimizer.param_groups
+                for p in group["params"]
+                for _ in range(2)
+            ]
+        observer = ObservedAdapter(self.adapter)
+        try:
+            logits = self._forward(batch, adapter=observer)
+            diagnostics = later_gradient(logits, audit, observer)
+            recurrent_keys = (
+                "later_state_gradient_norm",
+                "later_k_gradient_norm",
+                "later_v_gradient_norm",
+            )
+            if any(
+                diagnostics.get(key) is None
+                or not math.isfinite(diagnostics[key])
+                or diagnostics[key] <= 0
+                for key in recurrent_keys
+            ):
+                raise ValueError("smoke failed attached later-position state/K/V gate")
+            loss = supported_prefix_ce(logits, audit)
+            if not loss.requires_grad or not bool(torch.isfinite(loss)):
+                raise ValueError("smoke loss must be finite and attached")
+            loss.backward()
+            families = joint_parameter_families(self.linears)
+            binary_report = {}
+            for path, module in self.linears.items():
+                gradients = {}
+                for family, parameter in (
+                    ("sign", module.latent_sign),
+                    ("scale", module.scale_offset),
+                ):
+                    grad = parameter.grad
+                    if (
+                        grad is None
+                        or not bool(torch.isfinite(grad).all())
+                        or not bool((grad != 0).any())
+                    ):
+                        raise ValueError(f"{path}.{family}: all-nine finite/nonzero gradient gate")
+                    gradients[family + "_gradient_norm"] = float(grad.detach().norm())
+                binary_report[path] = gradients
+            extra_report = {}
+            for family in ("activation", "fusion", "midpoint"):
+                parameters = families[family]
+                if any(
+                    p.grad is None or not bool(torch.isfinite(p.grad).all()) for p in parameters
+                ):
+                    raise ValueError(f"{family}: declared optional-parameter finite-gradient gate")
+                extra_report[family] = {
+                    "parameter_tensors": len(parameters),
+                    "finite_gradient_tensors": len(parameters),
+                    "nonzero_gradient_tensors": sum(bool((p.grad != 0).any()) for p in parameters),
+                    "gradient_norms": [float(p.grad.detach().norm()) for p in parameters],
+                }
+            self._sync()
+            resources = self.resources()
+            return {
+                "activation_bits": self.qat.contract.activation_bits,
+                "loss": float(loss.detach()),
+                "optimizer_updates": 0,
+                "all_nine_binary_gradients_passed": True,
+                "later_state_kv_passed": True,
+                "binary_gradients": binary_report,
+                "optional_gradients": extra_report,
+                "resources": resources,
+                **diagnostics,
+            }
+        finally:
+            self.optimizer.zero_grad(set_to_none=True)
+            del observer, moment_probe
 
     def prepare(self, batch):
-        """Forward/backward every declared precision with strictly zero real updates."""
+        """Strong all-stage forward/backward admission, with zero real updates."""
         if self.state.global_updates != 0:
             raise ValueError("prepare-only refuses resumed optimizer progress")
+        self.smoke_passed = False
         original = self._model_payload()
         initial_rng = _cpu_tree(self.rng)
         begin = self.clock()
         report = []
         try:
-            for phase, stage in enumerate(self.curriculum.stages):
+            for phase in range(len(self.curriculum.stages)):
                 self._bind_phase(phase)
-                audit = audit_provider_round(batch, self.provider)
-                if len(batch.prefix_token_ids) > self.config.max_prefix_tokens:
-                    raise ValueError("smoke prefix exceeds memory-safe cap")
-                if not any(audit.ce_mask[1:]):
-                    raise ValueError("smoke must supervise an attached later proposal")
-                self.resources()
-                self.optimizer.zero_grad(set_to_none=True)
-                moment_probe = []
-                if torch.device(self.device).type == "cuda":
-                    # Adam-like moment occupancy without an optimizer update.
-                    moment_probe = [
-                        torch.zeros_like(p)
-                        for group in self.optimizer.param_groups
-                        for p in group["params"]
-                        for _ in range(2)
-                    ]
-                logits = self._forward(batch)
-                loss = supported_prefix_ce(logits, audit)
-                if not loss.requires_grad or not bool(torch.isfinite(loss)):
-                    raise ValueError("smoke loss must be finite and attached")
-                loss.backward()
-                parameters = [p for g in self.optimizer.param_groups for p in g["params"]]
-                if any(
-                    p.grad is not None and not bool(torch.isfinite(p.grad).all())
-                    for p in parameters
-                ):
-                    raise ValueError("smoke gradients are nonfinite")
-                if not any(p.grad is not None and bool((p.grad != 0).any()) for p in parameters):
-                    raise ValueError("smoke has no trainable gradient")
-                self.optimizer.zero_grad(set_to_none=True)
-                self._sync()
-                report.append(
-                    {
-                        "activation_bits": stage.activation_bits,
-                        "loss": float(loss.detach()),
-                        "optimizer_updates": 0,
-                    }
-                )
-                del logits, loss, moment_probe
+                report.append(self._smoke_round(batch))
         finally:
             self._bind_phase(0)
             self._load_model(original)
@@ -670,30 +774,30 @@ class CurriculumRunner:
         self.status("prepared", stop_reason="prepare_only", stages_smoked=len(report))
         return report
 
-    def smoke_current(self):
-        """Resume admission: attached current-stage backward without an update."""
-        batch = next((b for b in self.provider.rounds() if len(b.rows) > 1), None)
+    def smoke_current(self, batch=None):
+        """Strong resumed-stage admission without changing weights/moments/RNG."""
+        self.smoke_passed = False
+        if batch is None:
+            batch = next((b for b in self.provider.rounds() if len(b.rows) > 1), None)
         if batch is None:
             raise ValueError("no current train round supports resume smoke")
-        audit = audit_provider_round(batch, self.provider)
-        if not any(audit.ce_mask[1:]):
-            raise ValueError("resume smoke requires later-proposal supervision")
         before_rng = _cpu_tree(self.rng)
-        self.optimizer.zero_grad(set_to_none=True)
         try:
-            logits = self._forward(batch)
-            loss = supported_prefix_ce(logits, audit)
-            if not loss.requires_grad or not bool(torch.isfinite(loss)):
-                raise ValueError("resume smoke loss must be finite and attached")
-            loss.backward()
-            parameters = [p for group in self.optimizer.param_groups for p in group["params"]]
-            if any(
-                p.grad is not None and not bool(torch.isfinite(p.grad).all()) for p in parameters
-            ):
-                raise ValueError("resume smoke gradients must be finite")
-            self.resources()
+            report = self._smoke_round(batch)
             self._account_occupancy()
             self.smoke_passed = True
+            atomic_json(
+                self.run_dir / "resume-smoke.json",
+                {
+                    "schema": SCHEMA,
+                    "global_updates": self.state.global_updates,
+                    "source": self.source,
+                    "runtime": self.runtime,
+                    "checkpoint": self.last_checkpoint,
+                    "stage": report,
+                },
+            )
+            return report
         finally:
             self.optimizer.zero_grad(set_to_none=True)
             self.rng = before_rng
