@@ -8,7 +8,7 @@ data. Evaluate native draft quality and speed against Q4_0 when GPU work is
 explicitly permitted. Preserve the pinned FP16 target/verifier and draft map.
 This continues the existing goal rather than opening a second goal.
 
-**State: GPU work paused at the human user's request.** At 2026-10-01 00:09:53 UTC the current run was stopped and RTX5080 project GPU usage was released;58 completed manifests/1,832train/0dev prompts preserved, zero optimizer steps. Both host controls and monitoring are paused; explicit user resume is required. Q4_0 remains the primary comparison and finals remain unopened. Latest pause checkpoint supersedes prior running next actions.
+**State: RTX5080 resumed at the human user's request; RTX2080Ti remains paused.** At2026-10-01 00:41:04UTC supervisor04 survived SSH disconnect/reconnect and CPU health passed.58 retained manifests/1,832train/0dev prompts,zerooptimizer; resume re-audits completed cells at ordinal3/353. Existing15-minute monitor ACTIVE, recovery budget1of2 unchanged. Q4_0 remains the primary comparison and finals remain unopened. Latest resume checkpoint supersedes historical next actions.
 
 ## Current findings and work
 
@@ -4590,3 +4590,47 @@ pause. Dedicated local transport session$47 was closed after verification.
 Recovery budget remains1of2 used. Next action: **wait for explicit human resume**;
 then fresh registry/resource/identity and retained-partial checks are mandatory
 before any permitted same-experiment resume. Do not auto-restart or recover.
+
+
+### Human resume verified — 2026-10-01 00:41 UTC
+
+Human “Resume” authorized continuation of the same corrected experiment. Root
+enabled RTX5080 in shared controls;RTX2080Ti remains paused. One pinned Luna/high
+operator `/root/resume_20261001` (fork none) exclusively owned bounded preflight,
+CPU partial recovery, launch and post-disconnect verification through tmux MCP.
+
+Fresh preflight found RTX5080 SM120,13,400MiB free/2%utilization/no compute apps;
+host RAM available20,291,338,240B,disk743,572,250,624B. WSL memory20GB and
+instanceIdleTimeout=-1 unchanged; no prior trainer/native/supervisor or new-session
+collision. Remote HEAD`7547d253`,all eight registered math-source hashes,config
+`4ee4ce…f5579c8e`,stages`d2145092…b43cc294`,RTX5080/CUDA13.0/Torch2.14.0+cu130
+identity matched. CPU recover-partial exited0 with records:[],processes_started:
+false,raw_artifacts_deleted:false; no incomplete cell needed quarantine.
+
+Launched **once**, same experiment`runs/luna-continuous-a8-a1-native-order-20260930`,
+same stages/config using --start --allow-cuda --resume under NEW supervisor
+`luna-supervisor-a8-a1-native-order-20261001-04`,300s grace,host tmux socket
+`binary-eagle-runtime`/session`continuous-a8-a1-native-order-20261001-04`.
+Normal resume cleared STOP. No failure recovery consumed;budget stays1of2 used.
+
+At **00:41:04.236175UTC**, after closing first transport and reconnecting once,
+CPU checker exit0/healthy/nonterminal,preparing`teacher_capture_audit`,ordinal
+3/353;**58 retained completed manifests/1,832train/0dev**,optimizer:false,steps:{}.
+Host tmux server5050,supervisorPID/PGID5051,supervised childPID/PGID5052 verified
+live independently after disconnect. Old groups/supervisors remain historical.
+The reset ordinal reflects re-audit, not lost captured data. RAM19,504,816,128B
+available,disk743,571,591,168B at fresh check.
+
+Ignored `runs/luna-continuous-a8-a1-20260929/resume-20261001T004104Z.json` retains
+identity/resource/recovery/launch/checker evidence. Both local transports$48/$49
+closed; remote host job remains independent. Root corrected the registration’s
+experiment.host_tmux to current04ownership,preserved03fields separately,updated
+last-health/current paths and cleared intentional-pause flags. A current
+monitor_query_command is compiled locally from the proven bridge/query and bound
+to supervisor04; no extra remote observation was needed.
+
+Existing automation reactivated through automation_update; saved TOML verifies
+ACTIVE/same15-minute cadence/target/prompt. No new schedule/chat/native Goal,
+no code/config/numerical/tier/precision changes,no final-data access. Next:
+scheduled one pinned bounded CPU health/count check; healthy ordinary progress
+stays quiet,first actual optimizer update/new failure/completion notified.

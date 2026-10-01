@@ -1,21 +1,24 @@
 # A8/A1 health and bounded recovery monitor
 
-Prepared 2026-09-29; **PAUSED at the human user’s GPU-pause request** with user-authorized failure notification and bounded recovery. Automation ID:
+Prepared 2026-09-29; **ACTIVE every15minutes after explicit human resume** with user-authorized failure notification and bounded recovery. Automation ID:
 `a8-a1-health-check-enable-after-manual-start`. Target chat:
 `01a0f47a-e246-75e1-a299-fcac42d34f8a`.
 Coordination transferred to the acknowledged successor on 2026-09-30 after
 the required context rotation; the same automation ID, prompt and cadence are
 preserved. The GPU supervisor is independent and was untouched.
 
-At 2026-10-01 00:09:53 UTC, the explicit user pause was completed: both shared
-GPU controls paused, supervisor03 interrupted after SIGINT, trainer stopped,
-owned process group absent, no project processes and no RTX5080 compute apps.
-58 completed manifests retain1,832train/0dev prompts; optimizer never started.
-STOP is present. Existing monitor pause is verified in saved automation config.
-No recovery or automatic restart is permitted until explicit user resume.
+Human pause at00:09:53UTC completed cleanly; explicit “Resume” supersedes it.
+At00:41:04UTC the same corrected run was verified healthy after disconnect/
+reconnect under supervisor04;58retained manifests/1,832train/0dev,zerooptimizer,
+resumeordinal3/353. STOP cleared normally, RTX5080 enabled, RTX2080Ti paused.
+Existing monitor reactivated through automation_update; budget stays1of2.
+Registration.experiment.host_tmux records current5050server/5051supervisor/
+5052child ownership. Its monitor_query_command is locally compiled from the
+proven stdlib query with current supervisor04 paths; verify the registration
+before reusing it. Old supervisor03 and all historical data remain preserved.
 
 Current run:`luna-continuous-a8-a1-native-order-20260930`; supervisor
-`luna-supervisor-a8-a1-native-order-20260930-03`. Stable local ignored registration:
+`luna-supervisor-a8-a1-native-order-20261001-04`. Stable local ignored registration:
 `runs/luna-continuous-a8-a1-20260929/monitor-registration.json` (preserves the old
 failed experiment separately). Derive current remote status/supervisor paths from
 its`experiment`object; never reuse a hardcoded earlier attempt. First Luna check
