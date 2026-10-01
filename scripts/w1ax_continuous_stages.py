@@ -43,6 +43,7 @@ from w1a1_eagle.recurrent_trace import RoundAnchor, validate_recurrent_trace  # 
 
 LABEL_SCHEMA = "recurrent_native_label_capture_v2"
 READINESS_SCHEMA = "w1ax_continuous_readiness_v1"
+RECIPE_READINESS_SCHEMA = "w1ax_continuous_readiness_v2"
 PROVIDER_SCHEMA = "w1ax_native_train_provider_v2"
 STAGES_SCHEMA = "w1ax_continuous_stages_v1"
 FROZEN_RUNTIME_MANIFEST_SHA256 = "a199cfdabd81b5ba7414509e31007eab338c125b881a9276a78696cd9208fd5e"
@@ -636,7 +637,7 @@ def native_capture(
 
     gc.collect()
     torch.cuda.empty_cache()  # USER-start only; release prior gate/evaluation cache.
-    if activation_bits not in {1, 8, 16} or not 1 <= tokens <= 128:
+    if activation_bits not in {1, 4, 8, 16} or not 1 <= tokens <= 128:
         raise ValueError("unsupported native capture arithmetic or token cap")
     if "final" in str(prompts).lower():
         raise ValueError("sealed final is prohibited")
@@ -693,12 +694,11 @@ def native_capture(
             head="Q4_0",
             activation_precision="native Q8_1 conversion for Q4_0 weight matrices",
         )
-    if activation_bits in {1, 8}:
+    if activation_bits in {1, 4, 8}:
         spec["required_markers"] = [
             "EAGLE3 W1A1 active groups: fusion,attention,ffn,head (9 tensors)",
-            "CUDA packed W1A8 INT8 dispatch"
-            if activation_bits == 8
-            else "CUDA packed W1A1 XOR/POPCOUNT dispatch",
+            {8: "CUDA packed W1A8 INT8 dispatch", 4: "CUDA packed W1A4 BITSERIAL dispatch",
+             1: "CUDA packed W1A1 XOR/POPCOUNT dispatch"}[activation_bits],
         ]
     with native_cancellation() as guard:
         args.cancellation_guard = guard
@@ -709,7 +709,7 @@ def validate_readiness(record: dict, *, activation_bits: int, common_hashes: dic
     path = checked_record(record)
     report = json.loads(path.read_text())
     if (
-        report.get("schema") != READINESS_SCHEMA
+        report.get("schema") not in {READINESS_SCHEMA, RECIPE_READINESS_SCHEMA}
         or report.get("training_eligible") is not True
         or report.get("objective") != "hard_ce"
         or report.get("scale_layout") != "row"
@@ -718,8 +718,9 @@ def validate_readiness(record: dict, *, activation_bits: int, common_hashes: dic
     ):
         raise ValueError("continuous full-body readiness is not bound to frozen inputs")
     precision = report.get("precisions", {}).get(str(activation_bits))
-    if activation_bits not in {1, 8} or not isinstance(precision, dict):
-        raise ValueError("readiness needs independent A8 and A1 results")
+    modern = report["schema"] == RECIPE_READINESS_SCHEMA
+    if activation_bits not in ({1, 4, 8} if modern else {1, 8}) or not isinstance(precision, dict):
+        raise ValueError("readiness needs its own independent requested-precision result")
     if report.get("native_runtime"):
         runtime = report["native_runtime"]
         checked_record(runtime["immutable_manifest"])
@@ -727,9 +728,15 @@ def validate_readiness(record: dict, *, activation_bits: int, common_hashes: dic
             checked_record(library)
     from check_continuous_w1ax_readiness import validate_gate_report
 
-    for bits in (8, 1):
+    inventory = report.get("precisions", {})
+    if modern and (not inventory or set(inventory) - {"1", "4", "8"}):
+        raise ValueError("recipe readiness precision inventory differs")
+    for bits in ([int(key) for key in sorted(inventory)] if modern else (8, 1)):
         gate_path = checked_record(report["precisions"][str(bits)])
-        validate_gate_report(json.loads(gate_path.read_text()), bits, common_hashes)
+        gate = json.loads(gate_path.read_text())
+        if modern and gate.get("schema") != "w1ax_continuous_precision_gate_v2":
+            raise ValueError("recipe readiness requires independently validated versioned gates")
+        validate_gate_report(gate, bits, common_hashes)
     return report
 
 
@@ -1299,7 +1306,7 @@ def refresh_checkpoint(
     from export_recurrent_binary import export_model
 
     verify_sources(sources)
-    if bits not in {8, 1} or sha256(prompts) != prompts_sha256:
+    if bits not in {8, 4, 1} or sha256(prompts) != prompts_sha256:
         raise ValueError("refresh arithmetic/prompt identity differs")
     output.mkdir(parents=True, exist_ok=False)
     checkpoint, manifest = checkpoint_dir / "joint.npz", checkpoint_dir / "joint.json"
@@ -1321,7 +1328,7 @@ def refresh_checkpoint(
     write_json(
         output / "refresh.json",
         {
-            "schema": "w1ax_exact_prefix_refresh_v2",
+            "schema": "w1ax_exact_prefix_refresh_v3",
             "activation_bits": bits,
             "checkpoint": file_record(checkpoint),
             "checkpoint_manifest": file_record(manifest),
@@ -1372,7 +1379,7 @@ def make_refresh_provider(
             "model_snapshot_manifest",
         )
     }
-    permission = validate_readiness(file_record(readiness), activation_bits=8, common_hashes=common)
+    permission = validate_readiness(file_record(readiness), activation_bits=manifest["activation_bits"], common_hashes=common)
     if receipt.get("stages_config") != file_record(stages_config):
         raise ValueError("refresh receipt came from different typed stage sources")
     if sha256(capture) not in permission["teacher_capture_manifest_sha256"]:
@@ -1397,8 +1404,16 @@ def make_refresh_provider(
         spec = provider_manifest(sources, capture, readiness, staged)
         spec["captured_drafter"] = binding
         write_json(staged, spec)
-        for bits in (8, 1):
-            NativeCaptureProvider(JointQATConfig(W1AxContract(bits, "row")), staged)
+        for bits in ([int(key) for key in sorted(permission["precisions"])]
+                     if permission["schema"] == RECIPE_READINESS_SCHEMA else (8, 1)):
+            if permission["schema"] == RECIPE_READINESS_SCHEMA:
+                from check_continuous_w1ax_readiness import checkpoint_joint_config
+                proof = json.loads(checked_record(permission["precisions"][str(bits)]).read_text())
+                qat = checkpoint_joint_config(checked_record(proof["evidence"]["checkpoint_manifest"]),
+                                               bits, common["base_draft_gguf"])
+            else:
+                qat = JointQATConfig(W1AxContract(bits, "row"))
+            NativeCaptureProvider(qat, staged)
         os.rename(staged, output)
     return spec
 
@@ -1821,7 +1836,7 @@ def main() -> None:
     refresh.add_argument("--checkpoint-dir", type=Path, required=True)
     refresh.add_argument("--prompts", type=Path, required=True)
     refresh.add_argument("--prompts-sha256", required=True)
-    refresh.add_argument("--activation-bits", type=int, choices=(1, 8), required=True)
+    refresh.add_argument("--activation-bits", type=int, choices=(1, 4, 8), required=True)
     refresh.add_argument("--output", type=Path, required=True)
     refresh.add_argument("--allow-cuda", action="store_true")
     args = parser.parse_args()

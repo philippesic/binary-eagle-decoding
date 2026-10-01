@@ -87,10 +87,10 @@ def validate_captured_drafter(
     manifest = json.loads(paths["checkpoint_manifest"].read_text())
     audit = json.loads(paths["export_audit"].read_text())
     if (
-        receipt.get("schema") != "w1ax_exact_prefix_refresh_v2"
+        receipt.get("schema") not in {"w1ax_exact_prefix_refresh_v2", "w1ax_exact_prefix_refresh_v3"}
         or receipt.get("training_eligible") is not False
         or receipt.get("changed_prefix_labels_reused") is not False
-        or receipt.get("activation_bits") not in {1, 8}
+        or receipt.get("activation_bits") not in ({1, 4, 8} if receipt.get("schema") == "w1ax_exact_prefix_refresh_v3" else {1, 8})
         or receipt["activation_bits"] != activation_bits
         or receipt.get("capture_manifest", {}).get("sha256") != capture_manifest_sha256
         or receipt.get("prompts", {}).get("sha256") != prompts_sha256
@@ -105,6 +105,12 @@ def validate_captured_drafter(
         )
     ):
         raise ValueError("refreshed capture source/actor/prefix receipt differs")
+    if receipt["schema"] == "w1ax_exact_prefix_refresh_v3":
+        validate_actor_export(binding, activation_bits=activation_bits,
+                              base_hash=common_hashes["base_draft_gguf"])
+        for name in ("capture_manifest", "prompts", "native_binary"):
+            checked_record(receipt[name])
+        return receipt
     from w1a1_eagle.recurrent_binary import CANDIDATE_D_BASE_TO_PATH
 
     if (
@@ -133,6 +139,76 @@ def validate_captured_drafter(
     checked_record(receipt["prompts"])
     checked_record(receipt["native_binary"])
     return receipt
+
+
+def validate_actor_export(binding: dict, *, activation_bits: int, base_hash: str) -> dict:
+    """Strict v2/v3/v4 exporter and NPZ identity, without model/GGUF execution.
+
+    The GGUF bytes remain bound to their serialization audit hash. Recompute
+    checkpoint projection and correction hashes, so changed thresholds/factors
+    cannot inherit an unrelated actor audit. No numerical/native readiness is
+    granted by this serialization check.
+    """
+    from w1ax_continuous_stages import checked_record
+    from export_recurrent_binary import (check_manifest, load_checkpoint,
+                                          load_fusion_correction, raw_hash)
+    required = {"checkpoint", "checkpoint_manifest", "export", "export_audit"}
+    if not isinstance(binding, dict) or not required <= set(binding) or set(binding) - required - {"refresh_receipt"}:
+        raise ValueError("actor export binding inventory differs")
+    paths = {name: checked_record(binding[name]) for name in required}
+    manifest = json.loads(paths["checkpoint_manifest"].read_text())
+    audit = json.loads(paths["export_audit"].read_text())
+    expected = check_manifest(manifest, base_hash)
+    if manifest["schema_version"] not in (2, 3, 4) or manifest["objective"] != "hard_ce" or manifest["activation_bits"] != activation_bits or manifest["checkpoint_sha256"] != binding["checkpoint"]["sha256"]:
+        raise ValueError("actor checkpoint precision/objective/hash differs")
+    fields = {"schema_version", "base_gguf", "checkpoint", "checkpoint_manifest", "output", "scale_rule",
+              "training_arithmetic", "scale_layout", "activation_bits", "native_loader_gate",
+              "serialization_audit_passed", "projections", "preserved_tensors"}
+    quantizers, correction = manifest.get("activation_quantizers"), manifest.get("fusion_correction")
+    if quantizers is not None:
+        fields.add("activation_quantizers")
+    if correction is not None:
+        fields.update(("fusion_correction", "fusion_correction_tensor_sha256"))
+    if (set(audit) != fields or audit.get("schema_version") != 1 or audit.get("serialization_audit_passed") is not True
+            or audit.get("activation_bits") != activation_bits or audit.get("scale_layout") != "row"
+            or audit.get("scale_rule") != "f32_learned_nonnegative"
+            or audit.get("training_arithmetic") != "dense_matmul_hard_quant"
+            or audit.get("checkpoint") != binding["checkpoint"]
+            or audit.get("checkpoint_manifest") != binding["checkpoint_manifest"]
+            or audit.get("output") != binding["export"]
+            or audit.get("base_gguf", {}).get("sha256") != base_hash
+            or audit.get("activation_quantizers") != quantizers or audit.get("fusion_correction") != correction):
+        raise ValueError("actor export audit options/source contract differs")
+    extra_arrays = load_fusion_correction(paths["checkpoint"], correction, expected["fc"][1]) if correction is not None else {}
+    arrays = load_checkpoint(paths["checkpoint"], expected, row_scale=True, extra_names=set(extra_arrays))
+    projections = {base: {"checkpoint_name": expected[base][0], "shape": list(expected[base][1]),
+                           "latent_sha256": values["latent_sha256"], "source_scale_sha256": values["source_scale_sha256"],
+                           "packed_sha256": raw_hash(values["packed"]), "gguf_scale_sha256": raw_hash(values["scale"])}
+                   for base, values in arrays.items()}
+    if audit["projections"] != projections or (correction is not None and audit["fusion_correction_tensor_sha256"] != {name: raw_hash(array) for name, array in extra_arrays.items()}):
+        raise ValueError("actor checkpoint tensors differ from audited export")
+    return manifest
+
+
+def validate_provider_recipe(config, readiness: dict) -> None:
+    """New recipe proofs cannot qualify a differently configured provider."""
+    from w1ax_continuous_stages import RECIPE_READINESS_SCHEMA, checked_record
+    if readiness.get("schema") != RECIPE_READINESS_SCHEMA:
+        if getattr(config, "activation_quantization", "fixed") != "fixed" or getattr(config, "fusion_correction", None) is not None:
+            raise ValueError("learned/correction provider requires independently bound recipe readiness")
+        return
+    gate = json.loads(checked_record(readiness["precisions"][str(config.contract.activation_bits)]).read_text())
+    recipe = gate["recipe"]
+    if (recipe["activation_quantizers"] is not None) != (config.activation_quantization == "learned"):
+        raise ValueError("provider activation recipe differs from readiness")
+    declared = recipe["fusion_correction"]
+    live = config.fusion_correction
+    if (declared is None) != (live is None):
+        raise ValueError("provider fusion recipe differs from readiness")
+    if declared is not None and (not live.enabled or live.rank != declared["rank"]
+                                or live.output_bias != (declared["bias_name"] is not None)
+                                or (live.output_bias and live.bias_bound != declared["bias_bound"])):
+        raise ValueError("provider fusion configuration differs from readiness")
 
 
 def _capture_keys(capture) -> dict[tuple[str, tuple[int, ...], int], Mapping[str, object]]:
@@ -307,6 +383,7 @@ class NativeCaptureProvider:
                     )
                 },
             )
+            validate_provider_recipe(config, readiness)
             if capture_manifest.get("schema") == LABEL_SCHEMA and not readiness.get(
                 "native_runtime"
             ):
