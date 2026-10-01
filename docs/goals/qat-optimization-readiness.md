@@ -63,3 +63,102 @@ under experiments/qat-optimization-readiness/, and commits its own files.
 
 Goal checkpoint committed before team launch. No implementation or new GPU
 checks yet. Existing preparation is separate and remains preparation-only.
+
+## Added scope: tiny fusion correction
+
+Companion chat 01a0f90d-acc2-77b3-a8e5-383695f54087 forwarded the human's
+explicit implementation request on 2026-10-01. Add one optional rank-1/rank-4
+feature-fusion correction from raw pre-quantization features, preserving the
+binary core. Label F16 factor storage/F32 accumulation as mixed precision.
+Provide a bounded fusion output-bias control, train-only provenance-bound fitting
+entry point, parameter/target ownership checks, exact resume, versioned native
+export/load/execution and later state/K/V gradient tests. No real calibration
+fitting or GPU ownership change is authorized by the forwarded scope.
+Worker /root/fusion_correction owns new module/tests/CLI/report only; native
+owner will add export/runtime support after its learned-quantizer commit.
+
+## Team launched
+
+Checkpoint f502d4a pushed before workers. Native subagents: /root/computation,
+/root/cache_head, /root/recipes, /root/learned_activations, /root/native_quantizers,
+/root/validation (baseline completed), /root/advice (focused correctness),
+/root/fusion_correction. Feature owners are GPT-6.1 Sol/high; validation is
+Luna/high; focused advisor Astra/medium. Root integration worktree:
+/private/tmp/eagle-qat-integration, feature/qat-integration. Native standalone
+worktree /private/tmp/eagle-native-learned, feature/learned-w1ax. CPU baseline:
+114 passing tests, Apple M3 Max CPU, Torch 2.14.0/NumPy 2.4.6/Python 3.11.15.
+No new GPU checks or real optimizer updates.
+
+## CPU implementation integration milestone
+
+In isolated root worktree, integrated computation 1e8a012, cache/head 84fae13,
+learned activation be824f6, binary/curriculum helpers aeed6fe, raw fusion
+correction dc0ed58 and native/export learned support parent3e92989. Native
+cce962891 is published on the user's fork feature/learned-w1ax. Native CPU
+187 operator cases +24 EAGLE load/encode fixtures passed; CUDA not yet compiled
+or run. Correction native/export and runnable staged curriculum are finishing.
+Root added explicit config/optimizer families, deduped learned sharing, config
+source identity, schema3/4 checkpoint payloads and canonical alias/frozen-operand
+resume validation. Eight combined recipe integration tests pass, including
+exact uninterrupted/resumed learned+correction optimizer state. One tiny
+learned-A1 fixture has legal exact zero gate/up scale gradients: smoke correctly
+rejects it; a separately seeded nonsingular fixture passes without relaxing gates.
+No real model optimizer updates/GPU/finals/calibration fitting occurred.
+
+Existing preparation owner reported healthy supervisor07 after disconnect at
+2026-10-01 20:44:55 UTC; --prepare-only in cmdline, retained327manifests,
+10,000train/224dev andzerooptimizerupdates. This is historical observed state,
+not a fresh GPU-release claim. Ownership remains with that operator.
+
+Next: finish runner/correction support, independent whole-package review,
+config/readiness launch gating and actual GPU no-update validation after ownership
+release. Learned or mixed-precision options cannot inherit the old frozen source
+readiness silently; their new source and native contracts need fresh gates.
+
+## Added scope: asymmetric binary weight codebooks
+
+Companion chat01a0f90d-acc2-77b3-a8e5-383695f54087 forwarded explicit human
+authorization to implement per-output-row trainable weight midpoints on
+2026-10-01. Representation w_ri=mu_r+alpha_r*sign(z_ri), alpha>=0, mu initialized0.
+Opt-in fusion-only and all-nine coverage, separate midpoint LR and mild
+regularization; same quantized input as the binary term. Native arithmetic:
+(D*alpha)*beta+(S*mu)*beta before bias, with exact same-code S shared per input
+boundary; A16 uses the F16 boundary values and beta1. Do not materialize a dense
+center matrix. Versioned schema5/native admission, midpoint permutation,
+checkpoint/resume, zero-scale/input and later-state/K/V/ownership tests required.
+This is affine binary-core weights, distinct from learned activation thresholds
+and the raw-input rank correction. No training-quality or speed claim.
+
+Worker /root/affine_weights owns only new module/tests/report10; root owns
+training/config/state integration; /root/native_quantizers owns sequential
+native/export support. Existing GPU preparation remains untouched and soleowner.
+
+## Validation and admission milestone
+
+Combined CPU source now includes runnable curriculum85e0ab6 and native correction
+parent ea6d60c. Published native head dc6d178b5 includes learned-only CUDA
+subnormal arithmetic fixes; GPU compilation still absent. Independent Luna
+review found and root repaired boolean numeric/accelerator-option acceptance
+and a zero-update guard that previously ignored nonzero Adam/SGD moments.
+Weighted depth CE no longer computes and discards a duplicate CE. Broad suite
+858tests had20 baseline-only fixture errors:8 unsafe fake process-groupcalls and
+12missingignoredpromptfixtures; same failures independently reproduced on main.
+Luna owns isolated test-only repairs; assertions and capture behavior preserved.
+A CUDA readiness receipt validator and full-model zero-update profiling harness
+are being integrated, binding source/runtime/recipe/native/hardware and actual
+pack/decisions/memory evidence. CPU proof cannot authorize CUDA. Provider/A4 and
+refresh validation are being extended with new independently validated schemas;
+old source/readiness cannot silently admit new recipes.
+
+## Shared GPU pause checkpoint — 2026-10-01 23:15 UTC
+
+Existing preparation owner in chat01a0f47a-e246-75e1-a299-fcac42d34f8a executed
+the human “Pause gpu”. Supervisor07 gracefully interrupted/exit0; verified
+23:15:28UTC both owned groups1204/1205 absent,no project processes or GPUcompute
+apps. Retained10,000train/224dev across327complete manifests,zeroQATupdates;
+preparation incomplete. Both shared hostpause flags and existing monitor PAUSED.
+GPU ownership may not be reassigned from this idle proof while humanpause is
+active. CPUteam work can continue; GPU use requires NEW human resume/ownership
+coordination. Existing stop-before-QAT boundary and all frozenidentity preserved.
+Exact evidence and resumeprocedure remain in the prior body/head goal and
+ignored pause-preparation-only-20261001T231528Z.json monitor snapshot.
