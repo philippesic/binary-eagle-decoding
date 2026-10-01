@@ -114,3 +114,38 @@ Next: finish runner/correction support, independent whole-package review,
 config/readiness launch gating and actual GPU no-update validation after ownership
 release. Learned or mixed-precision options cannot inherit the old frozen source
 readiness silently; their new source and native contracts need fresh gates.
+
+## Added scope: asymmetric binary weight codebooks
+
+Companion chat01a0f90d-acc2-77b3-a8e5-383695f54087 forwarded explicit human
+authorization to implement per-output-row trainable weight midpoints on
+2026-10-01. Representation w_ri=mu_r+alpha_r*sign(z_ri), alpha>=0, mu initialized0.
+Opt-in fusion-only and all-nine coverage, separate midpoint LR and mild
+regularization; same quantized input as the binary term. Native arithmetic:
+(D*alpha)*beta+(S*mu)*beta before bias, with exact same-code S shared per input
+boundary; A16 uses the F16 boundary values and beta1. Do not materialize a dense
+center matrix. Versioned schema5/native admission, midpoint permutation,
+checkpoint/resume, zero-scale/input and later-state/K/V/ownership tests required.
+This is affine binary-core weights, distinct from learned activation thresholds
+and the raw-input rank correction. No training-quality or speed claim.
+
+Worker /root/affine_weights owns only new module/tests/report10; root owns
+training/config/state integration; /root/native_quantizers owns sequential
+native/export support. Existing GPU preparation remains untouched and soleowner.
+
+## Validation and admission milestone
+
+Combined CPU source now includes runnable curriculum85e0ab6 and native correction
+parent ea6d60c. Published native head dc6d178b5 includes learned-only CUDA
+subnormal arithmetic fixes; GPU compilation still absent. Independent Luna
+review found and root repaired boolean numeric/accelerator-option acceptance
+and a zero-update guard that previously ignored nonzero Adam/SGD moments.
+Weighted depth CE no longer computes and discards a duplicate CE. Broad suite
+858tests had20 baseline-only fixture errors:8 unsafe fake process-groupcalls and
+12missingignoredpromptfixtures; same failures independently reproduced on main.
+Luna owns isolated test-only repairs; assertions and capture behavior preserved.
+A CUDA readiness receipt validator and full-model zero-update profiling harness
+are being integrated, binding source/runtime/recipe/native/hardware and actual
+pack/decisions/memory evidence. CPU proof cannot authorize CUDA. Provider/A4 and
+refresh validation are being extended with new independently validated schemas;
+old source/readiness cannot silently admit new recipes.
