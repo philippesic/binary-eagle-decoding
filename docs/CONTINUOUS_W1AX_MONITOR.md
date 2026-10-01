@@ -1,16 +1,18 @@
 # A8/A1 health and bounded recovery monitor
 
-Prepared 2026-09-29; **PAUSED by explicit human request at 2026-10-01 19:13 UTC** with user-authorized failure notification and bounded recovery. Automation ID:
+Prepared 2026-09-29; **ACTIVE every 15 minutes after explicit user continuation at 2026-10-01 19:54 UTC** with user-authorized failure notification and bounded recovery. Automation ID:
 `a8-a1-health-check-enable-after-manual-start`. Target chat:
 `01a0f47a-e246-75e1-a299-fcac42d34f8a`.
-Current human request: “Pause gpu work and report status.” All shared GPU pause
-flags set; supervisor05 gracefully interrupted/exit0, experiment stopped at
-19:12:25UTC. Verified19:13:25UTC: both owned groups absent,no project processes,
-no GPU compute apps,RTX5080 utilization0%/12,672MiBfree. Retained10,000train /
-224dev across327 completed manifests,zerooptimizer. Existing automation PAUSED;
-no auto-resume without a NEW explicit human resume request. Earlier continuation
-paragraphs below are historical and superseded by this pause. Partial data and
-supervisor history preserved; budget1of2 unchanged, WSL idle setting untouched.
+Current human request: “Continue” supersedes the19:13 pause. Same experiment
+resumed under supervisor06/newhostsession, CPUhealth passed after SSH disconnect/
+reconnect19:53:24UTC, independent ownership19:54:03UTC: server650,supervisor651,
+child653. Retained327completed manifests /10,000train /224dev,zerooptimizer.
+Re-audit ordinal2/353 then3/353 is not lost data. Existing monitorACTIVE; budget
+1of2 unchanged (explicit intentional resume is not automatic recovery).
+RTX2080Ti stays paused. Same automatic training after full frozen preparation
+and paired CUDA smoke is authorized; do not pause for capture completion/morning.
+Current supervisor/state/host tmux always derived from registration.experiment.
+Previous pause/history below remains preserved and is superseded by continuation.
 
 Coordination transferred to the acknowledged successor on 2026-09-30 after
 the required context rotation; the same automation ID, prompt and cadence are
@@ -28,12 +30,12 @@ after all frozen capture/audit/readiness/coverage gates pass. Capture completion
 is not overall run completion. No further approval is needed for that transition;
 do not stop for morning or slow learning. Notify actual first optimizer updates,
 new verified failure or required action; quiet healthy ordinary progress.
-Current monitor_query_command is bound to supervisor05. Source checks must use
+Current monitor_query_command is bound to supervisor06. Source checks must use
 exact src/w1a1_eagle paths; a broad filename glob can select a test file.
 Both prior pause attempts and all retained/partial data remain preserved.
 
 Current run:`luna-continuous-a8-a1-native-order-20260930`; supervisor
-`luna-supervisor-a8-a1-native-order-20261001-05`. Stable local ignored registration:
+`luna-supervisor-a8-a1-native-order-20261001-06`. Stable local ignored registration:
 `runs/luna-continuous-a8-a1-20260929/monitor-registration.json` (preserves the old
 failed experiment separately). Derive current remote status/supervisor paths from
 its`experiment`object; never reuse a hardcoded earlier attempt. First Luna check
@@ -67,9 +69,9 @@ is established. No second observation or GPU recovery was attempted.
 
 A compact stdlib combined query is locally compiled in ignored
 `runs/luna-continuous-a8-a1-20260929/monitor-query-source.py` (SHA256
-b0bd69e78f2a2f24f84dfbfdba576bb95152e29546fd5cca53359614ed375b57).
+f354832354069a5b4be9ae5174ef4a67f1fd61d92169f0291574fc6c7d394eab).
 The exact current command is JSON in `monitor-query-command.json` and copied
-into registration.experiment.monitor_query_command, bound to supervisor05.
+into registration.experiment.monitor_query_command, bound to supervisor06.
 Read the command JSON with exec_command max_output_tokens8000, parse it inside
 functions.exec, and pass the resulting string directly to tmux execute_command.
 Do not print/read/copy displayed command text or reconstruct payloads by hand.

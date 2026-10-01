@@ -8,7 +8,7 @@ data. Evaluate native draft quality and speed against Q4_0 when GPU work is
 explicitly permitted. Preserve the pinned FP16 target/verifier and draft map.
 This continues the existing goal rather than opening a second goal.
 
-**State: GPU work and monitor PAUSED at explicit human request.** Verified2026-10-01 19:13:25UTC: supervisor05 interrupted/exit0, experiment stopped, both owned groups gone, no project processes/GPU compute apps. Retained327 manifests /10,000train /224dev; zerooptimizer. GPU0%/12,672MiBfree. Same goal remains; no restart until new human resume authorization. RTX2080Ti paused,Q4_0 primary,finals sealed.
+**State: User resumed RTX5080; supervisor06 healthy after reconnect.** CPU health19:53:24UTC; independent ownership19:54:03UTC confirmed server650/supervisor651/child653. Retained327 manifests /10,000train /224dev,zerooptimizer; re-audit ordinal2/353 then3/353. MonitorACTIVE/every15minutes,budget1of2 unchanged. Same automatic paired training after all frozen gates remains authorized; RTX2080Ti paused,Q4_0 primary,finals sealed.
 
 ## Current findings and work
 
@@ -5136,3 +5136,57 @@ and disconnect/reconnect health verification. Intentional pause must never be
 automatically recovered or resumed by a stale heartbeat. Earlier capture
 completion/autorun authority does not override this new pause. Docs-only
 checkpoint follows`45cd238`; diff check is appropriate verification.
+
+## Explicit user continuation resumed and verified — 2026-10-01 19:54 UTC
+
+Human “Continue” supersedes the19:13 intentional pause. Parent resumed only
+RTX5080 sharedcontrol at19:41UTC; RTX2080Ti remains paused. Durable ignored
+`resume-authorization-20261001-after-1913.json` records scope. One pinned
+Luna/high `/root/resume_20261001_after_1913` (fork none) owned bounded preflight,
+CPU partial recovery, one launch and one disconnect/reconnect proof. All prior
+operators done, no concurrent GPU owner; no additional agents/chats/schedules.
+
+Fresh preflight: previous supervisor05 terminal/exit0, PGIDs795/797 absent,
+no owned processes; RTX5080SM120 utilization0%,12,552MiBfree, WSL available
+19,749,192KiB,disk424,604,286,976B. Exact remote parentHEAD7547d253b6bf7d8a04ddb3c868e997afad39f31a,
+nativeb4e366d4f0a30cac07f14d51c54c5b1329b3f485,eight exact src/w1a1_eagle math
+hashes/config/stages/runtime/resolved-config identity matched. No source pull,
+precision/tier/cap change or gate relaxation. WSLmemory20GB/idleTimeout=-1 preserved.
+CPUrecover-partial exit0 at19:48:46UTC,records:[],processes_started:false,
+raw_artifacts_deleted:false; completed labels and partial artifacts retained.
+Initial oversized read-only preflight transport attempts were preserved; no
+GPU/state mutation or additional launch resulted from them.
+
+One authorized resume launched under NEW supervisor
+`luna-supervisor-a8-a1-native-order-20261001-06`, host socket
+`binary-eagle-runtime` / NEW session `continuous-a8-a1-native-order-20261001-06`.
+Same corrected experiment/stages/config; remote_job300-second grace and child
+--start --allow-cuda --resume. Prior supervisor directories retained. Firsthealth
+19:52:35UTC passed at1/353. Operator closed firstLOCALtransport$122, reconnected
+once via newLOCALMacBooktransport$123. CPUhealth **19:53:24.947738UTC** passed,
+preparing teacher_capture_audit,ordinal2/353,**327manifest labels /10,000train /
+224dev**,optimization_started:false,steps:{}. Independent ownership **19:54:03.079434UTC**
+confirmed host tmuxserver650,supervisor651/PGID651,child653/PGID653 alive and audit
+advanced3/353. Resume audit ordinal reset is not lost retained data. BothLOCAL
+transports closed/absence verified; host job remains running and GPU is occupied.
+
+Ignored operation evidence:
+`runs/luna-continuous-a8-a1-20260929/resume-operation-20261001-after-1913.json`.
+Full commands/preflight/CPUrecovery/launch/checker outputs/postreconnect/proc
+ownership/cleanup retained (SHA2566bfa760a prefix). Registration.experiment now
+owns supervisor06/state path/host_tmux and exact monitor query. Query source changed
+only supervisor05→06, locally compiled; sourceSHA256
+f354832354069a5b4be9ae5174ef4a67f1fd61d92169f0291574fc6c7d394eab.
+Command JSON and registration binding match; direct local shell loading required.
+Parent last-health updated with remote health timestamp and preserved pausehistory.
+Existing automation reactivated through native tool; savedconfigACTIVE, same15min
+cadence/prompt/target. Explicit intentional resume consumes no failure budget;
+budget stays1of2. Operator completed, no active remote transport remains.
+
+Next: single pinned CPU observation per tick; continue SAME pipeline through
+remaining development capture/full frozen audits/readiness/coverage and paired
+CUDA smoke into continuous paired updates automatically. No new confirmation,
+no pause for morning/capture completion. Notify actual optimizer start/new
+verified failure/completion/requiredaction; quiet healthy ordinary progress.
+Sealed finals unopened,Q4_0 primary,target/verifier precision and all identities
+frozen. Docs-only checkpoint follows`5bc1fd5`; diff check appropriate verification.
