@@ -1,18 +1,20 @@
 # A8/A1 health and bounded recovery monitor
 
-Prepared 2026-09-29; **ACTIVE every 15 minutes after explicit user continuation at 2026-10-01 19:54 UTC** with user-authorized failure notification and bounded recovery. Automation ID:
+Prepared 2026-09-29; **Temporarily PAUSED while installing preparation-only launch boundary (2026-10-01 20:27 UTC)** with user-authorized failure notification and bounded recovery. Automation ID:
 `a8-a1-health-check-enable-after-manual-start`. Target chat:
 `01a0f47a-e246-75e1-a299-fcac42d34f8a`.
-Current human request: “Continue” supersedes the19:13 pause. Same experiment
-resumed under supervisor06/newhostsession, CPUhealth passed after SSH disconnect/
-reconnect19:53:24UTC, independent ownership19:54:03UTC: server650,supervisor651,
-child653. Retained327completed manifests /10,000train /224dev,zerooptimizer.
-Re-audit ordinal2/353 then3/353 is not lost data. Existing monitorACTIVE; budget
-1of2 unchanged (explicit intentional resume is not automatic recovery).
-RTX2080Ti stays paused. Same automatic training after full frozen preparation
-and paired CUDA smoke is authorized; do not pause for capture completion/morning.
-Current supervisor/state/host tmux always derived from registration.experiment.
-Previous pause/history below remains preserved and is superseded by continuation.
+Current human request: “stop once data and qat prep is ready, dont actually start
+qat”. All previous automatic training authorization is superseded. Continue SAME
+capture/audit/readiness/coverage/paired CUDA smoke and zero-update initial save,
+then stop before optimization. Every new launch/recovery MUST use --prepare-only;
+positive optimizer steps are unauthorized and require notification/graceful stop.
+Old supervisor06 temporarily stopped/verified20:27UTC to install the boundary.
+Retained10,000train/224dev,zerooptimizer. Saved automation preparation-only prompt,
+temporarilyPAUSED until new live prep-only supervisor verified. GPUcontrol5080
+paused only during installation;2080Ti remains paused. Budget1of2 unchanged.
+When preparation_complete:true and readyreceipt/zero global+lane steps verified,
+verify allownedgroupsgone/GPUreleased, notify user readiness and pause schedule.
+All earlier autorun/continue paragraphs below are HISTORICAL and superseded.
 
 Coordination transferred to the acknowledged successor on 2026-09-30 after
 the required context rotation; the same automation ID, prompt and cadence are

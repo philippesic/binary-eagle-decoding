@@ -8,7 +8,7 @@ data. Evaluate native draft quality and speed against Q4_0 when GPU work is
 explicitly permitted. Preserve the pinned FP16 target/verifier and draft map.
 This continues the existing goal rather than opening a second goal.
 
-**State: User resumed RTX5080; supervisor06 healthy after reconnect.** CPU health19:53:24UTC; independent ownership19:54:03UTC confirmed server650/supervisor651/child653. Retained327 manifests /10,000train /224dev,zerooptimizer; re-audit ordinal2/353 then3/353. MonitorACTIVE/every15minutes,budget1of2 unchanged. Same automatic paired training after all frozen gates remains authorized; RTX2080Ti paused,Q4_0 primary,finals sealed.
+**State: Finish data/QAT prep only; no optimizer updates authorized.** Supervisor06 temporarily stopped to install explicit preparation-only launch boundary, verified20:27:44UTC terminal/exit0,no owned processes/GPUcomputeapps. Retained10,000train/224dev across327manifests,zeroQATsteps. Monitor temporarilyPAUSED,newpreparation-only prompt saved. Same goal,math/runtime/data/config/caps unchanged,finals sealed.
 
 ## Current findings and work
 
@@ -5265,3 +5265,41 @@ The clean managed worktree was archived after all workers completed, and the
 merged `codex/training-research-audit` branch was removed. No unpublished or
 unmerged work remains from this audit. The project checkout was clean before
 this final publication checkpoint.
+
+## User changed endpoint to preparation only — 2026-10-01 20:27 UTC
+
+Human: “stop once data and qat prep is ready, dont actually start qat”. This
+supersedes every earlier automatic-QAT/overnight training authorization. Finish
+SAME native train/dev capture,audits,readiness,coverage,paired CUDA smoke and
+zero-update initial checkpoint, then terminate before ContinuousTrainer.run.
+No optimizer steps, tuning, final evaluation or new experiment authorized.
+
+The running launcher automatically called trainer.run after smoke/save, so parent
+blocked new5080 launches and temporarily stopped supervisor06 gracefully after
+live cmdline ownership validation. STOP/SIGINT request timestamp
+20:26:22.758883UTC; supervisor interrupted/exit0 at20:26:24.078889UTC. Verification
+20:27:44.424780UTC: both PGIDs651/653 absent,no project processes,empty GPUcompute
+list,RTX5080util0%/12,534MiBfree. Retained327completed manifests /10,000train /
+224dev,zerooptimizer. Partial/raw data retained. Host tmux never touched, only
+localtransport$125 closed. Ignored exact raw evidence:
+`runs/luna-continuous-a8-a1-20260929/preparation-only-scope-stop-20261001T202744Z.json`.
+
+Current registration marks training_authorized:false,stop_after_preparation:true,
+preparation_resume_authorized:true; this temporary stop is not a request to end
+prep. Existing15min automation temporarilyPAUSED; saved prompt now explicitly
+requires --prepare-only for every launch/recovery and stops monitoring only after
+preparation_complete:true,zero counters,readyreceipt and owned processes gone.
+Budget unchanged1of2; no failure recovery. RTX2080Ti stayspaused. Critical math,
+stages/config/runtime/data identity,precision,nullcaps and finals unchanged.
+
+Bounded feature owner `/root/prepare_only_boundary` owns only launcher,launcher
+tests,runbook in temporary worktree `/private/tmp/eagle-continuous-prepare-only`
+branch`feature/continuous-prepare-only`; root owns deployment/docs/control.
+No concurrentGPUowner. Explicit CLIcontrol flag will preserve all preparation/
+smoke/save gates and return before optimization, publishing readyreceipt and
+recognized terminal stopped status. CPUtests must prove optimizer never reached,
+required failures cannot publish readiness,positive priorsteps rejected,default
+behavior unchanged. Next: review/test/integrate/push then deploy ONLY this launcher
+control change (math source hashes fixed),freshresource/ownership/CPUpartial
+recovery,resume SAMErun under new unique supervisor/session --prepare-only,
+verifydisconnect/reconnect,reactivate existing preparation-only monitor.
