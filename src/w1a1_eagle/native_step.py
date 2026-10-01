@@ -16,7 +16,7 @@ attention follows the row linears' device; native oracle modes remain CPU-only.
 from __future__ import annotations
 
 import math
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from types import MappingProxyType
 
@@ -106,6 +106,9 @@ class NativeStepAdapter(nn.Module):
         config = getattr(drafter, "config", None)
         if config is None or getattr(config, "pretraining_tp", None) != 1:
             raise ValueError("one-step adapter requires pretraining_tp=1")
+        layers = getattr(config, "num_hidden_layers", 1)
+        if type(layers) is not int or layers != 1:
+            raise ValueError("one-step adapter requires the single-layer EAGLE architecture")
         if getattr(drafter, "early_stop_method", None) is not None:
             raise ValueError("early stop is unsupported")
         if any(
@@ -259,10 +262,60 @@ class NativeStepAdapter(nn.Module):
             for module in linears.values()
             for parameter in (module.latent_sign, module.scale_offset)
         }
+        approved_parameter_ids = set(binary_parameter_ids)
+        extra_parameters = []
+        for path, module in linears.items():
+            quantizer = getattr(module, "activation_quantizer", None)
+            if quantizer is not None:
+                # Loaded only when explicitly installed. These optional modules
+                # are separate features; arbitrary trainable children are not
+                # admitted by the native adapter.
+                if (type(quantizer).__module__ != f"{__package__}.learned_activation"
+                        or type(quantizer).__name__ != "LearnedActivationQuantizer"):
+                    raise ValueError(f"{path}: unrecognized activation quantizer")
+                from .learned_activation import LearnedActivationQuantizer
+
+                if type(quantizer) is not LearnedActivationQuantizer:
+                    raise ValueError(f"{path}: unrecognized activation quantizer")
+                if (not isinstance(module, RowBinaryLinear)
+                        or quantizer.bits != module.contract.activation_bits
+                        or quantizer.in_features != module.in_features):
+                    raise ValueError(f"{path}: activation quantizer contract differs from projection")
+                parameters = tuple(quantizer.parameters())
+                if len(parameters) != 1 or parameters[0] is not quantizer.parameter:
+                    raise ValueError(f"{path}: quantizer must own its declared scalar parameter")
+                if parameters[0].ndim != 0:
+                    raise ValueError(f"{path}: quantizer parameter must be scalar")
+                extra_parameters.extend(parameters)
+            correction = getattr(module, "fusion_correction", None)
+            if correction is not None:
+                if (type(correction).__module__ != f"{__package__}.fusion_correction"
+                        or type(correction).__name__ != "FusionCorrection"):
+                    raise ValueError(f"{path}: unrecognized FC fusion correction")
+                from .fusion_correction import FusionCorrection
+
+                if path != "fc" or type(correction) is not FusionCorrection:
+                    raise ValueError(f"{path}: unrecognized FC fusion correction")
+                named_parameters = tuple(correction.named_parameters())
+                if any(name not in ("u", "v", "output_bias") for name, _ in named_parameters):
+                    raise ValueError("FC fusion correction owns an undeclared parameter")
+                extra_parameters.extend(parameter for _, parameter in named_parameters)
+        frozen_ids = {
+            id(drafter.get_submodule(path).weight) for path in norm_paths
+        }
+        borrowed_embedding = getattr(drafter, "embed_tokens", None)
+        if isinstance(borrowed_embedding, nn.Embedding):
+            frozen_ids.add(id(borrowed_embedding.weight))
+        for parameter in extra_parameters:
+            if parameter.device != self.device or parameter.dtype != torch.float32:
+                raise ValueError("optional training parameters must share the binary F32 device")
+            if id(parameter) in frozen_ids or id(parameter) in binary_parameter_ids:
+                raise ValueError("optional training parameter aliases a frozen or binary parameter")
+            approved_parameter_ids.add(id(parameter))
         # The borrowed target embedding and every original norm are frozen.
         # This also protects any unused drafter parameters from optimization.
         for parameter in drafter.parameters():
-            if id(parameter) not in binary_parameter_ids:
+            if id(parameter) not in approved_parameter_ids:
                 parameter.requires_grad_(False)
 
         self.drafter = drafter
@@ -278,6 +331,12 @@ class NativeStepAdapter(nn.Module):
         self.attention_mode = attention_mode
         self.native_attention_oracle = native_attention_oracle
         self.native_cpu_operators = native_cpu_operators
+        # Diagnostic oracles retain the serial reference path. These flags are
+        # explicit capabilities, also delegated by observer wrappers.
+        self.supports_context_cache = attention_mode == "f32"
+        self.supports_batched_head = attention_mode == "f32"
+        self.head_saturation_scope = "last_valid_row"
+        self.last_head_chain_saturation_fraction = None
 
     def new_cache(self) -> NativeStepCache:
         shape = (self.kv_heads, 0, self.head_dim)
@@ -313,6 +372,118 @@ class NativeStepAdapter(nn.Module):
                 or not torch.equal(value, value.to(torch.float16).to(torch.float32))
             ):
                 raise ValueError(f"{name} cache must be finite and F16-exact")
+
+    def _embedding(self, token: int) -> Tensor:
+        if type(token) is not int or not 0 <= token < self.embedding_vocab_size:
+            raise ValueError("token must index the borrowed embedding")
+        embedding = self.embedding_lookup(token)
+        if (
+            not isinstance(embedding, Tensor)
+            or embedding.device != self.device
+            or embedding.dtype != torch.float16
+            or embedding.shape != (self.hidden_size,)
+            or embedding.requires_grad
+            or (self.device.type == "cpu" and not torch.isfinite(embedding).all())
+        ):
+            raise ValueError("embedding lookup must return a frozen finite F16 row")
+        return embedding.to(torch.float32)
+
+    def _rope(self, x: Tensor, positions: Tensor) -> Tensor:
+        """Rotate [rows, heads, dim] at absolute decoder positions.
+
+        CPU retains the serial reference's independently repeated F32
+        multiplication per position; accelerator uses its declared power form.
+        """
+        theta_scale = torch.tensor(
+            self.rope_theta, dtype=torch.float32, device=self.device
+        ).pow(-2.0 / self.head_dim)
+        if self.device.type == "cpu":
+            angle = torch.empty(
+                (positions.numel(), self.head_dim // 2), dtype=torch.float32, device=self.device
+            )
+            theta = positions.to(torch.float32)
+            for index in range(angle.shape[-1]):
+                angle[:, index] = theta
+                theta = theta * theta_scale
+        else:
+            channels = torch.arange(self.head_dim // 2, device=self.device)
+            angle = positions.float()[:, None] * theta_scale.pow(channels)
+        full_angle = torch.cat((angle, angle), dim=-1)[:, None, :]
+        half = self.head_dim // 2
+        rotated = torch.cat((-x[..., half:], x[..., :half]), dim=-1)
+        return x * full_angle.cos() + rotated * full_angle.sin()
+
+    @torch.no_grad()
+    def build_context_cache(
+        self, token_ids: Sequence[int], raw_features: Tensor, *, chunk_size: int = 64
+    ) -> NativeStepCache:
+        """Build detached single-layer K/V for shifted context rows only.
+
+        The caller passes token[j+1] paired with captured target_features[j].
+        The deferred seed is excluded. One final allocation and bounded FC/K/V
+        chunks avoid context attention, Q/O/FFN and growing concatenations.
+        """
+        if not self.supports_context_cache:
+            raise ValueError("K/V-only context is unavailable for diagnostic attention modes")
+        if type(chunk_size) is not int or chunk_size < 1:
+            raise ValueError("context chunk size must be positive")
+        count = len(token_ids)
+        if (
+            count > self.max_positions
+            or not isinstance(raw_features, Tensor)
+            or raw_features.shape != (count, self.drafter.fc.in_features)
+            or raw_features.device != self.device
+            or raw_features.dtype != torch.float32
+            or (self.device.type == "cpu" and not torch.isfinite(raw_features).all())
+        ):
+            raise ValueError("context needs aligned finite F32 rows within RoPE bounds")
+        if getattr(self.drafter, "tree_mask", None) is not None:
+            raise ValueError("tree mask cannot be used with contiguous context cache")
+        shape = (self.kv_heads, count, self.head_dim)
+        keys = torch.empty(shape, dtype=torch.float32, device=self.device)
+        values = torch.empty_like(keys)
+        layer = self.drafter.midlayer
+        for start in range(0, count, chunk_size):
+            end = min(start + chunk_size, count)
+            embeddings = torch.stack([self._embedding(token) for token in token_ids[start:end]])
+            feature = self.drafter.fc(raw_features[start:end])
+            fused = torch.cat(
+                (self._rms_norm(embeddings, layer.input_layernorm),
+                 self._rms_norm(feature, layer.hidden_norm)), dim=-1
+            )
+            key = layer.self_attn.k_proj(fused).reshape(-1, self.kv_heads, self.head_dim)
+            value = layer.self_attn.v_proj(fused).reshape(-1, self.kv_heads, self.head_dim)
+            positions = torch.arange(start, end, device=self.device)
+            key = self._rope(key, positions).to(torch.float16).to(torch.float32)
+            value = value.to(torch.float16).to(torch.float32)
+            keys[:, start:end, :] = key.transpose(0, 1)
+            values[:, start:end, :] = value.transpose(0, 1)
+        result = NativeStepCache(keys, values)
+        self._validate_cache(result, count)
+        return result
+
+    def decode_head(self, states: Tensor) -> Tensor:
+        """One output norm/head call over attached valid proposal states.
+
+        Head saturation now describes the mean across this valid chain and is
+        explicitly labelled on the adapter; it is not the last depth's value.
+        """
+        if not self.supports_batched_head:
+            raise ValueError("batched head is unavailable for diagnostic attention modes")
+        if (
+            not isinstance(states, Tensor)
+            or states.ndim != 2 or states.shape[0] < 1
+            or states.shape[1] != self.hidden_size
+            or states.device != self.device or states.dtype != torch.float32
+            or (self.device.type == "cpu" and not torch.isfinite(states).all())
+        ):
+            raise ValueError("batched head needs finite F32 hidden rows")
+        logits = self.drafter.lm_head(self._rms_norm(states, self.drafter.norm))
+        self.head_saturation_scope = "valid_chain_mean"
+        self.last_head_chain_saturation_fraction = getattr(
+            self.drafter.lm_head, "last_saturation_fraction", None
+        )
+        return logits
 
     def encode_feature(
         self, raw: Tensor, *, trace_callback: Callable[[str, Tensor], None] | None = None
@@ -478,6 +649,9 @@ class NativeStepAdapter(nn.Module):
             if compute_logits
             else torch.empty(0, dtype=torch.float32, device=self.device)
         )
+        if compute_logits:
+            self.head_saturation_scope = "last_valid_row"
+            self.last_head_chain_saturation_fraction = None
         return DraftStep(logits=logits, pre_norm=pre_norm, cache=next_cache)
 
     def decode_context(

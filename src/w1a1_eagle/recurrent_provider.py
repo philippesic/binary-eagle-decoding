@@ -247,9 +247,40 @@ def audit_provider_round(batch: ProviderRound, provider: JointTrainingProvider) 
 
 
 def forward_torch_round(
-    batch: ProviderRound, adapter: StepAdapter, draft_vocab_size: int
+    batch: ProviderRound, adapter: StepAdapter, draft_vocab_size: int, *,
+    optimize_cache: bool = True, optimize_head: bool = True,
+    context_chunk_size: int = 64,
 ) -> Tensor:
-    """Rebuild context cache, then retain proposal-state/K/V autograd links."""
+    """Rebuild context and retain proposal-state/K/V autograd links.
+
+    Optional capabilities enable single-layer K/V-only reconstruction and one
+    head call over a captured chain. Generic/diagnostic adapters fall back to
+    serial execution. Reference controls change no optimizer/update cadence.
+    A wrapper's decode_step remains the proposal observation boundary.
+    """
+    if not batch.rows:
+        raise ValueError("one nonempty captured round is required")
+    if type(optimize_cache) is not bool or type(optimize_head) is not bool:
+        raise ValueError("optimization controls must be boolean")
+    if type(context_chunk_size) is not int or context_chunk_size < 1:
+        raise ValueError("context chunk size must be positive")
+    build_context = getattr(adapter, "build_context_cache", None)
+    if not (optimize_cache and getattr(adapter, "supports_context_cache", False)
+            and callable(build_context)):
+        build_context = None
+    context_builder = (
+        (lambda tokens, raw: build_context(tokens, raw, chunk_size=context_chunk_size))
+        if build_context is not None else None
+    )
+    head = getattr(adapter, "decode_head", None)
+    if not (optimize_head and getattr(adapter, "supports_batched_head", False)
+            and callable(head)):
+        head = None
+    decode_step = adapter.decode_step
+    if head is not None:
+        # Call the public wrapper, not an underlying decode-body method: an
+        # ObservedAdapter must still see the attached first state and K/V.
+        decode_step = lambda *args: adapter.decode_step(*args, compute_logits=False)
     rebuilt = rebuild_prefix_cache(
         batch.prefix_token_ids,
         batch.raw_target_features,
@@ -258,14 +289,19 @@ def forward_torch_round(
         encode_feature=adapter.encode_feature,
         decode_context=adapter.decode_context,
         new_cache=adapter.new_cache,
+        build_context_cache=context_builder,
     )
+    if (batch.rows[0].get("input_token_id") != rebuilt.seed_token
+            or batch.rows[0].get("parent_position") != rebuilt.decoder_position):
+        raise ValueError("proposal seed token/position differs from rebuilt accepted prefix")
     return rollout_captured_prefix(
         batch.rows,
         rebuilt.seed_raw_features,
         encode_feature=adapter.encode_feature,
-        decode_step=adapter.decode_step,
+        decode_step=decode_step,
         initial_cache=rebuilt.cache,
         draft_vocab_size=draft_vocab_size,
+        decode_head=head,
     )
 
 
