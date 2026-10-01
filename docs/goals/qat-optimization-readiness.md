@@ -149,3 +149,16 @@ are being integrated, binding source/runtime/recipe/native/hardware and actual
 pack/decisions/memory evidence. CPU proof cannot authorize CUDA. Provider/A4 and
 refresh validation are being extended with new independently validated schemas;
 old source/readiness cannot silently admit new recipes.
+
+## Shared GPU pause checkpoint — 2026-10-01 23:15 UTC
+
+Existing preparation owner in chat01a0f47a-e246-75e1-a299-fcac42d34f8a executed
+the human “Pause gpu”. Supervisor07 gracefully interrupted/exit0; verified
+23:15:28UTC both owned groups1204/1205 absent,no project processes or GPUcompute
+apps. Retained10,000train/224dev across327complete manifests,zeroQATupdates;
+preparation incomplete. Both shared hostpause flags and existing monitor PAUSED.
+GPU ownership may not be reassigned from this idle proof while humanpause is
+active. CPUteam work can continue; GPU use requires NEW human resume/ownership
+coordination. Existing stop-before-QAT boundary and all frozenidentity preserved.
+Exact evidence and resumeprocedure remain in the prior body/head goal and
+ignored pause-preparation-only-20261001T231528Z.json monitor snapshot.

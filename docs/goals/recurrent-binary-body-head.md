@@ -8,7 +8,7 @@ data. Evaluate native draft quality and speed against Q4_0 when GPU work is
 explicitly permitted. Preserve the pinned FP16 target/verifier and draft map.
 This continues the existing goal rather than opening a second goal.
 
-**State: Preparation-only run healthy; no QAT optimizer updates authorized.** Supervisor07 live --prepare-only verified afterdisconnect20:44:55UTC,server1203/supervisor1204/child1205;327 manifests /10,000train /224dev,zerooptimizer,re-audit1/353. MonitorACTIVE/every15min withpreparation-only endpoint; budget1of2 unchanged. Complete prep/smoke/checkpointzero then exit beforetrainer.run. Frozenmath/runtime/config/data/caps/finals unchanged;2080Ti paused.
+**State: Explicit user GPU pause verified2026-10-01 23:15:28UTC.** Preparation supervisor07 interrupted/exit0,ownedgroups1204/1205gone,no project processes/GPUcomputeapps. Retained327manifests /10,000train /224dev,zerooptimizer; prep incomplete. Monitor and bothGPUflagsPAUSED; stop-before-QAT boundary retained. No automaticresume without NEW human instruction. Active research goal is QAT optimization readiness; this file retains preparation/data ownership history.
 
 ## Current findings and work
 
@@ -5445,3 +5445,37 @@ ready andpausemonitor. Positiveoptimizersteps unauthorized:notifyandgracefully
 stop. Capturecompletion alone isn'treadiness; finalssealed,2080Tipaused. Operators
 done,noactiveLOCALtransport. Docs-only checkpoint preserves concurrenttraining
 audit/team findings; sameprojectgoal,nonewgoal/experiment/schedule.
+
+## Preparation operator user pause verified — 2026-10-01 23:15 UTC
+
+Human “Pause gpu” supersedes active preparation continuation. Parent immediately
+paused sharedcontrol for ALL hosts and the existing monitor through native tool,
+with its preparation-only prompt/cadence/target retained. NewLOCALtmuxMCPshell
+verifiedMacBook; current registry RTX5080WindowsSSH→WSL, registration-derived
+supervisor07. Livecmdline ownership verified before STOP/SIGINT at23:15:11UTC.
+Supervisor gracefully interrupted/exit0 at23:15:13.559354UTC,300secgrace unchanged.
+
+Combined poststop verification **23:15:28.326715UTC**: experimentstopped,both
+supervisorPGID1204 andchildPGID1205 absent,no matchingprojectprocesses,empty
+nvidia-smi compute-app list. RTX5080memoryfree12,541MiB/used3,437MiB,util1%
+(display/system activity); no projectGPUwork remains. Retained327validcomplete
+label manifests,train10,000/10,000,development224/1,002; zerooptimizerupdates.
+Lasthealthyreauditordinal220/353 at23:09UTC; stopping is not readiness, no
+preparation-ready receipt. Raw/completed/partialdata and oldsupervisors preserved.
+No recover-partial or failure-budget charge; allmath/runtime/native/config/data/
+precision/nullcaps/finals unchanged,WSLidleTimeout=-1 untouched.
+
+Ignored exact request/verification/raw evidence:
+`runs/luna-continuous-a8-a1-20260929/pause-preparation-only-20261001T231528Z.json`.
+Registration/last-health mark intentional_user_pause:true,terminalstopped,
+resume_requires_user_authorization:true,monitorPAUSED. Preparation_only:true,
+training_authorized:false,stop_after_preparation:true retained. Localtransport
+$138 closed/absenceverified; never touched hostjobpane/session/server. No
+operator/remotecommand remains active. Shared5080/2080Ti flags paused; this
+idle proof does NOT authorize another GPU task while humanpause is active.
+
+Next: wait for NEW explicit humanresume. Resume ONLY SAME preparation pipeline
+--prepare-only under new unique supervisor/session with freshownership/resource/
+identity check,CPUpartialpreservation anddisconnect/reconnecthealth. Never
+recover an intentional pause. Active projectgoal QAToptimization-readiness stays;
+its CPU work may continue but noGPU use until human resumes/coordinates ownership.

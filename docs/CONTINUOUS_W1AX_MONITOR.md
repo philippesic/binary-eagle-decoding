@@ -1,24 +1,18 @@
 # A8/A1 health and bounded recovery monitor
 
-Prepared 2026-09-29; **ACTIVE every 15 minutes for preparation-only run (verified 2026-10-01 20:44 UTC)** with user-authorized failure notification and bounded recovery. Automation ID:
+Prepared 2026-09-29; **PAUSED at explicit human GPU pause (verified 2026-10-01 23:15 UTC)** with user-authorized failure notification and bounded recovery. Automation ID:
 `a8-a1-health-check-enable-after-manual-start`. Target chat:
 `01a0f47a-e246-75e1-a299-fcac42d34f8a`.
-Current human request: “stop once data and qat prep is ready, dont actually start
-qat”. All previous automatic training authorization is superseded. Continue SAME
-capture/audit/readiness/coverage/paired CUDA smoke and zero-update initial save,
-then stop before optimization. Supervisor07 live --prepare-only verified after
-one disconnect/reconnect20:44:55UTC;server1203/supervisor1204/child1205,healthy.
-Retained10,000train/224dev across327manifests,zerooptimizer,re-auditordinal1/353.
-Existing15min monitorACTIVE withprep-onlyprompt;budget1of2unchanged,2080Tipaused.
-Only launcher stoppingcontrol (+95lines) deliberatelyupdated to reviewedSHA
-82f0185ab9ac38bc622749d2ca5e5c5a297a72494dcbf3d16d2b08df249cdade;
-frozen criticalmath/runtime/native/config/data/precision/caps/finals unchanged.
-Everynewlaunch/recovery MUST--prepare-only. Positiveoptimizersteps unauthorized:
-notify/gracefullystop. Atstatusstopped/preparation_complete:true,readyreceipt
-verifiedhash+zero global/A8/A1steps,verifyownedgroupsgone/GPUreleased,notifyready
-andpausemonitor. Capturecompletion alone isn'tpreparationcompletion. Current
-paths/hosttmux always registration.experiment. Earlierautorun paragraphs below
-are HISTORICAL and superseded bythislimit.
+Latest human request: “Pause gpu”. Both sharedhostflags and existing monitor
+PAUSED. Supervisor07 gracefully interrupted/exit0; verified23:15:28UTC ownedgroups
+1204/1205 gone,no project processes/GPUcomputeapps,RTX5080free12,541MiB. Retained
+10,000train/224dev across327completed manifests,zerooptimizer; prep incomplete.
+Artifacts/partials and prep-only stoppingboundary preserved. No auto-resume or
+GPU reassignment until NEW human resume/ownership coordination. CPUworkmaycontinue.
+Any future resumed pipeline MUST--prepare-only,training_authorized:false and
+stop_after_preparation:true. Complete data/audits/readiness/coverage/pairedsmoke/
+checkpointzero then exit BEFOREoptimizer. Earlierautorun/prepcontinuation
+paragraphs below are HISTORICAL and superseded by this pause.
 
 Coordination transferred to the acknowledged successor on 2026-09-30 after
 the required context rotation; the same automation ID, prompt and cadence are
