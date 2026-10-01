@@ -8,7 +8,7 @@ data. Evaluate native draft quality and speed against Q4_0 when GPU work is
 explicitly permitted. Preserve the pinned FP16 target/verifier and draft map.
 This continues the existing goal rather than opening a second goal.
 
-**State: User-authorized overnight RTX5080 capture and continuous paired training.** At 2026-10-01 06:37:02 UTC supervisor05 passed post-disconnect health, 119 completed captures / 3,736 train / 0 dev prompts preserved, zero optimizer steps; re-audit ordinal 1/353. Existing 15-minute monitor ACTIVE, failure budget 1 of 2 used. Training starts automatically after complete capture/audit/readiness/coverage/CUDA gates. RTX2080Ti remains paused; Q4_0 primary comparison and finals unopened. Latest overnight checkpoint supersedes prior pause/running next actions.
+**State: Overnight RTX5080 pipeline healthy; monitoring transport restored.** At2026-10-01 08:00:40UTC supervisor05 CPU health passed,120 completed labels / 3,768train / 0dev,zerooptimizer,capture ordinal120/353. Existing15-minute monitor ACTIVE,budget1of2 used. Continuous training starts after all frozen gates;RTX2080Ti paused,Q4_0 primary,finals sealed. Latest checkpoint supersedes the unknown transport observation.
 
 ## Current findings and work
 
@@ -4796,3 +4796,29 @@ compact command directly and execute one bounded combined CPU check. Do not
 retry during this failed tick. Preserve frozen runtime/precision/data/tier;
 continue the overnight pipeline automatically when gates pass. Notify actual
 optimizer start/new verified failure/required action; quiet healthy progress.
+
+
+### Monitoring transport restored — 2026-10-01 08:00 UTC
+
+One pinned Luna/high operator `/root/health_20261001_0758` (fork none) loaded the
+compact compiled command JSON programmatically and passed it directly to tmux
+MCP after checking registry/current supervisor paths. At **08:00:40 UTC**, one
+combined CPU checker/status/supervisor/manifest query exited0: healthy,
+nonterminal preparing teacher_capture_audit, capture ordinal120/353. Completed
+positive prompt_count label metadata totals **120 manifests / 3,768 train / 0 dev**;
+optimization_started:false,steps:{}. No partial/gate probes counted.
+
+The prior unknown result is resolved without GPU recovery or a job change.
+Ignored `runs/luna-continuous-a8-a1-20260929/health-20261001T080040Z.json` contains
+original checker stdout, exact command and raw tmux evidence. Root verified
+its exact command equals registration.experiment.monitor_query_command, saved
+fresh last-health/current registration, and retained the unknown evidence
+separately. Local transport closed and confirmed absent; remote supervisor05
+and host job untouched. No GPU query, extra healthy log read, source/config/tier/
+precision changes or final-set access. Failure recovery budget stays1of2 used;
+existing15-minute monitor ACTIVE with overnight training authorization.
+
+Next: keep direct JSON-to-tool command loading and one bounded pinned operator
+per tick. Continue the same pipeline automatically through readiness/CUDA smoke
+into paired training when eligible, notify actual optimizer start/new verified
+failure/completion/required action, keep healthy ordinary progress quiet.

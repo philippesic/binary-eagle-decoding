@@ -67,8 +67,10 @@ Do not print/read/copy displayed command text or reconstruct payloads by hand.
 Reject non-ASCII, ellipses or truncation markers before submitting. The shortened
 query still runs the same checker once with --check-process and counts completed
 label-manifest prompts. It changes no remote file, training configuration or gate.
-The next scheduled tick uses it; the prior verified state remains separately
-preserved in last-health/registration until fresh health returns.
+At08:00:40UTC the next tick passed using direct JSON-to-tool loading: healthy
+120/353,120 completed labels / 3,768train / 0dev,zerooptimizer. The prior unknown
+is resolved and its evidence remains preserved. No GPU recovery or job action.
+Subsequent ticks use the same compact command and direct loading rule.
 
 ## Windows SSH shell bridge
 
