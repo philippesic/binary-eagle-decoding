@@ -83,3 +83,14 @@ SM75 behavior, deployment trajectories, GPU timing or quality. Those remain
 integration/deployment gates, with no inference of a measured speed or quality
 gain. Native commit and parent export commit are provided to the orchestrator
 for integration; no primary checkout or submodule gitlink was changed here.
+
+Post-review CUDA fixes are published as `01eb425e4` and `dc6d178b5`, following
+`69a3697f7`. The CUDA build uses `-use_fast_math`; learned absmax reductions now
+compare raw positive IEEE magnitude bits, and learned zero-limit/finite-inverse
+checks use raw bits too. A1 delta-zero detection uses raw bits and F64-to-F32
+beta/fallback conversion explicitly uses round-nearest intrinsics. This prevents
+FTZ comparisons from turning a learned subnormal limit/threshold into zero.
+Legacy A4/A8 reductions and reciprocal-overflow behavior are retained. Threshold
+multiplication/subtraction already uses non-FTZ RN intrinsics. These are source
+review fixes, with CUDA compilation and actual tiny-token bit/code checks still
+required on the designated GPU; the local CPU evidence is unchanged.
