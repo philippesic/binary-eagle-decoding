@@ -172,7 +172,7 @@ def validate_gate_report(report: dict, bits: int, common: dict) -> None:
         if report.get("recipe") != expected_recipe:
             raise ValueError("precision gate recipe differs from independently audited actor")
         from w1a1_eagle.trajectory_refresh import checked_hash
-        checked_hash(report.get("live_state_sha256"))
+        checked_hash(report.get("deployment_state_sha256"))
         expected_counts = {"sign": 9, "scale": 9,
                            "activation": 6 if manifest.get("activation_quantizers") is not None else 0,
                            "fusion": (2 + int(manifest["fusion_correction"]["bias_name"] is not None))
@@ -462,6 +462,15 @@ def run_gate(
             raise ValueError("cached gate belongs to different actor checkpoint")
         if modern and saved_report.get("schema") != RECIPE_SCHEMA:
             raise ValueError("new recipe cannot inherit a legacy gate")
+        if measurement_binding is not None:
+            artifact = output / "native-decisions.json"
+            if not artifact.is_file():
+                raise ValueError("cached gate lacks bound decision artifact; use a new explicit gate output")
+            measured = json.loads(artifact.read_text())
+            if (measured.get("deployment_state_sha256") != saved_report.get("deployment_state_sha256")
+                    or measured.get("activation_bits") != bits
+                    or any(measured.get(key) != value for key, value in measurement_binding.items())):
+                raise ValueError("cached decision artifact differs from requested deployment/source/recipe")
         return report_path
     output.mkdir(parents=True, exist_ok=True)
     checkpoint_dir = output / "checkpoint-zero"
@@ -550,10 +559,10 @@ def run_gate(
     owned = [parameter for group in optimizer.param_groups for parameter in group["params"]]
     if len(owned) != sum(parameter_counts.values()) or len({id(p) for p in owned}) != len(owned):
         raise ValueError("native gate optimizer ownership does not match declared recipe")
-    live_state_sha256 = None
+    deployment_state_sha256 = None
     if modern or measurement_binding is not None:
-        from check_qat_optimization_readiness import deterministic_state_sha256
-        live_state_sha256 = deterministic_state_sha256(linears)
+        from w1a1_eagle.qat_state import deployment_state_sha256 as deployment_digest
+        deployment_state_sha256 = deployment_digest(linears)
     operands = FrozenOperands(
         Path(sources["target_gguf"]),
         Path(sources["candidate_d_gguf"]),
@@ -784,7 +793,7 @@ def run_gate(
         },
     }
     if modern:
-        report.update(recipe=recipe, live_state_sha256=live_state_sha256,
+        report.update(recipe=recipe, deployment_state_sha256=deployment_state_sha256,
                       trainable_parameter_counts=parameter_counts)
     if measurement_binding is not None:
         required = {"source_sha256", "training_runtime", "recipe", "native_commit"}
@@ -798,7 +807,7 @@ def run_gate(
         props = torch.cuda.get_device_properties(0)
         write_json(output / "native-decisions.json", {
             "schema": "qat_native_measurements_v1", "kind": "native_decisions", "split": "train",
-            "activation_bits": bits, "state_sha256": live_state_sha256, **measurement_binding,
+            "activation_bits": bits, "deployment_state_sha256": deployment_state_sha256, **measurement_binding,
             "backend": "cuda", "hardware": {"device_type": "cuda", "name": props.name,
                 "compute_capability": [props.major, props.minor], "total_memory_bytes": props.total_memory},
             "cases": [{"prompt_id": r["prompt_id"], "round_index": r["round_index"], "capture_id": r["capture_id"],

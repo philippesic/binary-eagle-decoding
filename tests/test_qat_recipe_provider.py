@@ -134,7 +134,7 @@ class RecipeProviderTests(unittest.TestCase):
         common = fixture.common
         report = fixture.report(4)
         binding, manifest, audit, _ = self.actor(schema=2)
-        report.update(schema=gate.RECIPE_SCHEMA, recipe=gate.checkpoint_recipe(manifest), live_state_sha256="c" * 64,
+        report.update(schema=gate.RECIPE_SCHEMA, recipe=gate.checkpoint_recipe(manifest), deployment_state_sha256="c" * 64,
                       trainable_parameter_counts={"sign": 9, "scale": 9, "activation": 0, "fusion": 0})
         report["evidence"].update(binding)
         for key in ("native_cell", "native_capture_manifest"):
