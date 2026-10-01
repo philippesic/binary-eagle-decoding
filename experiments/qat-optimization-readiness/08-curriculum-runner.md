@@ -9,7 +9,7 @@ not only a curriculum configuration helper. Acceptance is CPU fixture proof of
 stage transitions, exact optimizer/model/RNG/cursor resume, all-stage
 zero-update preparation, and fail-closed source/budget/resource admission.
 
-The 13 dedicated CPU tests pass with integration dependencies from commit
+The initial 13 dedicated CPU tests passed with integration dependencies from commit
 `36e53a8` (binary curriculum, learned activations, computation/cache/head, and
 fusion correction). The combined runner/curriculum/optimizer/recurrent QAT suite passes **32 tests**.
 Focused Ruff checks and Python compilation also pass.
@@ -26,14 +26,21 @@ stage switches. The latent values retain their magnitudes; effective scales,
 frozen biases, and the attached FC correction retain their exact values and
 parameter identities. A new activation bank uses the destination precision;
 A1 thresholds initialize at zero, and A4/A8 clip ratios initialize at one.
-Every switch creates a fresh optimizer including activation and correction
+Every switch creates a fresh optimizer including activation, correction, and affine midpoint
 parameters. Global warmup and per-phase exposure counters continue across
 switches. Each teacher round rebuilds the current-student prefix cache and
 owns one attached recurrent autograd graph. Shared hard-sign reuse ends
 before backward; no graph/cache survives an optimizer update.
 
 Preparation performs forward/backward at **every declared stage**, with no
-optimizer calls. It restores the original model, activation values and RNG,
+optimizer calls. Every one of the nine sign/scale parameter pairs must have
+finite, nonzero gradients. A later-only supervised loss must produce positive
+finite gradients in the earlier recurrent state, key cache, and value cache.
+Every declared activation, raw-fusion, and affine-midpoint parameter must have
+a finite attached gradient; raw low-rank V may legitimately have zero gradient
+while U initializes at zero. Declared trainability and exact optimizer ownership
+are checked. Per-layer gradient norms, recurrent norms, optional-family
+counts/norms and resource observations are retained in the smoke report. It restores the original model, activation values and RNG,
 saves checkpoint zero, and publishes a preparation report. CUDA preparation
 also allocates two moment-sized tensors per trainable parameter to expose
 Adam-like memory occupancy without an optimizer update. Resume performs a
@@ -42,7 +49,11 @@ state. STOP/SIGINT/SIGTERM/SIGHUP stop at a round boundary and save progress.
 
 Checkpoint payloads contain canonical six-boundary learned scalars exactly
 once, core binary operands, FC correction state, optimizer, RNG, curriculum,
-model phase and provider cursor. Payload fsync/rename precedes an atomic,
+model phase and provider cursor. Affine midpoints are serialized once through
+a canonical `affine_bank` payload. Child midpoint aliases are excluded from
+core state; independent tiny probes validate bounds, hashes, inventory and
+identity before any model mutation. Precision switches retain the same
+affine bank and midpoint parameter identities, rather than reinitializing μ. Payload fsync/rename precedes an atomic,
 hashed latest pointer. A source-phase boundary checkpoint exists before
 contract mutation; a second checkpoint publishes the switched fresh
 optimizer. Either boundary or a mid-stage checkpoint resumes exactly. Shared
@@ -89,12 +100,13 @@ reconstruction is also required at initialization, each epoch/stage, and
 resume; cached metadata alone cannot authorize CUDA. Provider implementation
 and critical math/runtime hashes are bound in the checkpoint contract.
 
-**New real-source admission remains necessary.** Existing v2 continuous
-readiness and refreshed-capture ancestry receipts authorize A1/A8, not a new
-A4 or learned/fusion curriculum recipe. Do not relabel that old readiness as
-A4. Supply independently audited per-stage readiness through a new provider
-manifest/factory while preserving source ancestry, split, masks, labels,
-precision and native verifier contracts. A changed corpus is a new experiment,
+**New real-source admission remains necessary.** Legacy readiness receipts
+authorize their original A1/A8 recipes. The new readiness-v2 path can admit A4
+only with its own independently validated precision gate, and binds learned,
+fusion and affine recipes explicitly. Do not relabel a legacy receipt as a
+new recipe. Supply independently audited per-stage readiness through the new
+provider manifest/factory while preserving source ancestry, split, masks,
+labels, precision and native verifier contracts. A changed corpus is a new experiment,
 not exact resume. The runner rejects any stage the factory cannot admit.
 
 ## CLI contract and integration
@@ -129,3 +141,34 @@ commits, run the dedicated tests in the integration checkout, record this
 report/checkpoint in `docs/goals/qat-optimization-readiness.md`, and preserve
 preparation-only scope. Future work is new per-stage provider/native admission,
 manual CUDA zero-update preparation, then a user-owned optimizer budget decision.
+
+
+## Strong smoke and affine followup
+
+The tightened followup passes **20 dedicated CPU tests**, plus **40 combined
+runner/recurrent-QAT/continuous-QAT tests**, against the integrated
+recipe APIs at `50e74db`, including learned quantizers, raw rank-one FC correction
+with output bias, and affine midpoints on all nine projections. Resumes after
+updates 1/2/3/4 cover both phase boundaries and midphase states; final model,
+optimizer moments, RNG, and exposure inventory match uninterrupted training
+exactly. Midpoint bounds/hash failures are rejected before model mutation, and
+phase switches preserve midpoint values and parameter identities.
+
+Synthetic tests now use an eight-wide native attention topology with seed-zero
+weights/features. A four-wide fixture produced genuine exact binary
+cancellation at a scale gradient, which the stronger gate correctly rejected.
+The fixture was expanded; the gate was not relaxed. Zero scales, a deliberately
+zeroed scale-gradient path, a missing later K gradient, and a frozen declared
+midpoint all fail admission and leave `smoke_passed=False`. Preparation still
+has zero optimizer calls and restores initial values/RNG. Optional raw-V zero
+gradients remain allowed when attached and finite.
+
+Runner report/API additions: `_smoke_round(batch)` returns the strong stage
+report; `_forward(batch, *, adapter=None)` accepts the observation wrapper;
+`smoke_current(batch=None)` returns and publishes the resumed-stage report.
+The report includes `all_nine_binary_gradients_passed`, `later_state_kv_passed`,
+`binary_gradients`, `optional_gradients`, the three later recurrent norms, and
+resource observations. The orchestrator owns the fresh CUDA receipt gate in
+`run()`; constructor/preparation remain bootstrappable and the followup does
+not change the optimizer loop. No real model/data, CUDA, remote host, native
+run or sealed final was used in this followup.
