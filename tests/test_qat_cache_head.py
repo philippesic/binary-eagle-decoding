@@ -209,7 +209,7 @@ class QATCacheHeadTests(unittest.TestCase):
         handle = adapter.drafter.lm_head.register_forward_pre_hook(
             lambda _, args: heads.append(tuple(args[0].shape)))
         try:
-            logits = forward_torch_round(b, observer, 7)
+            logits = forward_torch_round(b, observer, 7, optimize_cache=True, optimize_head=True)
         finally:
             handle.remove()
         self.assertEqual(steps, [(8, 7, False), (9, 8, False), (10, 9, False)])
@@ -225,7 +225,7 @@ class QATCacheHeadTests(unittest.TestCase):
                 return DraftStep(torch.empty(0), feature, (*cache, position))
             def decode_step(self, token, feature, position, cache):
                 return DraftStep(torch.arange(7).float(), feature, (*cache, position))
-        result = forward_torch_round(batch(), Generic(), 7)
+        result = forward_torch_round(batch(), Generic(), 7, optimize_cache=True, optimize_head=True)
         self.assertTrue(torch.equal(result[:3], torch.arange(7).float().expand(3, -1)))
         adapter = NativeStepAdapter(drafter(), attention_mode="native_forward_f32_backward",
                                     native_attention_oracle=lambda *_: torch.zeros(2, 8))
@@ -235,7 +235,7 @@ class QATCacheHeadTests(unittest.TestCase):
              patch.object(adapter, "decode_head", side_effect=AssertionError("fast head")), \
              patch("w1a1_eagle.native_step.native_forward_f32_backward", return_value=torch.zeros(2, 8)), \
              torch.no_grad():
-            self.assertEqual(forward_torch_round(batch(), adapter, 7).shape, (4, 7))
+            self.assertEqual(forward_torch_round(batch(), adapter, 7, optimize_cache=True, optimize_head=True).shape, (4, 7))
 
     def test_invalid_terminal_has_no_child_and_all_invalid_skips_head(self):
         adapter = NativeStepAdapter(drafter())
@@ -244,7 +244,7 @@ class QATCacheHeadTests(unittest.TestCase):
         from dataclasses import replace
         with patch.object(adapter, "decode_step", side_effect=AssertionError("invalid body")), \
              patch.object(adapter, "decode_head", side_effect=AssertionError("invalid head")):
-            self.assertTrue(torch.equal(forward_torch_round(replace(b, rows=invalid), adapter, 7),
+            self.assertTrue(torch.equal(forward_torch_round(replace(b, rows=invalid), adapter, 7, optimize_cache=True, optimize_head=True),
                                         torch.zeros(1, 7)))
         with self.assertRaisesRegex(ValueError, "terminal"):
             forward_torch_round(replace(b, rows=invalid + b.rows[1:]), adapter, 7)

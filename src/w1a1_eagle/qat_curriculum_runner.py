@@ -699,7 +699,21 @@ class CurriculumRunner:
             self.rng = before_rng
             restore_rng(self.rng, self.device)
 
+    def require_optimization_readiness(self):
+        from .qat_readiness import curriculum_readiness_config, require_measured_cuda_readiness
+
+        config = curriculum_readiness_config(self.qat_template, self.config, self.curriculum)
+        require_measured_cuda_readiness(
+            config,
+            source_sha256=_digest(self.source),
+            runtime_identity=self.runtime,
+            device=self.device,
+            max_cuda_reserved_bytes=self.config.max_cuda_reserved_bytes,
+            min_cuda_free_bytes=self.config.min_cuda_free_bytes,
+        )
+
     def run(self, *, require_smoke=True, max_new_updates=None):
+        self.require_optimization_readiness()
         if require_smoke and not self.smoke_passed:
             raise ValueError("every-stage forward/backward smoke required before optimization")
         if max_new_updates is not None and (

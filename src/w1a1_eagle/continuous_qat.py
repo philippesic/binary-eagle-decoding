@@ -173,6 +173,9 @@ class ContinuousConfig:
             depth_loss_decay=self.depth_loss_decay,
             optimization_readiness=self.optimization_readiness,
             affine_weights=self.affine_weights,
+            optimize_cache=self.optimize_cache,
+            optimize_head=self.optimize_head,
+            context_chunk_size=self.context_chunk_size,
         )
 
 

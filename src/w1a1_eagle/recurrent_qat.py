@@ -99,7 +99,7 @@ def _validate_activation_input(input: Tensor) -> None:
 
 def hard_activation(input: Tensor, bits: ActivationBits) -> tuple[Tensor, Tensor, Tensor]:
     """Return hard dequantized values, per-token scale and saturation mask."""
-    if bits not in (1, 4, 8, 16):
+    if type(bits) is not int or bits not in (1, 4, 8, 16):
         raise ValueError("unsupported activation width")
     _validate_activation_input(input)
     if bits == 16:
@@ -409,6 +409,9 @@ class JointQATConfig:
     depth_loss_decay: float = 1.0
     optimization_readiness: dict | None = None
     affine_weights: object | None = None
+    optimize_cache: bool = False
+    optimize_head: bool = False
+    context_chunk_size: int = 64
 
     def __post_init__(self) -> None:
         if type(self.allow_accelerator) is not bool:
@@ -468,6 +471,10 @@ class JointQATConfig:
                 )
             elif not isinstance(self.fusion_correction, FusionCorrectionConfig):
                 raise ValueError("fusion correction requires a validated recipe")
+        if type(self.optimize_cache) is not bool or type(self.optimize_head) is not bool:
+            raise ValueError("cache/head controls must be boolean")
+        if type(self.context_chunk_size) is not int or self.context_chunk_size < 1:
+            raise ValueError("context chunks must be positive integers")
         if self.affine_weights is not None:
             from .affine_binary import AffineBinaryConfig
 

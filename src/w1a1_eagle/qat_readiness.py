@@ -422,3 +422,11 @@ def require_measured_cuda_readiness(
         max_cuda_reserved_bytes=max_cuda_reserved_bytes,
         min_cuda_free_bytes=min_cuda_free_bytes,
     )
+
+
+def curriculum_readiness_config(qat, runner, curriculum) -> dict:
+    """Bind one complete precision schedule rather than a single isolated stage."""
+    result = _config(qat)
+    result["runner"] = _canonical(_config(runner))
+    result["curriculum"] = _canonical(curriculum.manifest())
+    return result

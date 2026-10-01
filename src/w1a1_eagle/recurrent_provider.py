@@ -9,6 +9,8 @@ implementation and is deliberately not exercised by Phase 1A checks.
 
 from __future__ import annotations
 
+import hashlib
+import json
 import platform
 import resource
 import time
@@ -247,8 +249,12 @@ def audit_provider_round(batch: ProviderRound, provider: JointTrainingProvider) 
 
 
 def forward_torch_round(
-    batch: ProviderRound, adapter: StepAdapter, draft_vocab_size: int, *,
-    optimize_cache: bool = True, optimize_head: bool = True,
+    batch: ProviderRound,
+    adapter: StepAdapter,
+    draft_vocab_size: int,
+    *,
+    optimize_cache: bool = False,
+    optimize_head: bool = False,
     context_chunk_size: int = 64,
 ) -> Tensor:
     """Rebuild context and retain proposal-state/K/V autograd links.
@@ -265,22 +271,27 @@ def forward_torch_round(
     if type(context_chunk_size) is not int or context_chunk_size < 1:
         raise ValueError("context chunk size must be positive")
     build_context = getattr(adapter, "build_context_cache", None)
-    if not (optimize_cache and getattr(adapter, "supports_context_cache", False)
-            and callable(build_context)):
+    if not (
+        optimize_cache
+        and getattr(adapter, "supports_context_cache", False)
+        and callable(build_context)
+    ):
         build_context = None
     context_builder = (
         (lambda tokens, raw: build_context(tokens, raw, chunk_size=context_chunk_size))
-        if build_context is not None else None
+        if build_context is not None
+        else None
     )
     head = getattr(adapter, "decode_head", None)
-    if not (optimize_head and getattr(adapter, "supports_batched_head", False)
-            and callable(head)):
+    if not (optimize_head and getattr(adapter, "supports_batched_head", False) and callable(head)):
         head = None
     decode_step = adapter.decode_step
     if head is not None:
         # Call the public wrapper, not an underlying decode-body method: an
         # ObservedAdapter must still see the attached first state and K/V.
-        decode_step = lambda *args: adapter.decode_step(*args, compute_logits=False)
+        def decode_step(*args):
+            return adapter.decode_step(*args, compute_logits=False)
+
     rebuilt = rebuild_prefix_cache(
         batch.prefix_token_ids,
         batch.raw_target_features,
@@ -291,8 +302,10 @@ def forward_torch_round(
         new_cache=adapter.new_cache,
         build_context_cache=context_builder,
     )
-    if (batch.rows[0].get("input_token_id") != rebuilt.seed_token
-            or batch.rows[0].get("parent_position") != rebuilt.decoder_position):
+    if (
+        batch.rows[0].get("input_token_id") != rebuilt.seed_token
+        or batch.rows[0].get("parent_position") != rebuilt.decoder_position
+    ):
         raise ValueError("proposal seed token/position differs from rebuilt accepted prefix")
     return rollout_captured_prefix(
         batch.rows,
@@ -323,6 +336,22 @@ def train_from_provider(
         validate_budget(config, max_rounds)
     if provider.split != "train" or not provider.allowed_prompt_ids:
         raise ValueError("provider must declare an eligible training split and prompt set")
+    from .qat_readiness import optimization_requires_receipt, require_measured_cuda_readiness
+
+    if optimization_requires_receipt(config):
+        if getattr(provider, "readiness_scope", None) == CALIBRATION_ONLY_SCOPE:
+            raise ValueError("frozen A16 calibration cannot admit a new optimization recipe")
+        if torch.device(config.device).type == "cuda":
+            from .continuous_runtime import training_runtime_identity
+
+            source = hashlib.sha256(
+                json.dumps(provider.source_metadata, sort_keys=True, separators=(",", ":")).encode()
+            ).hexdigest()
+            require_measured_cuda_readiness(
+                config,
+                source_sha256=source,
+                runtime_identity=training_runtime_identity(config.device),
+            )
     drafter, target = provider.load_models()
     linears = install_joint_linears(drafter, target, config, candidate_d=provider.candidate_d)
     adapter = provider.make_step_adapter(drafter)
@@ -347,7 +376,14 @@ def train_from_provider(
         device_batch = replace(
             batch, raw_target_features=batch.raw_target_features.to(config.device)
         )
-        logits = forward_torch_round(device_batch, adapter, provider.draft_vocab_size)
+        logits = forward_torch_round(
+            device_batch,
+            adapter,
+            provider.draft_vocab_size,
+            optimize_cache=config.optimize_cache,
+            optimize_head=config.optimize_head,
+            context_chunk_size=config.context_chunk_size,
+        )
         item = joint_train_step(linears, logits, audit, optimizer, config, teacher=teacher)
         if calibration_metrics:
             _sync_calibration_device(measurement_device)
