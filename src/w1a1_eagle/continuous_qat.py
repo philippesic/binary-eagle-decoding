@@ -84,6 +84,7 @@ class ContinuousConfig:
     optimize_head: bool = False
     context_chunk_size: int = 64
     persistent_sign_diagnostics: bool = False
+    optimization_readiness: dict | None = None
 
     def __post_init__(self):
         if torch.device(self.device).type not in {"cpu", "cuda"}:
@@ -149,6 +150,7 @@ class ContinuousConfig:
             fusion_correction=self.fusion_correction,
             fusion_lr=self.fusion_lr,
             depth_loss_decay=self.depth_loss_decay,
+            optimization_readiness=self.optimization_readiness,
         )
 
 
@@ -846,7 +848,15 @@ class ContinuousTrainer:
             )
         )
 
+    def require_optimization_readiness(self) -> None:
+        from .qat_readiness import optimization_requires_receipt, require_measured_cuda_readiness
+        if optimization_requires_receipt(self.config):
+            require_measured_cuda_readiness(
+                self.config, source_sha256=self.source,
+                runtime_identity=training_runtime_identity(self.config.device))
+
     def run(self, *, require_smoke: bool = True) -> None:
+        self.require_optimization_readiness()
         if require_smoke and not self.smoke_passed:
             raise ValueError("dual resource/math smoke must pass before optimization")
         handlers = {}

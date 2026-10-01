@@ -318,6 +318,7 @@ class JointQATConfig:
     fusion_correction: object | None = None
     fusion_lr: float = 1e-4
     depth_loss_decay: float = 1.0
+    optimization_readiness: dict | None = None
 
     def __post_init__(self) -> None:
         if type(self.allow_accelerator) is not bool:
@@ -361,6 +362,14 @@ class JointQATConfig:
                                    FusionCorrectionConfig(**self.fusion_correction))
             elif not isinstance(self.fusion_correction, FusionCorrectionConfig):
                 raise ValueError("fusion correction requires a validated recipe")
+        if self.optimization_readiness is not None:
+            import re
+            value = self.optimization_readiness
+            if (not isinstance(value, dict) or set(value) != {"path", "sha256"}
+                    or not isinstance(value["path"], str) or not Path(value["path"]).is_absolute()
+                    or not isinstance(value["sha256"], str)
+                    or re.fullmatch("[0-9a-f]{64}", value["sha256"]) is None):
+                raise ValueError("optimization readiness requires an absolute path and SHA256")
         if self.contract.scale_layout != "row" and (
             self.activation_quantization != "fixed" or self.binary_optimization is not None
             or self.fusion_correction is not None or self.a1_computation != "reference"

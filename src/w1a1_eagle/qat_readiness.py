@@ -321,3 +321,37 @@ def validate_optimization_readiness(
         _number(correction.get("cases"), "fusion_correction.cases", integer=True)
         _hash(correction.get("artifact_sha256"), "fusion correction artifact")
     return receipt
+
+
+def native_checkout_commit() -> str:
+    """Read this checkout's actual native revision; no network or accelerator."""
+    import subprocess
+    native_root = Path(__file__).resolve().parents[2] / "third_party" / "llama.cpp"
+    try:
+        result = subprocess.run(["git", "-C", str(native_root), "rev-parse", "HEAD"],
+                                check=True, capture_output=True, text=True)
+    except (OSError, subprocess.CalledProcessError) as error:
+        raise ValueError("cannot bind optimization admission to the actual native checkout") from error
+    return _hash(result.stdout.strip(), "native checkout commit", lengths=(40, 64))
+
+
+def require_measured_cuda_readiness(config, *, source_sha256, runtime_identity,
+                                   device=None, max_cuda_reserved_bytes=None,
+                                   min_cuda_free_bytes=None) -> dict | None:
+    """Launch adapter; called only at an authorized real optimizer boundary."""
+    value = _config(config)
+    device = str(device if device is not None else value.get("device", "cpu"))
+    if device.split(":", 1)[0] == "cpu":
+        return None
+    if value.get("optimization_readiness") is None:
+        raise ValueError("optimized CUDA QAT requires a fresh measured optimization readiness receipt")
+    import torch
+    properties = torch.cuda.get_device_properties(device)
+    hardware = {"device_type": "cuda", "name": properties.name,
+                "compute_capability": [properties.major, properties.minor],
+                "total_memory_bytes": properties.total_memory}
+    return validate_optimization_readiness(
+        config, source_sha256=source_sha256, runtime_identity=runtime_identity,
+        native_commit=native_checkout_commit(), backend="cuda", hardware=hardware,
+        device=device, max_cuda_reserved_bytes=max_cuda_reserved_bytes,
+        min_cuda_free_bytes=min_cuda_free_bytes)

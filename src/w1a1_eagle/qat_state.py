@@ -68,3 +68,53 @@ def validate_resume_state(linears: Mapping, states: Mapping, recipes: Mapping) -
         for key, value in recipes["fusion_correction"]["state"].items():
             if not torch.equal(states["fc"]["fusion_correction." + key].cpu(), value.cpu()):
                 raise ValueError("resume inconsistent correction aliases")
+
+
+def deployment_state_sha256(linears: Mapping) -> str:
+    """Fingerprint the effective native representation in checkpoint row order.
+
+    Latent magnitudes, scale offsets and F32 factor masters are training state;
+    the native drafter uses packed signs, effective F32 scales and rounded F16
+    factors. Source identity separately binds frozen norms/embeddings. This
+    lets an NPZ/native replay prove the same deployed forward without claiming
+    that it reconstructs the training master's backward or optimizer state.
+    """
+    import hashlib
+    import json
+    import numpy as np
+
+    digest = hashlib.sha256()
+
+    def add(name, array):
+        array = np.ascontiguousarray(array)
+        header = json.dumps({"name": name, "shape": list(array.shape),
+                             "dtype": array.dtype.str}, sort_keys=True, separators=(",", ":"))
+        digest.update(header.encode() + b"\n")
+        digest.update(memoryview(array).cast("B"))
+
+    for path in sorted(linears):
+        module = linears[path]
+        digest.update(json.dumps({"path": path, "activation_bits": module.contract.activation_bits,
+                                  "shape": list(module.latent_sign.shape)},
+                                 sort_keys=True, separators=(",", ":")).encode() + b"\n")
+        negative = (module.latent_sign.detach() < 0).cpu().numpy().reshape(-1)
+        add(path + ".packed_signs", np.packbits(negative, bitorder="little"))
+        add(path + ".scale", module.effective_scales().detach().cpu().numpy())
+        if module.frozen_bias is not None:
+            add(path + ".bias", module.frozen_bias.detach().cpu().numpy())
+        affine = getattr(module, "affine_binary", None)
+        if affine is not None:
+            add(path + ".midpoint", affine.midpoint.detach().cpu().numpy())
+    if any(getattr(m, "activation_quantizer", None) is not None for m in linears.values()):
+        from .learned_activation import LearnedActivationBank
+        parameters = LearnedActivationBank.from_attached(linears).native_parameters()
+        digest.update(json.dumps(parameters, sort_keys=True, separators=(",", ":"),
+                                 allow_nan=False).encode() + b"\n")
+    correction = getattr(linears["fc"], "fusion_correction", None)
+    if correction is not None:
+        descriptor, tensors = correction.native_payload()
+        digest.update(json.dumps(descriptor, sort_keys=True, separators=(",", ":"),
+                                 allow_nan=False).encode() + b"\n")
+        for name, tensor in sorted(tensors.items()):
+            add(name, tensor.detach().cpu().numpy())
+    return digest.hexdigest()
