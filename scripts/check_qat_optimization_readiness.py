@@ -508,7 +508,9 @@ def measure_lane(api, trainer, lane, rounds, flags):
     )
 
 
-def validate_native_evidence(evidence, base, binding, state_hashes, allowed_prompts):
+def validate_native_evidence(
+    evidence, base, binding, state_hashes, allowed_prompts, *, expected_lanes=("A8", "A1")
+):
     """Derive flags from measured independently hashed artifacts, not claims."""
     if (
         evidence.get("schema") != NATIVE_SCHEMA
@@ -521,8 +523,8 @@ def validate_native_evidence(evidence, base, binding, state_hashes, allowed_prom
     for name in BINDINGS:
         if evidence.get(name) != binding[name]:
             raise ValueError("native evidence binding differs: " + name)
-    if set(evidence.get("lanes", {})) != {"A8", "A1"}:
-        raise ValueError("native evidence needs both independent lanes")
+    if set(evidence.get("lanes", {})) != set(expected_lanes):
+        raise ValueError("native evidence lane inventory differs")
     decisions, learned, corrections, affine_cases = [], [], [], []
     artifact_hashes = {"learned_quantizers": [], "fusion_correction": [], "affine_weights": []}
     learned_required = binding["recipe"].get("activation_quantization") == "learned"
@@ -544,10 +546,14 @@ def validate_native_evidence(evidence, base, binding, state_hashes, allowed_prom
                     raise ValueError("native evidence is missing actual " + kind + " measurements")
                 continue
             measurement = checked_artifact(lane[kind], base)
+            synthetic = (
+                kind != "native_decisions"
+                and measurement.get("input_scope") == "synthetic_operator"
+            )
             if (
                 measurement.get("schema") != MEASUREMENT_SCHEMA
                 or measurement.get("kind") != kind
-                or measurement.get("split") != "train"
+                or measurement.get("split") != ("synthetic_operator" if synthetic else "train")
                 or measurement.get("activation_bits") != int(lane_name[1:])
                 or measurement.get("deployment_state_sha256") != state_hashes[lane_name]
             ):
@@ -571,8 +577,17 @@ def validate_native_evidence(evidence, base, binding, state_hashes, allowed_prom
                         "native affine descriptor must cover every selected projection base"
                     )
             for case in cases:
-                if (
-                    not isinstance(case, dict)
+                if not isinstance(case, dict):
+                    raise ValueError("native case must be a measured object")
+                if synthetic:
+                    if case.get("input_scope") != "synthetic_operator" or any(
+                        k in case for k in ("prompt_id", "capture_id", "round_index")
+                    ):
+                        raise ValueError(
+                            "synthetic operator case must not fabricate train ancestry"
+                        )
+                elif (
+                    case.get("input_scope", "train") != "train"
                     or case.get("prompt_id") not in allowed_prompts
                     or type(case.get("round_index")) is not int
                     or case["round_index"] < 0
@@ -741,7 +756,7 @@ def _aggregate_memory(records):
     }
 
 
-def preflight_native(evidence, spec, base):
+def preflight_native(evidence, spec, base, *, expected_lanes=("A8", "A1")):
     """Reject missing/malformed native measurements before model/CUDA work."""
     if (
         evidence.get("schema") != NATIVE_SCHEMA
@@ -751,7 +766,7 @@ def preflight_native(evidence, spec, base):
         or evidence.get("fixture_only") is not False
         or type(evidence.get("optimizer_updates")) is not int
         or evidence["optimizer_updates"] != 0
-        or set(evidence.get("lanes", {})) != {"A8", "A1"}
+        or set(evidence.get("lanes", {})) != set(expected_lanes)
     ):
         raise ValueError(
             "independent native evidence/expected published revision is missing or mismatched"
