@@ -4,7 +4,13 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-**Active goal:** [QAT optimization readiness](goals/qat-optimization-readiness.md). Implementing the five requested optimization areas plus the human-authorized tiny fusion correction. CPU/native correctness and exact-resume tests underway; real GPU readiness is not yet established. Preparation only, zero real-data optimizer updates; GPU work explicitly PAUSED by the human; supervisor07 stopped and GPU released at2026-10-01 23:15UTC. Both host pause flags and the preparation monitor are PAUSED; CPU work may continue.
+**Active goal:** [QAT optimization readiness](goals/qat-optimization-readiness.md).
+All five requested controls plus raw fusion correction and affine binary weights
+are implemented. Final CPU suite:952tests/fourskips; native CPU packing/operator/
+encoder checks pass. Actual CUDA compilation, full-model backward, native decisions
+and memory/timing remain unverified. [Integration report](../experiments/qat-optimization-readiness/11-integration.md).
+Both GPUs remain explicitly PAUSED; zero real-data optimizer updates. The goal
+is open pending a new human GPU resume and measured readiness gates.
 
 **Existing corpus preparation pause:** Verified **2026-10-01 23:15:28 UTC** (4:15 p.m. PDT): supervisor07 interrupted/exit0,owned groups1204/1205 absent,no project processes or GPU compute apps. Retained327completed manifests /10,000train /224of1,002dev,zeroQATsteps; preparation remains incomplete. Data/partials/stop-before-QAT boundary preserved. No auto-resume until new human resume instruction.
 **Existing preparation state:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). **Preparation-only RTX5080 run healthy; QAT optimizer updates disabled.** User endpoint is complete data/QAT prep, then stop. At **2026-10-01 20:44:55 UTC** (1:44 p.m. PDT), supervisor07 passed post-disconnect CPU health and live cmdline includes --prepare-only; server1203/supervisor1204/child1205 verified. Retained327manifests /10,000train /224dev,zerooptimizer; re-audit ordinal1/353 is not lost data. Same capture/audit/readiness/coverage/paired CUDA smoke and initial zero-update save precede automatic exit before optimizer loop. Existing15min monitorACTIVE with prep-only prompt; budget1of2 unchanged. Only launcher stopping control changed; math/native/runtime/config/data/precision/nullcaps and finals remain frozen. RTX2080Ti paused. See latest scope checkpoint.

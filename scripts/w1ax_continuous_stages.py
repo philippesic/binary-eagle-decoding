@@ -697,8 +697,11 @@ def native_capture(
     if activation_bits in {1, 4, 8}:
         spec["required_markers"] = [
             "EAGLE3 W1A1 active groups: fusion,attention,ffn,head (9 tensors)",
-            {8: "CUDA packed W1A8 INT8 dispatch", 4: "CUDA packed W1A4 BITSERIAL dispatch",
-             1: "CUDA packed W1A1 XOR/POPCOUNT dispatch"}[activation_bits],
+            {
+                8: "CUDA packed W1A8 INT8 dispatch",
+                4: "CUDA packed W1A4 BITSERIAL dispatch",
+                1: "CUDA packed W1A1 XOR/POPCOUNT dispatch",
+            }[activation_bits],
         ]
     with native_cancellation() as guard:
         args.cancellation_guard = guard
@@ -731,7 +734,7 @@ def validate_readiness(record: dict, *, activation_bits: int, common_hashes: dic
     inventory = report.get("precisions", {})
     if modern and (not inventory or set(inventory) - {"1", "4", "8"}):
         raise ValueError("recipe readiness precision inventory differs")
-    for bits in ([int(key) for key in sorted(inventory)] if modern else (8, 1)):
+    for bits in [int(key) for key in sorted(inventory)] if modern else (8, 1):
         gate_path = checked_record(report["precisions"][str(bits)])
         gate = json.loads(gate_path.read_text())
         if modern and gate.get("schema") != "w1ax_continuous_precision_gate_v2":
@@ -1379,7 +1382,9 @@ def make_refresh_provider(
             "model_snapshot_manifest",
         )
     }
-    permission = validate_readiness(file_record(readiness), activation_bits=manifest["activation_bits"], common_hashes=common)
+    permission = validate_readiness(
+        file_record(readiness), activation_bits=manifest["activation_bits"], common_hashes=common
+    )
     if receipt.get("stages_config") != file_record(stages_config):
         raise ValueError("refresh receipt came from different typed stage sources")
     if sha256(capture) not in permission["teacher_capture_manifest_sha256"]:
@@ -1404,13 +1409,20 @@ def make_refresh_provider(
         spec = provider_manifest(sources, capture, readiness, staged)
         spec["captured_drafter"] = binding
         write_json(staged, spec)
-        for bits in ([int(key) for key in sorted(permission["precisions"])]
-                     if permission["schema"] == RECIPE_READINESS_SCHEMA else (8, 1)):
+        for bits in (
+            [int(key) for key in sorted(permission["precisions"])]
+            if permission["schema"] == RECIPE_READINESS_SCHEMA
+            else (8, 1)
+        ):
             if permission["schema"] == RECIPE_READINESS_SCHEMA:
                 from check_continuous_w1ax_readiness import checkpoint_joint_config
+
                 proof = json.loads(checked_record(permission["precisions"][str(bits)]).read_text())
-                qat = checkpoint_joint_config(checked_record(proof["evidence"]["checkpoint_manifest"]),
-                                               bits, common["base_draft_gguf"])
+                qat = checkpoint_joint_config(
+                    checked_record(proof["evidence"]["checkpoint_manifest"]),
+                    bits,
+                    common["base_draft_gguf"],
+                )
             else:
                 qat = JointQATConfig(W1AxContract(bits, "row"))
             NativeCaptureProvider(qat, staged)

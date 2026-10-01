@@ -200,3 +200,29 @@ commits are integrated on the published branch. Root must finish review/full
 CPU rerun, integrate/pushmain, preserve unmerged worker outputs and clean only
 verified integrated worktrees. Then checkpoint pending actual CUDA/native
 decision/memory/timing gates without marking the goal complete.
+
+
+## Final CPU implementation milestone
+
+All workers completed and root integrated their owned changes on
+feature/qat-integration through e050d74, followed by final source binding and
+formatting. Native gitlink8025a07773b7828bdeb4f3e0b834c8b54cb65c66 is already
+published on the user's fork feature/learned-w1ax. Main integration/push follows
+the final CPU rerun; no native gitlink points at an unpublished commit.
+
+Full suite952tests/fourskips/104.553s passed on AppleM3Max with CPU-only
+Torch2.14.0,Python3.11.15,NumPy2.4.6. Final formatting/source-inventory rerun passed952tests/fourskips/104.517s;
+Ruff and whitespace checks pass. Outcomes are recorded in report11 and ignored runs/qat-optimization-readiness.
+Native CPU220operators,57exactbytepairs,36projections,114loaders,59encodergraphs,
+218auditedCPUarithnodes pass. Native actual JSON is correctly rejected as CUDA
+proof. Strong every-stage curriculum smoke, real-evidence collector and paired/
+complete-schedule receipt producers now bind the entire deployable recipe.
+Report11 supersedes interim worker test/smoke counts; no performance gain claimed.
+
+Remaining: actual CUDA compile/operator/exact-pack/nonzero-option/native-decision
+and full-shape backward/memory/timing gates, with fresh eligible train ancestry
+and every enabled stage. Both GPUs remain paused by the human; no queries or
+remote actions occurred. Existing preparation remains incomplete at10,000train/
+224of1,002dev/327manifests/zerooptimizerupdates. The scheduling question is
+superseded; wait for NEW human resume, assign one operator, then follow runbook.
+Goal remains active and incomplete; GPU-resource pause is not a whole-goal pause.

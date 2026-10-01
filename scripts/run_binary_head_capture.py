@@ -122,9 +122,11 @@ def write(path: Path, value):
 
 
 def validate_inputs(args, prompts: list[dict], variants: dict) -> None:
-    if (getattr(args, "activation_bits", 16) != 16 or getattr(args, "label_only", False)):
-        raise ValueError("new arithmetic/label-only capture uses the typed continuous stage API; "
-                         "legacy frozen capture CLI cannot change its contract")
+    if getattr(args, "activation_bits", 16) != 16 or getattr(args, "label_only", False):
+        raise ValueError(
+            "new arithmetic/label-only capture uses the typed continuous stage API; "
+            "legacy frozen capture CLI cannot change its contract"
+        )
     if not 1 <= args.tokens <= 128:
         raise ValueError("capture output token cap must be 1..128")
     if args.mode != "diagnostic" and args.tokens != 128:
@@ -345,10 +347,10 @@ def audit_recurrent_files(
         raise ValueError("unclaimed recurrent capture rows")
 
 
-
 def verify_mapped_runtime(pid: int, runtime: dict) -> dict:
-    expected = {str(Path(record["path"]).resolve()): record["sha256"]
-                for record in runtime["libraries"]}
+    expected = {
+        str(Path(record["path"]).resolve()): record["sha256"] for record in runtime["libraries"]
+    }
     maps = Path(f"/proc/{pid}/maps").read_text()
     loaded = set()
     for line in maps.splitlines():
@@ -367,8 +369,11 @@ def verify_mapped_runtime(pid: int, runtime: dict) -> dict:
     for path in loaded:
         if path not in expected or sha256(Path(path)) != expected[path]:
             raise ValueError("native server mapped an unexpected or changed llama/ggml library")
-    return {"source": f"/proc/{pid}/maps", "mapped_libraries":
-            [{"path": path, "sha256": expected[path]} for path in sorted(loaded)]}
+    return {
+        "source": f"/proc/{pid}/maps",
+        "mapped_libraries": [{"path": path, "sha256": expected[path]} for path in sorted(loaded)],
+    }
+
 
 def run_cell(args, name, spec, prompts, forced=None):
     if args.mode == "recurrent-train" and (name != "d_d" or forced is not None):
@@ -432,7 +437,8 @@ def run_cell(args, name, spec, prompts, forced=None):
         "spec": spec,
         "command": cmd,
         "env": {
-            k: v for k, v in env.items()
+            k: v
+            for k, v in env.items()
             if k.startswith(("GGML_", "EAGLE_", "W1AX_", "CUDA_")) or k == "LD_LIBRARY_PATH"
         },
         "binary_sha256": sha256(args.binary),
@@ -459,8 +465,12 @@ def run_cell(args, name, spec, prompts, forced=None):
         try:
             with critical():
                 proc = subprocess.Popen(
-                    cmd, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT,
-                    start_new_session=True
+                    cmd,
+                    cwd=ROOT,
+                    env=env,
+                    stdout=log,
+                    stderr=subprocess.STDOUT,
+                    start_new_session=True,
                 )
                 manifest["server_pid"] = proc.pid
                 manifest["server_pgid"] = os.getpgid(proc.pid)
@@ -582,13 +592,15 @@ def run_cell(args, name, spec, prompts, forced=None):
                 if progress_file is not None:
                     progress_path = Path(progress_file)
                     status = json.loads(progress_path.read_text())
-                    status.update(heartbeat_unix=time.time(),
-                                  native_capture_prompt=index + 1,
-                                  native_capture_prompts=len(prompts),
-                                  native_capture_prompt_id=prompt["id"],
-                                  native_server_pid=proc.pid,
-                                  native_server_pgid=manifest["server_pgid"],
-                                  disk_free_bytes=shutil.disk_usage(args.output).free)
+                    status.update(
+                        heartbeat_unix=time.time(),
+                        native_capture_prompt=index + 1,
+                        native_capture_prompts=len(prompts),
+                        native_capture_prompt_id=prompt["id"],
+                        native_server_pid=proc.pid,
+                        native_server_pgid=manifest["server_pgid"],
+                        disk_free_bytes=shutil.disk_usage(args.output).free,
+                    )
                     temporary = progress_path.with_name(progress_path.name + ".native.tmp")
                     write(temporary, status)
                     os.replace(temporary, progress_path)
@@ -604,8 +616,9 @@ def run_cell(args, name, spec, prompts, forced=None):
                 else:
                     manifest["server_stop"]["process_group_gone"] = False
                 write(cell / "manifest.json", manifest)
-    if (not manifest["server_stop"].get("stopped")
-            or not manifest["server_stop"].get("process_group_gone")):
+    if not manifest["server_stop"].get("stopped") or not manifest["server_stop"].get(
+        "process_group_gone"
+    ):
         raise RuntimeError("server process group did not stop")
     for marker in spec.get("required_markers", []):
         if marker not in (cell / "server.log").read_text(errors="replace"):
@@ -774,8 +787,11 @@ def main():
     parser.add_argument("--d2t", type=Path)
     parser.add_argument("--target-vocab-size", type=int)
     parser.add_argument("--activation-bits", type=int, choices=(1, 4, 8, 16), default=16)
-    parser.add_argument("--label-only", action="store_true",
-                        help="native hard-CE labels without target logit payloads")
+    parser.add_argument(
+        "--label-only",
+        action="store_true",
+        help="native hard-CE labels without target logit payloads",
+    )
     parser.add_argument("--tokens", type=int, default=128)
     parser.add_argument("--target-logits-limit", type=int, default=DEFAULT_TARGET_LOGITS_LIMIT)
     parser.add_argument("--target-features-limit", type=int, default=DEFAULT_TARGET_FEATURES_LIMIT)

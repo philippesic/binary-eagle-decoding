@@ -77,7 +77,7 @@ def rebuild_prefix_cache(
             cache = build_context_cache(
                 prefix_token_ids[1 : parent_position + 1], raw_target_features[:parent_position]
             )
-        for position in (range(parent_position) if build_context_cache is None else ()):
+        for position in range(parent_position) if build_context_cache is None else ():
             feature = encode_feature(raw_target_features[position])
             if (
                 feature.device != raw_target_features.device

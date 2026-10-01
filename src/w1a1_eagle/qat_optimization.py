@@ -38,8 +38,16 @@ class BinaryOptimizationConfig:
     scale_max_grad_norm: float = 1.0
 
     def __post_init__(self):
-        for name in ("latent_magnitude", "sign_lr", "scale_lr", "eps", "scale_floor",
-                     "max_grad_norm", "sign_max_grad_norm", "scale_max_grad_norm"):
+        for name in (
+            "latent_magnitude",
+            "sign_lr",
+            "scale_lr",
+            "eps",
+            "scale_floor",
+            "max_grad_norm",
+            "sign_max_grad_norm",
+            "scale_max_grad_norm",
+        ):
             value = getattr(self, name)
             if isinstance(value, bool) or not math.isfinite(value) or value <= 0:
                 raise ValueError(f"{name} must be finite and positive")
@@ -47,10 +55,15 @@ class BinaryOptimizationConfig:
             raise ValueError("latent initialization must stay in inclusive STE interval")
         if self.optimizer not in ("adamw", "sgd"):
             raise ValueError("optimizer must be adamw or sgd")
-        if len(self.betas) != 2 or any(isinstance(x, bool) or not math.isfinite(x) or
-                                       not 0 <= x < 1 for x in self.betas):
+        if len(self.betas) != 2 or any(
+            isinstance(x, bool) or not math.isfinite(x) or not 0 <= x < 1 for x in self.betas
+        ):
             raise ValueError("Adam betas must be finite in [0,1)")
-        if isinstance(self.momentum, bool) or not math.isfinite(self.momentum) or not 0 <= self.momentum < 1:
+        if (
+            isinstance(self.momentum, bool)
+            or not math.isfinite(self.momentum)
+            or not 0 <= self.momentum < 1
+        ):
             raise ValueError("SGD momentum must be finite in [0,1)")
         if self.sign_gradient_rule not in ("baseline", "weight_unit"):
             raise ValueError("unknown sign gradient rule")
@@ -78,7 +91,11 @@ def binary_parameter_families(linears: Mapping) -> tuple[list, list]:
             raise ValueError("binary parameters must be trainable with matrix signs")
         if scale.shape != (sign.shape[0],) or module.contract.scale_layout != "row":
             raise ValueError("optimization recipes currently support row scales only")
-        if sign.device != scale.device or not sign.is_floating_point() or not scale.is_floating_point():
+        if (
+            sign.device != scale.device
+            or not sign.is_floating_point()
+            or not scale.is_floating_point()
+        ):
             raise ValueError("binary parameters must share a device and be floating point")
         signs.append(sign)
         scales.append(scale)
@@ -89,24 +106,33 @@ def binary_parameter_families(linears: Mapping) -> tuple[list, list]:
 
 def binary_layout(linears: Mapping) -> list[dict]:
     binary_parameter_families(linears)
-    return [{"name": name, "sign_shape": list(linears[name].latent_sign.shape),
-             "scale_shape": list(linears[name].scale_offset.shape),
-             "activation_bits": linears[name].contract.activation_bits,
-             "scale_layout": linears[name].contract.scale_layout}
-            for name in sorted(linears)]
+    return [
+        {
+            "name": name,
+            "sign_shape": list(linears[name].latent_sign.shape),
+            "scale_shape": list(linears[name].scale_offset.shape),
+            "activation_bits": linears[name].contract.activation_bits,
+            "scale_layout": linears[name].contract.scale_layout,
+        }
+        for name in sorted(linears)
+    ]
 
 
 def _extra_parameters(parameters) -> list:
     result = list(parameters)
-    if any(not isinstance(p, torch.nn.Parameter) or not p.requires_grad or not p.is_floating_point() for p in result):
+    if any(
+        not isinstance(p, torch.nn.Parameter) or not p.requires_grad or not p.is_floating_point()
+        for p in result
+    ):
         raise ValueError("additional optimizer parameters must be trainable floating parameters")
     if len({id(p) for p in result}) != len(result):
         raise ValueError("aliased additional optimizer parameters")
     return result
 
 
-def validate_optimizer_ownership(linears: Mapping, optimizer: torch.optim.Optimizer,
-                                 *, additional_parameters=()) -> None:
+def validate_optimizer_ownership(
+    linears: Mapping, optimizer: torch.optim.Optimizer, *, additional_parameters=()
+) -> None:
     signs, scales = binary_parameter_families(linears)
     extras = _extra_parameters(additional_parameters)
     expected = signs + scales + extras
@@ -139,35 +165,50 @@ def initialize_latents_(linears: Mapping, config: BinaryOptimizationConfig) -> N
         sign.copy_(torch.where(sign < 0, -config.latent_magnitude, config.latent_magnitude))
 
 
-def make_binary_optimizer(linears: Mapping, config: BinaryOptimizationConfig,
-                          *, extra_parameters=(), extra_lr: float | None = None) -> torch.optim.Optimizer:
+def make_binary_optimizer(
+    linears: Mapping,
+    config: BinaryOptimizationConfig,
+    *,
+    extra_parameters=(),
+    extra_lr: float | None = None,
+) -> torch.optim.Optimizer:
     signs, scales = binary_parameter_families(linears)
     extras = _extra_parameters(extra_parameters)
     if len({id(p) for p in signs + scales + extras}) != len(signs + scales + extras):
         raise ValueError("additional optimizer parameters alias binary parameters")
     if extras:
-        if extra_lr is None or isinstance(extra_lr, bool) or not math.isfinite(extra_lr) or extra_lr <= 0:
+        if (
+            extra_lr is None
+            or isinstance(extra_lr, bool)
+            or not math.isfinite(extra_lr)
+            or extra_lr <= 0
+        ):
             raise ValueError("additional optimizer parameters require explicit finite positive LR")
     elif extra_lr is not None:
         raise ValueError("extra LR requires additional optimizer parameters")
-    groups = [{"params": signs, "lr": config.sign_lr, "family": "sign"},
-              {"params": scales, "lr": config.scale_lr, "family": "scale"}]
+    groups = [
+        {"params": signs, "lr": config.sign_lr, "family": "sign"},
+        {"params": scales, "lr": config.scale_lr, "family": "scale"},
+    ]
     if extras:
         groups.append({"params": extras, "lr": extra_lr, "family": "additional"})
     if config.optimizer == "adamw":
-        optimizer = torch.optim.AdamW(groups, betas=config.betas, eps=config.eps,
-                                      weight_decay=0, foreach=False)
+        optimizer = torch.optim.AdamW(
+            groups, betas=config.betas, eps=config.eps, weight_decay=0, foreach=False
+        )
     else:
-        optimizer = torch.optim.SGD(groups, momentum=config.momentum, weight_decay=0,
-                                    foreach=False)
+        optimizer = torch.optim.SGD(groups, momentum=config.momentum, weight_decay=0, foreach=False)
     optimizer._binary_recipe = config.manifest()
-    optimizer._binary_extra_layout = [{"shape": list(p.shape), "dtype": str(p.dtype)} for p in extras]
+    optimizer._binary_extra_layout = [
+        {"shape": list(p.shape), "dtype": str(p.dtype)} for p in extras
+    ]
     optimizer._binary_extra_lr = extra_lr
     return optimizer
 
 
-def transform_binary_gradients_(linears: Mapping, config: BinaryOptimizationConfig,
-                                *, additional_parameters=()) -> dict:
+def transform_binary_gradients_(
+    linears: Mapping, config: BinaryOptimizationConfig, *, additional_parameters=()
+) -> dict:
     """Validate, transform, then clip gradients; retain inclusive clipped STE.
 
     ``weight_unit`` removes the positive row scale from the sign gradient,
@@ -183,37 +224,55 @@ def transform_binary_gradients_(linears: Mapping, config: BinaryOptimizationConf
     effective = [module.effective_scales().detach() for module in modules]
     if any(not bool(torch.isfinite(p).all()) for p in signs + scales + effective + extras):
         raise ValueError("nonfinite binary parameters or effective scales")
-    if any(p.grad is not None and (p.grad.is_sparse or not bool(torch.isfinite(p.grad).all()))
-           for p in signs + scales + extras):
+    if any(
+        p.grad is not None and (p.grad.is_sparse or not bool(torch.isfinite(p.grad).all()))
+        for p in signs + scales + extras
+    ):
         raise ValueError("binary gradients must be finite dense tensors")
     sign_before = _grad_norm(signs)
     scale_before = _grad_norm(scales)
     with torch.no_grad():
         for sign, scale, alpha in zip(signs, scales, effective):
             if sign.grad is not None and config.sign_gradient_rule == "weight_unit":
-                multiplier = torch.where(alpha > 0, alpha.clamp_min(config.scale_floor).reciprocal(), 0)
+                multiplier = torch.where(
+                    alpha > 0, alpha.clamp_min(config.scale_floor).reciprocal(), 0
+                )
                 sign.grad.mul_(multiplier[:, None])
             if scale.grad is not None and config.scale_gradient_rule == "fan_in_rsqrt":
                 scale.grad.mul_(1 / math.sqrt(sign.shape[1]))
-    if any(p.grad is not None and not bool(torch.isfinite(p.grad).all()) for p in signs + scales + extras):
+    if any(
+        p.grad is not None and not bool(torch.isfinite(p.grad).all())
+        for p in signs + scales + extras
+    ):
         raise ValueError("gradient transform overflow")
     sign_transformed, scale_transformed = _grad_norm(signs), _grad_norm(scales)
     extra_norm = _grad_norm(extras)
     if config.clip_policy == "joint":
-        norm = float(torch.nn.utils.clip_grad_norm_(signs + scales + extras, config.max_grad_norm,
-                                                    error_if_nonfinite=True))
+        norm = float(
+            torch.nn.utils.clip_grad_norm_(
+                signs + scales + extras, config.max_grad_norm, error_if_nonfinite=True
+            )
+        )
         clipped = norm > config.max_grad_norm
     else:
         torch.nn.utils.clip_grad_norm_(signs, config.sign_max_grad_norm, error_if_nonfinite=True)
         torch.nn.utils.clip_grad_norm_(scales, config.scale_max_grad_norm, error_if_nonfinite=True)
         torch.nn.utils.clip_grad_norm_(extras, config.max_grad_norm, error_if_nonfinite=True)
         norm = math.hypot(sign_transformed, scale_transformed, extra_norm)
-        clipped = (sign_transformed > config.sign_max_grad_norm or scale_transformed > config.scale_max_grad_norm
-                   or extra_norm > config.max_grad_norm)
-    return {"gradient_norm": norm, "sign_gradient_norm": sign_before,
-            "scale_gradient_norm": scale_before, "transformed_sign_gradient_norm": sign_transformed,
-            "transformed_scale_gradient_norm": scale_transformed, "additional_gradient_norm": extra_norm,
-            "clipped_gradient": clipped}
+        clipped = (
+            sign_transformed > config.sign_max_grad_norm
+            or scale_transformed > config.scale_max_grad_norm
+            or extra_norm > config.max_grad_norm
+        )
+    return {
+        "gradient_norm": norm,
+        "sign_gradient_norm": sign_before,
+        "scale_gradient_norm": scale_before,
+        "transformed_sign_gradient_norm": sign_transformed,
+        "transformed_scale_gradient_norm": scale_transformed,
+        "additional_gradient_norm": extra_norm,
+        "clipped_gradient": clipped,
+    }
 
 
 def _grad_norm(params: list) -> float:
@@ -234,30 +293,49 @@ def project_binary_parameters_(linears: Mapping) -> None:
         module.project_scales_()
 
 
-def optimizer_checkpoint(linears: Mapping, optimizer: torch.optim.Optimizer,
-                         config: BinaryOptimizationConfig, *, contract: dict, additional_parameters=()) -> dict:
+def optimizer_checkpoint(
+    linears: Mapping,
+    optimizer: torch.optim.Optimizer,
+    config: BinaryOptimizationConfig,
+    *,
+    contract: dict,
+    additional_parameters=(),
+) -> dict:
     extras = _extra_parameters(additional_parameters)
     validate_optimizer_ownership(linears, optimizer, additional_parameters=extras)
     if getattr(optimizer, "_binary_recipe", None) != config.manifest():
         raise ValueError("optimizer recipe differs from checkpoint config")
-    return {"schema": "binary_optimizer_v1", "recipe": config.manifest(),
-            "layout": binary_layout(linears), "contract_sha256": digest(contract),
-            "extra_layout": [{"shape": list(p.shape), "dtype": str(p.dtype)} for p in extras],
-            "extra_lr": optimizer._binary_extra_lr,
-            "optimizer": copy.deepcopy(optimizer.state_dict())}
+    return {
+        "schema": "binary_optimizer_v1",
+        "recipe": config.manifest(),
+        "layout": binary_layout(linears),
+        "contract_sha256": digest(contract),
+        "extra_layout": [{"shape": list(p.shape), "dtype": str(p.dtype)} for p in extras],
+        "extra_lr": optimizer._binary_extra_lr,
+        "optimizer": copy.deepcopy(optimizer.state_dict()),
+    }
 
 
-def load_optimizer_checkpoint(linears: Mapping, optimizer: torch.optim.Optimizer,
-                              config: BinaryOptimizationConfig, saved: dict, *, contract: dict,
-                              additional_parameters=()) -> None:
+def load_optimizer_checkpoint(
+    linears: Mapping,
+    optimizer: torch.optim.Optimizer,
+    config: BinaryOptimizationConfig,
+    saved: dict,
+    *,
+    contract: dict,
+    additional_parameters=(),
+) -> None:
     extras = _extra_parameters(additional_parameters)
     validate_optimizer_ownership(linears, optimizer, additional_parameters=extras)
-    if (saved.get("schema") != "binary_optimizer_v1" or saved.get("recipe") != config.manifest()
-            or saved.get("layout") != binary_layout(linears)
-            or saved.get("contract_sha256") != digest(contract)
-            or saved.get("extra_layout") != optimizer._binary_extra_layout
-            or saved.get("extra_lr") != optimizer._binary_extra_lr
-            or getattr(optimizer, "_binary_recipe", None) != config.manifest()):
+    if (
+        saved.get("schema") != "binary_optimizer_v1"
+        or saved.get("recipe") != config.manifest()
+        or saved.get("layout") != binary_layout(linears)
+        or saved.get("contract_sha256") != digest(contract)
+        or saved.get("extra_layout") != optimizer._binary_extra_layout
+        or saved.get("extra_lr") != optimizer._binary_extra_lr
+        or getattr(optimizer, "_binary_recipe", None) != config.manifest()
+    ):
         raise ValueError("resume changes binary optimizer recipe/layout/model/data contract")
     state = saved.get("optimizer")
     if not isinstance(state, dict) or not isinstance(state.get("state"), dict):
@@ -272,8 +350,9 @@ def load_optimizer_checkpoint(linears: Mapping, optimizer: torch.optim.Optimizer
     if len(groups) != len(expected):
         raise ValueError("optimizer checkpoint family inventory differs")
     for group, reference in zip(groups, expected):
-        if set(group) != set(reference) or any(group[k] != reference[k] for k in reference
-                                             if k not in ("lr",)):
+        if set(group) != set(reference) or any(
+            group[k] != reference[k] for k in reference if k not in ("lr",)
+        ):
             raise ValueError("optimizer checkpoint group options differ")
         if not math.isfinite(group["lr"]) or not 0 < group["lr"] <= reference["lr"]:
             raise ValueError("optimizer checkpoint LR outside configured warmup range")
@@ -283,13 +362,21 @@ def load_optimizer_checkpoint(linears: Mapping, optimizer: torch.optim.Optimizer
         raise ValueError("optimizer checkpoint contains unowned state")
     for key, parameter in zip(ids, parameters):
         values = state["state"].get(key, {})
-        required = {"step", "exp_avg", "exp_avg_sq"} if config.optimizer == "adamw" else {"momentum_buffer"}
+        required = (
+            {"step", "exp_avg", "exp_avg_sq"}
+            if config.optimizer == "adamw"
+            else {"momentum_buffer"}
+        )
         if values and set(values) != required:
             raise ValueError("optimizer checkpoint moment inventory differs")
         for field, value in values.items():
-            if not isinstance(value, Tensor) or (field != "step" and value.shape != parameter.shape):
+            if not isinstance(value, Tensor) or (
+                field != "step" and value.shape != parameter.shape
+            ):
                 raise ValueError("optimizer checkpoint moment shape differs")
-            if field == "step" and (value.numel() != 1 or float(value) < 0 or float(value) != int(value)):
+            if field == "step" and (
+                value.numel() != 1 or float(value) < 0 or float(value) != int(value)
+            ):
                 raise ValueError("invalid optimizer checkpoint update counter")
             if field == "exp_avg_sq" and bool((value < 0).any()):
                 raise ValueError("negative optimizer second moment")
@@ -316,9 +403,12 @@ class SignFlipDiagnostics:
         self.masks = {}
         for name in sorted(linears):
             packed = self._signs(linears[name])
-            self.masks[name] = {"initial": packed.copy(), "previous": packed.copy(),
-                                "ever_flipped": np.zeros_like(packed),
-                                "disagreement": np.zeros_like(packed)}
+            self.masks[name] = {
+                "initial": packed.copy(),
+                "previous": packed.copy(),
+                "ever_flipped": np.zeros_like(packed),
+                "disagreement": np.zeros_like(packed),
+            }
 
     @staticmethod
     def _signs(module):
@@ -341,14 +431,24 @@ class SignFlipDiagnostics:
             backs = changed & masks["disagreement"] & ~disagreement
             continuing = disagreement & masks["disagreement"] & ~changed
             masks["ever_flipped"] |= changed
-            for key, value in (("flips", changed), ("backs", backs), ("net", disagreement),
-                               ("unique", masks["ever_flipped"]), ("sustained", continuing)):
+            for key, value in (
+                ("flips", changed),
+                ("backs", backs),
+                ("net", disagreement),
+                ("unique", masks["ever_flipped"]),
+                ("sustained", continuing),
+            ):
                 number = int(np.unpackbits(value, bitorder="little", count=count).sum())
-                if key == "flips": flips += number
-                elif key == "backs": flip_backs += number
-                elif key == "net": net += number
-                elif key == "unique": unique += number
-                else: sustained += number
+                if key == "flips":
+                    flips += number
+                elif key == "backs":
+                    flip_backs += number
+                elif key == "net":
+                    net += number
+                elif key == "unique":
+                    unique += number
+                else:
+                    sustained += number
             masks["previous"] = new
             masks["disagreement"] = disagreement
             total += count
@@ -356,28 +456,50 @@ class SignFlipDiagnostics:
         self.cumulative_flip_backs += flip_backs
         gap = step - self.last_step
         self.last_step, self.observations = step, self.observations + 1
-        return {"sign_flips": flips, "flip_backs": flip_backs, "net_sign_disagreement": net,
-                "unique_flipped_signs": unique, "sustained_disagreement": sustained,
-                "cumulative_sign_flips": self.cumulative_flips,
-                "cumulative_flip_backs": self.cumulative_flip_backs,
-                "sign_count": total, "observation_gap_steps": gap,
-                "diagnostic_observations": self.observations}
+        return {
+            "sign_flips": flips,
+            "flip_backs": flip_backs,
+            "net_sign_disagreement": net,
+            "unique_flipped_signs": unique,
+            "sustained_disagreement": sustained,
+            "cumulative_sign_flips": self.cumulative_flips,
+            "cumulative_flip_backs": self.cumulative_flip_backs,
+            "sign_count": total,
+            "observation_gap_steps": gap,
+            "diagnostic_observations": self.observations,
+        }
 
     def state_dict(self) -> dict:
-        return copy.deepcopy({"schema": "binary_flip_diagnostics_v1", "layout": self.layout,
-                              "contract_sha256": self.contract_sha256, "last_step": self.last_step,
-                              "observations": self.observations, "cumulative_flips": self.cumulative_flips,
-                              "cumulative_flip_backs": self.cumulative_flip_backs, "masks": self.masks})
+        return copy.deepcopy(
+            {
+                "schema": "binary_flip_diagnostics_v1",
+                "layout": self.layout,
+                "contract_sha256": self.contract_sha256,
+                "last_step": self.last_step,
+                "observations": self.observations,
+                "cumulative_flips": self.cumulative_flips,
+                "cumulative_flip_backs": self.cumulative_flip_backs,
+                "masks": self.masks,
+            }
+        )
 
-    def load_state_dict(self, saved: dict, linears: Mapping, *, resumed_step: int | None = None) -> None:
-        if (saved.get("schema") != "binary_flip_diagnostics_v1" or saved.get("layout") != self.layout
-                or saved.get("contract_sha256") != self.contract_sha256
-                or binary_layout(linears) != self.layout):
+    def load_state_dict(
+        self, saved: dict, linears: Mapping, *, resumed_step: int | None = None
+    ) -> None:
+        if (
+            saved.get("schema") != "binary_flip_diagnostics_v1"
+            or saved.get("layout") != self.layout
+            or saved.get("contract_sha256") != self.contract_sha256
+            or binary_layout(linears) != self.layout
+        ):
             raise ValueError("diagnostic resume changes model/data/layout contract")
         for key in ("last_step", "observations", "cumulative_flips", "cumulative_flip_backs"):
             if type(saved.get(key)) is not int or saved[key] < 0:
                 raise ValueError("invalid diagnostic counter")
-        if saved["observations"] > saved["last_step"] or saved["cumulative_flip_backs"] > saved["cumulative_flips"]:
+        if (
+            saved["observations"] > saved["last_step"]
+            or saved["cumulative_flip_backs"] > saved["cumulative_flips"]
+        ):
             raise ValueError("inconsistent diagnostic counters")
         if resumed_step is None:
             resumed_step = saved["last_step"]
@@ -390,11 +512,19 @@ class SignFlipDiagnostics:
             if set(masks[name]) != set(expected):
                 raise ValueError("diagnostic mask families differ")
             for key, value in masks[name].items():
-                if not isinstance(value, np.ndarray) or value.dtype != np.uint8 or value.shape != expected[key].shape:
+                if (
+                    not isinstance(value, np.ndarray)
+                    or value.dtype != np.uint8
+                    or value.shape != expected[key].shape
+                ):
                     raise ValueError("invalid packed diagnostic mask")
-            if resumed_step == saved["last_step"] and not np.array_equal(masks[name]["previous"], self._signs(linears[name])):
+            if resumed_step == saved["last_step"] and not np.array_equal(
+                masks[name]["previous"], self._signs(linears[name])
+            ):
                 raise ValueError("diagnostic checkpoint differs from restored latent signs")
-            if not np.array_equal(masks[name]["disagreement"], masks[name]["initial"] ^ masks[name]["previous"]):
+            if not np.array_equal(
+                masks[name]["disagreement"], masks[name]["initial"] ^ masks[name]["previous"]
+            ):
                 raise ValueError("diagnostic disagreement mask inconsistent")
             if np.any(masks[name]["disagreement"] & ~masks[name]["ever_flipped"]):
                 raise ValueError("diagnostic history cannot explain current disagreement")

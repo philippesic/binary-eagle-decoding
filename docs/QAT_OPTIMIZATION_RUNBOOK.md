@@ -3,8 +3,10 @@
 ## Current boundary
 
 Preparation only. No real-data optimizer updates or sealed-final reads are
-permitted by this goal. The existing frozen preparation job retains RTX5080
-ownership until its supervisor/process groups are terminal and released. Read
+permitted by this goal. Both GPUs are explicitly paused by the human. The previous preparation
+supervisor is stopped, but this does not authorize new GPU work. Require a new
+human resume instruction and explicit sole-operator ownership before any remote
+query, build or execution. Read
 `docs/STATUS.md` and the shared host registry before any remote action. Every SSH
 connection goes through tmux MCP; preserve the existing host tmux job/socket.
 RTX2080Ti remains paused. See `docs/AGENT_OPERATIONS.md`.
@@ -40,7 +42,7 @@ make a test pass.
 
 ## Native and actual CUDA proof
 
-After ownership release, the sole operator creates a separate project worktree
+After human resume and ownership assignment, the sole operator creates a separate project worktree
 under the registry workdir and a unique run directory. Fetch published parent
 and native commits through Git. Build a new CUDA runtime with the actual RTX5080
 architecture and record toolkit, compiler, driver, native/project revision,
