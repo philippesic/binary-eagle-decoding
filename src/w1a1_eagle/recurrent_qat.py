@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from collections.abc import Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -216,6 +217,13 @@ class JointQATConfig:
     scale_lr: float = 1e-5
     max_grad_norm: float = 1.0
     seed: int = 0
+    a1_computation: str = "reference"
+    activation_quantization: str = "fixed"
+    activation_lr: float = 1e-5
+    binary_optimization: object | None = None
+    fusion_correction: object | None = None
+    fusion_lr: float = 1e-4
+    depth_loss_decay: float = 1.0
 
     def __post_init__(self) -> None:
         device = torch.device(self.device)
@@ -228,8 +236,37 @@ class JointQATConfig:
             raise ValueError("group128 reference projection is CPU-only")
         if self.objective not in ("hard_ce", "compact_probability"):
             raise ValueError("unknown joint QAT objective")
-        if self.sign_lr <= 0 or self.scale_lr <= 0 or self.max_grad_norm <= 0:
-            raise ValueError("learning rates and gradient bound must be positive")
+        if any(not math.isfinite(x) or x <= 0 for x in
+               (self.sign_lr, self.scale_lr, self.max_grad_norm,
+                self.activation_lr, self.fusion_lr)):
+            raise ValueError("learning rates and gradient bound must be finite and positive")
+        if self.a1_computation not in ("reference", "single_forward"):
+            raise ValueError("unknown A1 computation implementation")
+        if self.activation_quantization not in ("fixed", "learned"):
+            raise ValueError("unknown activation quantization recipe")
+        if not math.isfinite(self.depth_loss_decay) or not 0 < self.depth_loss_decay <= 1:
+            raise ValueError("depth loss decay must be finite in (0,1]")
+        if self.activation_quantization == "learned" and self.contract.activation_bits == 16:
+            raise ValueError("learned activations support A1/A4/A8 only")
+        if self.binary_optimization is not None:
+            from .qat_optimization import BinaryOptimizationConfig
+            if isinstance(self.binary_optimization, dict):
+                object.__setattr__(self, "binary_optimization",
+                                   BinaryOptimizationConfig(**self.binary_optimization))
+            elif not isinstance(self.binary_optimization, BinaryOptimizationConfig):
+                raise ValueError("binary optimization requires a validated recipe")
+        if self.fusion_correction is not None:
+            from .fusion_correction import FusionCorrectionConfig
+            if isinstance(self.fusion_correction, dict):
+                object.__setattr__(self, "fusion_correction",
+                                   FusionCorrectionConfig(**self.fusion_correction))
+            elif not isinstance(self.fusion_correction, FusionCorrectionConfig):
+                raise ValueError("fusion correction requires a validated recipe")
+        if self.contract.scale_layout != "row" and (
+            self.activation_quantization != "fixed" or self.binary_optimization is not None
+            or self.fusion_correction is not None or self.a1_computation != "reference"
+        ):
+            raise ValueError("optimization options require row W1Ax")
 
 
 def install_joint_linears(
@@ -273,12 +310,26 @@ def install_joint_linears(
         initial_scale = weight.abs().mean(dim=1)
         latent = torch.where(weight < 0, -torch.full_like(weight, 0.5), 0.5)
         bias = None if linear.bias is None else linear.bias.detach().to(torch.float32, device="cpu")
-        replacements[path] = RowBinaryLinear(latent, initial_scale, config.contract, bias=bias).to(
+        replacements[path] = RowBinaryLinear(latent, initial_scale, config.contract, bias=bias,
+                                              a1_computation=config.a1_computation).to(
             config.device
         )
     for path, replacement in replacements.items():
         parent, name, _ = pending[path]
         setattr(parent, name, replacement)
+    if config.binary_optimization is not None:
+        from .qat_optimization import initialize_latents_
+        initialize_latents_(replacements, config.binary_optimization)
+    if config.activation_quantization == "learned":
+        from .learned_activation import LearnedActivationBank
+        bank = LearnedActivationBank(config.contract.activation_bits,
+                                     {name: m.in_features for name, m in replacements.items()})
+        bank.to(config.device)
+        bank.attach(replacements)
+    if config.fusion_correction is not None:
+        from .fusion_correction import install_fusion_correction
+        install_fusion_correction(replacements["fc"], target=target,
+                                  config=config.fusion_correction)
     return replacements
 
 
@@ -299,18 +350,46 @@ def validate_joint_linears(
         raise ValueError("joint linears are not on configured device")
 
 
-def joint_optimizer(
-    linears: Mapping[str, RowBinaryLinear | GroupedBinaryLinear], config: JointQATConfig
-) -> torch.optim.Optimizer:
-    """AdamW with separate sign/scale rates and no latent weight decay."""
+def joint_parameter_families(linears) -> dict[str, list[nn.Parameter]]:
+    """Explicit trainable ownership; shared activation parameters appear once."""
+    families = {"sign": [], "scale": [], "activation": [], "fusion": []}
+    seen = set()
+    for path, module in linears.items():
+        candidates = [("sign", module.latent_sign), ("scale", module.scale_offset)]
+        quantizer = getattr(module, "activation_quantizer", None)
+        correction = getattr(module, "fusion_correction", None)
+        if quantizer is not None:
+            from .learned_activation import LearnedActivationQuantizer
+            if not isinstance(quantizer, LearnedActivationQuantizer):
+                raise ValueError("unknown trainable activation module")
+            candidates.extend(("activation", p) for p in quantizer.parameters())
+        if correction is not None:
+            from .fusion_correction import FusionCorrection
+            if path != "fc" or not isinstance(correction, FusionCorrection):
+                raise ValueError("correction is restricted to feature fusion")
+            candidates.extend(("fusion", p) for p in correction.parameters())
+        for family, parameter in candidates:
+            if parameter.requires_grad and id(parameter) not in seen:
+                families[family].append(parameter)
+                seen.add(id(parameter))
+    return families
+
+
+def joint_optimizer(linears, config: JointQATConfig) -> torch.optim.Optimizer:
     validate_joint_linears(linears, config)
-    return torch.optim.AdamW(
-        [
-            {"params": [m.latent_sign for m in linears.values()], "lr": config.sign_lr},
-            {"params": [m.scale_offset for m in linears.values()], "lr": config.scale_lr},
-        ],
-        weight_decay=0,
-    )
+    families = joint_parameter_families(linears)
+    if config.binary_optimization is not None:
+        from .qat_optimization import make_binary_optimizer
+        optimizer = make_binary_optimizer(linears, config.binary_optimization)
+    else:
+        optimizer = torch.optim.AdamW([
+            {"params": families["sign"], "lr": config.sign_lr, "family": "sign"},
+            {"params": families["scale"], "lr": config.scale_lr, "family": "scale"},
+        ], weight_decay=0, foreach=False)
+    for family, lr in (("activation", config.activation_lr), ("fusion", config.fusion_lr)):
+        if families[family]:
+            optimizer.add_param_group({"params": families[family], "lr": lr, "family": family})
+    return optimizer
 
 
 def compact_probability_loss(
@@ -378,17 +457,23 @@ def joint_train_step(
     validate_joint_linears(linears, config)
     if logits.device != torch.device(config.device):
         raise ValueError("logits are not on configured device")
-    params = [p for m in linears.values() for p in (m.latent_sign, m.scale_offset)]
+    families = joint_parameter_families(linears)
+    params = [p for family in families.values() for p in family]
     owned = [p for group in optimizer.param_groups for p in group["params"]]
     if len(owned) != len(params) or {id(p) for p in owned} != {id(p) for p in params}:
-        raise ValueError("optimizer must own only nine sign and scale pairs")
+        raise ValueError("optimizer must own exactly declared binary/activation/fusion parameters")
     before_signs = [m.latent_sign.detach().clone() < 0 for m in linears.values()]
     before_scales = [m.effective_scales().detach().clone() for m in linears.values()]
     optimizer.zero_grad(set_to_none=True)
     if config.objective == "hard_ce":
         if teacher is not None:
             raise ValueError("hard CE does not take compact teacher")
-        loss = supported_prefix_ce(logits, audit)
+        if config.depth_loss_decay == 1:
+            loss = supported_prefix_ce(logits, audit)
+        else:
+            from .qat_curriculum import depth_weighted_supported_ce
+            loss = depth_weighted_supported_ce(logits, audit, tuple(range(len(audit.ce_mask))),
+                                               decay=config.depth_loss_decay)
     else:
         if teacher is None:
             raise ValueError("compact probability objective needs teacher")
@@ -415,7 +500,14 @@ def joint_train_step(
     )
     if not bool(finite_grads.all()):
         raise ValueError("nonfinite joint QAT gradient")
-    norm = torch.nn.utils.clip_grad_norm_(params, config.max_grad_norm, error_if_nonfinite=True)
+    if config.binary_optimization is None:
+        norm = torch.nn.utils.clip_grad_norm_(params, config.max_grad_norm, error_if_nonfinite=True)
+    else:
+        from .qat_optimization import transform_binary_gradients_
+        gradient_metrics = transform_binary_gradients_(
+            linears, config.binary_optimization,
+            additional_parameters=families["activation"] + families["fusion"])
+        norm = gradient_metrics["gradient_norm"]
     optimizer.step()
     for module in linears.values():
         # The clipped sign surrogate has zero derivative outside [-1, 1].
@@ -424,6 +516,13 @@ def joint_train_step(
         with torch.no_grad():
             module.latent_sign.clamp_(-1, 1)
         module.project_scales_()
+    projected = set()
+    for module in linears.values():
+        for name in ("activation_quantizer", "fusion_correction"):
+            child = getattr(module, name, None)
+            if child is not None and id(child) not in projected:
+                child.project_()
+                projected.add(id(child))
     finite_parameters = torch.stack([torch.isfinite(p).all() for p in params])
     if not bool(finite_parameters.all()):
         raise ValueError("joint QAT update produced nonfinite parameters")
