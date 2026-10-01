@@ -114,6 +114,88 @@ def resume_kind(run_dir: Path) -> str:
     return "preparation"
 
 
+def require_preparation_resume(run_dir: Path) -> None:
+    """Reject recorded optimizer progress before preparation touches CUDA/data."""
+    paths = [run_dir / "status.json", run_dir / "latest.json"]
+    paths.extend((run_dir / "checkpoints").glob("step-*/manifest.json"))
+    for path in paths:
+        if not path.exists():
+            continue
+        record = json.loads(path.read_text())
+        step = record.get("step", 0) if path.name == "status.json" else record.get("step")
+        models = record.get("models", {})
+        if (
+            type(step) is not int or step != 0
+            or record.get("optimization_started") is True
+            or not isinstance(models, dict)
+            or any(
+                not isinstance(model, dict) or type(model.get("step")) is not int
+                or model["step"] != 0 for model in models.values()
+            )
+        ):
+            raise ValueError(f"--prepare-only requires zero optimizer progress: {path}")
+    for path in run_dir.glob("metrics.jsonl*"):
+        with path.open() as stream:
+            for line in stream:
+                if not line.strip():
+                    continue
+                step = json.loads(line).get("step", 0)
+                if type(step) is not int or step != 0:
+                    raise ValueError(f"--prepare-only found optimization log: {path}")
+
+
+def require_zero_optimizer_progress(trainer) -> None:
+    """Check restored/live counters and Adam states, including hidden lane updates."""
+    if (
+        type(trainer.step) is not int or trainer.step != 0
+        or set(trainer.metrics) != {"A8", "A1"}
+        or any(
+            type(model.get("step")) is not int or model["step"] != 0
+            for model in trainer.metrics.values()
+        )
+    ):
+        raise ValueError("--prepare-only requires global and A8/A1 steps to be zero")
+    for lane in trainer.lanes:
+        for state in lane.optimizer.state.values():
+            step = state.get("step", 0)
+            if hasattr(step, "item"):
+                step = step.item()
+            if step != 0:
+                raise ValueError(f"--prepare-only found {lane.name} optimizer progress")
+
+
+def publish_preparation_ready(trainer, run_dir: Path) -> None:
+    """Publish only after all ordinary gates, paired backward smoke and save."""
+    require_zero_optimizer_progress(trainer)
+    if not trainer.smoke_passed or not trainer.checkpoint or trainer.checkpoint["step"] != 0:
+        raise ValueError("preparation requires passed paired smoke and checkpoint zero")
+    resources = trainer.resources()
+    report_path = run_dir / "preparation-ready.json"
+    atomic_json(
+        report_path,
+        {
+            "schema": "continuous_w1ax_preparation_ready_v1",
+            "preparation_complete": True,
+            "stop_reason": "prepare_only",
+            "optimization_started": False,
+            "heartbeat_unix": time.time(),
+            "step": trainer.step,
+            "models": trainer.metrics,
+            "source_sha256": trainer.source,
+            "training_runtime": trainer.runtime_identity,
+            "checkpoint": trainer.checkpoint,
+            "teacher_coverage": json.loads((run_dir / "teacher_coverage.json").read_text()),
+            "dual_smoke_sha256": sha256(run_dir / "dual_smoke.json"),
+            "resources": resources,
+        },
+    )
+    trainer.status(
+        "stopped", preparation_complete=True, stop_reason="prepare_only",
+        optimization_started=False, preparation_report=str(report_path),
+        preparation_report_sha256=sha256(report_path), **resources,
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     action = parser.add_mutually_exclusive_group(required=True)
@@ -122,12 +204,18 @@ def main():
     parser.add_argument("--config", type=Path, default=ROOT / "configs/continuous_w1ax.json")
     parser.add_argument("--run-dir", type=Path)
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument(
+        "--prepare-only", action="store_true",
+        help="with --start, finish capture/gates/paired backward smoke/checkpoint zero then exit",
+    )
     parser.add_argument("--stages-manifest", type=Path)
     parser.add_argument("--development-manifest", type=Path)
     parser.add_argument("--allow-cuda", action="store_true")
     args = parser.parse_args()
     if args.resume and not args.start:
         parser.error("--resume requires --start")
+    if args.prepare_only and not args.start:
+        parser.error("--prepare-only requires --start")
     if args.estimate:
         spec, config = load_config(args.config)
         estimate = memory_estimate(
@@ -166,6 +254,8 @@ def main():
     if args.resume:
         try:
             recovery = resume_kind(run_dir)
+            if args.prepare_only:
+                require_preparation_resume(run_dir)
         except ValueError as error:
             parser.error(str(error))
     if not args.resume and (run_dir / "status.json").exists():
@@ -288,10 +378,15 @@ def main():
         )
         if recovery == "checkpoint":
             trainer.resume()
+        if args.prepare_only:
+            require_zero_optimizer_progress(trainer)
         trainer.status("smoke")
         trainer.smoke(longest)
         trainer.smoke(deepest)
         trainer.save()
+        if args.prepare_only:
+            publish_preparation_ready(trainer, run_dir)
+            return
         trainer.run()
     except InterruptedError as error:
         # Native stage cancellation only raises this after escaped-server
