@@ -194,3 +194,44 @@ resolves the representation mismatch above without labeling different master
 states equal. Production execution requires root's shared helper; the provider
 fixtures do not query devices or execute the GPU producer. Cached gates cannot
 silently omit or substitute a newly requested bound decision artifact.
+
+## Follow-up: affine row mean deployment integration
+
+Schema5 affine actors now follow the same strict receipt-v3/gate-v2 path:
+`validate_actor_export` recomputes exporter-permuted F32 mean hashes and rejects
+missing, wrong-dtype, nonfinite, or wrong-inventory means. Gate configuration
+declares enabled fusion/all coverage; hydration copies actual NPZ F32 means
+in **original checkpoint row order**, after validating every attachment and
+array. Undeclared midpoint attachments cannot be ignored. Provider readiness
+compares affine coverage. Legacy gate-v1 explicitly rejects schema5/affine
+evidence even with a baseline activation rule or zero current means.
+
+Native head replay accepts the actual midpoint and adds
+`(sum(integer_codes)*mu)*beta` after `(integer_dot*alpha)*beta`, with the
+corresponding rounded-input sum for A16. Learned head codes/scales use their
+actual quantizer. All declared midpoint gradients must be present and finite;
+zero gradients are legal when the quantized input sum vanishes. Affine gates
+allow finite zero binary gradients at degenerate alpha/input states rather
+than assuming every parameter family must move on every bounded root. Existing
+non-affine binary nonzero gates remain unchanged. Every family is still owned
+exactly once, and current root API's empty `midpoint` family is handled without
+changing old v2 proof inventories.
+
+The deployment fingerprint includes F32 means, so a mean change cannot inherit
+another actor's native evidence. Midpoint LR, optional bound, and regularization
+are training policies rather than native descriptor fields; actor hydration
+uses a finite unbounded deployment configuration, while measurement receipts
+retain and compare the caller's complete recipe binding on reuse. The full
+trainer/curriculum state remains responsible for exact training-policy resume.
+
+Checks: 7 `test_qat_recipe_provider` CPU tests passed, including schema5 fixed
+and learned hydration, all-nine mean ownership, Q/K original-row order,
+changed mean hashes, missing/F16 mean rejection, alpha=0 with nonzero mean head
+replay for A1/A4/A8/A16, legitimate zero mean gradient at code sum zero, and
+legacy proof refusal. Existing 6 readiness and 4 refreshed-provider checks
+also passed. Python compilation and diff checks passed. Root core/schema5
+exporter updates are copied test dependencies and are excluded from this
+commit. No GPU/native process, device query, real-data update, or quality/speed
+claim was made. The dedicated native affine-unit-sum/timing artifact remains
+the independent harness's required gate; trajectory RMS alone does not grant
+affine readiness.
