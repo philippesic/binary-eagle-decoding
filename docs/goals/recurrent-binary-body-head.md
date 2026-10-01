@@ -8,7 +8,7 @@ data. Evaluate native draft quality and speed against Q4_0 when GPU work is
 explicitly permitted. Preserve the pinned FP16 target/verifier and draft map.
 This continues the existing goal rather than opening a second goal.
 
-**State: RTX5080 pipeline healthy; 8,128 train prompts captured.** At 2026-10-01 15:32:22 UTC supervisor05 CPU health passed: 260 completed labels / 8,128 train / 0 dev, zero optimizer steps, capture ordinal 260/353. Existing 15-minute monitor ACTIVE; budget 1 of 2 used. Automatic training waits for all frozen gates; RTX2080Ti paused, Q4_0 primary, finals sealed. Latest capture checkpoint supersedes earlier progress lists.
+**State: RTX5080 observation unknown at 2026-10-01 16:02 UTC; monitor ACTIVE.** Local transport nested the full SSH query in an interactive Windows SSH shell and returned no checker result. Last verified 15:45:00 UTC: healthy supervisor05, 264 completed labels / 8,256 train / 0 dev, zero optimizer steps. No job-failure conclusion or recovery. Existing automatic training authorization and all frozen gates remain; RTX2080Ti paused, Q4_0 primary, finals sealed.
 
 ## Current findings and work
 
@@ -4952,3 +4952,33 @@ unopened. Next: one pinned CPU observation per tick; notify actual optimizer
 start, new verified failure, completion or required action. Quiet healthy
 ordinary progress. No operator remains active. This docs-only checkpoint follows
 `5ceea12`; diff check is the appropriate verification, with no code/runtime change.
+
+## Local monitor transport failed before checker — 2026-10-01 16:02 UTC
+
+Pinned Luna/high `/root/health_20261001_1558` (fork none) returned UNKNOWN.
+The command passed byte equality/current supervisor05 binding and ASCII length
+2,291 validation. The local pane, however, had opened interactive `ssh -tt`
+before the operator submitted the full stored SSH command. Raw pane evidence
+shows the complete local command nested inside the Windows cmd prompt; no
+checked_at_utc JSON or checker stdout was returned. A placeholder-pane setup
+call also failed before dispatch. This is monitor transport construction error,
+not verified run failure, unavailable GPU or lost retained data. No second query,
+GPU query or recovery was attempted. User notified once before checkpoint.
+
+Last verified health at15:45:00.867257UTC remains healthy supervisor05, ordinal
+264/353,264 complete manifests /8,256train /0dev,optimization_started:false,
+steps:{}. Exact command and raw unknown evidence preserved in ignored
+`runs/luna-continuous-a8-a1-20260929/health-unknown-20261001T160207Z.json`.
+Last-health is unknown with prior verified counts/evidence retained; registration
+last_observed_health unknown, last_verified_health preserved. Budget stays1of2.
+Only local transport$107 disconnected/closed and absence confirmed; host job
+socket `binary-eagle-runtime` / session
+`continuous-a8-a1-native-order-20261001-05` untouched. Operator now completed.
+
+Next tick must create a fresh LOCAL shell pane and submit the complete stored
+SSH command directly from that local shell, with no preliminary interactive SSH
+or nested connection. Follow direct JSON loading and single checker rules.
+Existing15-minute monitor remains ACTIVE, suppress duplicate unchanged unknown
+alerts; automatic paired training authorization after all frozen gates remains.
+No source/config/runtime/data/precision/tier/cap/final changes. Docs-only
+checkpoint follows`c76e9b2`; diff check is appropriate verification.

@@ -72,6 +72,21 @@ At08:00:40UTC the next tick passed using direct JSON-to-tool loading: healthy
 is resolved and its evidence remains preserved. No GPU recovery or job action.
 Subsequent ticks use the same compact command and direct loading rule.
 
+## Local shell transport requirement
+
+At16:02UTC on2026-10-01 the observation became UNKNOWN because the operator
+opened interactive SSH before submitting the full saved SSH command. Raw pane
+evidence shows that complete local command nested inside the Windows cmd prompt;
+no checker result was returned. No retry/recovery or job action occurred.
+Last verified15:45UTC: healthy264/353,8,256train /0dev,zerooptimizer.
+
+Create a fresh LOCAL shell pane and pass the full stored monitor_query_command
+from that local shell directly to execute_command. Do not open preliminary
+interactive SSH or send this complete local SSH command to a remote shell.
+The stored command already handles SSH and the Windows-to-WSL bridge. Local
+preflight may verify the new pane is a local shell; job tmux stays untouched.
+Monitor remains ACTIVE; next scheduled tick restores observation when possible.
+
 ## Windows SSH shell bridge
 
 The registered RTX5080 endpoint is Windows SSH, with Linux files inside WSL.
