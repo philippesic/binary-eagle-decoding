@@ -18,6 +18,7 @@ MATH_FILES = (
     "recurrent_trace.py",
     "recurrent_provider.py",
     "continuous_qat.py",
+    "qat_state.py",
     "qat_optimization.py",
     "qat_curriculum.py",
     "learned_activation.py",

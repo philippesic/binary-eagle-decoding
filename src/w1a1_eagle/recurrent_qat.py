@@ -443,6 +443,19 @@ def validate_joint_linears(
         raise ValueError("group contract needs group size 128")
     if any(module.latent_sign.device != torch.device(config.device) for module in linears.values()):
         raise ValueError("joint linears are not on configured device")
+    attached = [getattr(module, "activation_quantizer", None) for module in linears.values()]
+    if config.activation_quantization == "learned":
+        from .learned_activation import LearnedActivationBank
+        bank = LearnedActivationBank.from_attached(linears)
+        bank.validate_attachment(linears)
+    elif any(q is not None for q in attached):
+        raise ValueError("undeclared learned activation parameters")
+    correction = getattr(linears["fc"], "fusion_correction", None)
+    if config.fusion_correction is None:
+        if correction is not None:
+            raise ValueError("undeclared fusion correction")
+    elif correction is None or correction.config != config.fusion_correction:
+        raise ValueError("fusion correction config differs from attachment")
 
 
 def joint_parameter_families(linears) -> dict[str, list[nn.Parameter]]:
@@ -689,6 +702,15 @@ def save_joint_checkpoint(
             module.effective_scales().detach().cpu().numpy().astype(np.float32, copy=True)
         )
         projections[base] = {"checkpoint_name": name, "shape": list(module.latent_sign.shape)}
+    activation_quantizers = None
+    if config.activation_quantization == "learned":
+        from .learned_activation import LearnedActivationBank
+        activation_quantizers = LearnedActivationBank.from_attached(linears).native_parameters()
+    fusion_descriptor = None
+    correction = getattr(linears["fc"], "fusion_correction", None)
+    if correction is not None:
+        fusion_descriptor, tensors = correction.native_payload()
+        arrays.update({name: tensor.detach().cpu().numpy().copy() for name, tensor in tensors.items()})
     checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     np.savez(checkpoint_path, **arrays)
@@ -710,6 +732,13 @@ def save_joint_checkpoint(
         "objective": config.objective,
         "projections": projections,
     }
+    if activation_quantizers is not None:
+        manifest.update(schema_version=3,
+                        activation_rule="learned_scalar_a1_threshold_a4a8_clip_v1",
+                        activation_quantizers=activation_quantizers)
+    if fusion_descriptor is not None:
+        manifest.update(schema_version=4, activation_quantizers=activation_quantizers,
+                        fusion_correction=fusion_descriptor)
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
     return {
         "checkpoint_sha256": digest,

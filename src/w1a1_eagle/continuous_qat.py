@@ -34,6 +34,7 @@ from .continuous_resources import (
     require_host_memory,
 )
 from .continuous_runtime import training_runtime_identity
+from .qat_state import recipe_state, validate_resume_state
 from .recurrent_provider import audit_provider_round, forward_torch_round
 from .recurrent_qat import (
     JointQATConfig,
@@ -577,6 +578,7 @@ class ContinuousTrainer:
                     "linears": {name: module.state_dict() for name, module in lane.linears.items()},
                     "optimizer": lane.optimizer.state_dict(),
                     "rng": lane.rng,
+                    "recipes": recipe_state(lane.linears),
                 }
                 for lane in self.lanes
             },
@@ -710,6 +712,19 @@ class ContinuousTrainer:
         ):
             raise ValueError("resume payload differs from published checkpoint contract/counters")
         latest = {"path": str(path), "sha256": manifest["sha256"], "step": counters[0]}
+        if set(payload.get("lanes", {})) != {lane.name for lane in self.lanes}:
+            raise ValueError("resume lane inventory differs")
+        for lane in self.lanes:
+            saved = payload["lanes"][lane.name]
+            validate_resume_state(lane.linears, saved["linears"], saved["recipes"])
+            expected_groups = lane.optimizer.param_groups
+            groups = saved["optimizer"].get("param_groups", [])
+            if len(groups) != len(expected_groups) or any(
+                len(group.get("params", [])) != len(expected["params"])
+                or group.get("family") != expected.get("family")
+                for group, expected in zip(groups, expected_groups)
+            ):
+                raise ValueError("resume optimizer family inventory differs")
         for lane in self.lanes:
             saved = payload["lanes"][lane.name]
             for name, module in lane.linears.items():
