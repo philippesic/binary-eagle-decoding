@@ -5259,5 +5259,9 @@ Changing the live frozen math source is not authorized by completing this audit.
 
 Publication verification: `git diff --check` and 232 local Markdown links across
 the nine report/state documents passed. No code tests or accelerator checks were
-run. The research branch is `codex/training-research-audit`; only these nine
-Markdown files are staged for integration, with no submodule/source change.
+run. Research publication `3617b9c` was fast-forward integrated into `main` and
+pushed; it changes only the nine Markdown files, with no submodule/source change.
+The clean managed worktree was archived after all workers completed, and the
+merged `codex/training-research-audit` branch was removed. No unpublished or
+unmerged work remains from this audit. The project checkout was clean before
+this final publication checkpoint.
