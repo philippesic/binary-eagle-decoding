@@ -8,7 +8,7 @@ data. Evaluate native draft quality and speed against Q4_0 when GPU work is
 explicitly permitted. Preserve the pinned FP16 target/verifier and draft map.
 This continues the existing goal rather than opening a second goal.
 
-**State: RTX5080 resumed at the human user's request; RTX2080Ti remains paused.** At2026-10-01 00:41:04UTC supervisor04 survived SSH disconnect/reconnect and CPU health passed.58 retained manifests/1,832train/0dev prompts,zerooptimizer; resume re-audits completed cells at ordinal3/353. Existing15-minute monitor ACTIVE, recovery budget1of2 unchanged. Q4_0 remains the primary comparison and finals remain unopened. Latest resume checkpoint supersedes historical next actions.
+**State: RTX5080 continuous capture/audit is running; RTX2080Ti remains paused.** At2026-10-01 03:45:32UTC supervisor04 CPU health passed.104 completed label manifests/3,256train/0dev prompts,zerooptimizer;capture-loopordinal103/353. Existing15-minute monitor ACTIVE,recoverybudget1of2 unchanged. Q4_0 remains primary comparison and finals remain unopened. Latest checkpoint supersedes historical next actions.
 
 ## Current findings and work
 
@@ -4634,3 +4634,34 @@ ACTIVE/same15-minute cadence/target/prompt. No new schedule/chat/native Goal,
 no code/config/numerical/tier/precision changes,no final-data access. Next:
 scheduled one pinned bounded CPU health/count check; healthy ordinary progress
 stays quiet,first actual optimizer update/new failure/completion notified.
+
+
+### Capture progress checkpoint — 2026-10-01 03:45 UTC
+
+After explicit user resume, the single bounded scheduled checks stayed healthy:
+re-audit passed the 58 retained cells, then native capture extended completed
+train data. One pinned Luna/high operator `/root/health_20261001_0343` (fork none)
+ran exactly one combined CPU checker/status/supervisor/label-count query at
+**03:45:32.971119 UTC**. Checker exit 0, healthy and nonterminal, preparing
+`teacher_capture_audit`, capture-loop ordinal 103/353. Actual positive prompt_count
+metadata in completed label manifests: **104 / 3,256 train prompts**, development 0;
+optimization_started:false, steps:{}. No gates or partial cells counted. This is
+corpus preparation progress; optimizer updates have not started.
+
+Current corrected experiment stays
+`runs/luna-continuous-a8-a1-native-order-20260930`; supervisor
+`luna-supervisor-a8-a1-native-order-20261001-04/state.json`, status running,
+child PID/PGID 5052, no received signal. Linux host tmux socket
+`binary-eagle-runtime`/session `continuous-a8-a1-native-order-20261001-04` owns
+the run. Supervisor 5051/server 5050 ownership was independently verified during
+the 00:41 resume; ordinary health state pid/pgid 5052 identifies the child.
+Read the fresh shared host registry and registration.experiment current paths.
+
+Ignored snapshot `runs/luna-continuous-a8-a1-20260929/health-20261001T034532Z.json`
+preserves the exact Windows SSH -> WSL query, checker stdout and tmux result.
+Root saved last-health/current registration; dedicated local transport $62 closed.
+No GPU query, extra healthy logs, recovery, job/config/WSL/precision/tier changes
+or final access. Recovery budget remains 1 of 2 used; existing 15-minute monitor
+ACTIVE. Operator is done, no other launch/recovery worker. Next: one bounded
+pinned CPU observation each tick; quiet ordinary progress, notify actual optimizer
+start, new failure or completion.
