@@ -767,3 +767,30 @@ Charge all warm-start/teacher/search compute, preserve data ancestry, compare
 native acceptance at equal GPU hours and report common-token learning curves.
 No current-student token may reuse a changed-prefix capture label. Q4_0 remains
 primary; final prompts stay sealed. No new experiment was launched by the audit.
+
+## Broader CPU-first research options — 2026-10-01
+
+Ten GPT-6.1 Sol/high audits requested by the user are complete; the
+[ranked shortlist](../experiments/broader-project-audit-2026-10-01.md)
+links all ten reports. This is a broader preparation proposal within the active
+goal, not an architecture pivot or authorization to alter the live preparation
+run. The preparation-only boundary recorded in `553244e` remains in force;
+no optimizer updates are authorized by this audit.
+
+Recommended quality track: a bounded fusion-only sign/scale fitter plus one
+cheap affine/bias/residual control on the same eligible local training operands.
+Direct fitting retains the existing sign/scale format; corrections have distinct
+metadata/precision costs and need separate native gates. Full calibration
+captures are largely remote; diagnostic samples do not substitute for them.
+
+Independent alternatives are a learned Q1_0 export/activation oracle, coupled
+FFN slicing, fixed-support head factorization/shortlist preparation, whole-round
+data selection, DSpark/DFlash compatibility fixtures, adaptive stopping and a
+two-bit control. Preserve exact data ancestry, frozen target/verifier, honest
+bits and activation precision. Existing teachers/features cannot silently be
+reused at changed prefixes or missing target taps. Compare real accepted
+proposals and complete decoding cost against Q4_0 before promotion.
+
+No option is selected by publishing the audit. New training, capture, architecture
+or deployment experiments remain user-owned. The user requests simpler,
+high-impact explanations from now on; detailed evidence remains in the reports.

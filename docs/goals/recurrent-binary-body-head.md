@@ -5303,3 +5303,71 @@ behavior unchanged. Next: review/test/integrate/push then deploy ONLY this launc
 control change (math source hashes fixed),freshresource/ownership/CPUpartial
 recovery,resume SAMErun under new unique supervisor/session --prepare-only,
 verifydisconnect/reconnect,reactivate existing preparation-only monitor.
+
+## Ten-agent broader research audit completed
+
+The user requested roughly ten GPT-6.1 Sol/high agents to research and reason
+about broader, high-impact work that can begin without GPU time, then a ranked
+list in chat. Ten workers completed separate source-and-primary-literature
+reports at baseline `f0bb92dda687d908b3cffe084510b3be757df54f`. Model and
+reasoning effort were explicitly selected. The user requested non-Fast agents;
+the launcher exposes no Fast/standard control, and root disclosed that limit.
+No service-tier selection is claimed.
+
+The user also changed the communication preference: explain ideas simply,
+focus on high-impact summaries, and assume some ML knowledge with little
+project-specific context. Define necessary terms briefly; keep detailed source
+and numeric caveats in reports. This preference applies to future project
+updates and handoffs.
+
+All source/model files remained read-only. Each worker wrote only its assigned
+report under `experiments/broader-audit-2026-10-01/` in the isolated managed
+`broader-research-audit` worktree. Root owns integration and the
+[ranked synthesis](../../experiments/broader-project-audit-2026-10-01.md).
+
+| Completed agent | Owned report |
+| --- | --- |
+| `/root/broad_architectures` | `01-architectures.md` |
+| `/root/broad_smaller_drafters` | `02-smaller-drafters.md` |
+| `/root/broad_binary_representations` | `03-binary-representations.md` |
+| `/root/broad_small_corrections` | `04-small-corrections.md` |
+| `/root/broad_discrete_fitting` | `05-discrete-fitting.md` |
+| `/root/broad_lowbit_formats` | `06-lowbit-formats.md` |
+| `/root/broad_draft_policies` | `07-draft-policies.md` |
+| `/root/broad_output_head` | `08-output-head.md` |
+| `/root/broad_native_execution` | `09-native-execution.md` |
+| `/root/broad_data_value` | `10-data-value.md` |
+
+The ten reports consolidate into nine proposed workstreams. Strongest near-term
+quality preparation: one fusion-only alternating sign/scale fitter and one
+cheap affine/bias/small-residual correction control, using a provenance-checked
+local train calibration subset. Independent deployment preparation is the
+learned-sign/group-scale Q1_0 export oracle; independent structural compression
+is coupled FFN neuron slicing. Head factorization, data selection, block-drafter
+compatibility, adaptive stopping and two-bit controls are conditional proposals.
+
+Root reviewed all reports and reconciled two important points: wider low-rank
+factors may use more bandwidth than packed binary weights, and early per-round
+EAGLE caps were previously reviewed rather than completed. Current per-round
+caps truncate after generation; unused-head and K/V pruning are separate work.
+Existing accepted-feature deduplication and shared teacher capture are not
+counted as new savings. No paper headline is treated as W1A1 EAGLE evidence.
+
+No tests/model workloads, builds, installations, GPU/remote actions, large
+artifact reads, sealed-final access or child-agent launches occurred in this
+audit. All ten workers are complete; none owns the GPU. This audit changes no
+live experiment, monitor, native ancestry, target/verifier or Q4_0 baseline.
+The prior five-agent training audit is already complete; neither audit launches
+implementation or a new research goal. No fresh live count/health read occurred.
+
+Next: publish the reports and propose user selection of one bounded CPU-first
+workstream. During publication another chat recorded `553244e`: finish data/QAT
+preparation and stop before optimizer updates. That preparation-only boundary
+and its owner are preserved, with no new training authorization. Changes to
+model/precision/data/runtime identities require their own explicit recipe;
+CPU preparation and literature evidence do not establish acceptance or GPU speed.
+
+Verification before publication: `git diff --check` and all 245 local Markdown
+links across the fourteen report/state documents pass. Exactly ten owned worker
+reports and one root synthesis are present. No code tests or performance checks
+were run. All audit changes are Markdown; the native submodule is unchanged.

@@ -1,0 +1,49 @@
+# Vocabulary and output-head audit
+
+2026-10-01; source `f0bb92dda687d908b3cffe084510b3be757df54f`. Research only: no model execution, training, GPU/Metal/remote work, installations, large-capture reads or final-set access. Target/verifier remain fixed; Q4_0 is the acceptance, latency and throughput comparison. Recommendations require user selection and start no goal.
+
+## Evidence and scope
+
+The draft head is **32,000 × 2,560 = 81.92M weights**, 37.537% of the nine selected linear weights, versus target vocabulary 151,936. The map is frozen and audited. `src/models/eagle3.cpp:636–670` already supports compact logits without target-vocabulary scatter; `common/speculative.cpp` uses those logits directly. Removing expansion is existing work, not this proposal. The training audit already recommends stacking per-chain heads; inference recurrence prevents simply batching five dependent head decisions.
+
+Parameter share is not time share. The rescue report measures the D group128 A16 head at 206 µs median versus C row-scale A16 at 76 µs on RTX 5080, with distinct trajectories. Its common-history factorial finds 148/7,320 unsupported labels (2.02%), with failures retained in agreement denominators. Swapping D head onto Q4 body costs about 5.9 points of first-position agreement; D body under Q4 head costs 19.8 points. A fitted FP16 head improves its same-body control but reaches only 0.450× Q4_0 request throughput. These facts discourage a head-only quality rescue claim. Sources: `experiments/drafter-static-coverage.md`, `experiments/binary-rescue-head-5080.md`, `experiments/training-optimization-audit-2026-10-01.md`.
+
+The later full capture records 1,110/40,815 unsupported valid labels and mean mapped target probability mass 0.9719726884. This concerns D histories, not live acceptance. Shrinking support can compound an existing ceiling; expanding support alone cannot repair body ranking. Source: `experiments/recurrent-binary-full-capture-5080.md`.
+
+## 1. Rank first: a learned thinner head with unchanged support
+
+[SlimSpec](https://arxiv.org/html/2605.10453), §§4–6, replaces the head by `U(V×r) D(r×d)`, preserving vocabulary support. Its EAGLE-3 study reports roughly 4–5× head acceleration and competitive acceptance, using H200/vLLM, three targets, batch 1/64 and temperatures 0/1. Training uses 660k target-generated prompts. This is direct speculative-head evidence, not an SM75 or bounded-fine-tune result. No author implementation link was found in the inspected paper/search.
+
+For our **current 32k support**, the derived parameter/MAC count is `r(32000+2560)`. Rank 320 gives 11,059,200, **13.5%** of the original head arithmetic; rank 160 gives 6.75%. These are logical products, not comparable instruction counts between FP16, Q4 and POPCOUNT. Full target support at rank 320 would require 49,438,720 weights: 60.35% of the current 32k dense head, with a new map/loss decision. Keep that separate.
+
+Precision is decisive. Rank-320 FP16 factors occupy **21.094 MiB**, whereas current strict packed head signs occupy **9.766 MiB** before scales; even rank-160 FP16 occupies 10.547 MiB. D group128 head occupies 12.207 MiB including scales. Thus fewer MACs can increase binary-head bandwidth. Rank-256 Q4_0 factors use approximately 4.746 MiB versus 43.945 MiB for the original Q4_0 head, excluding metadata. A dense or Q4 factor is mixed precision; two binary factors add a new activation-sign boundary and are not an algebraically equivalent decomposition of the original binary head. Recalculate coverage using the changed model denominator and disclose both factors’ execution.
+
+**Two-day CPU preparation:** specify ranks 160/320, precision and deployable norm placement; build tiny synthetic factor/export fixtures and a bounded capture-index plan; define target-label masks and native decision gates. Future bounded authorized slices can compare dense-factor reconstruction, target ranks/margins and training loss. Do not equate Frobenius/SVD fit with acceptance, or load full weights for this audit. Native burden is moderate: two new GGUF tensors, versioned shape/precision contract, loader validation, graph products and trainer/export allowlists. Later GPU gate compares factor variants against the same body/current head, then Q4_0, including both launches, intermediate conversion and full-round latency. This is the highest-quality research candidate, conditional on storage and acceptance.
+
+## 2. Rank second: dynamic shortlist with indexed exact row evaluation
+
+[SpecVocab](https://arxiv.org/html/2602.13836v2), §3, trains a low-rank vocabulary router, selects about 2,048 tokens, then evaluates original rows with a fused indexed kernel. Its [author repository](https://github.com/SamsungLabs/SpecVocab) is available. Our adaptation would route within the frozen 32k support and retain original head rows, rather than inherit its full-target/shared-head setup. With router rank 64 and shortlist 2,048, logical cost is `64(2560+32000)+2048×2560 = 7,454,720`, **9.10%** of exhaustive dense-head MACs; binary row costs and router precision change this comparison. The extra top-k and irregular reads may erase savings at N=1.
+
+[NanoSpec](https://arxiv.org/html/2605.26444), §3, supplies a cheaper training-free hypothesis: prompt/history tokens and recent target/draft candidates form a small sliding vocabulary, with asynchronous gathering. Its [author README](https://github.com/csAugust/NanoSpec/blob/main/README.md) explicitly warns of limited applicability to already-pruned 32k EAGLE-3 heads and requires Ampere-or-newer hardware for its implementation. Therefore propose a CPU coverage screen, not porting its stack or borrowing reported speedups. [DynaSpec](https://arxiv.org/html/2510.13847), §4, routes clusters from previous hidden state/current embedding to overlap routing with drafting; this adds training and stream scheduling. It ranks behind simpler temporal or low-rank routing here.
+
+**Two-day CPU preparation:** replay only compact metadata from train/development captures, preserving request, round, prefix and depth; test budgets 512/2,048/4,096. Only previously available verifier candidates may seed a shortlist; reading the current verifier label to choose its own candidate set is oracle leakage. Count missing draft argmax, missing verifier labels, lost top-10 candidates, early-prefix oracle survival and fallback frequency, including unsupported labels in unconditional denominators. Static learned 8k/16k support is a comparison arm, not a default: corpus frequencies can discard rare code/reasoning tokens permanently. Native burden is high: device candidate IDs/counts, indexed binary/Q4 kernels, scale gathers, stable mapping, graph capacity and fallback. Avoid materializing selected dense rows. Later GPU gate charges routing, deduplication, transfers, gathers and fallback against saved head time, followed by native acceptance/throughput versus Q4_0.
+
+## 3. Rank third: exact binary bounds; stop quickly if loose
+
+For row-scale W1A1 with positive scales, after evaluating `b` bits and partial signed sum `s`, an exact upper bound is `alpha_i beta (s + K-b)`. Prune only if this bound is strictly below the current selected-logit threshold. For A16, use remaining `sum(abs(x_j))`, with group scales applied separately. Outward rounding and native accumulation/tie rules matter. A Hamming cluster center with radius R also bounds unscaled row dot by `dot(center,x)+2R`; heterogeneous scales require valid per-row or sign-aware scale bounds. These are our mathematical derivations, not published measured gains.
+
+Worst case still reads every row. With K=2560, remaining-bit bounds are often much larger than relevant logit margins until late; near-random cluster radii approach K/2. Divergent pruning, reordered weight blocks, bound metadata, repeated reductions and launches can cost more than an already compact 80-word POPCOUNT row. Fusing exhaustive dots with selection avoids materialized logits but saves little arithmetic; existing CPU sampling is only 0.024 s inside Q4_0’s 4.415 s traced draft span.
+
+**Two-day CPU preparation:** tiny adversarial scaled/tied examples and synthetic correlated/random rows; measure visited words and bound work, not CPU speed as a GPU prediction. Reject if bounds cannot avoid substantial row reads before integration. Native burden is high for adaptive search; exact top-11 certification and full-head fallback are essential. Approximate retrieval is allowed as a changed drafter, but becomes route 2 with measured acceptance risk.
+
+## Semantics and verdict
+
+Native drafting selects top candidate after a top-10-only sampler; confidence is normalized within those candidates. `common/sampling.cpp:594–637` checks top-11 ties and falls back. Exact argmax alone cannot preserve confidence stopping or sampler behavior; certify candidates and logit biases too. Missing candidates inflate shortlist confidence. At current p_min=0 this does not stop drafts, but calibration cannot be reused for later thresholds. Target-sample-and-match acceptance is not the probability-ratio overlap law. Approximate heads remain drafter changes verified by the unchanged target; labels outside support remain explicit failures/masked CE with retained denominators.
+
+Tying to the target embedding/head does not remove projection arithmetic and couples the draft to fixed target precision. Codebook heads add lookup/accumulation and retraining without stronger local speculative evidence than low rank; defer them.
+
+- Prepare fixed-support low-rank heads first; price factor precision and the extra boundary.
+- Screen dynamic vocabulary recall cheaply before indexed-kernel work.
+- Treat exact binary search as a brief feasibility test, with exhaustive fallback.
+- Preserve missing-label denominators, prefix ancestry and top-10 confidence semantics.
+- Head savings must accompany body recovery and beat Q4_0 in native full rounds.

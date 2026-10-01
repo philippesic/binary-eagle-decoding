@@ -6,6 +6,19 @@ The target/verifier model precision remains as frozen for each experiment.
 
 **Active goal:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). **New user scope: finish data and QAT preparation, stop before optimizer updates.** Old automatic-QAT supervisor06 temporarily stopped at20:26UTC to install an explicit preparation-only launch boundary. Verified **2026-10-01 20:27:44 UTC**: terminal/exit0,both owned groups gone,no project/GPUcompute apps; retained327manifests /10,000train /224dev,zeroQATupdates. Existing monitor temporarilyPAUSED with saved preparation-only prompt; no QAT training authorized. Preparation-only launcher/testing in progress. Frozen math/data/runtime/config/precision/nullcaps and finals unchanged; RTX2080Ti paused. See latest scope checkpoint.
 
+**Broader CPU-first research audit complete (2026-10-01):** ten user-requested
+GPT-6.1 Sol/high agents researched model compression, binary representations,
+corrections, direct fitting, low-bit formats, draft policies, output heads,
+native execution, data selection and alternative architectures. The
+[plain-language ranked list](../experiments/broader-project-audit-2026-10-01.md)
+recommends a bounded fusion sign/scale fitter plus a cheap correction control;
+learned Q1_0 export and coupled FFN pruning are independent preparation options.
+All ten reports are complete. This changes documentation only; no code,
+model/test/GPU/remote run or sealed-final action occurred. No new experiment
+or architecture was selected, and no fresh live health observation is claimed.
+The user requests simpler explanations with high-impact summaries from now on.
+See the [checkpoint](goals/recurrent-binary-body-head.md#ten-agent-broader-research-audit-completed).
+
 **Training optimization audit complete (2026-10-01):** five user-requested
 GPT-6.1 Sol/high agents reviewed source and primary research. The strongest
 implementation candidates are bulk K/V-only Torch prefix construction, a
