@@ -143,3 +143,44 @@ packing-inclusive latency/acceptance/throughput against Q4_0. CPU evidence does
 not establish CUDA/SM75 correctness or speed. No GPU/remote actions, real-data
 updates, or sealed-final reads occurred. Both isolated worktrees remain intact
 for integration or validation repairs.
+
+## Explicit backend fixture gate
+
+Native follow-up `524427ed3` adds `test-eagle3-learned --backend CPU|CUDA`,
+defaulting to CPU. CUDA selection requires a CUDA-enabled fixture and a device
+from the `CUDA` backend registration; unavailable or incompatible selection
+exits 2 and refuses fallback. Direct exact-pack graphs allocate their buffers
+on the selected device and execute on its explicit backend. Valid encoder
+models pin that device with full offload; a scheduler evaluation callback
+checks every pack/W1Ax/matmul/conversion/add node's actual execution backend
+and cancels on fallback. Invalid metadata/data loader cases remain CPU checks.
+The summary separates exact pack cases, loader cases, actual encoder graph
+cases and audited arithmetic nodes, and prints device/hardware identity.
+
+The operator's actual GPU command after compiling with `GGML_CUDA=ON` is:
+
+```sh
+./build/bin/test-eagle3-learned --backend CUDA
+```
+
+This is the exact sign/code/scale/S gate, complementing the floating operator
+suite; `test-backend-ops` alone cannot establish packed-byte correctness.
+The explicit CPU command and unchanged default invocation both passed locally:
+33 exact pack cases, 108 loader cases, 53 encoder graphs, 179 audited arithmetic
+nodes on Apple M3 Max CPU. The operator suite still passes 220/220. The CPU
+build's explicit CUDA invocation was checked to reject before backend
+initialization with exit 2. No actual CUDA compilation or execution occurred.
+Logs are `/private/tmp/eagle-native-backend-final-cpu.log`,
+`/private/tmp/eagle-native-backend-default.log`,
+`/private/tmp/eagle-native-backend-final-ops.log`, and
+`/private/tmp/eagle-native-backend-final-build.log`.
+
+Exact packs now include 12 additional fixed-affine variants and tokens mixing
+signed zeros with positive/negative subnormals. The opt-in affine pack uses the
+same safe raw-magnitude/reciprocal-overflow normalization as the learned pack,
+even with fixed quantizer parameters; this avoids CUDA fast-math FTZ changing
+S. Legacy non-affine packing remains unchanged. A1 F64 beta and RN conversion
+already use raw magnitude bits/non-FTZ intrinsics. Affine fixed hard-code
+reference implementations must match this explicit safe tiny-token rule;
+ordinary finite-range codes are unchanged. Native CUDA correctness remains an
+open gate until the designated GPU operator runs the explicit CUDA command.
