@@ -636,6 +636,9 @@ class CurriculumRunner:
                 device_batch,
                 self.adapter if adapter is None else adapter,
                 self.provider.draft_vocab_size,
+                optimize_cache=self.qat.optimize_cache,
+                optimize_head=self.qat.optimize_head,
+                context_chunk_size=self.qat.context_chunk_size,
             )
 
     def _smoke_round(self, batch):

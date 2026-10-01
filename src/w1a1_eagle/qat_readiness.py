@@ -362,6 +362,104 @@ def validate_optimization_readiness(
             or set(affine["projection_bases"]) != expected
         ):
             raise ValueError("affine native fixture coverage differs from the declared layers")
+    if config.get("curriculum") is not None:
+        schedule = _object(config["curriculum"], "curriculum")
+        expected_bits = [stage["activation_bits"] for stage in schedule["stages"]]
+        measured = _object(gates.get("curriculum_stages"), "curriculum_stages")
+        _true(measured.get("passed"), "curriculum_stages.passed")
+        if measured.get("activation_bits") != expected_bits:
+            raise ValueError("readiness does not cover the complete ordered precision schedule")
+        stages = measured.get("stages")
+        if not isinstance(stages, list) or len(stages) != len(expected_bits):
+            raise ValueError("readiness precision stage inventory differs")
+        for bits, stage in zip(expected_bits, stages):
+            if (
+                not isinstance(stage, dict)
+                or type(stage.get("activation_bits")) is not int
+                or stage["activation_bits"] != bits
+            ):
+                raise ValueError("readiness precision stage identity differs")
+            full_stage = _object(stage.get("full_model"), "stage.full_model")
+            for field in ("passed", "finite_gradients"):
+                _true(full_stage.get(field), "stage.full_model." + field)
+            if full_stage.get("model_scope") != "full_model":
+                raise ValueError("curriculum stage is not an actual full model")
+            for field in (
+                "forward_calls",
+                "backward_calls",
+                "later_state_gradient_norm",
+                "later_key_gradient_norm",
+                "later_value_gradient_norm",
+            ):
+                _number(
+                    full_stage.get(field),
+                    "stage.full_model." + field,
+                    integer=field.endswith("calls"),
+                )
+            stage_memory = _object(stage.get("memory"), "stage.memory")
+            _true(stage_memory.get("passed"), "stage.memory.passed")
+            stage_allocated, stage_reserved, stage_free = (
+                _number(stage_memory.get(field), "stage.memory." + field, integer=True)
+                for field in ("peak_allocated_bytes", "peak_reserved_bytes", "min_free_bytes")
+            )
+            if (
+                not stage_allocated <= stage_reserved <= min(ceiling, total)
+                or not floor <= stage_free <= total
+            ):
+                raise ValueError("curriculum stage memory does not fit the configured bounds")
+            native_stage = _object(stage.get("native_gates"), "stage.native_gates")
+            decisions = _object(native_stage.get("native_decisions"), "stage.native_decisions")
+            for field in ("passed", "executed"):
+                _true(decisions.get(field), "stage.native_decisions." + field)
+            _number(decisions.get("cases"), "stage.native_decisions.cases", integer=True)
+            stage_changes = _number(
+                decisions.get("changed_choice_count"),
+                "stage.changed_choice_count",
+                positive=False,
+                integer=True,
+            )
+            stage_material = _number(
+                decisions.get("material_choice_changes"),
+                "stage.material_choice_changes",
+                positive=False,
+                integer=True,
+            )
+            if stage_material != 0 or stage_material > stage_changes:
+                raise ValueError("curriculum stage has material native choice changes")
+            for field, limit in (
+                ("max_changed_choice_margin", 0.02),
+                ("max_state_relative_rms", 0.10),
+                ("max_logit_relative_rms", 0.10),
+            ):
+                if (
+                    _number(decisions.get(field), "stage.native_decisions." + field, positive=False)
+                    > limit
+                ):
+                    raise ValueError("curriculum stage exceeds the native numeric gate")
+            for optional in ("learned_quantizers", "fusion_correction", "affine_weights"):
+                if optional in gates:
+                    proof = _object(native_stage.get(optional), "stage." + optional)
+                    fields = {
+                        "learned_quantizers": ("passed", "executed", "exact_pack"),
+                        "fusion_correction": (
+                            "passed",
+                            "raw_fc_executed",
+                            "zero_identity_passed",
+                            "nonzero_forward_passed",
+                            "raw_input_ancestry_passed",
+                        ),
+                        "affine_weights": (
+                            "passed",
+                            "executed",
+                            "mu_zero_identity_passed",
+                            "alpha_zero_nonzero_mu_passed",
+                            "exact_code_sum",
+                        ),
+                    }[optional]
+                    for field in fields:
+                        _true(proof.get(field), "stage." + optional + "." + field)
+                    _number(proof.get("cases"), "stage." + optional + ".cases", integer=True)
+                    _hash(proof.get("artifact_sha256"), "stage." + optional + " artifact")
     return receipt
 
 
