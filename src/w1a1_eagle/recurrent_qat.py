@@ -74,11 +74,18 @@ class _HardActivationSTE(torch.autograd.Function):
             normalized = x * torch.where(absmax > 0, qmax / absmax, 0)
             hard = torch.round(normalized).clamp(-qmax, qmax)
             saturation = hard.abs() == qmax
-        ctx.mark_non_differentiable(scale, saturation)
-        return hard * scale, scale, saturation
+        codes = hard.detach()
+        if bits == 1:
+            raw = x.contiguous().view(torch.int32)
+            negative = ((raw & -2147483648) != 0) & ((raw & 2147483647) != 0)
+            codes = torch.where(negative, -torch.ones_like(x), torch.ones_like(x))
+        ctx.mark_non_differentiable(scale, saturation, codes)
+        return hard * scale, scale, saturation, codes
 
     @staticmethod
-    def backward(ctx, grad_values: Tensor, grad_scale: Tensor, grad_saturation: Tensor):
+    def backward(
+        ctx, grad_values: Tensor, grad_scale: Tensor, grad_saturation: Tensor, grad_codes: Tensor
+    ):
         # Identity through the dequantized value; dynamic scale is detached.
         return grad_values, None
 
@@ -100,12 +107,44 @@ def hard_activation(input: Tensor, bits: ActivationBits) -> tuple[Tensor, Tensor
         if input.device.type == "cpu" and not bool(torch.isfinite(cast).all()):
             raise ValueError("A16 boundary cast overflow")
         return cast, torch.ones_like(cast[..., :1]), torch.zeros_like(cast, dtype=torch.bool)
-    return _HardActivationSTE.apply(input, bits)
+    values, scale, saturation, _ = _HardActivationSTE.apply(input, bits)
+    return values, scale, saturation
+
+
+class _HardAffineActivationSTE(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, input: Tensor, bits: int):
+        # Affine v1 uses the native safe reciprocal-overflow rule; the legacy
+        # symmetric quantizer remains unchanged. Only input has an identity STE.
+        from .learned_activation import learned_activation_reference
+
+        parameter = input.new_tensor(0.0 if bits == 1 else 1.0, dtype=torch.float32)
+        result = learned_activation_reference(input, bits, parameter)
+        ctx.mark_non_differentiable(result.scale, result.saturated, result.codes)
+        return result.values, result.scale, result.saturated, result.codes
+
+    @staticmethod
+    def backward(ctx, grad_values, grad_scale, grad_saturation, grad_codes):
+        return grad_values, None
+
+
+def hard_activation_with_codes(input: Tensor, bits: ActivationBits):
+    """One quantization call; native codes and original attached surrogate Q."""
+    if bits == 16:
+        values, scale, saturation = hard_activation(input, bits)
+        return values, scale, saturation, None
+    if type(bits) is not int or bits not in (1, 4, 8):
+        raise ValueError("unsupported activation width")
+    _validate_activation_input(input)
+    return _HardAffineActivationSTE.apply(input, bits)
 
 
 def _native_a1_projection(
-    input: Tensor, signs: Tensor, weight_scales: Tensor,
-    activation_scale: Tensor, bias: Tensor | None,
+    input: Tensor,
+    signs: Tensor,
+    weight_scales: Tensor,
+    activation_scale: Tensor,
+    bias: Tensor | None,
 ) -> Tensor:
     """Integer-valued F32 dot, weight scale, activation scale, then bias.
 
@@ -150,9 +189,9 @@ class _A1SingleForward(torch.autograd.Function):
             if ctx.needs_input_grad[2]:
                 # Row dot lowers to batched reductions, avoiding a dense T*S
                 # temporary. Never divide by scales: zero rows can revive.
-                grad_scales = torch.bmm(
-                    contraction.unsqueeze(1), signs.unsqueeze(2)
-                ).reshape_as(scales)
+                grad_scales = torch.bmm(contraction.unsqueeze(1), signs.unsqueeze(2)).reshape_as(
+                    scales
+                )
             if ctx.needs_input_grad[1]:
                 grad_signs = contraction * scales[:, None]
         if ctx.needs_input_grad[5]:
@@ -172,8 +211,9 @@ class _LearnedSingleForward(_A1SingleForward):
 class RowBinaryLinear(nn.Module):
     """Trainable one-bit row-scale linear for A1/A4/A8/A16 simulation.
 
-    `latent_sign` and `scale_offset` are the only trainable parameters. Frozen
-    biases are retained. A zero weight scale is legal and projects to zero.
+    The symmetric default trains `latent_sign` and `scale_offset`. Explicit
+    recipes can attach activation quantizers, row midpoints and an FC correction.
+    Frozen biases are retained. A zero weight scale is legal and projects to zero.
     A row checkpoint from this module is not a deployable GGUF.
     `a1_computation="single_forward"` opts into a reassociated surrogate VJP;
     the default reference retains bit-exact historical training arithmetic.
@@ -230,23 +270,63 @@ class RowBinaryLinear(nn.Module):
             raise ValueError("input last dimension differs from weight")
         if input.device != self.latent_sign.device:
             raise ValueError("input and linear must share device")
-        signs = (hard_sign_ste(self.latent_sign) if self._round_hard_signs is None
-                 else self._round_hard_signs)
+        signs = (
+            hard_sign_ste(self.latent_sign)
+            if self._round_hard_signs is None
+            else self._round_hard_signs
+        )
         weight_scales = self.effective_scales()
         quantizer = getattr(self, "activation_quantizer", None)
+        affine = getattr(self, "affine_binary", None)
+        if affine is not None:
+            from .affine_binary import affine_binary_projection
+
+            if quantizer is None:
+                values, scale, saturated, codes = hard_activation_with_codes(
+                    input, self.contract.activation_bits
+                )
+                identity = None
+            else:
+                result = quantizer(input)
+                values, scale, saturated, codes = (
+                    result.values,
+                    result.scale,
+                    result.saturated,
+                    result.codes,
+                )
+                identity = (id(quantizer), quantizer.parameter._version)
+            self.last_saturation_fraction = saturated.float().mean().detach()
+            return affine_binary_projection(
+                values,
+                signs,
+                weight_scales,
+                affine.midpoint,
+                codes=codes,
+                beta=None if codes is None else scale,
+                bias=self.frozen_bias,
+                single_forward=True,
+                cache_key=(input, self.contract.activation_bits, identity),
+            )
         if quantizer is not None:
             if quantizer.bits != self.contract.activation_bits:
                 raise ValueError("learned quantizer precision differs from linear contract")
             result = quantizer(input)
             self.last_saturation_fraction = result.saturated.float().mean().detach()
             if not torch.is_grad_enabled() or self.a1_computation == "single_forward":
-                return _LearnedSingleForward.apply(result.values, signs, weight_scales,
-                                                   result.codes, result.scale, self.frozen_bias)
+                return _LearnedSingleForward.apply(
+                    result.values,
+                    signs,
+                    weight_scales,
+                    result.codes,
+                    result.scale,
+                    self.frozen_bias,
+                )
             surrogate = F.linear(result.values, signs) * weight_scales
             surrogate = surrogate + (0 if self.frozen_bias is None else self.frozen_bias)
             with torch.no_grad():
-                native = (F.linear(result.codes.float(), signs.detach())
-                          * weight_scales.detach()) * result.scale
+                native = (
+                    F.linear(result.codes.float(), signs.detach()) * weight_scales.detach()
+                ) * result.scale
                 native = native + (0 if self.frozen_bias is None else self.frozen_bias)
             return native.detach() + (surrogate - surrogate.detach())
         if self.contract.activation_bits == 1 and not torch.is_grad_enabled():
@@ -254,15 +334,20 @@ class RowBinaryLinear(nn.Module):
             activation_scale = input.float().abs().double().mean(dim=-1, keepdim=True).float()
             self.last_saturation_fraction = input.new_zeros((), dtype=torch.float32)
             # Prefix reconstruction needs neither the surrogate GEMM nor Q.
-            return _native_a1_projection(input, signs, weight_scales,
-                                         activation_scale, self.frozen_bias) + 0.0
+            return (
+                _native_a1_projection(
+                    input, signs, weight_scales, activation_scale, self.frozen_bias
+                )
+                + 0.0
+            )
         quantized, activation_scale, saturated = hard_activation(
             input, self.contract.activation_bits
         )
         self.last_saturation_fraction = saturated.float().mean().detach()
         if self.contract.activation_bits == 1 and self.a1_computation == "single_forward":
-            return _A1SingleForward.apply(quantized, signs, weight_scales, input,
-                                          activation_scale, self.frozen_bias)
+            return _A1SingleForward.apply(
+                quantized, signs, weight_scales, input, activation_scale, self.frozen_bias
+            )
         surrogate = F.linear(quantized, signs) * weight_scales + (
             0 if self.frozen_bias is None else self.frozen_bias
         )
@@ -274,8 +359,9 @@ class RowBinaryLinear(nn.Module):
         # cancellation residual that changes a later A1 sign. Keep the original
         # dequantized-value STE, including meaningful gradients at scale zero.
         with torch.no_grad():
-            native = _native_a1_projection(input, signs.detach(), weight_scales.detach(),
-                                           activation_scale, self.frozen_bias)
+            native = _native_a1_projection(
+                input, signs.detach(), weight_scales.detach(), activation_scale, self.frozen_bias
+            )
         return native.detach() + (surrogate - surrogate.detach())
 
 
@@ -295,7 +381,10 @@ def shared_round_hard_signs(linears):
     try:
         for module in modules:
             module._round_hard_signs = hard_sign_ste(module.latent_sign)
-        yield
+        from .affine_binary import shared_affine_input_sums
+
+        with shared_affine_input_sums():
+            yield
     finally:
         for module in modules:
             module._round_hard_signs = None
@@ -319,6 +408,7 @@ class JointQATConfig:
     fusion_lr: float = 1e-4
     depth_loss_decay: float = 1.0
     optimization_readiness: dict | None = None
+    affine_weights: object | None = None
 
     def __post_init__(self) -> None:
         if type(self.allow_accelerator) is not bool:
@@ -335,44 +425,77 @@ class JointQATConfig:
             raise ValueError("unknown joint QAT objective")
         if type(self.seed) is not int or not 0 <= self.seed < 2**64:
             raise ValueError("seed must be an integer in [0,2**64)")
-        if any(isinstance(x, bool) or not math.isfinite(x) or x <= 0 for x in
-               (self.sign_lr, self.scale_lr, self.max_grad_norm,
-                self.activation_lr, self.fusion_lr)):
+        if any(
+            isinstance(x, bool) or not math.isfinite(x) or x <= 0
+            for x in (
+                self.sign_lr,
+                self.scale_lr,
+                self.max_grad_norm,
+                self.activation_lr,
+                self.fusion_lr,
+            )
+        ):
             raise ValueError("learning rates and gradient bound must be finite and positive")
         if self.a1_computation not in ("reference", "single_forward"):
             raise ValueError("unknown A1 computation implementation")
         if self.activation_quantization not in ("fixed", "learned"):
             raise ValueError("unknown activation quantization recipe")
-        if (isinstance(self.depth_loss_decay, bool) or not math.isfinite(self.depth_loss_decay)
-                or not 0 < self.depth_loss_decay <= 1):
+        if (
+            isinstance(self.depth_loss_decay, bool)
+            or not math.isfinite(self.depth_loss_decay)
+            or not 0 < self.depth_loss_decay <= 1
+        ):
             raise ValueError("depth loss decay must be finite in (0,1]")
         if self.activation_quantization == "learned" and self.contract.activation_bits == 16:
             raise ValueError("learned activations support A1/A4/A8 only")
         if self.binary_optimization is not None:
             from .qat_optimization import BinaryOptimizationConfig
+
             if isinstance(self.binary_optimization, dict):
-                object.__setattr__(self, "binary_optimization",
-                                   BinaryOptimizationConfig(**self.binary_optimization))
+                object.__setattr__(
+                    self,
+                    "binary_optimization",
+                    BinaryOptimizationConfig(**self.binary_optimization),
+                )
             elif not isinstance(self.binary_optimization, BinaryOptimizationConfig):
                 raise ValueError("binary optimization requires a validated recipe")
         if self.fusion_correction is not None:
             from .fusion_correction import FusionCorrectionConfig
+
             if isinstance(self.fusion_correction, dict):
-                object.__setattr__(self, "fusion_correction",
-                                   FusionCorrectionConfig(**self.fusion_correction))
+                object.__setattr__(
+                    self, "fusion_correction", FusionCorrectionConfig(**self.fusion_correction)
+                )
             elif not isinstance(self.fusion_correction, FusionCorrectionConfig):
                 raise ValueError("fusion correction requires a validated recipe")
+        if self.affine_weights is not None:
+            from .affine_binary import AffineBinaryConfig
+
+            if isinstance(self.affine_weights, dict):
+                object.__setattr__(
+                    self, "affine_weights", AffineBinaryConfig(**self.affine_weights)
+                )
+            elif not isinstance(self.affine_weights, AffineBinaryConfig):
+                raise ValueError("affine weights require a validated recipe")
         if self.optimization_readiness is not None:
             import re
+
             value = self.optimization_readiness
-            if (not isinstance(value, dict) or set(value) != {"path", "sha256"}
-                    or not isinstance(value["path"], str) or not Path(value["path"]).is_absolute()
-                    or not isinstance(value["sha256"], str)
-                    or re.fullmatch("[0-9a-f]{64}", value["sha256"]) is None):
+            if (
+                not isinstance(value, dict)
+                or set(value) != {"path", "sha256"}
+                or not isinstance(value["path"], str)
+                or not Path(value["path"]).is_absolute()
+                or not isinstance(value["sha256"], str)
+                or re.fullmatch("[0-9a-f]{64}", value["sha256"]) is None
+            ):
                 raise ValueError("optimization readiness requires an absolute path and SHA256")
         if self.contract.scale_layout != "row" and (
-            self.activation_quantization != "fixed" or self.binary_optimization is not None
-            or self.fusion_correction is not None or self.a1_computation != "reference"
+            self.activation_quantization != "fixed"
+            or self.binary_optimization is not None
+            or self.fusion_correction is not None
+            or self.affine_weights is not None
+            or self.a1_computation != "reference"
         ):
             raise ValueError("optimization options require row W1Ax")
 
@@ -418,27 +541,38 @@ def install_joint_linears(
         initial_scale = weight.abs().mean(dim=1)
         latent = torch.where(weight < 0, -torch.full_like(weight, 0.5), 0.5)
         bias = None if linear.bias is None else linear.bias.detach().to(torch.float32, device="cpu")
-        replacements[path] = RowBinaryLinear(latent, initial_scale, config.contract, bias=bias,
-                                              a1_computation=config.a1_computation).to(
-            config.device
-        )
+        replacements[path] = RowBinaryLinear(
+            latent, initial_scale, config.contract, bias=bias, a1_computation=config.a1_computation
+        ).to(config.device)
     for path, replacement in replacements.items():
         parent, name, _ = pending[path]
         setattr(parent, name, replacement)
     if config.binary_optimization is not None:
         from .qat_optimization import initialize_latents_
+
         initialize_latents_(replacements, config.binary_optimization)
     if config.activation_quantization == "learned":
         from .learned_activation import LearnedActivationBank
-        bank = LearnedActivationBank(config.contract.activation_bits,
-                                     {name: m.in_features for name, m in replacements.items()})
+
+        bank = LearnedActivationBank(
+            config.contract.activation_bits,
+            {name: m.in_features for name, m in replacements.items()},
+        )
         bank.to(config.device)
         bank.attach(replacements)
         drafter.qat_activation_bank = bank
     if config.fusion_correction is not None:
         from .fusion_correction import install_fusion_correction
-        install_fusion_correction(replacements["fc"], target=target,
-                                  config=config.fusion_correction)
+
+        install_fusion_correction(
+            replacements["fc"], target=target, config=config.fusion_correction
+        )
+    if config.affine_weights is not None:
+        from .affine_binary import install_affine_binary
+
+        drafter.qat_affine_bank = install_affine_binary(
+            replacements, target=target, config=config.affine_weights
+        )
     return replacements
 
 
@@ -460,6 +594,7 @@ def validate_joint_linears(
     attached = [getattr(module, "activation_quantizer", None) for module in linears.values()]
     if config.activation_quantization == "learned":
         from .learned_activation import LearnedActivationBank
+
         bank = LearnedActivationBank.from_attached(linears)
         bank.validate_attachment(linears)
     elif any(q is not None for q in attached):
@@ -470,11 +605,25 @@ def validate_joint_linears(
             raise ValueError("undeclared fusion correction")
     elif correction is None or correction.config != config.fusion_correction:
         raise ValueError("fusion correction config differs from attachment")
+    actual = {path for path, m in linears.items() if getattr(m, "affine_binary", None) is not None}
+    expected = (
+        set(linears)
+        if config.affine_weights is not None
+        and config.affine_weights.enabled
+        and config.affine_weights.coverage == "all"
+        else {"fc"}
+        if config.affine_weights is not None and config.affine_weights.enabled
+        else set()
+    )
+    if actual != expected or any(
+        linears[p].affine_binary.config != config.affine_weights for p in actual
+    ):
+        raise ValueError("affine midpoint coverage or recipe differs")
 
 
 def joint_parameter_families(linears) -> dict[str, list[nn.Parameter]]:
     """Explicit trainable ownership; shared activation parameters appear once."""
-    families = {"sign": [], "scale": [], "activation": [], "fusion": []}
+    families = {"sign": [], "scale": [], "activation": [], "fusion": [], "midpoint": []}
     seen = set()
     for path, module in linears.items():
         candidates = [("sign", module.latent_sign), ("scale", module.scale_offset)]
@@ -482,14 +631,23 @@ def joint_parameter_families(linears) -> dict[str, list[nn.Parameter]]:
         correction = getattr(module, "fusion_correction", None)
         if quantizer is not None:
             from .learned_activation import LearnedActivationQuantizer
+
             if not isinstance(quantizer, LearnedActivationQuantizer):
                 raise ValueError("unknown trainable activation module")
             candidates.extend(("activation", p) for p in quantizer.parameters())
         if correction is not None:
             from .fusion_correction import FusionCorrection
+
             if path != "fc" or not isinstance(correction, FusionCorrection):
                 raise ValueError("correction is restricted to feature fusion")
             candidates.extend(("fusion", p) for p in correction.parameters())
+        affine = getattr(module, "affine_binary", None)
+        if affine is not None:
+            from .affine_binary import AffineBinaryMidpoint
+
+            if type(affine) is not AffineBinaryMidpoint:
+                raise ValueError("unknown affine weight module")
+            candidates.append(("midpoint", affine.midpoint))
         for family, parameter in candidates:
             if parameter.requires_grad and id(parameter) not in seen:
                 families[family].append(parameter)
@@ -502,13 +660,21 @@ def joint_optimizer(linears, config: JointQATConfig) -> torch.optim.Optimizer:
     families = joint_parameter_families(linears)
     if config.binary_optimization is not None:
         from .qat_optimization import make_binary_optimizer
+
         optimizer = make_binary_optimizer(linears, config.binary_optimization)
     else:
-        optimizer = torch.optim.AdamW([
-            {"params": families["sign"], "lr": config.sign_lr, "family": "sign"},
-            {"params": families["scale"], "lr": config.scale_lr, "family": "scale"},
-        ], weight_decay=0, foreach=False)
-    for family, lr in (("activation", config.activation_lr), ("fusion", config.fusion_lr)):
+        optimizer = torch.optim.AdamW(
+            [
+                {"params": families["sign"], "lr": config.sign_lr, "family": "sign"},
+                {"params": families["scale"], "lr": config.scale_lr, "family": "scale"},
+            ],
+            weight_decay=0,
+            foreach=False,
+        )
+    rates = [("activation", config.activation_lr), ("fusion", config.fusion_lr)]
+    if config.affine_weights is not None:
+        rates.append(("midpoint", config.affine_weights.midpoint_lr))
+    for family, lr in rates:
         if families[family]:
             optimizer.add_param_group({"params": families[family], "lr": lr, "family": family})
     return optimizer
@@ -594,12 +760,25 @@ def joint_train_step(
             loss = supported_prefix_ce(logits, audit)
         else:
             from .qat_curriculum import depth_weighted_supported_ce
-            loss = depth_weighted_supported_ce(logits, audit, tuple(range(len(audit.ce_mask))),
-                                               decay=config.depth_loss_decay)
+
+            loss = depth_weighted_supported_ce(
+                logits, audit, tuple(range(len(audit.ce_mask))), decay=config.depth_loss_decay
+            )
     else:
         if teacher is None:
             raise ValueError("compact probability objective needs teacher")
         loss = compact_probability_loss(logits, audit, teacher)
+    token_loss = loss
+    midpoint_penalty = sum(
+        (
+            m.affine_binary.regularization_loss()
+            for m in linears.values()
+            if getattr(m, "affine_binary", None) is not None
+        ),
+        loss.new_zeros(()),
+    )
+    if families["midpoint"]:
+        loss = loss + midpoint_penalty
     if not loss.requires_grad or not bool(torch.isfinite(loss)):
         raise ValueError("joint loss must be finite and differentiable")
     loss.backward()
@@ -626,9 +805,14 @@ def joint_train_step(
         norm = torch.nn.utils.clip_grad_norm_(params, config.max_grad_norm, error_if_nonfinite=True)
     else:
         from .qat_optimization import transform_binary_gradients_
+
         gradient_metrics = transform_binary_gradients_(
-            linears, config.binary_optimization,
-            additional_parameters=families["activation"] + families["fusion"])
+            linears,
+            config.binary_optimization,
+            additional_parameters=families["activation"]
+            + families["fusion"]
+            + families["midpoint"],
+        )
         norm = gradient_metrics["gradient_norm"]
     optimizer.step()
     for module in linears.values():
@@ -640,7 +824,7 @@ def joint_train_step(
         module.project_scales_()
     projected = set()
     for module in linears.values():
-        for name in ("activation_quantizer", "fusion_correction"):
+        for name in ("activation_quantizer", "fusion_correction", "affine_binary"):
             child = getattr(module, name, None)
             if child is not None and id(child) not in projected:
                 child.project_()
@@ -677,6 +861,8 @@ def joint_train_step(
     )
     return {
         "loss": float(loss.detach()),
+        "token_loss": float(token_loss.detach()),
+        "midpoint_regularization": float(midpoint_penalty.detach()),
         "gradient_tensors": gradient_tensors,
         "gradient_norm": float(norm),
         "sign_flips": sign_flips,
@@ -719,12 +905,24 @@ def save_joint_checkpoint(
     activation_quantizers = None
     if config.activation_quantization == "learned":
         from .learned_activation import LearnedActivationBank
+
         activation_quantizers = LearnedActivationBank.from_attached(linears).native_parameters()
     fusion_descriptor = None
     correction = getattr(linears["fc"], "fusion_correction", None)
     if correction is not None:
         fusion_descriptor, tensors = correction.native_payload()
-        arrays.update({name: tensor.detach().cpu().numpy().copy() for name, tensor in tensors.items()})
+        arrays.update(
+            {name: tensor.detach().cpu().numpy().copy() for name, tensor in tensors.items()}
+        )
+    affine_descriptor = None
+    if config.affine_weights is not None and config.affine_weights.enabled:
+        from .affine_binary import AffineBinaryBank
+
+        bank = AffineBinaryBank.from_attached(linears)
+        affine_descriptor, tensors = bank.native_payload()
+        arrays.update(
+            {name: tensor.detach().cpu().numpy().copy() for name, tensor in tensors.items()}
+        )
     checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     np.savez(checkpoint_path, **arrays)
@@ -747,12 +945,24 @@ def save_joint_checkpoint(
         "projections": projections,
     }
     if activation_quantizers is not None:
-        manifest.update(schema_version=3,
-                        activation_rule="learned_scalar_a1_threshold_a4a8_clip_v1",
-                        activation_quantizers=activation_quantizers)
+        manifest.update(
+            schema_version=3,
+            activation_rule="learned_scalar_a1_threshold_a4a8_clip_v1",
+            activation_quantizers=activation_quantizers,
+        )
     if fusion_descriptor is not None:
-        manifest.update(schema_version=4, activation_quantizers=activation_quantizers,
-                        fusion_correction=fusion_descriptor)
+        manifest.update(
+            schema_version=4,
+            activation_quantizers=activation_quantizers,
+            fusion_correction=fusion_descriptor,
+        )
+    if affine_descriptor is not None:
+        manifest.update(
+            schema_version=5,
+            activation_quantizers=activation_quantizers,
+            fusion_correction=fusion_descriptor,
+            affine_weights=affine_descriptor,
+        )
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
     return {
         "checkpoint_sha256": digest,

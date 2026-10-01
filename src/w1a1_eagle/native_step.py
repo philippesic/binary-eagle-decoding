@@ -270,17 +270,23 @@ class NativeStepAdapter(nn.Module):
                 # Loaded only when explicitly installed. These optional modules
                 # are separate features; arbitrary trainable children are not
                 # admitted by the native adapter.
-                if (type(quantizer).__module__ != f"{__package__}.learned_activation"
-                        or type(quantizer).__name__ != "LearnedActivationQuantizer"):
+                if (
+                    type(quantizer).__module__ != f"{__package__}.learned_activation"
+                    or type(quantizer).__name__ != "LearnedActivationQuantizer"
+                ):
                     raise ValueError(f"{path}: unrecognized activation quantizer")
                 from .learned_activation import LearnedActivationQuantizer
 
                 if type(quantizer) is not LearnedActivationQuantizer:
                     raise ValueError(f"{path}: unrecognized activation quantizer")
-                if (not isinstance(module, RowBinaryLinear)
-                        or quantizer.bits != module.contract.activation_bits
-                        or quantizer.in_features != module.in_features):
-                    raise ValueError(f"{path}: activation quantizer contract differs from projection")
+                if (
+                    not isinstance(module, RowBinaryLinear)
+                    or quantizer.bits != module.contract.activation_bits
+                    or quantizer.in_features != module.in_features
+                ):
+                    raise ValueError(
+                        f"{path}: activation quantizer contract differs from projection"
+                    )
                 parameters = tuple(quantizer.parameters())
                 if len(parameters) != 1 or parameters[0] is not quantizer.parameter:
                     raise ValueError(f"{path}: quantizer must own its declared scalar parameter")
@@ -289,8 +295,10 @@ class NativeStepAdapter(nn.Module):
                 extra_parameters.extend(parameters)
             correction = getattr(module, "fusion_correction", None)
             if correction is not None:
-                if (type(correction).__module__ != f"{__package__}.fusion_correction"
-                        or type(correction).__name__ != "FusionCorrection"):
+                if (
+                    type(correction).__module__ != f"{__package__}.fusion_correction"
+                    or type(correction).__name__ != "FusionCorrection"
+                ):
                     raise ValueError(f"{path}: unrecognized FC fusion correction")
                 from .fusion_correction import FusionCorrection
 
@@ -300,9 +308,19 @@ class NativeStepAdapter(nn.Module):
                 if any(name not in ("u", "v", "output_bias") for name, _ in named_parameters):
                     raise ValueError("FC fusion correction owns an undeclared parameter")
                 extra_parameters.extend(parameter for _, parameter in named_parameters)
-        frozen_ids = {
-            id(drafter.get_submodule(path).weight) for path in norm_paths
-        }
+        for path, module in linears.items():
+            affine = getattr(module, "affine_binary", None)
+            if affine is not None:
+                from .affine_binary import AffineBinaryMidpoint
+
+                if (
+                    type(affine) is not AffineBinaryMidpoint
+                    or affine.midpoint.shape != (module.out_features,)
+                    or tuple(affine.parameters()) != (affine.midpoint,)
+                ):
+                    raise ValueError(f"{path}: unknown or invalid affine midpoint")
+                extra_parameters.append(affine.midpoint)
+        frozen_ids = {id(drafter.get_submodule(path).weight) for path in norm_paths}
         borrowed_embedding = getattr(drafter, "embed_tokens", None)
         if isinstance(borrowed_embedding, nn.Embedding):
             frozen_ids.add(id(borrowed_embedding.weight))
@@ -394,9 +412,9 @@ class NativeStepAdapter(nn.Module):
         CPU retains the serial reference's independently repeated F32
         multiplication per position; accelerator uses its declared power form.
         """
-        theta_scale = torch.tensor(
-            self.rope_theta, dtype=torch.float32, device=self.device
-        ).pow(-2.0 / self.head_dim)
+        theta_scale = torch.tensor(self.rope_theta, dtype=torch.float32, device=self.device).pow(
+            -2.0 / self.head_dim
+        )
         if self.device.type == "cpu":
             angle = torch.empty(
                 (positions.numel(), self.head_dim // 2), dtype=torch.float32, device=self.device
@@ -448,8 +466,11 @@ class NativeStepAdapter(nn.Module):
             embeddings = torch.stack([self._embedding(token) for token in token_ids[start:end]])
             feature = self.drafter.fc(raw_features[start:end])
             fused = torch.cat(
-                (self._rms_norm(embeddings, layer.input_layernorm),
-                 self._rms_norm(feature, layer.hidden_norm)), dim=-1
+                (
+                    self._rms_norm(embeddings, layer.input_layernorm),
+                    self._rms_norm(feature, layer.hidden_norm),
+                ),
+                dim=-1,
             )
             key = layer.self_attn.k_proj(fused).reshape(-1, self.kv_heads, self.head_dim)
             value = layer.self_attn.v_proj(fused).reshape(-1, self.kv_heads, self.head_dim)
@@ -472,9 +493,11 @@ class NativeStepAdapter(nn.Module):
             raise ValueError("batched head is unavailable for diagnostic attention modes")
         if (
             not isinstance(states, Tensor)
-            or states.ndim != 2 or states.shape[0] < 1
+            or states.ndim != 2
+            or states.shape[0] < 1
             or states.shape[1] != self.hidden_size
-            or states.device != self.device or states.dtype != torch.float32
+            or states.device != self.device
+            or states.dtype != torch.float32
             or (self.device.type == "cpu" and not torch.isfinite(states).all())
         ):
             raise ValueError("batched head needs finite F32 hidden rows")

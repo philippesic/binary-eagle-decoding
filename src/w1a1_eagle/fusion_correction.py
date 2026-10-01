@@ -78,7 +78,9 @@ class FusionCorrection(nn.Module):
     """
 
     def __init__(
-        self, in_features: int, out_features: int,
+        self,
+        in_features: int,
+        out_features: int,
         config: FusionCorrectionConfig = FusionCorrectionConfig(),
     ) -> None:
         super().__init__()
@@ -98,8 +100,10 @@ class FusionCorrection(nn.Module):
             self.register_parameter("u", None)
             self.register_parameter("v", None)
         self.register_parameter(
-            "output_bias", nn.Parameter(torch.zeros(out_features, dtype=torch.float32))
-            if config.output_bias else None,
+            "output_bias",
+            nn.Parameter(torch.zeros(out_features, dtype=torch.float32))
+            if config.output_bias
+            else None,
         )
 
     def _validate_masters(self) -> None:
@@ -114,15 +118,19 @@ class FusionCorrection(nn.Module):
             return None
         return self.output_bias.clamp(-self.config.bias_bound, self.config.bias_bound)
 
-    def forward(self, raw_input: Tensor) -> Tensor:
-        if (not raw_input.is_floating_point() or raw_input.ndim < 1
-                or raw_input.shape[-1] != self.in_features):
+    def _raw_delta(self, raw_input: Tensor) -> Tensor:
+        if (
+            not raw_input.is_floating_point()
+            or raw_input.ndim < 1
+            or raw_input.shape[-1] != self.in_features
+        ):
             raise ValueError("raw fusion input must be floating point with declared width")
         if raw_input.device.type == "cpu" and not bool(torch.isfinite(raw_input).all()):
             raise ValueError("raw fusion input must be finite")
         if not self.config.enabled:
             return raw_input.new_zeros(
-                (*raw_input.shape[:-1], self.out_features), dtype=torch.float32,
+                (*raw_input.shape[:-1], self.out_features),
+                dtype=torch.float32,
             )
         self._validate_masters()
         if raw_input.device != self.u.device:
@@ -130,17 +138,22 @@ class FusionCorrection(nn.Module):
         # Disabling autocast prevents an implicit F16/BF16 intermediate/output.
         with torch.autocast(device_type=raw_input.device.type, enabled=False):
             latent = F.linear(raw_input.float(), _F16FactorSTE.apply(self.v))
-            delta = F.linear(latent, _F16FactorSTE.apply(self.u))
-            bias = self.effective_bias()
-            return delta if bias is None else delta + bias
+            return F.linear(latent, _F16FactorSTE.apply(self.u))
+
+    def forward(self, raw_input: Tensor) -> Tensor:
+        delta = self._raw_delta(raw_input)
+        bias = self.effective_bias()
+        return delta if bias is None else delta + bias
 
     def add_to(self, raw_input: Tensor, binary_output: Tensor) -> Tensor:
         if not self.config.enabled:
             return binary_output
-        delta = self(raw_input)
+        delta = self._raw_delta(raw_input)
         if delta.shape != binary_output.shape or delta.device != binary_output.device:
             raise ValueError("binary output and fusion correction shape/device disagree")
-        return binary_output.float() + delta
+        combined = binary_output.float() + delta
+        bias = self.effective_bias()
+        return combined if bias is None else combined + bias
 
     @torch.no_grad()
     def project_(self) -> None:
@@ -155,9 +168,13 @@ class FusionCorrection(nn.Module):
 
     def identity(self) -> dict[str, Any]:
         contract = {
-            "version": SCHEMA_VERSION, "path": "fc", "in_features": self.in_features,
-            "out_features": self.out_features, "config": asdict(self.config),
-            "arithmetic": ARITHMETIC, "kind": "binary_core_hybrid",
+            "version": SCHEMA_VERSION,
+            "path": "fc",
+            "in_features": self.in_features,
+            "out_features": self.out_features,
+            "config": asdict(self.config),
+            "arithmetic": ARITHMETIC,
+            "kind": "binary_core_hybrid",
         }
         contract["sha256"] = hashlib.sha256(
             json.dumps(contract, sort_keys=True, separators=(",", ":")).encode()
@@ -173,7 +190,8 @@ class FusionCorrection(nn.Module):
             raise ValueError("fusion factor overflows F16")
         state = {name: tensor.detach().cpu().clone() for name, tensor in self.state_dict().items()}
         return {
-            "identity": self.identity(), "state": state,
+            "identity": self.identity(),
+            "state": state,
             "state_sha256": {name: _tensor_sha256(tensor) for name, tensor in state.items()},
         }
 
@@ -190,9 +208,12 @@ class FusionCorrection(nn.Module):
         if set(state) != set(expected) or set(hashes) != set(expected):
             raise ValueError("fusion state parameter names differ")
         for name, tensor in state.items():
-            if (not isinstance(tensor, Tensor) or tensor.dtype != torch.float32
-                    or tensor.shape != expected[name].shape
-                    or not bool(torch.isfinite(tensor).all())):
+            if (
+                not isinstance(tensor, Tensor)
+                or tensor.dtype != torch.float32
+                or tensor.shape != expected[name].shape
+                or not bool(torch.isfinite(tensor).all())
+            ):
                 raise ValueError(f"{name}: invalid fusion master tensor")
             if hashes[name] != _tensor_sha256(tensor):
                 raise ValueError(f"{name}: fusion state hash differs")
@@ -215,8 +236,10 @@ class FusionCorrection(nn.Module):
         if bias is not None:
             arrays["fc.correction_bias"] = bias.detach().cpu().clone()
         descriptor = {
-            "version": SCHEMA_VERSION, "rank": self.config.rank,
-            "u_name": "fc.correction_u.weight", "v_name": "fc.correction_v.weight",
+            "version": SCHEMA_VERSION,
+            "rank": self.config.rank,
+            "u_name": "fc.correction_u.weight",
+            "v_name": "fc.correction_v.weight",
             "bias_name": None if bias is None else "fc.correction_bias",
             "bias_bound": self.config.bias_bound if bias is not None else None,
             "arithmetic": ARITHMETIC,
@@ -226,10 +249,15 @@ class FusionCorrection(nn.Module):
     def manifest_payload(self) -> dict[str, Any]:
         descriptor, arrays = self.native_payload()
         return {
-            "identity": self.identity(), "native_descriptor": descriptor,
+            "identity": self.identity(),
+            "native_descriptor": descriptor,
             "native_tensors": {
-                name: {"shape": list(tensor.shape), "dtype": str(tensor.dtype),
-                       "sha256": _tensor_sha256(tensor)} for name, tensor in arrays.items()
+                name: {
+                    "shape": list(tensor.shape),
+                    "dtype": str(tensor.dtype),
+                    "sha256": _tensor_sha256(tensor),
+                }
+                for name, tensor in arrays.items()
             },
             "export_status": "requires_native_validation" if self.config.enabled else "disabled",
         }
@@ -238,7 +266,8 @@ class FusionCorrection(nn.Module):
 def _storage_keys(module: nn.Module) -> set[tuple[str, int]]:
     return {
         (str(t.device), t.untyped_storage().data_ptr())
-        for t in (*module.parameters(), *module.buffers()) if t.numel()
+        for t in (*module.parameters(), *module.buffers())
+        if t.numel()
     }
 
 
@@ -266,7 +295,9 @@ def _fusion_correction_hook(module, args, kwargs, output):
 
 
 def install_fusion_correction(
-    fc: nn.Module, *, target: nn.Module,
+    fc: nn.Module,
+    *,
+    target: nn.Module,
     config: FusionCorrectionConfig = FusionCorrectionConfig(),
 ) -> FusionCorrection:
     """Register one residual on RowBinaryLinear.fc and hook its original input.
@@ -291,7 +322,10 @@ def install_fusion_correction(
 
 
 def correction_parameter_group(
-    correction: FusionCorrection, *, target: nn.Module, lr: float,
+    correction: FusionCorrection,
+    *,
+    target: nn.Module,
+    lr: float,
 ) -> dict[str, Any] | None:
     validate_target_separation(correction, target)
     if not math.isfinite(lr) or lr <= 0:
@@ -301,8 +335,11 @@ def correction_parameter_group(
 
 
 def validate_correction_optimizer(
-    optimizer: torch.optim.Optimizer, corrections: Iterable[FusionCorrection], *,
-    base_parameters: Iterable[nn.Parameter] = (), target: nn.Module,
+    optimizer: torch.optim.Optimizer,
+    corrections: Iterable[FusionCorrection],
+    *,
+    base_parameters: Iterable[nn.Parameter] = (),
+    target: nn.Module,
 ) -> None:
     """Require exact base+correction ownership once, with no target storage."""
     if not isinstance(target, nn.Module):
@@ -314,8 +351,11 @@ def validate_correction_optimizer(
     expected_ids = [id(p) for p in expected]
     actual = [p for group in optimizer.param_groups for p in group["params"]]
     actual_ids = [id(p) for p in actual]
-    if (len(set(expected_ids)) != len(expected_ids) or len(set(actual_ids)) != len(actual_ids)
-            or set(actual_ids) != set(expected_ids)):
+    if (
+        len(set(expected_ids)) != len(expected_ids)
+        or len(set(actual_ids)) != len(actual_ids)
+        or set(actual_ids) != set(expected_ids)
+    ):
         raise ValueError("optimizer must own exactly base and fusion parameters once")
     target_storage = _storage_keys(target)
     if any((str(p.device), p.untyped_storage().data_ptr()) in target_storage for p in actual):

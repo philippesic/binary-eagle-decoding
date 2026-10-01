@@ -1,0 +1,125 @@
+{
+  "schema": "qat_optimization_profiles_v1",
+  "base_config": "configs/continuous_w1ax.json",
+  "profiles": {
+    "baseline": {},
+    "speed": {
+      "a1_computation": "single_forward",
+      "optimize_cache": true,
+      "optimize_head": true,
+      "context_chunk_size": 64
+    },
+    "lower-inertia": {
+      "a1_computation": "single_forward",
+      "optimize_cache": true,
+      "optimize_head": true,
+      "context_chunk_size": 64,
+      "binary_optimization": {
+        "latent_magnitude": 0.1,
+        "optimizer": "adamw",
+        "sign_lr": 0.001,
+        "scale_lr": 1e-05
+      }
+    },
+    "sgd": {
+      "a1_computation": "single_forward",
+      "optimize_cache": true,
+      "optimize_head": true,
+      "context_chunk_size": 64,
+      "binary_optimization": {
+        "optimizer": "sgd",
+        "momentum": 0.9,
+        "sign_lr": 0.001,
+        "scale_lr": 1e-05
+      }
+    },
+    "weight-unit-gradient": {
+      "a1_computation": "single_forward",
+      "optimize_cache": true,
+      "optimize_head": true,
+      "context_chunk_size": 64,
+      "binary_optimization": {
+        "sign_gradient_rule": "weight_unit",
+        "scale_gradient_rule": "fan_in_rsqrt",
+        "sign_lr": 0.001,
+        "scale_lr": 1e-05
+      }
+    },
+    "learned-activations": {
+      "a1_computation": "single_forward",
+      "optimize_cache": true,
+      "optimize_head": true,
+      "context_chunk_size": 64,
+      "activation_quantization": "learned",
+      "activation_lr": 1e-05
+    },
+    "depth-weighting": {
+      "a1_computation": "single_forward",
+      "optimize_cache": true,
+      "optimize_head": true,
+      "context_chunk_size": 64,
+      "depth_loss_decay": 0.8
+    },
+    "fusion-rank1": {
+      "a1_computation": "single_forward",
+      "optimize_cache": true,
+      "optimize_head": true,
+      "context_chunk_size": 64,
+      "fusion_correction": {
+        "enabled": true,
+        "rank": 1
+      }
+    },
+    "fusion-rank4": {
+      "a1_computation": "single_forward",
+      "optimize_cache": true,
+      "optimize_head": true,
+      "context_chunk_size": 64,
+      "fusion_correction": {
+        "enabled": true,
+        "rank": 4
+      }
+    },
+    "affine-fusion": {
+      "a1_computation": "single_forward",
+      "optimize_cache": true,
+      "optimize_head": true,
+      "context_chunk_size": 64,
+      "affine_weights": {
+        "enabled": true,
+        "coverage": "fusion",
+        "midpoint_lr": 1e-05,
+        "mild_l2": 1e-06
+      }
+    },
+    "affine-all": {
+      "a1_computation": "single_forward",
+      "optimize_cache": true,
+      "optimize_head": true,
+      "context_chunk_size": 64,
+      "affine_weights": {
+        "enabled": true,
+        "coverage": "all",
+        "midpoint_lr": 1e-05,
+        "mild_l2": 1e-06
+      }
+    },
+    "combined-contract-smoke": {
+      "a1_computation": "single_forward",
+      "optimize_cache": true,
+      "optimize_head": true,
+      "context_chunk_size": 64,
+      "activation_quantization": "learned",
+      "fusion_correction": {
+        "enabled": true,
+        "rank": 4,
+        "output_bias": true
+      },
+      "affine_weights": {
+        "enabled": true,
+        "coverage": "all"
+      }
+    }
+  },
+  "boundary": "Preparation only: no automatic training launch, no current-run resume/source mutation. Each CUDA option requires its own measured receipt. Profiles are prepared comparisons; no quality/speed gains established."
+}
