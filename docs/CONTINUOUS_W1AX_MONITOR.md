@@ -90,6 +90,12 @@ At16:14:59UTC the next tick verified a fresh local MacBook shell before the dire
 query: healthy273/353,8,544train /0dev,zerooptimizer. The unknown is resolved;
 prior raw evidence preserved. Local transport closed, host job unchanged.
 
+If get_command_result reports an output-capture error, read the already executed
+LOCAL transport pane before closing it and preserve any existing checker JSON.
+This is reading existing transport output, not a second remote query. Never use
+the host job pane. At18:47UTC the wrapper returned no output; health unknown,
+last verified18:30UTC9,832train /0dev preserved; no retry/recovery, monitor ACTIVE.
+
 ## Windows SSH shell bridge
 
 The registered RTX5080 endpoint is Windows SSH, with Linux files inside WSL.

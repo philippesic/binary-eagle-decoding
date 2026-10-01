@@ -8,7 +8,7 @@ data. Evaluate native draft quality and speed against Q4_0 when GPU work is
 explicitly permitted. Preserve the pinned FP16 target/verifier and draft map.
 This continues the existing goal rather than opening a second goal.
 
-**State: RTX5080 pipeline healthy at 2026-10-01 17:00:54 UTC; 9,000 train prompts captured.** One CPU checker passed: supervisor05, 288 completed manifests / 9,000 train / 0 dev, ordinal288/353, zero optimizer steps. Existing15-minute monitor ACTIVE; budget1of2. Automatic training after all frozen gates remains authorized; RTX2080Ti paused, Q4_0 primary, finals sealed.
+**State: RTX5080 observation unknown at 2026-10-01 18:47 UTC; monitor ACTIVE.** tmux output-capture error produced no checker result. Last verified18:30:46UTC: healthy supervisor05,314 completed manifests /9,832train /0dev,ordinal313/353,zerooptimizer. No retry/recovery or job action. Existing automatic training after all frozen gates remains authorized; RTX2080Ti paused, Q4_0 primary, finals sealed.
 
 ## Current findings and work
 
@@ -5037,3 +5037,31 @@ and Q4_0 primary baseline frozen; finals sealed. Next: single bounded CPU
 observations; quiet ordinary progress, notify actual optimizer start/new verified
 failure/completion/required action. No operator remains active. Docs-only
 checkpoint follows`bef2615`; diff check is appropriate verification.
+
+## Monitor output unavailable — 2026-10-01 18:47 UTC
+
+Pinned Luna/high `/root/health_20261001_1844` (fork none) confirmed a fresh local
+MacBook shell and dispatched the exact validated2,291-character stored SSH query
+once. tmux MCP result `5c41f04f-62ab-4425-9b20-8c8b8d53be67` reported
+“Command output could not be captured properly.” No checked_at_utc JSON or
+checker stdout available. The recorded18:47:56.123UTC is local observation time,
+not a remote verification timestamp. Health UNKNOWN, not verified run failure.
+Last verified18:30:46.208035UTC: healthy313/353,314completed manifests /9,832train
+/0dev,optimization_started:false,steps:{}. Prior data/health retained.
+
+Ignored raw snapshot:
+`runs/luna-continuous-a8-a1-20260929/health-observation-2026-10-01T18-47-56-123Z.json`.
+Exact command and raw MCP error retained; last-health unknown and registration
+last_observed_health unknown, with last_verified_health preserved. User notified
+once. Local transport$119 closed/absence verified; host job socket
+`binary-eagle-runtime` / session `continuous-a8-a1-native-order-20261001-05`
+untouched. No second checker, GPU query, remote inspection or retry/recovery.
+Budget1of2 unchanged, existing15-minute monitor ACTIVE, same autorun after full
+frozen capture/audit/readiness/coverage and paired CUDA smoke remains authorized.
+
+Next tick: same fresh LOCAL shell and direct command flow. If MCP wrapper cannot
+capture output, read the already executed LOCAL transport pane before closing it
+to preserve/salvage existing output; this is no second checker or remote command.
+Never attach to the host job pane. Suppress duplicate unchanged unknown alerts.
+No source/runtime/config/data/precision/tier/cap/final changes. Docs-only
+checkpoint follows`a18232c`; diff check is appropriate verification.
