@@ -161,6 +161,14 @@ class _A1SingleForward(torch.autograd.Function):
         return grad_quantized, grad_signs, grad_scales, None, None, grad_bias
 
 
+class _LearnedSingleForward(_A1SingleForward):
+    @staticmethod
+    def forward(ctx, quantized, signs, scales, codes, activation_scale, bias):
+        ctx.save_for_backward(quantized, signs, scales)
+        native = (F.linear(codes.float(), signs) * scales) * activation_scale
+        return native + (0 if bias is None else bias)
+
+
 class RowBinaryLinear(nn.Module):
     """Trainable one-bit row-scale linear for A1/A4/A8/A16 simulation.
 
@@ -225,6 +233,22 @@ class RowBinaryLinear(nn.Module):
         signs = (hard_sign_ste(self.latent_sign) if self._round_hard_signs is None
                  else self._round_hard_signs)
         weight_scales = self.effective_scales()
+        quantizer = getattr(self, "activation_quantizer", None)
+        if quantizer is not None:
+            if quantizer.bits != self.contract.activation_bits:
+                raise ValueError("learned quantizer precision differs from linear contract")
+            result = quantizer(input)
+            self.last_saturation_fraction = result.saturated.float().mean().detach()
+            if not torch.is_grad_enabled() or self.a1_computation == "single_forward":
+                return _LearnedSingleForward.apply(result.values, signs, weight_scales,
+                                                   result.codes, result.scale, self.frozen_bias)
+            surrogate = F.linear(result.values, signs) * weight_scales
+            surrogate = surrogate + (0 if self.frozen_bias is None else self.frozen_bias)
+            with torch.no_grad():
+                native = (F.linear(result.codes.float(), signs.detach())
+                          * weight_scales.detach()) * result.scale
+                native = native + (0 if self.frozen_bias is None else self.frozen_bias)
+            return native.detach() + (surrogate - surrogate.detach())
         if self.contract.activation_bits == 1 and not torch.is_grad_enabled():
             _validate_activation_input(input)
             activation_scale = input.float().abs().double().mean(dim=-1, keepdim=True).float()
@@ -396,6 +420,7 @@ def install_joint_linears(
                                      {name: m.in_features for name, m in replacements.items()})
         bank.to(config.device)
         bank.attach(replacements)
+        drafter.qat_activation_bank = bank
     if config.fusion_correction is not None:
         from .fusion_correction import install_fusion_correction
         install_fusion_correction(replacements["fc"], target=target,

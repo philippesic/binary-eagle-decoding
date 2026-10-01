@@ -40,6 +40,8 @@ from .recurrent_qat import (
     W1AxContract,
     install_joint_linears,
     joint_train_step,
+    joint_optimizer,
+    joint_parameter_families,
     save_joint_checkpoint,
     shared_round_hard_signs,
 )
@@ -70,6 +72,16 @@ class ContinuousConfig:
     min_host_available_bytes: int = 2 * 1024**3
     log_max_bytes: int = 8 * 1024**2
     log_backups: int = 3
+    a1_computation: str = "reference"
+    activation_quantization: str = "fixed"
+    activation_lr: float = 1e-5
+    binary_optimization: object | None = None
+    fusion_correction: object | None = None
+    fusion_lr: float = 1e-4
+    depth_loss_decay: float = 1.0
+    optimize_cache: bool = False
+    optimize_head: bool = False
+    context_chunk_size: int = 64
 
     def __post_init__(self):
         if torch.device(self.device).type not in {"cpu", "cuda"}:
@@ -98,6 +110,14 @@ class ContinuousConfig:
                 raise ValueError(f"{name} must be positive or null")
         if len(self.seeds) != 2 or self.seeds[0] == self.seeds[1]:
             raise ValueError("A8 and A1 need distinct seeds")
+        if type(self.optimize_cache) is not bool or type(self.optimize_head) is not bool:
+            raise ValueError("cache/head controls must be boolean")
+        if type(self.context_chunk_size) is not int or self.context_chunk_size < 1:
+            raise ValueError("context chunks must be positive integers")
+        # Joint validation also canonicalizes nested JSON recipe objects.
+        validated = self.qat(8)
+        object.__setattr__(self, "binary_optimization", validated.binary_optimization)
+        object.__setattr__(self, "fusion_correction", validated.fusion_correction)
 
     def qat(self, bits: int) -> JointQATConfig:
         return JointQATConfig(
@@ -108,6 +128,13 @@ class ContinuousConfig:
             scale_lr=self.scale_lr,
             max_grad_norm=self.max_grad_norm,
             seed=self.seeds[0 if bits == 8 else 1],
+            a1_computation=self.a1_computation,
+            activation_quantization=self.activation_quantization,
+            activation_lr=self.activation_lr,
+            binary_optimization=self.binary_optimization,
+            fusion_correction=self.fusion_correction,
+            fusion_lr=self.fusion_lr,
+            depth_loss_decay=self.depth_loss_decay,
         )
 
 
@@ -240,6 +267,13 @@ def build_lanes(provider, config: ContinuousConfig, run_dir: Path | None = None)
     other_linears = {path: other.get_submodule(path) for path in linears}
     for module in other_linears.values():
         module.contract = config.qat(1).contract
+    if config.activation_quantization == "learned":
+        from .learned_activation import LearnedActivationBank
+        bank = LearnedActivationBank(1, {name: m.in_features for name, m in other_linears.items()})
+        for module in other_linears.values():
+            del module.activation_quantizer
+        bank.attach(other_linears)
+        other.qat_activation_bank = bank
     # Share only frozen operands while both copies are still on CPU. Native
     # norm rebinding by each adapter may later replace tiny norm parameters;
     # embedding ownership stays shared without a second GPU allocation.
@@ -273,17 +307,7 @@ def build_lanes(provider, config: ContinuousConfig, run_dir: Path | None = None)
                 model,
                 modules,
                 adapter,
-                torch.optim.AdamW(
-                    [
-                        {"params": [m.latent_sign for m in modules.values()], "lr": config.sign_lr},
-                        {
-                            "params": [m.scale_offset for m in modules.values()],
-                            "lr": config.scale_lr,
-                        },
-                    ],
-                    weight_decay=0,
-                    foreach=False,
-                ),
+                joint_optimizer(modules, lane_config),
                 rng_state(config.device),
             )
         )
@@ -448,9 +472,12 @@ class ContinuousTrainer:
             for group in lane.optimizer.param_groups:
                 for parameter in group["params"]:
                     state = lane.optimizer.state[parameter]
-                    state.setdefault("step", torch.tensor(0.0))
-                    state.setdefault("exp_avg", torch.zeros_like(parameter))
-                    state.setdefault("exp_avg_sq", torch.zeros_like(parameter))
+                    if isinstance(lane.optimizer, torch.optim.AdamW):
+                        state.setdefault("step", torch.tensor(0.0))
+                        state.setdefault("exp_avg", torch.zeros_like(parameter))
+                        state.setdefault("exp_avg_sq", torch.zeros_like(parameter))
+                    elif group.get("momentum", 0) > 0:
+                        state.setdefault("momentum_buffer", torch.zeros_like(parameter))
         for lane in self.lanes:
             restore_rng(lane.rng, self.config.device)
             lane.optimizer.zero_grad(set_to_none=True)
@@ -459,7 +486,11 @@ class ContinuousTrainer:
                 batch, raw_target_features=batch.raw_target_features.to(self.config.device)
             )
             with shared_round_hard_signs(lane.linears):
-                logits = forward_torch_round(device_batch, observer, self.provider.draft_vocab_size)
+                logits = forward_torch_round(
+                    device_batch, observer, self.provider.draft_vocab_size,
+                    optimize_cache=self.config.optimize_cache,
+                    optimize_head=self.config.optimize_head,
+                    context_chunk_size=self.config.context_chunk_size)
             diagnostics = later_gradient(logits, audit, observer)
             if any(
                 diagnostics[key] is None or diagnostics[key] <= 0
@@ -475,19 +506,19 @@ class ContinuousTrainer:
             loss = F.cross_entropy(logits[mask], labels[mask])
             loss.backward()
             params = [p for group in lane.optimizer.param_groups for p in group["params"]]
+            families = joint_parameter_families(lane.linears)
+            binary = families["sign"] + families["scale"]
             if not torch.isfinite(loss) or any(
                 p.grad is None or not torch.isfinite(p.grad).all() or not (p.grad != 0).any()
-                for p in params
+                for p in binary
             ):
                 raise ValueError(f"{lane.name} failed all-nine finite/nonzero gradient gate")
+            if any(p.grad is None or not torch.isfinite(p.grad).all()
+                   for p in families["activation"] + families["fusion"]):
+                raise ValueError(f"{lane.name} failed declared optional-parameter gradient gate")
             # AdamW moment buffers are resident during smoke, before any update.
             # Reuse these initialized buffers in training instead of allocating
             # moments later and invalidating the admission measurement.
-            for parameter in params:
-                state = lane.optimizer.state[parameter]
-                state.setdefault("step", torch.tensor(0.0))
-                state.setdefault("exp_avg", torch.zeros_like(parameter))
-                state.setdefault("exp_avg_sq", torch.zeros_like(parameter))
             report[lane.name] = {"loss": float(loss.detach()), **diagnostics}
             lane.optimizer.zero_grad(set_to_none=True)
             del logits, loss, observer, device_batch
@@ -805,10 +836,13 @@ class ContinuousTrainer:
                         restore_rng(lane.rng, self.config.device)
                         begin = time.monotonic()
                         factor = min(1.0, (self.step + 1) / max(1, self.config.warmup_steps))
-                        for group, lr in zip(
-                            lane.optimizer.param_groups, (self.config.sign_lr, self.config.scale_lr)
-                        ):
-                            group["lr"] = lr * factor
+                        recipe = lane.config.binary_optimization
+                        rates = {"sign": self.config.sign_lr if recipe is None else recipe.sign_lr,
+                                 "scale": self.config.scale_lr if recipe is None else recipe.scale_lr,
+                                 "activation": self.config.activation_lr,
+                                 "fusion": self.config.fusion_lr}
+                        for group in lane.optimizer.param_groups:
+                            group["lr"] = rates[group["family"]] * factor
                         observer = ObservedAdapter(lane.adapter)
                         device_batch = replace(
                             batch,
@@ -816,7 +850,10 @@ class ContinuousTrainer:
                         )
                         with shared_round_hard_signs(lane.linears):
                             logits = forward_torch_round(
-                                device_batch, observer, self.provider.draft_vocab_size
+                                device_batch, observer, self.provider.draft_vocab_size,
+                                optimize_cache=self.config.optimize_cache,
+                                optimize_head=self.config.optimize_head,
+                                context_chunk_size=self.config.context_chunk_size,
                             )
                         diagnostics = (
                             later_gradient(logits, audit, observer)
@@ -852,6 +889,9 @@ class ContinuousTrainer:
                                             / module.initial_scale.clamp_min(1e-12)
                                         ).mean()
                                     ),
+                                    "activation_saturation_scope": (
+                                        getattr(lane.adapter, "head_saturation_scope", "last_call")
+                                        if name == "lm_head" else "last_call"),
                                     "activation_saturation": None
                                     if lane.name == "A1"
                                     else float(module.last_saturation_fraction),
