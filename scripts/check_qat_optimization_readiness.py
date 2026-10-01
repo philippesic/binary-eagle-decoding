@@ -39,6 +39,9 @@ PINNED_SHAPES = {
     "lm_head": [32000, 2560],
 }
 BOUNDARIES = {"fc", "qkv", "attn_output", "gate_up", "down", "head"}
+AFFINE_BASES = {"fc", "blk.0.attn_q", "blk.0.attn_k", "blk.0.attn_v", "blk.0.attn_output",
+                "blk.0.ffn_gate", "blk.0.ffn_up", "blk.0.ffn_down", "output"}
+AFFINE_FIXTURES = {"mu_zero_identity", "alpha_zero_nonzero_mu", "quantized_code_sum"}
 BINDINGS = ("source_sha256", "training_runtime", "recipe", "native_commit", "backend", "hardware")
 
 
@@ -408,15 +411,18 @@ def validate_native_evidence(evidence, base, binding, state_hashes, allowed_prom
             raise ValueError("native evidence binding differs: " + name)
     if set(evidence.get("lanes", {})) != {"A8", "A1"}:
         raise ValueError("native evidence needs both independent lanes")
-    decisions, learned, corrections = [], [], []
-    artifact_hashes = {"learned_quantizers": [], "fusion_correction": []}
+    decisions, learned, corrections, affine_cases = [], [], [], []
+    artifact_hashes = {"learned_quantizers": [], "fusion_correction": [], "affine_weights": []}
     learned_required = binding["recipe"].get("activation_quantization") == "learned"
     fusion_required = (binding["recipe"].get("fusion_correction") or {}).get("enabled") is True
+    affine_spec = binding["recipe"].get("affine_weights") or {}
+    affine_required = affine_spec.get("enabled") is True
+    affine_bases = AFFINE_BASES if affine_spec.get("coverage", "fusion") == "all" else {"fc"}
     for lane_name, lane in evidence["lanes"].items():
         if lane.get("deployment_state_sha256") != state_hashes[lane_name]:
             raise ValueError("native evidence checkpoint differs from current live " + lane_name)
         for kind, required in (("native_decisions", True), ("learned_quantizers", learned_required),
-                               ("fusion_correction", fusion_required)):
+                               ("fusion_correction", fusion_required), ("affine_weights", affine_required)):
             if kind not in lane:
                 if required:
                     raise ValueError("native evidence is missing actual " + kind + " measurements")
@@ -434,6 +440,12 @@ def validate_native_evidence(evidence, base, binding, state_hashes, allowed_prom
             if not isinstance(cases, list) or not cases:
                 raise ValueError("native artifact needs actual measured cases")
             boundaries = set()
+            affine_coverage = {fixture: set() for fixture in AFFINE_FIXTURES}
+            if kind == "affine_weights":
+                declared = measurement.get("projection_bases")
+                if (not isinstance(declared, list) or len(declared) != len(affine_bases)
+                        or set(declared) != affine_bases):
+                    raise ValueError("native affine descriptor must cover every selected projection base")
             for case in cases:
                 if (not isinstance(case, dict) or case.get("prompt_id") not in allowed_prompts
                         or type(case.get("round_index")) is not int or case["round_index"] < 0
@@ -456,7 +468,7 @@ def validate_native_evidence(evidence, base, binding, state_hashes, allowed_prom
                     finite_number(case.get("native_output_relative_rms"), "learned output RMS", maximum=.10)
                     boundaries.add(case.get("boundary"))
                     learned.append(case)
-                else:
+                elif kind == "fusion_correction":
                     for k in ("raw_input_sha256", "native_raw_input_sha256"):
                         checked_hex(case.get(k), 64, k)
                     if (case["raw_input_sha256"] != case["native_raw_input_sha256"]
@@ -467,8 +479,33 @@ def validate_native_evidence(evidence, base, binding, state_hashes, allowed_prom
                         raise ValueError("nonzero correction probe must execute a positive native delta")
                     finite_number(case.get("nonzero_forward_relative_rms"), "nonzero fusion RMS", maximum=.10)
                     corrections.append(case)
+                else:
+                    fixture, projection = case.get("fixture"), case.get("projection_base")
+                    if fixture not in AFFINE_FIXTURES or projection not in affine_bases:
+                        raise ValueError("unknown affine fixture or unselected projection")
+                    for pair in ("code_sum", "output_sign", "tail"):
+                        expected, actual = "expected_" + pair + "_sha256", "native_" + pair + "_sha256"
+                        checked_hex(case.get(expected), 64, expected)
+                        checked_hex(case.get(actual), 64, actual)
+                        if case[expected] != case[actual]:
+                            raise ValueError("native affine " + pair + " differs")
+                    finite_number(case.get("native_output_relative_rms"), "affine output RMS", maximum=1e-4)
+                    if fixture == "mu_zero_identity":
+                        if (finite_number(case.get("identity_max_abs"), "mu0 identity") != 0
+                                or finite_number(case.get("mu"), "identity mu", minimum=-sys.float_info.max) != 0):
+                            raise ValueError("affine mu0 default identity must be exact")
+                    elif fixture == "alpha_zero_nonzero_mu":
+                        if (finite_number(case.get("alpha"), "affine alpha") != 0
+                                or finite_number(case.get("mu"), "affine mu", minimum=-sys.float_info.max) == 0
+                                or finite_number(case.get("expected_output_norm"), "expected affine output") <= 0
+                                or finite_number(case.get("native_output_norm"), "native affine output") <= 0):
+                            raise ValueError("alpha0 nonzero mu must execute positive native output")
+                    affine_coverage[fixture].add(projection)
+                    affine_cases.append(case)
             if kind == "learned_quantizers" and boundaries != BOUNDARIES:
                 raise ValueError("native learned measurements must cover every shared boundary")
+            if kind == "affine_weights" and any(bases != affine_bases for bases in affine_coverage.values()):
+                raise ValueError("affine fixture coverage must include all selected projection bases")
             if kind in artifact_hashes:
                 artifact_hashes[kind].append(lane[kind]["sha256"])
     changed = [c for c in decisions if c["torch_choice"] != c["native_choice"]]
@@ -484,6 +521,12 @@ def validate_native_evidence(evidence, base, binding, state_hashes, allowed_prom
         gates["fusion_correction"] = {"passed": True, "raw_fc_executed": True,
             "zero_identity_passed": True, "nonzero_forward_passed": True, "raw_input_ancestry_passed": True,
             "cases": len(corrections), "artifact_sha256": digest(artifact_hashes["fusion_correction"])}
+    if affine_required:
+        gates["affine_weights"] = {"passed": True, "executed": True,
+            "mu_zero_identity_passed": True, "alpha_zero_nonzero_mu_passed": True,
+            "exact_code_sum": True, "fixture_coverage": sorted(AFFINE_FIXTURES),
+            "projection_bases": sorted(affine_bases), "cases": len(affine_cases),
+            "artifact_sha256": digest(artifact_hashes["affine_weights"])}
     return gates
 
 
@@ -510,6 +553,8 @@ def preflight_native(evidence, spec, base):
         required.append("learned_quantizers")
     if (training.get("fusion_correction") or {}).get("enabled") is True:
         required.append("fusion_correction")
+    if (training.get("affine_weights") or {}).get("enabled") is True:
+        required.append("affine_weights")
     for lane in evidence["lanes"].values():
         checked_hex(lane.get("deployment_state_sha256"), 64, "native deployment state SHA")
         for kind in required:
