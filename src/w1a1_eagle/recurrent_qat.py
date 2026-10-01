@@ -82,14 +82,18 @@ class _HardActivationSTE(torch.autograd.Function):
         return grad_values, None
 
 
-def hard_activation(input: Tensor, bits: ActivationBits) -> tuple[Tensor, Tensor, Tensor]:
-    """Return hard dequantized values, per-token scale and saturation mask."""
-    if bits not in (1, 4, 8, 16):
-        raise ValueError("unsupported activation width")
+def _validate_activation_input(input: Tensor) -> None:
     if not input.is_floating_point() or (
         input.device.type == "cpu" and not bool(torch.isfinite(input).all())
     ):
         raise ValueError("activations must be finite floating point")
+
+
+def hard_activation(input: Tensor, bits: ActivationBits) -> tuple[Tensor, Tensor, Tensor]:
+    """Return hard dequantized values, per-token scale and saturation mask."""
+    if bits not in (1, 4, 8, 16):
+        raise ValueError("unsupported activation width")
+    _validate_activation_input(input)
     if bits == 16:
         cast = input.float().to(torch.float16).float()
         if input.device.type == "cpu" and not bool(torch.isfinite(cast).all()):
@@ -98,12 +102,72 @@ def hard_activation(input: Tensor, bits: ActivationBits) -> tuple[Tensor, Tensor
     return _HardActivationSTE.apply(input, bits)
 
 
+def _native_a1_projection(
+    input: Tensor, signs: Tensor, weight_scales: Tensor,
+    activation_scale: Tensor, bias: Tensor | None,
+) -> Tensor:
+    """Integer-valued F32 dot, weight scale, activation scale, then bias.
+
+    The caller must disable gradients. Raw F32 sign bits preserve negative
+    subnormals even on a device that flushes floating comparisons; both signed
+    zeros are positive. Do not replace the two multiplies with combined scales.
+    """
+    raw = input.float().contiguous().view(torch.int32)
+    negative = ((raw & -2147483648) != 0) & ((raw & 2147483647) != 0)
+    activation_signs = torch.where(negative, -1.0, 1.0).to(torch.float32)
+    native = F.linear(activation_signs, signs) * weight_scales
+    native = native * activation_scale
+    return native if bias is None else native + bias
+
+
+class _A1SingleForward(torch.autograd.Function):
+    """Native A1 forward and the dequantized-identity surrogate VJP.
+
+    Saving the attached inputs delegates the activation STE, inclusive latent
+    clipping and scale derivative at zero to their original autograd nodes.
+    The reassociated scale contraction is numerically, not bitwise, equivalent
+    to the reference; callers must explicitly select this implementation.
+    """
+
+    @staticmethod
+    def forward(ctx, quantized, signs, scales, input, activation_scale, bias):
+        ctx.save_for_backward(quantized, signs, scales)
+        # Historical native + (surrogate - surrogate.detach()) adds positive
+        # zero. Preserve its signed-zero output bits without the surrogate GEMM.
+        return _native_a1_projection(input, signs, scales, activation_scale, bias) + 0.0
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        quantized, signs, scales = ctx.saved_tensors
+        rows = quantized.reshape(-1, signs.shape[1])
+        grad = grad_output.reshape(-1, signs.shape[0])
+        grad_quantized = grad_signs = grad_scales = grad_bias = None
+        if ctx.needs_input_grad[0]:
+            grad_quantized = ((grad * scales) @ signs).reshape_as(quantized)
+        if ctx.needs_input_grad[1] or ctx.needs_input_grad[2]:
+            contraction = grad.T @ rows
+            if ctx.needs_input_grad[2]:
+                # Row dot lowers to batched reductions, avoiding a dense T*S
+                # temporary. Never divide by scales: zero rows can revive.
+                grad_scales = torch.bmm(
+                    contraction.unsqueeze(1), signs.unsqueeze(2)
+                ).reshape_as(scales)
+            if ctx.needs_input_grad[1]:
+                grad_signs = contraction * scales[:, None]
+        if ctx.needs_input_grad[5]:
+            grad_bias = grad.sum(dim=0)
+        # Raw input and detached activation scale contribute no native gradient.
+        return grad_quantized, grad_signs, grad_scales, None, None, grad_bias
+
+
 class RowBinaryLinear(nn.Module):
     """Trainable one-bit row-scale linear for A1/A4/A8/A16 simulation.
 
     `latent_sign` and `scale_offset` are the only trainable parameters. Frozen
     biases are retained. A zero weight scale is legal and projects to zero.
     A row checkpoint from this module is not a deployable GGUF.
+    `a1_computation="single_forward"` opts into a reassociated surrogate VJP;
+    the default reference retains bit-exact historical training arithmetic.
     """
 
     def __init__(
@@ -113,8 +177,11 @@ class RowBinaryLinear(nn.Module):
         contract: W1AxContract,
         *,
         bias: Tensor | None = None,
+        a1_computation: Literal["reference", "single_forward"] = "reference",
     ) -> None:
         super().__init__()
+        if a1_computation not in ("reference", "single_forward"):
+            raise ValueError("unknown A1 computation implementation")
         if contract.scale_layout != "row":
             raise ValueError("RowBinaryLinear needs row-scale contract")
         if weight.ndim != 2 or min(weight.shape) < 1 or scales.shape != (weight.shape[0],):
@@ -128,6 +195,7 @@ class RowBinaryLinear(nn.Module):
         ):
             raise ValueError("frozen bias shape or values invalid")
         self.contract = contract
+        self.a1_computation = a1_computation
         self.in_features = weight.shape[1]
         self.out_features = weight.shape[0]
         self.latent_sign = nn.Parameter(weight.detach().float().clone())
@@ -153,13 +221,23 @@ class RowBinaryLinear(nn.Module):
             raise ValueError("input last dimension differs from weight")
         if input.device != self.latent_sign.device:
             raise ValueError("input and linear must share device")
+        signs = (hard_sign_ste(self.latent_sign) if self._round_hard_signs is None
+                 else self._round_hard_signs)
+        weight_scales = self.effective_scales()
+        if self.contract.activation_bits == 1 and not torch.is_grad_enabled():
+            _validate_activation_input(input)
+            activation_scale = input.float().abs().double().mean(dim=-1, keepdim=True).float()
+            self.last_saturation_fraction = input.new_zeros((), dtype=torch.float32)
+            # Prefix reconstruction needs neither the surrogate GEMM nor Q.
+            return _native_a1_projection(input, signs, weight_scales,
+                                         activation_scale, self.frozen_bias) + 0.0
         quantized, activation_scale, saturated = hard_activation(
             input, self.contract.activation_bits
         )
         self.last_saturation_fraction = saturated.float().mean().detach()
-        signs = (hard_sign_ste(self.latent_sign) if self._round_hard_signs is None
-                 else self._round_hard_signs)
-        weight_scales = self.effective_scales()
+        if self.contract.activation_bits == 1 and self.a1_computation == "single_forward":
+            return _A1SingleForward.apply(quantized, signs, weight_scales, input,
+                                          activation_scale, self.frozen_bias)
         surrogate = F.linear(quantized, signs) * weight_scales + (
             0 if self.frozen_bias is None else self.frozen_bias
         )
@@ -171,16 +249,8 @@ class RowBinaryLinear(nn.Module):
         # cancellation residual that changes a later A1 sign. Keep the original
         # dequantized-value STE, including meaningful gradients at scale zero.
         with torch.no_grad():
-            # Native tests raw bits so CUDA fast-math cannot flush a negative
-            # subnormal before sign selection; both signed zeros stay positive.
-            raw = input.float().contiguous().view(torch.int32)
-            negative = ((raw & -2147483648) != 0) & ((raw & 2147483647) != 0)
-            ones = torch.ones_like(quantized)
-            activation_signs = torch.where(negative, -ones, ones)
-            native = (F.linear(activation_signs, signs.detach()) * weight_scales.detach())
-            native = native * activation_scale
-            if self.frozen_bias is not None:
-                native = native + self.frozen_bias
+            native = _native_a1_projection(input, signs.detach(), weight_scales.detach(),
+                                           activation_scale, self.frozen_bias)
         return native.detach() + (surrogate - surrogate.detach())
 
 
