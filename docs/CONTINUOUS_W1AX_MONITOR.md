@@ -86,6 +86,9 @@ interactive SSH or send this complete local SSH command to a remote shell.
 The stored command already handles SSH and the Windows-to-WSL bridge. Local
 preflight may verify the new pane is a local shell; job tmux stays untouched.
 Monitor remains ACTIVE; next scheduled tick restores observation when possible.
+At16:14:59UTC the next tick verified a fresh local MacBook shell before the direct
+query: healthy273/353,8,544train /0dev,zerooptimizer. The unknown is resolved;
+prior raw evidence preserved. Local transport closed, host job unchanged.
 
 ## Windows SSH shell bridge
 
