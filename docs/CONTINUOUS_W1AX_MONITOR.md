@@ -1,22 +1,30 @@
 # A8/A1 health and bounded recovery monitor
 
-Prepared 2026-09-29; **PAUSED after the human GPU-pause request** with user-authorized failure notification and bounded recovery. Automation ID:
+Prepared 2026-09-29; **ACTIVE every 15 minutes for user-authorized overnight continuation** with user-authorized failure notification and bounded recovery. Automation ID:
 `a8-a1-health-check-enable-after-manual-start`. Target chat:
 `01a0f47a-e246-75e1-a299-fcac42d34f8a`.
 Coordination transferred to the acknowledged successor on 2026-09-30 after
 the required context rotation; the same automation ID, prompt and cadence are
 preserved. The GPU supervisor is independent and was untouched.
 
-Human request “Pause gpu work” supersedes the prior resume. At04:36:14UTC
-supervisor04 was interrupted with child exit0, trainer stopped, STOP present,
-owned group5052 absent, no project processes or RTX5080 compute apps.119 complete
-manifests retain3,736train/0dev prompts; zero optimizer steps. Both shared host
-controls are paused and the existing automation is verified PAUSED. Do not
-restart or recover until explicit user resume. Prior03/04 and all data preserved;
-failure recovery budget remains1of2 used. Registration records intentional pause.
+The latest human authorization supersedes the pause: “Continue. It's all yours
+for the night. If prompt gen finishes, start the training. I expect to see you
+still going in the morning.” Supervisor05 was verified healthy after disconnect
+at 06:37:02 UTC, retaining 119 manifests / 3,736 train / 0 dev prompts, zero
+optimizer steps, re-audit ordinal 1/353. Current host ownership is server794,
+supervisor795/PGID795, child797/PGID797 in experiment.host_tmux. Existing monitor
+reactivated with an overnight authorization paragraph; budget stays 1 of 2 used.
+The supervised pipeline enters CUDA smoke and continuous training automatically
+after all frozen capture/audit/readiness/coverage gates pass. Capture completion
+is not overall run completion. No further approval is needed for that transition;
+do not stop for morning or slow learning. Notify actual first optimizer updates,
+new verified failure or required action; quiet healthy ordinary progress.
+Current monitor_query_command is bound to supervisor05. Source checks must use
+exact src/w1a1_eagle paths; a broad filename glob can select a test file.
+Both prior pause attempts and all retained/partial data remain preserved.
 
 Current run:`luna-continuous-a8-a1-native-order-20260930`; supervisor
-`luna-supervisor-a8-a1-native-order-20261001-04`. Stable local ignored registration:
+`luna-supervisor-a8-a1-native-order-20261001-05`. Stable local ignored registration:
 `runs/luna-continuous-a8-a1-20260929/monitor-registration.json` (preserves the old
 failed experiment separately). Derive current remote status/supervisor paths from
 its`experiment`object; never reuse a hardcoded earlier attempt. First Luna check

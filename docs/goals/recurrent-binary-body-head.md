@@ -8,7 +8,7 @@ data. Evaluate native draft quality and speed against Q4_0 when GPU work is
 explicitly permitted. Preserve the pinned FP16 target/verifier and draft map.
 This continues the existing goal rather than opening a second goal.
 
-**State: GPU work paused at the human user's request.** At2026-10-01 04:36:14UTC supervisor04 was stopped and project processes released the RTX5080.119 completed captures/3,736train/0dev prompts preserved,zerooptimizer. Both host controls and the monitor are PAUSED; explicit user resume required. Q4_0 remains primary comparison and finals remain unopened. Latest pause checkpoint supersedes prior running actions.
+**State: User-authorized overnight RTX5080 capture and continuous paired training.** At 2026-10-01 06:37:02 UTC supervisor05 passed post-disconnect health, 119 completed captures / 3,736 train / 0 dev prompts preserved, zero optimizer steps; re-audit ordinal 1/353. Existing 15-minute monitor ACTIVE, failure budget 1 of 2 used. Training starts automatically after complete capture/audit/readiness/coverage/CUDA gates. RTX2080Ti remains paused; Q4_0 primary comparison and finals unopened. Latest overnight checkpoint supersedes prior pause/running next actions.
 
 ## Current findings and work
 
@@ -4694,3 +4694,70 @@ resume. Dedicated local transport$66 closed after verification. Recovery budget
 remains1of2 used; no live operator remains. Next: wait for human resume, then
 fresh host/resource/source/config/retained-partial preflight before same-run
 resume under a new supervisor. Do not auto-restart an intentionally stopped run.
+
+
+### Overnight continuation verified — 2026-10-01 06:37 UTC
+
+Human authorization: “Continue. It's all yours for the night. If prompt gen
+finishes, start the training. I expect to see you still going in the morning.”
+This supersedes the latest GPU pause and continues the same goal, experiment,
+source, model/precision/tier and verifier. Root enabled only RTX5080; RTX2080Ti
+remains paused. One pinned Luna/high operator `/root/overnight_resume_20261001`
+(fork none) exclusively owned bounded preflight/recovery/resume verification.
+
+Initial read-only command formatting failures did not execute mutations or GPU
+work. A broad source-path glob then hashed tests/test_recurrent_binary.py,
+causing a false identity mismatch. Parent notified before launch; bounded exact
+src/w1a1_eagle path checks showed all eight working-tree/head/expected hashes
+match with diff exit0. No source file changed. Remote HEAD7547d253, native
+submodule b4e366d4, config4ee4ce…f5579c8e and stages d2145092…b43cc294 matched.
+Preserve exact source paths during any future recovery preflight. Pre-existing
+untracked checkouts/ and rescue-head-20260927/ remain untouched.
+
+Fresh RTX5080 SM120 preflight: 0% utilization, 12,908 MiB free / 16,303 MiB total,
+no compute apps; host RAM available20,233,510,912B and disk671,390,375,936B.
+WSL memory20GB and instanceIdleTimeout=-1 unchanged. Old supervisor04 terminal,
+no owned trainer/native/supervisor, new05 session/directory absent. CPU partial
+recovery exited0 at06:33:54UTC: records:[], processes_started:false,
+raw_artifacts_deleted:false. Completed and partial capture bytes preserved.
+
+Launched **once** at06:35:39UTC under NEW supervisor
+`luna-supervisor-a8-a1-native-order-20261001-05`, stop grace300, host tmux socket
+`binary-eagle-runtime` / session `continuous-a8-a1-native-order-20261001-05`.
+Same experiment `runs/luna-continuous-a8-a1-native-order-20260930`, same stages,
+--start --allow-cuda --resume. STOP cleared normally. This intentional resume
+does not consume a failure recovery; the budget remains 1 of 2 used.
+
+At **06:37:02.489002UTC**, after first transport closed and one fresh reconnect,
+CPU checker exit0, healthy/nonterminal, preparing teacher_capture_audit,
+resume ordinal1/353. Retained completed labels: **119 / 3,736 train / 0 dev**;
+optimization_started:false, steps:{}. Host server794, supervisorPID/PGID795,
+childPID/PGID797 independently present; child group held trainer only. No signal.
+Available RAM19,544,150,016B, disk671,389,724,672B. Re-audit counter reset does
+not imply lost captured data. Both local transports $67/$68 closed after proof.
+
+Source and unchanged frozen config confirm the existing train launcher calls
+CUDA smoke for two representative rounds, saves paired state, then trainer.run()
+automatically after full corpus capture/audit/readiness and declared coverage.
+No further human prompt is required. max_steps/max_tokens/max_seconds/max_epochs
+are null; no artificial overnight stop introduced. Training has not yet started.
+Failure of a frozen numerical/cache/data/eligibility gate must still be reported
+and cannot be relaxed or auto-retried. Finals remain sealed; native comparison
+remains Q4_0, with FP16 diagnostic only.
+
+Ignored evidence `runs/luna-continuous-a8-a1-20260929/resume-20261001T063702Z.json`
+preserves exact preflight/source/resource/recovery/launch/postdisconnect output.
+Registration.experiment has05 current state and host_tmux ownership; parent saved
+last-health, cleared intentional-pause flags, and rebound monitor_query_command
+to05 via locally compiled stdlib query. Existing automation reactivated through
+automation_update and its full prompt extended with the explicit overnight
+training authorization. Saved TOML confirms ACTIVE, same 15-minute cadence and
+same chat target. No new schedule/chat/native Goal or experiment was created.
+
+Next: one bounded pinned experiment_operator each heartbeat, CPU health and
+completed prompt counts only when healthy, separate from optimizer steps.
+Continue the supervised pipeline into training when all gates pass; do not
+pause merely for completed capture or morning. Notify first actual optimizer
+updates, new verified failures, completion or required action. Safe whitelisted
+failure recovery remains at most one per tick / two per 24h; one remains in this
+window. Keep progress quiet otherwise and checkpoint meaningful changes.
