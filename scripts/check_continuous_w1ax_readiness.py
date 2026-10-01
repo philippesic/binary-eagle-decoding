@@ -28,6 +28,7 @@ from w1ax_continuous_stages import (
 )
 
 SCHEMA = "w1ax_continuous_precision_gate_v1"
+RECIPE_SCHEMA = "w1ax_continuous_precision_gate_v2"
 CHECKS = (
     "export_serialization_and_frozen_operands",
     "native_stored_f16_cache_and_masks",
@@ -98,10 +99,11 @@ def _reclaim_and_admit_host(output: Path, stage: str, diagnostic_filename: str) 
 
 
 def validate_gate_report(report: dict, bits: int, common: dict) -> None:
+    modern = report.get("schema") == RECIPE_SCHEMA
     mismatches = [
         name
         for name, expected in {
-            "schema": SCHEMA,
+            "schema": RECIPE_SCHEMA if modern else SCHEMA,
             "activation_bits": bits,
             "execution_device": "cuda:0",
             "scale_layout": "row",
@@ -112,8 +114,8 @@ def validate_gate_report(report: dict, bits: int, common: dict) -> None:
         }.items()
         if report.get(name) != expected
     ]
-    if bits not in {1, 8}:
-        mismatches.append("requested activation_bits must be 1 or 8")
+    if bits not in ({1, 4, 8} if modern else {1, 8}):
+        mismatches.append("requested precision requires an independent versioned gate")
     if len(report.get("roots", [])) < 6:
         mismatches.append("roots require at least six entries")
     checks = report.get("checks", {})
@@ -161,12 +163,31 @@ def validate_gate_report(report: dict, bits: int, common: dict) -> None:
     exported = evidence["export_audit"]
     captured = evidence["native_capture_manifest"]
     cache = evidence["native_cache_audit"]
+    if modern:
+        from w1ax_capture_provider import validate_actor_export
+        manifest = validate_actor_export({name: report["evidence"][name] for name in
+                                          ("checkpoint", "checkpoint_manifest", "export", "export_audit")},
+                                         activation_bits=bits, base_hash=common["base_draft_gguf"])
+        expected_recipe = checkpoint_recipe(manifest)
+        if report.get("recipe") != expected_recipe:
+            raise ValueError("precision gate recipe differs from independently audited actor")
+        from w1a1_eagle.trajectory_refresh import checked_hash
+        checked_hash(report.get("live_state_sha256"))
+        expected_counts = {"sign": 9, "scale": 9,
+                           "activation": 6 if manifest.get("activation_quantizers") is not None else 0,
+                           "fusion": (2 + int(manifest["fusion_correction"]["bias_name"] is not None))
+                           if manifest.get("fusion_correction") is not None else 0}
+        if report.get("trainable_parameter_counts") != expected_counts:
+            raise ValueError("precision gate trainable ownership differs from recipe")
+        expected_gradient_tensors = sum(expected_counts.values())
+    else:
+        expected_gradient_tensors = 18
     if (
         checkpoint.get("activation_bits") != bits
         or checkpoint.get("scale_layout") != "row"
         or checkpoint.get("objective") != "hard_ce"
-        or checkpoint.get("activation_rule")
-        != "a16_f16_cast_a8a4_absmax_even_a1_f64_meanabs_sign_zero_positive"
+        or (not modern and checkpoint.get("activation_rule")
+            != "a16_f16_cast_a8a4_absmax_even_a1_f64_meanabs_sign_zero_positive")
         or checkpoint.get("weight_rule") != "hard_sign_zero_positive_clipped_identity_ste"
         or checkpoint.get("base_gguf_sha256") != common["base_draft_gguf"]
         or checkpoint.get("checkpoint_sha256") != report["evidence"]["checkpoint"]["sha256"]
@@ -190,6 +211,13 @@ def validate_gate_report(report: dict, bits: int, common: dict) -> None:
     ):
         raise ValueError("precision evidence differs from runtime/checkpoint/export contracts")
     native_directory = checked_record(report["evidence"]["native_cell"]).parent
+    if modern:
+        log = checked_record({"path": str(native_directory / "server.log"),
+                              "sha256": native.get("files", {}).get("server.log", {}).get("sha256")})
+        markers = {1: "CUDA packed W1A1 XOR/POPCOUNT dispatch", 4: "CUDA packed W1A4 BITSERIAL dispatch",
+                   8: "CUDA packed W1A8 INT8 dispatch"}
+        if markers[bits] not in log.read_text(errors="replace"):
+            raise ValueError("precision gate lacks independently hashed packed native dispatch proof")
     for field, filename in (
         ("cache_index", "heads.draft_cache.jsonl"),
         ("cache_rows", "heads.draft_cache.f16"),
@@ -215,7 +243,7 @@ def validate_gate_report(report: dict, bits: int, common: dict) -> None:
             )
             or root["state_relative_rms"] > 0.10
             or root["logit_relative_rms"] > 0.10
-            or root["finite_gradient_tensors"] != 18
+            or root["finite_gradient_tensors"] != expected_gradient_tensors
             or not np.isfinite(root["loss"])
             or (not root["top_choice_matches"] and root["decision_margin"] > 0.02)
         ):
@@ -260,47 +288,86 @@ def _publish_gate_report(report: dict, bits: int, common: dict, report_path: Pat
     write_json(report_path, report)
 
 
+def checkpoint_recipe(manifest: dict) -> dict:
+    return {"schema_version": manifest["schema_version"], "activation_bits": manifest["activation_bits"],
+            "activation_quantizers": manifest.get("activation_quantizers"),
+            "fusion_correction": manifest.get("fusion_correction")}
+
+
+def checkpoint_joint_config(manifest_path, bits, base_hash, *, device="cpu", allow_accelerator=False):
+    """Construct declared deployment options before installing modules."""
+    from export_recurrent_binary import check_manifest
+    from w1a1_eagle.recurrent_qat import JointQATConfig, W1AxContract
+    from w1a1_eagle.fusion_correction import FusionCorrectionConfig
+    manifest = json.loads(Path(manifest_path).read_text())
+    check_manifest(manifest, base_hash)
+    if manifest["schema_version"] not in (2, 3, 4) or manifest["activation_bits"] != bits or manifest["objective"] != "hard_ce":
+        raise ValueError("precision checkpoint options differ")
+    correction = manifest.get("fusion_correction")
+    config = None if correction is None else FusionCorrectionConfig(
+        enabled=True, rank=correction["rank"], output_bias=correction["bias_name"] is not None,
+        bias_bound=correction["bias_bound"] if correction["bias_name"] is not None else .1)
+    return JointQATConfig(W1AxContract(bits, "row"), device=device, allow_accelerator=allow_accelerator,
+                          activation_quantization="learned" if manifest.get("activation_quantizers") is not None else "fixed",
+                          fusion_correction=config)
+
+
 def _load_checkpoint(path, manifest_path, linears, bits, base_hash):
-    from w1a1_eagle.recurrent_training import CHECKPOINT_NAMES
+    """Load effective deployed state, validating all arrays before any mutation.
 
-    m = json.loads(Path(manifest_path).read_text())
-    if (
-        m.get("schema_version") != 2
-        or m.get("activation_bits") != bits
-        or m.get("scale_layout") != "row"
-        or m.get("objective") != "hard_ce"
-        or m.get("base_gguf_sha256") != base_hash
-        or m.get("checkpoint_sha256") != sha256(path)
-    ):
+    This is a zero-update deployment replay, not a training optimizer resume:
+    correction factors in the export checkpoint are effective F16 tensors.
+    """
+    from export_recurrent_binary import check_manifest, load_checkpoint, load_fusion_correction
+    from w1a1_eagle.learned_activation import LearnedActivationBank, BOUNDARY_PATHS
+    path, manifest_path = Path(path), Path(manifest_path)
+    manifest = json.loads(Path(manifest_path).read_text())
+    expected = check_manifest(manifest, base_hash)
+    if manifest["schema_version"] not in (2, 3, 4) or manifest["activation_bits"] != bits or manifest["objective"] != "hard_ce" or manifest["checkpoint_sha256"] != sha256(path):
         raise ValueError("continuous precision checkpoint contract differs")
+    correction = manifest.get("fusion_correction")
+    extras = load_fusion_correction(Path(path), correction, expected["fc"][1]) if correction is not None else {}
+    load_checkpoint(Path(path), expected, row_scale=True, extra_names=set(extras))
+    if set(linears) != {name.removesuffix(".weight") for name, _ in expected.values()}:
+        raise ValueError("checkpoint linear inventory differs")
+    quantizers = manifest.get("activation_quantizers")
+    bank = LearnedActivationBank.from_attached(linears) if quantizers is not None else None
+    if quantizers is not None and bits != 1 and any(item["clip_ratio"] < 2**-16 for item in quantizers["boundaries"].values()):
+        raise ValueError("deployed clip parameter is outside trainable quantizer contract")
+    if quantizers is None and any(getattr(module, "activation_quantizer", None) is not None for module in linears.values()):
+        raise ValueError("checkpoint has undeclared activation quantizer")
+    attached = getattr(linears["fc"], "fusion_correction", None)
+    if (attached is None) != (correction is None) or (attached is not None and attached.native_payload()[0] != correction):
+        raise ValueError("checkpoint fusion correction differs from attached config")
+    for name, shape in expected.values():
+        module = linears[name.removesuffix(".weight")]
+        if tuple(module.latent_sign.shape) != shape or module.contract.activation_bits != bits or module.contract.scale_layout != "row" or getattr(module, "_round_hard_signs", None) is not None:
+            raise ValueError("checkpoint shape/precision/cache differs from installed module")
     with np.load(path, allow_pickle=False) as archive, torch.no_grad():
-        if set(archive.files) != {
-            n + s for n in CHECKPOINT_NAMES.values() for s in (".latent", ".scale")
-        }:
-            raise ValueError("checkpoint must own exactly all nine sign/scale pairs")
-        for name in CHECKPOINT_NAMES.values():
+        for name, _ in expected.values():
             module = linears[name.removesuffix(".weight")]
-            latent, scale = archive[name + ".latent"], archive[name + ".scale"]
-            if (
-                latent.dtype != np.float32
-                or scale.dtype != np.float32
-                or latent.shape != tuple(module.latent_sign.shape)
-                or scale.shape != tuple(module.initial_scale.shape)
-                or not np.isfinite(latent).all()
-                or not np.isfinite(scale).all()
-                or (scale < 0).any()
-            ):
-                raise ValueError("checkpoint sign/scale array invalid")
-            module.latent_sign.copy_(torch.from_numpy(latent).to(module.latent_sign.device))
-            module.scale_offset.copy_(
-                torch.from_numpy(scale).to(module.scale_offset.device) - module.initial_scale
-            )
+            module.latent_sign.copy_(torch.from_numpy(archive[name + ".latent"]).to(module.latent_sign))
+            module.initial_scale.copy_(torch.from_numpy(archive[name + ".scale"]).to(module.initial_scale))
+            module.scale_offset.zero_()
+        if bank is not None:
+            for boundary in BOUNDARY_PATHS:
+                item = quantizers["boundaries"][boundary]
+                bank.quantizers[boundary].parameter.fill_(item["threshold_delta"] if bits == 1 else item["clip_ratio"])
+        if attached is not None:
+            attached.u.copy_(torch.from_numpy(extras[correction["u_name"]]).to(attached.u))
+            attached.v.copy_(torch.from_numpy(extras[correction["v_name"]]).to(attached.v))
+            if attached.output_bias is not None:
+                attached.output_bias.copy_(torch.from_numpy(extras[correction["bias_name"]]).to(attached.output_bias))
+    return checkpoint_recipe(manifest)
 
 
-def _replay_head(packed, scales, k, state, bits):
+def _replay_head(packed, scales, k, state, bits, *, quantizer=None):
     from w1a1_eagle.recurrent_qat import hard_activation
 
-    if bits == 1:
+    if quantizer is not None:
+        result = quantizer(state)
+        activation, activation_scale = result.codes.float(), result.scale
+    elif bits == 1:
         state_f32 = state.to(dtype=torch.float32)
         raw = state_f32.view(torch.int32)
         negative = ((raw & -2147483648) != 0) & ((raw & 2147483647) != 0)
@@ -314,7 +381,7 @@ def _replay_head(packed, scales, k, state, bits):
         signs = np.unpackbits(words, axis=1, bitorder="little")[:, :k].astype(np.float32) * 2 - 1
         weight = torch.from_numpy(signs).to(state.device)
         scale = torch.from_numpy(scales[start : start + 4096]).to(state.device)
-        if bits == 1:
+        if bits == 1 or quantizer is not None:
             # Unscaled +/-1 sums are exact integers at the native head widths.
             # Native rounds dot*weight_scale to F32 before activation_scale.
             outputs.append(
@@ -327,7 +394,8 @@ def _replay_head(packed, scales, k, state, bits):
 
 
 def run_gate(
-    sources: dict, prompts: Path, output: Path, bits: int, *, expected_prompt_sha256: str
+    sources: dict, prompts: Path, output: Path, bits: int, *, expected_prompt_sha256: str,
+    checkpoint_bundle: dict | None = None, measurement_binding: dict | None = None,
 ) -> Path:
     """Execute capture then checker sequentially; no optimizer updates."""
     from audit_recurrent_draft_cache import audit as audit_cache
@@ -356,12 +424,22 @@ def run_gate(
         JointQATConfig,
         W1AxContract,
         install_joint_linears,
+        joint_parameter_families,
+        joint_optimizer,
         shared_round_hard_signs,
     )
     from w1a1_eagle.recurrent_rollout import rebuild_prefix_cache
 
-    if bits not in {1, 8} or sha256(prompts) != expected_prompt_sha256:
+    from w1ax_continuous_stages import require_unsealed_prompts
+    require_unsealed_prompts(prompts, sources=sources, expected_sha256=expected_prompt_sha256)
+    if bits not in {1, 4, 8} or sha256(prompts) != expected_prompt_sha256:
         raise ValueError("gate arithmetic or frozen prompt hash differs")
+    modern = checkpoint_bundle is not None or bits == 4
+    if checkpoint_bundle is not None:
+        if set(checkpoint_bundle) != {"checkpoint", "checkpoint_manifest"}:
+            raise ValueError("gate checkpoint bundle inventory differs")
+        checkpoint, checkpoint_manifest = (checked_record(checkpoint_bundle[name]) for name in
+                                             ("checkpoint", "checkpoint_manifest"))
     prompt_rows = [json.loads(line) for line in prompts.read_text().splitlines() if line.strip()]
     by_domain = {p["domain"]: p["id"] for p in prompt_rows}
     if len(prompt_rows) != 3 or set(by_domain) != {"prose", "reasoning", "code"}:
@@ -378,11 +456,16 @@ def run_gate(
         )
     }
     if report_path.exists():
-        validate_gate_report(json.loads(report_path.read_text()), bits, common)
+        saved_report = json.loads(report_path.read_text())
+        validate_gate_report(saved_report, bits, common)
+        if checkpoint_bundle is not None and any(saved_report["evidence"][name] != checkpoint_bundle[name] for name in checkpoint_bundle):
+            raise ValueError("cached gate belongs to different actor checkpoint")
+        if modern and saved_report.get("schema") != RECIPE_SCHEMA:
+            raise ValueError("new recipe cannot inherit a legacy gate")
         return report_path
     output.mkdir(parents=True, exist_ok=True)
     checkpoint_dir = output / "checkpoint-zero"
-    if not checkpoint_dir.exists():
+    if checkpoint_bundle is None and not checkpoint_dir.exists():
         _reclaim_and_admit_host(
             output,
             "bounded checkpoint-zero CPU initialization",
@@ -395,7 +478,10 @@ def run_gate(
             bits,
             checkpoint_dir,
         )
-    checkpoint, checkpoint_manifest = checkpoint_dir / "joint.npz", checkpoint_dir / "joint.json"
+    if checkpoint_bundle is None:
+        checkpoint, checkpoint_manifest = checkpoint_dir / "joint.npz", checkpoint_dir / "joint.json"
+    config = checkpoint_joint_config(checkpoint_manifest, bits, common["base_draft_gguf"],
+                                      device="cuda:0", allow_accelerator=True)
     exported = output / "drafter.gguf"
     export_audit = output / "export-audit.json"
     if not exported.exists():
@@ -405,6 +491,11 @@ def run_gate(
                 Path(sources["base_draft_gguf"]), checkpoint, checkpoint_manifest, exported
             ),
         )
+    if modern:
+        from w1ax_capture_provider import validate_actor_export
+        validate_actor_export({"checkpoint": file_record(checkpoint), "checkpoint_manifest": file_record(checkpoint_manifest),
+                               "export": file_record(exported), "export_audit": file_record(export_audit)},
+                              activation_bits=bits, base_hash=common["base_draft_gguf"])
     native = output / "native"
     if not (native / "d_d/manifest.json").exists():
         if native.exists():
@@ -434,7 +525,6 @@ def run_gate(
     snapshot = json.loads(Path(sources["model_snapshot_manifest"]).read_text())
     for role in ("draft", "target"):
         verify_model_snapshot(Path(snapshot["models"][role]["directory"]), snapshot["models"][role])
-    config = JointQATConfig(W1AxContract(bits, "row"), device="cuda:0", allow_accelerator=True)
     _reclaim_and_admit_host(
         output,
         "bounded numeric gate CPU target/draft load",
@@ -453,7 +543,17 @@ def run_gate(
     drafter, target = model.eagle_layer, model.base_model
     linears = install_joint_linears(drafter, target, config)
     drafter.to("cuda:0")
-    _load_checkpoint(checkpoint, checkpoint_manifest, linears, bits, common["base_draft_gguf"])
+    recipe = _load_checkpoint(checkpoint, checkpoint_manifest, linears, bits, common["base_draft_gguf"])
+    families = joint_parameter_families(linears)
+    parameter_counts = {name: len(parameters) for name, parameters in families.items()}
+    optimizer = joint_optimizer(linears, config)
+    owned = [parameter for group in optimizer.param_groups for parameter in group["params"]]
+    if len(owned) != sum(parameter_counts.values()) or len({id(p) for p in owned}) != len(owned):
+        raise ValueError("native gate optimizer ownership does not match declared recipe")
+    live_state_sha256 = None
+    if modern or measurement_binding is not None:
+        from check_qat_optimization_readiness import deterministic_state_sha256
+        live_state_sha256 = deterministic_state_sha256(linears)
     operands = FrozenOperands(
         Path(sources["target_gguf"]),
         Path(sources["candidate_d_gguf"]),
@@ -532,7 +632,8 @@ def run_gate(
                     rebuilt.cache,
                 )
                 normalized = adapter._rms_norm(step.pre_norm, drafter.norm)
-                replay = _replay_head(packed, scales, k, native_state, bits)
+                replay = _replay_head(packed, scales, k, native_state, bits,
+                                      quantizer=getattr(linears["lm_head"], "activation_quantizer", None))
                 state_rms = relative_rms(normalized.cpu().numpy(), native_state.cpu().numpy())
                 logit_rms = relative_rms(step.logits.cpu().numpy(), replay.cpu().numpy())
                 absolute_id = int(
@@ -571,14 +672,11 @@ def run_gate(
                 raise ValueError("Torch exact-prefix positions/nonfinite logits gate failed")
             loss = supported_prefix_ce(logits, audit)
             loss.backward(retain_graph=True)
-            grads = [
-                g
-                for layer in linears.values()
-                for g in (layer.latent_sign.grad, layer.scale_offset.grad)
-            ]
+            grads = [parameter.grad for parameter in owned]
             finite = sum(g is not None and bool(torch.isfinite(g).all()) for g in grads)
-            if finite != 18 or not all(bool(g.abs().sum() > 0) for g in grads):
-                raise ValueError("joint hard CE requires 18 finite sign/scale gradients")
+            base_grads = [p.grad for name in ("sign", "scale") for p in families[name]]
+            if finite != len(owned) or not all(bool(g.abs().sum() > 0) for g in base_grads):
+                raise ValueError("joint hard CE requires finite declared-family and nonzero sign/scale gradients")
             later = [i for i, ok in enumerate(audit.ce_mask) if ok and i > 0]
             if later:
                 for state in states:
@@ -623,12 +721,14 @@ def run_gate(
                     "logit_relative_rms": logit_rms,
                     "top_choice_matches": matches,
                     "decision_margin": margin,
+                    "torch_choice": absolute_id,
+                    "native_choice": native_row["proposed_token_id"],
+                    "capture_id": sha256(labels / "manifest.json"),
                     "finite_gradient_tensors": finite,
                     "supported_rows": sum(audit.ce_mask),
                 }
             )
-            for layer in linears.values():
-                layer.latent_sign.grad = layer.scale_offset.grad = None
+            optimizer.zero_grad(set_to_none=True)
             states.clear()
             caches.clear()
             if later:
@@ -650,7 +750,7 @@ def run_gate(
         later_paths
     )
     report = {
-        "schema": SCHEMA,
+        "schema": RECIPE_SCHEMA if modern else SCHEMA,
         "activation_bits": bits,
         "scale_layout": "row",
         "objective": "hard_ce",
@@ -683,6 +783,29 @@ def run_gate(
             "scope": "cache projection operands and stored writes/masks",
         },
     }
+    if modern:
+        report.update(recipe=recipe, live_state_sha256=live_state_sha256,
+                      trainable_parameter_counts=parameter_counts)
+    if measurement_binding is not None:
+        required = {"source_sha256", "training_runtime", "recipe", "native_commit"}
+        if set(measurement_binding) != required:
+            raise ValueError("native decision measurement binding inventory differs")
+        from w1a1_eagle.trajectory_refresh import checked_hash
+        checked_hash(measurement_binding["source_sha256"])
+        import re
+        if not re.fullmatch("[0-9a-f]{40}", measurement_binding["native_commit"]):
+            raise ValueError("native decision measurements require pinned native commit")
+        props = torch.cuda.get_device_properties(0)
+        write_json(output / "native-decisions.json", {
+            "schema": "qat_native_measurements_v1", "kind": "native_decisions", "split": "train",
+            "activation_bits": bits, "state_sha256": live_state_sha256, **measurement_binding,
+            "backend": "cuda", "hardware": {"device_type": "cuda", "name": props.name,
+                "compute_capability": [props.major, props.minor], "total_memory_bytes": props.total_memory},
+            "cases": [{"prompt_id": r["prompt_id"], "round_index": r["round_index"], "capture_id": r["capture_id"],
+                "state_relative_rms": r["state_relative_rms"], "logit_relative_rms": r["logit_relative_rms"],
+                "torch_choice": r["torch_choice"], "native_choice": r["native_choice"], "native_margin": r["decision_margin"]}
+                for r in roots],
+        })
     _publish_gate_report(report, bits, common, report_path)
     del adapter, linears, drafter, target, model
     gc.collect()

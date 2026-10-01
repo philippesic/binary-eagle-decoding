@@ -410,8 +410,8 @@ def run_cell(args, name, spec, prompts, forced=None):
         env.setdefault("EAGLE_CAPTURE_FULL_LOGITS_LIMIT", "32")
     if recurrent:
         bits = getattr(args, "activation_bits", 16)
-        if bits not in (1, 8, 16):
-            raise ValueError("capture activation contract must be A1, A8 or frozen A16")
+        if bits not in (1, 4, 8, 16):
+            raise ValueError("capture activation contract must be A1, A4, A8 or frozen A16")
         env.update(
             {
                 "GGML_W1AX_ACT_BITS": str(bits),
@@ -773,7 +773,7 @@ def main():
     )
     parser.add_argument("--d2t", type=Path)
     parser.add_argument("--target-vocab-size", type=int)
-    parser.add_argument("--activation-bits", type=int, choices=(1, 8, 16), default=16)
+    parser.add_argument("--activation-bits", type=int, choices=(1, 4, 8, 16), default=16)
     parser.add_argument("--label-only", action="store_true",
                         help="native hard-CE labels without target logit payloads")
     parser.add_argument("--tokens", type=int, default=128)

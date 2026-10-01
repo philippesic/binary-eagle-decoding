@@ -120,3 +120,66 @@ contracts fixed and measure native acceptance, latency, and total throughput
 against Q4_0 EAGLE. FP16 EAGLE remains diagnostic. Depth weighting, optimizer
 changes, precision staging, and refreshed trajectories should be separate
 experiment options rather than simultaneous unmeasured changes.
+
+## Follow-up: provider, refresh actor, and readiness integration
+
+The isolated follow-up owns `w1ax_continuous_stages.py`,
+`w1ax_capture_provider.py`, `check_continuous_w1ax_readiness.py`, and explicit
+A4 enumeration in `run_binary_head_capture.py`. Root's integrated optimized
+core/exporter files were copied as **uncommitted test dependencies only**;
+the delivery does not commit those files or change the llama.cpp gitlink.
+
+- New `w1ax_continuous_readiness_v2` admits only precision entries with their
+  own `w1ax_continuous_precision_gate_v2`. A4 cannot inherit A8/A1 or a legacy
+  gate. Gate-v2 independently validates the strict exporter manifest/audit,
+  recomputed projection/correction tensor hashes, actual hashed packed dispatch
+  log, requested recipe, deduplicated trainable-family counts, and finite
+  backward tensors. Existing v1 A8/A1 proofs retain their original contract.
+- Native A4 capture explicitly requires `CUDA packed W1A4 BITSERIAL dispatch`;
+  the native capture helper accepts A4 without changing target precision,
+  token/microshard/graph limits, or cancellation-group ownership.
+- New `w1ax_exact_prefix_refresh_v3` supports exporter manifests 2/3/4 with
+  strict `validate_actor_export`: exact field inventory, six learned shared
+  boundaries, correction descriptor/factor hashes, projection NPZ inventory,
+  effective numeric values, checkpoint/export/source bindings. Legacy receipt
+  v2 remains restricted to baseline manifest2 A8/A1. Fresh captures still have
+  `training_eligible=False` and `changed_prefix_labels_reused=False`; existing
+  native teacher/prefix/feature audits remain authoritative.
+- Providers reject requested learned/correction configurations that differ
+  from their own versioned precision proof. Refresh provider adoption builds
+  each configuration from its corresponding independently admitted proof.
+- `checkpoint_joint_config` builds fixed/learned/fusion modules from the
+  strict manifest. `_load_checkpoint` validates all arrays and attachments
+  before changing any parameter, restores learned scalar thresholds/clips and
+  effective correction tensors, and rejects undeclared extras. It returns
+  `checkpoint_recipe(manifest)`.
+- `run_gate(..., checkpoint_bundle={checkpoint,checkpoint_manifest})` gates a
+  specific declared actor rather than silently using checkpoint-zero. It owns
+  every attached parameter exactly once through `joint_optimizer`, requires
+  finite extra-family backward gradients and nonzero binary gradients, and
+  replays the head using its actual learned quantizer. A provided
+  `measurement_binding={source_sha256,training_runtime,recipe,native_commit}`
+  produces an actual `qat_native_measurements_v1` native-decisions artifact
+  for the independent readiness harness. Its state hash helper is supplied by
+  the separately owned `check_qat_optimization_readiness` harness.
+
+CPU synthetic checks passed: 5 new `test_qat_recipe_provider` checks, 6 existing
+`test_continuous_readiness`, 4 `test_w1ax_refreshed_provider`, and 19 discovered
+`test_w1ax_continuous_stages` checks (including its imported capture fixtures).
+Tests use real synthetic NPZ arrays and hashed fake artifacts, rejecting
+missing A4 proof, unknown audit options, changed thresholds/correction hashes,
+stale actor/prefix reuse, and mismatched loader shapes. Native capture execution
+and CUDA cache release are mocked in the dispatch/cancellation fixture. No
+CUDA query, native/GPU execution, model data, remote use, or real optimizer
+update was performed. Python compilation and `git diff --check` passed.
+
+Remaining integration boundary: export NPZ stores effective scales and F16
+correction factors; it does not preserve the original F32 factor masters or
+additive initial-scale/offset decomposition. Its zero-update replay state hash
+therefore identifies that exact replay state, and must not be relabeled as a
+different trainer master state. The independent harness must require matching
+live hashes; exact trainer-master native evidence needs a full trainer-state
+restore or a separately proved deployment-effective identity. Dedicated
+learned packing and raw-input/nonzero fusion artifacts are not manufactured
+from trajectory RMS measurements. Actual GPU gates remain unexecuted, and
+this follow-up asserts no native-ready status or quality improvement.
