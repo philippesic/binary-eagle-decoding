@@ -88,3 +88,29 @@ Luna/high; focused advisor Astra/medium. Root integration worktree:
 worktree /private/tmp/eagle-native-learned, feature/learned-w1ax. CPU baseline:
 114 passing tests, Apple M3 Max CPU, Torch 2.14.0/NumPy 2.4.6/Python 3.11.15.
 No new GPU checks or real optimizer updates.
+
+## CPU implementation integration milestone
+
+In isolated root worktree, integrated computation 1e8a012, cache/head 84fae13,
+learned activation be824f6, binary/curriculum helpers aeed6fe, raw fusion
+correction dc0ed58 and native/export learned support parent3e92989. Native
+cce962891 is published on the user's fork feature/learned-w1ax. Native CPU
+187 operator cases +24 EAGLE load/encode fixtures passed; CUDA not yet compiled
+or run. Correction native/export and runnable staged curriculum are finishing.
+Root added explicit config/optimizer families, deduped learned sharing, config
+source identity, schema3/4 checkpoint payloads and canonical alias/frozen-operand
+resume validation. Eight combined recipe integration tests pass, including
+exact uninterrupted/resumed learned+correction optimizer state. One tiny
+learned-A1 fixture has legal exact zero gate/up scale gradients: smoke correctly
+rejects it; a separately seeded nonsingular fixture passes without relaxing gates.
+No real model optimizer updates/GPU/finals/calibration fitting occurred.
+
+Existing preparation owner reported healthy supervisor07 after disconnect at
+2026-10-01 20:44:55 UTC; --prepare-only in cmdline, retained327manifests,
+10,000train/224dev andzerooptimizerupdates. This is historical observed state,
+not a fresh GPU-release claim. Ownership remains with that operator.
+
+Next: finish runner/correction support, independent whole-package review,
+config/readiness launch gating and actual GPU no-update validation after ownership
+release. Learned or mixed-precision options cannot inherit the old frozen source
+readiness silently; their new source and native contracts need fresh gates.
