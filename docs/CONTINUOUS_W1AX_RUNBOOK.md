@@ -105,6 +105,34 @@ CUDA memory/backward smoke before optimization. Calibration-only A16 records
 cannot qualify A8/A1. Any failed gate stops; no precision/hardware fallback.
 No full-vocabulary target logits are captured; historical raw data stays intact.
 
+To finish data and QAT preparation without starting optimization, add
+`--prepare-only` to the same supervised `--start` command:
+
+```sh
+tmux -L binary-eagle-runtime new-session -d -s continuous-a8-a1-prep-001 -c "$PWD" \
+  'exec python3 scripts/remote_job.py --stop-grace-seconds 300 continuous-a8-a1-prep-001 -- .venv/bin/python scripts/train_continuous_w1ax.py --start --allow-cuda --prepare-only --stages-manifest runs/continuous-preparation/stages.json --run-dir /absolute/experiment-directory'
+```
+
+This runs the same native capture, audits, readiness and coverage gates, model
+construction, both paired CUDA forward/backward smoke probes and initial paired
+checkpoint save. The smoke computes gradients and initializes Adam moment
+buffers, but performs **no optimizer updates**. It then verifies global, A8/A1
+and Adam step counters are zero, writes `preparation-ready.json` with coverage,
+checkpoint/runtime provenance and a resource snapshot, and exits successfully.
+Status is the recognized healthy terminal `stopped`, with
+`preparation_complete: true`, `stop_reason: "prepare_only"` and
+`optimization_started: false`. No development evaluation runs. Wait for
+supervisor exit and verify its process groups/GPU allocations are gone before
+reporting the GPU free.
+
+`--prepare-only` is valid only with `--start`; it is a launcher control, not an
+experiment config or training cap. For interrupted preparation, add `--resume`
+to this command with a new supervisor/session ID and the identical frozen
+configuration. An existing checkpoint must be at step zero; any recorded or
+restored optimizer progress rejects preparation-only resume. A failed required
+gate cannot publish readiness. Starting optimization later requires a separate
+explicitly authorized ordinary `--start --resume` launch without `--prepare-only`.
+
 Default run has no step/token/time/epoch cap. Optional caps are in
 `configs/continuous_w1ax.json`; copy it to a resolved run config and pass
 `--config` to change caps/settings deliberately. Status reports stage progress,
