@@ -125,12 +125,15 @@ def require_preparation_resume(run_dir: Path) -> None:
         step = record.get("step", 0) if path.name == "status.json" else record.get("step")
         models = record.get("models", {})
         if (
-            type(step) is not int or step != 0
+            type(step) is not int
+            or step != 0
             or record.get("optimization_started") is True
             or not isinstance(models, dict)
             or any(
-                not isinstance(model, dict) or type(model.get("step")) is not int
-                or model["step"] != 0 for model in models.values()
+                not isinstance(model, dict)
+                or type(model.get("step")) is not int
+                or model["step"] != 0
+                for model in models.values()
             )
         ):
             raise ValueError(f"--prepare-only requires zero optimizer progress: {path}")
@@ -147,7 +150,8 @@ def require_preparation_resume(run_dir: Path) -> None:
 def require_zero_optimizer_progress(trainer) -> None:
     """Require zero counters and untouched Adam/SGD moment buffers."""
     if (
-        type(trainer.step) is not int or trainer.step != 0
+        type(trainer.step) is not int
+        or trainer.step != 0
         or set(trainer.metrics) != {"A8", "A1"}
         or any(
             type(model.get("step")) is not int or model["step"] != 0
@@ -165,10 +169,14 @@ def require_zero_optimizer_progress(trainer) -> None:
             for name, value in state.items():
                 if hasattr(value, "is_floating_point"):
                     if bool((value != 0).any()):
-                        raise ValueError(f"--prepare-only found {lane.name} nonzero optimizer {name}")
+                        raise ValueError(
+                            f"--prepare-only found {lane.name} nonzero optimizer {name}"
+                        )
                 elif isinstance(value, (int, float)) and not isinstance(value, bool):
                     if value != 0:
-                        raise ValueError(f"--prepare-only found {lane.name} nonzero optimizer {name}")
+                        raise ValueError(
+                            f"--prepare-only found {lane.name} nonzero optimizer {name}"
+                        )
                 else:
                     raise ValueError(f"--prepare-only found unsupported optimizer state {name}")
 
@@ -199,9 +207,13 @@ def publish_preparation_ready(trainer, run_dir: Path) -> None:
         },
     )
     trainer.status(
-        "stopped", preparation_complete=True, stop_reason="prepare_only",
-        optimization_started=False, preparation_report=str(report_path),
-        preparation_report_sha256=sha256(report_path), **resources,
+        "stopped",
+        preparation_complete=True,
+        stop_reason="prepare_only",
+        optimization_started=False,
+        preparation_report=str(report_path),
+        preparation_report_sha256=sha256(report_path),
+        **resources,
     )
 
 
@@ -214,7 +226,8 @@ def main():
     parser.add_argument("--run-dir", type=Path)
     parser.add_argument("--resume", action="store_true")
     parser.add_argument(
-        "--prepare-only", action="store_true",
+        "--prepare-only",
+        action="store_true",
         help="with --start, finish capture/gates/paired backward smoke/checkpoint zero then exit",
     )
     parser.add_argument("--stages-manifest", type=Path)
@@ -293,6 +306,12 @@ def main():
             (run_dir / "STOP").unlink(missing_ok=True)
         import torch
 
+        from w1a1_eagle.qat_readiness import optimization_requires_receipt
+
+        if optimization_requires_receipt(config):
+            torch.set_float32_matmul_precision("highest")
+            torch.backends.cuda.matmul.allow_tf32 = False
+            torch.backends.cudnn.allow_tf32 = False
         if not torch.cuda.is_available():
             raise RuntimeError("manual start requires declared CUDA hardware")
         properties = torch.cuda.get_device_properties(config.device)

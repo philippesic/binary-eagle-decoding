@@ -145,6 +145,9 @@ def main(argv=None):
                 raise ValueError("prepare-only refuses existing optimizer progress")
     import torch
 
+    torch.set_float32_matmul_precision("highest")
+    torch.backends.cuda.matmul.allow_tf32 = False
+    torch.backends.cudnn.allow_tf32 = False
     if not torch.cuda.is_available():
         raise RuntimeError("explicit start requires declared CUDA hardware")
     properties = torch.cuda.get_device_properties(qat.device)

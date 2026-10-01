@@ -29,6 +29,7 @@ class FixtureConfig:
     max_cuda_reserved_bytes: int = 9000
     min_cuda_free_bytes: int = 100
     optimization_readiness: dict | None = None
+    curriculum: dict | None = None
 
 
 # Synthetic values deliberately named as stubs. These objects exercise the
@@ -138,6 +139,51 @@ class ReadinessTests(unittest.TestCase):
         return validate_optimization_readiness(
             self.write(receipt or synthetic_receipt(config), config), **(CONTEXT | context)
         )
+
+    def test_all_curriculum_stages_need_independent_measured_gates(self):
+        config = replace(
+            self.config,
+            curriculum={
+                "stages": [
+                    {"activation_bits": 8, "gpu_seconds": 10, "max_updates": 1},
+                    {"activation_bits": 1, "gpu_seconds": 20, "max_updates": 2},
+                ],
+                "optimizer_transition": "fresh",
+            },
+        )
+        receipt = synthetic_receipt(config)
+        source = receipt["gates"]
+        native = {
+            name: copy.deepcopy(value)
+            for name, value in source.items()
+            if name not in ("full_model", "memory")
+        }
+        stages = [
+            {
+                "activation_bits": bits,
+                "full_model": copy.deepcopy(source["full_model"]),
+                "memory": copy.deepcopy(source["memory"]),
+                "native_gates": copy.deepcopy(native),
+            }
+            for bits in (8, 1)
+        ]
+        source["curriculum_stages"] = {"passed": True, "activation_bits": [8, 1], "stages": stages}
+        self.validate(receipt, config=config)
+        for mutation in (
+            lambda x: x["gates"].pop("curriculum_stages"),
+            lambda x: x["gates"]["curriculum_stages"]["stages"].pop(),
+            lambda x: x["gates"]["curriculum_stages"].update(activation_bits=[1, 8]),
+            lambda x: x["gates"]["curriculum_stages"]["stages"][1]["native_gates"][
+                "native_decisions"
+            ].update(material_choice_changes=False),
+            lambda x: x["gates"]["curriculum_stages"]["stages"][1]["native_gates"][
+                "learned_quantizers"
+            ].update(exact_pack=False),
+        ):
+            invalid = copy.deepcopy(receipt)
+            mutation(invalid)
+            with self.assertRaises(ValueError):
+                self.validate(invalid, config=config)
 
     def test_valid_synthetic_schema_with_explicit_stub_context(self):
         receipt = self.validate()
