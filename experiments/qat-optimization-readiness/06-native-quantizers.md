@@ -43,3 +43,43 @@ Before deployment run bounded actual CUDA code/bit, trajectory numeric and
 native-choice gates (relative RMS <=0.10; no choice change with margin >0.02),
 then packing-inclusive native acceptance/latency against Q4_0. No model data,
 sealed finals, or real-data optimizer updates were used.
+
+## Optional fusion correction extension
+
+Manifest schema 4 adds the seven-field `fusion_correction` v1 descriptor and
+`activation_quantizers` (null for the fixed quantizer, otherwise the same v1
+object). Correction arrays are exactly named `fc.correction_u.weight` F16
+[out,rank], `fc.correction_v.weight` F16 [rank,in], and optionally
+`fc.correction_bias` F32 [out]. Rank is 1 or 4. The descriptor pins names,
+rank, arithmetic and the optional positive bias bound. Extra/missing arrays,
+wrong shapes/dtypes, nonfinite factors, and out-of-bound bias fail export.
+GGUF stores descriptor fields under `eagle3.fusion_correction.*`, with an
+explicit empty bias name and zero bound when disabled. Native load rejects
+unknown/malformed descriptors, missing/type/shape mismatches and unversioned
+correction tensors. Enabling correction forces finite tensor validation;
+after load, the bias is checked against its bound.
+
+The encoder retains raw prequantization FC input and adds U(Vx) after the binary
+projection, then bias. Stored F16 factors are promoted to F32 for the ordinary
+MUL_MAT graphs with F32 precision: CPU F16 MUL_MAT otherwise rounds its F32
+right-hand side to F16. Raw input and rank intermediate therefore retain F32,
+matching the Torch correction contract, without introducing a custom op.
+No correction metadata/tensors means the existing graph remains unchanged.
+
+Final CPU fixtures pass 60 actual loader cases and 25 valid encoder numeric
+checks across A1/A4/A8. Valid cases include default/fixed/learned quantizers,
+zero correction, rank1/rank4 and optional bias. Invalid payloads include rank,
+version, missing factor, shape, unknown field, nonfinite factor and exceeded
+bias bound. Raw inputs include non-F16-exact values; absolute tolerance 1e-4
+allows scalar versus SIMD F32 accumulation order. Nine standalone pack fixtures
+add exact scale bytes, A1 signs, A4/A8 codes, A4 planes and A1 tail checks for
+normal/zero/subnormal tokens, positive/negative thresholds and clipping; these
+avoid tiny reconstructed outputs hiding bit errors in a floating tolerance.
+The 187 operator fixtures still pass. Final Python export checks pass 7 legacy
+and 4 focused learned/correction tests; Ruff and diff checks pass.
+
+The correction's CPU loader/graph checks do not validate CUDA compilation,
+SM75 behavior, deployment trajectories, GPU timing or quality. Those remain
+integration/deployment gates, with no inference of a measured speed or quality
+gain. Native commit and parent export commit are provided to the orchestrator
+for integration; no primary checkout or submodule gitlink was changed here.

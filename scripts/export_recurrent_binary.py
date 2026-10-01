@@ -31,7 +31,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "third_party/llama.cpp/gguf-py"))
 from audit_eagle_w1a1_gguf import SOURCE_NAMES, gguf_qk_row_order  # noqa: E402
 from gguf import GGMLQuantizationType as Type  # noqa: E402
-from gguf import GGUFReader, GGUFWriter  # noqa: E402
+from gguf import GGUFReader, GGUFValueType, GGUFWriter  # noqa: E402
 
 PREFIX = "eagle3.w1a1."
 GROUP_SIZE = 128
@@ -43,7 +43,13 @@ LEARNED_ACTIVATION_RULE = "learned_scalar_a1_threshold_a4a8_clip_v1"
 
 def check_activation_quantizers(value: dict, bits: int) -> dict:
     """Validate effective F32 scalars, including the shared-boundary inventory."""
-    if bits not in (1, 4, 8) or not isinstance(value, dict) or set(value) != {"version", "boundaries"} or type(value["version"]) is not int or value["version"] != 1:
+    if (
+        bits not in (1, 4, 8)
+        or not isinstance(value, dict)
+        or set(value) != {"version", "boundaries"}
+        or type(value["version"]) is not int
+        or value["version"] != 1
+    ):
         raise ValueError("unsupported learned activation quantizers")
     boundaries = value["boundaries"]
     if not isinstance(boundaries, dict) or set(boundaries) != set(QUANTIZER_BOUNDARIES):
@@ -51,12 +57,21 @@ def check_activation_quantizers(value: dict, bits: int) -> dict:
     checked = {}
     for boundary in QUANTIZER_BOUNDARIES:
         item = boundaries[boundary]
-        if not isinstance(item, dict) or set(item) != {"bits", "threshold_delta", "clip_ratio"} or type(item["bits"]) is not int or item["bits"] != bits:
+        if (
+            not isinstance(item, dict)
+            or set(item) != {"bits", "threshold_delta", "clip_ratio"}
+            or type(item["bits"]) is not int
+            or item["bits"] != bits
+        ):
             raise ValueError(f"{boundary}: incompatible learned quantizer bits or fields")
         params = {}
         for name in ("threshold_delta", "clip_ratio"):
             scalar = item[name]
-            if type(scalar) not in (int, float) or not np.isfinite(scalar) or abs(scalar) > np.finfo(np.float32).max:
+            if (
+                type(scalar) not in (int, float)
+                or not np.isfinite(scalar)
+                or abs(scalar) > np.finfo(np.float32).max
+            ):
                 raise ValueError(f"{boundary}: nonfinite or non-scalar {name}")
             params[name] = float(np.float32(scalar))
             if params[name] != scalar:
@@ -66,6 +81,70 @@ def check_activation_quantizers(value: dict, bits: int) -> dict:
             raise ValueError(f"{boundary}: incompatible learned quantizer parameters")
         checked[boundary] = {"bits": bits, **params}
     return {"version": 1, "boundaries": checked}
+
+
+CORRECTION_PREFIX = "eagle3.fusion_correction."
+CORRECTION_ARITHMETIC = "raw_f32_v_f16_dot_f32_u_f16_dot_f32_add_base_f32_bias_f32"
+
+
+def check_fusion_correction(value: dict) -> dict:
+    required = {"version", "rank", "u_name", "v_name", "bias_name", "bias_bound", "arithmetic"}
+    if (
+        not isinstance(value, dict)
+        or set(value) != required
+        or type(value["version"]) is not int
+        or value["version"] != 1
+        or type(value["rank"]) is not int
+        or value["rank"] not in (1, 4)
+    ):
+        raise ValueError("unsupported fusion correction descriptor")
+    if (
+        value["u_name"] != "fc.correction_u.weight"
+        or value["v_name"] != "fc.correction_v.weight"
+        or value["arithmetic"] != CORRECTION_ARITHMETIC
+    ):
+        raise ValueError("incompatible fusion correction names or arithmetic")
+    if value["bias_name"] is None:
+        if value["bias_bound"] is not None:
+            raise ValueError("fusion correction bias bound without bias")
+    elif (
+        value["bias_name"] != "fc.correction_bias"
+        or type(value["bias_bound"]) not in (int, float)
+        or not np.isfinite(value["bias_bound"])
+        or not 0 < value["bias_bound"] <= np.finfo(np.float32).max
+    ):
+        raise ValueError("fusion correction bias requires a finite positive bound")
+    return dict(value)
+
+
+def load_fusion_correction(checkpoint: Path, value: dict, shape: tuple) -> dict:
+    descriptor = check_fusion_correction(value)
+    rank = descriptor["rank"]
+    specs = {
+        descriptor["u_name"]: (np.float16, (shape[0], rank)),
+        descriptor["v_name"]: (np.float16, (rank, shape[1])),
+    }
+    if descriptor["bias_name"]:
+        specs[descriptor["bias_name"]] = (np.float32, (shape[0],))
+    arrays = {}
+    with np.load(checkpoint, allow_pickle=False) as archive:
+        for name, (dtype, expected_shape) in specs.items():
+            if name not in archive.files:
+                raise ValueError(f"missing fusion correction tensor {name}")
+            array = archive[name]
+            if (
+                array.dtype != dtype
+                or array.shape != expected_shape
+                or not np.isfinite(array).all()
+            ):
+                raise ValueError(f"invalid fusion correction tensor {name}")
+            if (
+                name == descriptor["bias_name"]
+                and (np.abs(array) > np.float32(descriptor["bias_bound"])).any()
+            ):
+                raise ValueError("fusion correction bias exceeds declared bound")
+            arrays[name] = np.ascontiguousarray(array)
+    return arrays
 
 
 def sha256(path: Path) -> str:
@@ -85,7 +164,7 @@ def tensor_key(base: str, suffix: str) -> str:
 
 
 def check_manifest(manifest: dict, base_hash: str) -> dict[str, tuple[str, tuple[int, int]]]:
-    if not isinstance(manifest, dict) or manifest.get("schema_version") not in (1, 2, 3):
+    if not isinstance(manifest, dict) or manifest.get("schema_version") not in (1, 2, 3, 4):
         raise ValueError("manifest schema must be v1 group128, v2 row or v3 learned row")
     if manifest["schema_version"] == 1:
         required = {"schema_version", "base_gguf_sha256", "training_arithmetic", "projections"}
@@ -107,15 +186,22 @@ def check_manifest(manifest: dict, base_hash: str) -> dict[str, tuple[str, tuple
             "objective",
             "projections",
         }
-        if manifest["schema_version"] == 3:
+        if manifest["schema_version"] in (3, 4):
             required.add("activation_quantizers")
+        if manifest["schema_version"] == 4:
+            required.add("fusion_correction")
+            check_fusion_correction(manifest.get("fusion_correction"))
         if set(manifest) != required:
             raise ValueError("row manifest has missing or extra contract fields")
         if (
             manifest["scale_layout"] != "row"
             or manifest["activation_bits"] not in (1, 4, 8, 16)
             or manifest["activation_rule"]
-            != (LEARNED_ACTIVATION_RULE if manifest["schema_version"] == 3 else "a16_f16_cast_a8a4_absmax_even_a1_f64_meanabs_sign_zero_positive")
+            != (
+                LEARNED_ACTIVATION_RULE
+                if manifest.get("activation_quantizers") is not None
+                else "a16_f16_cast_a8a4_absmax_even_a1_f64_meanabs_sign_zero_positive"
+            )
             or manifest["weight_rule"] != "hard_sign_zero_positive_clipped_identity_ste"
             or manifest["qk_row_order"] != "original_checkpoint"
             or manifest["export_status"] != "row_w1ax_requires_native_validation"
@@ -124,8 +210,10 @@ def check_manifest(manifest: dict, base_hash: str) -> dict[str, tuple[str, tuple
             or not re.fullmatch("[0-9a-f]{64}", manifest["checkpoint_sha256"])
         ):
             raise ValueError("unsupported row checkpoint contract")
-        if manifest["schema_version"] == 3:
-            check_activation_quantizers(manifest["activation_quantizers"], manifest["activation_bits"])
+        if manifest["schema_version"] == 3 or manifest.get("activation_quantizers") is not None:
+            check_activation_quantizers(
+                manifest["activation_quantizers"], manifest["activation_bits"]
+            )
     if manifest["base_gguf_sha256"] != base_hash:
         raise ValueError("manifest version or base GGUF hash mismatch")
     projections = manifest["projections"]
@@ -158,12 +246,15 @@ def check_base(reader: GGUFReader, expected: dict) -> dict:
         raise ValueError("base GGUF must have eagle3 architecture")
     if reader.byte_order != "I":
         raise ValueError("only little-endian base GGUF is supported")
-    if any(key.startswith(PREFIX) for key in reader.fields):
+    if any(key.startswith((PREFIX, CORRECTION_PREFIX)) for key in reader.fields):
         raise ValueError("base GGUF contains existing binary metadata")
     tensors = {tensor.name: tensor for tensor in reader.tensors}
     if len(tensors) != len(reader.tensors):
         raise ValueError("duplicate tensor names")
-    if any(name.endswith((".w1a1_packed", ".w1a1_scale")) for name in tensors):
+    if any(
+        name.endswith((".w1a1_packed", ".w1a1_scale")) or name.startswith("fc.correction")
+        for name in tensors
+    ):
         raise ValueError("base GGUF contains binary shadows")
     for name in tensors:
         match = re.match(r"^blk\.(\d+)\.", name)
@@ -186,8 +277,11 @@ def pack(latent: np.ndarray) -> np.ndarray:
     return np.ascontiguousarray(np.packbits(signs, axis=1, bitorder="little").view("<i4"))
 
 
-def load_checkpoint(checkpoint: Path, expected: dict, *, row_scale: bool = False) -> dict:
+def load_checkpoint(
+    checkpoint: Path, expected: dict, *, row_scale: bool = False, extra_names: set = frozenset()
+) -> dict:
     required = {name + suffix for name, _ in expected.values() for suffix in (".latent", ".scale")}
+    required |= extra_names
     arrays = {}
     with np.load(checkpoint, allow_pickle=False) as archive:
         if set(archive.files) != required or len(archive.files) != len(required):
@@ -251,17 +345,26 @@ def export_model(base_path: Path, checkpoint: Path, manifest_path: Path, output:
     base_hash = sha256(base_path)
     manifest = json.loads(manifest_path.read_text())
     expected = check_manifest(manifest, base_hash)
-    row_scale = manifest["schema_version"] in (2, 3)
+    row_scale = manifest["schema_version"] in (2, 3, 4)
     if row_scale and sha256(checkpoint) != manifest["checkpoint_sha256"]:
         raise ValueError("row checkpoint SHA256 differs from manifest")
     reader = GGUFReader(base_path)
     tensors = check_base(reader, expected)
-    arrays = load_checkpoint(checkpoint, expected, row_scale=row_scale)
+    correction = manifest.get("fusion_correction")
+    correction_arrays = (
+        load_fusion_correction(checkpoint, correction, expected["fc"][1])
+        if correction is not None
+        else {}
+    )
+    arrays = load_checkpoint(
+        checkpoint, expected, row_scale=row_scale, extra_names=set(correction_arrays)
+    )
     selected_names = {base + ".weight" for base in SOURCE_NAMES}
     preserved = {name: tensor for name, tensor in tensors.items() if name not in selected_names}
     expected_names = set(preserved) | {
         base + suffix for base in SOURCE_NAMES for suffix in (".w1a1_packed", ".w1a1_scale")
     }
+    expected_names |= set(correction_arrays)
     output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix=".recurrent-binary-export-", dir=output.parent) as tmp:
         temporary = Path(tmp) / "model.gguf"
@@ -278,13 +381,28 @@ def export_model(base_path: Path, checkpoint: Path, manifest_path: Path, output:
         writer.add_uint32(PREFIX + "scale_group_size", 0 if row_scale else GROUP_SIZE)
         if row_scale:
             writer.add_uint32(PREFIX + "activation_bits", manifest["activation_bits"])
-        if manifest["schema_version"] == 3:
-            quantizers = check_activation_quantizers(manifest["activation_quantizers"], manifest["activation_bits"])
+        if manifest.get("activation_quantizers") is not None:
+            quantizers = check_activation_quantizers(
+                manifest["activation_quantizers"], manifest["activation_bits"]
+            )
             writer.add_uint32(QUANTIZER_PREFIX + "version", 1)
             writer.add_array(QUANTIZER_PREFIX + "boundaries", list(QUANTIZER_BOUNDARIES))
             for boundary, params in quantizers["boundaries"].items():
                 for name in ("threshold_delta", "clip_ratio"):
                     writer.add_float32(QUANTIZER_PREFIX + boundary + "." + name, params[name])
+        if correction is not None:
+            writer.add_uint32(CORRECTION_PREFIX + "version", correction["version"])
+            writer.add_uint32(CORRECTION_PREFIX + "rank", correction["rank"])
+            for key in ("u_name", "v_name", "arithmetic"):
+                writer.add_string(CORRECTION_PREFIX + key, correction[key])
+            writer.add_key_value(
+                CORRECTION_PREFIX + "bias_name", correction["bias_name"] or "", GGUFValueType.STRING
+            )
+            writer.add_float32(CORRECTION_PREFIX + "bias_bound", correction["bias_bound"] or 0)
+            for name, array in correction_arrays.items():
+                writer.add_tensor(
+                    name, array, raw_dtype=Type.F16 if array.dtype == np.float16 else Type.F32
+                )
         writer.add_array(PREFIX + "groups", list(GROUPS))
         writer.add_array(PREFIX + "tensors", sorted(selected_names))
         writer.add_string(PREFIX + "bit_order", "little")
@@ -334,11 +452,32 @@ def export_model(base_path: Path, checkpoint: Path, manifest_path: Path, output:
             or reread.fields[PREFIX + "activation_bits"].contents() != manifest["activation_bits"]
         ):
             raise ValueError("row activation or scale metadata mismatch")
-        if manifest["schema_version"] == 3:
+        if manifest.get("activation_quantizers") is not None:
             for boundary, params in quantizers["boundaries"].items():
                 for name in ("threshold_delta", "clip_ratio"):
-                    if reread.fields[QUANTIZER_PREFIX + boundary + "." + name].contents() != params[name]:
+                    if (
+                        reread.fields[QUANTIZER_PREFIX + boundary + "." + name].contents()
+                        != params[name]
+                    ):
                         raise ValueError("learned activation metadata mismatch")
+        for name, array in correction_arrays.items():
+            observed = actual[name]
+            kind = Type.F16 if array.dtype == np.float16 else Type.F32
+            if (
+                observed.tensor_type != kind
+                or observed.data.shape != array.shape
+                or raw_hash(observed.data) != raw_hash(array)
+            ):
+                raise ValueError("fusion correction tensor round-trip mismatch")
+        if correction is not None:
+            for key, expected_value in correction.items():
+                stored = reread.fields[CORRECTION_PREFIX + key].contents()
+                if key == "bias_name":
+                    expected_value = expected_value or ""
+                if key == "bias_bound":
+                    expected_value = float(np.float32(expected_value or 0))
+                if stored != expected_value:
+                    raise ValueError("fusion correction metadata round-trip mismatch")
         output_hash = sha256(temporary)
         report = {
             "schema_version": 1,
@@ -368,8 +507,13 @@ def export_model(base_path: Path, checkpoint: Path, manifest_path: Path, output:
                 for name, tensor in preserved.items()
             },
         }
-        if manifest["schema_version"] == 3:
+        if manifest.get("activation_quantizers") is not None:
             report["activation_quantizers"] = quantizers
+        if correction is not None:
+            report["fusion_correction"] = correction
+            report["fusion_correction_tensor_sha256"] = {
+                name: raw_hash(array) for name, array in correction_arrays.items()
+            }
         temporary.rename(output)
     return report
 
