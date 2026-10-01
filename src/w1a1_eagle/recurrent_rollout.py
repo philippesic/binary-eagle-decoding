@@ -41,6 +41,7 @@ def rebuild_prefix_cache(
     encode_feature: Callable[[Tensor], Tensor],
     decode_context: Callable[[int, Tensor, int, Any], DraftStep],
     new_cache: Callable[[], Any],
+    build_context_cache: Callable[[Sequence[int], Tensor], Any] | None = None,
 ) -> RebuiltPrefix:
     """Recompute current-student cache from accepted-prefix target features.
 
@@ -49,7 +50,9 @@ def rebuild_prefix_cache(
     ``j``. The final feature row ``target_features[P]`` is deferred for the
     draft seed ``token[P+1]`` at position ``P``. Context reconstruction is a
     declared truncated-gradient boundary; the proposal unroll retains its
-    own student-state and cache gradients.
+    own student-state and cache gradients. An optional architecture-validated
+    builder receives only shifted context tokens and raw context rows under
+    no_grad; the deferred seed never enters that batch.
     """
     if type(parent_position) is not int or parent_position < 0:
         raise ValueError("parent_position must be nonnegative")
@@ -70,7 +73,11 @@ def rebuild_prefix_cache(
         raise ValueError("raw target feature positions are missing or misordered")
     cache = new_cache()
     with torch.no_grad():
-        for position in range(parent_position):
+        if build_context_cache is not None:
+            cache = build_context_cache(
+                prefix_token_ids[1 : parent_position + 1], raw_target_features[:parent_position]
+            )
+        for position in (range(parent_position) if build_context_cache is None else ()):
             feature = encode_feature(raw_target_features[position])
             if (
                 feature.device != raw_target_features.device
@@ -95,13 +102,16 @@ def rollout_captured_prefix(
     decode_step: Callable[[int, Tensor, int, Any], DraftStep],
     initial_cache: Any,
     draft_vocab_size: int,
+    decode_head: Callable[[Tensor], Tensor] | None = None,
 ) -> Tensor:
     """Unroll one exact-prefix chain without detaching student states or cache.
 
     ``rows`` must first pass ``validate_recurrent_trace`` with its independent
     round anchor and verifier vocabulary map. This function checks the local
     recurrence and fills only a terminal invalid row with zero, ignored logits
-    so its output aligns with the trace CE mask.
+    so its output aligns with the trace CE mask. With ``decode_head``, the step
+    callback must omit logits (return an empty row); valid attached pre-norm
+    states are stacked for one head call after serial recurrent decoding.
     """
     if not rows or draft_vocab_size < 1:
         raise ValueError("one nonempty round and positive draft vocabulary are required")
@@ -114,6 +124,8 @@ def rollout_captured_prefix(
         raise ValueError("feature encoder must return one valid state on the input device")
     cache = initial_cache
     logits_rows = []
+    states = []
+    valid_indices = []
     first = rows[0]
     identity = (first["prompt_id"], first["round_index"], first["parent_position"])
     token = first["input_token_id"]
@@ -141,19 +153,36 @@ def rollout_captured_prefix(
         result = decode_step(token, feature, row["input_position"] - 1, cache)
         if not isinstance(result, DraftStep):
             raise TypeError("decoder must return DraftStep")
+        expected_logits = (draft_vocab_size,) if decode_head is None else (0,)
         if (
             result.logits.device != feature.device
-            or result.logits.shape != (draft_vocab_size,)
+            or result.logits.shape != expected_logits
             or (feature.device.type == "cpu" and not torch.isfinite(result.logits).all())
             or result.pre_norm.device != feature.device
             or result.pre_norm.shape != feature.shape
             or (feature.device.type == "cpu" and not torch.isfinite(result.pre_norm).all())
         ):
             raise ValueError("decoder returned invalid logits or pre-norm state")
-        logits_rows.append(result.logits)
+        if decode_head is None:
+            logits_rows.append(result.logits)
+        else:
+            valid_indices.append(len(logits_rows))
+            states.append(result.pre_norm)
+            logits_rows.append(None)
         feature, cache = result.pre_norm, result.cache
         previous_proposal = row.get("proposed_token_id")
         if type(previous_proposal) is not int:
             raise ValueError("valid proposal row needs a proposed token")
         token = previous_proposal
+    if states:
+        logits = decode_head(torch.stack(states))
+        if (
+            not isinstance(logits, Tensor)
+            or logits.device != feature.device
+            or logits.shape != (len(states), draft_vocab_size)
+            or (feature.device.type == "cpu" and not torch.isfinite(logits).all())
+        ):
+            raise ValueError("batched head returned invalid logits")
+        for index, value in zip(valid_indices, logits.unbind(0)):
+            logits_rows[index] = value
     return torch.stack(logits_rows)
