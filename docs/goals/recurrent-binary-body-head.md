@@ -8,7 +8,7 @@ data. Evaluate native draft quality and speed against Q4_0 when GPU work is
 explicitly permitted. Preserve the pinned FP16 target/verifier and draft map.
 This continues the existing goal rather than opening a second goal.
 
-**State: RTX5080 healthy at 2026-10-01 19:00:52 UTC; all10,000 train prompts captured, dev96/1,002.** One CPU checker passed: supervisor05,323 completed manifests,ordinal323/353,zerooptimizer. Prior monitor output error resolved. MonitorACTIVE,budget1of2. Same automatic paired training after all full frozen gates remains authorized; RTX2080Ti paused,Q4_0 primary,finals sealed.
+**State: GPU work and monitor PAUSED at explicit human request.** Verified2026-10-01 19:13:25UTC: supervisor05 interrupted/exit0, experiment stopped, both owned groups gone, no project processes/GPU compute apps. Retained327 manifests /10,000train /224dev; zerooptimizer. GPU0%/12,672MiBfree. Same goal remains; no restart until new human resume authorization. RTX2080Ti paused,Q4_0 primary,finals sealed.
 
 ## Current findings and work
 
@@ -5096,3 +5096,43 @@ null caps, cache/mask/verifier semantics,Q4_0 primary baseline unchanged; sealed
 finals unopened. Next: single bounded CPU observation per tick, quiet ordinary
 progress, notify actual optimizer start/new failure/completion/required action.
 Docs-only checkpoint follows`b85c085`; diff check is appropriate verification.
+
+## Explicit user pause verified — 2026-10-01 19:13 UTC
+
+Human requested “Pause gpu work and report status.” This supersedes the earlier
+overnight continuation. Parent immediately set shared GPU-control pause flags
+for all hosts, then used a new LOCAL tmux MCP shell and the registry-derived
+RTX5080 Windows SSH→WSL bridge. Registration-derived supervisor05 state and live
+/proc cmdline verified ownership before writing experiment STOP and sending
+SIGINT to supervisor795 at19:12:22UTC. No host tmux pane/session/server interaction.
+Supervisor delivered graceful stop to child797 with its existing300-second grace;
+terminal state ended19:12:25.778900UTC, interrupted, exit0, SIGINT receipt.
+
+One combined post-stop verification at **19:13:25.965311UTC** found experiment
+stopped, both supervisor PGID795 and child PGID797 absent, no matching project
+processes and empty nvidia-smi compute-app list. RTX5080 utilization0%,memory
+free12,672MiB/used3,306MiB (display/system use). GPU released from project work.
+Completed valid labels: **327 manifests,train10,000/10,000,development224/1,002**;
+zero optimizer updates. Development capture/preparation remains incomplete.
+Artifacts and partial native data preserved without CPU recovery/deletion.
+No failure recovery used; budget still1of2. Source/config/runtime/data/precision/
+tier/caps and sealed finals unchanged. WSL instanceIdleTimeout=-1 untouched.
+
+Ignored raw pause evidence:
+`runs/luna-continuous-a8-a1-20260929/pause-20261001T191325Z.json`.
+It records exact request/verify commands, original MCP outputs, ownership/signal
+receipt, full terminal supervisor, retained label counts, /proc scan and GPU
+queries. Current registration and last-health mark intentional_user_pause:true,
+resume_requires_user_authorization:true, stopped/terminal. Existing automation
+`a8-a1-health-check-enable-after-manual-start` updated through native tool to
+PAUSED, preserving prompt/cadence/target. Saved TOML verifiedPAUSED; shared5080
+and2080Ti flags paused. Only local transport$121 closed and absence verified.
+No active operator or remote command remains.
+
+Next: wait for explicit user resume. On resume, preserve partial pre-optimization
+data through existing CPU recover-partial, unchanged identity and gates, fresh
+resource/ownership check, new unique supervisor/session in the SAME experiment,
+and disconnect/reconnect health verification. Intentional pause must never be
+automatically recovered or resumed by a stale heartbeat. Earlier capture
+completion/autorun authority does not override this new pause. Docs-only
+checkpoint follows`45cd238`; diff check is appropriate verification.

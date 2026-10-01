@@ -1,8 +1,17 @@
 # A8/A1 health and bounded recovery monitor
 
-Prepared 2026-09-29; **ACTIVE every 15 minutes for user-authorized overnight continuation** with user-authorized failure notification and bounded recovery. Automation ID:
+Prepared 2026-09-29; **PAUSED by explicit human request at 2026-10-01 19:13 UTC** with user-authorized failure notification and bounded recovery. Automation ID:
 `a8-a1-health-check-enable-after-manual-start`. Target chat:
 `01a0f47a-e246-75e1-a299-fcac42d34f8a`.
+Current human request: “Pause gpu work and report status.” All shared GPU pause
+flags set; supervisor05 gracefully interrupted/exit0, experiment stopped at
+19:12:25UTC. Verified19:13:25UTC: both owned groups absent,no project processes,
+no GPU compute apps,RTX5080 utilization0%/12,672MiBfree. Retained10,000train /
+224dev across327 completed manifests,zerooptimizer. Existing automation PAUSED;
+no auto-resume without a NEW explicit human resume request. Earlier continuation
+paragraphs below are historical and superseded by this pause. Partial data and
+supervisor history preserved; budget1of2 unchanged, WSL idle setting untouched.
+
 Coordination transferred to the acknowledged successor on 2026-09-30 after
 the required context rotation; the same automation ID, prompt and cadence are
 preserved. The GPU supervisor is independent and was untouched.
