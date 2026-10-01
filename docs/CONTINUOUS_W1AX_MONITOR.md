@@ -95,6 +95,8 @@ LOCAL transport pane before closing it and preserve any existing checker JSON.
 This is reading existing transport output, not a second remote query. Never use
 the host job pane. At18:47UTC the wrapper returned no output; health unknown,
 last verified18:30UTC9,832train /0dev preserved; no retry/recovery, monitor ACTIVE.
+Next tick19:00:52UTC passed: healthy323/353,10,000train /96dev,zerooptimizer;
+unknown resolved, prior evidence preserved, host job untouched.
 
 ## Windows SSH shell bridge
 

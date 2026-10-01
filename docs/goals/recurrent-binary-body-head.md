@@ -8,7 +8,7 @@ data. Evaluate native draft quality and speed against Q4_0 when GPU work is
 explicitly permitted. Preserve the pinned FP16 target/verifier and draft map.
 This continues the existing goal rather than opening a second goal.
 
-**State: RTX5080 observation unknown at 2026-10-01 18:47 UTC; monitor ACTIVE.** tmux output-capture error produced no checker result. Last verified18:30:46UTC: healthy supervisor05,314 completed manifests /9,832train /0dev,ordinal313/353,zerooptimizer. No retry/recovery or job action. Existing automatic training after all frozen gates remains authorized; RTX2080Ti paused, Q4_0 primary, finals sealed.
+**State: RTX5080 healthy at 2026-10-01 19:00:52 UTC; all10,000 train prompts captured, dev96/1,002.** One CPU checker passed: supervisor05,323 completed manifests,ordinal323/353,zerooptimizer. Prior monitor output error resolved. MonitorACTIVE,budget1of2. Same automatic paired training after all full frozen gates remains authorized; RTX2080Ti paused,Q4_0 primary,finals sealed.
 
 ## Current findings and work
 
@@ -5065,3 +5065,34 @@ to preserve/salvage existing output; this is no second checker or remote command
 Never attach to the host job pane. Suppress duplicate unchanged unknown alerts.
 No source/runtime/config/data/precision/tier/cap/final changes. Docs-only
 checkpoint follows`a18232c`; diff check is appropriate verification.
+
+## Train capture complete and development capture underway — 2026-10-01 19:00 UTC
+
+Pinned Luna/high `/root/health_20261001_1859` (fork none) verified a fresh local
+MacBook shell and submitted the exact stored SSH query directly. ASCII length
+2,291/equality/current supervisor05 binding passed. One combined CPU checker,
+status/supervisor/completed-label query passed at **19:00:52.531241UTC**:
+exit0,healthy/nonterminal,preparing teacher_capture_audit,ordinal323/353,
+323completed manifests,actual prompt counts **train10,000/10,000,dev96/1,002**.
+Optimization_started:false,steps:{}. Train capture complete; full development
+capture and remaining audits/readiness/coverage/CUDA smoke still precede training.
+
+Ignored raw snapshot:
+`runs/luna-continuous-a8-a1-20260929/health-observation-20261001T190052Z.json`.
+Exact command, original checker stdout, decoded query object and raw MCP result
+preserved. Last-health/current registration updated with remote timestamp;
+18:47 unknown output-capture error resolved, previous evidence preserved.
+Supervisor05 PID/PGID795 and child797/PGID797 running; host socket
+`binary-eagle-runtime` / session `continuous-a8-a1-native-order-20261001-05`
+untouched. Only local transport$120 closed and absence verified. No GPU query,
+extra healthy logs, second checker, retry/recovery or job action. Operator done.
+
+Existing15-minute monitor ACTIVE; budget1of2 unchanged. Human continuation
+still authorizes the same pipeline automatically through full development
+capture/audit/readiness/coverage and paired CUDA smoke into continuous paired
+optimizer updates. No pause for capture completion/morning and no new approval
+needed for that transition. All source/runtime/config/data ancestry, precision,
+null caps, cache/mask/verifier semantics,Q4_0 primary baseline unchanged; sealed
+finals unopened. Next: single bounded CPU observation per tick, quiet ordinary
+progress, notify actual optimizer start/new failure/completion/required action.
+Docs-only checkpoint follows`b85c085`; diff check is appropriate verification.
