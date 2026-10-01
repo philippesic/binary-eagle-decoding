@@ -1,6 +1,6 @@
 # QAT optimization integration checkpoint
 
-All five requested areas are implemented and CPU-tested. Actual CUDA readiness
+All five requested areas are implemented and CPU-tested; published main eb66093. Actual CUDA readiness
 remains unverified: both GPUs are paused by the human, and this goal performed
 no remote/GPU execution, real-data optimizer updates, real correction fitting or
 sealed-final reads. The goal remains open.
@@ -38,7 +38,8 @@ Published native revision **8025a07773b7828bdeb4f3e0b834c8b54cb65c66** on the
 user's llama.cpp fork, branch `feature/learned-w1ax`: 220/220 CPU operator cases;
 57 exact packed-byte pairs, 36 projection cases, 114 loader cases, 59 encoder
 graphs and 218 audited arithmetic nodes. The actual JSON report is
-`/private/tmp/eagle-native-json-cpu-6.json`; it identifies Apple M3 Max CPU and
+`/private/tmp/eagle-native-json-cpu-6.json` (also preserved under ignored
+`runs/qat-optimization-readiness/native-cpu/`); it identifies Apple M3 Max CPU and
 is correctly refused as CUDA evidence. CUDA source is uncompiled and unrun.
 The detailed [native report](06-native-quantizers.md) records raw logs.
 
