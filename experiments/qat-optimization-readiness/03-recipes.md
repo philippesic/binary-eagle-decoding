@@ -183,3 +183,14 @@ restore or a separately proved deployment-effective identity. Dedicated
 learned packing and raw-input/nonzero fusion artifacts are not manufactured
 from trajectory RMS measurements. Actual GPU gates remain unexecuted, and
 this follow-up asserts no native-ready status or quality improvement.
+
+Integration fingerprint clarification: root now supplies
+`qat_state.deployment_state_sha256(linears)` over the native effective
+representation (hard signs, effective F32 scales/scalars, rounded F16 factors,
+effective bias). Gate-v2 and decision artifacts use `deployment_state_sha256`,
+so equivalent NPZ rehydration can bind the exact same deployed operands while
+full F32 master-state hashing remains a separate no-update assertion. This
+resolves the representation mismatch above without labeling different master
+states equal. Production execution requires root's shared helper; the provider
+fixtures do not query devices or execute the GPU producer. Cached gates cannot
+silently omit or substitute a newly requested bound decision artifact.
