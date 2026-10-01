@@ -8,7 +8,7 @@ data. Evaluate native draft quality and speed against Q4_0 when GPU work is
 explicitly permitted. Preserve the pinned FP16 target/verifier and draft map.
 This continues the existing goal rather than opening a second goal.
 
-**State: Overnight RTX5080 pipeline healthy; train capture passed halfway.** At 2026-10-01 10:14:58 UTC supervisor05 CPU health passed: 163 completed labels / 5,096 train / 0 dev, zero optimizer steps, capture ordinal 163/353. Existing 15-minute monitor ACTIVE; budget 1 of 2 used. Automatic training waits for all frozen gates; RTX2080Ti paused, Q4_0 primary, finals sealed. Latest capture checkpoint supersedes earlier progress lists.
+**State: Overnight RTX5080 pipeline healthy; 6,096 train prompts captured.** At 2026-10-01 11:59:35 UTC supervisor05 CPU health passed: 195 completed labels / 6,096 train / 0 dev, zero optimizer steps, capture ordinal 195/353. Existing 15-minute monitor ACTIVE; budget 1 of 2 used. Automatic training waits for all frozen gates; RTX2080Ti paused, Q4_0 primary, finals sealed. Latest capture checkpoint supersedes earlier progress lists.
 
 ## Current findings and work
 
@@ -4855,3 +4855,35 @@ source/runtime/data ancestry, cache/mask/verifier semantics and Q4_0 primary
 baseline frozen. Next: one pinned bounded CPU observation per tick, notify
 actual optimizer start/new failure/completion/required action, quiet healthy
 ordinary progress. No launch/recovery operator remains active.
+
+## Train capture exceeded six thousand — 2026-10-01 11:59 UTC
+
+One pinned Luna/high operator `/root/health_20261001_1158` (fork none) ran
+exactly one combined CPU checker/status/supervisor/completed-label query at
+**11:59:35.429571 UTC**. Checker exit0, healthy and nonterminal, preparing
+teacher_capture_audit, capture ordinal195/353. Actual completed label manifests:
+**195 / 6,096 train prompts**, development0/1,002. Optimizer_started:false,
+steps:{}. Capture progress is separate from weight updates and quality evidence.
+
+Current supervisor remains `luna-supervisor-a8-a1-native-order-20261001-05`,
+supervisor PID/PGID795, supervised child PID/PGID797. Host socket
+`binary-eagle-runtime` / session `continuous-a8-a1-native-order-20261001-05`
+remains independent. Current registration and last-health preserve this result;
+ignored raw snapshot is
+`runs/luna-continuous-a8-a1-20260929/health-observation-20261001T115935Z.json`.
+It holds the exact command, original checker stdout, decoded query and raw MCP
+result. Command loaded directly from JSON and registration-validated, never
+transcribed from display. Local transport$91 closed and verified absent; host
+job unchanged. No GPU query, extra healthy logs, recovery or experiment change.
+
+Existing15-minute monitor remains ACTIVE; automatic failure budget stays1of2.
+The human overnight continuation authorizes the same supervised pipeline into
+paired continuous optimizer updates after full frozen capture/audit/readiness/
+coverage and paired CUDA smoke pass. No pause for morning/capture completion,
+no new approval required for that existing transition. Source/config/runtime/
+data ancestry, precision, null caps, cache/mask/verifier semantics and Q4_0
+primary baseline unchanged; sealed finals unopened. Next: one pinned CPU
+observation per tick; notify actual optimizer start, new verified failure,
+completion or required action. Quiet healthy ordinary progress. No operator
+remains active. This docs-only checkpoint follows `8ffdd18`; diff check is the
+appropriate verification, with no code or runtime change.
