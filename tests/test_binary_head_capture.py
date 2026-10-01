@@ -10,6 +10,7 @@ import struct
 import sys
 import tempfile
 import unittest
+from contextlib import contextmanager
 from pathlib import Path
 from unittest import mock
 
@@ -190,6 +191,20 @@ class RunnerTests(unittest.TestCase):
         )
         self.spec = {"body": "D", "head": "D", "draft": str(self.root / "draft")}
 
+    @contextmanager
+    def fake_process_group(self, proc):
+        """Model a new session leader, then an exited group without signaling a PID."""
+        proc.pid = 731_942
+        with (
+            mock.patch.object(runner.os, "getpgid", return_value=proc.pid) as getpgid,
+            mock.patch.object(runner.os, "killpg", side_effect=ProcessLookupError) as killpg,
+        ):
+            try:
+                yield getpgid, killpg
+            finally:
+                getpgid.assert_called_once_with(proc.pid)
+                killpg.assert_called_once_with(proc.pid, 0)
+
     def test_input_scope_and_environment_override_guards(self):
         variants = {
             name: {"body": body, "head": head, "draft": "x"}
@@ -221,7 +236,8 @@ class RunnerTests(unittest.TestCase):
         self.args.output.mkdir()
         proc = mock.Mock()
         with (
-            mock.patch.object(runner.subprocess, "Popen", return_value=proc),
+            self.fake_process_group(proc),
+            mock.patch.object(runner.subprocess, "Popen", return_value=proc) as popen,
             mock.patch.object(runner, "wait_ready"),
             mock.patch.object(runner, "http_json", side_effect=RuntimeError("broken HTTP")),
             mock.patch.object(runner, "stop_server", return_value={"stopped": True}) as stop,
@@ -229,6 +245,7 @@ class RunnerTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "broken HTTP"):
                 runner.run_cell(self.args, "d_d", self.spec, [self.prompt])
         stop.assert_called_once_with(proc)
+        self.assertTrue(popen.call_args.kwargs["start_new_session"])
         manifest = json.loads((self.args.output / "d_d" / "manifest.json").read_text())
         self.assertTrue(manifest["server_stop"]["stopped"])
         self.assertFalse(manifest["complete"])
@@ -257,13 +274,18 @@ class RunnerTests(unittest.TestCase):
             )
             return {"generated_token_ids": [3, 4]}
 
+        proc = mock.Mock()
         with (
-            mock.patch.object(runner.subprocess, "Popen"),
+            self.fake_process_group(proc),
+            mock.patch.object(runner.subprocess, "Popen", return_value=proc) as popen,
             mock.patch.object(runner, "wait_ready"),
             mock.patch.object(runner, "http_json", side_effect=response),
-            mock.patch.object(runner, "stop_server", return_value={"stopped": True}),
+            mock.patch.object(runner, "stop_server", return_value={"stopped": True}) as stop,
         ):
             manifest = runner.run_cell(self.args, "d_d", self.spec, [self.prompt])
+        popen.assert_called_once()
+        self.assertTrue(popen.call_args.kwargs["start_new_session"])
+        stop.assert_called_once_with(proc)
         self.assertEqual(manifest["task_prompt_ids"], {"9": "historical-1"})
         self.assertEqual(manifest["requests"][0]["capture_rows"], [0, 1])
         self.assertEqual(manifest["audit"]["state_dim"], 2)
@@ -393,6 +415,7 @@ class RunnerTests(unittest.TestCase):
             return self.recurrent_response(cell)
 
         with (
+            self.fake_process_group(proc),
             mock.patch.object(runner.subprocess, "Popen", return_value=proc) as popen,
             mock.patch.object(runner, "wait_ready"),
             mock.patch.object(runner, "http_json", side_effect=response),
@@ -460,8 +483,10 @@ class RunnerTests(unittest.TestCase):
                 stream.write(b"\0" * (runner.FEATURE_WIDTH * 4))
             return {"generated_token_ids": [3, 4]}
 
+        proc = mock.Mock()
         with (
-            mock.patch.object(runner.subprocess, "Popen"),
+            self.fake_process_group(proc),
+            mock.patch.object(runner.subprocess, "Popen", return_value=proc),
             mock.patch.object(runner, "wait_ready"),
             mock.patch.object(runner, "http_json", side_effect=response),
             mock.patch.object(runner, "stop_server", return_value={"stopped": True}),
@@ -496,6 +521,7 @@ class RunnerTests(unittest.TestCase):
                     )
 
                 with (
+                    self.fake_process_group(proc),
                     mock.patch.object(runner.subprocess, "Popen", return_value=proc),
                     mock.patch.object(runner, "wait_ready"),
                     mock.patch.object(runner, "http_json", side_effect=response),
