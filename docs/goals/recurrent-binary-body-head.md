@@ -5371,3 +5371,10 @@ Verification before publication: `git diff --check` and all 245 local Markdown
 links across the fourteen report/state documents pass. Exactly ten owned worker
 reports and one root synthesis are present. No code tests or performance checks
 were run. All audit changes are Markdown; the native submodule is unchanged.
+
+Publication `0c40db8` is integrated into `main` and pushed. The report branch
+was rebased over preparation-only checkpoint `553244e`; both that checkpoint
+and the live STATUS/monitor boundary were preserved. The clean managed audit
+worktree was archived and its merged branch removed after all ten workers
+completed. No unmerged or unpublished audit output remains. This final record
+adds documentation only and authorizes no optimizer or GPU work.
