@@ -13,6 +13,11 @@ SPEC = importlib.util.spec_from_file_location(
 )
 ANALYSIS = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(ANALYSIS)
+PROMPT_SPEC = importlib.util.spec_from_file_location(
+    "generate_w1ax_context_prompts", ROOT / "scripts/generate_w1ax_context_prompts.py"
+)
+PROMPT_GENERATOR = importlib.util.module_from_spec(PROMPT_SPEC)
+PROMPT_SPEC.loader.exec_module(PROMPT_GENERATOR)
 
 
 def digest(text):
@@ -35,8 +40,13 @@ class ContextMatrixTests(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name)
         self.runs = {cap: self.root / str(cap) for cap in (32, 128)}
-        prompts_text = (ROOT / "data/w1ax-context/prompts.jsonl").read_text()
-        self.prompts = [json.loads(line) for line in prompts_text.splitlines()]
+        self.prompts = PROMPT_GENERATOR.build_rows()
+        prompts_text = "".join(
+            json.dumps(prompt, ensure_ascii=False, separators=(",", ":")) + "\n"
+            for prompt in self.prompts
+        )
+        prompts_sha256 = hashlib.sha256(prompts_text.encode()).hexdigest()
+        self.assertEqual(prompts_sha256, ANALYSIS.FROZEN_PROMPT_SHA256)
         self.models = {
             k: digest("packed" if k in ANALYSIS.W1AX_BITS else k) for k in ANALYSIS.MODEL_KEYS
         }
