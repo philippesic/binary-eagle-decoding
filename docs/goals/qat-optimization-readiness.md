@@ -63,3 +63,28 @@ under experiments/qat-optimization-readiness/, and commits its own files.
 
 Goal checkpoint committed before team launch. No implementation or new GPU
 checks yet. Existing preparation is separate and remains preparation-only.
+
+## Added scope: tiny fusion correction
+
+Companion chat 01a0f90d-acc2-77b3-a8e5-383695f54087 forwarded the human's
+explicit implementation request on 2026-10-01. Add one optional rank-1/rank-4
+feature-fusion correction from raw pre-quantization features, preserving the
+binary core. Label F16 factor storage/F32 accumulation as mixed precision.
+Provide a bounded fusion output-bias control, train-only provenance-bound fitting
+entry point, parameter/target ownership checks, exact resume, versioned native
+export/load/execution and later state/K/V gradient tests. No real calibration
+fitting or GPU ownership change is authorized by the forwarded scope.
+Worker /root/fusion_correction owns new module/tests/CLI/report only; native
+owner will add export/runtime support after its learned-quantizer commit.
+
+## Team launched
+
+Checkpoint f502d4a pushed before workers. Native subagents: /root/computation,
+/root/cache_head, /root/recipes, /root/learned_activations, /root/native_quantizers,
+/root/validation (baseline completed), /root/advice (focused correctness),
+/root/fusion_correction. Feature owners are GPT-6.1 Sol/high; validation is
+Luna/high; focused advisor Astra/medium. Root integration worktree:
+/private/tmp/eagle-qat-integration, feature/qat-integration. Native standalone
+worktree /private/tmp/eagle-native-learned, feature/learned-w1ax. CPU baseline:
+114 passing tests, Apple M3 Max CPU, Torch 2.14.0/NumPy 2.4.6/Python 3.11.15.
+No new GPU checks or real optimizer updates.
