@@ -70,6 +70,17 @@ learned or affine formats. New source/config and current effective packed signs,
 scales, activation parameters, rounded factors and midpoints bind the native
 replay; original latent magnitudes/offsets are training state, not native data.
 
+`collect_qat_native_evidence.py` provides bootstrap, bounded native execution
+and verified collection phases. Default invocation prints a plan; active phases
+refuse the durable GPU pause flag. Bootstrap initializes the same model/config
+on CPU and saves schema2–5 bundles but grants no training eligibility. Native
+execution uses `run_gate` and `test-eagle3-learned --backend CUDA --json-report
+<newpath>`. Collection derives evidence from raw measured JSON and hashed gate
+reports; operator fixtures declare synthetic scope without fake train ancestry,
+while native decisions require actual eligible train prompt/capture/round joins.
+A fresh immutable server build manifest must pin the exact native revision and
+binary SHA; the old frozen server cannot be relabeled as the new build.
+
 The measured paired harness consumes hashed actual native evidence and performs
 full-shape resident forward/backward with optimizer.step forbidden:
 
@@ -107,8 +118,13 @@ not reset global budget accounting. Exact midphase/boundary resume is tested.
 
 Default CLI validates without model/CUDA work. Explicit `--start --allow-cuda
 --prepare-only` performs every-stage forward/backward and saves a zero-update
-checkpoint. The actual optimizer path also requires a measured receipt bound
-to the whole schedule, not just an isolated stage. Do not start real optimizer
+checkpoint. `check_curriculum_qat_readiness.py` produces a distinct single-model measured
+receipt for the complete ordered schedule, with strict every-stage backward,
+resident optimizer memory, warmup/five measured repetitions and unchanged state.
+Default invocation is a CPU-only plan. Actual execution remains blocked by the
+GPU pause; independent A4/provider/native proof is required before publication.
+The actual optimizer path also requires this measured receipt bound to the
+whole schedule, not just an isolated stage. Do not start real optimizer
 updates under this goal.
 
 Refresh is native recapture on current-student prefixes, with checkpoint,

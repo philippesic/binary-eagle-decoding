@@ -497,6 +497,7 @@ def recipe_context(args, api):
     spec = common.read_json(path)
     if args.curriculum_config:
         import train_qat_curriculum as training
+
         from w1a1_eagle.qat_curriculum_runner import curriculum_runtime
         from w1a1_eagle.qat_readiness import curriculum_readiness_config
 

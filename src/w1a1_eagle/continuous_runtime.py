@@ -36,6 +36,8 @@ ADMISSION_FILES = (
     "export_recurrent_binary.py",
     "train_continuous_w1ax.py",
     "check_qat_optimization_readiness.py",
+    "check_curriculum_qat_readiness.py",
+    "collect_qat_native_evidence.py",
     "train_qat_curriculum.py",
 )
 
