@@ -162,3 +162,41 @@ active. CPUteam work can continue; GPU use requires NEW human resume/ownership
 coordination. Existing stop-before-QAT boundary and all frozenidentity preserved.
 Exact evidence and resumeprocedure remain in the prior body/head goal and
 ignored pause-preparation-only-20261001T231528Z.json monitor snapshot.
+
+## Full CPU suite and user GPU pause
+
+The integrated package in /private/tmp/eagle-qat-integration passed the full
+CPU unittest discovery:924tests,4expectedskips,104.080seconds,AppleM3Max,
+Python3.11.15/Torch2.14.0(CPU-only)/NumPy2.4.6. Rawlog:
+runs/qat-optimization-readiness/cpu-full-suite.log in that worktree (ignored).
+Subsequent strict curriculum and workflow changes have targeted green checks;
+final whole-package rerun is pending those last tooling commits.
+
+Native published head524427ed3 supports explicit --backendCUDA with fallback
+rejection. CPU native proof:220operators,108loaders,53encodergraphs and33exact
+packfixtures; GPU compilation/runtime is still absent. Integration branch
+feature/qat-integration is published through0244308. No real-data optimizer
+updates,real calibration fitting,remote/GPU work or sealed-final reads occurred.
+
+Root integrated canonical μ/activation/factor state, exact paired/curriculum
+resume, schema2–5 exports/providers, independent A4 admission, typed options,
+unchanged default cache/head controls, all-trainer measured CUDA admission and
+complete schedule gates. Fixed raw correction addition order to native base+
+raw_delta+bias, and separated detached/attached shared-sum cache keys. Learned
+and affine tiny multi-bit inputs use the explicit safe normalization rule.
+
+User GPU pause checkpointd172f42 takes precedence. Both pause flags aretrue;
+supervisor07 terminal/released23:15UTC,10,000train/224of1,002dev retained,
+zerooptimizerupdates; corpus preparation remains incomplete. No automatic
+resume or CUDA launch is permitted until the human explicitly resumes. The
+earlier async GPU scheduling question is superseded by this pause. CPU-only
+implementation and test work continues.
+
+Last bounded workers: /root/computation deliveredb846fd9 curriculum receipt
+producer(11CPUtests); /root/cache_head is finishing real-measurement native
+evidence collection/generic stage support; /root/native_quantizers is adding
+actual JSON fixture reports on CPU only. All earlier workers completed and their
+commits are integrated on the published branch. Root must finish review/full
+CPU rerun, integrate/pushmain, preserve unmerged worker outputs and clean only
+verified integrated worktrees. Then checkpoint pending actual CUDA/native
+decision/memory/timing gates without marking the goal complete.
