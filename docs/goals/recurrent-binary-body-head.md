@@ -8,7 +8,7 @@ data. Evaluate native draft quality and speed against Q4_0 when GPU work is
 explicitly permitted. Preserve the pinned FP16 target/verifier and draft map.
 This continues the existing goal rather than opening a second goal.
 
-**State: RTX5080 continuous capture/audit is running; RTX2080Ti remains paused.** At2026-10-01 03:45:32UTC supervisor04 CPU health passed.104 completed label manifests/3,256train/0dev prompts,zerooptimizer;capture-loopordinal103/353. Existing15-minute monitor ACTIVE,recoverybudget1of2 unchanged. Q4_0 remains primary comparison and finals remain unopened. Latest checkpoint supersedes historical next actions.
+**State: GPU work paused at the human user's request.** At2026-10-01 04:36:14UTC supervisor04 was stopped and project processes released the RTX5080.119 completed captures/3,736train/0dev prompts preserved,zerooptimizer. Both host controls and the monitor are PAUSED; explicit user resume required. Q4_0 remains primary comparison and finals remain unopened. Latest pause checkpoint supersedes prior running actions.
 
 ## Current findings and work
 
@@ -4665,3 +4665,32 @@ or final access. Recovery budget remains 1 of 2 used; existing 15-minute monitor
 ACTIVE. Operator is done, no other launch/recovery worker. Next: one bounded
 pinned CPU observation each tick; quiet ordinary progress, notify actual optimizer
 start, new failure or completion.
+
+
+### Human GPU pause completed — 2026-10-01 04:36 UTC
+
+Human request: “Pause gpu work.” Root immediately paused both shared host
+controls, refreshed registry/current supervisor04 registration, and used a fresh
+local tmux MCP transport with Windows SSH -> WSL. STOP was created, and the
+live command exclusively verified remote_job supervisor5051. SIGINT sent at
+04:35:50.861942UTC; supervisor relayed SIGTERM to child group5052 and exited
+interrupted at04:35:53.716138UTC, child exit0. No host tmux pane/server was killed.
+
+At **04:36:14.755068UTC**, trainer status stopped with intentional native stage
+stop true. STOP present; owned group5052 empty; no experiment/project trainer
+or native-server processes; `/usr/lib/wsl/lib/nvidia-smi` compute-app list empty.
+Whole-device reading99%/5,852MiB remains background/unrelated activity; this
+verifies project GPU release, not a fully idle desktop. No unrelated work touched.
+**119 completed label manifests / 3,736 train prompts**, development0 retained;
+optimizer never started. All completed/partial captures and supervisor history
+are preserved; no recovery, new configuration or final-set access.
+
+Existing15-minute automation paused through automation_update; saved TOML
+verifies PAUSED, prompt/cadence/target preserved. Both GPU controls paused,
+RTX2080Ti remains unused by this run. Ignored pause evidence:
+`runs/luna-continuous-a8-a1-20260929/pause-20261001T043614Z.json`.
+Last-health/registration now mark intentional user pause and require explicit
+resume. Dedicated local transport$66 closed after verification. Recovery budget
+remains1of2 used; no live operator remains. Next: wait for human resume, then
+fresh host/resource/source/config/retained-partial preflight before same-run
+resume under a new supervisor. Do not auto-restart an intentionally stopped run.
