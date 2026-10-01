@@ -147,6 +147,51 @@ def load_fusion_correction(checkpoint: Path, value: dict, shape: tuple) -> dict:
     return arrays
 
 
+AFFINE_PREFIX = "eagle3.affine_weights."
+AFFINE_ARITHMETIC = "integer_dot_alpha_beta_plus_integer_sum_midpoint_beta_before_bias_f32"
+
+
+def check_affine_weights(value: dict) -> dict:
+    required = {"version", "coverage", "arithmetic", "tensors"}
+    if (
+        not isinstance(value, dict)
+        or set(value) != required
+        or type(value["version"]) is not int
+        or value["version"] != 1
+        or value["coverage"] not in ("fusion", "all")
+        or value["arithmetic"] != AFFINE_ARITHMETIC
+    ):
+        raise ValueError("unsupported affine weight descriptor")
+    expected = {"fc"} if value["coverage"] == "fusion" else set(SOURCE_NAMES)
+    if (
+        not isinstance(value["tensors"], dict)
+        or set(value["tensors"]) != expected
+        or any(name != base + ".w1ax_midpoint" for base, name in value["tensors"].items())
+    ):
+        raise ValueError("affine weight coverage or tensor names mismatch")
+    return value
+
+
+def load_affine_weights(checkpoint: Path, descriptor: dict, expected: dict) -> dict:
+    check_affine_weights(descriptor)
+    result = {}
+    with np.load(checkpoint, allow_pickle=False) as archive:
+        for base, name in descriptor["tensors"].items():
+            if name not in archive.files:
+                raise ValueError(f"missing affine midpoint {name}")
+            array = archive[name]
+            if (
+                array.dtype != np.float32
+                or array.shape != (expected[base][1][0],)
+                or not np.isfinite(array).all()
+            ):
+                raise ValueError(f"invalid affine midpoint {name}")
+            if base in ("blk.0.attn_q", "blk.0.attn_k"):
+                array = gguf_qk_row_order(array[:, None], 32 if base.endswith("_q") else 8)[:, 0]
+            result[name] = np.ascontiguousarray(array)
+    return result
+
+
 def sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as stream:
@@ -164,7 +209,7 @@ def tensor_key(base: str, suffix: str) -> str:
 
 
 def check_manifest(manifest: dict, base_hash: str) -> dict[str, tuple[str, tuple[int, int]]]:
-    if not isinstance(manifest, dict) or manifest.get("schema_version") not in (1, 2, 3, 4):
+    if not isinstance(manifest, dict) or manifest.get("schema_version") not in (1, 2, 3, 4, 5):
         raise ValueError("manifest schema must be v1 group128, v2 row or v3 learned row")
     if manifest["schema_version"] == 1:
         required = {"schema_version", "base_gguf_sha256", "training_arithmetic", "projections"}
@@ -186,11 +231,15 @@ def check_manifest(manifest: dict, base_hash: str) -> dict[str, tuple[str, tuple
             "objective",
             "projections",
         }
-        if manifest["schema_version"] in (3, 4):
+        if manifest["schema_version"] in (3, 4, 5):
             required.add("activation_quantizers")
-        if manifest["schema_version"] == 4:
+        if manifest["schema_version"] in (4, 5):
             required.add("fusion_correction")
-            check_fusion_correction(manifest.get("fusion_correction"))
+            if manifest["schema_version"] == 4 or manifest.get("fusion_correction") is not None:
+                check_fusion_correction(manifest.get("fusion_correction"))
+        if manifest["schema_version"] == 5:
+            required.add("affine_weights")
+            check_affine_weights(manifest.get("affine_weights"))
         if set(manifest) != required:
             raise ValueError("row manifest has missing or extra contract fields")
         if (
@@ -246,13 +295,14 @@ def check_base(reader: GGUFReader, expected: dict) -> dict:
         raise ValueError("base GGUF must have eagle3 architecture")
     if reader.byte_order != "I":
         raise ValueError("only little-endian base GGUF is supported")
-    if any(key.startswith((PREFIX, CORRECTION_PREFIX)) for key in reader.fields):
+    if any(key.startswith((PREFIX, CORRECTION_PREFIX, AFFINE_PREFIX)) for key in reader.fields):
         raise ValueError("base GGUF contains existing binary metadata")
     tensors = {tensor.name: tensor for tensor in reader.tensors}
     if len(tensors) != len(reader.tensors):
         raise ValueError("duplicate tensor names")
     if any(
-        name.endswith((".w1a1_packed", ".w1a1_scale")) or name.startswith("fc.correction")
+        name.endswith((".w1a1_packed", ".w1a1_scale", ".w1ax_midpoint"))
+        or name.startswith("fc.correction")
         for name in tensors
     ):
         raise ValueError("base GGUF contains binary shadows")
@@ -345,7 +395,7 @@ def export_model(base_path: Path, checkpoint: Path, manifest_path: Path, output:
     base_hash = sha256(base_path)
     manifest = json.loads(manifest_path.read_text())
     expected = check_manifest(manifest, base_hash)
-    row_scale = manifest["schema_version"] in (2, 3, 4)
+    row_scale = manifest["schema_version"] in (2, 3, 4, 5)
     if row_scale and sha256(checkpoint) != manifest["checkpoint_sha256"]:
         raise ValueError("row checkpoint SHA256 differs from manifest")
     reader = GGUFReader(base_path)
@@ -356,15 +406,20 @@ def export_model(base_path: Path, checkpoint: Path, manifest_path: Path, output:
         if correction is not None
         else {}
     )
+    affine = manifest.get("affine_weights")
+    affine_arrays = load_affine_weights(checkpoint, affine, expected) if affine is not None else {}
     arrays = load_checkpoint(
-        checkpoint, expected, row_scale=row_scale, extra_names=set(correction_arrays)
+        checkpoint,
+        expected,
+        row_scale=row_scale,
+        extra_names=set(correction_arrays) | set(affine_arrays),
     )
     selected_names = {base + ".weight" for base in SOURCE_NAMES}
     preserved = {name: tensor for name, tensor in tensors.items() if name not in selected_names}
     expected_names = set(preserved) | {
         base + suffix for base in SOURCE_NAMES for suffix in (".w1a1_packed", ".w1a1_scale")
     }
-    expected_names |= set(correction_arrays)
+    expected_names |= set(correction_arrays) | set(affine_arrays)
     output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix=".recurrent-binary-export-", dir=output.parent) as tmp:
         temporary = Path(tmp) / "model.gguf"
@@ -403,6 +458,17 @@ def export_model(base_path: Path, checkpoint: Path, manifest_path: Path, output:
                 writer.add_tensor(
                     name, array, raw_dtype=Type.F16 if array.dtype == np.float16 else Type.F32
                 )
+        if affine is not None:
+            writer.add_uint32(AFFINE_PREFIX + "version", 1)
+            writer.add_string(AFFINE_PREFIX + "coverage", affine["coverage"])
+            writer.add_string(AFFINE_PREFIX + "arithmetic", affine["arithmetic"])
+            bases = sorted(affine["tensors"])
+            writer.add_array(AFFINE_PREFIX + "bases", bases)
+            writer.add_array(
+                AFFINE_PREFIX + "midpoint_tensors", [affine["tensors"][base] for base in bases]
+            )
+            for name, array in affine_arrays.items():
+                writer.add_tensor(name, array, raw_dtype=Type.F32)
         writer.add_array(PREFIX + "groups", list(GROUPS))
         writer.add_array(PREFIX + "tensors", sorted(selected_names))
         writer.add_string(PREFIX + "bit_order", "little")
@@ -460,7 +526,7 @@ def export_model(base_path: Path, checkpoint: Path, manifest_path: Path, output:
                         != params[name]
                     ):
                         raise ValueError("learned activation metadata mismatch")
-        for name, array in correction_arrays.items():
+        for name, array in (correction_arrays | affine_arrays).items():
             observed = actual[name]
             kind = Type.F16 if array.dtype == np.float16 else Type.F32
             if (
@@ -478,6 +544,12 @@ def export_model(base_path: Path, checkpoint: Path, manifest_path: Path, output:
                     expected_value = float(np.float32(expected_value or 0))
                 if stored != expected_value:
                     raise ValueError("fusion correction metadata round-trip mismatch")
+        if affine is not None:
+            for key in ("version", "coverage", "arithmetic"):
+                if reread.fields[AFFINE_PREFIX + key].contents() != affine[key]:
+                    raise ValueError("affine metadata round-trip mismatch")
+            if reread.fields[AFFINE_PREFIX + "bases"].contents() != sorted(affine["tensors"]):
+                raise ValueError("affine coverage round-trip mismatch")
         output_hash = sha256(temporary)
         report = {
             "schema_version": 1,
@@ -513,6 +585,11 @@ def export_model(base_path: Path, checkpoint: Path, manifest_path: Path, output:
             report["fusion_correction"] = correction
             report["fusion_correction_tensor_sha256"] = {
                 name: raw_hash(array) for name, array in correction_arrays.items()
+            }
+        if affine is not None:
+            report["affine_weights"] = affine
+            report["affine_midpoint_sha256"] = {
+                name: raw_hash(array) for name, array in affine_arrays.items()
             }
         temporary.rename(output)
     return report
