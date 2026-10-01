@@ -8,7 +8,7 @@ data. Evaluate native draft quality and speed against Q4_0 when GPU work is
 explicitly permitted. Preserve the pinned FP16 target/verifier and draft map.
 This continues the existing goal rather than opening a second goal.
 
-**State: RTX5080 pipeline healthy at 2026-10-01 16:14:59 UTC; monitor error resolved.** One CPU checker passed: supervisor05, 273 completed manifests / 8,544 train / 0 dev, ordinal273/353, zero optimizer steps. Existing15-minute monitor ACTIVE; budget1of2. Automatic training after all frozen gates remains authorized; RTX2080Ti paused, Q4_0 primary, finals sealed.
+**State: RTX5080 pipeline healthy at 2026-10-01 17:00:54 UTC; 9,000 train prompts captured.** One CPU checker passed: supervisor05, 288 completed manifests / 9,000 train / 0 dev, ordinal288/353, zero optimizer steps. Existing15-minute monitor ACTIVE; budget1of2. Automatic training after all frozen gates remains authorized; RTX2080Ti paused, Q4_0 primary, finals sealed.
 
 ## Current findings and work
 
@@ -5010,3 +5010,30 @@ No pause for morning, no source/runtime/config/data/precision/tier/cap/final
 changes. Next: same single bounded CPU observations, quiet ordinary progress,
 notify actual optimizer start/new verified failure/completion/required action.
 Docs-only checkpoint follows`6a1427c`; diff check is appropriate verification.
+
+## Train capture reached nine thousand — 2026-10-01 17:00 UTC
+
+Pinned Luna/high `/root/health_20261001_1658` (fork none) ran exactly one combined
+CPU checker/status/supervisor/completed-label query at **17:00:54.251413UTC**.
+Fresh local MacBook shell verified before direct stored SSH query, without
+preliminary interactive SSH. Command ASCII length2,291/current binding passed.
+Checker exit0, healthy/nonterminal, preparing teacher_capture_audit, ordinal
+288/353,288 completed manifests /9,000 of10,000train /0 of1,002dev prompts.
+Optimization_started:false,steps:{}. Capture is distinct from optimizer progress.
+
+Ignored raw snapshot:
+`runs/luna-continuous-a8-a1-20260929/health-observation-20261001T170054+0000.json`.
+Exact command, original checker stdout, decoded query and raw MCP result kept.
+Registration and last-health updated with remote timestamp. Supervisor05
+PID/PGID795 and child797/PGID797 running; host socket `binary-eagle-runtime` /
+session `continuous-a8-a1-native-order-20261001-05` untouched. Local transport$111
+closed and absence verified. No GPU query, extra logs, retry/recovery or job action.
+
+Monitor ACTIVE/every15minutes; budget1of2 unchanged. Same automatic paired
+training after full frozen capture/audit/readiness/coverage and CUDA smoke
+remains authorized; no pause for morning or capture completion. All source,
+runtime, config, data ancestry, precision, null caps, cache/mask/verifier semantics
+and Q4_0 primary baseline frozen; finals sealed. Next: single bounded CPU
+observations; quiet ordinary progress, notify actual optimizer start/new verified
+failure/completion/required action. No operator remains active. Docs-only
+checkpoint follows`bef2615`; diff check is appropriate verification.
