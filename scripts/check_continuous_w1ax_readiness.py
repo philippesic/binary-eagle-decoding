@@ -177,11 +177,21 @@ def validate_gate_report(report: dict, bits: int, common: dict) -> None:
                            "activation": 6 if manifest.get("activation_quantizers") is not None else 0,
                            "fusion": (2 + int(manifest["fusion_correction"]["bias_name"] is not None))
                            if manifest.get("fusion_correction") is not None else 0}
-        if report.get("trainable_parameter_counts") != expected_counts:
+        affine = manifest.get("affine_weights")
+        reported_counts = dict(report.get("trainable_parameter_counts", {}))
+        if affine is not None:
+            expected_counts["midpoint"] = len(affine["tensors"])
+        elif reported_counts.get("midpoint") == 0:
+            reported_counts.pop("midpoint")
+        if reported_counts != expected_counts:
             raise ValueError("precision gate trainable ownership differs from recipe")
         expected_gradient_tensors = sum(expected_counts.values())
     else:
         expected_gradient_tensors = 18
+        if (checkpoint.get("schema_version") not in (None, 2)
+                or any(checkpoint.get(name) is not None for name in
+                       ("activation_quantizers", "fusion_correction", "affine_weights"))):
+            raise ValueError("legacy gate cannot grant learned/correction/affine readiness")
     if (
         checkpoint.get("activation_bits") != bits
         or checkpoint.get("scale_layout") != "row"
@@ -289,9 +299,12 @@ def _publish_gate_report(report: dict, bits: int, common: dict, report_path: Pat
 
 
 def checkpoint_recipe(manifest: dict) -> dict:
-    return {"schema_version": manifest["schema_version"], "activation_bits": manifest["activation_bits"],
+    result = {"schema_version": manifest["schema_version"], "activation_bits": manifest["activation_bits"],
             "activation_quantizers": manifest.get("activation_quantizers"),
             "fusion_correction": manifest.get("fusion_correction")}
+    if manifest.get("affine_weights") is not None:
+        result["affine_weights"] = manifest["affine_weights"]
+    return result
 
 
 def checkpoint_joint_config(manifest_path, bits, base_hash, *, device="cpu", allow_accelerator=False):
@@ -299,9 +312,10 @@ def checkpoint_joint_config(manifest_path, bits, base_hash, *, device="cpu", all
     from export_recurrent_binary import check_manifest
     from w1a1_eagle.recurrent_qat import JointQATConfig, W1AxContract
     from w1a1_eagle.fusion_correction import FusionCorrectionConfig
+    from w1a1_eagle.affine_binary import AffineBinaryConfig
     manifest = json.loads(Path(manifest_path).read_text())
     check_manifest(manifest, base_hash)
-    if manifest["schema_version"] not in (2, 3, 4) or manifest["activation_bits"] != bits or manifest["objective"] != "hard_ce":
+    if manifest["schema_version"] not in (2, 3, 4, 5) or manifest["activation_bits"] != bits or manifest["objective"] != "hard_ce":
         raise ValueError("precision checkpoint options differ")
     correction = manifest.get("fusion_correction")
     config = None if correction is None else FusionCorrectionConfig(
@@ -309,7 +323,8 @@ def checkpoint_joint_config(manifest_path, bits, base_hash, *, device="cpu", all
         bias_bound=correction["bias_bound"] if correction["bias_name"] is not None else .1)
     return JointQATConfig(W1AxContract(bits, "row"), device=device, allow_accelerator=allow_accelerator,
                           activation_quantization="learned" if manifest.get("activation_quantizers") is not None else "fixed",
-                          fusion_correction=config)
+                          fusion_correction=config, affine_weights=AffineBinaryConfig(enabled=True,
+                              coverage=manifest["affine_weights"]["coverage"]) if manifest.get("affine_weights") is not None else None)
 
 
 def _load_checkpoint(path, manifest_path, linears, bits, base_hash):
@@ -318,16 +333,18 @@ def _load_checkpoint(path, manifest_path, linears, bits, base_hash):
     This is a zero-update deployment replay, not a training optimizer resume:
     correction factors in the export checkpoint are effective F16 tensors.
     """
-    from export_recurrent_binary import check_manifest, load_checkpoint, load_fusion_correction
+    from export_recurrent_binary import check_manifest, load_checkpoint, load_fusion_correction, load_affine_weights
     from w1a1_eagle.learned_activation import LearnedActivationBank, BOUNDARY_PATHS
     path, manifest_path = Path(path), Path(manifest_path)
     manifest = json.loads(Path(manifest_path).read_text())
     expected = check_manifest(manifest, base_hash)
-    if manifest["schema_version"] not in (2, 3, 4) or manifest["activation_bits"] != bits or manifest["objective"] != "hard_ce" or manifest["checkpoint_sha256"] != sha256(path):
+    if manifest["schema_version"] not in (2, 3, 4, 5) or manifest["activation_bits"] != bits or manifest["objective"] != "hard_ce" or manifest["checkpoint_sha256"] != sha256(path):
         raise ValueError("continuous precision checkpoint contract differs")
     correction = manifest.get("fusion_correction")
     extras = load_fusion_correction(Path(path), correction, expected["fc"][1]) if correction is not None else {}
-    load_checkpoint(Path(path), expected, row_scale=True, extra_names=set(extras))
+    affine = manifest.get("affine_weights")
+    midpoints = load_affine_weights(path, affine, expected) if affine is not None else {}
+    load_checkpoint(Path(path), expected, row_scale=True, extra_names=set(extras) | set(midpoints))
     if set(linears) != {name.removesuffix(".weight") for name, _ in expected.values()}:
         raise ValueError("checkpoint linear inventory differs")
     quantizers = manifest.get("activation_quantizers")
@@ -339,6 +356,19 @@ def _load_checkpoint(path, manifest_path, linears, bits, base_hash):
     attached = getattr(linears["fc"], "fusion_correction", None)
     if (attached is None) != (correction is None) or (attached is not None and attached.native_payload()[0] != correction):
         raise ValueError("checkpoint fusion correction differs from attached config")
+    affine_modules = {name: module.affine_binary for name, module in linears.items()
+                      if getattr(module, "affine_binary", None) is not None}
+    expected_affine = {} if affine is None else {expected[base][0].removesuffix(".weight"): tensor
+                                               for base, tensor in affine["tensors"].items()}
+    if set(affine_modules) != set(expected_affine) or any(not module.config.enabled or
+            module.config.coverage != affine["coverage"] for module in affine_modules.values()):
+        raise ValueError("checkpoint affine midpoint coverage differs from attachment")
+    with np.load(path, allow_pickle=False) as archive:
+        for name, module in affine_modules.items():
+            values = archive[expected_affine[name]]
+            if values.shape != tuple(module.midpoint.shape) or (module.config.midpoint_bound is not None and
+                    (np.abs(values) > module.config.midpoint_bound).any()):
+                raise ValueError("checkpoint affine midpoint shape/bound differs from attachment")
     for name, shape in expected.values():
         module = linears[name.removesuffix(".weight")]
         if tuple(module.latent_sign.shape) != shape or module.contract.activation_bits != bits or module.contract.scale_layout != "row" or getattr(module, "_round_hard_signs", None) is not None:
@@ -358,10 +388,14 @@ def _load_checkpoint(path, manifest_path, linears, bits, base_hash):
             attached.v.copy_(torch.from_numpy(extras[correction["v_name"]]).to(attached.v))
             if attached.output_bias is not None:
                 attached.output_bias.copy_(torch.from_numpy(extras[correction["bias_name"]]).to(attached.output_bias))
+        for name, module in affine_modules.items():
+            # Export audit permutes Q/K into GGUF order; live modules retain
+            # the original checkpoint row order from the actual NPZ array.
+            module.midpoint.copy_(torch.from_numpy(archive[expected_affine[name]]).to(module.midpoint))
     return checkpoint_recipe(manifest)
 
 
-def _replay_head(packed, scales, k, state, bits, *, quantizer=None):
+def _replay_head(packed, scales, k, state, bits, *, quantizer=None, midpoint=None):
     from w1a1_eagle.recurrent_qat import hard_activation
 
     if quantizer is not None:
@@ -373,6 +407,12 @@ def _replay_head(packed, scales, k, state, bits, *, quantizer=None):
         negative = ((raw & -2147483648) != 0) & ((raw & 2147483647) != 0)
         activation = torch.where(negative, -torch.ones_like(state_f32), torch.ones_like(state_f32))
         activation_scale = state_f32.abs().double().mean(dim=-1, keepdim=True).float()
+    elif midpoint is not None:
+        from w1a1_eagle.recurrent_qat import hard_activation_with_codes
+        values, activation_scale, _, codes = hard_activation_with_codes(state, bits)
+        activation = values if codes is None else codes.float()
+        if codes is None:
+            activation_scale = None
     else:
         activation = hard_activation(state, bits)[0]
     outputs = []
@@ -381,13 +421,17 @@ def _replay_head(packed, scales, k, state, bits, *, quantizer=None):
         signs = np.unpackbits(words, axis=1, bitorder="little")[:, :k].astype(np.float32) * 2 - 1
         weight = torch.from_numpy(signs).to(state.device)
         scale = torch.from_numpy(scales[start : start + 4096]).to(state.device)
-        if bits == 1 or quantizer is not None:
+        if bits == 1 or quantizer is not None or midpoint is not None:
             # Unscaled +/-1 sums are exact integers at the native head widths.
             # Native rounds dot*weight_scale to F32 before activation_scale.
-            outputs.append(
-                (torch.nn.functional.linear(activation, weight) * scale.to(dtype=torch.float32))
-                * activation_scale
-            )
+            output = torch.nn.functional.linear(activation, weight) * scale.to(dtype=torch.float32)
+            if activation_scale is not None:
+                output = output * activation_scale
+            if midpoint is not None:
+                mu = midpoint[start:start + 4096].to(device=state.device, dtype=torch.float32)
+                delta = activation.sum(dim=-1, keepdim=True) * mu
+                output = output + (delta if activation_scale is None else delta * activation_scale)
+            outputs.append(output)
         else:
             outputs.append(torch.nn.functional.linear(activation, weight) * scale)
     return torch.cat(outputs)
@@ -642,7 +686,8 @@ def run_gate(
                 )
                 normalized = adapter._rms_norm(step.pre_norm, drafter.norm)
                 replay = _replay_head(packed, scales, k, native_state, bits,
-                                      quantizer=getattr(linears["lm_head"], "activation_quantizer", None))
+                                      quantizer=getattr(linears["lm_head"], "activation_quantizer", None),
+                                      midpoint=getattr(getattr(linears["lm_head"], "affine_binary", None), "midpoint", None))
                 state_rms = relative_rms(normalized.cpu().numpy(), native_state.cpu().numpy())
                 logit_rms = relative_rms(step.logits.cpu().numpy(), replay.cpu().numpy())
                 absolute_id = int(
@@ -684,7 +729,7 @@ def run_gate(
             grads = [parameter.grad for parameter in owned]
             finite = sum(g is not None and bool(torch.isfinite(g).all()) for g in grads)
             base_grads = [p.grad for name in ("sign", "scale") for p in families[name]]
-            if finite != len(owned) or not all(bool(g.abs().sum() > 0) for g in base_grads):
+            if finite != len(owned) or (config.affine_weights is None and not all(bool(g.abs().sum() > 0) for g in base_grads)):
                 raise ValueError("joint hard CE requires finite declared-family and nonzero sign/scale gradients")
             later = [i for i, ok in enumerate(audit.ce_mask) if ok and i > 0]
             if later:

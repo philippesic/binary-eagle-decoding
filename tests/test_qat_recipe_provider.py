@@ -20,6 +20,8 @@ import w1ax_capture_provider as provider
 import w1ax_continuous_stages as stages
 import test_continuous_readiness as legacy_readiness
 from w1a1_eagle.fusion_correction import install_fusion_correction
+from w1a1_eagle.affine_binary import install_affine_binary
+from w1a1_eagle.qat_state import deployment_state_sha256
 from w1a1_eagle.learned_activation import BOUNDARY_PATHS, LearnedActivationBank
 from w1a1_eagle.recurrent_qat import RowBinaryLinear, W1AxContract, joint_optimizer, joint_parameter_families
 
@@ -36,20 +38,26 @@ class RecipeProviderTests(unittest.TestCase):
         else: path.write_text(json.dumps(value))
         return stages.file_record(path)
 
-    def actor(self, *, bits=4, schema=2):
+    def actor(self, *, bits=4, schema=2, affine_coverage="all", learned=True, fusion=True):
         expected = {base: (name, (64 if base == "blk.0.attn_q" else 16 if base == "blk.0.attn_k" else 4, 4))
                     for base, name in exporter.SOURCE_NAMES.items()}
         arrays = {name + suffix: (np.full(shape, .1, np.float32) if suffix == ".latent" else
                                   np.full(shape[0], .2, np.float32))
                   for name, shape in expected.values() for suffix in (".latent", ".scale")}
         quantizers = {"version": 1, "boundaries": {name: {"bits": bits, "threshold_delta": .25 if bits == 1 else 0,
-                    "clip_ratio": 1 if bits == 1 else .5} for name in exporter.QUANTIZER_BOUNDARIES}} if schema >= 3 else None
+                    "clip_ratio": 1 if bits == 1 else .5} for name in exporter.QUANTIZER_BOUNDARIES}} if schema >= 3 and learned else None
         correction = {"version": 1, "rank": 1, "u_name": "fc.correction_u.weight", "v_name": "fc.correction_v.weight",
-                      "bias_name": "fc.correction_bias", "bias_bound": .1, "arithmetic": exporter.CORRECTION_ARITHMETIC} if schema == 4 else None
+                      "bias_name": "fc.correction_bias", "bias_bound": .1, "arithmetic": exporter.CORRECTION_ARITHMETIC} if schema in (4, 5) and fusion else None
         if correction:
             arrays.update({correction["u_name"]: np.full((4, 1), .2, np.float16),
                            correction["v_name"]: np.full((1, 4), .3, np.float16),
                            correction["bias_name"]: np.zeros(4, np.float32)})
+        affine = None
+        if schema == 5:
+            affine = {"version": 1, "coverage": affine_coverage, "arithmetic": exporter.AFFINE_ARITHMETIC,
+                      "tensors": {base: base + ".w1ax_midpoint" for base in (expected if affine_coverage == "all" else {"fc"})}}
+            for base, name in affine["tensors"].items():
+                arrays[name] = np.arange(expected[base][1][0], dtype=np.float32) / 100 + .125
         checkpoint = self.root / "joint.npz"
         np.savez(checkpoint, **arrays)
         manifest = {"schema_version": schema, "base_gguf_sha256": "a" * 64,
@@ -60,7 +68,8 @@ class RecipeProviderTests(unittest.TestCase):
                     "export_status": "row_w1ax_requires_native_validation", "objective": "hard_ce",
                     "projections": {base: {"checkpoint_name": name, "shape": list(shape)} for base, (name, shape) in expected.items()}}
         if schema >= 3: manifest["activation_quantizers"] = quantizers
-        if correction: manifest["fusion_correction"] = correction
+        if schema >= 4: manifest["fusion_correction"] = correction
+        if affine: manifest["affine_weights"] = affine
         manifest_record = self.write("joint.json", manifest)
         exported = self.write("student.gguf", b"synthetic export marker")
         extras = set(arrays) - {name + suffix for name, _ in expected.values() for suffix in (".latent", ".scale")}
@@ -75,7 +84,11 @@ class RecipeProviderTests(unittest.TestCase):
                     "packed_sha256": exporter.raw_hash(v["packed"]), "gguf_scale_sha256": exporter.raw_hash(v["scale"])} for base, v in values.items()}}
         if quantizers is not None: audit["activation_quantizers"] = quantizers
         if correction:
-            audit.update(fusion_correction=correction, fusion_correction_tensor_sha256={name: exporter.raw_hash(arrays[name]) for name in extras})
+            names = (correction["u_name"], correction["v_name"], correction["bias_name"])
+            audit.update(fusion_correction=correction, fusion_correction_tensor_sha256={name: exporter.raw_hash(arrays[name]) for name in names if name})
+        if affine:
+            native_midpoints = exporter.load_affine_weights(checkpoint, affine, expected)
+            audit.update(affine_weights=affine, affine_midpoint_sha256={name: exporter.raw_hash(value) for name,value in native_midpoints.items()})
         binding = {"checkpoint": stages.file_record(checkpoint), "checkpoint_manifest": manifest_record,
                    "export": exported, "export_audit": self.write("export-audit.json", audit)}
         return binding, manifest, audit, expected
@@ -116,7 +129,7 @@ class RecipeProviderTests(unittest.TestCase):
         self.assertEqual(float(bank.quantizers["head"].parameter.detach()), .5)
         torch.testing.assert_close(modules["fc"].fusion_correction.u, torch.tensor(np.full((4, 1), .2, np.float16)).float())
         families = joint_parameter_families(modules)
-        self.assertEqual({k: len(v) for k, v in families.items()}, {"sign": 9, "scale": 9, "activation": 6, "fusion": 3})
+        self.assertEqual({k: len(v) for k, v in families.items()}, {"sign": 9, "scale": 9, "activation": 6, "fusion": 3, "midpoint": 0})
         optimizer = joint_optimizer(modules, config)
         self.assertEqual(sum(len(g["params"]) for g in optimizer.param_groups), 27)
         before = modules["fc"].latent_sign.detach().clone()
@@ -201,6 +214,85 @@ class RecipeProviderTests(unittest.TestCase):
         self.assertEqual(args.tokens, 2)
         self.assertIn("CUDA packed W1A4 BITSERIAL dispatch", spec["required_markers"])
         self.assertIsInstance(args.cancellation_guard, stages.NativeCancellationGuard)
+
+    def test_schema5_midpoint_hydration_original_order_and_actor_hashes(self):
+        for learned in (False, True):
+            binding, manifest, audit, expected = self.actor(schema=5, learned=learned, fusion=False)
+            self.assertEqual(provider.validate_actor_export(binding, activation_bits=4, base_hash="a" * 64), manifest)
+            config = gate.checkpoint_joint_config(binding["checkpoint_manifest"]["path"], 4, "a" * 64)
+            modules = {name.removesuffix(".weight"): RowBinaryLinear(torch.full(shape, .5), torch.ones(shape[0]), W1AxContract(4))
+                       for name, shape in expected.values()}
+            if learned:
+                bank = LearnedActivationBank(4, {name: module.in_features for name,module in modules.items()})
+                bank.attach(modules)
+            install_affine_binary(modules, target=torch.nn.Linear(2,2), config=config.affine_weights)
+            gate._load_checkpoint(binding["checkpoint"]["path"], binding["checkpoint_manifest"]["path"], modules, 4, "a" * 64)
+            self.assertEqual(len(joint_parameter_families(modules)["midpoint"]), 9)
+            with np.load(binding["checkpoint"]["path"]) as archive:
+                for base, tensor in manifest["affine_weights"]["tensors"].items():
+                    path = expected[base][0].removesuffix(".weight")
+                    torch.testing.assert_close(modules[path].affine_binary.midpoint.detach(), torch.from_numpy(archive[tensor]), rtol=0,atol=0)
+            before = deployment_state_sha256(modules)
+            modules["fc"].affine_binary.midpoint.data.add_(.125)
+            self.assertNotEqual(before, deployment_state_sha256(modules))
+            broken = copy.deepcopy(audit)
+            broken["affine_midpoint_sha256"]["fc.w1ax_midpoint"] = "b" * 64
+            binding["export_audit"] = self.write("export-audit.json", broken)
+            with self.assertRaisesRegex(ValueError, "tensors differ"):
+                provider.validate_actor_export(binding, activation_bits=4, base_hash="a" * 64)
+        binding, manifest, audit, expected = self.actor(schema=5, learned=False, fusion=False, affine_coverage="fusion")
+        with np.load(binding["checkpoint"]["path"]) as archive:
+            arrays = {name: archive[name].copy() for name in archive.files if name != "fc.w1ax_midpoint"}
+        np.savez(binding["checkpoint"]["path"], **arrays)
+        manifest["checkpoint_sha256"] = stages.sha256(Path(binding["checkpoint"]["path"]))
+        binding["checkpoint"] = stages.file_record(Path(binding["checkpoint"]["path"]))
+        binding["checkpoint_manifest"] = self.write("joint.json", manifest)
+        audit["checkpoint"],audit["checkpoint_manifest"] = binding["checkpoint"],binding["checkpoint_manifest"]
+        binding["export_audit"] = self.write("export-audit.json", audit)
+        with self.assertRaisesRegex(ValueError, "missing affine midpoint"):
+            provider.validate_actor_export(binding, activation_bits=4, base_hash="a" * 64)
+        binding,manifest,audit,_ = self.actor(schema=5,learned=False,fusion=False,affine_coverage="fusion")
+        with np.load(binding["checkpoint"]["path"]) as archive:
+            arrays = {name: archive[name].copy() for name in archive.files}
+        arrays["fc.w1ax_midpoint"] = arrays["fc.w1ax_midpoint"].astype(np.float16)
+        np.savez(binding["checkpoint"]["path"],**arrays)
+        binding["checkpoint"] = stages.file_record(Path(binding["checkpoint"]["path"]))
+        manifest["checkpoint_sha256"] = binding["checkpoint"]["sha256"]
+        binding["checkpoint_manifest"] = self.write("joint.json",manifest)
+        audit["checkpoint"],audit["checkpoint_manifest"] = binding["checkpoint"],binding["checkpoint_manifest"]
+        binding["export_audit"] = self.write("export-audit.json",audit)
+        with self.assertRaisesRegex(ValueError,"invalid affine midpoint"):
+            provider.validate_actor_export(binding,activation_bits=4,base_hash="a" * 64)
+
+    def test_affine_head_replay_alpha_zero_and_zero_midpoint_gradient(self):
+        for bits in (1,4,8,16):
+            binding, manifest, _, expected = self.actor(bits=bits,schema=5,learned=False,fusion=False)
+            config = gate.checkpoint_joint_config(binding["checkpoint_manifest"]["path"], bits, "a" * 64)
+            modules = {name.removesuffix(".weight"): RowBinaryLinear(torch.full(shape,.5),torch.zeros(shape[0]),W1AxContract(bits))
+                       for name,shape in expected.values()}
+            install_affine_binary(modules,target=torch.nn.Linear(2,2),config=config.affine_weights)
+            module = modules["lm_head"]
+            module.affine_binary.midpoint.data.fill_(.25)
+            state = torch.tensor([1.,2.,3.,4.])
+            packed = exporter.pack(module.latent_sign.detach().numpy())
+            actual = gate._replay_head(packed,np.zeros(4,np.float32),4,state,bits,midpoint=module.affine_binary.midpoint)
+            torch.testing.assert_close(actual,module(state).flatten(),rtol=0,atol=0)
+            self.assertTrue(bool((actual != 0).any()))
+            module.zero_grad(set_to_none=True)
+            module(torch.tensor([[1.,-1.,1.,-1.]])).sum().backward()
+            self.assertIsNotNone(module.affine_binary.midpoint.grad)
+            torch.testing.assert_close(module.affine_binary.midpoint.grad,torch.zeros(4))
+        fixture = legacy_readiness.ReadinessTests()
+        fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+        legacy = fixture.report(8)
+        record = legacy["evidence"]["checkpoint_manifest"]
+        value = json.loads(Path(record["path"]).read_text())
+        value["schema_version"],value["affine_weights"] = 5,manifest["affine_weights"]
+        Path(record["path"]).write_text(json.dumps(value))
+        legacy["evidence"]["checkpoint_manifest"] = stages.file_record(Path(record["path"]))
+        with self.assertRaisesRegex(ValueError,"legacy gate cannot"):
+            gate.validate_gate_report(legacy,8,fixture.common)
 
 
 if __name__ == "__main__": unittest.main()
