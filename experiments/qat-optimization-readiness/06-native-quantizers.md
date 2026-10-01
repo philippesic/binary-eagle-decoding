@@ -184,3 +184,48 @@ already use raw magnitude bits/non-FTZ intrinsics. Affine fixed hard-code
 reference implementations must match this explicit safe tiny-token rule;
 ordinary finite-range codes are unchanged. Native CUDA correctness remains an
 open gate until the designated GPU operator runs the explicit CUDA command.
+
+## Granular measurement JSON
+
+Published native commits `0e37ba740` and `8025a0777` add optional
+`--json-report <newpath>`. It creates exclusively and checkpoints completed
+measurements with status `failed` until all checks and backend cleanup complete;
+then status becomes `passed`. Existing report files are refused without change.
+Schema 1 is explicitly `input_scope: synthetic_operator`, with little-endian
+raw hex, command argv, actual requested/backend/device/hardware identity and
+informational compiled runtime version/short commit/compiler/target. It invents
+no train prompt, capture ancestry or deployment context. The collector must
+bind the actual full source, executable, recipe and deployment hashes separately.
+
+`pack_cases` contains expected/native complete packed bytes, layout offsets,
+raw input and quantizer scalars. `projection_cases` measures all nine selected
+base identities with six actual shared packs at odd synthetic widths; it includes
+code/scale/S/output hex, alpha/midpoint/weight values, paired baseline and zero-mu
+outputs, and `pack_case_index` linking the same input and quantizer. A16 records
+its explicit backend F16 boundary cast, F32 value sum and beta-one exception,
+without treating those values as integer codes or adding an int64 kernel.
+`encoder_cases` records expected/native output, raw FC input, expected base,
+correction and bias, actual GGUF correction rank/bias, and actual arithmetic
+node outputs/source bytes/device. Named `fc_correction_latent` and
+`fc_correction_delta` provide raw-input and nonzero-delta witnesses. Zero-U cases
+retain nonzero V; rank4 zero-U and rank4+bias cases are included. `loader_cases`
+records actual admission/rejection. Consumers must derive checks from data,
+never turn reported counters or mode labels into a numerical proof.
+
+Final local CPU JSON `/private/tmp/eagle-native-json-cpu-6.json` is approximately
+1.49 MiB and identifies compiled native head `8025a0777`, Apple M3 Max CPU.
+57 pack byte pairs (33 scalar plus 24 six-boundary packs), 36 projection cases,
+114 loader cases, 59 encoder graphs and 218 audited arithmetic nodes pass.
+An independent local JSON check verified exact bytes/S, nonzero alpha-zero
+midpoint outputs, exact zero-midpoint/baseline identity, raw FC input equality,
+and relative RMS <=1e-4. Overwrite refusal preserves the prior SHA and exits 2.
+The collector correctly refuses this CPU report as CUDA evidence. Raw logs are
+`/private/tmp/eagle-native-json-final-pinned-cpu.log` and
+`/private/tmp/eagle-native-json-final-pinned-build.log`.
+
+CPU command: `test-eagle3-learned --backend CPU --json-report <newpath>`.
+Future GPU command, **only after the user resumes GPU work**:
+`test-eagle3-learned --backend CUDA --json-report <newpath>` with a CUDA-enabled
+build. Both GPUs remain paused; no CUDA compilation, GPU execution or remote
+queries occurred during this work. GPU numeric/trajectory/performance gates
+remain pending.
