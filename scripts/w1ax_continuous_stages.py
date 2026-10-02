@@ -46,6 +46,7 @@ READINESS_SCHEMA = "w1ax_continuous_readiness_v1"
 RECIPE_READINESS_SCHEMA = "w1ax_continuous_readiness_v2"
 PROVIDER_SCHEMA = "w1ax_native_train_provider_v2"
 STAGES_SCHEMA = "w1ax_continuous_stages_v1"
+RETAINED_IMPORT_SCHEMA = "w1ax_retained_native_capture_import_v1"
 FROZEN_RUNTIME_MANIFEST_SHA256 = "a199cfdabd81b5ba7414509e31007eab338c125b881a9276a78696cd9208fd5e"
 FROZEN_BINARY_SHA256 = "b5093749d67888bc2cafdb6a65c479f4c182f0a904820f1dae4870b6ae66d41c"
 Q4_0_GGUF_SHA256 = "2db40f99d27e404298b80b2865671b9fd0136060ffb503007cb2ae23759e7280"
@@ -1126,11 +1127,147 @@ def stage_progress(
     )
 
 
+def _retained_path(value: str) -> Path:
+    """Retained adoption never follows directory aliases or symlink ancestors."""
+    path = Path(value)
+    if not path.is_absolute() or path != path.resolve():
+        raise ValueError("retained import paths must be absolute without aliases")
+    return path
+
+
+def _validate_retained_import(config: dict, run_dir: Path) -> dict:
+    """Authenticate explicit old artifacts without granting training readiness.
+
+    Historical audit.json producer authentication is deliberately an extension
+    point, not evidence accepted here. Only the ordinary source-bound external
+    receipt API may skip a full shard audit.
+    """
+    record = config["retained_native_capture_import"]
+    path = _retained_path(record["path"])
+    adoption = json.loads(checked_record(record).read_text())
+    if (
+        not isinstance(adoption, dict)
+        or set(adoption) != {
+            "schema", "original_stages", "original_run_dir", "captures",
+            "precision_gates", "audit_receipts_dir", "output_run_dir",
+            "historical_audit_provenance",
+        }
+        or adoption["schema"] != RETAINED_IMPORT_SCHEMA
+        or adoption["historical_audit_provenance"] is not None
+    ):
+        raise ValueError("unsupported retained import/provenance contract")
+    original_path = _retained_path(adoption["original_stages"]["path"])
+    original = json.loads(checked_record(adoption["original_stages"]).read_text())
+    expected = {**original, "retained_native_capture_import": record,
+                "native_label_audit_receipts_dir": adoption["audit_receipts_dir"]}
+    if (original.get("schema") != STAGES_SCHEMA
+            or "retained_native_capture_import" in original or config != expected):
+        raise ValueError("retained import changes original stages/source/prompt configuration")
+    old_run = _retained_path(adoption["original_run_dir"])
+    new_run = _retained_path(adoption["output_run_dir"])
+    receipts = _retained_path(adoption["audit_receipts_dir"])
+    if (new_run != Path(run_dir).absolute()
+            or new_run.is_relative_to(old_run) or old_run.is_relative_to(new_run)
+            or receipts.is_relative_to(old_run) or old_run.is_relative_to(receipts)
+            or path.is_relative_to(old_run) or original_path == path):
+        raise ValueError("retained import requires separate new output and external receipts")
+    if config["native_label_audit_receipts_dir"] != str(receipts):
+        raise ValueError("retained import receipt directory changed")
+    _retained_path(str(new_run / "stages"))
+    for ordinal in range(len(original["captures"])):
+        _retained_path(str(receipts / f"capture-{ordinal:05d}.json"))
+    sources = original["sources"]
+    verify_sources(sources)
+    for name in ("legacy_provider", "corpus_manifest"):
+        if name in sources:
+            checked_record(sources[name])
+    if "corpus_manifest" in original:
+        checked_record(original["corpus_manifest"])
+        if sources.get("corpus_manifest") != original["corpus_manifest"]:
+            raise ValueError("retained import corpus ancestry differs")
+    captures = adoption["captures"]
+    if not isinstance(captures, list) or len(captures) != len(original["captures"]):
+        raise ValueError("retained import requires every original capture in order")
+    for ordinal, (entry, capture) in enumerate(zip(captures, original["captures"], strict=True)):
+        if (not isinstance(entry, dict) or set(entry) != {"ordinal", "label_manifest"}
+                or type(entry["ordinal"]) is not int or entry["ordinal"] != ordinal):
+            raise ValueError("retained import capture ordinals differ")
+        manifest = _retained_path(entry["label_manifest"]["path"])
+        if manifest != old_run / f"stages/capture-{ordinal:05d}/labels/manifest.json":
+            raise ValueError("retained import label manifest is not the original capture")
+        m = json.loads(checked_record(entry["label_manifest"]).read_text())
+        if (m.get("split") != capture["split"]
+                or m.get("prompt_count") != capture["prompt_count"]
+                or m.get("prompts_sha256") != capture["prompts_sha256"]
+                or m.get("activation_bits") != 16
+                or m.get("target_sha256") != sources["sha256"]["target_gguf"]
+                or m.get("draft_sha256") != sources["sha256"]["candidate_d_gguf"]
+                or m.get("binary_sha256") != sources["sha256"]["binary"]
+                or m.get("files", {}).get("absolute_d2t", {}).get("sha256")
+                   != sources["sha256"]["absolute_d2t"]):
+            raise ValueError("retained import teacher/source/prompt/split ancestry differs")
+        require_unsealed_prompts(Path(capture["prompts"]), sources=sources,
+                                 expected_sha256=capture["prompts_sha256"])
+        checked_record({"path": capture["prompts"], "sha256": capture["prompts_sha256"]})
+        # This checks every file and cache/sampler input; it never trusts audit.json.
+        _native_label_receipt_binding(
+            manifest, expected_manifest_sha256=entry["label_manifest"]["sha256"],
+            expected_prompt_sha256=capture["prompts_sha256"],
+            expected_prompt_count=capture["prompt_count"],
+        )
+    from check_continuous_w1ax_readiness import validate_gate_report
+
+    gates = adoption["precision_gates"]
+    if not isinstance(gates, dict) or set(gates) != {"8", "1"}:
+        raise ValueError("retained import requires both original precision gates")
+    common = {k: sources["sha256"][k] for k in (
+        "target_gguf", "candidate_d_gguf", "base_draft_gguf",
+        "absolute_d2t", "model_snapshot_manifest",
+    )}
+    for bits in (8, 1):
+        gate_path = _retained_path(gates[str(bits)]["path"])
+        if gate_path != old_run / f"stages/gate-a{bits}/gate.json":
+            raise ValueError("retained import gate is not the original stage gate")
+        gate = json.loads(checked_record(gates[str(bits)]).read_text())
+        if (gate.get("schema") != "w1ax_continuous_precision_gate_v1"
+                or gate.get("native_binary_sha256") != sources["sha256"]["binary"]
+                or gate.get("native_runtime") != sources["native_runtime"]):
+            raise ValueError("retained import gate runtime/recipe differs")
+        validate_gate_report(gate, bits, common)
+        labels = json.loads(checked_record(gate["evidence"]["native_capture_manifest"]).read_text())
+        if (labels.get("prompts_sha256") != original["gate_prompts_sha256"]
+                or labels.get("split") != "train"):
+            raise ValueError("retained import gate prompt/split differs")
+    return adoption
+
+
+def prepare_retained_config(import_manifest: Path, output: Path) -> dict:
+    """CPU-only metadata adoption; labels remain preparation-only until launch.
+
+    The caller supplies explicit path/SHA records for the original stage config,
+    every capture and both independently validated native gates. No old final
+    ready receipt is required and no payload or old run is rewritten.
+    """
+    import_manifest = _retained_path(str(import_manifest.absolute()))
+    adoption = json.loads(import_manifest.read_text())
+    original = json.loads(checked_record(adoption["original_stages"]).read_text())
+    result = {**original, "retained_native_capture_import": file_record(import_manifest),
+              "native_label_audit_receipts_dir": adoption["audit_receipts_dir"]}
+    _validate_retained_import(result, Path(adoption["output_run_dir"]))
+    output = _retained_path(str(output.absolute()))
+    if output.exists() or output.is_relative_to(Path(adoption["original_run_dir"])):
+        raise ValueError("retained config requires a new output outside the old run")
+    write_json(output, result)
+    return result
+
+
 def _run_stages(config: dict, run_dir: Path) -> Path:
     """Capture/audit/gate explicit immutable train shards before optimization."""
     if config.get("schema") != STAGES_SCHEMA:
         raise ValueError("unsupported continuous stage configuration")
     check_stop(run_dir)
+    retained = (_validate_retained_import(config, run_dir)
+                if "retained_native_capture_import" in config else None)
     sources = config["sources"]
     sources = {
         **sources,
@@ -1198,7 +1335,8 @@ def _run_stages(config: dict, run_dir: Path) -> Path:
     remaining = sum(
         c["storage_forecast"]["upper_bound_bytes"]
         for ordinal, c in enumerate(captures)
-        if not (stage_dir / f"capture-{ordinal:05d}/labels/manifest.json").is_file()
+        if retained is None
+        and not (stage_dir / f"capture-{ordinal:05d}/labels/manifest.json").is_file()
     )
     if shutil.disk_usage(stage_dir).free < remaining + config.get(
         "min_free_disk_bytes", 10 * 1024**3
@@ -1226,13 +1364,12 @@ def _run_stages(config: dict, run_dir: Path) -> Path:
             detail="bounded native/CUDA math/cache/export/backward gate; no optimization",
         )
         check_stop(run_dir)
-        report = run_gate(
-            sources,
-            Path(config["gate_prompts"]),
-            stage_dir / f"gate-a{bits}",
-            bits,
-            expected_prompt_sha256=config["gate_prompts_sha256"],
-        )
+        report = (checked_record(retained["precision_gates"][str(bits)])
+                  if retained is not None else run_gate(
+                      sources, Path(config["gate_prompts"]),
+                      stage_dir / f"gate-a{bits}", bits,
+                      expected_prompt_sha256=config["gate_prompts_sha256"],
+                  ))
         results[str(bits)] = file_record(report)
     teacher_manifests = []
     receipt_records = {}
@@ -1254,11 +1391,12 @@ def _run_stages(config: dict, run_dir: Path) -> Path:
         ):
             raise ValueError("stage frozen prompt bytes/count changed")
         folder = stage_dir / f"capture-{ordinal:05d}"
-        manifest = folder / "labels/manifest.json"
+        manifest = (checked_record(retained["captures"][ordinal]["label_manifest"])
+                    if retained is not None else folder / "labels/manifest.json")
         receipt_path = (
             receipt_dir / f"capture-{ordinal:05d}.json" if receipt_dir is not None else None
         )
-        if not manifest.exists():
+        if retained is None and not manifest.exists():
             native_cell = folder / "native/d_d/manifest.json"
             if (folder / "native").exists():
                 if (
@@ -1293,7 +1431,9 @@ def _run_stages(config: dict, run_dir: Path) -> Path:
                 manifest,
                 expected_prompt_sha256=capture["prompts_sha256"],
                 expected_prompt_count=capture["prompt_count"],
-                expected_manifest_sha256=_observed_record(manifest)["sha256"],
+                expected_manifest_sha256=(retained["captures"][ordinal]["label_manifest"]["sha256"]
+                                          if retained is not None else
+                                          _observed_record(manifest)["sha256"]),
                 receipt_path=receipt_path,
             )
             receipt_records[manifest] = file_record(receipt_path)
@@ -2298,6 +2438,11 @@ def main() -> None:
     prep.add_argument("--output", type=Path, required=True)
     prep.add_argument("--shard-prompts", type=int, default=32)
     prep.add_argument("--max-storage-bytes", type=int, default=1024**4)
+    retained = sub.add_parser(
+        "prepare-retained-config", help="CPU-only explicit retained capture/gate adoption"
+    )
+    retained.add_argument("--import-manifest", type=Path, required=True)
+    retained.add_argument("--output", type=Path, required=True)
     recovery = sub.add_parser("recover-partial", help="CPU-only quarantine; no launch/deletion")
     recovery.add_argument("--run-dir", type=Path, required=True)
     recovery.add_argument("--stages-config", type=Path, required=True)
@@ -2341,6 +2486,11 @@ def main() -> None:
             "storage_forecast": result["storage_forecast"],
             "execution_device": "cpu",
         }
+    elif args.command == "prepare-retained-config":
+        config = prepare_retained_config(args.import_manifest, args.output)
+        result = {"config": str(args.output), "execution_device": "cpu",
+                  "training_eligible": False,
+                  "retained_native_capture_import": config["retained_native_capture_import"]}
     elif args.command == "recover-partial":
         result = recover_partial(args.run_dir, args.stages_config)
     elif args.command == "make-refresh-provider":
