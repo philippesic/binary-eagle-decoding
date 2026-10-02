@@ -312,3 +312,56 @@ capture. Human was told the restartcost; no data loss or newtraining claim.
 No gate/identity weakening to skipchecks is authorized. Keep GPUreservation
 until sameprep pipeline readiness/exit and verified release; actual new feature
 GPU readiness remains unestablished.
+
+## Existing preparation resume verified — 2026-10-02 05:32 UTC
+
+Human continuation remains preparation-only,no QAT optimizerupdates. Sole Luna
+`/root/resume_prep_after_2315` completed freshpreflight,CPUpartialpreservation,
+one new supervisor08 launch and one disconnect/reconnect proof. Fresh21checks
+passed: old07terminal/groups1204/1205gone,no ownedprocesses/computeapps,RTX5080
+SM120free12,749MiB,MemAvailable19,755,324KiB,disk424,602,206,208B. Original frozen
+parent7547d253/nativeb4e366d4,eight exactmath/config/stages/runtime/resolved/launcher
+SHA identities match. Only launcher control delta remains allowed. No latest
+local optimization-feature source/native bytes deployed to the old data run.
+CPUrecoverpartial exit0 at05:26:49UTC,records:[],processes_started:false,
+raw_artifacts_deleted:false; no quarantine/deletion or new experiment.
+
+Same pipeline launched05:28:08UTC via remote_job300secgrace, NEW supervisor
+`luna-supervisor-a8-a1-native-order-20261002-08`, host socketbinary-eagle-runtime /
+session`continuous-a8-a1-native-order-20261002-08`, SAME experiment dir
+`runs/luna-continuous-a8-a1-native-order-20260930`, child --start --allow-cuda
+--resume --prepare-only. Firsthealth05:29:26UTC passed at1/353. FirstLOCAL
+transportclosed, ONCEfreshLOCALMacBookreconnect: CPUhealth **05:31:39.846713UTC**
+passed at4/353,independentownership **05:32:52.175302UTC** passed12checks and
+reauditadvanced6/353. Hostserver673,supervisor674/PGID674,child676/PGID676;
+live --prepare-only verified. Retained327complete manifests /10,000train /
+224dev,optimization_started:false,steps:{},readyreceipt:null. Auditordinalreset
+is not lostdata or newlycapturedprompts. BothLOCALtransports closed/absent.
+HostGPU jobremainsrunning;2080Ti remains paused. No failure-budget charge.
+
+Ignored rawoperation `runs/luna-continuous-a8-a1-20260929/resume-operation-20261002-after-2315.json`
+contains authorization,fullcommands/rawpreflight/recovery/launch/health/ownership/
+cleanup (SHA256e77fd345prefix). Current registration canonical08state/hosttmux,
+monitor queryJSONSTRINGlength2,983 and binding matched. Querysource ONLY statepath
+07→08; sourceSHA256
+6e8b3470a3b3138cc2949101c47024d22318f07c0972281031d44f1276511f92.
+Parent last-health normalized to remote CPUchecktimestamp,ownership timestamp
+separate. Existing monitor reactivated via native tool with SAMEprep-onlyprompt,
+ID,target,15mincadence. Prepared terminal endpoint must have zero global/A8/A1
+steps+readyreceipt and ownedgroupsgone/GPUreleased before notification/pause.
+No QAT start,frozenmath/runtime/config/data/precision/nullcaps/finals unchanged.
+
+Userasked why promptgeneration hasn't advanced. Code read of original
+scripts/w1ax_continuous_stages.py confirms existing nativecaptures aren't regenerated,
+but audit_native_labels is called unconditionally for each completed manifest,
+starting at firstshard on EVERYresume; no saved auditcursor. Previous07 run
+20:43→23:15UTC spent about2.5hours auditing and reached220/353 before humanpause,
+so new developmentcaptures remained224. Textpromptpool alreadyprepared; remaining
+work is native response/features/labels and audit. User told this restartcost and
+that it should have been clearer. No audit bypass/weakening/sourcechange made.
+
+Existing preparation owns RTX5080 until ready/verifiedrelease or humanpause. New
+optimization-feature GPU gates remain unverified and require ownership coordination,
+not an automatic deploy into this frozen run. Same activeprojectgoal retained;
+no new goal/architecture/experiment/schedule. Operatorcomplete,no activeLOCAL
+transport. Docs-only checkpoint follows8971bb6,diffcheck appropriate verification.

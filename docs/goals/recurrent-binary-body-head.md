@@ -8,7 +8,7 @@ data. Evaluate native draft quality and speed against Q4_0 when GPU work is
 explicitly permitted. Preserve the pinned FP16 target/verifier and draft map.
 This continues the existing goal rather than opening a second goal.
 
-**State: Explicit user GPU pause verified2026-10-01 23:15:28UTC.** Preparation supervisor07 interrupted/exit0,ownedgroups1204/1205gone,no project processes/GPUcomputeapps. Retained327manifests /10,000train /224dev,zerooptimizer; prep incomplete. Monitor and bothGPUflagsPAUSED; stop-before-QAT boundary retained. No automaticresume without NEW human instruction. Active research goal is QAT optimization readiness; this file retains preparation/data ownership history.
+**State: Existing preparation-only run resumed/healthy under supervisor08 after humanContinue.** CPUhealth2026-10-02 05:31:39UTC,ownership05:32:52UTC: server673/supervisor674/child676,live --prepare-only verified. Retained327manifests /10,000train /224dev,zerooptimizer;reaudit4/353 then6/353. MonitorACTIVE,2080Tipaused. Stops beforeQAT after fullprep. Activeprojectgoal QAToptimization-readiness retains latestresumecheckpoint; this file keeps originaldata/ownershiphistory.
 
 ## Current findings and work
 

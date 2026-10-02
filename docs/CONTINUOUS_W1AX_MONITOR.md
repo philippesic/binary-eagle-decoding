@@ -1,24 +1,22 @@
 # A8/A1 health and bounded recovery monitor
 
-Prepared 2026-09-29; **PAUSED at explicit human GPU pause (verified 2026-10-01 23:15 UTC)** with user-authorized failure notification and bounded recovery. Automation ID:
+Prepared 2026-09-29; **ACTIVE every15minutes for preparation-only run (resume verified2026-10-02 05:32UTC)** with user-authorized failure notification and bounded recovery. Automation ID:
 `a8-a1-health-check-enable-after-manual-start`. Target chat:
 `01a0f47a-e246-75e1-a299-fcac42d34f8a`.
-Latest human “Continue” supersedes the23:15pause for SAME preparation-only
-resume. Fresh preflight/launch/reconnect proof underway by soleoperator
-`/root/resume_prep_after_2315`; no live claim yet, monitor staysPAUSED until proof.
-5080pause flag cleared,2080Ti stayspaused; no new featureGPUtask owns5080.
-No QAT optimizerupdates authorized; all futurelaunches MUST--prepare-only.
-
-Historical human request: “Pause gpu”. Both sharedhostflags and existing monitor
-PAUSED. Supervisor07 gracefully interrupted/exit0; verified23:15:28UTC ownedgroups
-1204/1205 gone,no project processes/GPUcomputeapps,RTX5080free12,541MiB. Retained
-10,000train/224dev across327completed manifests,zerooptimizer; prep incomplete.
-Artifacts/partials and prep-only stoppingboundary preserved. No auto-resume or
-GPU reassignment until NEW human resume/ownership coordination. CPUworkmaycontinue.
-Any future resumed pipeline MUST--prepare-only,training_authorized:false and
-stop_after_preparation:true. Complete data/audits/readiness/coverage/pairedsmoke/
-checkpointzero then exit BEFOREoptimizer. Earlierautorun/prepcontinuation
-paragraphs below are HISTORICAL and superseded by this pause.
+Latest human “Continue” resumes SAME --prepare-only pipeline; healthyafter
+SSH disconnect/reconnect05:31:39UTC,ownership05:32:52UTC under supervisor08,
+hostserver673/supervisor674/child676. Retained10,000train/224dev,327manifests,
+zerooptimizer,reaudit4/353 then6/353. No newcapturedprompts yet: completed shards
+are fullyre-audited from firstshard eachresume before unfinished devcapture.
+ExistingmonitorACTIVE withsameprep-onlyprompt/cadence/target,2080Tipaused.
+All launch/recovery MUST--prepare-only. Stopafterfull data/audits/readiness/
+coverage/pairedsmoke/checkpointzero BEFOREoptimizer. No QAT updates authorized.
+Atstatusstopped/prepcomplete+readyreceipt/zero steps,verifyownedgroupsgone and
+GPUreleased,notifyready andpausemonitor. Currentpaths/hosttmux/commandbinding
+MUST derive from registration.experiment; no historicalhardcoding. Frozen
+math/runtime/native/data/config/precision/caps/finals preserved,onlyapproved
+launchercontrolSHA82f0185a delta. NewfeatureGPUchecks mustwaitforownershiprelease.
+Earlierpause/automatictraining paragraphs below are HISTORICAL and superseded.
 
 Coordination transferred to the acknowledged successor on 2026-09-30 after
 the required context rotation; the same automation ID, prompt and cadence are
@@ -36,12 +34,12 @@ after all frozen capture/audit/readiness/coverage gates pass. Capture completion
 is not overall run completion. No further approval is needed for that transition;
 do not stop for morning or slow learning. Notify actual first optimizer updates,
 new verified failure or required action; quiet healthy ordinary progress.
-Current monitor_query_command is bound to supervisor07. Source checks must use
+Current monitor_query_command is bound to supervisor08. Source checks must use
 exact src/w1a1_eagle paths; a broad filename glob can select a test file.
 Both prior pause attempts and all retained/partial data remain preserved.
 
 Current run:`luna-continuous-a8-a1-native-order-20260930`; supervisor
-`luna-supervisor-a8-a1-native-order-20261001-07`. Stable local ignored registration:
+`luna-supervisor-a8-a1-native-order-20261002-08`. Stable local ignored registration:
 `runs/luna-continuous-a8-a1-20260929/monitor-registration.json` (preserves the old
 failed experiment separately). Derive current remote status/supervisor paths from
 its`experiment`object; never reuse a hardcoded earlier attempt. First Luna check
@@ -75,13 +73,13 @@ is established. No second observation or GPU recovery was attempted.
 
 A compact stdlib combined query is locally compiled in ignored
 `runs/luna-continuous-a8-a1-20260929/monitor-query-source.py` (SHA256
-4217aad98ba3ce1a377a27a25ef3746d44e538051ce0f2164d8c68b0e2414f11).
+6e8b3470a3b3138cc2949101c47024d22318f07c0972281031d44f1276511f92).
 The current command JSON is a STRING (ASCII length2,983; derive dynamic length
 from registration.monitor_query_command_length). Query includes readyreceipt
 metadata ifexists. Operator objectwrappers/stalebinding were normalized locally;
-validate commandstring equality/current07binding before everydispatch.
+validate commandstring equality/current08binding before everydispatch.
 The exact current command is JSON in `monitor-query-command.json` and copied
-into registration.experiment.monitor_query_command, bound to supervisor07.
+into registration.experiment.monitor_query_command, bound to supervisor08.
 Read the command JSON with exec_command max_output_tokens8000, parse it inside
 functions.exec, and pass the resulting string directly to tmux execute_command.
 Do not print/read/copy displayed command text or reconstruct payloads by hand.
