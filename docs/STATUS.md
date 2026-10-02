@@ -4,6 +4,16 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
+## Preparation recovery running — October 2, 21:19 UTC
+
+Actual09 prep-only recovery is verified live after the current-boot disconnect
+proof. Supervisor2713/child2714 retain all353manifests/10,000train/1,002development
+prompts; reconnect is healthy at audit2/353,zero updates/no final receipt. Existing
+monitor is rebound to exact09 identities. Native9e2 CUDA synthetic repair is passed
+and returned; necessary CPUserver03 admission follows alongside CPU audit. Current
+actor/model/resource/final corpus gates and optimizer start remain pending.
+[Live recovery](goals/qat-optimization-readiness.md#preparation-recovery09-verified-running--october-2-2119-utc).
+
 ## Actual native pass; preparation recovery next — October 2, 20:59 UTC
 
 Native9e2 FTZ repair passed ACTUAL RTX5080/SM120 CUDA fixtures:57pack,114loader,

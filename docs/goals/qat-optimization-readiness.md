@@ -2724,3 +2724,40 @@ from accepted packet AFTER fixture return and phase admission; prepare current
 server/model sources from authenticated owner records; finish referenceA8/A1
 current actor/recipe/model/backward/memory/timing/save-resume and exact fullcorpus
 receipt joins, then launch new source-bound training without optional studies.
+
+
+## Preparation recovery09 verified running — October 2, 21:19 UTC
+
+Current-boot CPU disconnect proof passed21:01:41UTC after92seconds with no WSL
+client; same2587/2588 kernel births/UID/commands/tmux and heartbeats30→180.
+Windows UbuntuRunning was observed before invoking WSL, sameboot459.../PIDns.
+Only owned CPU-proof groups/session were stopped and verified absent.
+
+Final recovery admission/source/pause/budget/resources/unused09 gates passed.
+Recovery budget charged2/2 BEFORE one exact --resume --prepare-only launch.
+Actual host socketbinary-eagle-runtime/sessioncontinuous-a8-a1-native-order-20261002-09:
+server2712; supervisor2713/PGID=SID2713/PPID2712/UID1000/start939774;
+child2714/PGID=SID2714/PPID2713/UID1000/start939780. LaunchreceiptSHA
+1cb1e8b28f3f9244b9af08c80125c33d794761a57a8ed6f8e83d0cb00563a28d.
+
+Independent reconnect21:10:31.553960UTC confirms same source/job/kernel identities,
+healthy teacher_capture_audit2/353, retained353/10,000train/1,002dev, zero optimizer
+updates/models{}, no final preparation-ready receipt. Hostavailable19,446,550,528B.
+No redundant GPU query or availability inference from this CPU health.
+Final recovery proofSHA9ce383... is maintained by preparation owner; raw reconnect
+is ignored prep-only-recovery-09-20261002/recovery09-reconnect-raw.json.
+
+Existing prep monitor ACTIVE15m targets same owner01a0fdd6. Bound query mechanically
+rebound08→09, sourceb00422df4a5bdb7c09f4dbbae6771eb08232603fc4804176283e7f5910b738b6,
+2754bytes/3672base64/3887ASCIIcommand, single checker invocation. Old query archived;
+stale recorded3312length corrected metadata-only, no SSH/source mutation. QAT
+monitor remains ACTIVE15m/currentowner01a0fe3f. Supporting research stays stopped.
+
+Root accepted CPUserver03 packet with15mocktests and exact manifest871ec850...;
+sole prep Luna now owns fresh CPU phase/RAM/pause/source admission and launch.
+This necessary CPU-only build may share RAM with09 audits only with fresh>=14GiB
+and owner coordination; it does not execute server/model/native/GPU work or signal
+09. Small authenticated six model/map/server source records are requested in the
+same CPU admission query, no model/capture payload copy. No actual server03 PID
+or current runtime inventory is yet verified. Actual-model/recipe/backward/
+memory/timing/save-resume/full-final-receipt joins still precede new training.
