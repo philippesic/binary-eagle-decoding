@@ -1511,6 +1511,116 @@ def native_acceptance_metrics(cell: dict) -> dict:
     }
 
 
+def _development_checkpoint_preflight(checkpoint_dir, base_hash):
+    """Authenticate the paired deployment publication before staging arrays.
+
+    Paired A8/A1 only; A4/curriculum development remains unsupported. This is
+    effective deployment replay, not optimizer/master-state restoration.
+    """
+    from check_continuous_w1ax_readiness import checkpoint_joint_config
+    from export_recurrent_binary import (
+        check_manifest,
+        load_affine_weights,
+        load_checkpoint,
+        load_fusion_correction,
+    )
+
+    checkpoint_dir = Path(checkpoint_dir)
+    publication = checkpoint_dir / "manifest.json"
+    if publication.is_symlink() or not publication.is_file():
+        raise ValueError("published paired checkpoint manifest is missing or symlinked")
+    identities = {"publication": file_record(publication), "lanes": {}}
+    published = json.loads(publication.read_text())
+    if published.get("schema") != "continuous_joint_w1ax_v1" or set(
+        published.get("exports", {})
+    ) != {"A8", "A1"}:
+        raise ValueError(
+            "published paired A8/A1 export inventory required; A4/curriculum unsupported"
+        )
+    for bits in (8, 1):
+        inventory = published["exports"][f"A{bits}"]
+        if not isinstance(inventory, dict) or set(inventory) != {"joint.npz", "joint.json"}:
+            raise ValueError("published checkpoint export file inventory differs")
+        if any(
+            not isinstance(digest, str) or re.fullmatch(r"[0-9a-f]{64}", digest) is None
+            for digest in inventory.values()
+        ):
+            raise ValueError("published checkpoint export requires full SHA256 identities")
+        identities["lanes"][bits] = dict(inventory)
+    _development_checkpoint_unchanged(checkpoint_dir, 8, identities)
+    configs, manifests, shapes = {}, {}, {}
+    peak_bytes = 0
+    for bits in (8, 1):
+        manifest_path = checkpoint_dir / f"A{bits}/joint.json"
+        configs[bits] = checkpoint_joint_config(manifest_path, bits, base_hash)
+        manifest = json.loads(manifest_path.read_text())
+        expected = check_manifest(manifest, base_hash)
+        if manifest["checkpoint_sha256"] != identities["lanes"][bits]["joint.npz"]:
+            raise ValueError("continuous precision checkpoint contract differs")
+        quantizers = manifest.get("activation_quantizers")
+        if (
+            quantizers is not None
+            and bits != 1
+            and any(item["clip_ratio"] < 2**-16 for item in quantizers["boundaries"].values())
+        ):
+            raise ValueError("deployed clip parameter is outside trainable quantizer contract")
+        # Eight copies of all declared F32 masters/scales and effective optional
+        # arrays conservatively cover NPZ reads, Q/K reorder, hashing/packing
+        # temporaries and retained packs. Keep the existing 12 GiB staging bound
+        # as a floor. This reservation is source-derived, not a measured fit.
+        array_bytes = sum((shape[0] * shape[1] + shape[0]) * 4 for _, shape in expected.values())
+        correction, affine = manifest.get("fusion_correction"), manifest.get("affine_weights")
+        if correction is not None:
+            n, k = expected["fc"][1]
+            array_bytes += 2 * correction["rank"] * (n + k)
+            array_bytes += 4 * n if correction["bias_name"] is not None else 0
+        if affine is not None:
+            array_bytes += sum(expected[base][1][0] * 4 for base in affine["tensors"])
+        peak_bytes = max(peak_bytes, 8 * array_bytes)
+        manifests[bits], shapes[bits] = manifest, expected
+    _development_checkpoint_unchanged(checkpoint_dir, 8, identities)
+    host_admission("development deployment preflight array staging", max(12 * 1024**3, peak_bytes))
+    for bits in (8, 1):
+        _development_checkpoint_unchanged(checkpoint_dir, bits, identities)
+        checkpoint = checkpoint_dir / f"A{bits}/joint.npz"
+        manifest, expected = manifests[bits], shapes[bits]
+        correction, affine = manifest.get("fusion_correction"), manifest.get("affine_weights")
+        extras = (
+            load_fusion_correction(checkpoint, correction, expected["fc"][1])
+            if correction is not None
+            else {}
+        )
+        midpoints = load_affine_weights(checkpoint, affine, expected) if affine is not None else {}
+        packs = load_checkpoint(
+            checkpoint, expected, row_scale=True, extra_names=set(extras) | set(midpoints)
+        )
+        del packs, extras, midpoints
+        _development_checkpoint_unchanged(checkpoint_dir, bits, identities)
+    return configs, identities
+
+
+def _development_checkpoint_unchanged(checkpoint_dir, bits, identities):
+    """Recheck the original publication and BOTH lanes at every costly boundary."""
+    if bits not in (8, 1):
+        raise ValueError("paired development supports A8/A1 only; A4/curriculum unsupported")
+    checkpoint_dir = Path(checkpoint_dir)
+    publication = checkpoint_dir / "manifest.json"
+    if (
+        publication.is_symlink()
+        or not publication.is_file()
+        or sha256(publication) != identities["publication"]["sha256"]
+    ):
+        raise ValueError("development publication identity changed after preflight")
+    for lane in (8, 1):
+        for name, digest in identities["lanes"][lane].items():
+            path = checkpoint_dir / f"A{lane}" / name
+            if path.is_symlink() or not path.is_file() or sha256(path) != digest:
+                raise ValueError(
+                    "development checkpoint export hash mismatch "
+                    "or identity changed after preflight"
+                )
+
+
 def _evaluate_development(config: dict, checkpoint_dir: Path, run_dir: Path) -> dict:
     """Serialized current-checkpoint loss and native acceptance versus Q4_0.
 
@@ -1528,8 +1638,6 @@ def _evaluate_development(config: dict, checkpoint_dir: Path, run_dir: Path) -> 
     from w1a1_eagle.recurrent_loss import supported_prefix_ce
     from w1a1_eagle.recurrent_provider import audit_provider_round, forward_torch_round
     from w1a1_eagle.recurrent_qat import (
-        JointQATConfig,
-        W1AxContract,
         install_joint_linears,
         shared_round_hard_signs,
     )
@@ -1548,6 +1656,9 @@ def _evaluate_development(config: dict, checkpoint_dir: Path, run_dir: Path) -> 
         "progress_file": str((Path(run_dir) / "status.json").resolve()),
     }
     check_stop(run_dir)
+    checkpoint_configs, checkpoint_identities = _development_checkpoint_preflight(
+        checkpoint_dir, sources["sha256"]["base_draft_gguf"]
+    )
     prompts = Path(config["native_prompts"])
     if sha256(prompts) != config["native_prompts_sha256"]:
         raise ValueError("frozen development subset changed")
@@ -1582,10 +1693,12 @@ def _evaluate_development(config: dict, checkpoint_dir: Path, run_dir: Path) -> 
         checkpoint = checkpoint_dir / f"A{bits}/joint.npz"
         manifest = checkpoint_dir / f"A{bits}/joint.json"
         exported = folder / "student.gguf"
+        _development_checkpoint_unchanged(checkpoint_dir, bits, checkpoint_identities)
         export_audit = export_model(
             Path(sources["base_draft_gguf"]), checkpoint, manifest, exported
         )
         write_json(folder / "export-audit.json", export_audit)
+        _development_checkpoint_unchanged(checkpoint_dir, bits, checkpoint_identities)
         native_capture(sources, prompts, folder / "native", activation_bits=bits, draft=exported)
         native_cell = json.loads((folder / "native/d_d/manifest.json").read_text())
         accepted = sum(r["quality"]["accepted"] for r in native_cell["requests"])
@@ -1604,6 +1717,7 @@ def _evaluate_development(config: dict, checkpoint_dir: Path, run_dir: Path) -> 
     q4 = output / "q4_0"
     if sha256(Path(sources["q4_0_draft"])) != sources["sha256"]["q4_0_draft"]:
         raise ValueError("frozen Q4_0 baseline changed")
+    _development_checkpoint_unchanged(checkpoint_dir, 8, checkpoint_identities)
     native_capture(sources, prompts, q4, draft=Path(sources["q4_0_draft"]))
     q4_cell = json.loads((q4 / "d_d/manifest.json").read_text())
     q4_accepted = sum(r["quality"]["accepted"] for r in q4_cell["requests"])
@@ -1617,14 +1731,18 @@ def _evaluate_development(config: dict, checkpoint_dir: Path, run_dir: Path) -> 
         "native_cell": file_record(q4 / "d_d/manifest.json"),
     }
     for bits in (8, 1):
-        qat = JointQATConfig(W1AxContract(bits, "row"), device="cuda:0", allow_accelerator=True)
+        _development_checkpoint_unchanged(checkpoint_dir, bits, checkpoint_identities)
+        qat = replace(checkpoint_configs[bits], device="cuda:0", allow_accelerator=True)
         provider = StreamingNativeProvider(qat, Path(config["providers_manifest"]))
         if provider.data_split != "development" or provider.training_eligible:
             raise ValueError("validation loss cannot use train ownership")
         host_admission("development CPU target/draft load after training offload", 12 * 1024**3)
+        _development_checkpoint_unchanged(checkpoint_dir, bits, checkpoint_identities)
         drafter, target = provider.load_models_cpu()
+        _development_checkpoint_unchanged(checkpoint_dir, bits, checkpoint_identities)
         linears = install_joint_linears(drafter, target, qat)
         drafter.to("cuda:0")
+        _development_checkpoint_unchanged(checkpoint_dir, bits, checkpoint_identities)
         _load_checkpoint(
             checkpoint_dir / f"A{bits}/joint.npz",
             checkpoint_dir / f"A{bits}/joint.json",
@@ -1632,6 +1750,7 @@ def _evaluate_development(config: dict, checkpoint_dir: Path, run_dir: Path) -> 
             bits,
             provider.base_gguf_sha256,
         )
+        _development_checkpoint_unchanged(checkpoint_dir, bits, checkpoint_identities)
         adapter = provider.make_step_adapter(drafter)
         losses, labels, selected = 0.0, 0, 0
         loss_selection = []
