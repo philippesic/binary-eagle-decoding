@@ -2193,3 +2193,113 @@ allowance remains. Protected latest preflight18:40:51SSH255/no checker/hold/CUDA
 remote healthunknown; fresh host info requested. All current training gates and
 GPU ownership remain unchanged. Integration hashes/archives/roster in
 [supervisor](../parallel20261002/supervisor.md#first-slate-integrated-second-slate-launched--october-2-1846-utc).
+
+
+## Second CPU slate integrated — October 2, 18:58 UTC
+
+# Task A checkpoint for the active QAT optimization readiness goal
+
+Bounded deliverable: composed learned-activation + all-row affine midpoint +
+nonzero FC correction VJP gate through actual NativeStepAdapter/provider.
+Acceptance check: hard values and 36 unique parameter VJPs plus first input
+state/cache VJPs match independent local backward algebra at F32
+`atol=2e-6, rtol=5e-5`; one joint clipped update; detach/alias controls detect
+missing paths. Completed 48 comparisons, three clipped updates, owner 3/3 tests,
+Ruff pass. Independent Luna validation completed in disjoint validation files:
+3/3 hand-VJP tests plus owner rerun on Torch2.8, evidence commit51df26e with
+report/lint polish in f99f03f. Owner
+reran all6/6 tests on project Torch2.14. Independent source/API checks cover
+two-consumer shared-sum accumulation and F16 correction-factor STE.
+
+Detailed report: `experiments/parallel20261002/auxiliary_vjp/report.md`.
+Aggregate tables/source hashes: adjacent `summary.json`. Full ignored output
+is preserved in both worker and main `runs/parallel20261002/auxiliary-vjp/`.
+At the last check control remained stop=false, original reset1791049896,
+82% weekly used. No persistent research process, GPU/Metal/SSH/model/data/final
+access. No core or live recipe changes; learned heads stayed serial.
+
+All-row affine source always uses single-forward internally, so the distinct
+oracle uses handwritten algebra rather than claiming reference/single-forward
+select two affine kernels. Every parameter has a nonzero depth-3 VJP in each
+precision. Max VJP error2.3842e-7; max one-update parameter error9.0380e-7.
+Detached state/cache preserves logits but fails gradients.
+
+Remaining: report coherent commits to root for integration/push/cleanup.
+No CPU research gate remains open for this packet. Root owns the main active goal file;
+this checkpoint is its integration-ready durable text within assigned paths.
+
+
+## Supporting exported composed function CPU audit — October 2
+
+Owner `/root/export_function`, isolated worktree
+`/private/tmp/eagle-parallel-20261002/export-function`, branch
+`research/20261002-export-function`; independent Luna validator
+`/root/export_function/decode_validation`. Bounded deliverable is actual
+all-nine joint-checkpoint -> unchanged exporter -> serialized GGUF composed
+forward reconstruction. Final report and source-bound summary are in
+`experiments/parallel20261002/export_function/`.
+
+All81 projection comparisons across9 synthetic A1/A4/A8 exports matched the
+training hard outputs exactly (predeclared atol3e-5/rtol3e-6). Independent
+NumPy decoder also matched all81 exactly. Coverage includes Q32/K8 nonidentity
+inverse permutation, all-row affine midpoints, six learned quantizers,
+nonzero rank1/4 raw fusion correction with F16-rounded factors and F32 bias,
+zero signs/scales, subnormal input rows and K33/65/130 tail packing. Nine actual
+GGUF midpoint byte mutations changed forward values; F32-master factors differ
+from the required F16-rounded factors, so precision control is observable.
+
+No production/native source changed; no fix is proposed from these bounded
+cases. This is CPU serialization semantics, not native backend validity,
+SM75 performance, held-out acceptance, or Q4_0-relative throughput. Current
+QAT/preparation admission gates and GPU ownership remain separate. No models,
+captures, optimizer, GPU/Metal/build/SSH or persistent research process was used.
+
+Owner3/3 focused tests, Ruff and whitespace passed. Independent validation
+passed9/9 cases/81 projections. Raw synthetic checkpoints/GGUF/results are
+already retained in MAIN ignored `runs/parallel20261002/export-function-final/`
+and survive worktree retirement. Exact SHA256 values are committed in the
+summary; final integration commit IDs are supplied to the orchestrator.
+
+Root reviewed/integrated evidence; combined second-slate20tests pass. Native
+backend/GPU gates remain separate. Raw fixtures preserved before cleanup.
+
+
+# Active-goal checkpoint for root integration
+
+Packet C Refresh metric/handoff contract is complete under the existing QAT
+optimization readiness goal. Worktree `/private/tmp/eagle-parallel-20261002/refresh-contract`,
+branch `research/20261002-refresh-contract`; owner `/root/refresh_contract`,
+Luna validator `/root/refresh_contract/contract_validation`.
+
+The protocol's [0,1] native_acceptance already means accepted/proposed. No
+automatic refresh learning-curve producer exists; native development emits
+separate rate and accepted/round fields. The typed synthetic proposal maps only
+pooled raw accepted/proposed counts into the actual gate, records checkpoint /
+export identities and exact comparisons, and demonstrates opposite metric
+movements under draft caps/EOS plus unequal-prompt weighting.
+
+Actual refresh plans stay training_eligible=False before and after fabricated
+missing-row completion. Actual curriculum resume preserves spent run budget and
+rejects changed data/budget; distinct new-experiment admission requires separate
+provider/readiness gates. A simulated cumulative ledger preserves old charges
+and refuses spent allowance or refreshed Codex window. It grants no training.
+Production has run-local budgets, not the proposed automatic cross-experiment
+ledger; there is no claim that ledger authority or live audits were established.
+
+36 CPU tests and Ruff pass; JSON generation passes. Validator corrected the
+zero-proposal round denominator gap. No production source/model/corpus/recipe
+changed; no GPU/Metal/SSH/dev/final payload or persistent process used. Original
+window 1791049896, control last read 82% used / research_stop false.
+
+Reports, reference, fixtures and independent validation are under
+`experiments/parallel20261002/refresh_contract/` and
+`research/parallel20261002/refresh_contract/`. Root records integrated commit
+hashes in `docs/goals/qat-optimization-readiness.md`, pushes main, then retires
+the merged worktree/branch. Remaining user-owned work: any real adoption,
+metric replacement, changed live corpus/recipe or new authorized budget.
+
+
+Root combined second-slate20/20 tests passed on project Torch2.14 CPU.
+Integrated worker tips26f4e65→b606b50, b53da23→92f6e10,8273e25→9e39ff1;
+source core unchanged by this slate. Receipt second-slate-integration.json
+records exact preserved branch contents/raw archives before retirement.

@@ -165,3 +165,36 @@ worktrees and branches retired, with owned contents verified equal to main and
 ignored runs archived. Receipt records original tips/paths/retirement timestamps.
 Second-slate active worktrees and protected QAT regression/source work remain
 untouched. No experiment processes were active in retired worktrees.
+
+
+## Second slate integration — October 2, 18:58 UTC
+
+All second-slate leaders/validators completed. Root reviewed reports and
+cherry-picked evidence: auxiliary51df26e/f99f03f/26f4e65→9b14ac7/78617ca/b606b50;
+exported-function ed8d93b/446485b/e7afc14/b53da23→ac8451d/3eee242/a6f241f/92f6e10;
+refresh6a373b9/8273e25→cfbf9dd/9e39ff1. Combined second-slate20/20 tests
+pass on project Torch2.14/macOSarm64 CPU, diff checks pass. No core changes.
+Full results and limitations remain in each report.
+
+48 all-auxiliary gradient comparisons and three clipped steps pass;81 serialized
+projection outputs exact in two independent decoders; refresh metric already
+means accepted/proposed, no automatic learning-curve producer found. Proposed
+count receipt/cumulative ledger stays a synthetic proposal granting no training.
+Native and full-provider readiness remain separate.
+
+Fresh18:54:58weekly82% used/18% remaining, same original reset and ordinary
+allowance allowed. Astra now generates third slate: isolated curriculum resume
+hardening prototype, source-bound training memory ledger, actual development
+evaluator recipe closure. Launch after exact packets arrive; no repeated sweeps.
+
+Protected learned-head correction67fe388 plus regression adaptationaf82c93
+passed final immutable82/82 CPU tests; full hashes/readiness metadata reviewed.
+QAT coordinator requests sole-root main integration acknowledgment from current
+QAT owner before cherry-picking to prevent concurrent edits. No source adoption
+or CUDA-ready claim yet. Pending host info remains unchanged; protected prep
+heartbeat suppresses duplicate unchanged SSH while awaiting that reply.
+
+All three clean second-slate worktrees owned content matches main; ignored
+run folders copied to main archived-worktrees/<slug>. Receipt
+second-slate-integration.json records original tips/paths before retirement.
+Retire only after successful push; protected QAT worktrees are separate.
