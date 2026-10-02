@@ -16,23 +16,18 @@ The human now authorizes early GPU validation during the preparation CPU audit,
 subject to a coordinated exclusive GPU reservation, fresh resource proof and a
 safe handback before preparation resumes GPU work. Training still requires full
 verified data/current gates and GPU handoff. [Overlap policy](QAT_GPU_AUDIT_OVERLAP.md). RTX2080Ti remains paused.
-**Early validation lease granted:** RTX5080 is exclusively reserved for QAT
-owner01a0f934 until October2 02:40:04PDT (09:40UTC). Preparation child676 is
-intentionally held in the same live process at audit244/353; supervisor674 stays
-live,10,000train/224dev retained,zerooptimizer. Fresh08:10UTC proof showed empty
-GPUcomputeapps and13.37GBGPU/19.47GBhost free. Actual CUDA build completed; the first RTX5080 fixture executed at08:56:45UTC
-and failed `pack beta mismatch` (activation scale). Backend-ops/model readiness
-and QAT remain unproved. Failed evidence is preserved; a targeted native-owner
-investigation is underway without gate weakening. Validationgroups2254/2256
-were gone and GPUcomputeappsempty at08:57:31UTC. Validation teardown cutoff02:30PDT, then preparation owner
-requires fresh ownedgroupsgone/GPUempty proof before sameprocessSIGCONT. Both
-hold-awareprep and QAT15minmonitors ACTIVE. [Lease checkpoint](goals/qat-optimization-readiness.md#exclusive-early-validation-lease-granted--october2).
-Training still requires complete verified data and current passing CUDA gates.
-**09:18UTC decision:** QAT owner is returning the early-validation lease after
-an additional diagnostic launcher failed before the fixture on a private-header
-path error. Exact failed beta case remains unclassified. Fresh final cleanup and
-same-process preparation resume are pending verification; no more GPU attempts
-or lease renewal. The readiness objective remains incomplete.
+**Early validation lease closed; preparation resumed:** at09:27:19UTC
+(02:27PDT), one SIGCONT resumed exact child676/startticks85132, audit244→245.
+All19release checks passed, all14validation process groups gone, GPUempty and
+frozen identities unchanged; post45sCPUhealth healthy/zerooptimizer. No restart
+or audit reset. Preparation again owns RTX5080;2080Ti paused. Actual CUDA build
+succeeded but firstfixture failed `pack beta mismatch`; exactcase/repair and
+readiness remain unproved. QAT owner is preparing a corrected diagnostichelper
+and CPU-only incremental build in its separate checkout whileauditcontinues;
+GPUtests require a new bounded exclusive reservation oncebinaryready. QAT waits
+for fullverifieddata and currentpassinggates. Both existing15minmonitors ACTIVE.
+[Handback checkpoint](goals/qat-optimization-readiness.md#early-validation-lease-closed-and-cpu-audit-resumed--october2).
+The readiness objective remains incomplete.
 
 **Overnight CPU research authorized (October1):** three teams investigate W1A1
 representation geometry, native accepted-prefix objectives and block-parallel

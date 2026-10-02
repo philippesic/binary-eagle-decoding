@@ -783,3 +783,28 @@ all failures and solve diagnosticlaunch outsideheldaudit before requesting
 anotherboundedslot. No weakenedgates,source/mathchanges,QAT/fullcorpusclaim.
 Original09:30teardowncutoff/09:40deadline stillbound the pendinghandback. Next
 required milestone is fresh cleanup and exactlivepreparation resumeproof.
+
+
+## Early validation lease closed and CPU audit resumed — October2
+
+Prepowner and QATowner verified actual SIGCONT09:27:19.132939UTC/02:27PDT:
+samechild676/startticks85132, audit244→245, all19releasechecks (all14validation
+processgroupsgone/GPUempty/unchangedfrozenidentity), post45secondCPUhealthhealthy,
+zerooptimizer. No restart/sourcechange/auditreset/recoverycharge. Authoritative
+ignored lease now `returned_resumed`, returned_at09:27:19.132939UTC; proof
+runs/luna-continuous-a8-a1-20260929/lease-return-operation-20261002.json,
+returnreceiptSHA d7b074e8 prefix indexed by owner. Preparation again sole5080;
+RTX2080Ti paused. Both existing monitorsACTIVE and usualprep monitoring resumes.
+Parent locally confirmed returned_resumed and performs no duplicate remotequery.
+
+Firstactual native8025 GPUfixture `pack beta mismatch` remainsunclassified;
+no numericalfix,passingreadiness orQAT. Laterdiagnostic launcherpath failures
+neverreachedfixture and are not GPU numericaldiagnostics. All originalfailures
+preserved. QATowner now owns a thinCPU-only diagnostichelper with corrected
+absoluteprivateoverlaypath, explicitnative1284/parent e0, pycompile/plan/command
+review. Nextprepare-onlyincrementalcompilation uses existingseparatecheckout
+whileCPUauditcontinues, noGPUquery/context/test/datawork. Request a <=10minute
+exclusive GPUreservation only oncebinaryready; no oldlease or concurrent GPUwork.
+Fullverifiedcorpus/currentrecipe gates and exclusivehandoff still precede real
+training. Parent owns this commonresumecheckpoint; QATowner owns helper/build/
+fixture evidence and heartbeat. No newhuman confirmation is required.
