@@ -3312,3 +3312,76 @@ no waitold09reaudit353 orrecapture. Packetrootreview/freshsoleowner gates preced
 anyold09signal/GPUtransfer. No newmodelsmoke/zero-save/finalready/currentnative
 actor/backward/memory/timing/save-resume/Q4development oroptimizerstepyet.
 FullgoalACTIVE, researchstopped/2080Tipaused/SAMEheartbeats/protectedcredits remain.
+
+
+## Clean runtime fix integrated — October 2, 23:30 UTC
+
+ACTUALclosedELFquery23:16:43.253422UTC raw50405B SHA
+91772aa2c506c8e255d311f718a57690b1c9d0fd9a93b22ec7024fd3dbe00f5c,
+proofa39c4c72ef5bb6ee5656336a27b901d525a41d8c476fe4c5f218ee37b0f70868.
+Complete10files original8+serverimpl
+ a3080d0e937abc410f1ed819c4003e7d58208335d5fb1435e73f184cbf293867
+andmtmd005098731753bb327733ca218e319d0d36f97ab18f4f6aafb4a2a9c38d71ded8,
+14ownedaliases, missingprojectneeded[], nineexactoldbin+colonRUNPATHs/baseNOtag,
+all10unchanged/original7match/noartifact/model/GPUexecution/writes. Onlynamed
+nonprojectsystem/CUDAdeps. LOCAL220/keeper59129cleaned/negativeverification,
+soleoperatorinactive/completed afterward; old09GPUreservedtrue/unsignalled.
+
+Runtimefeature5999d90+hardeninge37cf69 reviewed/integrated/pushed973d10c.
+Owned4files helper/newpackager+their2tests; root39+Luna39/Ruff/diffPASS.
+Newfixed-slotELF64LEtransform independentlycopiesclosed10/ownedaliases; only
+verifiedDT_RUNPATHoldbin+':' bytes become$ORIGIN+NULpadding. Everyotherbyte and
+.text/.rodata/CUDAfatbin/dynsym/dynamic/NEEDED/SONAME invariance proved.
+Allknownstring-valueddynamicrefs/dynsym/GNUverneed/verdef completeintervals reject
+RUNPATHalias orspan; section/link/record/cycle/aux-count bounds andsixfocused
+regressions closeLunacaveat. Original7/8/10neverwritten/rebuilt/repinned.
+No toolinstall/relocation/header/object timestamp edit. Packageinode/hardlink/
+sourceoverlap/inventory/alias/closure evidence strict. Basewithoutpath unchanged.
+
+Helper optionalexplicitSHA-boundpackage preservesoriginalb32/native9e2 source/
+objects/compiler/CMake/response/FTZ/architecture/old7actualPASSpins and freshness.
+Only runtimeELF/ldd namespace movesNEWproveddirectory, including mtmd/serverimpl
+fromclosedtypedproof. Rejects originalbuildresolution/CWDempty/unapprovedproject/
+system/toolkitpaths; fullsource/package bytes recheckedbeforepublication.
+ActualfreshNEWpackagednativefixture requiredbeforecurrentnative-modelcollector;
+CPUinventory marksreadiness/hardware/trainingfalse/optimizer0. Actor6f training
+math/config/oldteacherb4/frozenmodels/verifier/held-out/sealed finalsunchanged.
+
+CPUcopy+strictstaticpacket rootreview+6guardsPASS, source39/Luna39 done:
+ignoredcurrent-clean-runtime-cpu-20261002-01/manifest
+98fb93b59d2070540c54144dd24a804f108ce25ccd8c926f40cdf639a2be7ca3,
+runner0dee840c12e7fcee1829943c8f060a7442c92c96270335f57cd7692196d464e7,
+plana985343a048aa922890f87dd1a2a072728502bf05bbe135bda86d74295fc63ff,
+helper051af6c77dbbefac09252a9413065332118a65e83afbd597c49a5a6c479c571e,
+packager4d0c5d927d0f4293173dff71a14a8e3909be3f6225d02c62fdbe1c1178b5302e.
+NewCPUjobqat-clean-runtime-cpu-20261002-01, immutableoutput
+/home/philip/binary-eagle-decoding/runs/qat-clean-runtime9e2-20261002-01,
+copy40s/static180s/outer240TERMkill10/grace10, alloriginal10/7/14checks
+before/afterfailure+teardown. RootconditionalCPU98GO+adjacentmechanicalspecific
+<=300s mint afterfresh14GiB/old09phase/pause/source/heads/04+fixture return/
+newpathsunused/oneoperator. NoGPU/model/artifactexec/dataaction. SameLuna stage/
+launch/collect withoutnewhumanreview ifguardsPASS. Currentordinaryheartbeat
+healthqueryactive mustfinishownedcleanup first. IfGPUtransfercriticalpacketready
+beforeCPUcopylaunch, prioritizecurrentPyTorchmodelprep andcoordinateCPUsharing;
+nevercompetingoperator/unownedGPUwork. Actualcopy/staticstart/pass pending.
+
+GPUtransfer coretransfer.py islocallywritten, rootreadall570lines. Source494/ccc/
+6f/old14/current28/runtime7/full353/zero/pidfdold09/STOP/supervisor300grace/
+350teardown/exclusiveGPU/newprepare-only/actualexit_code scopecorrect.
+Threefocusedchangesrequested BEFOREGO: stat-onlytransportancestor/proof-boundOS
+systemd/PAM relevance toavoidcwdpermissionfalseblockers whileunknownsameUIDdenies;
+explicitnewjobCUDA0/LD-PYTHONenvironmentcleanup; freshGPU/projectcontextcensus
+AFTERterminalgroups beforeownershipreturned. Currentpid/sourcelabelsmaynotbe
+guessed; reuseactualV3samebootproof onlystrictidentitymatch. Userpause/CANCEL
+propagatedadjacentlaunch. NoCPPpackagingprecondition beforePyTorchprep; no health
+checkerframework. Packetfocusedtests/manifest/rootGO pending, old09unsignalled.
+SAMEheartbeatmustrebindtoactualNEWrun/source28/configccc/vendor9e2/newPIDbirths
+AFTERactualstart; archiveoldquery/no newautomation/no old09recoverycharge.
+
+Protectedcontinuityfinal02fbb48 ownedqat-priorityreport integrated/pushed1c745c6
+(401additions/exactownedfileequality, no otherfiles). Initialsequencecontextconflict
+abortedunchanged; consolidatedonlyexplicitownedfinalcontent. Roottempintegration
+worktreeremovedclean. Coordinator/private/tmp/eagle-qat-continuity-20261002 and
+branchoriginalcommitsPRESERVEDperexplicitKEEPuntilseparateclean/live/publicproof.
+Peeruntrackedovernightdirs preserved. FullQATgoal/SAMEheartbeats/researchstop/
+2080Tipause/credits remain; actualGPUmodel/optimizer/finalready stillunverified.

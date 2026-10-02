@@ -4,6 +4,20 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
+## Clean runtime fix public — October 2, 23:30 UTC
+
+The loader packaging fix is integrated and pushed as `973d10c`, after 39 CPU
+tests under root and independent review. It copies the complete ten-file runtime
+into a new directory and changes only the verified search-path string slots to
+`$ORIGIN`. Every other byte and original file remains unchanged. Strict source,
+dependency, ELF and provenance checks remain enabled.
+
+The six-guard-tested CPU copy/static packet is cleared for the sole operator.
+Actual packaging and fresh packaged CUDA validation remain pending. The separate
+GPU preparation transfer packet is undergoing focused review; new-source CPU
+payload/configuration acceptance is complete. Optimizer updates remain zero.
+[Runtime deployment checkpoint](goals/qat-optimization-readiness.md#clean-runtime-fix-integrated--october-2-2330-utc).
+
 ## CPU payload/configuration validation accepted — October 2, 23:14 UTC
 
 The actual new-source CPU validation passed and its process groups returned.
