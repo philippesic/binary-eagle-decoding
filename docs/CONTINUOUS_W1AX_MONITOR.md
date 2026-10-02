@@ -1,5 +1,48 @@
 # A8/A1 health and bounded recovery monitor
 
+## Latest coordinated validation lease — October2
+
+The human now authorizes the separate QAT owner to validate its changes on
+RTX5080 before full preparation completes, under an exclusive bounded lease.
+This supersedes the requirement below to wait for full release before validation;
+training still requires full verified data, current recipe gates and GPU handoff.
+Preparation retains the SAME frozen job and `--prepare-only`, with zero updates.
+
+Read ignored `runs/luna-continuous-a8-a1-20260929/gpu-validation-lease.json`
+BEFORE each tick. The preparation owner owns the single preflight/hold/release
+operator; the validation owner runs no competing reservation checker. Never
+dispatch a second operator while one of those operations is active. A pending
+lease is not a grant. Initial agreed maximum is90minutes from verified hold,
+with fresh coordination required for renewal. Validation uses a separate checkout
+and records its owned process groups; common goal/runbook edits belong to it.
+
+Frozen preparation has no next-GPU boundary guard: after auditing existing data,
+it automatically starts missing native capture and later CUDA smoke. Therefore
+the reservation guard is a reversible SIGSTOP of its verified supervised child
+process group only, while the supervisor stays live. This temporarily stops CPU
+audit too but preserves its exact in-memory position, avoiding restart/re-audit.
+Before grant, prove current CPU audit/complete current shard, exact identities,
+all group members stopped, live supervisor, zero optimizer, no GPU compute apps
+or resident preparation CUDA contexts, actual hardware and resource floors.
+Never signal host job tmux panes/session/server or unrelated processes.
+
+For held ticks, run one bounded Luna/high CPU identity/status/lease proof via
+fresh LOCALtmuxMCP. Verify stopped members/starttimes, live supervisor and zero
+optimizer, without querying GPU during validation ownership. Save held-state
+observations separately from last running health. An intentionally stale audit
+heartbeat is not failed training and must not trigger recovery/budget charges,
+restart or SIGCONT. Do not suppress unrelated failures or unexpected process
+states. Unknown transport is unknown ownership, not a free-GPU claim.
+
+Before expiry the validation owner must tear down its owned GPU groups. Only
+after fresh coordinated groups-gone/GPU-empty proof may the preparation owner
+verify the original identities and SIGCONT the SAME child group, then verify
+resumed CPU health. Deadline expiry alone never permits resume against possibly
+live validation. Notify an overdue/unsafe return and coordinate cleanup; retain
+the monitor and stopped-state evidence. An explicit human pause takes precedence;
+account for a stopped child when performing authorized graceful termination.
+All original full preparation/release gates and frozen-source/data rules remain.
+
 Prepared 2026-09-29; **ACTIVE every15minutes for preparation-only run (resume verified2026-10-02 05:32UTC)** with user-authorized failure notification and bounded recovery. Automation ID:
 `a8-a1-health-check-enable-after-manual-start`. Target chat:
 `01a0fb62-cbdb-72f0-8e86-4055b2ccb4ed`.
