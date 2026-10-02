@@ -23,8 +23,12 @@ core linears before optional banks. Core `state_dict` keys are parameters
 first (`latent_sign`, `scale_offset`), then buffers (`initial_scale`, and
 `frozen_bias` where present). `joint_parameter_families` creates sign then
 scale lists in linear insertion order; `joint_optimizer` installs those groups
-in that order, and curriculum smoke creates Adam state in group/parameter
-order. The source-derived hard-sign forward is `torch.where(weight < 0,
+in that order. Curriculum smoke uses a temporary `moment_probe` and frees it;
+it does not populate the retained curriculum optimizer state. A fully populated
+Adam state after ordinary updates is the concrete case modeled here. Sparse
+state can be legal on resume and may retain a different insertion order; this
+validation makes no claim about that smaller or differently ordered case. The
+source-derived hard-sign forward is `torch.where(weight < 0,
 -torch.ones_like(weight), torch.ones_like(weight))`; at the `where` call, its
 boolean predicate, two F32 operands, and F32 result can be live together. For
 the configured 81.92M-weight head those are 81,920,000 B and three times
@@ -40,7 +44,8 @@ one dense gradient, a 3,221,225,472 B assumed graph budget, and
 (12 GiB) reserved-memory ceiling. These figures confirm the function's
 arithmetic; the assumed graph budget, allocator retention, actual CUDA
 temporaries, and whether the real smoke fits remain unresolved. The configured
-headroom is not a measured fit result.
+headroom is not a measured fit result. This arithmetic and CPU calibration make
+no GPU fit claim.
 
 The observed `_cpu_tree` alias expansion is included in curriculum
 `tensor_bytes(raw_payload)`, which sums every tensor occurrence and therefore
