@@ -18,7 +18,17 @@ def _finite(value):
 def _probability(values, index, temperature):
     # Center BEFORE temperature scaling: common 1e300 offsets remain harmless.
     maximum = max(values)
-    weights = [math.exp((value - maximum) / temperature) for value in values]
+    weights = []
+    for value in values:
+        difference = value - maximum
+        # Opposite-sign finite endpoints can overflow subtraction even when a
+        # large temperature makes their normalized separation modest.
+        scaled = (
+            (value / 2 - maximum / 2) / temperature * 2
+            if difference == -math.inf
+            else difference / temperature
+        )
+        weights.append(math.exp(scaled))
     return weights[index] / math.fsum(weights)
 
 
@@ -97,6 +107,8 @@ def certify(logits, bounds=None, *, token_ids, identity, provenance, contract, n
         lower, upper = [], []
         for value, error in zip(values, bounds):
             radius = float(error) + float(a)
+            if radius > 0:
+                radius = math.nextafter(radius, math.inf)
             if not math.isfinite(radius):
                 return fail("invalid", "effective radius overflow")
             lo, hi = value - radius, value + radius

@@ -78,6 +78,22 @@ class GateChecks(unittest.TestCase):
             case([1.0, 0.0], [0.0, 0.0], contract=dict(base, domain="raw_top_k"))["status"],
             "processor_contract",
         )
+        row = case([1e308, -1e308], [0.0, 0.0], contract=dict(base, temperature=1e308))
+        exact = 1.0 / (1.0 + math.exp(-2.0))
+        self.assertLessEqual(row["probability_bounds"][0][0], exact)
+        self.assertGreaterEqual(row["probability_bounds"][0][1], exact)
+
+    def test_radius_addition_rounds_outward_before_cancellation(self):
+        row = case(
+            [1.0],
+            [1.0],
+            numeric_allowance=dict(
+                logit_absolute=2**-53,
+                probability_absolute=1e-14,
+                provenance="synthetic rounding fixture",
+            ),
+        )
+        self.assertLess(row["lower_logits"][0], -(2**-53))
 
     def test_rms_not_margin_proof(self):
         row = MODULE.rms_counterexample()
