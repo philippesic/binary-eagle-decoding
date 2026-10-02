@@ -20,9 +20,13 @@ original676/startticks85132,audit272→274,post45sCPUhealthhealthy/zerooptimizer
 no restart or GPU overlap. The short hold exceeded its deadline2m17 because a
 return guard copied a65character hash; it was corrected from actual64byte-text
 receipt SHA, preserving gates and exactlyone SIGCONT. Preparation again owns
-RTX5080;2080Ti paused. Root's corrected thinCPUhelper is rebuilding the precision
-fix outside the audit, with noGPUquery/context/test/data/optimizer. New GPU slot
-will be requested only after fixed binary is ready. [Handoff](QAT_TRAINING_HANDOFF.md).
+RTX5080;2080Ti paused. The corrected CPU rebuild is complete. Sourceb32/native9e2, CUDAlibrarySHA
+29e41b5e…acf97d8a, full runtime/DLL/RUNPATH and FTZflag-order proof are saved.
+Fresh10:37:08UTC retest reservation was denied WITHOUTSIGNAL: ordinal327's
+labelmanifest is missing at the first unfinished development capture transition.
+All runtime/source/resource guards passed; no GPU reservation or test was granted.
+Preparation can now advance new dev capture. Root waits a verified safe CPU
+boundary or full release; CUDA repair retest remains pending. [Handoff](QAT_TRAINING_HANDOFF.md).
 QATheartbeat remainsACTIVE every15minutes; no CUDA-ready or training-start claim.
 
 **Overnight CPU research authorized (October1):** three teams investigate W1A1

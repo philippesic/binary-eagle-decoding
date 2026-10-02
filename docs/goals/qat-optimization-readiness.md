@@ -936,3 +936,36 @@ binaryready request NEWshortexclusive reservation, run all packing/encoder
 fixtures first, thenbackendops onlyifpackpasses. Preserve nextfailure,return
 promptly with exact groups/GPUproof. No current reservation or automaticreuse;
 noQATstartuntilfullverifieddata/currentgates. Same protectedACTIVEheartbeat.
+
+
+## Fixed runtime ready; retest denied at new-development capture boundary
+
+CPU-only cached rebuild finished successfully withsourceb32/native9e2. Full
+w1a1.cu compile command places--ftz=falseafter-use_fast_math. TestexecutableSHA
+0d31447f3401e5b6434195148a60f2a992cadad0ae403dbeb9e8046f5c5b6e35 is unchanged
+because CUDAkernels are shared; actuallibggml-cuda.so.0.25.1 SHA
+29e41b5ef1d721632f0a34c90c2de1757b4095c00653f42d3e8c0ce2acf97d8a was read from
+its currentbuild file. All6GGML/llamaDLL hashes,source/toolkit/compiler/config/
+compilecommand/ldd/RUNPATH are in ignored registration/early-cuda-build-artifact-
+provenance.json. RPATH resolves ONLY newattempt06build/bin, not frozenoldlibs.
+No priorCUDAbackendSHA record exists, so no before/after binary claim is invented.
+CPUjob10395/10397 exited0/groupsgone; noGPUquery/context/tests/data/optimizer.
+
+A NEWprepared≤10minretest requested all nativefixtures120s, thenbackendops180s
+ONLYif firstfixtureandactualreport validation passed. Soleprepownercheck at
+2026-10-02 10:37:08.504800UTC denied WITHOUTSIGNAL: currentordinal327'slabels
+manifestMISSING at firstunfinisheddevelopmentcapture. All source/newexe+6DLL/
+FTZorder/ldd/frozenidentity/resources/GPUemptyguards passed, child676R. Empty
+GPU snapshot does not guarantee no automatic nativecapture transition; no hold,
+lease receipt,sourcechange,restart or fixturewasstarted. Rawaudit boundaryproof
+no-ftz-hold-operation-20261002.json, lease denied_before_hold/operatorinactive;
+prepmonitorACTIVE, localholdtransport171closed/absenceverified. Root's prepared
+validationoperator stooddown without remoteconnection orGPUexecution.
+
+Retaineddata re-audit through326 is complete; remainingdev capture may nowadvance.
+LatestordinaryCPUhealth10:21:20UTC healthy307/353, retained10,000train/224dev,
+zerooptimizer; the10:37guard is a distinct source/current-boundary observation,
+not a new full-health/capturecompletion proof. ActualnewrecipeCUDAretest/model/
+backward/memory/fullcorpus gates remain pending. RootheartbeatACTIVE; wait next
+verified safe completed CPUboundary or fullrelease, no duplicateGPUcheck/retry
+thisreservation and no stalelease reuse. FullparsedrawSHAs drive future guards.
