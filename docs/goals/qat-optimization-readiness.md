@@ -109,6 +109,26 @@ one-shot command for both-owner review. No remote staging, GPU lease, CUDA
 fixture, training, or optimizer update has started. Codex remains 77% used / 23%
 remaining in the original window.
 
+**16:03 UTC status refresh:** both owners report review complete and
+conditionally authorize one fixture-only transaction. The preparation operator
+must still pass fresh ownership/resource preflight before any hold or CUDA start.
+Its active turn is pending that preflight. No lease, hold, CUDA fixture, training,
+or optimizer update is active. Usage remains 77% used / 23% remaining in the
+original window.
+
+**16:08 UTC status refresh:** staging is in progress, but the fresh preflight has
+not established an exclusive hold. The lease record says GPU not reserved and no
+CUDA result is verified; the same preparation operator still owns the conditional
+transaction. QAT is idle between healthy turns. No training or optimizer update
+is active. Usage remains 77% used / 23% remaining in the original window.
+
+**16:13 UTC status refresh:** QAT reports SSH timed out before staging; no hold
+or CUDA test occurred, local cleanup is verified, and remote health is unknown.
+Lease state is `atomic05_transport_unknown_no_remote_execution` with no active
+operator/reservation. Do not infer GPU free or training failure from the timeout.
+Both existing owner monitors remain active. Codex remains 77% used / 23% remaining
+in the original window.
+
 The clean-checkpoint repository snapshot was at `42e6419` before the current
 uncommitted research notes; do not discard unmerged/uncommitted files. Recent
 visible commits include `f6815c3` (atomic CUDA plan), `a5127e6` (preparation
@@ -1844,3 +1864,61 @@ readyreceipt with stale warning classified separately; no fresh root health
 query. Next actual milestone is one owner-supervised outcome, with original
 job preserved. Training still requires complete preparation, current actor/
 recipe/native/backward/memory/timing/provider gates and final exclusive handoff.
+
+
+## Atomic05 connection timeout before staging — October2 16:11 UTC
+
+Final immutable V5 controller6a414f89…cc7d5c, guard3a02b322…14026,
+identity_entry814dbad9…68d5 and expected4ebdcbad…944f passed20/20 LOCAL mocked
+safety tests at15:54:24UTC. Full source/test hashes, test transcript and failed
+harness/invariant runs are preserved in ignored provider-audit-atomic-05/.
+Test-result SHA c3fd9aea9d844cf0f171215a3eaf5ee4e418959a34d2212c799aa06a810c1abc.
+Both owners reviewed the exact packet; prior source review's three blockers
+were fixed, final delta explicit controllerPID equality passed. No mock result
+is actual CUDA, model, backward, eligibility, memory/timing or training proof.
+
+One preauthorized transaction was prepared locally for unused lease
+prep08-provider-audit-atomic-no-ftz-20261002-05/controller
+prep08-atomic-no-ftz-controller-20261002-05/fixtureqat-no-ftz-atomic-20261002-05.
+Actual raw authorization SHA
+22b886151e139b9351d95a856b199127e2606fbce75539fcb99f021d739ad881;
+27<=900byte chunks were planned BEFORE any hold clock, then exact source/auth/
+remote_job e647 byte verification and a1352character durable controller launch.
+600second monotonic hold, >370seconds remaining at dispatch/nativeexec,
+180second return reserve, outer180s grace/native10s, one120s synthetic fixture
+only, no backendops/model/data/build/optimizer/frozen change. Original676 must
+return with activity proof before collector/report transfer; unknown ownership
+never permits CONT or expiry renewal. Request04 remains unchanged/closed.
+
+Actual attempt stopped on chunk0: fresh LOCALDarwin session189 against fresh
+shared registryphilip@192.168.4.43:22 returnedSSH255 connectiontimeout before
+Windows/WSL bridge execution. One attempted chunk, ZERO successful staging,
+26undispatched; finish/controller/hold/fixture/GPUquery/signals/recovery/retry
+allfalse. No SSH connection was established, so no remote launch or ownership
+proof exists. SameLuna preserved rawMCP/exactcommand/pane and closedLOCAL189;
+post-kill session list verifies absence. Raw operation
+runs/luna-continuous-a8-a1-20260929/provider-audit-atomic-05/atomic-operation-20261002.json
+SHA1572d3ba6bc7ef6bc8bdbe004e426bf0cdf3771d470b3c6f0cc1d315260abbdb.
+Current connection observation recordedLOCAL16:11:11.368UTC; no remote timestamp.
+
+User notified once before any recovery; this is UNKNOWN remote health, not a
+verified native process/training failure or freeGPU. No IP guessing/rotation,
+reboot/driver reset/source/runtime/precision/config/tier/cap/WSL change,
+preparation restart or recovery-budget charge. Last actual combined query
+14:06:37.959029UTC is preserved: original676R/start85132 under674/start85124,
++61,620CPUticks/+123.76GBrchar since13:56, full353/10,000train/1,002dev,
+models{}/updates0/no readyreceipt, same stale phase heartbeat only. Counts and
+activeCPU classification are historical after this timeout, not fresh evidence.
+
+Local last-health records unknown transport separately from the previous
+remote process/CPU observation and old stale-warning fingerprint. Local current
+leaseatomic05 has no hold/reservation/activeoperator, conditionalGOinactive and
+no queued validation work. Existing15min preparation/QAT monitors stayACTIVE;
+rootCUDA Luna offline. No actual native9e2 repair retest or backendops ran.
+Next scheduled tick observes current registered host through one CPU checker
+when reachable, suppressing duplicate unchanged connectivity alerts; no retry
+loop this tick. Any later validation acquisition needs explicit fresh coordinated
+GO plus all source/ownership/resource guards and unused IDs. Full preparation,
+current recipe/model/native/backward/memory/timing/full-provider evidence and
+final GPU handoff still precede authorized later training; no user decision or
+new goal/architecture was introduced by this failed transport attempt.

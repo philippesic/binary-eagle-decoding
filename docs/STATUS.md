@@ -5,6 +5,16 @@ latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
 
+**Current preparation connectivity — October2 16:11 UTC:** remote health is
+UNKNOWN. Atomic05's first SSH connection to the registered RTX5080 host timed
+out before any staging. Zero successful chunks; no hold/controller/fixture,
+GPU query, retry or recovery charge. Last actual observation14:06 UTC verified
+original676 actively auditing full10,000train/1,002dev/353, zero updates/no ready
+receipt; those are historical counts, not a fresh remote observation. User
+notified once, SAME15minute monitorACTIVE, no GPU-free/training-failure claim.
+The reviewed atomic source/local20tests remain preserved; conditional GO is now
+inactive. [Checkpoint](goals/qat-optimization-readiness.md#atomic05-connection-timeout-before-staging--october2-1611-utc).
+
 ## Overnight research supervisor handoff — 2026-10-02 15:05 UTC
 
 The supporting CPU research teams and all descendants are complete, with no
@@ -54,6 +64,22 @@ verifying hashes, the final change, and the exact command before deciding whethe
 to authorize the bounded fixture. Preparation is sending the same scripts,
 hashes, and one-shot command for both-owner review. Nothing is staged remotely;
 no lease, CUDA fixture, training, or optimizer update has started.
+
+At 16:03 UTC both owners report review complete and conditionally authorize one
+fixture-only transaction. The preparation operator still must pass fresh
+ownership/resource preflight before any hold or CUDA start; its active turn is
+pending that preflight. No lease, hold, CUDA fixture, or training is active.
+
+At 16:08 UTC the operator reports staging is in progress, but the fresh preflight
+has not established an exclusive hold: lease record says GPU not reserved and no
+CUDA result is verified. QAT is between healthy turns. The operator remains the
+single owner of the conditional transaction; no training/update is active.
+
+At 16:13 UTC the QAT owner reports SSH timed out before staging; no hold or CUDA
+test occurred, local cleanup is verified, and remote health is unknown. The lease
+record is `atomic05_transport_unknown_no_remote_execution` with no active
+operator/reservation. Do not infer GPU free or training failure from the timeout;
+both existing owner monitors remain active.
 
 The checkpoint is prepared for a fresh Codex task, but task creation was
 rejected by the app's automatic approval gate (`approval policy is never`). No

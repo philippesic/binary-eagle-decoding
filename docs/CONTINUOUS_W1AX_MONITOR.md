@@ -1,5 +1,22 @@
 # A8/A1 health and bounded recovery monitor
 
+## Current remote observation unknown — 2026-10-02 16:11 UTC
+
+Atomic05's first staging SSH connection timed out before any remote command.
+Zero chunks staged/no controller/hold/fixture or GPU query/signal/retry/recovery;
+LOCAL189 closed/absent. Current remote health is UNKNOWN, no GPU-free or
+training-failure claim. Last actual14:06CPUquery verified original676 actively
+auditing full353/10,000train/1,002dev/zero/no finalreceipt, with only the known
+stale phase-heartbeat warning. Preserve that baseline as historical.
+
+Current leaseatomic05 is inactive/no hold, conditionalGOinactive. Source packet
+and20/20 LOCALmockedtests are preserved, actual CUDA retest remains pending.
+Same monitorACTIVE every15minutes, name/target/preferences unchanged. Next tick
+uses exact registered one-check CPU query if reachable; suppress unchanged SSH
+connect-timeout alerts and retain unknown classification until actual evidence.
+No recovery charge, source/cap/precision/hardware/WSL change or guessed IP.
+See [actual failure checkpoint](goals/qat-optimization-readiness.md#atomic05-connection-timeout-before-staging--october2-1611-utc).
+
 ## Active CPU provider audits — 2026-10-02 13:07 UTC
 
 All353 completed capture manifests retain10,000 train/1,002 development prompts.
