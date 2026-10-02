@@ -2534,3 +2534,37 @@ pinned bounded fixture, remote_job/tmux/reconnect/teardown then serialized
 admitted preparation recovery. No actual CUDA start or training verified yet.
 Main supervisor is active restarting Astra and independent CPU teams; actual
 worker start not yet independently verified by retiring predecessor.
+
+
+## Successor local execution preparation — October 2, 20:15 UTC
+
+QAT successor01a0fe3f independently verified same ACTIVE15minute heartbeat
+target and exact TOML SHA bb79d104ca691025ee7cb92964cf48e0a6ef6fbcfabb4263fd76a422f469c0db.
+Preparation01a0fdd6 keeps sole remote operator. At its explicit partition request,
+QAT owns LOCALONLY fresh-boot native9e2 packet under ignored
+runs/luna-continuous-a8-a1-20260929/postboot-exclusive-native9e2-20261002/.
+Protected feature_owner postboot_launcher implements bounded inspect/launch/collect
+and pre-exec identity receipts; no old676 hold/return or STOP/CONT. Actual fresh
+GPU/process/context/resources/source/runtime proof, immutable local review, unique
+remote_job/tmux, reconnect, raw fixture and teardown remain required. No actual
+remote start, GPU availability, CUDA pass or optimizer update is claimed.
+
+Protected read-only gate_inputs completed: ignored INPUT_AUDIT.md SHA
+3a62467f6344ae986ee2e37d5030537702e335fbece806710be5700e27f2e430.
+Current runtime helper already public and three exact TRAIN prompts already pinned.
+Missing current collector sources metadata builder is now assigned to protected
+feature_owner bounded_sources, isolated /private/tmp/eagle-qat-bounded-sources,
+ONLY scripts/prepare_qat_bounded_sources.py and its tests. No readiness promotion,
+remote access or model loading. Later current-native teacher/provider/actual-model
+forward/backward/memory/timing/save-resume/full-corpus gates remain unchanged.
+
+A small isolated CPU check of native9e2 scripts/ui-assets.cmake passed exit0 with
+BUILD_UI=OFF/HF_ENABLED=OFF and emitted0assets. Raw ignored proof
+runs/qat-optimization-readiness/current-server-offline-ui-proof-20261002/proof.json.
+This identifies an offline option for a NEW isolated later server build; it is
+not a third retry of the frozen attempt06 build and not CUDA/model evidence.
+
+Inherited evaluator worktree retired after clean-status check, exact source/test
+byte equality with public main and git bundle verification. Preserved bundle
+runs/qat-optimization-readiness/development-preflight-owned-archive-20261002/f314-source.bundle
+retains f314faa; only owned merged worktree/branch removed. Peer artifacts untouched.
