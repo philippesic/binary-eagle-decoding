@@ -1125,3 +1125,26 @@ No new schedule, SSH query, GPU work, optimizer update or preparation change.
 Predecessor stops now. Successor assumes the exact next actions above;
 parent/preparation/usage supervisors receive the verified identity. No change
 to human authorization or overnight protection.
+
+### Overnight support research and current supervisor checkpoint — 2026-10-02 11:00 UTC
+
+The three bounded CPU research teams (representation, accepted-prefix objective,
+and block-parallel drafter) are complete. Their reports and evidence are under
+`experiments/overnight20261002/`; no research descendants or persistent
+experiment processes remain. The supporting research supervisor continues the
+five-minute original-window usage check. At 11:00:31 UTC, Codex weekly usage
+was 72% used / 28% remaining, ordinary use allowed, resetsAt 1791049896, with
+no reset observed and no credits or reset credits used. There is no fixed
+morning cutoff. Research stops at the specified threshold or latest verified
+original-window reset and must not consume a fresh allowance.
+
+The protected QAT validation/training owner is successor
+`01a0fc3d-bbe1-7e93-a19b-a9200dfa186c`; the existing
+`qat-validation-and-training-handoff` heartbeat is ACTIVE and targets it. The
+current successor and preparation-owner turns are in progress. Preparation
+owner `01a0fb62-cbdb-72f0-8e86-4055b2ccb4ed` retains the GPU. Its latest saved
+health (10:43:57 UTC) is healthy/nonterminal at 329 audited manifests, 10,000
+train / 288 development prompts, and zero optimizer updates. No exclusive
+validation lease, CUDA retest, or training start is confirmed. The CUDA repair
+retest and all actual-model/data admission gates remain pending.
+

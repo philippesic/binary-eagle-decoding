@@ -4,6 +4,24 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
+
+## Overnight support research — 2026-10-02
+
+The three authorized CPU research topics are complete; all research leaders and
+descendants report finished, with no persistent experiment processes. Results
+and limits are in `experiments/overnight20261002/`. The supervisor continues
+monitoring the original Codex weekly window (72% used / 28% remaining at
+11:00:31 UTC; resetsAt 1791049896); there is no fixed morning cutoff. Stop
+research before the latest verified original-window reset and never use a fresh
+allowance for research.
+
+QAT ownership is verified under successor `01a0fc3d-bbe1-7e93-a19b-a9200dfa186c`;
+its existing handoff heartbeat is ACTIVE and targets that successor. Preparation
+owner `01a0fb62-cbdb-72f0-8e86-4055b2ccb4ed` retains GPU ownership. The latest
+saved healthy preparation checkpoint has 10,000 train / 288 development prompts
+and zero optimizer updates; no validation lease, CUDA retest, or training start
+is verified.
+
 **Active goal:** [QAT optimization readiness](goals/qat-optimization-readiness.md).
 All five requested controls plus raw fusion correction and affine binary weights
 are implemented;952CPUtests/fourskips and native CPU fixtures pass. Actual CUDA
