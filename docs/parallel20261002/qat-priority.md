@@ -1,0 +1,77 @@
+# Protected QAT coordination — October 2, 2026
+
+This is supporting work under the active QAT optimization readiness goal, not a
+new research goal. Deliverable: restore the acknowledged preparation and QAT
+owners and their protected supervision, then pursue the existing safe validation
+and training sequence. Acceptance: actual active owner turns, active correctly
+targeted recurring supervision, exclusive GPU ownership, and evidence-backed
+gates before any CUDA or optimizer claim.
+
+## Restored owners and supervision
+
+The human's latest parallel-team request protects QAT and its required preparation
+and GPU supervision through the supporting CPU research usage cutoff and actual
+weekly allowance reset. Available paid-credit continuation is authorized;
+purchasing credits and redeeming resets are not authorized.
+
+The existing acknowledged owners were archived. They were unarchived and woken
+with the current human instruction; app snapshots verify active turns:
+
+| Responsibility | Owner chat | Protected heartbeat |
+| --- | --- | --- |
+| Validation and later training | `01a0fc3d-bbe1-7e93-a19b-a9200dfa186c` | `qat-validation-and-training-handoff` |
+| Sole preparation/preflight operator coordination | `01a0fdd6-8e11-7393-9aed-5c99bd08e428` | `a8-a1-luna-health-and-recovery` |
+| Interrupted transport diagnosis only | `01a0fb34-e010-7b11-ac9a-f72cf2367c6c` | No additional heartbeat |
+
+Both old protected automation IDs were absent. App update calls explicitly
+reported that the automations did not exist. Replacement creation succeeded:
+QAT retained its old ID; preparation received the new ID above rather than the
+deleted `a8-a1-health-check-enable-after-manual-start`. Actual local TOML readback
+verifies ACTIVE heartbeat kind, 15-minute cadence, and exact owner targets for
+both replacements. Neither action received an approval rejection. Preparation
+owner owns consistent registration ID/reference updates, preserving old history;
+the coordinating agent does not race its ignored registration edits.
+
+The QAT coordinator restored scheduling and ownership only. It did not create a
+second GPU operator, take over frozen preparation, run SSH, signal a remote
+process, change a recipe, or claim a GPU result.
+
+## Actual execution boundary
+
+Latest actual saved remote observation remains historical October 2, 14:06 UTC:
+original preparation child 676 was actively auditing the complete 10,000 train /
+1,002 development corpus across 353 manifests, with zero optimizer updates and
+no final readiness receipt. Subsequent connectivity failures establish unknown
+remote health, not GPU availability or training failure.
+
+RTX5080 remains preparation-owned. Fresh local controls permit it; RTX2080Ti
+remains paused. Validation still needs fresh exclusive identity/resource/context
+proof and a bounded hold. Training separately needs current actual CUDA packing,
+full-model/native/gradient/memory/recipe gates, final complete preparation receipt,
+terminal preparation supervisor, and fresh GPU handoff.
+
+The successor metadata rebind passed the same 20 local mocked safety tests with
+unchanged controller/guard/entry code hashes. That is CPU process-safety evidence,
+not CUDA readiness. QAT owner is resuming renewal of ONE fixture-only conditional
+authorization; preparation owner is mechanically preparing the matching transport
+packet. Frozen `--prepare-only` job and numerical/ancestry gates remain intact.
+
+## Transport handoff and next action
+
+The recorded parent-owned LOCAL198 transport diagnosis was still active at first
+inspection and blocked all new remote dispatch. Its archived owner was reopened
+and asked for explicit completion/cancel/transfer with raw proof. Its resumed
+turn states it will capture and close only its owned local tmux session and
+release the stale lock. Completion and raw cleanup proof are still pending;
+elapsed time alone does not release ownership.
+
+Next: consume that explicit handoff, verify the preparation registration's new
+heartbeat binding, then let the SAME sole preparation operator execute the
+reviewed packet only after renewed owner authorization and fresh safe exclusive
+preflight. Consume its result; preserve any failure. Continue protected owner
+supervision and restart needs through credits and allowance reset.
+
+Integration: checkpoint/report branch `feature/qat-priority-20261002` in
+`/private/tmp/eagle-qat-priority-20261002`; orchestrator should integrate the report
+and link it from the existing active goal/status. Shared goal/status edits remain
+with the orchestrator and existing QAT owners.
