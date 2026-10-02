@@ -291,6 +291,14 @@ class RecipeProviderTests(unittest.TestCase):
                 value["files"] = {"server.log": {"sha256": stages.sha256(log)}}
             path.write_text(json.dumps(value))
             report["evidence"][key] = stages.file_record(path)
+        runtime = {
+            "schema": "CPU_runtime_fixture",
+            "directory": str(self.root.resolve()),
+            "ld_library_path": str(self.root.resolve()),
+            "immutable_manifest": self.write("runtime.json", {"fixture_only": True}),
+            "libraries": [self.write("libggml-cuda.fixture", b"synthetic runtime")],
+        }
+        report["native_runtime"] = runtime
         gate.validate_gate_report(report, 4, common)
         gate_record = self.write("gate4.json", report)
         readiness = {
@@ -301,6 +309,8 @@ class RecipeProviderTests(unittest.TestCase):
             "common_source_sha256": common,
             "unresolved_gates": [],
             "precisions": {"4": gate_record},
+            "native_binary_sha256": report["native_binary_sha256"],
+            "native_runtime": runtime,
         }
         ready_record = self.write("ready.json", readiness)
         stages.validate_readiness(ready_record, activation_bits=4, common_hashes=common)

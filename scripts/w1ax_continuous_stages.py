@@ -724,8 +724,17 @@ def validate_readiness(record: dict, *, activation_bits: int, common_hashes: dic
     modern = report["schema"] == RECIPE_READINESS_SCHEMA
     if activation_bits not in ({1, 4, 8} if modern else {1, 8}) or not isinstance(precision, dict):
         raise ValueError("readiness needs its own independent requested-precision result")
-    if report.get("native_runtime"):
-        runtime = report["native_runtime"]
+    runtime = report.get("native_runtime")
+    if modern and (
+        not isinstance(report.get("native_binary_sha256"), str)
+        or re.fullmatch(r"[0-9a-f]{64}", report["native_binary_sha256"]) is None
+        or not isinstance(runtime, dict)
+        or not isinstance(runtime.get("immutable_manifest"), dict)
+        or not isinstance(runtime.get("libraries"), list)
+        or not runtime["libraries"]
+    ):
+        raise ValueError("recipe readiness needs a bound native binary and full runtime inventory")
+    if runtime:
         checked_record(runtime["immutable_manifest"])
         for library in runtime["libraries"]:
             checked_record(library)
@@ -739,6 +748,13 @@ def validate_readiness(record: dict, *, activation_bits: int, common_hashes: dic
         gate = json.loads(gate_path.read_text())
         if modern and gate.get("schema") != "w1ax_continuous_precision_gate_v2":
             raise ValueError("recipe readiness requires independently validated versioned gates")
+        if modern and (
+            gate.get("native_binary_sha256") != report["native_binary_sha256"]
+            or gate.get("native_runtime") != runtime
+        ):
+            raise ValueError(
+                "recipe precision gate and teacher readiness use different native runtimes"
+            )
         validate_gate_report(gate, bits, common_hashes)
     return report
 
