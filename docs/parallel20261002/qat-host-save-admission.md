@@ -40,6 +40,14 @@ and test hashes and independent checks are recorded with the reviewed commit.
 The runner is already bound in its runtime `EXTRA_MATH` source identity, so this
 source change requires new current receipts rather than reuse of old identities.
 
+Independent Luna acceptance at immutable `53c2eaa`: **42/42 tests passed in
+1.457 seconds**, with the runner and all four participating test-file hashes
+unchanged before and after, accelerator discovery forbidden, no source/test
+diff, and the process exited. Its read-only review confirms the clone-per-
+occurrence/one-transfer bound and unchanged copy/resume/math/probe behavior.
+Exact source hashes, command, environment and raw paths are in
+[the independent validation record](qat-host-save-validation.md).
+
 Remaining: QAT owner review, sole-root integration/push and clean worktree
 retirement. Actual source-bound host available/RSS and device allocated/reserved
 measurements for save and resume remain mandatory before launch admission. This
