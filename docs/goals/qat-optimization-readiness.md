@@ -1205,7 +1205,7 @@ recipe/every-precision/memory/timing/data ancestry gates. Full corpus/current
 selected passing recipe/final handoff remain mandatory before NEW authorized
 QAT. No training, real-data optimizer update or acceptance/speedup claim.
 
-## Current-runtime CPU helper published — October2 11:28 UTC
+## Current-runtime CPU helper published — October2 11:30 UTC
 
 New runtime-only helper scripts/prepare_qat_native_runtime.py and focused tests
 are reviewed, integrated and pushed as e5dcbb9 (worker07da576 rebased onto main).
@@ -1258,3 +1258,62 @@ published helper and exact declared toolkit root. Record groups/startticks/
 state/logs and prove teardown. Actual server manifest and CUDA retest remain
 pending. New source/recipe/current model/backward/memory/timing/full coverage/
 final preparation release gates still precede already-authorized QAT.
+
+## Runtime admission and reservation safety — October2 12:08 UTC
+
+Published eaa3929 closes a concrete v2 admission gap: every attached precision
+gate must bind the same native binary SHA and full runtime as its top-level
+readiness. Previously a hand-built mixed b4/9e2 receipt could pass internal
+checks despite the same-runtime contract. No hybrid was used or produced here.
+53 relevant readiness/provider/stages/collector CPU tests and independent Luna
+review pass; v1 admission is unchanged. Own worktree/branch cleaned after push.
+Actual native/recipe receipts after this change must bind current Python source;
+built synthetic operator checkout remains b32/native9e2, with unchanged7pins.
+
+Focused Astra source/contract audit found a supported full-corpus reuse path
+for fixed A8/A1 baseline/speed/optimizer/gradient recipes: retain authentic b4
+capture/v1 readiness/providers, independently join current9e2 actor gates
+through the five common model/map hashes, and measure against the FULL provider
+source digest. A three-prompt measured receipt cannot admit that full provider.
+No full recapture is required for this existing fixed path. Learned/correction/
+affine recipes and A4 require explicit separately versioned two-runtime admission
+before reusing historical full-corpus captures; do not assemble hybrid v2 fields.
+Fresh same-runtime three-TRAIN teacher capture remains an honest early model-gate
+path, not full-corpus training admission. Native b4→9e2 changes12files including
+EAGLE graph/learned/affine code; target-FP16 flag scope alone does not establish
+teacher trajectory equivalence. Any bridge must preserve original prefixes,
+labels/features/cache/masks/runtime and separately pin current actor evidence.
+No new training recipe, curriculum budget or frozen-teacher policy was selected.
+
+NEW request03 followed a meaningful normal-health candidate (345 completed
+manifests at currentordinal344), with frozen local operator READY. One owner's
+reviewed8065character acquisition command failed SSH255/exec request failed on
+channel0. No result/receipt/grant verified; command-size hypothesis is unproven.
+Raw no-ftz-hold03-operation-20261002.json SHA
+ ec9660855f2460330b26cf479af5ef88179fe5662d7bfd0b99f39c70f760dafa.
+ONE small CPU-only safety check11:51:12.219848UTC confirmed exact original
+676/startticks85132 RUNNING,674/startticks85124/state.running,ordinal348 and zero
+optimizer; NEW receipt absent. Safety raw SHA
+ ea19e23561309657c6b470c23493762e8fd5065e2478a2e818a5e04c66f7587e.
+Owner's LOCAL177/178 closed/absence verified, no recovery charge/restart/signal.
+Request03 acquisition_failed_no_hold_safety_verified/operatorinactive. Root/Luna
+never connected or launched any remote CPU/GPU job; no lease, hold or CUDA retest.
+Do not repeat acquisition on unchanged capture; let preparation finish.
+
+Latest NORMAL owner CPU health11:58:43.272875UTC is healthy/nonterminal,
+currentordinal350/353 but351completedmanifests,10,000train/992development;
+only10development remain. Zerooptimizer/steps{}, no readyreceipt,original674/676
+live. LOCAL179 closed/absent, no GPU query. Safety-only ordinal348 is not a
+recount and the healthy count is not preparation completion/release. Still need
+final readiness/coverage/paired smoke/checkpointzero, terminal supervisor and
+fresh owned-groups/GPU-empty proof before handoff. RTX2080Ti remains paused.
+
+Independent CPU-only server runner is local, unlaunched, with per-target GNU
+Make preview/relative object/link handling tested on retained LOCAL generated
+metadata. It permits only server compile/link while guarding7operator bytes,
+uses fresh14GiB admission/parallel2/600s build/900s overall, never executes a
+server or queries GPU. Root review is closing one progress-cleanup parser edge
+before CPU GO. Transfer will use small hash-bound chunks, avoiding long SSH
+payload assumptions. GPUplan f112/validator4b765 stays frozen and CUDA repair
+retest pending. Active SAME15min heartbeat/protection continues; no actual model,
+backward, memory/timing, optimizer or quality/throughput claim from CPU code.

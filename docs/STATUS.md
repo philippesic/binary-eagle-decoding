@@ -64,7 +64,17 @@ No CUDA readiness or provider eligibility follows. Latest owner CPU health
 11:23UTC is healthy340/353 /10,000train /640dev, zerooptimizer/no receipt.
 The sole Luna prepares a bounded CPU-only server target/static inspection,
 protecting all seven ready operator artifacts; no remote launch yet. Retest and
-training still await their separate gates. [Checkpoint](goals/qat-optimization-readiness.md#current-runtime-cpu-helper-published--october2-1128-utc).
+training still await their separate gates. [Checkpoint](goals/qat-optimization-readiness.md#current-runtime-cpu-helper-published--october2-1130-utc).
+
+**Latest QAT checkpoint, October2 12:08 UTC:** v2 runtime-binding guard eaa3929
+passes53 relevant CPU tests; authentic v1 fixed A8/A1 full-corpus reuse remains
+supported with separate current actor gates. Optional/A4 full-corpus admission
+needs an explicit ancestry bridge. New reservation03 failed transport; one
+CPU safety proof confirms original preparation running/no hold receipt/no grant.
+Normal11:58CPUhealth shows10,000train/992dev, zerooptimizer/no readyreceipt.
+Capture nearing completion does not release GPU; final preparation endpoint and
+all new CUDA/model/recipe gates remain pending. CPU server job is still local,
+unlaunched. [Checkpoint](goals/qat-optimization-readiness.md#runtime-admission-and-reservation-safety--october2-1208-utc).
 
 **Validation task rotation at a safe boundary:** after two compactions, the
 validation/training owner transferred to acknowledged successor
