@@ -84,3 +84,37 @@ Integration: checkpoint/report branch `feature/qat-priority-20261002` in
 `/private/tmp/eagle-qat-priority-20261002`; orchestrator should integrate the report
 and link it from the existing active goal/status. Shared goal/status edits remain
 with the orchestrator and existing QAT owners.
+
+## Learned-head batching risk — 18:43 UTC assessment
+
+The LSQ research team reports 72 synthetic CPU cases through the actual
+`forward_torch_round` / `NativeStepAdapter` / installed `RowBinaryLinear` head:
+serial and stacked-head logits/loss match, while trainable activation clip or
+threshold gradients differ by the square root of valid depth, with optimizer
+step differences up to 0.002749. Invocation-local normalization explains this
+computation-control equivalence issue. This is CPU evidence, not CUDA behavior
+or a QAT quality result; the research implementation remains isolated.
+
+The frozen preparation config's actual SHA256
+`4ee4ce05139e0ae4762dfa35b6546b79a3fafc8c2b91be07b6ef76e9f5579c8e`
+matches its registration pin exactly. It omits activation quantization and head
+optimization controls, whose current defaults are fixed activations and serial
+head. The existing frozen prepare-only job is not exposed to this combination;
+no frozen source or recipe change follows.
+
+New training's selected recipe is still null. The prepared `learned-activations`
+and `combined-contract-smoke` profiles explicitly enable learned activations and
+`optimize_head=true`, so this risk must be resolved before those recipes receive
+training admission. Fixed-activation profiles are not implicated by this finding.
+The actual all-nine activation bank includes the installed output head, and the
+observed adapter forwards linears, making the production path relevant.
+
+Astra's focused advice: the smallest reference-preserving option is serial head
+execution when gradient recording is enabled and its attached activation scalar
+requires gradients, retaining batching for fixed/frozen/no-grad cases. A shared
+chain normalization would deliberately change the serial optimization recipe.
+No remedy is selected or integrated here. Current QAT owner received the evidence
+and profile assessment; require source/config-bound gradient/update equivalence
+or a reference-preserving fallback before enabling the affected combination.
+The single packing fixture and existing actual-model/native/memory/full-prep
+gates remain separate; no synthetic or CPU result admits optimizer updates.
