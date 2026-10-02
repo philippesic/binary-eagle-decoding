@@ -2075,3 +2075,63 @@ reviews semantics/remedy. Recurrent comparisons pass; curriculum resume-state
 validation and sign/capacity diagnostics are being finalized. No live source or
 recipe changed and no new GPU/training result inferred. Details and validation
 limits: [supervisor findings](../parallel20261002/supervisor.md#first-research-findings--october-2-1839-utc).
+
+
+## Successor preflight and learned-head gate — October2 18:40 UTC
+
+Acknowledged prep successor01a0fdd6-8e11-7393-9aed-5c99bd08e428 now owns
+coordination for SAME frozen supervisor08/676 --prepare-only job. Rotation does
+not release GPU. Both restored persistent TOMLs independently verified ACTIVE/
+15minutes with correct owner targets: QAT sameID qat-validation-and-training-handoff,
+prep replacementID a8-a1-luna-health-and-recovery (deleted oldID absent).
+Protected coordinator owns schedule edits; root makes no parallel edits.
+
+Exact controller/guard/entry/suite remain accepted V5. Expected config changes
+ONLY prep-owner UUID: SHA021e25cde2dfd4022391ad5e0eb0a010162c8544634da7a098976ec7b68e004c;
+root reconstructed predecessor exact hash from that replacement. SAME20tests pass.
+Owner-rebinding receipt7a1f2d8a9d198050bee47ba5d2afe5acd84376e3c21407168bec4711140b2a79.
+Root renewed ONE fixture authorization against both current owners and bytepins:
+auth58451501f0878fc24f242912df0047fc0037d6941c3064fc364714f2c97477cf.
+Predecessor auth/packet/proofs archived; payload mechanically refreshed, no new
+native/math/recipe behavior. All fresh ownership/resource/deadline/teardown gates
+remain mandatory; no chat waits in hold, no stale authorization reuse.
+
+Parent explicitly ended diagnosis, LOCAL198 closed; proof
+6711fe18e9de9992a28113f4ea135f07bae9dd033c6de20aff98322d29198c8f.
+No successful SSH/checker/GPU action occurred there. Sole successor Luna
+atomic05_owner_rebind opened verifiable persistent LOCAL exec keeper98611 and
+submitted the3811ASCII registered CPU query ONCE through fresh LOCALtmux199/
+pane228. SSH255 timed out BEFORE WSL/checker atLOCAL18:40:51.281632UTC.
+Zero staging/controller/hold/fixture/GPUquery/signals/recovery/retry. Actual
+remote health UNKNOWN; historical actual14:06 full353/10,000train/1,002dev/
+zero/no-readyreceipt preserved. One failed transport does not prove physical
+host/GPU unavailability or process failure.
+
+Raw MCP53b5fdc71970d4b8667e719c05b4875759141b3aa22299d006b50fd1a380a4cd;
+final closeoutb2b5c943d52e60892ea96da8cddb28776bf0e718e492531cb67003c8d4978c9e,
+under ignored runs/luna-continuous-a8-a1-20260929/. Root verified both actual byte
+hashes. LOCAL199 absent; keeper98611 interrupted/exit1, all owned local tools
+closed, lease operatorinactive/conditionalGOinactive/no queued work. Same
+connectivity-family alert suppressed. Root asked for current SSH address after
+persistent-execution prerequisite failed to establish transport; no address
+is guessed or changed without human evidence.
+
+Independent CPU research supplied72 synthetic A1/A4/A8 production-head cases:
+serial/batched outputs/loss match, learned clip/threshold gradient scale differs
+by sqrt(valid depth), SGD update delta up to0.002749. This is not a CUDA result
+or universal quantizer error; invocation-local scaling makes the batching
+optimization change the existing serial training update. Affected prepared
+profiles learned-activations and combined-contract-smoke cannot be admitted
+without reference-equivalence or explicit new-recipe evidence. Frozen config
+4ee4ce05 has fixed activations and optimize_headFalse defaults; live prep unaffected.
+
+Root assigns feature owner model_gate_plan a NEW isolated source fix preserving
+CURRENT SERIAL learned training semantics: only grad-enabled attached trainable
+learned head takes serial fallback, while fixed/frozen/no-grad head batching
+stays available. No shared normalization/mathematical recipe change; effective
+fallback must be recorded in timing/readiness. Relevant actual adapter path and
+gradient/update-equivalence CPU tests precede review/integration. Worker owns
+recurrent_provider.py/focused tests/minimal metadata plumbing; no live/remote
+source/data/model/finals/GPU action. Native synthetic fixture scope remains
+independent. All current actual-model/native/backward/memory/timing/full-provider/
+complete-prep and final exclusive handoff gates still precede later training.

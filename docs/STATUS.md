@@ -5,25 +5,21 @@ latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
 
-**Preparation owner rotation — October 2, 18:10 UTC tick:** handoff is
-pending; the original remote job must continue untouched. Parent coordinator
-`01a0fb34-e010-7b11-ac9a-f72cf2367c6c` owns the interrupted transport diagnosis
-and local tmux `$198`; no duplicate SSH/checker was launched by this tick.
-The human reports the host reachable and requests a persistent `sleep infinity`
-connection through tmux. The exact successful procedure/result is still pending;
-previous local timeouts do not establish physical host unreachability.
-[Preparation handoff](goals/qat-optimization-readiness.md#preparation-owner-rotation--october-2-1810-utc-tick)
-records current jobs, proofs, next actions and monitor transfer requirements.
+**Current QAT/preparation state — October2 18:40 UTC:** successor
+01a0fdd6-8e11-7393-9aed-5c99bd08e428 is acknowledged. Both restored15minute
+monitors are ACTIVE; preparation uses a8-a1-luna-health-and-recovery. The one
+fresh connection attempt verified a persistent local execution keeper but SSH
+still timed out before its CPU checker. No staging/hold/CUDA test; all owned
+local transport/keeper cleanup verified. Remote health remains UNKNOWN; historical
+14:06 full10,000train/1,002dev/zero-update observation is not fresh release proof.
+Current source9e2 runtime and20-pass controller are ready; fixture GO is inactive
+pending fresh coordination/availability. RTX2080Ti paused.
 
-**Current preparation connectivity — October2 16:11 UTC:** remote health is
-UNKNOWN. Atomic05's first SSH connection to the registered RTX5080 host timed
-out before any staging. Zero successful chunks; no hold/controller/fixture,
-GPU query, retry or recovery charge. Last actual observation14:06 UTC verified
-original676 actively auditing full10,000train/1,002dev/353, zero updates/no ready
-receipt; those are historical counts, not a fresh remote observation. User
-notified once, SAME15minute monitorACTIVE, no GPU-free/training-failure claim.
-The reviewed atomic source/local20tests remain preserved; conditional GO is now
-inactive. [Checkpoint](goals/qat-optimization-readiness.md#atomic05-connection-timeout-before-staging--october2-1611-utc).
+Learned activation plus batched head changes clip/threshold update semantics;
+a reference-preserving serial learned-head fallback is being implemented/tested
+in isolated new source before admitting those profiles. Frozen preparation uses
+fixed activations/serial head and is untouched. No selected recipe or optimizer
+updates. [Checkpoint](goals/qat-optimization-readiness.md#successor-preflight-and-learned-head-gate--october2-1840-utc).
 
 ## Overnight research supervisor handoff — 2026-10-02 15:05 UTC
 
