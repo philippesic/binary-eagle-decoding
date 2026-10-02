@@ -12,11 +12,14 @@ and memory/timing remain unverified. [Integration report](../experiments/qat-opt
 All12 profile preparation/planning CLIs also pass on the published checkout;
 [completion audit](../experiments/qat-optimization-readiness/12-completion-audit.md)
 records requirement-specific CPU proof and missing GPU evidence.
-The human has resumed RTX5080 for the existing corpus preparation only; zero
-real-data optimizer updates remain authorized. RTX2080Ti remains paused. Required
-GPU evidence for the new optimization implementations is still pending; the
-existing preparation owner has sole RTX5080 assignment until verified release.
-The previous native Goal block during the pause is historical; the full readiness
+The human assigned this chat ownership of validation and later training after
+verified release by the dataset-preparation owner. RTX2080Ti remains paused.
+Required new-feature GPU evidence is pending; the preparation owner retains sole
+RTX5080 assignment until release. Root handoff monitor is ACTIVE every15minutes;
+[handoff plan](QAT_TRAINING_HANDOFF.md) requires current zero-update validation
+before the newly authorized training starts. Existing frozen prep stays
+--prepare-only. FreshCPUcheck06:03:52UTC: healthyreaudit52/353,zerooptimizer,
+no readyreceipt,supervisor674/child676live; GPU not released. The readiness
 objective remains incomplete.
 
 **Existing corpus preparation resumed and verified:** SAME --prepare-only run under supervisor08. CPU health **2026-10-02 05:31:39 UTC** (October1,10:31p.m.PDT), independent ownership **05:32:52UTC** confirms server673/supervisor674/child676 and live prep-only flag afterdisconnect/reconnect. Retained327manifests /10,000train /224dev,zeroQATsteps; re-audit4/353 then6/353 is not lostdata. Existing15min monitorACTIVE;2080Ti paused. No newcaptures yet: everyresume restarts the audit loop over completed data before unfinished dev capture. Same fullgates and automatic stop-before-QAT endpoint; new optimization-feature GPU checks still await ownership release.

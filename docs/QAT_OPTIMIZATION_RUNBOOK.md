@@ -2,14 +2,19 @@
 
 ## Current boundary
 
-Preparation only. No real-data optimizer updates or sealed-final reads are
-permitted by this goal. Both GPUs are explicitly paused by the human. The previous preparation
-supervisor is stopped, but this does not authorize new GPU work. Require a new
-human resume instruction and explicit sole-operator ownership before any remote
-query, build or execution. Read
-`docs/STATUS.md` and the shared host registry before any remote action. Every SSH
-connection goes through tmux MCP; preserve the existing host tmux job/socket.
-RTX2080Ti remains paused. See `docs/AGENT_OPERATIONS.md`.
+Latest human instruction assigns this chat validation and later training after
+verified GPU release by the dataset-generation owner. See
+[training handoff](QAT_TRAINING_HANDOFF.md). During validation, zero real-data
+optimizer updates are allowed; after current launch gates pass, training is
+explicitly authorized without another confirmation. The old preparation-only
+restriction is superseded for that transition. Existing frozen preparation
+remains --prepare-only and must not be interrupted or changed.
+
+RTX5080 is resumed but owned by the preparation agent until verified release;
+RTX2080Ti remains paused. Read docs/STATUS.md and the shared host registry before
+remote action. Every SSH connection goes through tmux MCP. Respect newer human
+pause/stop instructions immediately; preserve frozen precision/data and sealed
+finals. See docs/AGENT_OPERATIONS.md.
 
 The CPU suite and native CPU fixtures establish implementation correctness,
 not CUDA performance, memory fit, or native GPU readiness. An optimized CUDA
@@ -123,11 +128,10 @@ Default CLI validates without model/CUDA work. Explicit `--start --allow-cuda
 checkpoint. `check_curriculum_qat_readiness.py` produces a distinct single-model measured
 receipt for the complete ordered schedule, with strict every-stage backward,
 resident optimizer memory, warmup/five measured repetitions and unchanged state.
-Default invocation is a CPU-only plan. Actual execution remains blocked by the
-GPU pause; independent A4/provider/native proof is required before publication.
+Default invocation is a CPU-only plan. Actual execution awaits preparation-owner release; independent A4/provider/native proof is required before publication.
 The actual optimizer path also requires this measured receipt bound to the
-whole schedule, not just an isolated stage. Do not start real optimizer
-updates under this goal.
+whole schedule, not just an isolated stage. Real optimizer updates require all current gates and the latest training
+authorization recorded in the handoff.
 
 Refresh is native recapture on current-student prefixes, with checkpoint,
 export, actor, prompt, feature/label and runtime hashes. Changed-prefix teacher

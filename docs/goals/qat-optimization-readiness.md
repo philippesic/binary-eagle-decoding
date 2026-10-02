@@ -9,9 +9,13 @@ until ready for real GPU QAT. This is the one active project goal, continuing
 Phase 1 of the one-bit plan. The previous [body/head goal](recurrent-binary-body-head.md)
 retains historical experiment/data ancestry and preparation job ownership.
 
-Preparation only: no real-data optimizer updates, no sealed-final reads, no
-changes to frozen target/verifier or existing experiment source/config identity.
-Tiny synthetic optimizer tests are permitted. RTX2080Ti remains paused.
+Latest human authorization: root owns actual validation and subsequent training
+after the current preparation owner releasesRTX5080. Zero real-data optimizer
+updates during validation; training may begin after all current launch gates
+pass, without another confirmation. No sealed-final reads or changes to frozen
+target/verifier or existing preparation source/config identity. Tiny synthetic
+optimizer tests are permitted. RTX2080Ti remains paused. The earlier
+preparation-only boundary is historical; see the latest handoff checkpoint.
 RTX5080 belongs to the existing preparation operator in chat
 01a0f47a-e246-75e1-a299-fcac42d34f8a; new GPU checks require explicit ownership
 coordination and idle proof. Do not modify or stop that job from this goal.
@@ -365,3 +369,51 @@ optimization-feature GPU gates remain unverified and require ownership coordinat
 not an automatic deploy into this frozen run. Same activeprojectgoal retained;
 no new goal/architecture/experiment/schedule. Operatorcomplete,no activeLOCAL
 transport. Docs-only checkpoint follows8971bb6,diffcheck appropriate verification.
+
+
+## Human assigns validation and training ownership
+
+Latest direct human instruction in this chat: “from now on you will be in charge
+of training ... Monitor the other agent for when it releases the gpu ... then
+start your validation and later training.” Root is designated validation/training
+owner after current dataset preparation releasesRTX5080. This supersedes the
+old no-real-data-update restriction ONLY after current actual validation gates
+pass. No new goal created; full readiness objective persists, followed by the
+new authorized training responsibility. Frozen target/verifier, sealed finals,
+exact data/cache semantics and all validation gates remain unchanged.
+
+Current registry re-read: RTX5080unpaused,RTX2080Ti paused. Existing preparation
+owner retains sole5080assignment,supervisor08 recordedlive, --prepare-only.
+Root will not modify or interrupt it or deploy new source into its frozen run.
+A fresh bounded read-only Luna handoff observation is in progress, owning only
+its separate local transport and ignored handoff-observation JSON; no GPUlaunch.
+
+Native heartbeat **qat-validation-and-training-handoff** created and confirmed
+ACTIVE every15minutes,targetthischat01a0f934-dd65-7e33-a5bf-0ba591e713a4. It watches
+preparationchat01a0f47a-e246-75e1-a299-fcac42d34f8a usingcompactwaitcursor and local
+registration; existingprepmonitor remainsuntouched. Silent healthy observation;
+notifyverifiedrelease/failure/requiredaction, then start already-authorized
+validation and training after allrecipe/source/native/hardware/memory gates.
+Handoffphase/authorization/cursor saved in ignored
+runs/qat-optimization-readiness/training-handoff-registration.json. Exact operator
+sequence and latestauthorization live in docs/QAT_TRAINING_HANDOFF.md.
+
+Training recipe will be selected/recorded from actual passing controls before
+launch; noneselected orstartednow. No real-dataoptimizerupdates in this turn.
+The old nativeGoalblocked status during the humanGPU pause is historical; durable
+projectstate is waitingforcurrentpreparationrelease with monitoringactive. Goal
+API provides no agent-owned resume transition; do not create a duplicate goal.
+
+
+Fresh handoff observation **2026-10-02 06:03:52.658738UTC**: one existing CPU-only
+checker invocation exit0/healthy,statuspreparing,phaseteacher_capture_audit,
+reaudit52/353. Retained327completedmanifests /10,000train /224dev; no newdata
+completion inferred from the auditordinal. optimization_started:false,steps:{},
+readyreceipt:null. Currentregisteredowner stilllive: hostserver673,supervisor674/
+PGID674,child676/PGID676. Release notproven. No GPU query,hostjobaction,recovery,
+sourcechange,data/model/finalread oroptimizerupdate. Exactrawcheck/command/paths/
+cleanup in ignored runs/qat-optimization-readiness/handoff-observation-20261002.json.
+Lunaobservercompleted; its ownLOCALtransportclosedandabsenceverified. No local
+command remains live. Nextscheduledobservation uses savedcursor/freshregistration;
+only successful fullprep+terminalgroups+freshresourceidle proof advances to
+newrecipeCUDAvalidation. Rootheartbeatconfirmedactive before checkpoint.
