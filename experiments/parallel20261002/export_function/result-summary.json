@@ -1,0 +1,168 @@
+{
+  "schema": "export_function_audit_v1",
+  "hardware": "CPU synthetic; no native backend execution",
+  "torch": "2.14.0",
+  "gate": {
+    "atol": 3e-05,
+    "rtol": 3e-06
+  },
+  "comparisons": 81,
+  "max_abs_error": 0.0,
+  "parent_base_commit": "ca02272ae4c5740077c96eb2b3993435c814f444",
+  "native_readonly_commit": "9e2c7a90051e738751aab7d7bd7c2d8201fb76e3",
+  "raw_index": "/Users/pippo/github/binary-eagle-decoding/runs/parallel20261002/export-function-final/index.json",
+  "source_sha256": {
+    "scripts/export_recurrent_binary.py": "2232bf29d25324ca50e8b72e7308d8bb445485793c387fc2af155d4fbe081a2d",
+    "scripts/audit_eagle_w1a1_gguf.py": "a99d3e6331a645506411ad7a606812d5e41509962c1ed979026598a9436a1528",
+    "src/w1a1_eagle/recurrent_qat.py": "f2b6d83b8929807b65b6f21826cc99097a6ddd70f99ff23ca0836aebe4db1224",
+    "src/w1a1_eagle/recurrent_binary.py": "7624fa4486bcb130440cbc6b84c2463af01f0750e0145236063a125ab8b3de06",
+    "src/w1a1_eagle/learned_activation.py": "65b7b0863bb67806991ee4860ce327bf46bfbdf0e8d4e44226aa1ca268e880db",
+    "src/w1a1_eagle/affine_binary.py": "edad3b513413eac5dc027cb949da6ae4e8d3ca4184d66b7d0f97b880c6252ebc",
+    "src/w1a1_eagle/fusion_correction.py": "23247735fc7250c8d74bf7a2a605ba8c71ce0b0b8ccd0a3f22b39414ce8265e2",
+    "research/parallel20261002/export_function/reference/audit.py": "6302d69794300b141e55fd1367818eeb458583a7ffccbb05a2c41ee655746cf7",
+    "tests/test_parallel20261002_export_function.py": "9be47688dab43a727509aeefb5788fceac6b6c6b8a507e0a1c030f2ab26ebede"
+  },
+  "readonly_native_sha256": {
+    "third_party/llama.cpp/src/models/eagle3.cpp": "9a7b44b0fa3719258da03ea01f57954b605020763e0c63bb01fab66523c485d7",
+    "third_party/llama.cpp/ggml/src/ggml-cpu/ggml-cpu.c": "8c07660c792a9ac7475388b08a8b46a2a49c5b6e06b0bc4e3ecef7ead7240dc0",
+    "third_party/llama.cpp/ggml/src/ggml.c": "0a1bad6bccd06bf951914ef2cee8981e9632c3814e94600f0057b61fcdcfdd68",
+    "third_party/llama.cpp/gguf-py/gguf/gguf_reader.py": "d0ea743200e19d7ef0a4c969edcc4a6dba8e3656a790b217e3bdc7b31170718e"
+  },
+  "cases": [
+    {
+      "name": "a1-k33-r1",
+      "bits": 1,
+      "width": 33,
+      "rank": 1,
+      "negative_control_max_delta": 1.2890625,
+      "factor_rounding_max_delta": 1.1457595974206924e-06,
+      "hashes": {
+        "base.gguf": "4b82be6e978527573282ef952f2f4600556bf9ec929aa3684931f402ed8a8855",
+        "joint.npz": "72cf4d0bb9acfd02a64e6b802df8649ec53ddd370d7f713e5430b7f6cc927114",
+        "joint.json": "6e9a07182fcdcf8ffc658b87b02aebfe973322c0149ef0c22fc18b13cb1f9d1c",
+        "model.gguf": "5c9932c8d06e24e3fecced136eb4bfc344f692fb1076258a15b1b43a1cd98855",
+        "midpoint-mutated.gguf": "9a2a591772eee3bb59719d5996fc87fc0e43749bc465866343e60306a32a619f"
+      }
+    },
+    {
+      "name": "a1-k65-r4",
+      "bits": 1,
+      "width": 65,
+      "rank": 4,
+      "negative_control_max_delta": 2.5390625,
+      "factor_rounding_max_delta": 6.684660911560059e-05,
+      "hashes": {
+        "base.gguf": "be8dd989368a41e97107d2fb843d06640e860e5566e88b7afc5b79c4e10d8dd2",
+        "joint.npz": "1ce91be74396e5a58496051b9214e0ed6a323d9a196f81ac91378ab55087aea8",
+        "joint.json": "8daadefcfb2ae37d17783dbb8b0b4ef60f8acff7535a458e2fe59b675d72240f",
+        "model.gguf": "4baf90fe4608705670ae79ee8224196d066287f6888a7ea6e6e9d3824aedbd47",
+        "midpoint-mutated.gguf": "cf8bcc79394dd0f8e1d3a1998adf1d43f42bad77ce9487de9024c1228c931a83"
+      }
+    },
+    {
+      "name": "a1-k130-r4",
+      "bits": 1,
+      "width": 130,
+      "rank": 4,
+      "negative_control_max_delta": 5.078124523162842,
+      "factor_rounding_max_delta": 0.00016379356384277344,
+      "hashes": {
+        "base.gguf": "97da76ec47cca3c04a6bcbadf8ae87291e01af31ebaed630bc78447a956e84e6",
+        "joint.npz": "7ca784b8555bc62e384b3b795a5bbf65a3fe487ebed738be07ee8611346110dd",
+        "joint.json": "f72a64ffd7179c23dff5a2feb6dfdcb02a3ea6dcd3f57420756f8642cf590fc3",
+        "model.gguf": "2341ba2b384681e0ccb27b76fab72a9cff76eecd8a1483447fbf49e634ef156b",
+        "midpoint-mutated.gguf": "abaf467910b03452d15d4c9cbe86fe01bacb450fa919dae64134d17bb1d1a100"
+      }
+    },
+    {
+      "name": "a4-k33-r1",
+      "bits": 4,
+      "width": 33,
+      "rank": 1,
+      "negative_control_max_delta": 0.6832031011581421,
+      "factor_rounding_max_delta": 1.1457595974206924e-06,
+      "hashes": {
+        "base.gguf": "4b82be6e978527573282ef952f2f4600556bf9ec929aa3684931f402ed8a8855",
+        "joint.npz": "72cf4d0bb9acfd02a64e6b802df8649ec53ddd370d7f713e5430b7f6cc927114",
+        "joint.json": "fe3ac3247630947381cf250bb4902da2c13000fe15a9a65b6db9be6c4a0f39ca",
+        "model.gguf": "7c4c5f561edd77005948ed26ae741a689c1f5bc9f327216055115c829b033ab8",
+        "midpoint-mutated.gguf": "56ba9400f5bb0ceadbf646ed0726a78dd647f2e5317be8bf206b1f9fe8bfbc5b"
+      }
+    },
+    {
+      "name": "a4-k65-r4",
+      "bits": 4,
+      "width": 65,
+      "rank": 4,
+      "negative_control_max_delta": 1.345703125,
+      "factor_rounding_max_delta": 6.684660911560059e-05,
+      "hashes": {
+        "base.gguf": "be8dd989368a41e97107d2fb843d06640e860e5566e88b7afc5b79c4e10d8dd2",
+        "joint.npz": "1ce91be74396e5a58496051b9214e0ed6a323d9a196f81ac91378ab55087aea8",
+        "joint.json": "9d6a349339782898bc7213a51c2cac8a385f30dac6d9538e5ff91a7ddb04e240",
+        "model.gguf": "8d3fb907df42d6cec0476c78b8bdead98850e6740e90bdf14fe97822c74404ac",
+        "midpoint-mutated.gguf": "18c08a78e94b2dc272c4eea8f426d99165e70a6791f955d4f33f4acbef593b7c"
+      }
+    },
+    {
+      "name": "a4-k130-r4",
+      "bits": 4,
+      "width": 130,
+      "rank": 4,
+      "negative_control_max_delta": 2.691406488418579,
+      "factor_rounding_max_delta": 0.00016379356384277344,
+      "hashes": {
+        "base.gguf": "97da76ec47cca3c04a6bcbadf8ae87291e01af31ebaed630bc78447a956e84e6",
+        "joint.npz": "7ca784b8555bc62e384b3b795a5bbf65a3fe487ebed738be07ee8611346110dd",
+        "joint.json": "283320516a084212d4bd7fa57ca9e311848fbd286b1973bf3b3ed2c3385034fa",
+        "model.gguf": "729c90a35d597548772cc82b6cef4f716be5e3e73cd563a25a2960587bce7a9c",
+        "midpoint-mutated.gguf": "ba607f529eebc882ad559f34a6c24a2ca610017d30b65239982eb14e8a1149c3"
+      }
+    },
+    {
+      "name": "a8-k33-r1",
+      "bits": 8,
+      "width": 33,
+      "rank": 1,
+      "negative_control_max_delta": 0.6832031011581421,
+      "factor_rounding_max_delta": 1.1457595974206924e-06,
+      "hashes": {
+        "base.gguf": "4b82be6e978527573282ef952f2f4600556bf9ec929aa3684931f402ed8a8855",
+        "joint.npz": "72cf4d0bb9acfd02a64e6b802df8649ec53ddd370d7f713e5430b7f6cc927114",
+        "joint.json": "4024cca0619930a40ed20d623550f79e1955bfda9190ca1548257a757fedc18d",
+        "model.gguf": "a2f2cb5e0dba04c724e6192b052850ed14e9be76c975419f95904e1586c22b66",
+        "midpoint-mutated.gguf": "1734a9c364a0a923b1724195ffe6f7fde964a17affb8ae29db7d043a2b333673"
+      }
+    },
+    {
+      "name": "a8-k65-r4",
+      "bits": 8,
+      "width": 65,
+      "rank": 4,
+      "negative_control_max_delta": 1.345703125,
+      "factor_rounding_max_delta": 6.684660911560059e-05,
+      "hashes": {
+        "base.gguf": "be8dd989368a41e97107d2fb843d06640e860e5566e88b7afc5b79c4e10d8dd2",
+        "joint.npz": "1ce91be74396e5a58496051b9214e0ed6a323d9a196f81ac91378ab55087aea8",
+        "joint.json": "b6ea4823a70a6c2e1f3b5940d0f93fb032a6875decac2be6eaf3f37b393854b8",
+        "model.gguf": "21523f84a6d56c870780262ffe705dec23b5b74cff02387d600a9bd4159a1f40",
+        "midpoint-mutated.gguf": "9bc63fe971b6f0fa4d4b5574bbfc62e0e28d26ef829c485473c731aa01f404ed"
+      }
+    },
+    {
+      "name": "a8-k130-r4",
+      "bits": 8,
+      "width": 130,
+      "rank": 4,
+      "negative_control_max_delta": 2.691406011581421,
+      "factor_rounding_max_delta": 0.00016379356384277344,
+      "hashes": {
+        "base.gguf": "97da76ec47cca3c04a6bcbadf8ae87291e01af31ebaed630bc78447a956e84e6",
+        "joint.npz": "7ca784b8555bc62e384b3b795a5bbf65a3fe487ebed738be07ee8611346110dd",
+        "joint.json": "81526a1f3bbdcd42e93fe7f7fccfd188ac146730e7098c96eb69029d966909b4",
+        "model.gguf": "3d9b1e75c3cbcf4bed4245efc2d7b5a944a6e055d1917c97fc1caacbb0bebc96",
+        "midpoint-mutated.gguf": "eb81498b033428febf73af3d7981f39accf878e7e94a52a7d820463ee3c6afaf"
+      }
+    }
+  ]
+}
