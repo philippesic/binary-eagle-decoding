@@ -2,20 +2,23 @@
 
 ## Latest human authorization
 
-The human assigned chat01a0f934-dd65-7e33-a5bf-0ba591e713a4 responsibility for
-training: monitor the existing dataset-generation owner for GPU release, then
-start validation and later training. This explicitly supersedes the earlier
-preparation-only restriction for this chat **after successful current validation**.
-It does not authorize optimizer updates before validation, interruption of the
-preparation run, changes to frozen target/verifier precision or sealed-final use.
+The human assigned chat01a0f934-dd65-7e33-a5bf-0ba591e713a4 validation and later
+training. New direct human authorization permits early GPU tests during CPU-only
+dataset audit, under a bounded exclusive owner-coordinated validation lease.
+Full preparation completion is no longer a prerequisite for those tests.
+Training still requires all current CUDA/recipe gates and the complete verified
+train/development corpus and final preparation GPU handoff.
 
-The current preparation owner is derived from the acknowledged
-monitor-registration.json coordination_handoff and confirmed against its existing
-heartbeat target. Successorchat01a0fb62-cbdb-72f0-8e86-4055b2ccb4ed currently retains
-RTX5080 until its preparation endpoint and verified release. Its source/native/
-config/data identity stays frozen; it must stop before optimizer updates. The
-training owner uses a new source-bound project/run and audited data ancestry.
-RTX2080Ti remains paused. No training recipe is selected or launched yet.
+Derive the current preparation owner from acknowledged coordination_handoff in
+monitor-registration.json and its matching existing heartbeat target. Current
+ownerchat01a0fb62-cbdb-72f0-8e86-4055b2ccb4ed controls the live preparation job and
+its next GPU phase. It can grant an exclusive validation reservation with fresh
+resource/context/process proof and a reversible live CPU-boundary hold. No
+simultaneous GPU work, source/config/runtime change, kill/restart or repeat audit.
+The preparation job remains --prepare-only. Use new source-bound validation and
+training checkouts/runs; RTX2080Ti remains paused. See
+[early-validation policy](QAT_GPU_AUDIT_OVERLAP.md). No recipe or training launch
+automatically follows from lease grant or a synthetic test pass.
 
 ## Persistent observation
 
@@ -31,12 +34,14 @@ start. An idle chat or completed turn is not GPU release.
 
 ## Release and validation sequence
 
-1. Require successful full preparation, audits, coverage, paired smoke and
-   preparation-ready receipt, zero global/A8/A1 optimizer counters, terminal
-   supervisor, absence of owned process groups and fresh GPU/resource proof.
-   Failure, unavailable SSH, stale observation or incomplete data is not release
-   to training. Derive current paths and IDs from registration, not historical
-   supervisor IDs. Use tmux MCP for every SSH connection.
+1. Validation may start under a verified exclusive early lease before full
+   preparation completion. One owner-coordinated operator checks processes,
+   resident CUDA contexts, GPU/host memory/disk and next GPU phase, then records
+   holder/deadline/teardown conditions. CPU status alone is not GPU availability.
+   If required, the owner holds the verified live preparation child group with
+   SIGSTOP, preserves supervisor and in-memory audit position, and resumes with
+   SIGCONT only after validation's owned groups/contexts are gone. Hold-aware
+   monitoring must not launch failure recovery. No kill/restart/frozen edits.
 2. Assign one GPU operator. Use a separate project checkout/run under the
    registry workdir and published parent/native revisions. Do not update the
    live/frozen preparation directory. Keep native8025a0777 source and actual
@@ -54,7 +59,11 @@ start. An idle chat or completed turn is not GPU release.
    Enabled asymmetric midpoint/sign/learned quantizer/correction/curriculum
    controls must each be covered by current evidence. Do not silently enable an
    unvalidated option or select a purported winner from unmeasured quality.
-6. Start the already-authorized training in a new run after all launch gates
+6. Before training, separately require successful full preparation/audits/
+   coverage/paired smoke/ready receipt/checkpointzero, zero prep optimizer
+   counters, terminal prep supervisor and fresh owned-groups/GPU release proof.
+   Early operator proof or a partial corpus cannot grant training admission.
+   Start the already-authorized training in a new run after all launch gates
    pass. Use detached Linux host tmux with remote_job.py, exact checkpoint/resume,
    sign/midpoint/quantizer diagnostics and Q4_0 development comparison. Verify
    disconnect/reconnect survival once. This heartbeat then follows owned
@@ -113,3 +122,30 @@ Saved owner health06:56:05.023881UTC is healthy/nonterminal,reaudit130/353,
 10,000train/224dev retained,zerooptimizer,no readyreceipt,supervisor08running.
 The GPU job remains the same; supervision rotation is not release. No remote
 query/sourcechange/training action occurred on this routine handoff observation.
+
+
+## Initial early validation plan
+
+Requested reservationIDprep08-validation-20261002, max90minutes from verifiedhold;
+preparation owner controls the ONE preflight/hold/resource operator. Root accepts
+SIGSTOP of the verified live preparation child PGID as the reversible guard.
+Current native tests/source8025a0777 and parent7b0ef42 are published. New validation
+operator is locally prepared; execution requires the explicit stopped-state and
+resource-proof grant. It owns only a separate immutable checkout/build/run.
+Compilerparallelism<=2; reserve>=10minutes for teardown before leaseexpiry.
+
+Initial floors: hostMemAvailable>=14GiB, GPUfree>=12GiB, diskfree>=8GiB; runtime
+host>=2GiB, Torchreserved<=12GiB and GPU residualfree>=1GiB. Resource admission
+is measured for each phase; no full-model fit claim from a small fixture. First
+serial tests are test-eagle3-learned --backendCUDA --json-reportNEW and
+ test-backend-ops -bCUDA -oW1A1_MUL_MAT; raw CUDA/operator evidence remains
+synthetic scope. Actual-model decision/backward/memory tests require independently
+audited eligible unsealed TRAIN operands. No incomplete fullcorpus promotion.
+
+Root's SAME ACTIVE15min heartbeat now distinguishes earlyvalidationlease from
+latertrainingadmission; no duplicate schedule. Exact plan/pendinggrant fields
+live in ignored runs/qat-optimization-readiness/early-validation-plan-20261002.json
+and training-handoff-registration.json. Leaseproof lives in preparation's ignored
+gpu-validation-lease.json. Preserve failures and return lease promptly after
+bounded tests, proving all owned validation groups/GPU contexts gone before
+preparation owner's SIGCONT. Renew only by explicit coordination.

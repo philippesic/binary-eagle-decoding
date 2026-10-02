@@ -2,15 +2,19 @@
 
 ## Current boundary
 
-Latest human instruction assigns this chat validation and later training after
-verified GPU release by the dataset-generation owner. See
+Latest human instruction permits early GPU validation during CPU-only dataset
+audit under a bounded exclusive reservation coordinated with the dataset owner.
+See [early-validation policy](QAT_GPU_AUDIT_OVERLAP.md). Training still waits for
+complete verified data and final GPU handoff. See
 [training handoff](QAT_TRAINING_HANDOFF.md). During validation, zero real-data
 optimizer updates are allowed; after current launch gates pass, training is
 explicitly authorized without another confirmation. The old preparation-only
 restriction is superseded for that transition. Existing frozen preparation
 remains --prepare-only and must not be interrupted or changed.
 
-RTX5080 is resumed but owned by the preparation agent until verified release;
+RTX5080 is resumed and preparation-owned; new validation requires an explicit
+exclusive lease with fresh occupancy/resources and next-phase guard, or verified
+final release;
 RTX2080Ti remains paused. Read docs/STATUS.md and the shared host registry before
 remote action. Every SSH connection goes through tmux MCP. Respect newer human
 pause/stop instructions immediately; preserve frozen precision/data and sealed
@@ -47,7 +51,8 @@ make a test pass.
 
 ## Native and actual CUDA proof
 
-After human resume and ownership assignment, the sole operator creates a separate project worktree
+After explicit verified exclusive lease or final GPU release, the sole operator
+creates a separate source-bound project worktree
 under the registry workdir and a unique run directory. Fetch published parent
 and native commits through Git. Build a new CUDA runtime with the actual RTX5080
 architecture and record toolkit, compiler, driver, native/project revision,
@@ -128,7 +133,8 @@ Default CLI validates without model/CUDA work. Explicit `--start --allow-cuda
 checkpoint. `check_curriculum_qat_readiness.py` produces a distinct single-model measured
 receipt for the complete ordered schedule, with strict every-stage backward,
 resident optimizer memory, warmup/five measured repetitions and unchanged state.
-Default invocation is a CPU-only plan. Actual execution awaits preparation-owner release; independent A4/provider/native proof is required before publication.
+Default invocation is a CPU-only plan. Actual validation execution requires an exclusive owner-coordinated lease or final
+release; independent A4/provider/native proof is required before publication.
 The actual optimizer path also requires this measured receipt bound to the
 whole schedule, not just an isolated stage. Real optimizer updates require all current gates and the latest training
 authorization recorded in the handoff.
