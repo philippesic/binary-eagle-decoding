@@ -149,3 +149,43 @@ and training-handoff-registration.json. Leaseproof lives in preparation's ignore
 gpu-validation-lease.json. Preserve failures and return lease promptly after
 bounded tests, proving all owned validation groups/GPU contexts gone before
 preparation owner's SIGCONT. Renew only by explicit coordination.
+
+
+## Actual CUDA attempt and preparation handback
+
+The first exclusive reservation held the same preparation process at audit244.
+Actual native8025 build completed on RTX5080/SM120, driver616.92,CUDA13.1.115,
+GCC15.2,CMake3.31.10. A private copied CUDA include overlay changed only two
+rsqrt exception declarations; originaltoolkit headers/arithmetic unchanged,
+compile/link probe and private include-selection passed. Its hashes/diff and
+all tool paths are retained with actual build/binary hashes in ignored
+runs/qat-optimization-readiness/early-cuda-20261002.
+
+First actual test-eagle3-learned --backendCUDA at08:56:45UTC failed **pack beta
+mismatch**. The incomplete JSON was correctly rejected as readiness evidence.
+No backend-ops/actual-model/optimizer/data/final work followed. Native diagnostic
+1284d46a3b91aa3ad7bba152dd656bb49b6e5327 and parent e0ec292 were published after
+unchanged CPU fixture checks; they improve failure capture without arithmetic or
+gate changes. The attempted diagnostic did not reach the fixture because its
+launcher used a wrong private-overlay sibling path. Exact failing beta values
+and root cause remain unknown; FTZ is a hypothesis, not a verified conclusion.
+
+All fourteen validation groups and CUDA contexts were proven gone. Preparation
+owner verified all19releasechecks and issued exactly one SIGCONT at
+2026-10-02 09:27:19.132939UTC to original676/startticks85132. Audit244→245 and
+post45secondCPUhealth passed with zerooptimizer; no restart/re-audit/sourcechange.
+Lease returned_resumed; preparation again owns5080. Raw return proof is ignored
+lease-return-operation-20261002.json and its receiptSHA
+ d7b074e8c00cbf9be37399bbebe60f0757aba06595987c11ec0321e76ea3ac16.
+
+Root then supplied and reviewed a thin CPU-only diagnostic preparation helper
+with the correct absolute overlay path. It executed unchanged and passed at
+09:37:35UTC, updated only the separate validation checkout to e0ec292/native1284,
+compiled onlytest-eagle3-learned, and made no GPU queries/context/test/data access.
+The ready binary SHA256 is
+0d31447f3401e5b6434195148a60f2a992cadad0ae403dbeb9e8046f5c5b6e35.
+A NEWshort<=10minute exclusive reservation was requested only after this binary
+was ready. This slot is for the prebuilt fixture under120secondtimeout, with no
+checkout or compilation during hold. Execution awaits a new explicit verified
+grant; the old lease cannot be reused. All full-data/currentrecipe gates still
+apply before QAT; no optimizer updates or CUDA-ready claim.
