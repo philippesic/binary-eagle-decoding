@@ -80,6 +80,31 @@ reviewed packet only after renewed owner authorization and fresh safe exclusive
 preflight. Consume its result; preserve any failure. Continue protected owner
 supervision and restart needs through credits and allowance reset.
 
+### Fresh preflight closed — 18:40:51 UTC
+
+The SAME preparation Luna verified the packet and ownership records, opened a
+persistent local execution connection, and submitted the exact registered 3,811
+byte CPU query once through tmux MCP. SSH exited 255 with a connection timeout
+before the remote checker/Windows-to-WSL bridge. No remote checker, staging,
+controller, hold, fixture, GPU query, signal, retry, or recovery occurred.
+Remote health remains UNKNOWN; retain the historical 14:06 UTC remote baseline.
+
+Raw MCP evidence is
+`health-observation-atomic05-preflight-raw-mcp-20261002.json`, SHA256
+`53b5fdc71970d4b8667e719c05b4875759141b3aa22299d006b50fd1a380a4cd`,
+under the existing ignored preparation run. Updated observation records the
+owned keeper stopped and LOCAL199 transport closed/session absence verified.
+The initial cleanup-pending observation is superseded by that completed proof.
+Lease readback now records operator inactive/completed and fixture GO inactive;
+the source packet is preserved, but a future acquisition needs fresh coordination.
+Both protected monitors remain ACTIVE; no GPU availability or training failure
+claim follows from the timeout.
+
+Next scheduled preparation tick may make its single registration-bound check
+under the existing sole-operator rules. Successful connection and fresh exclusive
+proof still precede any CUDA retest. The QAT owner recorded the learned-head risk
+below as a training gate; packing-fixture scope is unaffected.
+
 Integration: checkpoint/report branch `feature/qat-priority-20261002` in
 `/private/tmp/eagle-qat-priority-20261002`; orchestrator should integrate the report
 and link it from the existing active goal/status. Shared goal/status edits remain
