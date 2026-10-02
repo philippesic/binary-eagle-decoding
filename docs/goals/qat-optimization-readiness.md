@@ -808,3 +808,33 @@ exclusive GPUreservation only oncebinaryready; no oldlease or concurrent GPUwork
 Fullverifiedcorpus/currentrecipe gates and exclusivehandoff still precede real
 training. Parent owns this commonresumecheckpoint; QATowner owns helper/build/
 fixture evidence and heartbeat. No newhuman confirmation is required.
+
+
+## Exact GPU packing failure case obtained — October2 09:50UTC
+
+CorrectedthinCPUhelper succeeded09:37:35 before anynewhold: diagnostic-only
+native1284/parent e0ec292, prebuiltbinarySHA0d31447f prefix indexed byQATowner,
+CPUjob8289/8291exit0/groupsgone/noGPUquery ordata/model work. QATowner requested
+andused a separate<=10minuteexclusive slot for onlyprebuiltCUDAfixture, under
+120secondtimeout/newremote_job; no checkout/compilation duringhold. Old90minute
+lease remainedclosed; preparationowner supplied the newreservation.
+
+Actual native1284 CUDAfixture case: activationbits1, affinefalse,learnedtrue,
+variant0,delta0,clip1,k33,n4,token2 with minimumpositive/negative F32subnormals.
+Expected beta little-endianhex01000000 =2^-149; nativehex00000000 =0.
+ReferenceF64absolute_sum4.624284932271896e-44. ExactrawcaseJSONSHA04779ffd prefix
+withsuffix6a7ff5 retained byQATowner. This is the first exactnumericalcase; earlier
+privateoverlay path mistakes neverreachedfixture and do not establish a cause.
+
+Probejobqat-beta-exact-probe-20261002-01, supervisor8656/child8658 finishedexit1.
+Fresh09:50:25.463UTC groupsgone/GPUcomputeappsempty,free12769MiB,
+hostavailable19040776kB. QATowner explicitlyreturned shortlease and requested
+prepowner's onefreshidentity/releaseproof andsameprocessSIGCONT before09:55:20.
+Parent has not yet received thatnewresumeproof. No furtherGPUwork in thisslot.
+
+Concrete risk is loss of subnormalactivation scale at learnedA1packing. QATowner
+will implement a targeted FTZ-safe precision fix and CPUchecks outsideheldaudit,
+then seek freshactualCUDAoperator/recurrent/model gates. Preserve exactbeta gate,
+sourceancestry and alloriginalfailures; no passingreadiness/QATupdate orgeneral
+realfeature failure is inferred from thissingleedgecase. Preparationmonitor/data
+ownership remains withprepowner; no autonomousGPUuse without freshreservation.

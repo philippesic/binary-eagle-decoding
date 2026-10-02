@@ -20,11 +20,12 @@ verified data/current gates and GPU handoff. [Overlap policy](QAT_GPU_AUDIT_OVER
 (02:27PDT), one SIGCONT resumed exact child676/startticks85132, audit244→245.
 All19release checks passed, all14validation process groups gone, GPUempty and
 frozen identities unchanged; post45sCPUhealth healthy/zerooptimizer. No restart
-or audit reset. Preparation again owns RTX5080;2080Ti paused. Actual CUDA build
-succeeded but firstfixture failed `pack beta mismatch`; exactcase/repair and
-readiness remain unproved. QAT owner is preparing a corrected diagnostichelper
-and CPU-only incremental build in its separate checkout whileauditcontinues;
-GPUtests require a new bounded exclusive reservation oncebinaryready. QAT waits
+or audit reset. Preparation again owns RTX5080;2080Ti paused. Actual CUDA build succeeded; a short subsequent GPU probe identified the
+packing failure: learned A1 at minimumfloat32 subnormals returns beta0 instead
+of2^-149. A targeted precision fix is being prepared without weakening the exact
+gate; fullCUDA/native/model readiness remains unproved. Probegroups8656/8658gone
+and GPUempty verified09:50:25UTC; shortlease explicitlyreturned, exactliveprep
+resume for that lease awaits ownerproof. FurtherGPUtests require newreservation. QAT waits
 for fullverifieddata and currentpassinggates. Both existing15minmonitors ACTIVE.
 [Handback checkpoint](goals/qat-optimization-readiness.md#early-validation-lease-closed-and-cpu-audit-resumed--october2).
 The readiness objective remains incomplete.
