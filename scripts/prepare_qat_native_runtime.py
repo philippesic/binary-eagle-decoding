@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import os
 import re
@@ -335,7 +336,9 @@ def _dynamic_paths(text, object_path, build, *, required=False, allowed_roots=()
     return result
 
 
-def _dependencies(text, bin_dir, inventory):
+def _dependencies(
+    text, bin_dir, inventory, *, package_names=(), original_build=None, allowed_roots=()
+):
     if "not found" in text:
         raise ValueError("runtime dependency is missing")
     result = []
@@ -353,16 +356,38 @@ def _dependencies(text, bin_dir, inventory):
         if not path.is_absolute():
             raise ValueError("ldd dependency has no absolute path")
         resolved = path.resolve(strict=True)
-        if LIBRARY.fullmatch(name) or LIBRARY.fullmatch(resolved.name):
+        project = LIBRARY.fullmatch(name) or LIBRARY.fullmatch(resolved.name)
+        if package_names:
+            project = project or name in package_names or resolved.name in package_names
+            project = project or resolved.is_relative_to(bin_dir)
+            if original_build is not None and resolved.is_relative_to(original_build):
+                raise ValueError("packaged dependency resolves to the original build")
+        if project:
             inside(resolved, bin_dir, "resolved llama/ggml dependency")
             if name.split(".so")[0] != resolved.name.split(".so")[0]:
                 raise ValueError("resolved project dependency basename differs")
             if str(resolved) not in inventory:
                 raise ValueError("resolved project dependency is absent from inventory")
+        elif package_names:
+            system = (Path("/usr/lib/x86_64-linux-gnu"), Path("/usr/lib/wsl/lib"))
+            roots = tuple(Path(p).resolve() for p in (*allowed_roots, *system))
+            if not any(resolved.is_relative_to(root) for root in roots):
+                raise ValueError(
+                    "packaged dependency resolves outside approved system/toolkit roots"
+                )
         result.append({"name": name, "path": str(resolved)})
     if not result:
         raise ValueError("ldd returned no dynamic dependency records")
     return result
+
+
+def _packaging_tool():
+    spec = importlib.util.spec_from_file_location(
+        "qat_runtime_package", Path(__file__).with_name("prepare_qat_runtime_package.py")
+    )
+    packaging = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(packaging)
+    return packaging
 
 
 def inspect_runtime(
@@ -377,6 +402,8 @@ def inspect_runtime(
     allowed_runtime_roots=(),
     existing_build_proof=None,
     existing_build_proof_sha256=None,
+    runtime_package=None,
+    runtime_package_sha256=None,
 ):
     """Read explicit source/build artifacts and inspect ELF; never run a server."""
     if not COMMIT.fullmatch(expected_parent) or not COMMIT.fullmatch(expected_native):
@@ -386,6 +413,7 @@ def inspect_runtime(
     build = Path(build_dir).resolve(strict=True)
     bin_dir = (build / "bin").resolve(strict=True)
     server = inside(bin_dir / "llama-server", bin_dir, "server")
+    original_server = server
     allowed_roots = tuple(sorted({Path(p).resolve(strict=True) for p in allowed_runtime_roots}))
     if any(not p.is_dir() for p in allowed_roots):
         raise ValueError("allowed runtime roots must be explicit existing directories")
@@ -402,6 +430,23 @@ def inspect_runtime(
             expected_native,
         )
     regeneration = None
+    if (runtime_package is None) != (runtime_package_sha256 is None):
+        raise ValueError("runtime package and SHA-256 must be supplied together")
+    package = None
+    if runtime_package is not None:
+        if known_build is None:
+            raise ValueError("runtime package requires existing original build proof")
+        packaging = _packaging_tool()
+        package = packaging.verify_package(
+            runtime_package,
+            runtime_package_sha256,
+            checkout,
+            build,
+            expected_parent,
+            expected_native,
+        )
+        bin_dir = Path(package["directory"])
+        server = inside(bin_dir / "llama-server", bin_dir, "packaged server")
 
     def git(directory, *args):
         return runner(["git", "-C", str(directory), *args]).strip()
@@ -502,8 +547,20 @@ def inspect_runtime(
     facts["w1a1_arguments"] = compiled["w1a1"]["arguments"]
     libraries = {}
     aliases = []
+    library_names = set()
+    if package:
+        library_names = {
+            Path(item["copy"]["path"]).name
+            for item in package["files"]
+            if ".so" in Path(item["copy"]["path"]).name
+        }
     for path in sorted(bin_dir.iterdir()):
-        if not LIBRARY.fullmatch(path.name):
+        is_library = LIBRARY.fullmatch(path.name)
+        if package:
+            is_library = (
+                path.name in library_names or package["aliases"].get(path.name) in library_names
+            )
+        if not is_library:
             continue
         resolved = inside(path, bin_dir, "library symlink")
         if not resolved.is_file():
@@ -518,9 +575,11 @@ def inspect_runtime(
             for r in facts["libraries"]
             if Path(r["path"]).name.startswith("libggml-cuda.so")
         )
+        if package:
+            cuda = build / "bin" / cuda.name
         if cuda.stat().st_mtime_ns < Path(compiled["w1a1"]["object"]["path"]).stat().st_mtime_ns:
             raise ValueError("CUDA backend predates the inspected w1a1 object")
-    if server.stat().st_mtime_ns < max(
+    if original_server.stat().st_mtime_ns < max(
         Path(compiled[k]["object"]["path"]).stat().st_mtime_ns
         for k in ("server", "server_impl", "build_info")
     ):
@@ -535,13 +594,29 @@ def inspect_runtime(
                 raise ValueError("runtime artifact must be an ELF file")
         dynamic = runner(["readelf", "-d", str(path)])
         search = _dynamic_paths(
-            dynamic, path, build, required=path == server, allowed_roots=allowed_roots
+            dynamic,
+            path,
+            bin_dir if package else build,
+            required=path == server,
+            allowed_roots=allowed_roots,
         )
         ldd = runner(["ldd", str(path)])
-        dependencies = _dependencies(ldd, bin_dir, libraries)
+        package_names = ()
+        if package:
+            package_names = tuple(library_names | set(package["aliases"]))
+        dependencies = _dependencies(
+            ldd,
+            bin_dir,
+            libraries,
+            package_names=package_names,
+            original_build=build if package else None,
+            allowed_roots=allowed_roots,
+        )
         for dependency in dependencies:
             dependency_path = Path(dependency["path"])
-            if any(dependency_path.is_relative_to(root) for root in allowed_roots):
+            if (package and str(dependency_path) not in libraries) or any(
+                dependency_path.is_relative_to(root) for root in allowed_roots
+            ):
                 runtime_dependencies.setdefault(str(dependency_path), record(dependency_path))
         if path == server or path.name.startswith("libllama-common.so"):
             rodata = runner(["readelf", "--string-dump=.rodata", str(path)])
@@ -576,6 +651,11 @@ def inspect_runtime(
         + [server_record]
         + [v[k] for v in compiled.values() for k in ("source", "object")]
         + (
+            package["original_files"] + package["evidence"] + [package["manifest"]]
+            if package
+            else []
+        )
+        + (
             [known_build[k] for k in ("proof", "provenance", "native_report", "native_validation")]
             + [{"path": p, "sha256": h} for p, h in known_build["runtime_files"].items()]
             if known_build
@@ -586,6 +666,15 @@ def inspect_runtime(
             raise ValueError("source/build/runtime file changed during inspection")
     if any(str(Path(a["path"]).resolve(strict=True)) != a["resolved_path"] for a in aliases):
         raise ValueError("runtime symlink changed during inspection")
+    if package:
+        packaging.verify_package(
+            runtime_package,
+            runtime_package_sha256,
+            checkout,
+            build,
+            expected_parent,
+            expected_native,
+        )
     if (
         git(checkout, "rev-parse", "HEAD") != expected_parent
         or git(native, "rev-parse", "HEAD") != expected_native
@@ -625,6 +714,7 @@ def inspect_runtime(
         "artifacts": artifacts + list(response_records.values()),
         "compiled": compiled,
         "commands_regeneration_proof": regeneration,
+        "runtime_package": package,
         "dynamic_observations": observations,
         "allowed_runtime_roots": [str(p) for p in allowed_roots],
         "allowed_runtime_dependency_artifacts": list(runtime_dependencies.values()),
@@ -641,6 +731,16 @@ def write_inventory(manifest, output):
     output = Path(output).absolute()
     if output.exists():
         raise FileExistsError("runtime inventory output already exists")
+    package = manifest.get("runtime_package")
+    if package:
+        _packaging_tool().verify_package(
+            package["manifest"]["path"],
+            package["manifest"]["sha256"],
+            Path(manifest["checkout"]),
+            Path(manifest["build_directory"]),
+            manifest["parent_commit"],
+            manifest["native_commit"],
+        )
     for item in [
         manifest["binary"],
         *manifest["libraries"],
@@ -681,6 +781,8 @@ def main(argv=None):
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--existing-build-proof", type=Path)
     parser.add_argument("--existing-build-proof-sha256")
+    parser.add_argument("--runtime-package", type=Path)
+    parser.add_argument("--runtime-package-sha256")
     parser.add_argument(
         "--allowed-runtime-root",
         type=Path,
@@ -704,6 +806,8 @@ def main(argv=None):
         allowed_runtime_roots=args.allowed_runtime_root,
         existing_build_proof=args.existing_build_proof,
         existing_build_proof_sha256=args.existing_build_proof_sha256,
+        runtime_package=args.runtime_package,
+        runtime_package_sha256=args.runtime_package_sha256,
     )
     runtime = write_inventory(manifest, args.output)
     print(

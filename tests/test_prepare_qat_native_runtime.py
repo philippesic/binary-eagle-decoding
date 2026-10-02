@@ -7,10 +7,12 @@ import io
 import json
 import os
 import shlex
+import shutil
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -209,6 +211,112 @@ class NativeRuntimeInventoryTests(unittest.TestCase):
         path.write_text(json.dumps(proof))
         os.utime(f.build / "compile_commands.json", ns=(4 * 10**9, 4 * 10**9))
         return dict(existing_build_proof=path, existing_build_proof_sha256=tool.sha256(path))
+
+    def test_verified_package_selects_typed_closure_without_admitting_old_paths(self):
+        kwargs = self.existing_build_proof()
+        package_dir = self.root / "verified-package"
+        package_dir.mkdir()
+        for path in self.fixture.bin.iterdir():
+            if not path.is_symlink():
+                shutil.copyfile(path, package_dir / path.name)
+        for name in ("libmtmd.so", "libllama-server-impl.so"):
+            (package_dir / name).write_bytes(b"\x7fELF" + name.encode())
+        manifest_path = package_dir / "package-manifest.json"
+        manifest_path.write_text("{}")
+        package = dict(
+            directory=str(package_dir),
+            manifest=tool.record(manifest_path),
+            aliases={},
+            files=[
+                {"copy": tool.record(p)}
+                for p in package_dir.iterdir()
+                if p.name != "package-manifest.json"
+            ],
+            original_files=[],
+            evidence=[],
+            requires_fresh_native_validation=True,
+        )
+        fake = SimpleNamespace(verify_package=lambda *args: package)
+        kwargs.update(
+            runtime_package=manifest_path,
+            runtime_package_sha256=tool.sha256(manifest_path),
+            allowed_runtime_roots=[self.root],
+        )
+
+        def runner(argv):
+            if argv[0] == "readelf" and "-d" in argv:
+                return "0x01 (RUNPATH) Library runpath: [$ORIGIN]\n"
+            if argv[0] == "ldd":
+                return (
+                    "libllama.so.1 => "
+                    + str(package_dir / "libllama.so.1")
+                    + " (0x01)\nlibstdc++.so.6 => "
+                    + str(self.fixture.system)
+                    + " (0x02)\n"
+                )
+            return self.fixture.runner(argv)
+
+        with patch.object(tool, "_packaging_tool", return_value=fake):
+            manifest = tool.inspect_runtime(
+                self.fixture.checkout, self.fixture.build, PARENT, NATIVE, runner=runner, **kwargs
+            )
+        self.assertIn(str(package_dir / "libmtmd.so"), [r["path"] for r in manifest["libraries"]])
+        self.assertIn(
+            str(package_dir / "libllama-server-impl.so"), [r["path"] for r in manifest["libraries"]]
+        )
+        self.assertEqual(manifest["binary"]["path"], str(package_dir / "llama-server"))
+        self.assertFalse(manifest["readiness_granted"])
+        self.assertTrue(manifest["runtime_package"]["requires_fresh_native_validation"])
+        old = self.fixture.bin / "libllama.so.1"
+        inventory = {str(package_dir / "libllama.so.1"): tool.record(package_dir / "libllama.so.1")}
+        with self.assertRaisesRegex(ValueError, "original build"):
+            tool._dependencies(
+                "libllama.so.1 => " + str(old) + " (0x01)",
+                package_dir,
+                inventory,
+                package_names=("libllama.so.1",),
+                original_build=self.fixture.build,
+            )
+
+    def test_package_dependencies_reject_unapproved_system_paths(self):
+        with self.assertRaisesRegex(ValueError, "approved system/toolkit"):
+            tool._dependencies(
+                "libstdc++.so.6 => " + str(self.fixture.system) + " (0x01)",
+                self.fixture.bin,
+                {},
+                package_names=("libmtmd.so",),
+                original_build=self.fixture.build,
+            )
+
+    def test_package_cannot_mask_stale_original_server(self):
+        kwargs = self.existing_build_proof()
+        package_dir = self.root / "fresh-copy"
+        package_dir.mkdir()
+        for p in self.fixture.bin.iterdir():
+            if not p.is_symlink():
+                shutil.copyfile(p, package_dir / p.name)
+        manifest_path = package_dir / "package-manifest.json"
+        manifest_path.write_text("{}")
+        os.utime(self.fixture.bin / "llama-server", ns=(0, 0))
+        fake = SimpleNamespace(
+            verify_package=lambda *args: dict(
+                directory=str(package_dir),
+                files=[
+                    {"copy": tool.record(p)}
+                    for p in package_dir.iterdir()
+                    if p.name != "package-manifest.json"
+                ],
+                aliases={},
+                original_files=[],
+                evidence=[],
+                manifest=tool.record(manifest_path),
+            )
+        )
+        with patch.object(tool, "_packaging_tool", return_value=fake):
+            with self.assertRaisesRegex(ValueError, "server predates inspected"):
+                self.fixture.inspect(
+                    runtime_package=manifest_path, runtime_package_sha256="0" * 64, **kwargs
+                )
 
     def test_existing_proof_only_admits_regenerated_commands_timestamp(self):
         kwargs = self.existing_build_proof()
