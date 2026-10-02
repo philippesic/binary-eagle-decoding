@@ -12,8 +12,10 @@ and memory/timing remain unverified. [Integration report](../experiments/qat-opt
 All12 profile preparation/planning CLIs also pass on the published checkout;
 [completion audit](../experiments/qat-optimization-readiness/12-completion-audit.md)
 records requirement-specific CPU proof and missing GPU evidence.
-Both GPUs remain explicitly PAUSED; zero real-data optimizer updates. The goal
-is open pending a new human GPU resume and measured readiness gates.
+Both GPUs remain explicitly PAUSED; zero real-data optimizer updates. Native
+Goal status is **blocked** after the same pause prevented required GPU gates
+for three consecutive goal turns. Resume requires a new human GPU instruction
+and sole-operator assignment; the full objective remains incomplete.
 
 **Existing corpus preparation pause:** Verified **2026-10-01 23:15:28 UTC** (4:15 p.m. PDT): supervisor07 interrupted/exit0,owned groups1204/1205 absent,no project processes or GPU compute apps. Retained327completed manifests /10,000train /224of1,002dev,zeroQATsteps; preparation remains incomplete. Data/partials/stop-before-QAT boundary preserved. No auto-resume until new human resume instruction.
 **Historical preparation observation before pause:** [joint binary EAGLE body and head](goals/recurrent-binary-body-head.md), Phase 1 of the [one-bit research plan](W1_RESEARCH_PLAN.md). **Preparation-only RTX5080 run healthy; QAT optimizer updates disabled.** User endpoint is complete data/QAT prep, then stop. At **2026-10-01 20:44:55 UTC** (1:44 p.m. PDT), supervisor07 passed post-disconnect CPU health and live cmdline includes --prepare-only; server1203/supervisor1204/child1205 verified. Retained327manifests /10,000train /224dev,zerooptimizer; re-audit ordinal1/353 is not lost data. Same capture/audit/readiness/coverage/paired CUDA smoke and initial zero-update save precede automatic exit before optimizer loop. Existing15min monitorACTIVE with prep-only prompt; budget1of2 unchanged. Only launcher stopping control changed; math/native/runtime/config/data/precision/nullcaps and finals remain frozen. RTX2080Ti paused. See latest scope checkpoint.

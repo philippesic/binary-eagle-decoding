@@ -270,3 +270,23 @@ consecutive goal turn2(counting original implementation turn); no live process
 wait. Current goal remains active. No remote query,host action,model/data/final
 read or real optimizer update occurred. Next meaningful endpoint action requires
 NEW human GPU resume and sole-owner assignment; do not automatically restart.
+
+
+## Blocked checkpoint
+
+The previous turn was progress: actual preparation/planning CLI checks for all12
+profiles and published requirement auditbd88554. This continuation revalidated
+clean mainbd88554, the audit, native Goal state and both durable host pause flags.
+The same human GPU pause has now blocked required actual CUDA evidence across
+three consecutive goal turns, counting the original implementation turn. No live
+job handle is being waited on; no remote query or experiment occurred.
+
+Native Goal tool returned **blocked**. CPU implementation,952tests/fourskips,
+native CPU fixtures and executable plans are preserved. Completion remains
+unproven for CUDA compilation/packing,full-model backward,native decisions,
+memory/timing,larger-batch measurements and every-stage fresh eligible providers.
+There is no remaining meaningful independent CPU action toward those measured
+requirements. The scope and no-real-data-update/final/precision boundaries remain
+unchanged. Resume only after NEW human GPU authorization and sole-operator
+assignment; start a fresh blocked audit if the goal is resumed. Runbook and
+report12 give the exact next gates. No automatic GPU/monitor restart.
