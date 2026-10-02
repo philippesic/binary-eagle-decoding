@@ -21,7 +21,12 @@ Acceptance checks: copied actual helper bytes change the runtime hash with the
 adapter disabled; a missing helper file fails runtime generation; base and
 curriculum helper hashes agree; a complete default-recipe synthetic receipt
 passes; receipt omission, mutual map omission and changed current hash fail.
-Initial owner checks pass 41/41 with continuous and curriculum runner guards.
+Owner checks pass 9/9; the combined reproduction passes 59/59 with existing
+continuous/curriculum guards, readiness guards and the independent Luna checks.
+An actual copied-helper byte mismatch rejects continuous resume before
+`torch.load`. A synthetic CUDA launch through the public readiness adapter
+rejects a helper mismatch before optimizer execution, parameter mutation or
+checkpoint publication; all hardware queries in this check are mocked.
 The legacy readiness fixture has only `stub_math.py`; a scoped complete-source
 fixture alignment passes its 11/11 existing guard tests. Its source is preserved;
 integration must align historical synthetic fixtures with the stricter contract.
@@ -35,5 +40,17 @@ PYTHONPATH=src:tests:.:/Users/pippo/github/binary-eagle-decoding/third_party/lla
 The JSON stdout is a source/test proof, never a measured readiness receipt.
 Environment: macOS arm64, PyTorch 2.14, CPU, one Torch thread, tiny synthetic
 models. No GPU/Metal/SSH, weights, captures, datasets or held-out/final evaluation.
-Independent Luna resume/training closure checks are pending at this checkpoint.
+Independent Luna commit `16e78b5` passes 5/5: actual helper hashing, mutually
+omitted maps, complete receipt, malformed digest and curriculum resume rejection
+before parameters/optimizer/RNG/phase/update restoration. Its report is
+`independent-cpu-01.md`; raw log SHA-256 is
+`6aac5942de82ec60222fcdb3d0f3237b40026d9553a31df3236daebc13bc2621`.
+Implementation commit is `7808e02`. The imported feature files
+`activation_reuse.py`, `learned_activation.py` and `native_step.py` are unchanged
+byte-for-byte from `f027609`; `source-proof.json` records their hashes. Source
+edits comprise seven lines in the three assigned inventory/readiness files.
+Ruff and `git diff --check` pass. Integration requires root/QAT review plus
+historical synthetic-fixture alignment; any future measured CUDA receipt must
+be regenerated for the resulting source identity. This grants no live admission
+and does not block the independently frozen simplest-recipe preparation.
 No persistent process or allocated device remains after owner checks.

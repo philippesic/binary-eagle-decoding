@@ -27,6 +27,6 @@
     "native_step.py": "5be7faa64ff49214c2ce44d5f47d9a0c933e412da1c0ac359fa944a4bba1c634"
   },
   "receipt_scope": "synthetic CUDA schema context only; no actual GPU admission",
-  "tests_run": 52,
+  "tests_run": 59,
   "torch_version": "2.14.0"
 }

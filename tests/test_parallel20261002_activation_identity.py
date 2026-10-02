@@ -7,6 +7,7 @@ import tempfile
 import unittest
 from dataclasses import replace
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 import test_qat_readiness as fixtures
@@ -40,8 +41,11 @@ class ActivationIdentityTests(unittest.TestCase):
             after = continuous_runtime.training_runtime_identity("cpu", source_root=root)
         self.assertNotEqual(before, after)
         self.assertEqual(
-            [name for name in before["math_source_sha256"]
-             if before["math_source_sha256"][name] != after["math_source_sha256"][name]],
+            [
+                name
+                for name in before["math_source_sha256"]
+                if before["math_source_sha256"][name] != after["math_source_sha256"][name]
+            ],
             [HELPER],
         )
 
@@ -64,7 +68,8 @@ class ActivationIdentityTests(unittest.TestCase):
             with (
                 mock.patch.object(qat_curriculum_runner, "__file__", str(root / "runner.py")),
                 mock.patch.object(
-                    qat_curriculum_runner, "training_runtime_identity",
+                    qat_curriculum_runner,
+                    "training_runtime_identity",
                     side_effect=lambda device: continuous_runtime.training_runtime_identity(
                         device, source_root=root
                     ),
@@ -86,8 +91,9 @@ class ActivationIdentityTests(unittest.TestCase):
         )
         self.assertFalse(optimization_requires_receipt(config))
         context = copy.deepcopy(fixtures.CONTEXT)
-        context["runtime_identity"]["math_source_sha256"] = continuous_runtime\
-            .training_runtime_identity("cpu")["math_source_sha256"]
+        context["runtime_identity"]["math_source_sha256"] = (
+            continuous_runtime.training_runtime_identity("cpu")["math_source_sha256"]
+        )
         with mock.patch.dict(fixtures.CONTEXT, context, clear=True):
             receipt = fixtures.synthetic_receipt(config)
         if mutate:
@@ -96,9 +102,13 @@ class ActivationIdentityTests(unittest.TestCase):
             path = Path(folder) / "CPU_SCHEMA_FIXTURE.json"
             data = json.dumps(receipt).encode()
             path.write_bytes(data)
-            config = replace(config, optimization_readiness={
-                "path": str(path), "sha256": hashlib.sha256(data).hexdigest()
-            })
+            config = replace(
+                config,
+                optimization_readiness={
+                    "path": str(path),
+                    "sha256": hashlib.sha256(data).hexdigest(),
+                },
+            )
             return validate_optimization_readiness(config, **context)
 
     def test_complete_default_recipe_receipt_passes(self):
@@ -122,8 +132,105 @@ class ActivationIdentityTests(unittest.TestCase):
 
     def test_receipt_helper_omission_rejected_against_complete_context(self):
         with self.assertRaisesRegex(ValueError, "training_runtime differs"):
-            self.validate(lambda context, receipt:
-                          receipt["training_runtime"]["math_source_sha256"].pop(HELPER))
+            self.validate(
+                lambda context, receipt: receipt["training_runtime"]["math_source_sha256"].pop(
+                    HELPER
+                )
+            )
+
+    def test_helper_byte_mismatch_rejects_continuous_resume_before_checkpoint_load(self):
+        from test_continuous_qat import config, make
+
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            trained = make(root / "run", config(max_steps=1))
+            trained.run(require_smoke=False)
+            resumed = make(root / "run", config(max_steps=2))
+            source = root / "source"
+            source.mkdir()
+            self.source_copy(source)
+            (source / HELPER).write_bytes(b"# changed CPU resume helper fixture\n")
+            changed = continuous_runtime.training_runtime_identity("cpu", source_root=source)
+            pointer = (root / "run/latest.json").read_bytes()
+            with (
+                mock.patch(
+                    "w1a1_eagle.continuous_qat.training_runtime_identity", return_value=changed
+                ),
+                mock.patch(
+                    "w1a1_eagle.continuous_qat.torch.load",
+                    side_effect=AssertionError("checkpoint loaded before identity gate"),
+                ),
+            ):
+                with self.assertRaisesRegex(ValueError, "critical training math"):
+                    resumed.resume()
+            self.assertEqual(resumed.step, 0)
+            self.assertEqual(resumed.cursor, 0)
+            self.assertEqual((root / "run/latest.json").read_bytes(), pointer)
+
+    def test_launch_helper_mismatch_rejects_before_training_or_publication(self):
+        from test_continuous_qat import config, make
+
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            trainer = make(root / "run", config(max_steps=1))
+            self.assertTrue(all(lane.adapter.activation_reuse is False for lane in trainer.lanes))
+            runtime = copy.deepcopy(fixtures.CONTEXT["runtime_identity"])
+            runtime["math_source_sha256"] = continuous_runtime.training_runtime_identity("cpu")[
+                "math_source_sha256"
+            ]
+            trainer.config = replace(
+                trainer.config,
+                device="cuda:0",
+                optimize_cache=True,
+                max_cuda_reserved_bytes=9000,
+                min_cuda_free_bytes=100,
+            )
+            context = copy.deepcopy(fixtures.CONTEXT)
+            context.update(source_sha256=trainer.source, runtime_identity=runtime)
+            with mock.patch.dict(fixtures.CONTEXT, context, clear=True):
+                receipt = fixtures.synthetic_receipt(trainer.config)
+            data = json.dumps(receipt).encode()
+            path = root / "CPU_LAUNCH_SCHEMA_FIXTURE.json"
+            path.write_bytes(data)
+            trainer.config = replace(
+                trainer.config,
+                optimization_readiness={
+                    "path": str(path),
+                    "sha256": hashlib.sha256(data).hexdigest(),
+                },
+            )
+            runtime["math_source_sha256"][HELPER] = "f" * 64
+            before = {
+                (lane.name, name): parameter.detach().clone()
+                for lane in trainer.lanes
+                for name, parameter in lane.drafter.named_parameters()
+            }
+            properties = SimpleNamespace(
+                name=context["hardware"]["name"], major=12, minor=0, total_memory=10000
+            )
+            with (
+                mock.patch(
+                    "w1a1_eagle.continuous_qat.training_runtime_identity", return_value=runtime
+                ),
+                mock.patch("torch.cuda.get_device_properties", return_value=properties),
+                mock.patch(
+                    "w1a1_eagle.qat_readiness.native_checkout_commit",
+                    return_value=context["native_commit"],
+                ),
+                mock.patch(
+                    "w1a1_eagle.continuous_qat.joint_train_step",
+                    side_effect=AssertionError("trained before identity gate"),
+                ),
+            ):
+                with self.assertRaisesRegex(ValueError, "training_runtime differs"):
+                    trainer.run(require_smoke=False)
+            self.assertEqual(trainer.step, 0)
+            self.assertEqual(trainer.cursor, 0)
+            self.assertFalse((root / "run/latest.json").exists())
+            for lane in trainer.lanes:
+                self.assertEqual(lane.optimizer.state, {})
+                for name, parameter in lane.drafter.named_parameters():
+                    self.assertTrue(parameter.equal(before[(lane.name, name)]))
 
 
 if __name__ == "__main__":

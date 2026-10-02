@@ -21,6 +21,7 @@ context = copy.deepcopy(fixtures.CONTEXT)
 context["runtime_identity"]["math_source_sha256"] = identity["math_source_sha256"]
 modules = [
     "test_parallel20261002_activation_identity",
+    "test_parallel20261002_activation_identity_independent",
     "test_continuous_qat",
     "test_qat_curriculum_runner",
     "test_qat_readiness",
