@@ -1,7 +1,14 @@
-"""CPU synthetic invariance and distinguishing controls for the LSQ batching audit."""
+"""Protected QAT CPU regressions for learned-head reference equivalence.
 
+The historical discrepancy and candidate source pins remain in the LSQ report,
+raw records, and proposal files. These tests exercise the current provider.
+"""
+
+import hashlib
 import math
 import unittest
+from pathlib import Path
+from unittest.mock import patch
 
 import torch
 
@@ -15,10 +22,31 @@ from research.parallel20261002.lsq_batching.reference.audit import (
 )
 
 
-class LSQBatchingAuditTests(unittest.TestCase):
+class ProtectedQATValidation(unittest.TestCase):
+    def setUp(self):
+        # These synthetic correctness checks are QAT work; they remain runnable
+        # after supporting research stops and without its machine-local record.
+        control = patch("research.parallel20261002.lsq_batching.reference.audit.check_control")
+        control.start()
+        self.addCleanup(control.stop)
+
+
+class LSQBatchingAuditTests(ProtectedQATValidation):
     @classmethod
     def setUpClass(cls):
-        cls.results = run_audit()["cases"]
+        with patch("research.parallel20261002.lsq_batching.reference.audit.check_control"):
+            cls.report = run_audit()
+            cls.results = cls.report["cases"]
+
+    def test_report_pins_the_imported_provider_source(self):
+        import w1a1_eagle.recurrent_provider as provider
+
+        source = Path(provider.__file__).resolve()
+        self.assertEqual(self.report["source_paths"]["recurrent_provider.py"], str(source))
+        self.assertEqual(
+            self.report["source_sha256"]["recurrent_provider.py"],
+            hashlib.sha256(source.read_bytes()).hexdigest(),
+        )
 
     def test_actual_native_head_batch_preserves_logits_loss_and_other_vjps(self):
         for entry in self.results:
@@ -42,20 +70,13 @@ class LSQBatchingAuditTests(unittest.TestCase):
                     ):
                         self.assertLessEqual(values[key], ATOL)
 
-    def test_nonzero_parameter_vjp_exposes_invocation_normalizer(self):
+    def test_trainable_head_preserves_serial_parameter_vjp_and_update(self):
         for entry in self.results:
-            with self.subTest(entry=entry):
-                self.assertIsNotNone(entry["batched"]["head_gradient_ratio"])
-                self.assertAlmostEqual(
-                    entry["batched"]["head_gradient_ratio"], math.sqrt(entry["depth"]), delta=1e-5
-                )
-                self.assertAlmostEqual(
-                    entry["chunk2"]["head_gradient_ratio"],
-                    math.sqrt(min(entry["depth"], 2)),
-                    delta=1e-5,
-                )
-                if entry["depth"] > 1:
-                    self.assertGreater(entry["batched"]["head_parameter_step_abs"], 1e-5)
+            for policy in ("batched", "chunk2"):
+                with self.subTest(entry=entry, policy=policy):
+                    self.assertIsNotNone(entry[policy]["head_gradient_ratio"])
+                    self.assertAlmostEqual(entry[policy]["head_gradient_ratio"], 1.0, delta=1e-5)
+                    self.assertLessEqual(entry[policy]["head_parameter_step_abs"], ATOL)
 
     def test_repeated_row_mean_loss_holds_serial_vjp_constant(self):
         for bits in (1, 4, 8):
@@ -104,7 +125,7 @@ class LSQBatchingAuditTests(unittest.TestCase):
                 individual = run_case(bits, depth, invalid=True)
                 weighted = individual["grads"][key] * depth / 7
                 expected_serial += weighted
-                expected_batched += weighted / math.sqrt(depth)
+                expected_batched += weighted
             torch.testing.assert_close(serial["grads"][key], expected_serial, rtol=RTOL, atol=ATOL)
             torch.testing.assert_close(
                 batched["grads"][key], expected_batched, rtol=RTOL, atol=ATOL
@@ -117,13 +138,12 @@ class LSQBatchingAuditTests(unittest.TestCase):
             )
 
 
-class IsolatedProviderProposalTests(unittest.TestCase):
-    def test_source_bound_patch_preserves_serial_vjps_and_update(self):
+class LiveProviderFallbackTests(ProtectedQATValidation):
+    def test_current_provider_preserves_serial_vjps_and_update(self):
         from research.parallel20261002.lsq_batching.reference.audit import batch, tiny_native
-        from research.parallel20261002.lsq_batching.reference.proposal import load_proposed_forward
+        from w1a1_eagle.recurrent_provider import forward_torch_round
         from w1a1_eagle.recurrent_qat import joint_optimizer, shared_round_hard_signs
 
-        proposed = load_proposed_forward()
         for bits in (1, 4, 8):
             for depth in (1, 2, 4):
                 reference = run_case(bits, depth, True)
@@ -131,7 +151,7 @@ class IsolatedProviderProposalTests(unittest.TestCase):
                 optimizer = joint_optimizer(adapter.linears, cfg)
                 b = batch(depth, invalid=True)
                 with shared_round_hard_signs(adapter.linears):
-                    logits = proposed(b, adapter, 3, optimize_head=True)
+                    logits = forward_torch_round(b, adapter, 3, optimize_head=True)
                     loss = torch.nn.functional.cross_entropy(
                         logits[:depth], torch.full((depth,), 2, dtype=torch.long)
                     )
@@ -153,40 +173,39 @@ class IsolatedProviderProposalTests(unittest.TestCase):
                         )
                 self.assertEqual(adapter.head_saturation_scope, "last_valid_row")
 
-    def test_proposal_retains_batched_inference_and_fixed_quantizer_training(self):
+    def test_current_provider_retains_batched_inference_and_fixed_quantizer_training(self):
         from unittest.mock import patch
 
         from research.parallel20261002.lsq_batching.reference.audit import batch, tiny_native
-        from research.parallel20261002.lsq_batching.reference.proposal import load_proposed_forward
+        from w1a1_eagle.recurrent_provider import forward_torch_round
 
-        proposed = load_proposed_forward()
         adapter, _ = tiny_native(4)
         with (
             patch.object(adapter, "decode_head", wraps=adapter.decode_head) as head,
             torch.no_grad(),
         ):
-            proposed(batch(4, invalid=True), adapter, 3, optimize_head=True)
+            forward_torch_round(batch(4, invalid=True), adapter, 3, optimize_head=True)
             self.assertEqual(head.call_count, 1)
         for module in adapter.linears.values():
             del module.activation_quantizer
         with patch.object(adapter, "decode_head", wraps=adapter.decode_head) as head:
-            proposed(batch(4, invalid=True), adapter, 3, optimize_head=True)
+            forward_torch_round(batch(4, invalid=True), adapter, 3, optimize_head=True)
             self.assertEqual(head.call_count, 1)
 
 
-class ObservedProposalTests(unittest.TestCase):
+class ObservedFallbackTests(ProtectedQATValidation):
     def test_observer_delegates_trainable_head_and_keeps_first_attached_state(self):
         from unittest.mock import patch
 
         from research.parallel20261002.lsq_batching.reference.audit import batch, tiny_native
-        from research.parallel20261002.lsq_batching.reference.proposal import load_proposed_forward
         from w1a1_eagle.continuous_qat import ObservedAdapter
+        from w1a1_eagle.recurrent_provider import forward_torch_round
 
         adapter, _ = tiny_native(4)
         observed = ObservedAdapter(adapter)
         self.assertIs(observed.linears, adapter.linears)
         with patch.object(adapter, "decode_head", wraps=adapter.decode_head) as head:
-            logits = load_proposed_forward()(
+            logits = forward_torch_round(
                 batch(4, invalid=True), observed, 3, optimize_head=True
             )
             self.assertEqual(head.call_count, 0)

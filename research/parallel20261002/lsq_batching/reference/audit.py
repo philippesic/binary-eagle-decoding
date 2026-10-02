@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import importlib
 import json
 import platform
 from pathlib import Path
@@ -332,6 +333,10 @@ def run_audit():
         "native_step.py",
         "qat_optimization.py",
     ]
+    source_paths = {
+        s: Path(importlib.import_module("w1a1_eagle." + Path(s).stem).__file__).resolve()
+        for s in sources
+    }
     return {
         "device": "CPU",
         "hardware": platform.machine(),
@@ -342,9 +347,9 @@ def run_audit():
         "seed": 17,
         "atol": ATOL,
         "rtol": RTOL,
+        "source_paths": {s: str(p) for s, p in source_paths.items()},
         "source_sha256": {
-            s: hashlib.sha256((ROOT / "src/w1a1_eagle" / s).read_bytes()).hexdigest()
-            for s in sources
+            s: hashlib.sha256(p.read_bytes()).hexdigest() for s, p in source_paths.items()
         },
         "cases": results,
     }
