@@ -3,7 +3,8 @@
 The isolated production-function variant passes the local acceptance gate.
 Replace `m.latent_sign.detach().clone() < 0` with
 `m.latent_sign.detach() < 0`. The comparison allocates its own Boolean storage;
-the subsequent optimizer mutation does not change the captured signs. This is
+the subsequent optimizer mutation does not change the captured signs under the
+current sequential same-stream step. This is
 the only proposed source change. Live core source is untouched.
 
 Scope clearance: `/root/qat_priority` confirmed no equivalent active diagnostic
@@ -88,8 +89,15 @@ git apply --check research/parallel20261002/step_bookkeeping/reference/snapshot-
 git diff --check
 ```
 
-Independent Luna validation is recorded separately under `validation/` after
-completion. Root should integrate this report/prototype/patch only, checkpoint
+Independent Luna validation uses separately constructed 3×3 A1 fixtures and
+seeded existing AdamW moments. Fixed, learned and affine variants compare
+exactly across 99, 135 and 144 tensor entries, respectively, on Torch2.8 and
+Torch2.14 CPU. Its independent whole-step census confirms latent float clones
+9→0, scale clones9→9 and Boolean comparison outputs27→27. Its seeded optimizer
+state also remains unchanged after NaN rejection. Commands, raw hashes and
+environment details are in [validation.md](validation.md).
+
+Root should integrate this report/prototype/patch only, checkpoint
 the existing QAT goal, push main and retire the merged worktree after preserving
 ignored raw logs. Any live-core adoption belongs to the QAT source owner and
 requires current-source step checks; actual GPU performance is its next gate.

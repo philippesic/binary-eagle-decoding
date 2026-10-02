@@ -25,19 +25,33 @@ snapshots218,234,880B/lane-step. No full-shape tensors were allocated and no GPU
 performance or allocator peak was measured. Scalar extraction is unchanged.
 
 Descendant `/root/step_bookkeeping/step_validation` (Luna high) owns independent
-validation paths, registered with `/root/usage_monitor`. Validation pending at
-this checkpoint. No persistent process, GPU/Metal/SSH, model/data or final-set
+validation paths, registered with `/root/usage_monitor`. Independent validation
+is complete on Torch2.8 and2.14 CPU: separately constructed fixed/learned/affine
+A1 fixtures compare99/135/144 tensor entries exactly, including seeded existing
+AdamW moments. Latent float clones9→0, scale clones9→9, Boolean comparisons
+27→27. NaN rejection leaves existing optimizer state unchanged; independent
+Boolean mutation check passes. Final cleanup added per-chunk absolute control
+checks and CPU-only RNG seeds; final Torch2.14 rerun is numerically unchanged.
+No persistent process, GPU/Metal/SSH, model/data or final-set
 access. MAIN absolute control last read:85% used /15% original allowance
 remaining, research_stop false, reset1791049896 unchanged. No fresh/paid research
 allowance authorized. Both owner/validator stop/checkpoint on stop, reset or<=1%.
 
 Raw owner test log: `runs/parallel20261002/step-bookkeeping/owner-tests.log`
-(ignored). Durable report and JSON:
+(ignored), SHA256`f6df1050d915f8745e7df5a5157a9b027734785ea1ebaf6d00befbb6955a207c`.
+Independent raw logs are under
+`runs/parallel20261002/step-bookkeeping-validation/`; raw hashes in
+`experiments/parallel20261002/step_bookkeeping/validation.md`.
+Durable report and JSON:
 `experiments/parallel20261002/step_bookkeeping/{report.md,summary.json}`.
 Function SHA256 pinned in `reference/snapshot_step.py` and summary.
 
-Remaining: independent validation; owner review its evidence; coherent final
-commit receipt to root. Root integrates/pushes reports only, writes result and
+Commits: independent evidence`bc44748`, owner prototype/report`c744995`,
+independent CPU-control/lint polish`9cbd689`; final report/checkpoint commit
+is recorded in the parent handoff. Full tree Ruff and patch apply-check pass.
+No live core edits are in this branch.
+
+Remaining: root integrates/pushes reports only, writes result and
 commit IDs into active goal, archives raw logs and retires worktree/branch.
 QAT owns any later live one-line adoption and hardware gate. No new optimizer,
 recipe, reporting cadence or budget decision is made.
