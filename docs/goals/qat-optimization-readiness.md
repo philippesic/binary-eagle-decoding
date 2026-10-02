@@ -722,3 +722,23 @@ passes, remaining build/tests stay within original09:30cutoff and all numerical/
 ancestry/data gates. Parent records owner-reported evidence, performs no duplicate
 remotequery, and does not claim overlay orCUDA success. Owner retains exact logs,
 probe/build source/toolchain identities and next action in its ignored records.
+
+
+## Actual CUDA build underway — October2 08:45:40UTC
+
+QATowner verified actual attempt06 build activity, not merely dispatch. Fixed
+parent7b0ef42/native8025a0777 identity passed; CMakeconfigurationPASSED and
+`ggml-cuda` .cu objects compile with parallelism2. ToolchainCUDA13.1.115,
+GCC15.2,CMake3.31.10; actualRTX5080SM120/driver616.92. The privateincludeoverlay
+probe compiled+linked in0.937seconds. Exact two exceptiondeclaration diff,
+selectedprivateheaderSHA and globalheadersunchanged proof are indexed in owner
+records. No arithmeticbodies/global/frozen edits; previoussetup failures retained.
+
+Remotehosttmuxsessionqat-early-cuda-validation-20261002-06;
+remote_jobqat-early-cuda-20261002-validation06,supervisor2254/child2256,
+stdout20,856B observed. Beforebuild08:44preflight GPUcomputeappsempty,
+free12751MiB/host19.49GB. Prepowner knows validationgroupIDs; exactliveprep remains
+held under existinglease. GPUfixtures have NOT executed, zerooptimizer, no
+fullcorpuspromotion/readinessclaim. Lease09:40deadline and09:30teardowncutoff
+unchanged. Next buildcompletion/operatorfixture evidence or preservedfailure,
+thenleasecleanup+fresh GPUhandoff proof before sameprocessauditresume.
