@@ -6,14 +6,16 @@ import copy
 import json
 import os
 import sys
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 import torch
 from torch.utils._python_dispatch import TorchDispatchMode
 
 ROOT = Path(__file__).resolve().parents[4]
 sys.path.insert(0, str(ROOT / "src"))
+CONTROL_PATH = Path("/Users/pippo/github/binary-eagle-decoding/runs/parallel20261002/control.json")
+ORIGINAL_RESET_UNIX = 1791049896
 
 from w1a1_eagle.affine_binary import AffineBinaryConfig, install_affine_binary  # noqa: E402
 from w1a1_eagle.learned_activation import LearnedActivationBank  # noqa: E402
@@ -23,7 +25,6 @@ from w1a1_eagle.recurrent_qat import (  # noqa: E402
     RowBinaryLinear,
     W1AxContract,
     joint_optimizer,
-    joint_train_step,
 )
 from w1a1_eagle.recurrent_trace import TraceAudit  # noqa: E402
 
@@ -56,7 +57,12 @@ class AllocationCensus(TorchDispatchMode):
             )
         if name.startswith(("aten.empty", "aten.zeros", "aten.ones", "aten.full")):
             self.allocations.extend(
-                {"op": name, "dtype": str(t.dtype), "numel": t.numel(), "bytes": t.numel() * t.element_size()}
+                {
+                    "op": name,
+                    "dtype": str(t.dtype),
+                    "numel": t.numel(),
+                    "bytes": t.numel() * t.element_size(),
+                }
                 for t in outputs
             )
         if name.startswith("aten.lt"):
@@ -64,22 +70,38 @@ class AllocationCensus(TorchDispatchMode):
         return result
 
 
+def _check_control(checkpoint: str) -> None:
+    control = json.loads(CONTROL_PATH.read_text())
+    if control.get("research_stop"):
+        raise RuntimeError(f"research stop requested before {checkpoint}")
+    if control.get("reset_observed") or control.get("last_reset_unix") != ORIGINAL_RESET_UNIX:
+        raise RuntimeError(f"allowance reset observed before {checkpoint}")
+    remaining = 100 - float(control["last_weekly_used_percent"])
+    if remaining <= 1:
+        raise RuntimeError(f"weekly allowance at or below 1% before {checkpoint}")
+
+
 def _linears(seed: int, mode: str):
-    torch.manual_seed(seed)
+    torch.random.default_generator.manual_seed(seed)
     linears = {}
     # Equal tiny widths satisfy all six canonical learned-activation boundaries.
     for ordinal, path in enumerate(CANDIDATE_D_BASE_TO_PATH.values()):
-        base = torch.tensor(
-            [[0.72, -0.39, 0.18], [-0.44, 0.83, -0.27], [0.31, 0.12, -0.91]],
-            dtype=torch.float32,
-        ) + ordinal * 0.001
+        base = (
+            torch.tensor(
+                [[0.72, -0.39, 0.18], [-0.44, 0.83, -0.27], [0.31, 0.12, -0.91]],
+                dtype=torch.float32,
+            )
+            + ordinal * 0.001
+        )
         scales = torch.tensor([0.7, 1.1, 0.9], dtype=torch.float32)
         linears[path] = RowBinaryLinear(base, scales, W1AxContract(1))
     config = JointQATConfig(
         contract=W1AxContract(1),
         device="cpu",
         activation_quantization="learned" if mode == "learned" else "fixed",
-        affine_weights=AffineBinaryConfig(enabled=True, coverage="all") if mode == "affine" else None,
+        affine_weights=AffineBinaryConfig(enabled=True, coverage="all")
+        if mode == "affine"
+        else None,
     )
     if mode == "learned":
         bank = LearnedActivationBank(1, {path: 3 for path in linears})
@@ -146,23 +168,6 @@ def _compare_tree(left, right, path="root") -> dict[str, float | int]:
     return {"tensors": 0, "max_abs": 0.0}
 
 
-def _clone_for_mode(linears, config, mode):
-    # Rebuild deterministically rather than deepcopying module hooks/context state.
-    clone, clone_config = _linears(20261002, mode)
-    for path in linears:
-        clone[path].load_state_dict(linears[path].state_dict())
-    if mode == "learned":
-        for path in linears:
-            clone[path].activation_quantizer.parameter.data.copy_(
-                linears[path].activation_quantizer.parameter.detach()
-            )
-    if mode == "affine":
-        for path in linears:
-            clone[path].affine_binary.midpoint.data.copy_(linears[path].affine_binary.midpoint.detach())
-    # Keep exact original config object; the dataclass is immutable.
-    return clone, config
-
-
 def _optimizer(linears, config):
     return joint_optimizer(linears, config)
 
@@ -171,7 +176,7 @@ def _run(step: Callable, mode: str, census: bool = False):
     linears, config = _linears(20261002, mode)
     optimizer = _optimizer(linears, config)
     # Seed optimizer state so the comparison verifies real moments and step counters.
-    torch.manual_seed(20261003)
+    torch.random.default_generator.manual_seed(20261003)
     for group in optimizer.param_groups:
         for parameter in group["params"]:
             optimizer.state[parameter]["step"] = torch.tensor(3.0)
@@ -187,7 +192,11 @@ def _run(step: Callable, mode: str, census: bool = False):
     values = {
         "metrics": metrics,
         "parameters": {path: module.state_dict() for path, module in linears.items()},
-        "gradients": {f"{path}.{name}": p.grad for path, module in linears.items() for name, p in module.named_parameters()},
+        "gradients": {
+            f"{path}.{name}": p.grad
+            for path, module in linears.items()
+            for name, p in module.named_parameters()
+        },
         "optimizer": optimizer.state_dict(),
     }
     counts = {
@@ -216,10 +225,16 @@ def _nan_gradient_rejection(step: Callable) -> None:
             optimizer.state[parameter]["exp_avg"] = torch.full_like(parameter, 0.017)
             optimizer.state[parameter]["exp_avg_sq"] = torch.full_like(parameter, 0.029)
     parameters_before = _tree_snapshot(
-        {f"{path}.{name}": p for path, module in linears.items() for name, p in module.named_parameters()}
+        {
+            f"{path}.{name}": p
+            for path, module in linears.items()
+            for name, p in module.named_parameters()
+        }
     )
     optimizer_before = _tree_snapshot(optimizer.state_dict())
-    linears["fc"].latent_sign.register_hook(lambda gradient: torch.full_like(gradient, float("nan")))
+    linears["fc"].latent_sign.register_hook(
+        lambda gradient: torch.full_like(gradient, float("nan"))
+    )
     try:
         step(linears, _logits(linears, "fixed"), _audit(), optimizer, config)
     except ValueError as error:
@@ -236,6 +251,7 @@ def _nan_gradient_rejection(step: Callable) -> None:
 
 
 def main():
+    _check_control("main")
     torch.set_num_threads(1)
     torch.use_deterministic_algorithms(True)
     report = {
@@ -249,21 +265,29 @@ def main():
         },
         "cases": {},
     }
-    from w1a1_eagle.recurrent_qat import joint_train_step as production_step
     from research.parallel20261002.step_bookkeeping.reference.snapshot_step import (
         joint_train_step_without_snapshot_clone,
     )
+    from w1a1_eagle.recurrent_qat import joint_train_step as production_step
 
     for mode in ("fixed", "learned", "affine"):
+        _check_control(f"{mode} fixture")
         reference, reference_census = _run(production_step, mode, census=True)
-        candidate, candidate_census = _run(joint_train_step_without_snapshot_clone, mode, census=True)
+        candidate, candidate_census = _run(
+            joint_train_step_without_snapshot_clone, mode, census=True
+        )
         equality = _compare_tree(reference, candidate)
         assert reference["metrics"] == candidate["metrics"], mode
         assert reference_census["float_clone_numel_9"] == 9
         assert candidate_census["float_clone_numel_9"] == 0
-        assert reference_census["float_clone_numel_3"] == candidate_census["float_clone_numel_3"] == 9
+        assert (
+            reference_census["float_clone_numel_3"] == candidate_census["float_clone_numel_3"] == 9
+        )
         assert reference_census["clone_float_count"] - candidate_census["clone_float_count"] == 9
-        assert reference_census["bool_comparison_outputs"] == candidate_census["bool_comparison_outputs"]
+        assert (
+            reference_census["bool_comparison_outputs"]
+            == candidate_census["bool_comparison_outputs"]
+        )
         assert reference_census["clone_bool_count"] == candidate_census["clone_bool_count"]
         report["cases"][mode] = {
             "result": "passed exact metrics, gradients, parameters, and optimizer state",
@@ -272,6 +296,7 @@ def main():
             "reference_census": reference_census,
             "candidate_census": candidate_census,
         }
+    _check_control("NaN gradient fixture")
     _nan_gradient_rejection(production_step)
     _nan_gradient_rejection(joint_train_step_without_snapshot_clone)
     report["nan_gradient"] = "both steps fail before parameter or optimizer state changes"
