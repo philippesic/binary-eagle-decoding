@@ -3182,3 +3182,63 @@ actualvalidatedsource/config before09controlledteardown/freshGPUtransfer andNEW
 --prepare-only. Fullcurrentmodel/backward/memory/checkpoint/development andactual
 optimizerprogress remainpending; usercheck-in answeredzeroQATupdates directly.
 Goal/SAMEheartbeats active, researchstopped,2080Tipaused, no creditpurchase/reset.
+
+
+## CPU configuration bootstrap and payload validation running — October 2, 23:02 UTC
+
+CPU04 actualterminal22:53:08.480238UTC exit1/noSignal, rawstateSHA
+ab355da144ca1f3908a38daacccdb310cbe767943e9408e50ec1ad1e0f78e073.
+EXACTstaticstderr1111B SHA74cfe7eb0163aad806933955b90db0cfac8f36d8a3c8f7a30929cdb26cb1338f:
+inspect_runtime537→_dynamic_paths322 ValueError empty runtime search path isnot
+admissible. Loop[server,*libs] meansFIRSTunprotectedllama-server fails; other
+ELFpaths notclassifiedyet. Commandsmtimeproof nowpassed farenoughtoELF; no blind
+retry/RPATHwaiver/rebuild/touch/7artifactmodify orrepin. Unchangedcollectorstdout
+5229B SHAd621c5334996a4f583a71d4704747b82b9693e522afd2a0c159b9f5ca13830d1
+verifies groups3911/3912gone/supervisorabsent/14+7unchanged/noGPU/context/optimizer.
+ACTUALprettyproducerreturn7ecfdb4e1b6d836b6ee08d1490761bf003f3d72657f1d42f9171116264437fec
+isdistinctfromcollectorstdout; don'tnormalize/reconstruct. Finalactualproof
+0c4760f78c1bce9e21b8abc2b942dd73404b99ef66ffe7ab8250d38dd7d013e5.
+
+Runtimeworker ownsLOCALboundedmetadata classification; ONEquery source
+31494cd367b3a84e4e8737f6c5da5d8add08eb14325bf9523f1470140aa5ec86,
+ignoredcurrent-server-elf-metadata-20261002-01/{probe.py,probe.zlib.b64,transport.json}.
+Rootfullsourcereview+4parser/realELFsectionhashguardsPASS; author4PASS.
+Readserver+6libs+fixture/all8SHA before-after/protected7expected pins, all RPATH/
+RUNPATHcomponents preservingEMPTYs, .text/.rodata/CUDAfatbin sectionSHA andavailable
+patchelf/chrpath toolSHA/version. Internal35s/outer40kill5/eachcommand5/output256KiB
+bound; no artifact/server/model execution, GPUquery/context, data access orwrites.
+RootconditionalGO SAMEsoleLuna afterCPUconfiglaunchtransportcleanup, mayreadmetadata
+alongsidehealthyCPUconfig underownercoordination; noextraSSH/operator. ActualELFcensus
+and minimumconcretepackagingfix pending. Preferredonlyunprotectedserverempty→strip
+empty entries withallotherpaths/codebytes/protected7 unchanged; ifprotectedDLLs
+alsoempty mustpreserveoriginal7 andproposeNEWimmutable packaging/codeidentity/
+actualnativefixture proof, notgenericbypass. No speculative fix issued.
+
+FreshCPUconfigpreflight22:57:03.844757UTC
+0094a69ded806fc5ec0435cffd1a558033591eb7e394135afcf2abf71a29d903 PASS:
+same09audit163/MemAv19,443,048,448B/disk392,284,004,352B/unusedNEWpaths/
+14+7+4HEAD/04actualreturned/noGPU. Newaccepted85grantSHA
+ ecb3c1487176d843946d97be3200329a6c47bc5b0e9ddc69d5d542d1b825042a;
+unchangedrevieweddf4016stagebuilder outputs feda6b2a0cca5b1cb92a7e520871ac4296e8f72b32f6ed7201cd62708fad7e9b.
+ACTUALCPUconfig85 START22:59:03.893035UTC exacttransport/launchrc0;
+raw3446B SHA4644fbd36d9c5230c837d9d9e76fe05bb61d6da991d44297df117d719ef90ca4.
+Jobretained-capture-cpu-validation-20261002-01 supervisor4108/PGID4108/start1603811;
+timeout4109/PGID4109/start1603815; runner4111/samegroup/start1603816; UID1000.
+Outer1200TERM/kill10/grace10/bootstrap180/config900/finalreserve120 unchanged.
+
+ACTUALbootstrap fetch0/newdetachedworktree0/vendor9e2init0/currentCPUsharedruntime
+probe0/source28guardsPASS within180s. RawsequenceSHA
+ dd2de8e10cdd1a2f614efd92c00f7091b18c50a6b79843d4407562c257c0203d.
+Payloadvalidation nowPID4221/PGID4109/UID1000/start1607368/PPID4111,
+exactaccepted900s prepare-retained-config/import04b717. NoCUDA/native/server/
+model/optimizer/old09signal. Old09 retainsGPUownership/source/data unchanged.
+SAMEsoleLuna supervisesactualjob4108/4109/4111/4221 andterminalcollect; no newjob
+becauseobservationexpires. CurrentconfigurationSHA/fullpayloadPASS andCPUreturn
+stillpending. RuntimeELFfailure independently unresolved, notblockingthisCPUwork.
+
+Next: actualCPUconfigvalidation/result/teardown; ELFclassification+minimumstrict
+packagingrepair; ROOTaccepts validatedNEWsource/config, exact09gracefulstop/group+
+GPUteardown/exclusiveNEW--prepare-only (referenceA8/A1). Fullmodel/backward/memory/
+zero-save/final-ready/current9e2actor/nativetiming/save-resume/Q4development and
+realoptimizer/checkpoint/developmentprogress remain unverified; goalfullscopeACTIVE.
+Researchstopped/2080Tipaused/SAMEheartbeats/protectedcredits unchanged; no rootSSH.

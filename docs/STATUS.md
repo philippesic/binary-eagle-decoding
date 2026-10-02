@@ -4,6 +4,20 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
+## CPU payload validation running — October 2, 23:02 UTC
+
+The new-source CPU job actually started at 22:59 UTC. Fetch, detached checkout,
+vendor initialization and CPU runtime probe passed; payload/configuration
+validation is running under child4221, with supervisor4108 and group4109.
+Old recovery09 remains untouched. This verifies data and configuration, with
+no model, GPU or optimizer execution.
+
+Server04 exited1 because its first ELF artifact has an empty runtime search-path
+entry. Collection verified its groups are gone and all 7 runtime / 14 frozen
+files are unchanged. A bounded read-only ELF census is cleared to identify the
+minimum packaging correction. Optimizer QAT remains unstarted, with zero updates.
+[Actual validation checkpoint](goals/qat-optimization-readiness.md#cpu-configuration-bootstrap-and-payload-validation-running--october-2-2302-utc).
+
 ## CPU server inspection actually started — October 2, 22:54 UTC
 
 Static-only server04 started at 22:53:07 UTC: supervisor3911, child3912 and
