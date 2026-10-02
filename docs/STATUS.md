@@ -28,7 +28,11 @@ were gone and GPUcomputeappsempty at08:57:31UTC. Validation teardown cutoff02:30
 requires fresh ownedgroupsgone/GPUempty proof before sameprocessSIGCONT. Both
 hold-awareprep and QAT15minmonitors ACTIVE. [Lease checkpoint](goals/qat-optimization-readiness.md#exclusive-early-validation-lease-granted--october2).
 Training still requires complete verified data and current passing CUDA gates.
-The readiness objective remains incomplete.
+**09:18UTC decision:** QAT owner is returning the early-validation lease after
+an additional diagnostic launcher failed before the fixture on a private-header
+path error. Exact failed beta case remains unclassified. Fresh final cleanup and
+same-process preparation resume are pending verification; no more GPU attempts
+or lease renewal. The readiness objective remains incomplete.
 
 **Overnight CPU research authorized (October1):** three teams investigate W1A1
 representation geometry, native accepted-prefix objectives and block-parallel

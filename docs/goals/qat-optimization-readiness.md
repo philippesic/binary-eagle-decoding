@@ -762,3 +762,24 @@ require targeted retest and actualnative admission without weakening gates.
 If no fast supportedfix exists, returnlease promptly with fresh proof so the
 sameheldpreparationprocess resumes. No fullcorpuspromotion/readiness/training
 claim. Owner retains exactfailedstdout/reports/toolchain/build/evidence paths.
+
+
+## QAT owner requests early validation handback — October2 09:18UTC
+
+QATowner stopped further attempts and decided to return the earlyvalidationlease
+promptly. Firstactualfixturefailure remains `pack beta mismatch`; no exactcase
+or confirmedFTZ cause. Dedicatednativeowner published a diagnostic-only revision
+(1284prefix,parent e0ec292), unchanged CPUfixturepassed. Intended<=5minincremental
+probe was delayed by setup; new supervisor8153/child8155 started09:17:59.963UTC
+and exited09:18:00.464 beforefixture. Owner subsequently identified the startup
+error as the diagnostichelper using the wrong privateheader path; it is not a
+second numericfailure or evidence about the beta cause.
+
+Same validationoperator is collecting exactstartupfailure and fresh final
+all-ownedgroupsgone/GPUempty proof. No furtherGPUattempts/renewal. Preparation
+owner has explicitauthorization to independently verify release and SIGCONT
+same child676/startticks85132; parent has NOT yet verified resume. Preserve
+all failures and solve diagnosticlaunch outsideheldaudit before requesting
+anotherboundedslot. No weakenedgates,source/mathchanges,QAT/fullcorpusclaim.
+Original09:30teardowncutoff/09:40deadline stillbound the pendinghandback. Next
+required milestone is fresh cleanup and exactlivepreparation resumeproof.
