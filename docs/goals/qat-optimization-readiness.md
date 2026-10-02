@@ -2517,3 +2517,20 @@ after verifying patch equivalence and no worker. Other own learned-head
 worktrees already archived/removed. Preserve peer untracked overnight docs,
 research and experiments; no peer cleanup. No unresolved human decision:
 remaining obstacles are implementation/execution gates, not approval.
+
+
+### QAT transfer completed — October 2, 20:14 UTC
+
+Successor01a0fe3f-0eff-78e3-bb75-af0b4b77b49e acknowledged and independently
+verified SAME ACTIVE15m heartbeat target; actual TOML SHA
+bb79d104ca691025ee7cb92964cf48e0a6ef6fbcfabb4263fd76a422f469c0db.
+Ignored coordination_handoff acknowledged/automation_target_verified=true.
+Predecessor01a0fc3d retires with no owned remote job/lease/workers. Prep and main
+supervisors notified. Successor has one local read-only gate_inputs subagent.
+Prep confirms exact launcher blocker: V5 unconditionally holds/returns obsolete
+PID676. SAME sole Luna prepares new fixture-only source-bound launcher with no
+STOP/CONT; fresh exclusive boot/GPU/context/process/resource/runtime admission,
+pinned bounded fixture, remote_job/tmux/reconnect/teardown then serialized
+admitted preparation recovery. No actual CUDA start or training verified yet.
+Main supervisor is active restarting Astra and independent CPU teams; actual
+worker start not yet independently verified by retiring predecessor.

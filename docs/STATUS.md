@@ -17,8 +17,8 @@ Human reiterates actual research/QAT execution. Main supervisor is directed to
 resume useful isolated CPU research teams; preparation owner retains the SAME
 sole operator for fresh exclusive GPU proof/native repair retest, then serialized
 admitted preparation recovery. Old676 hold/return guard is obsolete. Training
-gates remain mandatory. QAT rotates at a safe boundary with no owned remote job
-or lease; transfer SAME heartbeat only after successor acknowledgment.
+gates remain mandatory. QAT successor01a0fe3f is acknowledged and SAME ACTIVE15m heartbeat target is
+independently verified; predecessor retires with no owned remote job or lease.
 [Executable checkpoint](goals/qat-optimization-readiness.md#executable-qat-rotation-checkpoint--october-2-2010-utc).
 
 ## Current coordination — October 2, 19:56 UTC
