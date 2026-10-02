@@ -1,0 +1,292 @@
+{
+  "audited_simulation": {
+    "admissible_proposal": true,
+    "admission": {
+      "corpus_sha256": "7777777777777777777777777777777777777777777777777777777777777777",
+      "full_body_train_eligible": true,
+      "missing_requirements": 0,
+      "plan_sha256": "9d537abaa53f700998f0ea4f8203e5c0e967e88832eb8132473c60ad90f89a94",
+      "synthetic_provider_audit_sha256": "c5fadbbfddfd955263fbcefd4975a03b88f8c752ea201e76b002888108c9e2fc"
+    },
+    "cumulative_ledger": {
+      "authorization_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+      "authorized_gpu_seconds": 20.0,
+      "entries": [
+        {
+          "experiment_id": "old",
+          "gpu_seconds": 12,
+          "kind": "training_residency"
+        },
+        {
+          "experiment_id": "refresh-preflight",
+          "gpu_seconds": 2,
+          "kind": "capture"
+        },
+        {
+          "experiment_id": "refresh-preflight",
+          "gpu_seconds": 1,
+          "kind": "audit"
+        },
+        {
+          "experiment_id": "refresh-preflight",
+          "gpu_seconds": 1,
+          "kind": "export"
+        },
+        {
+          "experiment_id": "old",
+          "gpu_seconds": 1,
+          "kind": "development"
+        }
+      ],
+      "original_research_reset_unix": 1791049896
+    },
+    "initialization": "explicit_parent_weight_import_after_separate_model_gates",
+    "new_experiment_id": "new",
+    "new_experiment_updates": 0,
+    "old_corpus_sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+    "old_experiment_id": "old",
+    "optimizer_state": "fresh",
+    "reasons": [],
+    "remaining_gpu_seconds": 3.0,
+    "remaining_real_gates": [
+      "human_experiment_scope_and_budget",
+      "audited_provider_factory",
+      "native_cuda_readiness",
+      "all_stage_zero_update_smoke",
+      "exclusive_gpu_ownership"
+    ],
+    "requested_gpu_seconds": 3,
+    "research_window_resets": false,
+    "resume_mode": "new_experiment",
+    "schema": "synthetic_refresh_handoff_proposal_v1",
+    "source_checkpoint_sha256": "c7060c02f9b2d410f3a6d69b29f057f61b5f28f5ca0c74efb68c3fcc21095941",
+    "synthetic": true,
+    "training_authorized": false
+  },
+  "fresh_research_window": {
+    "admissible_proposal": false,
+    "admission": {
+      "corpus_sha256": "7777777777777777777777777777777777777777777777777777777777777777",
+      "full_body_train_eligible": true,
+      "missing_requirements": 0,
+      "plan_sha256": "9d537abaa53f700998f0ea4f8203e5c0e967e88832eb8132473c60ad90f89a94",
+      "synthetic_provider_audit_sha256": "c5fadbbfddfd955263fbcefd4975a03b88f8c752ea201e76b002888108c9e2fc"
+    },
+    "cumulative_ledger": {
+      "authorization_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+      "authorized_gpu_seconds": 20.0,
+      "entries": [
+        {
+          "experiment_id": "old",
+          "gpu_seconds": 12,
+          "kind": "training_residency"
+        },
+        {
+          "experiment_id": "refresh-preflight",
+          "gpu_seconds": 2,
+          "kind": "capture"
+        },
+        {
+          "experiment_id": "refresh-preflight",
+          "gpu_seconds": 1,
+          "kind": "audit"
+        },
+        {
+          "experiment_id": "refresh-preflight",
+          "gpu_seconds": 1,
+          "kind": "export"
+        },
+        {
+          "experiment_id": "old",
+          "gpu_seconds": 1,
+          "kind": "development"
+        }
+      ],
+      "original_research_reset_unix": 1791049896
+    },
+    "initialization": "explicit_parent_weight_import_after_separate_model_gates",
+    "new_experiment_id": "new",
+    "new_experiment_updates": 0,
+    "old_corpus_sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+    "old_experiment_id": "old",
+    "optimizer_state": "fresh",
+    "reasons": [
+      "original_research_allowance_closed_or_unknown"
+    ],
+    "remaining_gpu_seconds": 3.0,
+    "remaining_real_gates": [
+      "human_experiment_scope_and_budget",
+      "audited_provider_factory",
+      "native_cuda_readiness",
+      "all_stage_zero_update_smoke",
+      "exclusive_gpu_ownership"
+    ],
+    "requested_gpu_seconds": 3,
+    "research_window_resets": false,
+    "resume_mode": "new_experiment",
+    "schema": "synthetic_refresh_handoff_proposal_v1",
+    "source_checkpoint_sha256": "c7060c02f9b2d410f3a6d69b29f057f61b5f28f5ca0c74efb68c3fcc21095941",
+    "synthetic": true,
+    "training_authorized": false
+  },
+  "planned_only": {
+    "admissible_proposal": false,
+    "admission": null,
+    "cumulative_ledger": {
+      "authorization_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+      "authorized_gpu_seconds": 20.0,
+      "entries": [
+        {
+          "experiment_id": "old",
+          "gpu_seconds": 12,
+          "kind": "training_residency"
+        },
+        {
+          "experiment_id": "refresh-preflight",
+          "gpu_seconds": 2,
+          "kind": "capture"
+        },
+        {
+          "experiment_id": "refresh-preflight",
+          "gpu_seconds": 1,
+          "kind": "audit"
+        },
+        {
+          "experiment_id": "refresh-preflight",
+          "gpu_seconds": 1,
+          "kind": "export"
+        },
+        {
+          "experiment_id": "old",
+          "gpu_seconds": 1,
+          "kind": "development"
+        }
+      ],
+      "original_research_reset_unix": 1791049896
+    },
+    "initialization": "explicit_parent_weight_import_after_separate_model_gates",
+    "new_experiment_id": "new",
+    "new_experiment_updates": 0,
+    "old_corpus_sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+    "old_experiment_id": "old",
+    "optimizer_state": "fresh",
+    "reasons": [
+      "audited_new_corpus_required"
+    ],
+    "remaining_gpu_seconds": 3.0,
+    "remaining_real_gates": [
+      "human_experiment_scope_and_budget",
+      "audited_provider_factory",
+      "native_cuda_readiness",
+      "all_stage_zero_update_smoke",
+      "exclusive_gpu_ownership"
+    ],
+    "requested_gpu_seconds": 3,
+    "research_window_resets": false,
+    "resume_mode": "new_experiment",
+    "schema": "synthetic_refresh_handoff_proposal_v1",
+    "source_checkpoint_sha256": "c7060c02f9b2d410f3a6d69b29f057f61b5f28f5ca0c74efb68c3fcc21095941",
+    "synthetic": true,
+    "training_authorized": false
+  },
+  "planner_manifests": {
+    "after_fabricated_capture": {
+      "capture_queue_ready": false,
+      "counts": {
+        "changed_label_prefix_fraction": 0.0,
+        "new_feature_rows": 0,
+        "new_label_rows": 0,
+        "reused_requirements": 9,
+        "student_rows": 3
+      },
+      "readiness": "ancestry_complete_provider_gate_required",
+      "training_eligible": false
+    },
+    "planned": {
+      "capture_queue_ready": true,
+      "counts": {
+        "changed_label_prefix_fraction": 1.0,
+        "new_feature_rows": 0,
+        "new_label_rows": 3,
+        "reused_requirements": 6,
+        "student_rows": 3
+      },
+      "readiness": "missing_native_teacher_capture",
+      "training_eligible": false
+    },
+    "provider_audit": "separate synthetic simulation; no payload audited",
+    "schema": "synthetic_planner_pair_manifest_v1",
+    "student": {
+      "checkpoint_sha256": "c7060c02f9b2d410f3a6d69b29f057f61b5f28f5ca0c74efb68c3fcc21095941",
+      "export_sha256": "df523a4fbd92d317b0062fb50b97789f9e687a38dada5b0d4bff35cc6d51bc23"
+    },
+    "synthetic": true
+  },
+  "spent_budget": {
+    "admissible_proposal": false,
+    "admission": {
+      "corpus_sha256": "7777777777777777777777777777777777777777777777777777777777777777",
+      "full_body_train_eligible": true,
+      "missing_requirements": 0,
+      "plan_sha256": "9d537abaa53f700998f0ea4f8203e5c0e967e88832eb8132473c60ad90f89a94",
+      "synthetic_provider_audit_sha256": "c5fadbbfddfd955263fbcefd4975a03b88f8c752ea201e76b002888108c9e2fc"
+    },
+    "cumulative_ledger": {
+      "authorization_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+      "authorized_gpu_seconds": 17,
+      "entries": [
+        {
+          "experiment_id": "old",
+          "gpu_seconds": 12,
+          "kind": "training_residency"
+        },
+        {
+          "experiment_id": "refresh-preflight",
+          "gpu_seconds": 2,
+          "kind": "capture"
+        },
+        {
+          "experiment_id": "refresh-preflight",
+          "gpu_seconds": 1,
+          "kind": "audit"
+        },
+        {
+          "experiment_id": "refresh-preflight",
+          "gpu_seconds": 1,
+          "kind": "export"
+        },
+        {
+          "experiment_id": "old",
+          "gpu_seconds": 1,
+          "kind": "development"
+        }
+      ],
+      "original_research_reset_unix": 1791049896
+    },
+    "initialization": "explicit_parent_weight_import_after_separate_model_gates",
+    "new_experiment_id": "new",
+    "new_experiment_updates": 0,
+    "old_corpus_sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+    "old_experiment_id": "old",
+    "optimizer_state": "fresh",
+    "reasons": [
+      "cumulative_gpu_budget_exhausted"
+    ],
+    "remaining_gpu_seconds": 0,
+    "remaining_real_gates": [
+      "human_experiment_scope_and_budget",
+      "audited_provider_factory",
+      "native_cuda_readiness",
+      "all_stage_zero_update_smoke",
+      "exclusive_gpu_ownership"
+    ],
+    "requested_gpu_seconds": 3,
+    "research_window_resets": false,
+    "resume_mode": "new_experiment",
+    "schema": "synthetic_refresh_handoff_proposal_v1",
+    "source_checkpoint_sha256": "c7060c02f9b2d410f3a6d69b29f057f61b5f28f5ca0c74efb68c3fcc21095941",
+    "synthetic": true,
+    "training_authorized": false
+  },
+  "synthetic": true
+}

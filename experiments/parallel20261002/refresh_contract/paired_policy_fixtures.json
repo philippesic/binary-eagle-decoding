@@ -1,0 +1,334 @@
+{
+  "rate_falls_drafts_per_round_rises": {
+    "aggregation": "sum_raw_counts_then_divide",
+    "comparison_contract_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+    "comparisons": {
+      "acceptance_regression": {
+        "left": 0.5,
+        "operator": "<",
+        "result": true,
+        "right": 0.98,
+        "unit": "accepted_draft_tokens/proposed_draft_tokens"
+      },
+      "ce_threshold": 0.05,
+      "changed_prefix_fraction": 0.5,
+      "changed_prefix_threshold": 0.2,
+      "insufficient_ce": false,
+      "insufficient_changed_prefix": false,
+      "insufficient_steps": false,
+      "refresh_round": 0,
+      "refresh_round_cap": 2,
+      "relative_ce_improvement": 0.09999999999999998,
+      "round_cap_exhausted": false,
+      "step_threshold": 200
+    },
+    "current": {
+      "ce_loss_sum": 18.0,
+      "ce_supported_rows": 10,
+      "checkpoint_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "completed_steps": 200,
+      "counts": {
+        "accepted": 5,
+        "accepted_emitted": 4,
+        "emitted": 5,
+        "proposed": 10,
+        "rounds": 2
+      },
+      "export_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "metrics": {
+        "accepted_per_proposed": {
+          "unit": "accepted_draft_tokens/proposed_draft_tokens",
+          "value": 0.5
+        },
+        "accepted_per_round": {
+          "unit": "accepted_draft_tokens/speculative_round",
+          "value": 2.5
+        },
+        "emitted_per_round": {
+          "unit": "emitted_tokens/speculative_round",
+          "value": 2.5
+        },
+        "hard_ce": {
+          "unit": "nats/supported_label_row",
+          "value": 1.8
+        }
+      },
+      "raw_rounds": [
+        {
+          "accepted": 3,
+          "draft_cap": 5,
+          "emitted": 4,
+          "eos": false,
+          "prompt_id": "p0",
+          "proposed": 5
+        },
+        {
+          "accepted": 2,
+          "draft_cap": 5,
+          "emitted": 1,
+          "eos": true,
+          "prompt_id": "p1",
+          "proposed": 5
+        }
+      ]
+    },
+    "gate": {
+      "reasons": [
+        "native_acceptance_regression"
+      ],
+      "relative_ce_improvement": 0.09999999999999998,
+      "status": "stop"
+    },
+    "gate_policy": {
+      "caps": {
+        "max_rounds": 2
+      },
+      "development_sample_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "learning_curve": {
+        "max_acceptance_regression": 0.02,
+        "min_changed_prefix_fraction": 0.2,
+        "min_completed_steps": 200,
+        "min_relative_ce_improvement": 0.05
+      }
+    },
+    "legacy_curve_input": {
+      "checkpoint_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "current": {
+        "checkpoint_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "completed_steps": 200,
+        "hard_ce": 1.8,
+        "native_acceptance": 0.5
+      },
+      "development_sample_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "previous": {
+        "checkpoint_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "completed_steps": 100,
+        "hard_ce": 2.0,
+        "native_acceptance": 1.0
+      },
+      "schema": "w1ax_refresh_learning_curve_v1",
+      "split": "development"
+    },
+    "policy_sha256": "9dc3a77aa1a986ab2b80d300fba7e529f75f2a34a4810686d4e0fefd7e95807e",
+    "previous": {
+      "ce_loss_sum": 20.0,
+      "ce_supported_rows": 10,
+      "checkpoint_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "completed_steps": 100,
+      "counts": {
+        "accepted": 2,
+        "accepted_emitted": 2,
+        "emitted": 3,
+        "proposed": 2,
+        "rounds": 2
+      },
+      "export_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "metrics": {
+        "accepted_per_proposed": {
+          "unit": "accepted_draft_tokens/proposed_draft_tokens",
+          "value": 1.0
+        },
+        "accepted_per_round": {
+          "unit": "accepted_draft_tokens/speculative_round",
+          "value": 1.0
+        },
+        "emitted_per_round": {
+          "unit": "emitted_tokens/speculative_round",
+          "value": 1.5
+        },
+        "hard_ce": {
+          "unit": "nats/supported_label_row",
+          "value": 2.0
+        }
+      },
+      "raw_rounds": [
+        {
+          "accepted": 1,
+          "draft_cap": 1,
+          "emitted": 2,
+          "eos": false,
+          "prompt_id": "p0",
+          "proposed": 1
+        },
+        {
+          "accepted": 1,
+          "draft_cap": 1,
+          "emitted": 1,
+          "eos": true,
+          "prompt_id": "p1",
+          "proposed": 1
+        }
+      ]
+    },
+    "schema": "synthetic_refresh_decision_receipt_proposal_v1",
+    "selected_metric": "accepted_per_proposed",
+    "selected_unit": "accepted_draft_tokens/proposed_draft_tokens",
+    "synthetic": true,
+    "training_authorized": false
+  },
+  "rate_rises_drafts_per_round_falls": {
+    "aggregation": "sum_raw_counts_then_divide",
+    "comparison_contract_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+    "comparisons": {
+      "acceptance_regression": {
+        "left": 1.0,
+        "operator": "<",
+        "result": false,
+        "right": 0.48,
+        "unit": "accepted_draft_tokens/proposed_draft_tokens"
+      },
+      "ce_threshold": 0.05,
+      "changed_prefix_fraction": 0.5,
+      "changed_prefix_threshold": 0.2,
+      "insufficient_ce": false,
+      "insufficient_changed_prefix": false,
+      "insufficient_steps": false,
+      "refresh_round": 0,
+      "refresh_round_cap": 2,
+      "relative_ce_improvement": 0.09999999999999998,
+      "round_cap_exhausted": false,
+      "step_threshold": 200
+    },
+    "current": {
+      "ce_loss_sum": 18.0,
+      "ce_supported_rows": 10,
+      "checkpoint_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "completed_steps": 200,
+      "counts": {
+        "accepted": 2,
+        "accepted_emitted": 2,
+        "emitted": 3,
+        "proposed": 2,
+        "rounds": 2
+      },
+      "export_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "metrics": {
+        "accepted_per_proposed": {
+          "unit": "accepted_draft_tokens/proposed_draft_tokens",
+          "value": 1.0
+        },
+        "accepted_per_round": {
+          "unit": "accepted_draft_tokens/speculative_round",
+          "value": 1.0
+        },
+        "emitted_per_round": {
+          "unit": "emitted_tokens/speculative_round",
+          "value": 1.5
+        },
+        "hard_ce": {
+          "unit": "nats/supported_label_row",
+          "value": 1.8
+        }
+      },
+      "raw_rounds": [
+        {
+          "accepted": 1,
+          "draft_cap": 1,
+          "emitted": 2,
+          "eos": false,
+          "prompt_id": "p0",
+          "proposed": 1
+        },
+        {
+          "accepted": 1,
+          "draft_cap": 1,
+          "emitted": 1,
+          "eos": true,
+          "prompt_id": "p1",
+          "proposed": 1
+        }
+      ]
+    },
+    "gate": {
+      "reasons": [],
+      "relative_ce_improvement": 0.09999999999999998,
+      "status": "pass"
+    },
+    "gate_policy": {
+      "caps": {
+        "max_rounds": 2
+      },
+      "development_sample_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "learning_curve": {
+        "max_acceptance_regression": 0.02,
+        "min_changed_prefix_fraction": 0.2,
+        "min_completed_steps": 200,
+        "min_relative_ce_improvement": 0.05
+      }
+    },
+    "legacy_curve_input": {
+      "checkpoint_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "current": {
+        "checkpoint_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "completed_steps": 200,
+        "hard_ce": 1.8,
+        "native_acceptance": 1.0
+      },
+      "development_sample_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "previous": {
+        "checkpoint_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "completed_steps": 100,
+        "hard_ce": 2.0,
+        "native_acceptance": 0.5
+      },
+      "schema": "w1ax_refresh_learning_curve_v1",
+      "split": "development"
+    },
+    "policy_sha256": "9dc3a77aa1a986ab2b80d300fba7e529f75f2a34a4810686d4e0fefd7e95807e",
+    "previous": {
+      "ce_loss_sum": 20.0,
+      "ce_supported_rows": 10,
+      "checkpoint_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "completed_steps": 100,
+      "counts": {
+        "accepted": 5,
+        "accepted_emitted": 4,
+        "emitted": 5,
+        "proposed": 10,
+        "rounds": 2
+      },
+      "export_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "metrics": {
+        "accepted_per_proposed": {
+          "unit": "accepted_draft_tokens/proposed_draft_tokens",
+          "value": 0.5
+        },
+        "accepted_per_round": {
+          "unit": "accepted_draft_tokens/speculative_round",
+          "value": 2.5
+        },
+        "emitted_per_round": {
+          "unit": "emitted_tokens/speculative_round",
+          "value": 2.5
+        },
+        "hard_ce": {
+          "unit": "nats/supported_label_row",
+          "value": 2.0
+        }
+      },
+      "raw_rounds": [
+        {
+          "accepted": 3,
+          "draft_cap": 5,
+          "emitted": 4,
+          "eos": false,
+          "prompt_id": "p0",
+          "proposed": 5
+        },
+        {
+          "accepted": 2,
+          "draft_cap": 5,
+          "emitted": 1,
+          "eos": true,
+          "prompt_id": "p1",
+          "proposed": 5
+        }
+      ]
+    },
+    "schema": "synthetic_refresh_decision_receipt_proposal_v1",
+    "selected_metric": "accepted_per_proposed",
+    "selected_unit": "accepted_draft_tokens/proposed_draft_tokens",
+    "synthetic": true,
+    "training_authorized": false
+  }
+}
