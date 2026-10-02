@@ -431,3 +431,30 @@ SSH operator. Bounded recovery remains authorized by the existing protocol
 when its conditions pass; no recovery has started and no new permission gate
 is invented. A new exclusive grant needs fresh resource/ownership evidence.
 QAT/source fixes and monitoring continue; no native or training-start claim.
+
+
+## Human stop — October 2, 20:44 UTC
+
+Direct human instruction: stop all research and research teams; leave QAT running.
+This overrides continuous replenishment and the usage-only thresholds. Shared
+research_stop is latched, phase stopped_by_human, refills disabled. SAME research
+heartbeat parallel-research-usage-control is PAUSED (actual TOML verified). Usage
+monitor stopped; last actual reading97%used/3%remaining, original reset unchanged;
+no new poll. All research leaders and descendants completed/stopped; remaining
+research names explicitly interrupted.
+
+All owned local CPU groups98750/98946/99759/99781 independently absent; native
+compile supervisor gone. Real server-context.cpp translation unit compiled
+before stop; full server build interrupted36/209. Source/object/partial build/
+rawlogs remain, no completion claim. All unmerged branches and worktrees remain
+intact, including nested native source worktree. No research review/integration/
+new tests or replacement work after stop. Preservation inventory and actual
+stop verification: ignored runs/parallel20261002/human-stop-receipt.json.
+
+Protected QAT successor01a0fe3f, sole preparation/GPU operator, necessary
+prepared-corpus-reuse worker and their monitors are unaffected. Actual native
+CUDA fixture started under supervisor832/child834, then exited0 and owned
+groups/computeapps cleared per prep owner; unchanged raw-report validation is
+pending. No optimizer-training or final data admission claim. QAT continues
+including existing-credit protection. Root research coordination now goes idle
+and must not resume from a queued old heartbeat without new human instruction.

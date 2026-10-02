@@ -2653,3 +2653,17 @@ paired Q4development evaluator. Optional controls remain outside first launch.
 Authentic frozen corpus admission/current actor receipts must be joined separately;
 metadata caches do not substitute959 repeated v1 provider audits. No label/data
 eligibility, finalreceipt, actual-model smoke/checkpointzero or training claim.
+
+
+## Supporting research stopped by human — October 2, 20:44 UTC
+
+Human stopped every research team/Astra/usage worker; shared latchtrue, SAME
+research heartbeatPAUSED verified. All research agents complete/stopped and
+CPUgroups98750/98946/99759/99781+supervisor gone. All unmerged source branches/
+worktrees/raw evidence and partialnativebuild preserved; no further research
+or source integration. Stop/preservation receipt in runs/parallel20261002/.
+
+QAT successor01a0fe3f and necessary prep/GPU support remain active and protected.
+Native9e2 CUDA fixture actually ran832/834 and exited0; raw validation pending,
+no optimizertraining/readiness claim. Existing QAT monitors/credit continuation
+unchanged. [Stop checkpoint](../parallel20261002/supervisor.md#human-stop--october-2-2044-utc).
