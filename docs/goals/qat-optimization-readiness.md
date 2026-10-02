@@ -2568,3 +2568,42 @@ Inherited evaluator worktree retired after clean-status check, exact source/test
 byte equality with public main and git bundle verification. Preserved bundle
 runs/qat-optimization-readiness/development-preflight-owned-archive-20261002/f314-source.bundle
 retains f314faa; only owned merged worktree/branch removed. Peer artifacts untouched.
+
+
+## Postboot fixture packet accepted — October 2, 20:21 UTC
+
+Direct human execute-now steering selects simplest supported training recipe
+after necessary actual gates; optional learned/fusion/affine/A4/curriculum
+comparisons must not block a simpler passing recipe. No new approval required.
+Root accepted LOCALONLY packet from protected postboot_launcher after source
+review and independent19/19 mocked guards. Exact resolved six ldd library pins,
+last FTZ=false, relative-project-cwd process detection, pre-exec source/deadline
+checks and receipt identities are enforced. No old676 STOP/CONT.
+
+Ignored packet postboot-exclusive-native9e2-20261002/ manifest SHA
+08db9babcaac4ab83b53f6ddd72487404a62078e34c610fcaae9a0aec310da76;
+expected SHA a88007e01ac6cc9dbd39bec845689c1d32880fef1c3dcc01904f8d083d450531;
+launcher SHA f212dddb3d280808bc32fb0f1485295245c49a6fddb1e10d332acbabe5f71ef6;
+identity entry SHA924dddbc291499b838d0969cdc6101a524d39eeba5b801aa8185e6b9df41f271.
+Same preparation Luna owns fresh census, short file-stdin transport through
+tmux MCP, inspect/new600slease/repeated admission/unique06fixture120s+10kill,
+actual start receipts, separate SSH reconnect, teardown and exclusive return.
+Root conditional one-fixture GO sent; actual admission/lease/start/result remain
+unverified. Raw report contract uses unchanged4b765 validator after safe return.
+
+Root explicitly selected fixture-then-prep-only recovery from immutable packet
+8a8c49f2147d15b47810f9d7419dadaca2b75f07e6bb519b0424f2e8256b2821.
+Exact new09 supervisor/session, same --resume --prepare-only argv,300sgrace,
+retained corpus/frozen14/runtime7/Git4 pins, fresh recovery budget charge and
+resource/WSL disconnect durability gates remain mandatory. No recovery started
+or budget charged at this local acceptance checkpoint. Native fixture failure
+can return ownership after proven teardown while retaining its raw failure.
+
+Bounded metadata builder integrated/pushed7588a87 from reviewed5618d4b.
+Root independently reran10 focused tests; author reports34 relevant CPU checks
+and Ruff passed. ScriptSHAfc74e4b0f94e85225f3cbc8fd75d4fc47541da295924b62b1f42935311fd6a50;
+testSHAfb4a1dd54299145d811a54e727827bcf54d257abf40115d4f03690aba7998a5c.
+This joins runtime/source registration/three exact TRAIN prompts as metadata;
+actual downstream byte verification and all admission gates remain separate.
+Owned clean worktree removed after exact patch equality; no peer cleanup.
+Both implementation workers complete; sole remote operator remains with prep.

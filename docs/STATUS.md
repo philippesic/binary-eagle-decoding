@@ -4,6 +4,16 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
+## Executable packet accepted — October 2, 20:21 UTC
+
+QAT successor reviewed the minimal postboot fixture packet;19 local guard tests
+pass. SAME prep Luna performs fresh exclusive admission and ONE pinned120s
+native9e2 fixture, then proves teardown before admitted exact prep-only recovery.
+Actual GPU grant/native start/recovery/training remain unverified. The bounded
+collector sources metadata builder is public7588a87; actual model/data/native
+byte verification still required. Human directs simplest passing recipe first.
+[Accepted packet](goals/qat-optimization-readiness.md#postboot-fixture-packet-accepted--october-2-2021-utc).
+
 ## Successor execution preparation — October 2, 20:15 UTC
 
 QAT ownership and SAME ACTIVE15minute heartbeat are verified under01a0fe3f.
