@@ -53,6 +53,9 @@ forward uses dequantized dense dots, so `module_logits` and
 `baseline_max_drift` are retained separately. The diagnostic baseline instead
 uses native-order integer-dot arithmetic. It never borrows the trainer's
 softmax denominator when those baselines differ. A16 is excluded.
+The owner's fixed synthetic fixture has maximum trainer/native logit drift
+A1 = 0, A4 = `2.384185791015625e-7`, A8 = 0; this is a fixture observation,
+not a universal bound or evidence from model states.
 
 The independent validator gate is changed-row F32 error at most
 `8*epsilon*max(1, abs(reference))`, ordinary F64 CE error at most
@@ -93,12 +96,21 @@ Ruff and `git diff --check` pass. Environment: macOS arm64, Apple M3 Max,
 Python 3.11, PyTorch 2.14.0, CPU F32/F64/I64 arithmetic.
 
 Independent Luna validation owns `validation/`, its unique test file, and
-`validation.md`; final results are recorded there. No production source is
-edited. The branch is `research/20261002-head-flip-oracle`, isolated worktree
+`validation.md`; commit `f20d334` records 5/5 tests on independent PyTorch 2.8:
+9 configurations, 27 candidates, 135 exact F32 row-logit checks, 108 supported
+CE checks (maximum error `4.718447854656915e-16`), and 89/89 decisions above
+the margin gate. All 46 ties/near-ties are explicitly flagged. The final
+combined owner/validator suite passes 11/11 on project PyTorch 2.14 with the
+same recorded metrics; Ruff and diff checks pass. Owner implementation is
+commit `7fcaa84`. No production source is edited. The branch is
+`research/20261002-head-flip-oracle`, isolated worktree
 `/private/tmp/eagle-parallel-20261002/head-flip-oracle`.
 
-Remaining work at this checkpoint: independent validator result, combined
-acceptance run, final commit and root integration/push/cleanup. Root owns the
+Deliverable and bounded acceptance check are complete. Remaining work is root
+integration/push/cleanup; preserve the ignored raw validator log at
+`runs/parallel20261002/head-flip-oracle-validation/unittest.log` before removing
+the worktree. No persistent CPU process or accelerator allocation remains.
+Root owns the
 active-goal checkpoint under `docs/goals/qat-optimization-readiness.md`.
 Integration is report/prototype only; adoption as training telemetry would
 require explicit source binding and separate recipe/runtime review. A useful
