@@ -27,6 +27,14 @@ task; do not load every document for a small edit.
 - The orchestrator speaks to the user briefly and technically, explaining terms
   that require project-specific background. Give periodic milestone updates and
   answer check-ins directly. Save detailed state in the goal file.
+- Whenever you notice contention between the user and agents (disagreements,
+  cooperation difficulties, or confusion), or a concrete user mistake, record
+  it in `docs/USER_LESSONS.md`. Keep entries factual and respectful: include
+  context, evidence, agent contributions to the problem, and a practical lesson
+  for reminders, behavior, or clearer coordination. Distinguish confirmed errors
+  from disagreements or uncertainty; update entries when corrected. Consult
+  relevant lessons when needed, without treating them as overriding the user's
+  current instructions.
 - Delegate independent, bounded work. GPT-6.1 Sol high owns coordination and features;
   Luna high handles tests, logs, and experiment supervision; Astra medium gives
   focused advice on hard problems. Avoid parallel edits to the same files or
