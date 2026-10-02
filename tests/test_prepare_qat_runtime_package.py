@@ -16,8 +16,12 @@ tool = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(tool)
 
 
-def tiny_elf(runpath, soname=None, needed=()):
+def tiny_elf(
+    runpath, soname=None, needed=(), version_kind=None, version_alias=True, path_prefix=""
+):
     labels = ["", ".shstrtab", ".dynstr", ".dynamic", ".dynsym", ".text", ".rodata", ".nv_fatbin"]
+    if version_kind:
+        labels.append(".gnu.version_d" if version_kind == "definition" else ".gnu.version_r")
     names = b"\0"
     name_offsets = {}
     for name in labels[1:]:
@@ -34,8 +38,9 @@ def tiny_elf(runpath, soname=None, needed=()):
     entries.extend((1, put(name)) for name in needed)
     if soname:
         entries.append((14, put(soname)))
+    safe_version = put("SAFE_VERSION") if version_kind else 0
     if runpath is not None:
-        entries.append((29, put(runpath)))
+        entries.append((29, put(path_prefix + runpath) + len(path_prefix)))
     entries.extend([(5, 0x402000), (10, len(strings)), (0, 0)])
     bodies = [
         b"",
@@ -47,6 +52,20 @@ def tiny_elf(runpath, soname=None, needed=()):
         b"readonly identity",
         b"CUDA bytes never executed",
     ]
+    if version_kind:
+        alias = next(v for t, v in entries if t == 29)
+        name = alias if version_alias else safe_version
+        if version_kind == "definition":
+            bodies.append(
+                struct.pack("<HHHHIII", 1, 0, 2, 1, 0, 20, 0) + struct.pack("<II", name, 0)
+            )
+        else:
+            file_name = alias if version_kind == "need-file" and version_alias else 0
+            aux_name = name if version_kind == "need-name" else safe_version
+            bodies.append(
+                struct.pack("<HHIII", 1, 1, file_name, 16, 0)
+                + struct.pack("<IHHII", 0, 0, 2, aux_name, 0)
+            )
     header = bytearray(64)
     header[:7] = b"\x7fELF\x02\x01\x01"
     struct.pack_into("<Q", header, 40, 64)
@@ -56,7 +75,7 @@ def tiny_elf(runpath, soname=None, needed=()):
     for index, (name, body) in enumerate(zip(labels, bodies)):
         kind = {".shstrtab": 3, ".dynstr": 3, ".dynamic": 6, ".dynsym": 11}.get(name, 1)
         addr = 0x402000 if name == ".dynstr" else 0
-        link = 2 if name in (".dynamic", ".dynsym") else 0
+        link = 2 if name in (".dynamic", ".dynsym", ".gnu.version_r", ".gnu.version_d") else 0
         stride = 16 if name == ".dynamic" else 24 if name == ".dynsym" else 0
         rows.append(
             struct.pack(
@@ -205,6 +224,55 @@ class FixedSlotPackage(unittest.TestCase):
             tool.transform(tiny_elf("/other:"), self.old)
         with self.assertRaisesRegex(ValueError, "Unexpected runtime path"):
             tool.transform(tiny_elf(self.old), None)
+
+    def test_other_string_dynamic_tags_cannot_overlap_slot(self):
+        for tag in (1, 14, 15, 0x7FFFFFFD, 0x7FFFFFFF, 0x6FFFFEFA, 0x6FFFFEFB, 0x6FFFFEFC):
+            with self.subTest(tag=tag):
+                data = bytearray(tiny_elf(self.old, needed=["placeholder"]))
+                layout = tool.elf(data)
+                index = layout["paths"][0][1]
+                dynamic = layout["sections"][".dynamic"][1]
+                struct.pack_into("<qQ", data, dynamic[4], tag, index)
+                with self.assertRaisesRegex(ValueError, "overlaps RUNPATH|Exactly one"):
+                    tool.transform(bytes(data), self.old)
+
+    def test_dynamic_reference_starting_before_slot_cannot_span_it(self):
+        data = bytearray(tiny_elf(self.old, needed=["unused"], path_prefix="prefix"))
+        layout = tool.elf(data)
+        index = layout["paths"][0][1]
+        dynamic = layout["sections"][".dynamic"][1]
+        struct.pack_into("<qQ", data, dynamic[4], 0x6FFFFEFC, index - 6)
+        with self.assertRaisesRegex(ValueError, "overlaps RUNPATH"):
+            tool.transform(bytes(data), self.old)
+
+    def test_symbol_reference_starting_before_slot_cannot_span_it(self):
+        data = bytearray(tiny_elf(self.old, path_prefix="prefix"))
+        layout = tool.elf(data)
+        index = layout["paths"][0][1]
+        symbols = layout["sections"][".dynsym"][1]
+        struct.pack_into("<I", data, symbols[4], index - 6)
+        with self.assertRaisesRegex(ValueError, "overlaps RUNPATH"):
+            tool.transform(bytes(data), self.old)
+
+    def test_gnu_version_file_and_auxiliary_names_cannot_alias_slot(self):
+        for kind in ("need-file", "need-name", "definition"):
+            with self.subTest(kind=kind), self.assertRaisesRegex(ValueError, "overlaps RUNPATH"):
+                tool.transform(tiny_elf(self.old, version_kind=kind), self.old)
+
+    def test_gnu_nonoverlapping_versions_are_preserved(self):
+        for kind in ("need-file", "need-name", "definition"):
+            with self.subTest(kind=kind):
+                data = tiny_elf(self.old, version_kind=kind, version_alias=False)
+                changed, patch, _ = tool.transform(data, self.old)
+                self.assertEqual(len(data), len(changed))
+                self.assertTrue(patch["every_other_byte_identical"])
+
+    def test_gnu_version_out_of_bounds_chain_is_rejected(self):
+        data = bytearray(tiny_elf(self.old, version_kind="need-name", version_alias=False))
+        row = tool.elf(data)["sections"][".gnu.version_r"][1]
+        struct.pack_into("<I", data, row[4] + 8, 0xFFFFFFF0)
+        with self.assertRaisesRegex(ValueError, "Bad version auxiliary"):
+            tool.transform(bytes(data), self.old)
 
     def test_changed_copy_code_fails_even_with_new_manifest_sha(self):
         proof = self.create()

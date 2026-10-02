@@ -118,18 +118,71 @@ def transform(data, old_runpath):
     )
     start = layout["strings"][4] + index
     end = start + width
+    strings_row = layout["strings"]
+    strings = data[strings_row[4] : strings_row[4] + strings_row[5]]
+
+    def reject_reference(value):
+        require(0 <= value < len(strings), "ELF string reference outside table")
+        terminator = strings.find(b"\0", value)
+        require(terminator >= value, "ELF string reference lacks terminator")
+        require(
+            terminator + 1 <= index or value >= index + width,
+            "ELF string reference overlaps RUNPATH slot",
+        )
+
     # Reject ELF string-table sharing with NEEDED/SONAME or dynamic symbols.
+    string_tags = {1, 14, 15, 0x7FFFFFFD, 0x7FFFFFFF, 0x6FFFFEFA, 0x6FFFFEFB, 0x6FFFFEFC}
     for other_tag, value in layout["entries"]:
-        if other_tag in (1, 14, 15) or (other_tag == 29 and value != index):
-            require(
-                not index <= value < index + width, "RUNPATH slot aliases another dynamic string"
-            )
+        if other_tag in string_tags or (other_tag == 29 and value != index):
+            reject_reference(value)
+    # GNU version records refer to .dynstr too; preserve their string names.
+    for section_name, head_size, aux_size, name_field in (
+        (".gnu.version_r", 16, 16, 8),
+        (".gnu.version_d", 20, 8, 0),
+    ):
+        if section_name not in layout["sections"]:
+            continue
+        row = layout["sections"][section_name][1]
+        require(row[6] == layout["sections"][".dynstr"][0], "Version string table link differs")
+        blob = data[row[4] : row[4] + row[5]]
+        require(row[4] + row[5] <= len(data), "Version section outside ELF")
+        offset, visited = 0, set()
+        while True:
+            require(offset not in visited and offset + head_size <= len(blob), "Bad version record")
+            visited.add(offset)
+            count = struct.unpack_from("<H", blob, offset + (2 if head_size == 16 else 6))[0]
+            require(count <= len(blob) // aux_size, "Version auxiliary count exceeds bound")
+            aux, following = struct.unpack_from("<II", blob, offset + head_size - 8)
+            if head_size == 16:
+                file_name = struct.unpack_from("<I", blob, offset + 4)[0]
+                reject_reference(file_name)
+            require(not count or aux >= head_size, "Version auxiliary overlaps header")
+            cursor, aux_seen = offset + aux, set()
+            for position in range(count):
+                require(
+                    cursor not in aux_seen and cursor + aux_size <= len(blob),
+                    "Bad version auxiliary",
+                )
+                aux_seen.add(cursor)
+                name = struct.unpack_from("<I", blob, cursor + name_field)[0]
+                reject_reference(name)
+                next_aux = struct.unpack_from("<I", blob, cursor + aux_size - 4)[0]
+                if position + 1 < count:
+                    require(next_aux >= aux_size, "Truncated version auxiliary chain")
+                    cursor += next_aux
+            if not following:
+                break
+            require(following >= head_size, "Overlapping version records")
+            offset += following
     if ".dynsym" in layout["sections"]:
         row = layout["sections"][".dynsym"][1]
-        require(row[9] == 24 and row[5] % 24 == 0, "Unexpected dynamic symbol layout")
+        require(
+            row[9] == 24 and row[5] % 24 == 0 and row[6] == layout["sections"][".dynstr"][0],
+            "Unexpected dynamic symbol layout",
+        )
         for offset in range(0, row[5], 24):
             value = struct.unpack_from("<I", data, row[4] + offset)[0]
-            require(not index <= value < index + width, "RUNPATH slot aliases a symbol name")
+            reject_reference(value)
     replacement = b"$ORIGIN\0"
     require(width >= len(replacement), "RUNPATH slot too short")
     result = data[:start] + replacement + b"\0" * (width - len(replacement)) + data[end:]
