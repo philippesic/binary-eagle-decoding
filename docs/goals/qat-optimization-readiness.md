@@ -3142,3 +3142,43 @@ payload/configresult; rootaccepts concretevalidatedNEWsource/config before exact
 provider/coverage/currentpairedmodelsmoke/zero-save/finalready andcurrent9e2
 nativeactor/model/backward/memory/timing/save-resume/Q4development gates, then
 alreadyauthorizedoptimizertraining and actualcheckpoint/development progress.
+
+
+## CPU static04 actual start — October 2, 22:54 UTC
+
+CPU04ACTUALLY started22:53:07.479001UTC withnewv2grant
+bf9aa100d3b7b79ef787c6aca1f5ece8f8d8e1157354b2910e36db7825b199eb.
+LaunchrawSHAaceb90f9b62946fff5cca689bbcf6280e09609552a4959a3d7ec66fc01a2051e,
+rc0/stateRUNNING. Supervisor3911/PGID3911/start1568168; timeout3912/PGID3912/
+start1568174; runner3914/samePGID/start1568174; UID1000. Reviewedinner180sstatic/
+outer240sTERM/kill10/grace10, noGPU/model/optimizer. SAMEsoleLuna obtains fresh
+reconnect/terminalresult/teardown collect; actualacceptance/return stillpending.
+No observationtimeout usedasrestart authority; existingjob3911/3912 iswatched.
+
+Original04packet stagingall15bytes verified; initialWindowsbase64quotedattempt
+failedbeforeremoteexecution. Correctstdin stage succeededbut8babgrant expired
+21secondsbeforelaunch; staticnotinvoked, failureproof
+ dde1158ecafc007bfd9eab9dcc9cf18c953ccf8a4f42f6e695010d198dffcf03 retained.
+No restage/source/gate waiver. Freshpoststagepreflight22:51:16UTC PASS raw
+22dceb7c2593cd0fc25fda3357f9f98df5a5818f284d50b0e9a10031d395ec5e,
+proof7fef4a9c83f9aaa9c292991b1723e004690780c25cc5cbe810087b687a6a1d88;
+same09boot/source/kernel, audit153/353/models{}/optimizerfalse, host19.47GB,
+14+7+4HEAD/actualstaged13+manifest/priorreturns/unusedjob/output/sessionPASS.
+Parentmintedv2specificgrant andcombinedgrant-staging/exactlaunch requestadjacent.
+
+ROOTexplicit mechanicalCPUgrant delegation acknowledged: parent/SAMEsoleoperator
+may mint specific<=300s newadmission immediatelyafter exactfreshguard evidence
+under existingrootconditionalGO, then launchadjacent withoutanotherchatroundtrip.
+Preserve proof/grantSHA/bothownerapproval/currentsource/pause/RAM/unused/return
+checks. AppliesONLY CPU04 and CPUconfig85 scopes, neverGPU/old09signal/optimizer.
+Avoid expiry causedby agent/toolhandshakes; no deadline/resource/identity weakening.
+Existinginvalidtemplate/03grant remain unusable. Parent retainedLOCALcombined
+requestownership andsoleLuna remotetmuxMCPexecution; no duplicateSSH/operator.
+
+CPUconfig85reviewed18root+18Luna/all11bytes stable/rootGO; source/checkouts/code
+remain6f/9e2. Nextafteractual04terminalreturn/freshRAM14GiB/disk10GiB/old09phase
+and specificgrant: NEWsupervised CPUcheckout/payload/configvalidation. ROOTaccepts
+actualvalidatedsource/config before09controlledteardown/freshGPUtransfer andNEW
+--prepare-only. Fullcurrentmodel/backward/memory/checkpoint/development andactual
+optimizerprogress remainpending; usercheck-in answeredzeroQATupdates directly.
+Goal/SAMEheartbeats active, researchstopped,2080Tipaused, no creditpurchase/reset.

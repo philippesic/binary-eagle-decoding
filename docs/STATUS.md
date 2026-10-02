@@ -4,6 +4,18 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
+## CPU server inspection actually started — October 2, 22:54 UTC
+
+Static-only server04 started at 22:53:07 UTC: supervisor3911, child3912 and
+runner3914, under the reviewed 180-second inspection / 240-second supervisor
+bounds. Result and complete process-group return remain pending. This is a CPU
+inspection, with no model, GPU or optimizer execution.
+
+Fresh recovery09 observation at 22:51 UTC verified audit153/353, zero updates,
+source/runtime identities and about 19.47 GB host memory. The separately reviewed
+new-source CPU validation packet is accepted next, after server04 return and fresh
+coordination. Optimizer QAT has not started. [Actual start checkpoint](goals/qat-optimization-readiness.md#cpu-static04-actual-start--october-2-2254-utc).
+
 ## New-source CPU validation packet accepted — October 2, 22:47 UTC
 
 The executable new-source staging/configuration packet passed 18 tests under
