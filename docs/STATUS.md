@@ -30,12 +30,13 @@ boundary or full release; CUDA repair retest remains pending. [Handoff](QAT_TRAI
 QATheartbeat remainsACTIVE every15minutes; no CUDA-ready or training-start claim.
 
 **Validation task rotation at a safe boundary:** after two compactions, the
-validation/training owner is checkpointing into a fresh task. No owned remote
+validation/training owner transferred to acknowledged successor
+01a0fc3d-bbe1-7e93-a19b-a9200dfa186c (Continue QAT validation and training). No owned remote
 jobs or exclusive lease are active. Fresh preparation health10:43:57 UTC is
 healthy329/353, completed10,000train/288dev (714dev remain), zerooptimizer.
-The built native9e2 repair awaits an exclusive actual CUDA retest. The successor
-must acknowledge ownership and receive the SAME active15min heartbeat; this
-rotation does not release the preparation GPU. [Executable handoff](goals/qat-optimization-readiness.md#validation-ownership-rotation--october2-1043-utc-checkpoint).
+The built native9e2 repair awaits an exclusive actual CUDA retest. Acknowledgment and SAME active15min heartbeat target were verified from local
+registration and automation readback. This rotation does not release the
+preparation GPU. [Executable handoff](goals/qat-optimization-readiness.md#validation-ownership-rotation--october2-1043-utc-checkpoint).
 
 **Overnight CPU research authorized (October1):** three teams investigate W1A1
 representation geometry, native accepted-prefix objectives and block-parallel

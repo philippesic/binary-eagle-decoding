@@ -1108,3 +1108,20 @@ reset/cutoff and may use available paid credits. No permission to redeem resets
 or purchase credits. New direct human pause/stop overrides this. Training has
 not begun; real-data optimizer updates remain zero. No unresolved user decision
 is required for the bounded retest or training after all declared gates.
+
+
+### Successor acknowledgment and monitor transfer verified
+
+Fresh Sol/high task **Continue QAT validation and training**, ID
+01a0fc3d-bbe1-7e93-a19b-a9200dfa186c, verified local source/runtime provenance,
+all executable/library hashes, exact preparation identities, latest health,
+no active validation job/lease, paused RTX2080Ti and clean retained native
+worktree. Its first turn completed with acknowledgment in the ignored handoff
+registration. The predecessor retargeted the SAME qat-validation-and-training-
+handoff automation; TOML readback confirms ACTIVE, every15minutes, target
+01a0fc3d-bbe1-7e93-a19b-a9200dfa186c. Registration acknowledgment and
+automation_target_verified are true; training_owner_thread_id names successor.
+No new schedule, SSH query, GPU work, optimizer update or preparation change.
+Predecessor stops now. Successor assumes the exact next actions above;
+parent/preparation/usage supervisors receive the verified identity. No change
+to human authorization or overnight protection.
