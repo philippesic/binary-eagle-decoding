@@ -2036,3 +2036,21 @@ not a fresh checkout missing run artifacts. Preserve peer untracked research
 and overnight files and any concurrent STATUS/goal notes. No unresolved research
 choice is introduced by this rotation; transport proof and acceptance gates remain
 pending, zero prep optimization authorized.
+
+
+## Parallel support launch — October 2, 18:35 UTC
+
+Human requested protected continuous QAT/preflight coordination, Astra medium
+CPU research, one Sol high/Luna validation team per task, and a five-minute usage
+monitor. Supervisor chat `01a0fddd-d4fd-7e70-8720-528a4e23006e`; detailed roster,
+worktrees, stop/refill/reset policy and owner restoration are in
+[the supervisor checkpoint](../parallel20261002/supervisor.md). Initial weekly
+window78% used, then79% used/21% remaining, resetsAt1791049896 unchanged.
+ACTIVE five-minute heartbeat `parallel-research-usage-control` created and
+verified. At<=1% stop CPU research; on actual reset stop research monitor too.
+QAT/preparation supervision and available-credit continuation remain protected.
+Four teams launched: LSQ batching gradients, curriculum transitions/resume,
+composed recurrent/cache VJPs, and binary sign inertia/capacity. No live recipe
+change, new GPU operator, fresh CUDA result or training-start claim. QAT agent
+restored archived owners and deleted QAT/prep heartbeats; LOCAL198 diagnosis
+completion/explicit handoff is pending before remote dispatch.

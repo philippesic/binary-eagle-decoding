@@ -1074,3 +1074,15 @@ the naive grouped control is not an optimized Prism checkpoint.
 The active SM75 suite, its GPU owner, frozen protocol and reserved final prompts
 are unchanged. New fitting/QAT budgets and any practical weight-only branch
 remain proposals for the user, not additional experiments started by this review.
+
+
+## Parallel support launch — October 2, 18:35 UTC
+
+Four isolated CPU research teams and independent Luna validators are active,
+coordinated by Astra medium, with protected QAT/preflight ownership restored.
+Five-minute usage heartbeat `parallel-research-usage-control` is ACTIVE; initial
+window now21% remaining, resetsAt1791049896. CPU research stops at<=1%;
+research and its monitor stop on reset while QAT continues including existing
+credits. Actual new CUDA/training start is not verified. See
+[supervisor](parallel20261002/supervisor.md) and
+[active-goal checkpoint](goals/qat-optimization-readiness.md#parallel-support-launch--october-2-1835-utc).
