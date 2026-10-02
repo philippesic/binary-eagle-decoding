@@ -838,3 +838,26 @@ then seek freshactualCUDAoperator/recurrent/model gates. Preserve exactbeta gate
 sourceancestry and alloriginalfailures; no passingreadiness/QATupdate orgeneral
 realfeature failure is inferred from thissingleedgecase. Preparationmonitor/data
 ownership remains withprepowner; no autonomousGPUuse without freshreservation.
+
+
+## Targeted subnormal precision repair published — October2 09:59UTC
+
+Nativeowner published9e2c7a900 onforkfeature/learned-w1ax. Parent pinb32f7fe is
+published. Targeted CMake SOURCEw1a1.cu --ftz=false appended after target
+--use_fast_math, retaining other optimizations/unrelatedkernels/globalheaders.
+The exactactual learnedA1packcase supports preserving subnormalbeta/input
+conversions/learnedthresholds; no assertion/tolerance/data changes. CPUfixture
+57packs/114loaders/59graphs/218nodes passes unchanged. Actual CUDAretest and
+allrecurrent/model/readiness proof remain pending; no optimizer/QATclaim.
+QATowner builds incrementally onCPU before asking anotherGPUslot.
+
+At parentlocal09:59UTC read, exactcaseshortlease stillstatusrelease_operator_active
+(updated09:54:53), deadline09:55:20elapsed; held audit272/353. Prepowner reports
+allreleasechecks except one locallytranscribed expectedchecksum passed; no
+SIGCONT signal sent. Same soleoperator is correcting theguard from savedraw
+receipt and willverifyrelease/exactfrozenidentity thenSIGCONT same676 promptly.
+Parent directed fullJSON/rawbyte checksumderivation, no shortenedhash
+copy/no weakenedgate/no paralleloperator/restart. QATowner owns noactiveGPUjobs
+and explicitlyreturned9:50; that is not proof of prepresume. Parent records
+currentpendingresume and will close it only on actualproof. Both owner monitors
+remainACTIVE; no newGPUreservation until actualhandoff is safe.

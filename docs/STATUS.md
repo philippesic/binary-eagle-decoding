@@ -22,10 +22,12 @@ All19release checks passed, all14validation process groups gone, GPUempty and
 frozen identities unchanged; post45sCPUhealth healthy/zerooptimizer. No restart
 or audit reset. Preparation again owns RTX5080;2080Ti paused. Actual CUDA build succeeded; a short subsequent GPU probe identified the
 packing failure: learned A1 at minimumfloat32 subnormals returns beta0 instead
-of2^-149. A targeted precision fix is being prepared without weakening the exact
-gate; fullCUDA/native/model readiness remains unproved. Probegroups8656/8658gone
-and GPUempty verified09:50:25UTC; shortlease explicitlyreturned, exactliveprep
-resume for that lease awaits ownerproof. FurtherGPUtests require newreservation. QAT waits
+of2^-149. Native precision fix9e2c7a900 is published/pinned: w1a1.cu appends
+--ftz=false after fastmath, preserving subnormals without assertion/tolerance
+changes. CPUfixtures pass; actualCUDAretest/fullreadiness remain pending. Probegroups8656/8658gone
+and GPUempty verified09:50:25UTC; shortlease explicitlyreturned; at09:59UTC its resumeguard was being corrected
+from rawreceipt after a checksumtranscription error (no signal/allotherchecks
+passed). Actualsameprocessresume for thisshortlease is still unverified. FurtherGPUtests require newreservation. QAT waits
 for fullverifieddata and currentpassinggates. Both existing15minmonitors ACTIVE.
 [Handback checkpoint](goals/qat-optimization-readiness.md#early-validation-lease-closed-and-cpu-audit-resumed--october2).
 The readiness objective remains incomplete.
