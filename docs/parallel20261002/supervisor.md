@@ -124,7 +124,7 @@ All first-slate owners/validators completed. Root reviewed findings, integrated
 all four source-bound CPU reports/fixtures, and ran the combined new suite:
 30/30 tests passed on Apple arm64 CPU/PyTorch2.14; diff checks pass. Worker
 commits map to main: LSQe61cf9e→0576fd5 and349ad51→949b037, curriculum77d90fe
-→4904f80, recurrent4fa1357→d9c1e55, signe e01400→7af7630. LSQ's goal append
+→4904f80, recurrent4fa1357→d9c1e55, sign ee01400→7af7630. LSQ's goal append
 conflict was resolved retaining current QAT-owner notes and all incoming evidence.
 QAT doc40253ab→c694dce,9afc496→ca02272.
 
@@ -158,3 +158,10 @@ refresh metric/admission/budget handoff gaps. Ownership follows matching
 research/experiments topic directories and unique tests; no live source edits.
 Fresh18:44:20usage81% used/19% remaining, same original reset; monitor registered
 new teams. Refill only after all three teams/descendants finish and budget permits.
+
+
+First-slate cleanup completed after verified push69c253c: all four clean
+worktrees and branches retired, with owned contents verified equal to main and
+ignored runs archived. Receipt records original tips/paths/retirement timestamps.
+Second-slate active worktrees and protected QAT regression/source work remain
+untouched. No experiment processes were active in retired worktrees.
