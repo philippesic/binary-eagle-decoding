@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import fcntl
+import hashlib
 import importlib
 import json
 import os
@@ -217,6 +218,264 @@ def publish_preparation_ready(trainer, run_dir: Path) -> None:
     )
 
 
+def prepared_digest(value: dict) -> str:
+    """Same full-provider identity used by the trainer and native actor collector."""
+    return hashlib.sha256(
+        json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+    ).hexdigest()
+
+
+def prepared_corpus_inputs(spec: dict, run_dir: Path, prepared_dir: Path, ready_sha: str):
+    """Authenticate a completed preparation without loading its optimizer/model state.
+
+    All writes belong to the new run. The old checkpoint is evidence only; the
+    new trainer builds independent lanes and performs its own smoke and save.
+    """
+    if (not isinstance(ready_sha, str) or len(ready_sha) != 64
+            or any(c not in "0123456789abcdef" for c in ready_sha)):
+        raise ValueError("prepared completion receipt requires a pinned SHA256")
+    prepared_dir, run_dir = prepared_dir.resolve(), run_dir.resolve()
+    if (prepared_dir == run_dir or prepared_dir in run_dir.parents
+            or run_dir in prepared_dir.parents):
+        raise ValueError("prepared and new run directories must not overlap")
+    artifacts = {}
+
+    def pin(path, expected=None):
+        path = Path(path).resolve()
+        if path == run_dir or run_dir in path.parents:
+            raise ValueError("prepared input overlaps new run output")
+        actual = sha256(path)
+        if expected is not None and actual != expected:
+            raise ValueError(f"prepared artifact SHA256 mismatch: {path}")
+        artifacts[str(path)] = actual
+        return path
+
+    def read(path, expected=None):
+        return json.loads(pin(path, expected).read_text())
+
+    ready = read(prepared_dir / "preparation-ready.json", ready_sha)
+    if ready.get("schema") != "continuous_w1ax_preparation_ready_v1":
+        raise ValueError("unsupported prepared completion receipt")
+    status = read(prepared_dir / "status.json")
+    for record in (ready, status):
+        if (
+            record.get("preparation_complete") is not True
+            or record.get("optimization_started") is not False
+            or record.get("stop_reason") != "prepare_only"
+            or type(record.get("step")) is not int or record["step"] != 0
+            or set(record.get("models", {})) != {"A8", "A1"}
+            or any(type(m.get("step")) is not int or m["step"] != 0
+                   for m in record["models"].values())
+        ):
+            raise ValueError("prepared corpus requires complete zero-update A8/A1 preparation")
+    if (
+        status.get("schema") != "continuous_joint_w1ax_v1"
+        or status.get("status") != "stopped"
+        or status.get("preparation_report_sha256") != ready_sha
+        or Path(status.get("preparation_report", "")).resolve()
+           != prepared_dir / "preparation-ready.json"
+        or status.get("source_sha256") != ready.get("source_sha256")
+        or status.get("training_runtime") != ready.get("training_runtime")
+        or status.get("models") != ready.get("models")
+    ):
+        raise ValueError("prepared stopped status does not join completion receipt")
+    require_preparation_resume(prepared_dir)
+    old = read(prepared_dir / "resolved_config.json")
+    # Training controls may change only through the ordinary current-source
+    # trainer gates; frozen corpus, model, coverage and development declarations may not.
+    def frozen_declarations(value):
+        declarations = {k: v for k, v in value.items()
+                        if k not in {"training", "preparation_note", "prepared_corpus"}}
+        # These two fields describe the new actor/profiling proof. They do not
+        # change capture ancestry or enable training controls; ordinary current
+        # runtime/model/receipt gates still bind the new training configuration.
+        if "optimization_profile" in declarations:
+            profile = declarations.pop("optimization_profile")
+            if not isinstance(profile, str) or not profile.strip():
+                raise ValueError("prepared reuse requires a named optimization profile")
+        if "native" in declarations:
+            if not isinstance(declarations["native"], dict):
+                raise ValueError("prepared reuse requires native actor metadata")
+            native = dict(declarations["native"])
+            if "expected_commit" in native:
+                commit = native.pop("expected_commit")
+                if (not isinstance(commit, str) or len(commit) != 40
+                        or any(c not in "0123456789abcdef" for c in commit)):
+                    raise ValueError("prepared reuse native.expected_commit requires full SHA")
+            if native:
+                declarations["native"] = native
+            else:
+                declarations.pop("native")
+        return declarations
+
+    if frozen_declarations(old) != frozen_declarations(spec):
+        raise ValueError("prepared reuse changes immutable stages/development/source configuration")
+    runtime = read(prepared_dir / "runtime_environment.json")
+    if runtime.get("training_runtime") != ready.get("training_runtime"):
+        raise ValueError("prepared runtime does not join completion receipt")
+    checkpoint = ready.get("checkpoint", {})
+    if (
+        type(checkpoint.get("step")) is not int or checkpoint["step"] != 0
+        or status.get("checkpoint") != checkpoint
+        or read(prepared_dir / "latest.json") != checkpoint
+    ):
+        raise ValueError("prepared checkpoint zero does not join receipt/status/latest")
+    checkpoint_path = Path(checkpoint["path"]).resolve()
+    if prepared_dir not in checkpoint_path.parents:
+        raise ValueError("prepared checkpoint must belong to original run")
+    pin(checkpoint_path, checkpoint["sha256"])
+    manifest = read(checkpoint_path.parent / "manifest.json")
+    if (
+        manifest.get("schema") != "continuous_joint_w1ax_v1"
+        or type(manifest.get("step")) is not int or manifest["step"] != 0
+        or manifest.get("sha256") != checkpoint["sha256"]
+        or manifest.get("source_sha256") != ready.get("source_sha256")
+        or manifest.get("training_runtime") != ready.get("training_runtime")
+        or any(type(manifest.get(k)) is not int or manifest[k] != 0 for k in ("epoch", "cursor"))
+        or manifest.get("optimizer_rng_cursor_exact") is not True
+        or set(manifest.get("exports", {})) != {"A8", "A1"}
+    ):
+        raise ValueError("prepared checkpoint manifest does not join receipt")
+    from dataclasses import asdict
+
+    from w1a1_eagle.continuous_qat import immutable_config
+
+    _, old_config = load_config(prepared_dir / "resolved_config.json")
+    if manifest.get("immutable_config") != immutable_config(asdict(old_config)):
+        raise ValueError("prepared checkpoint changes original training configuration")
+    for lane, exports in manifest["exports"].items():
+        if set(exports) != {"joint.npz", "joint.json"}:
+            raise ValueError("prepared checkpoint export inventory differs")
+        for filename, digest in exports.items():
+            pin(checkpoint_path.parent / lane / filename, digest)
+    smoke = read(prepared_dir / "dual_smoke.json", ready["dual_smoke_sha256"])
+    if not {"A8", "A1"} <= set(smoke):
+        raise ValueError("prepared paired smoke is incomplete")
+    for lane in ("A8", "A1"):
+        for name in ("loss", "later_state_gradient_norm",
+                     "later_k_gradient_norm", "later_v_gradient_norm"):
+            value = smoke[lane].get(name)
+            if (type(value) not in (int, float) or not -float("inf") < value < float("inf")
+                    or (name != "loss" and value <= 0)):
+                raise ValueError(
+                    "prepared paired smoke lacks finite loss/attached state/K/V gradients"
+                )
+    coverage = read(prepared_dir / "teacher_coverage.json")
+    if (coverage != ready.get("teacher_coverage")
+            or prepared_digest(coverage.get("source", {})) != ready.get("source_sha256")):
+        raise ValueError("prepared coverage/provider source digest does not join receipt")
+
+    stage_dir = prepared_dir / "stages"
+    readiness_path = stage_dir / "readiness.json"
+    readiness_record = {"path": str(readiness_path), "sha256": sha256(readiness_path)}
+    common_keys = ("target_gguf", "candidate_d_gguf", "base_draft_gguf",
+                   "absolute_d2t", "model_snapshot_manifest")
+    common = {key: spec["stages"]["sources"]["sha256"][key] for key in common_keys}
+    from w1ax_continuous_stages import validate_readiness
+
+    for bits in (8, 1):
+        validate_readiness(readiness_record, activation_bits=bits, common_hashes=common)
+    readiness = read(readiness_path)
+    if (readiness.get("native_binary_sha256") != spec["stages"]["sources"]["sha256"]["binary"]
+            or readiness.get("native_runtime") != spec["stages"]["sources"].get("native_runtime")):
+        raise ValueError("prepared readiness changes frozen native source/runtime")
+    # Record every attached metadata artifact, preserving full train/development
+    # shard identity. Payload/model ancestry is independently audited by each provider.
+    captures = spec["stages"]["captures"]
+    capture_hashes = []
+    full_records = {}
+    development_prompt_ids = {}
+    for split, filename in (("train", "train-providers.json"),
+                            ("development", "development-providers.json")):
+        provider_spec = read(stage_dir / filename)
+        planned = [c for c in captures if c["split"] == split]
+        records = provider_spec.get("shards", [])
+        if (
+            provider_spec.get("schema") != "w1ax_streaming_train_v2"
+            or provider_spec.get("split") != split
+            or provider_spec.get("training_eligible") is not (split == "train")
+            or provider_spec.get("continuous_readiness") != readiness_record
+            or not planned or len(records) != len(planned)
+        ):
+            raise ValueError("prepared provider is not the complete frozen capture plan")
+        full_records[split] = records
+        for ordinal, (record, capture) in enumerate(zip(records, planned)):
+            child = read(record["provider_manifest"], record["provider_manifest_sha256"])
+            if (
+                record.get("ordinal") != ordinal
+                or child.get("schema") != "w1ax_native_train_provider_v2"
+                or child.get("split") != split
+                or child.get("training_eligible") is not (split == "train")
+                or child.get("prompt_count") != capture["prompt_count"]
+                or child.get("sha256", {}).get("prompts") != capture["prompts_sha256"]
+                or child.get("continuous_readiness") != readiness_record
+                or any(child["sha256"].get(k) != common[k] for k in common_keys)
+            ):
+                raise ValueError("prepared shard changes frozen prompts/model/map/readiness")
+            prompt_path = pin(child["paths"]["prompts"], capture["prompts_sha256"])
+            if split == "development":
+                with prompt_path.open() as stream:
+                    development_prompt_ids[record["provider_manifest"]] = {
+                        json.loads(line)["id"] for line in stream if line.strip()
+                    }
+            pin(child["paths"]["capture_manifest"], child["sha256"]["capture_manifest"])
+            capture_hashes.append(child["sha256"]["capture_manifest"])
+    if sorted(capture_hashes) != sorted(readiness.get("teacher_capture_manifest_sha256", [])):
+        raise ValueError("prepared readiness does not bind every frozen capture")
+    train_path = stage_dir / "train-providers.json"
+    source = coverage["source"]
+    if (source.get("execution_manifest_sha256") != sha256(train_path)
+            or source.get("common_source_sha256") != common):
+        raise ValueError("prepared full provider identity differs from teacher coverage")
+    development = read(stage_dir / "development.json")
+    if (
+        development.get("schema") != "w1ax_continuous_development_v1"
+        or development.get("split") != "development"
+        or development.get("native_prompts") != spec["stages"]["development_prompts"]
+        or development.get("native_prompts_sha256") != spec["stages"]["development_prompts_sha256"]
+        or development.get("full_pool_prompt_count")
+           != sum(c["prompt_count"] for c in captures if c["split"] == "development")
+        or development.get("sources", {}).get("sha256") != spec["stages"]["sources"]["sha256"]
+        or development.get("sources", {}).get("native_runtime")
+           != spec["stages"]["sources"].get("native_runtime")
+    ):
+        raise ValueError("prepared development changes frozen inputs")
+    pin(development["native_prompts"], development["native_prompts_sha256"])
+    pool = development["full_pool_manifest"]
+    if Path(pool["path"]).resolve() != stage_dir / "development-providers.json":
+        raise ValueError("prepared development pool differs from frozen providers")
+    pin(pool["path"], pool["sha256"])
+    subset = read(development["providers_manifest"])
+    with Path(development["native_prompts"]).open() as stream:
+        native_ids = {json.loads(line)["id"] for line in stream if line.strip()}
+    pool_ids = set().union(*development_prompt_ids.values())
+    if not native_ids or not native_ids <= pool_ids:
+        raise ValueError("prepared development prompts are absent from frozen capture pool")
+    expected_subset = []
+    for record in full_records["development"]:
+        if development_prompt_ids[record["provider_manifest"]].intersection(native_ids):
+            expected_subset.append({**record, "ordinal": len(expected_subset)})
+    if (
+        subset.get("schema") != "w1ax_streaming_train_v2"
+        or subset.get("split") != "development"
+        or subset.get("training_eligible") is not False
+        or subset.get("continuous_readiness") != readiness_record
+        or subset.get("shards") != expected_subset
+    ):
+        raise ValueError("prepared development subset has unmatched shard ancestry")
+    binding = {
+        "schema": "continuous_w1ax_prepared_corpus_v1",
+        "prepared_run_dir": str(prepared_dir),
+        "prepared_ready_sha256": ready_sha,
+        "source_sha256": ready["source_sha256"],
+        "artifacts": artifacts,
+        "provider_manifest": str(train_path),
+        "development_manifest": str(stage_dir / "development.json"),
+        "checkpoint_policy": "original_zero_checkpoint_evidence_only_new_model_smoke_and_save",
+    }
+    return binding, train_path, development
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     action = parser.add_mutually_exclusive_group(required=True)
@@ -230,6 +489,10 @@ def main():
         action="store_true",
         help="with --start, finish capture/gates/paired backward smoke/checkpoint zero then exit",
     )
+    parser.add_argument("--prepared-run-dir", type=Path,
+                        help="reuse immutable inputs from a completed zero-update preparation")
+    parser.add_argument("--prepared-ready-sha256",
+                        help="required exact SHA256 of original preparation-ready.json")
     parser.add_argument("--stages-manifest", type=Path)
     parser.add_argument("--development-manifest", type=Path)
     parser.add_argument("--allow-cuda", action="store_true")
@@ -238,6 +501,10 @@ def main():
         parser.error("--resume requires --start")
     if args.prepare_only and not args.start:
         parser.error("--prepare-only requires --start")
+    if bool(args.prepared_run_dir) != bool(args.prepared_ready_sha256):
+        parser.error("prepared reuse requires both --prepared-run-dir and --prepared-ready-sha256")
+    if args.prepared_run_dir and not args.start:
+        parser.error("prepared reuse requires --start")
     if args.estimate:
         spec, config = load_config(args.config)
         estimate = memory_estimate(
@@ -272,6 +539,32 @@ def main():
         spec["development"] = json.loads(args.development_manifest.read_text())
     if not isinstance(spec.get("stages"), dict):
         parser.error("pinned stages required: use --stages-manifest from CPU prepare-config")
+    prepared = None
+    prepared_development = None
+    saved_binding_path = run_dir / "prepared-corpus.json"
+    if args.resume and saved_binding_path.exists():
+        saved_binding = json.loads(saved_binding_path.read_text())
+        if not args.prepared_run_dir:
+            args.prepared_run_dir = Path(saved_binding["prepared_run_dir"])
+            args.prepared_ready_sha256 = saved_binding["prepared_ready_sha256"]
+    elif args.resume and (run_dir / "resolved_config.json").exists():
+        if json.loads((run_dir / "resolved_config.json").read_text()).get("prepared_corpus"):
+            parser.error("resume requires retained prepared corpus binding")
+    if args.prepared_run_dir:
+        prepared, prepared_provider, prepared_development = prepared_corpus_inputs(
+            spec, run_dir, args.prepared_run_dir, args.prepared_ready_sha256
+        )
+        if args.resume:
+            if (not saved_binding_path.exists()
+                    or json.loads(saved_binding_path.read_text()) != prepared):
+                parser.error("resume changes immutable prepared corpus binding")
+        elif run_dir.exists() and any(run_dir.iterdir()):
+            parser.error("prepared reuse requires a new empty run directory")
+        spec["prepared_corpus"] = {
+            "run_dir": str(args.prepared_run_dir.resolve()),
+            "ready_sha256": args.prepared_ready_sha256,
+            "binding_sha256": prepared_digest(prepared),
+        }
     recovery = None
     if args.resume:
         try:
@@ -302,6 +595,8 @@ def main():
             atomic_json(run_dir / f"resume-request-{time.time_ns()}.json", spec)
         else:
             atomic_json(resolved_path, spec)
+        if prepared is not None and not saved_binding_path.exists():
+            atomic_json(saved_binding_path, prepared)
         if args.resume:
             (run_dir / "STOP").unlink(missing_ok=True)
         import torch
@@ -345,13 +640,19 @@ def main():
         )
         from w1ax_continuous_stages import run_stages
 
-        # Concrete pinned native capture -> v2 audit -> A8/A1 readiness gates,
-        # with no optimization while either contract remains ineligible.
-        resolved = run_stages(spec["stages"], run_dir)
+        # Capture new inputs or authenticate the completed immutable preparation.
+        # Each provider still independently audits full-body eligibility below.
+        resolved = (prepared_provider if prepared is not None
+                    else run_stages(spec["stages"], run_dir))
         provider_spec = dict(spec["provider"])
         provider_spec["manifest"] = str(resolved)
         providers = provider_pair(provider_spec, config)
         provider = providers[0]
+        if (prepared is not None
+                and prepared_digest(provider.source_metadata) != prepared["source_sha256"]):
+            raise ValueError(
+                "independently audited full provider source differs from prepared binding"
+            )
         del providers  # Release the independently audited A1 provider payload.
         minimum = spec["coverage"]
         if len(provider.allowed_prompt_ids) < minimum["min_unique_train_prompts"]:
@@ -394,7 +695,8 @@ def main():
         evaluator = None
         development = spec.get("development")
         if development is None or development == {"from_stages": True}:
-            development = json.loads((run_dir / "stages/development.json").read_text())
+            development = (prepared_development if prepared is not None else
+                           json.loads((run_dir / "stages/development.json").read_text()))
         if development is not None:
             from w1ax_continuous_stages import evaluate_development
 
