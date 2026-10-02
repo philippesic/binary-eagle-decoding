@@ -2135,3 +2135,39 @@ recurrent_provider.py/focused tests/minimal metadata plumbing; no live/remote
 source/data/model/finals/GPU action. Native synthetic fixture scope remains
 independent. All current actual-model/native/backward/memory/timing/full-provider/
 complete-prep and final exclusive handoff gates still precede later training.
+
+## Supporting LSQ head-batching CPU audit — October 2
+
+Owner `/root/lsq_batching`, isolated worktree
+`/private/tmp/eagle-parallel-20261002/lsq-batching`, branch
+`research/20261002-lsq-batching`; independent Luna validator
+`/root/lsq_batching/independent_vjp`. Bounded deliverable is the actual provider →
+NativeStepAdapter → learned-head gradient reproducer and an isolated preservation
+proposal in `experiments/parallel20261002/lsq_batching/report.md`.
+
+72 synthetic CPU combinations prove that `optimize_head` reduces the shared
+learned clip/threshold VJP by `1/sqrt(valid_depth)` under the currently documented
+invocation normalization; exact hard logits/loss and other-family VJPs agree
+(max absolute discrepancy `1.1921e-7`). Actual joint-optimizer synthetic SGD steps
+differ, max head parameter delta `0.00274904`. Depths 1/2/4, terminal padding,
+ragged valid lengths, tied QKV, reference/single-forward, chunking and hand VJP
+controls are covered. This is a composition defect relative to the declared
+reference control, not an incorrect low-level STE formula or an Adam-quality claim.
+
+The source-bound isolated provider guard retains serial heads while a learned
+head parameter trains. The alternate common chain count also restores parity
+but changes the historical serial recipe. No live source/recipe was changed;
+QAT/preparation/GPU ownership, current runtime hashes and final set are preserved.
+The QAT owner must select/apply the remedy and rebuild required current-source
+readiness evidence; preserve actual execution/saturation metadata. Synthetic CPU
+checks do not establish SM75 performance, Q4_0-relative quality or throughput.
+Full numeric/raw output stays in ignored `runs/parallel20261002/lsq-batching/`;
+report source hashes and independent validation are committed on the worker
+branch. Parent orchestrator integrates and pushes reviewed evidence, then removes
+this worktree only after preserving commits and raw run artifacts.
+
+Acceptance checks: 55/55 focused CPU tests passed, including nine new audit/
+proposal checks; handwritten independent VJP controls passed on Torch 2.8.0
+and project Torch 2.14.0. Owner Ruff/diff whitespace checks passed. Independent
+validator evidence commit `e61cf9e`; raw validator logs copied into the main
+workspace before any worktree retirement. No research process remains active.

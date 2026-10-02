@@ -1,0 +1,18 @@
+--- a/src/w1a1_eagle/recurrent_provider.py
++++ b/src/w1a1_eagle/recurrent_provider.py
+@@ -285,6 +285,15 @@
+     head = getattr(adapter, "decode_head", None)
+     if not (optimize_head and getattr(adapter, "supports_batched_head", False) and callable(head)):
+         head = None
++    if head is not None and torch.is_grad_enabled():
++        quantizer = getattr(
++            getattr(adapter, "linears", {}).get("lm_head"), "activation_quantizer", None
++        )
++        if quantizer is not None and quantizer.parameter.requires_grad:
++            # The learned parameter uses invocation-local normalization. Serial
++            # learned heads preserve the reference recipe until a chain domain
++            # is explicitly declared and forwarded through every head call.
++            head = None
+     decode_step = adapter.decode_step
+     if head is not None:
+         # Call the public wrapper, not an underlying decode-body method: an
