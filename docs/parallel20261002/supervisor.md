@@ -45,8 +45,12 @@ heartbeats deleted. The agent unarchived/woke QAT owner
 heartbeats were verified: `qat-validation-and-training-handoff` and
 `a8-a1-luna-health-and-recovery`, targeting their respective owners. Preparation
 owns its registration update. No new GPU operator was launched by this supervisor.
-The LOCAL198 transport diagnosis requires explicit raw completion/handoff before
-new remote dispatch. Historical full captures and zero updates are not fresh
+The LOCAL198 transport diagnosis was explicitly closed and handed off at
+18:35:29 UTC; raw proof SHA256
+`6711fe18e9de9992a28113f4ea135f07bae9dd033c6de20aff98322d29198c8f`
+was locally verified, with lease diagnosis/operator inactive. No successful SSH
+or remote checker followed from the diagnosis. The sole preparation operator
+now owns a fresh bounded connection/check before any guarded transaction. Historical full captures and zero updates are not fresh
 remote health or GPU release evidence. CUDA retest/training remains unverified.
 
 Research advisor: `/root/astra_research`, Astra medium. Its four initial packets

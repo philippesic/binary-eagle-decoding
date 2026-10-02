@@ -2054,3 +2054,12 @@ composed recurrent/cache VJPs, and binary sign inertia/capacity. No live recipe
 change, new GPU operator, fresh CUDA result or training-start claim. QAT agent
 restored archived owners and deleted QAT/prep heartbeats; LOCAL198 diagnosis
 completion/explicit handoff is pending before remote dispatch.
+
+
+At18:35:29UTC the previous diagnosis owner explicitly closed LOCAL198 and
+released the shared diagnosis/operator lock. Raw proof SHA6711fe18…198c8f was
+verified by protected QAT agent; sole preparation successor01a0fdd6 owns the
+next fresh CPU connection/check before any guarded validation transaction.
+All previous parent connection attempts failed locally; no successful remote
+checker, lease, GPU result or optimizer update is implied. See updated
+[QAT support checkpoint](../parallel20261002/qat-priority.md).
