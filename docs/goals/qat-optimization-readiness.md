@@ -1,5 +1,89 @@
 # QAT optimization readiness
 
+## Supervisor rotation checkpoint — October2 15:05 UTC
+
+This is the active goal handoff for the overnight research supervisor. The
+QAT validation/training owner remains `01a0fc3d-bbe1-7e93-a19b-a9200dfa186c`;
+the preparation owner remains `01a0fb62-cbdb-72f0-8e86-4055b2ccb4ed`.
+The registration at
+`runs/qat-optimization-readiness/training-handoff-registration.json` records
+the acknowledged owner rotation and verified ACTIVE automation targets. Both
+QAT and preparation heartbeats are ACTIVE every 15 minutes. At 15:08 UTC
+QAT was actively reviewing a controller-test harness mismatch and process-safety
+code; no lease, CUDA test, or training update had started. The prep owner was
+active on local controller failure tests; no GPU action is authorized by that
+status alone.
+
+Supporting overnight research is complete: representation, objective,
+architecture, head-compression, data-engine, and startup-reuse teams all have
+completed leaders/descendants; the root collaboration tree shows no active
+research worker, and the registry records no persistent process. The latest
+Codex weekly sample at 2026-10-02 15:05:23 UTC is 77% used / 23% remaining,
+ordinary use allowed, original reset `1791049896`. No reset occurred or credits
+were redeemed. `hard_cutoff_utc` and `hard_cutoff_unix` remain null. Continue
+tracking the actual original window and stop/latch at <=1%, disallowed/zero
+ordinary allowance, actual reset, or a newer human stop; never use the fresh
+allowance for research.
+
+### Completed research evidence and tests
+
+- Representation rejected native group-A1 promotion at the predeclared gate;
+  independent CPU validation and counterexamples are recorded in its report.
+- Objective work supplied feasible and infeasible exactly-enumerable cases;
+  independent checks cover 54 snapshots, 96 candidates, 16 preservation checks,
+  and 48 relaxed-gradient coordinates (max error `1.05e-10`). No native or
+  held-out claim.
+- Reduced DSpark/DFlash reference reports 25/25 core tests and 7/7 ownership
+  tests; no native deployment win established.
+- Head compression reports 25/25 tests and exact metadata mapping validation;
+  no native acceptance/performance result.
+- Startup-reuse proof reduces teacher audits 959→320 while retaining 959 actor
+  admissions and 960 coverage checks. Its synthetic benchmarks and caveats are
+  in `experiments/overnight20261002/data_engine/startup_reuse/design.md`.
+- No tests were run at this supervisor checkpoint. Research reports preserve
+  test evidence and no GPU, frozen-data, verifier, sealed-final, or live QAT
+  source changes were made by the research work.
+
+### Exact next actions and unresolved gates
+
+1. Continue the existing `overnight-research-usage-control` five-minute heartbeat
+   in the current task. A fresh successor task was attempted as required for
+   session rotation but the app rejected task creation under `approval policy is
+   never`; no successor exists. The heartbeat remains ACTIVE and targets this
+   current supervisor. Do not create another monitor. At each tick read the run
+   control/registry and reset override, refresh Codex usage, append one compact
+   usage ping, and confirm team statuses.
+2. Keep QAT and preparation owners, their heartbeats, agents, job, data and GPU
+   protected. A QAT idle turn under its active heartbeat is not a stopped job.
+3. Let the preparation owner finish/review its local controller failure tests.
+   Do not infer GPU release from stale `last-health.json` or chat status. Current
+   required proof is a reviewed fail-closed controller and fresh same-process /
+   ownership/resource gates. Any validation requires one coordinated exclusive
+   lease, complete teardown, verified GPU return, and resume of the SAME prep
+   process before deadline.
+4. Current QAT gates remain: repair CUDA retest; current source/runtime-bound
+   native validation; actual-model/recipe forward/backward; memory/timing and
+   data ancestry/provider eligibility; full readiness/coverage/paired smoke;
+   zero-update checkpoint and ready receipt; terminal prep completion and
+   independent GPU release. No training or optimizer update is verified.
+5. The automatic approval gate prevented the required successor task creation;
+   no alternate task or duplicate monitor was created. Broader QAT recipe,
+   held-out, and final-set decisions remain user-owned under the active goal.
+
+**15:08 UTC status refresh:** Codex remains 77% used / 23% remaining in the
+same window. QAT's active turn found test-harness interface mismatches before
+launch and is reviewing process-safety code. The preparation owner is also
+testing locally; staging and GPU execution remain blocked pending review. No
+lease, CUDA test, training or optimizer update is active.
+
+The clean-checkpoint repository snapshot was at `42e6419` before the current
+uncommitted research notes; do not discard unmerged/uncommitted files. Recent
+visible commits include `f6815c3` (atomic CUDA plan), `a5127e6` (preparation
+lease return), and `ba06fa1` (reviewed preparation reservation). No commit was
+created by the research teams under their file-only ownership. No remote job is
+owned by the research supervisor; the preparation job remains the sole RTX5080
+owner and RTX2080Ti stays paused.
+
 ## Objective and boundaries
 
 User requested on 2026-10-01 via start-goal-team: implement and fully test faster
@@ -1623,3 +1707,47 @@ one immutable coordinated transaction under existing human authority only when
 all guards are concrete, then report actual CUDA outcome and verified return.
 Full model/recipe/backward/memory/timing/provider and final preparation handoff
 remain separate training gates. No selected recipe or optimizer update.
+
+
+## Atomic controller candidate review — October2 15:09 UTC
+
+The local atomic05 candidate is NOT accepted for staging/acquisition/execution.
+Candidate pins under ignored provider-audit-atomic-05/candidate-pins.json match
+source before and after Astra's bounded source-only review:
+controllerf4327d0f, guard066582b6, identity_entry49cb85e7, expected4ebdcbad.
+Full hashes remain in that file/test-result; old04 is untouched. Root's separate
+review confirms intended two-owner authorization/raw-byte pin binding, fresh05
+IDs, fixture-only120s, max600s/reserve180s plus60s launch overhead and outer
+controller cleanup grace180s. This scope review grants no GO.
+
+Astra found three actual executable blockers, sent directly to preparation owner:
+- remote_job can publish running after Popen but before child identity receipt;
+  both watch and cleanup assert missing ownership and abort before supervisor
+  TERM. Require bounded pending state with independent verified supervisor stop.
+- deadline/cancellation is checked before dispatch, while identity entry can
+  unconditionally exec after scheduling/pin delay. Require durable deadline and
+  cancellation gate immediately before native exec, with delayed-entry tests.
+- controller accepts same original live process after CONT despite zero CPU
+  progress, ignoring guard classification-needed outcome. Require verified
+  active-return outcome; never repeat CONT to fix reporting.
+
+First mocked local safety suite15:04 has9pass/1fail/4error, all preserved and
+classified as test fixture/CLI setup mismatches after source interface changes.
+No SSH/tmux/host-process/GPU/model/data/training access; signals/subprocess are
+patched. Fix harness and add the three regression scenarios before freezing a
+new candidate; tests passing alone still require actual immutable source review.
+New hashes invalidate this candidate review. Existing Astra reused, no new GPU
+operator; root validation Luna stays offline without transport/job.
+
+Latest saved preparation observation remains14:06:37UTC, full353/10,000train/
+1,002development, zero models/updates, no finalreceipt, same stale heartbeat
+warning previously classified with original676 CPU progress. No root remote
+query or duplicate health/recovery operator. Lease04 remains returned/resumed,
+no new lease or CUDA fixture. Same ACTIVE heartbeat/current acknowledged owners,
+5080 unpaused/preparation-owned,2080Ti paused. This source-only failure does not
+trigger preparation recovery or alter frozen source/data/math/precision/gates.
+
+Next: prep owner fixes local controller/tests; review new immutable packet and
+conditionally authorize one complete sole-operator transaction only after all
+checks pass. No actual CUDA repair, model/backward/memory/timing, corpus admission,
+recipe selection, training or acceptance/throughput claim at this milestone.

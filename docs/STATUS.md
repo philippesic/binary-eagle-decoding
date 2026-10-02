@@ -5,6 +5,34 @@ latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
 
+## Overnight research supervisor handoff — 2026-10-02 15:05 UTC
+
+The supporting CPU research teams and all descendants are complete, with no
+active research process. The Codex weekly bucket is still the original window:
+77% used / 23% remaining at 15:05:23 UTC, `resetsAt=1791049896`; ordinary
+usage is allowed and no reset credits were used. The reset estimate is unchanged,
+there is no fixed cutoff, and the research stop latch is not triggered. Continue
+five-minute checks and stop before an actual reset or at the existing <=1%
+threshold. Do not spend a fresh allowance.
+
+QAT owner `01a0fc3d-bbe1-7e93-a19b-a9200dfa186c` and preparation owner
+`01a0fb62-cbdb-72f0-8e86-4055b2ccb4ed` are still the acknowledged owners;
+their existing 15-minute heartbeats remain ACTIVE and target the same owners.
+At 15:08 UTC the QAT owner is active reviewing a local controller-test harness
+mismatch and process-safety code; no GPU work started. The preparation owner is
+active on local controller failure tests. Latest durable state still has full 10,000/1,002
+train/development captures, but no readiness receipt, validation lease, CUDA
+retest, training start, or optimizer update is verified. RTX5080 remains under
+the preparation job's ownership; RTX2080Ti remains paused. Preserve the active
+goal and exact pending gates in
+[the QAT checkpoint](goals/qat-optimization-readiness.md#supervisor-rotation-checkpoint--october2-1505-utc).
+
+The checkpoint is prepared for a fresh Codex task, but task creation was
+rejected by the app's automatic approval gate (`approval policy is never`). No
+successor task was created. The existing single research heartbeat remains
+attached to the current supervisor; keep it as the only five-minute monitor.
+
+
 ## Overnight support research — 2026-10-02
 
 The three authorized CPU research topics are complete; all research leaders and
@@ -22,17 +50,15 @@ saved healthy preparation checkpoint has 10,000 train / 288 development prompts
 and zero optimizer updates; no validation lease, CUDA retest, or training start
 is verified.
 
-**Latest validation checkpoint, October2 14:16 UTC:** reservation04 is closed,
-original preparation resumed before its deadline, and no CUDA fixture launched.
-Saved owner check14:06 verifies the same original child676/start85132 running,
-full353/10,000train/1,002dev, zero updates and no final receipt. The stale heartbeat
-warning remains; CPU audits are active. A new single-operator atomic plan is
-accepted for local implementation/mock tests only: verified hold, immediate
-prebuilt120s CUDA fixture, teardown and guarded return in one durable controller.
-Maximum hold600s, return reserve180s; backendops deferred. Exact implementation,
-unique identities and supervision pins require review before acquisition/test GO.
-Root validation Luna remains offline; no active lease or owned remote job.
-[Checkpoint](goals/qat-optimization-readiness.md#atomic-fixture-controller-planning--october2-1416-utc).
+**Latest validation checkpoint, October2 15:09 UTC:** the new atomic controller
+candidate has three executable review blockers: startup identity race can abort
+cleanup, delayed native exec lacks its own deadline/cancel gate, and zero CPU
+progress after return can be reported successful. Owner is fixing these locally;
+no staging, lease or GPU fixture GO. First local tests preserve9pass/1fail/4error
+from harness mismatches; passing corrected tests and immutable review remain
+required. Full capture remains10,000train/1,002dev; no final preparation receipt
+or optimizer updates. Root CUDA operator stays offline; both monitors ACTIVE.
+[Checkpoint](goals/qat-optimization-readiness.md#atomic-controller-candidate-review--october2-1509-utc).
 
 **Active goal:** [QAT optimization readiness](goals/qat-optimization-readiness.md).
 All five requested controls plus raw fusion correction and affine binary weights
