@@ -196,3 +196,113 @@ No executable experiment, model/data read, optimizer update or implementation
 change was performed by this advisor. The four task packets are ready for root
 dispatch. Further literature expansion is deferred until a team returns an
 unresolved question that can change a practical recommendation.
+
+## Second bounded slate after first-slate completion
+
+Monitor requested this slate after all four teams and validators completed.
+Control records81% used/19% remaining, stop=false, reset unchanged. Root launches
+teams; advisor launches none. First-slate evidence: fixed-activation recurrence
+passed216 comparisons; sign-inertia study selected no recipe; LSQ isolated a
+real composed normalization mismatch; transition study proposed optimizer-state
+hardening. Those completed gates should not be repeated.
+
+### A. Combined auxiliary gradients in the real recurrent adapter
+
+Priority1. One Sol high owner and one Luna high validator. Own
+`research/parallel20261002/auxiliary_vjp/{reference,validation}/` and
+`experiments/parallel20261002/auxiliary_vjp/`.
+
+Evidence: combined-contract-smoke enables learned activations, fusion correction
+and all-row affine midpoints. Existing recipe tests verify ownership, individual
+projection VJPs and serialization; affine/fusion tests cover individual later
+state cases. The completed recurrent audit deliberately covered fixed
+activations and18 binary VJPs only. The missing distinct gate is all auxiliary
+families simultaneously through the actual NativeStepAdapter/provider graph.
+
+Read `recurrent_qat.py`, `learned_activation.py`, `affine_binary.py`,
+`fusion_correction.py`, `native_step.py`, `recurrent_provider.py`, and existing
+tests before deciding exact fixtures. Reuse first-slate reduced all-nine model
+read-only. Use serial learned head to avoid rediscovering LSQ batching. Test
+A1/A4/A8, two depths and nonzero correction/midpoint values; zero-initialized
+correction factors can hide a missing gradient. Independently derive the affine
+and correction VJP pieces and compare composed reference versus single_forward,
+shared-sum on/off where supported, cache-only optimization. Cover shared
+quantizer accumulation exactly once per consumer, with intentional alias/detach
+negative controls. Fixed synthetic inputs only, no parameter fitting sweep.
+
+Deliverable: source-bound VJP table for every unique sign/scale/activation/
+midpoint/correction parameter, first-state/cache VJP, and one clipped update.
+Gate: equal declared hard values and all-family gradients within predeclared
+F32 tolerance, or a minimal reproducible mismatch. Do not finite-difference the
+hard quantizer. Do not expand into optimizer or durable-resume tests already
+completed. Any fix remains an isolated patch proposal, not live source mutation.
+
+### B. Exported composed function, not just tensor inventory
+
+Priority2. One Sol high owner and one Luna high validator. Own
+`research/parallel20261002/export_function/{reference,validation}/` and
+`experiments/parallel20261002/export_function/`.
+
+Evidence: `tests/test_learned_activation_export.py` checks scalar metadata,
+correction tensor hashes and affine Q/K permutation. These are valuable but do
+not reconstruct and evaluate the entire serialized composed projection.
+`test_qat_recipe_integration.py` checks train checkpoint inventory separately.
+
+Deliverable: tiny synthetic all-nine checkpoint through actual
+`save_joint_checkpoint`/existing exporter into GGUF, then independently read
+packed signs/scales/learned scalars/midpoints/correction factors from GGUF and
+evaluate the declared forward in original row order. Read source schema and
+the pinned C++ graph order; no native build or GPU is required. Cover A1/A4/A8,
+Q/K row permutation, nonzero bias and correction, zero-sign and bounded tail
+packing cases. Compare training hard-forward values with reconstructed export
+values using documented F16 factor rounding/F32 epilogue ordering. Alter one
+serialized auxiliary field in a synthetic negative control and require changed
+function or rejection, proving the reference does not secretly reuse the live
+model's tensors.
+
+Gate: all composed outputs agree within the declared arithmetic contract;
+counterexamples carry exact source/export hashes and implicated tensor/order.
+CPU decoding is an export semantic gate, not native backend validation. Avoid
+repeating all malformed-field tests or giant model-shaped allocations. Source
+dependencies: `scripts/export_recurrent_binary.py`, `recurrent_qat.py`,
+`learned_activation.py`, `affine_binary.py`, `fusion_correction.py` and GGUF
+reader. No models or captures needed. Teams A/B share no output files.
+
+### C. Refresh decision metric and experiment-handoff contract
+
+Priority3. One Sol high owner and one Luna high validator; stop early if existing
+tests already establish the whole contract. Own
+`research/parallel20261002/refresh_contract/{reference,validation}/` and
+`experiments/parallel20261002/refresh_contract/`.
+
+Evidence: `trajectory_refresh.learning_gate` constrains native_acceptance to
+[0,1], whereas the project separately uses accepted/proposed rate and accepted
+drafts/round. This may be an intended rate field, not a defect; its generic name
+needs an explicit producer-to-consumer unit check. `plan_curriculum_refresh`
+declares training_eligible=False until capture/provider admission and requires
+changed corpus to start a new experiment. Existing tests thoroughly cover hash,
+prefix and source ancestry, so merely adding more stale-hash tests is low value.
+
+Deliverable: trace actual learning-curve producer(s), or explicitly report that
+only manual synthetic input exists. Write a minimal typed decision receipt
+proposal carrying accepted/proposed/round/emitted counts, derived metric units,
+checkpoint/export identities and exact decision comparisons. Construct two
+synthetic paired policies where acceptance rate improves but accepted/round
+falls (and converse), with draft caps/EOS accounting visible. Prove the gate
+uses its intended metric, never switches units or averages per-prompt ratios.
+Do not decide that one metric should replace another; report that choice to
+the owner. Show the legal old-experiment→planned-refresh→audited-new-corpus→
+new-experiment handoff with synthetic manifests and cumulative budget ledger;
+verify plan alone cannot authorize training or reset a spent research budget.
+
+Gate: the executable decision is reproducible from raw counts and named units,
+and preflight/new-experiment state cannot be mistaken for exact resume. A
+counterexample must identify actual callable path and field, not hypothesize
+an attack. No development/final payload access; all metrics are fabricated
+synthetic fixtures clearly labeled as such. Dependencies: `trajectory_refresh.py`,
+`qat_curriculum.py`, `qat_curriculum_runner.py`, existing refresh tests.
+
+No additional architectures, optimizers, objective sweeps or data-reuse layers
+are recommended in this batch. These packets close specific composition and
+handoff gaps; they do not justify consuming all remaining allowance if the
+gates finish quickly.

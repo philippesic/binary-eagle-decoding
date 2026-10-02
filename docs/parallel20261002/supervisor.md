@@ -116,3 +116,45 @@ Preliminary owner reports, not integrated production changes:
 All teams keep source and live recipes untouched. Final source-bound reports,
 independent checks and commits precede root integration. CUDA readiness, actual
 acceptance and Q4_0 native throughput still require their existing GPU gates.
+
+
+## First slate integrated; second slate launched — October 2, 18:46 UTC
+
+All first-slate owners/validators completed. Root reviewed findings, integrated
+all four source-bound CPU reports/fixtures, and ran the combined new suite:
+30/30 tests passed on Apple arm64 CPU/PyTorch2.14; diff checks pass. Worker
+commits map to main: LSQe61cf9e→0576fd5 and349ad51→949b037, curriculum77d90fe
+→4904f80, recurrent4fa1357→d9c1e55, signe e01400→7af7630. LSQ's goal append
+conflict was resolved retaining current QAT-owner notes and all incoming evidence.
+QAT doc40253ab→c694dce,9afc496→ca02272.
+
+The current QAT owner's model_gate_plan is the sole provider/source correction
+owner. Protected coordinator qat_priority owns only explicitly partitioned LSQ
+regression adaptation/review. No competing provider fix is allowed. Frozen
+preparation config remains fixed-activation/head batching disabled and unaffected.
+Pending learned-activations/combined profiles need corrected reference-equivalence
+and honest effective fallback metadata before admission.
+
+Latest actual bounded preflight connection at18:40:51UTC: SSH255, no remote
+checker/staging/hold/CUDA; remote health UNKNOWN. Raw proof/cleanup in
+[protected checkpoint](qat-priority.md). Transport and keeper closed, lease
+operator inactive, conditional fixtureGOinactive. Root requested current5080
+address/user/port asynchronously; no guess or duplicate retry. Protected
+QAT/preparation heartbeats stayACTIVE.
+
+First-slate ignored run folders were copied before cleanup to
+`runs/parallel20261002/archived-worktrees/<worktree-slug>/`; sign/LSQ primary
+raw copies also remain at their existing main-run paths. Each clean worker
+branch's owned file contents were verified identical to integrated main.
+Integration/cleanup receipt: ignored `first-slate-integration.json`. Retire
+only after successful push; no unmerged work or raw artifacts may be lost.
+
+Second slate: `/root/auxiliary_vjp`, `/root/export_function`,
+`/root/refresh_contract`, each Sol high plus independent Luna validator, in
+`/private/tmp/eagle-parallel-20261002/<auxiliary-vjp|export-function|refresh-contract>`
+branches `research/20261002-<slug>`. Exact packets in updated Astra slate. Tasks
+close combined auxiliary gradients, serialized GGUF composed function, and
+refresh metric/admission/budget handoff gaps. Ownership follows matching
+research/experiments topic directories and unique tests; no live source edits.
+Fresh18:44:20usage81% used/19% remaining, same original reset; monitor registered
+new teams. Refill only after all three teams/descendants finish and budget permits.

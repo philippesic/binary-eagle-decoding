@@ -1082,3 +1082,11 @@ research and its monitor stop on reset while QAT continues including existing
 credits. Actual new CUDA/training start is not verified. See
 [supervisor](parallel20261002/supervisor.md) and
 [active-goal checkpoint](goals/qat-optimization-readiness.md#parallel-support-launch--october-2-1835-utc).
+
+
+**Parallel support18:46UTC:** first four CPU audits integrated,30/30 combined
+new tests pass; three next teams launched (auxiliary VJPs/exported function/refresh
+contract) at19% original weekly remaining. QAT's sole source worker prepares
+learned-head serial-training preservation; frozen prep unaffected. Latest remote
+check18:40:51SSH255/no CUDA, healthunknown; host details requested. Protected
+QAT supervision ACTIVE. [Checkpoint](parallel20261002/supervisor.md#first-slate-integrated-second-slate-launched--october-2-1846-utc).

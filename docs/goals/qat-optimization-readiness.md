@@ -2171,3 +2171,25 @@ proposal checks; handwritten independent VJP controls passed on Torch 2.8.0
 and project Torch 2.14.0. Owner Ruff/diff whitespace checks passed. Independent
 validator evidence commit `e61cf9e`; raw validator logs copied into the main
 workspace before any worktree retirement. No research process remains active.
+
+
+## CPU support integration and second slate — October 2, 18:46 UTC
+
+First four source-bound CPU audits integrated; combined30/30 new tests pass.
+[LSQ](../../experiments/parallel20261002/lsq_batching/report.md) identifies
+invocation-normalization batching drift; sole current QAT source worker prepares
+serial-training preservation guard, protected coordinator adapts regressions.
+[Curriculum](../../experiments/parallel20261002/curriculum_transition/README.md)
+confirms valid transition crash replay and separately proposes malformed optimizer
+state hardening. [Recurrent](../../experiments/parallel20261002/recurrent_vjp/report.md)
+passes216 composed fixed-activation VJP comparisons.
+[Sign](../../experiments/parallel20261002/sign_inertia/report.md) selects no
+recipe: movement can improve simple decisions but recurrent chatter persists.
+All findings CPU/synthetic, no native acceptance/performance proof.
+
+Next three Astra-selected CPU teams launched: combined auxiliary VJPs, exported
+GGUF function, refresh metric/admission/budget handoff.19% original weekly
+allowance remains. Protected latest preflight18:40:51SSH255/no checker/hold/CUDA,
+remote healthunknown; fresh host info requested. All current training gates and
+GPU ownership remain unchanged. Integration hashes/archives/roster in
+[supervisor](../parallel20261002/supervisor.md#first-slate-integrated-second-slate-launched--october-2-1846-utc).
