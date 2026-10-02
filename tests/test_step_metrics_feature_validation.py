@@ -4,6 +4,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import Mock, patch
 
 import torch
 
@@ -48,16 +49,36 @@ class StepMetricsFeatureValidation(unittest.TestCase):
         result = _reporting_scalars(
             {
                 "wide_count": torch.tensor(exact_count, dtype=torch.int64),
-                "ratio": torch.tensor(0.125, dtype=torch.float32),
+                "float16": torch.tensor(0.5, dtype=torch.float16),
+                "bfloat16": torch.tensor(1.25, dtype=torch.bfloat16),
+                "float32": torch.tensor(2.5, dtype=torch.float32),
+                "float64": torch.tensor(3.75 + 2**-40, dtype=torch.float64),
                 "native_int": 7,
                 "native_float": 0.25,
             }
         )
-        self.assertEqual(list(result), ["wide_count", "ratio", "native_int", "native_float"])
+        self.assertEqual(
+            list(result),
+            [
+                "wide_count",
+                "float16",
+                "bfloat16",
+                "float32",
+                "float64",
+                "native_int",
+                "native_float",
+            ],
+        )
         self.assertEqual(result["wide_count"], exact_count)
         self.assertIs(type(result["wide_count"]), int)
-        self.assertEqual(result["ratio"], 0.125)
-        self.assertIs(type(result["ratio"]), float)
+        for key, expected in (
+            ("float16", 0.5),
+            ("bfloat16", 1.25),
+            ("float32", 2.5),
+            ("float64", 3.75 + 2**-40),
+        ):
+            self.assertEqual(result[key], expected)
+            self.assertIs(type(result[key]), float)
         self.assertEqual(result["native_int"], 7)
         self.assertEqual(result["native_float"], 0.25)
 
@@ -135,6 +156,89 @@ class StepMetricsFeatureValidation(unittest.TestCase):
                     torch.testing.assert_close(value, expected, rtol=0, atol=0)
                 else:
                     self.assertEqual(value, expected)
+
+    def test_nonfinite_gradient_rejects_before_optimizer_step(self):
+        config = JointQATConfig(W1AxContract(16), seed=113, sign_lr=0.01, scale_lr=0.01)
+        linears, trace = tiny_joint_fixture(config)
+        optimizer = joint_optimizer(linears, config)
+        logits, _, _ = tiny_rollout(linears, "cpu")
+        joint_train_step(linears, logits, trace, optimizer, config)
+
+        parameters = [p for group in optimizer.param_groups for p in group["params"]]
+        parameter_snapshot = [p.detach().clone() for p in parameters]
+        state_snapshot = {
+            p: {
+                key: value.detach().clone() if isinstance(value, torch.Tensor) else value
+                for key, value in optimizer.state[p].items()
+            }
+            for p in parameters
+        }
+        hook = parameters[0].register_hook(lambda grad: torch.full_like(grad, float("nan")))
+        logits, _, _ = tiny_rollout(linears, "cpu")
+        step = Mock(wraps=optimizer.step)
+        optimizer.step = step
+        try:
+            with self.assertRaisesRegex(ValueError, "nonfinite joint QAT gradient"):
+                joint_train_step(linears, logits, trace, optimizer, config)
+        finally:
+            hook.remove()
+        step.assert_not_called()
+        for param, snapshot in zip(parameters, parameter_snapshot):
+            torch.testing.assert_close(param, snapshot, rtol=0, atol=0)
+            for key, value in optimizer.state[param].items():
+                expected = state_snapshot[param][key]
+                if isinstance(value, torch.Tensor):
+                    torch.testing.assert_close(value, expected, rtol=0, atol=0)
+                else:
+                    self.assertEqual(value, expected)
+
+    def test_optimizer_ownership_error_precedes_invalid_teacher_and_zero_grad(self):
+        config = JointQATConfig(W1AxContract(16), seed=127)
+        linears, trace = tiny_joint_fixture(config)
+        logits, _, _ = tiny_rollout(linears, "cpu")
+        unrelated = torch.nn.Parameter(torch.ones(()))
+        optimizer = torch.optim.SGD([unrelated], lr=0.1)
+        zero_grad = Mock(wraps=optimizer.zero_grad)
+        optimizer.zero_grad = zero_grad
+        with self.assertRaisesRegex(
+            ValueError,
+            "optimizer must own exactly declared binary/activation/fusion parameters",
+        ):
+            joint_train_step(
+                linears,
+                logits,
+                trace,
+                optimizer,
+                config,
+                teacher={"invalid": torch.ones(1)},
+            )
+        zero_grad.assert_not_called()
+
+    def test_nonfinite_updated_parameters_reject_before_reporting_scalar_extraction(self):
+        config = JointQATConfig(W1AxContract(16), seed=139)
+        linears, trace = tiny_joint_fixture(config)
+        optimizer = joint_optimizer(linears, config)
+        logits, _, _ = tiny_rollout(linears, "cpu")
+        real_step = optimizer.step
+
+        def step_then_poison_parameter(*args, **kwargs):
+            result = real_step(*args, **kwargs)
+            with torch.no_grad():
+                linears["fc"].latent_sign[0, 0] = float("nan")
+            return result
+
+        step = Mock(side_effect=step_then_poison_parameter)
+        optimizer.step = step
+        with patch(
+            "w1a1_eagle.recurrent_qat._reporting_scalars", wraps=_reporting_scalars
+        ) as reporting:
+            with self.assertRaisesRegex(
+                ValueError, "joint QAT update produced nonfinite parameters"
+            ):
+                joint_train_step(linears, logits, trace, optimizer, config)
+        step.assert_called_once()
+        reporting.assert_not_called()
+        self.assertTrue(torch.isnan(linears["fc"].latent_sign[0, 0]))
 
 
 if __name__ == "__main__":
