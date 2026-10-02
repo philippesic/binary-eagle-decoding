@@ -6,31 +6,24 @@ The target/verifier model precision remains as frozen for each experiment.
 
 **Active goal:** [QAT optimization readiness](goals/qat-optimization-readiness.md).
 All five requested controls plus raw fusion correction and affine binary weights
-are implemented. Final CPU suite:952tests/fourskips; native CPU packing/operator/
-encoder checks pass. Actual CUDA compilation, full-model backward, native decisions
-and memory/timing remain unverified. [Integration report](../experiments/qat-optimization-readiness/11-integration.md).
-All12 profile preparation/planning CLIs also pass on the published checkout;
-[completion audit](../experiments/qat-optimization-readiness/12-completion-audit.md)
-records requirement-specific CPU proof and missing GPU evidence.
-The human now authorizes early GPU validation during the preparation CPU audit,
-subject to a coordinated exclusive GPU reservation, fresh resource proof and a
-safe handback before preparation resumes GPU work. Training still requires full
-verified data/current gates and GPU handoff. [Overlap policy](QAT_GPU_AUDIT_OVERLAP.md). RTX2080Ti remains paused.
-**Short validation lease closed; preparation resumed:** the same child676
-(start ticks85132) resumed at09:57:37UTC /02:57PDT, audit272→274. A45-second
-post-resume CPU check passed with zero optimizer updates. Preparation again
-owns RTX5080;2080Ti remains paused. No restart, source change or GPU overlap.
+are implemented;952CPUtests/fourskips and native CPU fixtures pass. Actual CUDA
+build succeeded on RTX5080/SM120, but packing failed: learnedA1,k33,token2,
+minimum F32 subnormals, expectedbeta2^-149/native0. Exact raw case is preserved.
+Native9e2c7a900 now disables FTZ only in W1Ax CUDA code; unchanged CPU fixtures
+pass, actual CUDA retest is pending. No numerical gate was weakened.
 
-The exact CUDA failure is learned A1 packing beta0 instead of2^-149 for minimum
-float32 subnormals. Native repair9e2c7a900 is published and pinned: per-source
-w1a1.cu --ftz=false follows --use_fast_math; assertions and tolerances are
-unchanged. CPU fixtures57packs/114loaders/59graphs/218nodes pass. Actual CUDA
-retest and full native/model readiness remain pending. QAT owner is preparing
-the repaired binary on CPU while audit continues; a new exclusive GPU slot is
-required for testing. Both existing15-minute monitors are ACTIVE. Training
-requires complete verified data and all current launch gates.
-[Resume checkpoint](goals/qat-optimization-readiness.md#short-lease-resume-verified--october2-0957utc).
-The readiness objective remains incomplete.
+The human assigned this chat validation and later training. Early GPU tests are
+allowed under exclusive bounded reservations during CPU audit; training still
+requires complete verified data/currentrecipe/model/native/memory gates. Both
+completed reservations were returned. Latest actual SIGCONT09:57:37UTC resumed
+original676/startticks85132,audit272→274,post45sCPUhealthhealthy/zerooptimizer;
+no restart or GPU overlap. The short hold exceeded its deadline2m17 because a
+return guard copied a65character hash; it was corrected from actual64byte-text
+receipt SHA, preserving gates and exactlyone SIGCONT. Preparation again owns
+RTX5080;2080Ti paused. Root's corrected thinCPUhelper is rebuilding the precision
+fix outside the audit, with noGPUquery/context/test/data/optimizer. New GPU slot
+will be requested only after fixed binary is ready. [Handoff](QAT_TRAINING_HANDOFF.md).
+QATheartbeat remainsACTIVE every15minutes; no CUDA-ready or training-start claim.
 
 **Overnight CPU research authorized (October1):** three teams investigate W1A1
 representation geometry, native accepted-prefix objectives and block-parallel

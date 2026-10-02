@@ -189,3 +189,22 @@ was ready. This slot is for the prebuilt fixture under120secondtimeout, with no
 checkout or compilation during hold. Execution awaits a new explicit verified
 grant; the old lease cannot be reused. All full-data/currentrecipe gates still
 apply before QAT; no optimizer updates or CUDA-ready claim.
+
+
+## Exact-case result and precision repair
+
+The ready diagnostic ran under a NEWshortreservation and captured learnedA1
+minimum-subnormalbeta2^-149 becoming0, k33/n4/token2,delta0/clip1/nonaffine.
+Raw case SHA04779ffd18d41ba30586abe87ac02b3b3f2e21e6f0c462a169262cf9c26a7ff5.
+All groups/contexts were cleared and the owner resumed original676 at09:57:37UTC,
+audit272→274/healthy0steps. The short hold overran2m17 because a return guard
+copied a malformed65character hash; correction used actualraw64characterSHA,
+no weakening or secondSIGCONT. NoGPUoverlap/restart. Reservation is closed.
+
+Published native9e2c7a900/parentb32f7fe adds a targeted W1Ax-only FTZoverride after
+fastmath options. CPUfixtures remain green; this is a proposed precision repair
+awaiting actual CUDA retest, not readiness. The fixed binary is being prepared
+with the ROOT-owned CPU-only helper, correct absolute overlay and sourcepins,
+with compile-command proof of flag ordering. Newfixture slot must be separately
+granted. Packing/encoder tests precede backendops; actualmodel/backward/memory/
+everyenabledstage/fullcorpus gates remain mandatory before training.

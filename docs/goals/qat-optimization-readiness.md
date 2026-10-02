@@ -896,3 +896,43 @@ is ready and a new exclusive reservation/full release is verified. Future
 CUDA operator/recurrent/model gates and full verified corpus remain mandatory
 before optimizer updates. Parent owns this shared milestone checkpoint; QAT
 owner owns build/fixture evidence and its existing heartbeat.
+
+
+## Exact CUDA subnormal case, short handback and targeted precision setting
+
+Root-owned thin CPUhelper prepared the diagnostic binary before a NEW10minute
+reservation. Actualfixture sourcee0ec292/native1284 ran once, job8656/8658,
+09:49:11→09:49:12/exit1. Exactfailedcase: learnedA1,affinefalse,variant0,delta0,
+clip1,k33,n4,token2; rawalternatingminimumF32subnormals. Expectedβhex01000000=
+2^-149,native00000000=0; F64sum4.624284932271896e-44. RawJSONSHA
+04779ffd18d41ba30586abe87ac02b3b3f2e21e6f0c462a169262cf9c26a7ff5 is preserved in
+ignored early-cuda-20261002/logs/beta-exact-probe-20261002-01. This is an actual
+packed-amplitude mismatch; previousenv/path failures are separate startup errors.
+
+Fresh09:50:25cleanupproved8656/8658gone/GPUcomputeempty; rootexplicitreturn.
+Ownerreturnguardinitiallydeniedwithoutsignalbecausea65characterSHA was copied
+from a message. It was corrected FROMraw/canonical64characterreceipt SHA, with
+no remoteidentity/gate change. ActualsingleSIGCONT09:57:37.646130UTC resumed
+same676/startticks85132,audit272→274; post45sCPUhealthpassed/zerooptimizer.
+Leaseoverrun2m17,noGPUworkafterfixture/nooverlap/restart. Rawproof
+beta-probe-return-corrected-operation-20261002.json; returnreceiptSHA
+58438e6ee4fa3dddba604f7a7b7a72a9a6df145d3d11e6edaf124272e2c30c29.
+Preparationagainsole5080;2080Tipaused. Allvalidationjobs/groups/transportsclosed.
+
+Root owns nativeworktree after the feature owner hit model capacity. Published
+native9e2c7a90051e738751aab7d7bd7c2d8201fb76e3 adds per-source --ftz=false AFTER
+-use_fast_math forw1a1.cu only, retaining remaining optimizations and unrelated
+kernels. This preserves the declared subnormal scales/learned thresholds; no
+arithmeticbody,CPUreference,tolerance,input/data/frozenruntime changes. Parent
+b32f7fe publishes its gitlink. CPUfixture57packs/114loaders/59encodergraphs/
+218auditednodes unchangedpassed, logs /private/tmp/eagle-native-no-ftz-cpu.log.
+Actual CUDA retest and all later model/recipe/data/memory gates remain required.
+
+A root-reviewed thin CPU-only helper now updates ONLY separate validation
+checkout/binary to b32/9e2 and verifies compile_commands.json has--ftz=falseafter
+-use_fast_math. It executes noGPUquery/context/test/models/data/optimizer, max240s
+andcompiler2 withhost14GiBfloor. Live audit continues independently. After fixed
+binaryready request NEWshortexclusive reservation, run all packing/encoder
+fixtures first, thenbackendops onlyifpackpasses. Preserve nextfailure,return
+promptly with exact groups/GPUproof. No current reservation or automaticreuse;
+noQATstartuntilfullverifieddata/currentgates. Same protectedACTIVEheartbeat.
