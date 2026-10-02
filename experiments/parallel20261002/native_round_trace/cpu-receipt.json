@@ -1,0 +1,22 @@
+{
+  "schema": "native_round_trace_cpu_receipt_v1",
+  "tests_passed": 21,
+  "full_native_build": false,
+  "gpu_time_measured": false,
+  "native_runtime_changed": false,
+  "raw_artifact_sha256": {
+    "runs/parallel20261002/native-round-trace-owner/unittest.log": "97a7bf1d6393c3a8f8717cb37a0889bcfd38d82af3650c3ac13214cb817646d6",
+    "runs/parallel20261002/native-round-trace-owner/compiled-emitter.json": "7cb5c5926c75820dc30af8fa0b4488d68cff9598f44a41de7c96bdb4fc05ab40"
+  },
+  "environment": {
+    "hardware": "Apple M3 Max host; C++ CPU stubs only",
+    "python": "3.11.3",
+    "compiler": "Apple clang21.0.0",
+    "platform": "Darwin27 arm64"
+  },
+  "commands": [
+    "python3 -m unittest discover -s tests -p test_parallel20261002_native_round_trace*.py -v",
+    "PYTHONPATH=. python3 research/parallel20261002/native_round_trace/reference/run_callback_fixture.py"
+  ],
+  "processes_remaining": false
+}

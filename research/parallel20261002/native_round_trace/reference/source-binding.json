@@ -1,0 +1,8 @@
+{
+  "native_commit": "9e2c7a90051e738751aab7d7bd7c2d8201fb76e3",
+  "source_path": "tools/server/server-context.cpp",
+  "original_sha256": "ebb8b4310280b691ca5cebe37dac18a08401cd0063ca5cbccaa4724a7a5060be",
+  "patched_sha256": "67d8bdd23081252b031e6d232cc2a132b1b30240b3718adebe7d901fd2f777c8",
+  "patch_sha256": "180d9205f98be987ab40cf25174d6365cddb7a9ab7984f0902ca82c38f7f9d5d",
+  "state": "UNAPPLIED; no native build or runtime adoption"
+}
