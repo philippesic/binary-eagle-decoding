@@ -16,20 +16,20 @@ The human now authorizes early GPU validation during the preparation CPU audit,
 subject to a coordinated exclusive GPU reservation, fresh resource proof and a
 safe handback before preparation resumes GPU work. Training still requires full
 verified data/current gates and GPU handoff. [Overlap policy](QAT_GPU_AUDIT_OVERLAP.md). RTX2080Ti remains paused.
-**Early validation lease closed; preparation resumed:** at09:27:19UTC
-(02:27PDT), one SIGCONT resumed exact child676/startticks85132, audit244→245.
-All19release checks passed, all14validation process groups gone, GPUempty and
-frozen identities unchanged; post45sCPUhealth healthy/zerooptimizer. No restart
-or audit reset. Preparation again owns RTX5080;2080Ti paused. Actual CUDA build succeeded; a short subsequent GPU probe identified the
-packing failure: learned A1 at minimumfloat32 subnormals returns beta0 instead
-of2^-149. Native precision fix9e2c7a900 is published/pinned: w1a1.cu appends
---ftz=false after fastmath, preserving subnormals without assertion/tolerance
-changes. CPUfixtures pass; actualCUDAretest/fullreadiness remain pending. Probegroups8656/8658gone
-and GPUempty verified09:50:25UTC; shortlease explicitlyreturned; at09:59UTC its resumeguard was being corrected
-from rawreceipt after a checksumtranscription error (no signal/allotherchecks
-passed). Actualsameprocessresume for thisshortlease is still unverified. FurtherGPUtests require newreservation. QAT waits
-for fullverifieddata and currentpassinggates. Both existing15minmonitors ACTIVE.
-[Handback checkpoint](goals/qat-optimization-readiness.md#early-validation-lease-closed-and-cpu-audit-resumed--october2).
+**Short validation lease closed; preparation resumed:** the same child676
+(start ticks85132) resumed at09:57:37UTC /02:57PDT, audit272→274. A45-second
+post-resume CPU check passed with zero optimizer updates. Preparation again
+owns RTX5080;2080Ti remains paused. No restart, source change or GPU overlap.
+
+The exact CUDA failure is learned A1 packing beta0 instead of2^-149 for minimum
+float32 subnormals. Native repair9e2c7a900 is published and pinned: per-source
+w1a1.cu --ftz=false follows --use_fast_math; assertions and tolerances are
+unchanged. CPU fixtures57packs/114loaders/59graphs/218nodes pass. Actual CUDA
+retest and full native/model readiness remain pending. QAT owner is preparing
+the repaired binary on CPU while audit continues; a new exclusive GPU slot is
+required for testing. Both existing15-minute monitors are ACTIVE. Training
+requires complete verified data and all current launch gates.
+[Resume checkpoint](goals/qat-optimization-readiness.md#short-lease-resume-verified--october2-0957utc).
 The readiness objective remains incomplete.
 
 **Overnight CPU research authorized (October1):** three teams investigate W1A1

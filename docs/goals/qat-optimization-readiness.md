@@ -861,3 +861,38 @@ copy/no weakenedgate/no paralleloperator/restart. QATowner owns noactiveGPUjobs
 and explicitlyreturned9:50; that is not proof of prepresume. Parent records
 currentpendingresume and will close it only on actualproof. Both owner monitors
 remainACTIVE; no newGPUreservation until actualhandoff is safe.
+
+
+## Short lease resume verified — October2 09:57UTC
+
+Actual SIGCONT at09:57:37.646130UTC resumed the exact preparation child676,
+start ticks85132, with audit272→274. The post45-second CPU checker exited0,
+healthy with zero optimizer updates. Both owners supplied the proof; parent
+locally confirmed lease status returned_resumed and the same returned_at time.
+No restart, audit reset, source change, recovery charge or GPU overlap.
+
+Raw proof: runs/luna-continuous-a8-a1-20260929/
+beta-probe-return-corrected-operation-20261002.json. Canonical return receipt SHA:
+58438e6ee4fa3dddba604f7a7b7a72a9a6df145d3d11e6edaf124272e2c30c29.
+The short hold exceeded its09:55:20 deadline by2m17 because the initial release
+guard copied a65-character message hash. That guard refused without signaling;
+all other checks passed. The corrected guard derived the64-character SHA from
+full raw JSON/canonical bytes, retained the original denial and issued exactly
+one SIGCONT without weakening checks. Sole operator completed and its LOCAL165
+transport was closed with absence verified. Shared lease/registration/health
+records updated; no remaining lease-release blocker. Preparation is again sole
+RTX5080 owner; RTX2080Ti remains paused.
+
+Native precision repair9e2c7a900 is published/pinned by parentb32f7fe:
+per-w1a1.cu --ftz=false follows target --use_fast_math, leaving other optimizations,
+unrelated kernels and global headers unchanged. No assertions/tolerances/data
+changes. CPU57packs/114loaders/59graphs/218nodes pass. Actual CUDA confirmation
+is still absent; no numerical-fix readiness or QAT outcome is claimed.
+
+QAT owner updated its thin CPU-only helper to exact parentb32/native9e2 and
+checks actual compiler flag ordering. One CPU build operator is preparing the
+repaired binary outside the live audit. No GPU query/context/test until binary
+is ready and a new exclusive reservation/full release is verified. Future
+CUDA operator/recurrent/model gates and full verified corpus remain mandatory
+before optimizer updates. Parent owns this shared milestone checkpoint; QAT
+owner owns build/fixture evidence and its existing heartbeat.
