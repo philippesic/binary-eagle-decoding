@@ -65,11 +65,14 @@ under experiments/qat-optimization-readiness/, and commits its own files.
 
 ## Current state
 
-Implementation is integrated and published on main eb66093; 952 CPU tests
-pass with four skips. Native8025a0777 is published and CPU-tested. RTX5080 is assigned to the existing corpus preparation resume after the human
-continued it; RTX2080Ti remains paused. New implementation CUDA gates and complete
-data preparation are pending.
-See the final integration checkpoint below. No real-data optimizer updates.
+All requested controls are integrated on main (implementation eb66093), with
+952 CPU tests passing and four skips. Actual RTX5080 CUDA validation exposed
+an exact learned-A1 subnormal packing failure. Native repair 9e2c7a900 is
+published and pinned by parent b32f7fe; its CUDA runtime is built and bound to
+recorded shared-library hashes, but the repair has not yet been retested on GPU.
+Preparation owns RTX5080 and has completed 10,000 train / 288 development
+captures as of October2 10:43:57 UTC. Zero real-data optimizer updates.
+See the latest rotation checkpoint below for executable next actions.
 
 ## Added scope: tiny fusion correction
 
@@ -969,3 +972,139 @@ not a new full-health/capturecompletion proof. ActualnewrecipeCUDAretest/model/
 backward/memory/fullcorpus gates remain pending. RootheartbeatACTIVE; wait next
 verified safe completed CPUboundary or fullrelease, no duplicateGPUcheck/retry
 thisreservation and no stalelease reuse. FullparsedrawSHAs drive future guards.
+
+
+## Validation ownership rotation — October2 10:43 UTC checkpoint
+
+Objective remains the five requested optimizations plus raw fusion correction
+and affine binary midpoint training, validated on actual GPU before later QAT.
+Human authorization permits early validation under an exclusive bounded lease;
+training requires full train/development coverage and current recipe gates.
+Training is already authorized after those gates. No new user decision blocks
+operator retesting. No training recipe has yet been selected from passing GPU
+evidence. Q4_0 remains the comparison baseline; sealed finals stay unopened.
+
+This task rotates after its second compaction at a safe boundary: no root-owned
+remote jobs, active GPU reservation or running subagents. All original feature
+workers completed and their reviewed changes were integrated. Native worker
+hit model capacity; root now owns its retained native worktree. The existing
+Luna validation operator completed and stood down without a new remote launch.
+Its local prepared plan is transferable, not a live GPU job. New task must verify
+ignored ownership registration and acknowledge before assuming responsibility.
+Old task 01a0f934-dd65-7e33-a5bf-0ba591e713a4 stops after that acknowledgment and
+retargeting the existing heartbeat. This is supervision transfer, not GPU release.
+
+**Completed implementation and tests:** single-forward/backward controls,
+K/V-only cache and batched heads, initialization/sign LR/gradient/optimizer
+controls, learned A4/A8 clipping and A1 thresholds, staged/depth/refresh
+curricula, raw rank1/rank4 fusion correction, and row midpoint μ+αsign(z).
+CPU suite 952 passes / four skips. Native CPU fixture: 57 packing pairs,
+36 projection cases, 114 loaders, 59 encoder graphs, 218 audited arithmetic
+nodes; separate operator fixture 220 cases. Source implementation eb66093;
+exact CUDA diagnostic parent e0ec292 / native1284d46; precision repair parent
+b32f7fe / native9e2c7a90051e738751aab7d7bd7c2d8201fb76e3; latest checkpoint
+before rotation 70de2f2. No CUDA-ready, measured speedup or convergence claim.
+
+**Actual failure and repair:** learned A1, affine=false, variant0, delta0,
+clip1, k33/n4/token2, alternating minimum F32 subnormals. Expected β=2^-149
+(hex01000000), CUDA β=0. Raw report SHA
+04779ffd18d41ba30586abe87ac02b3b3f2e21e6f0c462a169262cf9c26a7ff5,
+ignored logs/beta-exact-probe-20261002-01/native-operator-diagnostic.json.
+Repair appends --ftz=false only for w1a1.cu after --use_fast_math, preserving
+all assertions, CPU reference, numerical gates and remaining optimizations.
+CPU fixtures pass unchanged. Real GPU repair retest is still pending.
+
+**Preparation owner and job:** current acknowledged owner
+01a0fb62-cbdb-72f0-8e86-4055b2ccb4ed; derive later rotations from
+runs/luna-continuous-a8-a1-20260929/monitor-registration.json and verify its
+heartbeat target. Existing job is frozen, prepare-only, in remote
+/home/philip/binary-eagle-decoding, run luna-continuous-a8-a1-native-order-20260930,
+supervisor luna-supervisor-a8-a1-native-order-20261002-08. Linux tmux socket
+binary-eagle-runtime, session continuous-a8-a1-native-order-20261002-08;
+server673, supervisor674/PGID674/startticks85124, child676/PGID676/startticks85132.
+Do not modify, kill, restart or train in that run. Owner controls reversible
+SIGSTOP/SIGCONT at a verified completed CPU boundary and its hold-aware monitor.
+Preparation-only source7547d253/nativeb4e366d4/config/runtime remain frozen.
+
+**Fresh health:** owner's single CPU check at 10:43:57.895032 UTC passed,
+nonterminal teacher_capture_audit329/353. Completed manifests329 contain
+10,000 train / 288 development, up64 development since previous224;
+714 of1,002 development remain. Same674/676 live; host available19,627,233,280B,
+disk419,524,091,904B. Optimizer updates zero; no preparation-ready receipt.
+Owner's checker/operator and LOCAL172 transport finished. No GPU query or
+release claim. Compact owner cursor: 684dde2b-2763-466c-a0ee-d5da4ef94c72:23.
+Fresh raw last-health.json and health-snapshot-20261002T104357+0000.json are
+ignored under the preparation registration directory.
+
+**Lease state:** both prior leases returned; same preparation group resumed
+09:57:37 UTC after the diagnostic probe. All validation groups proved absent.
+Latest request prep08-no-ftz-retest-20261002 was denied before any signal at
+10:37:08 UTC: ordinal327 label manifest missing at automatic new development
+capture transition. CPU phase and empty GPU snapshot did not establish a safe
+slot. gpu-validation-lease.json remains denied_before_hold/operator inactive.
+No current lease, GPU reservation, root process or renewal. Do not reuse an old
+receipt. Await meaningful completed CPU boundary or final preparation release;
+coordinate one owner-controlled Luna preflight rather than duplicate monitors.
+
+**Ready validation runtime:** separate checkout
+/home/philip/binary-eagle-decoding/runs/qat-optimization-readiness/early-cuda-20261002/attempt06/checkout,
+parentb32f7fe/native9e2. Native build directory third_party/llama.cpp/
+build-qat-early-cuda-20261002, Release/CUDAarch120/parallel2. Test binary
+bin/test-eagle3-learned SHA0d31447f3401e5b6434195148a60f2a992cadad0ae403dbeb9e8046f5c5b6e35;
+actual libggml-cuda.so.0.25.1 SHA
+29e41b5ef1d721632f0a34c90c2de1757b4095c00653f42d3e8c0ce2acf97d8a.
+Same executable hash alone does not bind changed dynamic kernels. All six
+library hashes, ldd/RUNPATH, compile flags/source/config/toolchain are in
+runs/qat-optimization-readiness/early-cuda-20261002/registration/
+early-cuda-build-artifact-provenance.json. Derive full checksums from that JSON;
+never copy shortened prose hashes. Private declaration-only CUDA header overlay
+resolves CUDA13.1/glibc rsqrt exception mismatch; no global toolkit modification.
+CPU build job10395/10397 exited0 and groups/transports are gone.
+
+**Local worktrees:** /private/tmp/eagle-native-learned retains native branch
+feature/learned-w1ax at9e2, with /private/tmp/eagle-native-learned-build CPU build
+and /private/tmp/eagle-native-no-ftz-cpu.log. Successor assumes native ownership.
+Parent primary submodule detached9e2, clean. Original integrated parent worktrees
+were cleaned after preserving dependencies. Untracked research/, experiments/
+overnight20261002/ and docs/overnight20261002/supervisor.md belong to research;
+do not stage, revert or delete them. Temporary rotation worktree is removed
+only after its checkpoint is integrated and pushed.
+
+**Exact next actions:**
+1. Read this checkpoint, STATUS, operations, QAT runbook/handoff and overlap
+   policy; read fresh local hosts.toml/gpu-control.json, ignored root/preparation
+   registrations, last-health and provenance. Confirm the existing QAT heartbeat
+   is transferred to the new task. Do not create another schedule.
+2. Keep the healthy preparation observation quiet. Request a new exclusive
+   short lease only at a freshly owner-verified safe completed CPU boundary,
+   or verify final successful preparation release. All SSH uses tmux MCP.
+   RTX2080Ti remains paused. Use exactly one coordinated Luna operator.
+3. Under an explicit lease with deadline and prepared return guards, run existing
+   binary only via remote_job.py in detached Linux tmux, new job/session
+   qat-no-ftz-retest-20261002-01. Native command: timeout --signal=TERM
+   --kill-after=10s 120s <absolute build>/bin/test-eagle3-learned --backend CUDA
+   --json-report <new output>/native-operator.json. Do not build during the hold.
+   If raw report and collector validate a full passing CUDA fixture, run bounded
+   test-backend-ops -b CUDA -o W1A1_MUL_MAT (180s), separately supervised.
+   Record actual PIDs/startticks/state immediately. Preserve any failure.
+   Stop/prove groups and GPU apps absent, return before deadline, and only prep
+   owner resumes its same process. No further work during the held slot.
+4. After operators pass, collect actual-model native zero-update evidence,
+   nonzero learned/correction/affine execution and full-shape forward/backward,
+   memory/timing for every enabled recipe and curriculum precision. Three
+   unsealed TRAIN prompts can bootstrap gates; a separate truthful bounded TRAIN
+   provider needs independent admission. Raw preparation_only labels are not
+   eligible. Full corpus is not required for early operator validation, but
+   incomplete corpus cannot authorize training. Preserve teacher/native ancestry.
+5. When complete verified train/dev coverage, current launch recipe gates and
+   final GPU handoff all pass, record selected passing recipe and start authorized
+   QAT in a NEW source-bound run from validated initialization. Preserve budgets,
+   checkpoints/resume, sign/midpoint/quantizer diagnostics and Q4_0 development
+   comparison; verify disconnect/reconnect. No silent unvalidated options.
+
+Existing heartbeat qat-validation-and-training-handoff stays ACTIVE every15min.
+QAT task/agents/jobs are protected from supporting research usage thresholds,
+reset/cutoff and may use available paid credits. No permission to redeem resets
+or purchase credits. New direct human pause/stop overrides this. Training has
+not begun; real-data optimizer updates remain zero. No unresolved user decision
+is required for the bounded retest or training after all declared gates.
