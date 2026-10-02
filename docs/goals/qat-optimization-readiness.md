@@ -2949,3 +2949,71 @@ concrete reviewedpacket/newsource staging/freshadmission/completeold09teardown.
 Research stopped; soleoperator/2080Ti pause/SAMEheartbeats/nativeGoal preserved.
 Next actual milestones: inventory proof; narrowruntimehelper test/review/static
 inventory; historicalextension review/integration; safeNEWsource prep launch.
+
+
+## Audit reuse and runtime fix public — October 2, 22:17 UTC
+
+Historical full-pass source2508fa07f5fa068d249207ad7d7a41e374cbe282 is
+reviewed/integrated/pushed6f1444b86dd01862da878c2d5d2434a1d9165c29;
+stageSHA41f1814e6389c798a246080b27948d110cadbe119c2409161cab7c4d7557337f.
+Root49focusedCPUchecks+final15historical tests afterhardening PASS; Luna49
+and finalcommitted15/Ruff/diffreview PASS. _files restoredexactoriginalAST;
+separate _receipt_files retains strict currentintegritychecks. Audit function,
+_files, policy and selectedimports ASTexact7547, sixsemanticdependencies rawSHA
+exact. Newsource/module/currentPython/NumPy/Torchversion binding preserved.
+
+Explicit optional historical_audit_provenance contract:
+{schema:w1ax_historical_native_audit_full_pass_v1,operation:pathSHAe77fd345,
+completion:pathSHAb89e155,readiness:pathSHA,provider_indexes:{train,development},
+audit_reports:[353orderedpathSHArecords]}. Fixedactual operation/completion
+trustroots, originalstage/run/source/controlled08identities/ordered353readiness/
+eachsidecar/index/provider joins required. Current everypayload/request/input
+SHA+ownedinventory checks precede newreceipt publication. Receipt audit_origin
+binds exactimportSHA/provenance digest/sourcecommit/ordinal and is revalidated by
+ordinaryloader, with metadata cache checking allpathancestry/SHA/stat identities
+on access. NULL retains freshsemantic-once fallback; malformed optionalproof fails.
+No generic skip/sidecaralone/ordinal trust, no oldwrites or eligibilitypromotion.
+Actual positive remoteinventory stillrequired; historicaladoption NOTenabled.
+
+Server freshness feature444260b+format11603c2 integrated/pusheda345f87,
+helperSHA457fd6c2109ae103cd8d2acfc7b724e6fb2f263586c60e06d59064b3ab25c33c.
+Root23helperchecks/Luna23+Ruff/diff PASS. Explicit callerSHA-approved existing
+build proof binds originalsource/argv/syntheticraw/actualvalidatoroutput and
+all7runtimebytes. Onlyglobalcompile_commandsmtime exception; source/CMakeflag/
+response/object/backend/server/compiler/FTZarchitecture/ELFldd/mutation stillstrict.
+No historicalobjecthash inferred. CPU04static-only packet root6guards PASS,
+manifest26df57df3613bacee0758c4fa30bc50adc213082bf7b8219995adbeda5c63e67,
+runnera0f5a17693bdaf595f7aff451d611ee597282c043a1bdc1242ba8e8781617509,
+plan045eba8e08502bd4245dd1e91189b968b5624f0b6cacdb54b147262321e67df3,
+proofb5becb2bc7a6474e6406b07e390f6d5658e238a268e3112b15b01df14a6d1a2f.
+Genuine unchanged4b765validator locally rerunreturned0/output
+b38d74f20a52d14bdee8c0bb154f181906dca246a403f81d1061c8e2153fd45d.
+One180sstatic/240outer+10kill/grace10; configure/build impossible. SoleprepLuna
+conditionalGO afterinventoryownedcleanup/freshphase/RAM14GiB/pause/03return/
+fixture return/04unused/<=300sadmission. No actual04PID/result yet.
+
+Actual first353metadataquery DID NOTexecuteLinux: outertimeout resolvedWindows
+TIMEOUT at SSHlanding. Operator preservesstderr/transportcleanup; packetworker
+ownsminimal NEW-v2 WindowsSSH->verifiedWSLUbuntu boundary, Linux/usr/bin/timeout
+insideWSL. Querysource32f671 remainsUNCHANGED; previous12root+12Lunaguards and
+commandproof preserved. This is transport failure, not corpusinvalidity. New
+wrapperneeds actualknown03admissionWindowsquoting/context/decompression proof,
+rootreviewthenSAMEsoleoperatoronequery. No extraGPU/payload/sourceclassification.
+Frozen09 continuesuntouched/zero updates, researchstopped/2080Tipaused.
+
+Next immutableNEWprepare-only source6f1444b, referenceA8/A1/config4ee; explicit
+submodule9e2initialization needed forGGUFReader aftergitworktreeadd. Stage/config
+metadata verification includes actualpayloadhashscan; may run BEFORE stopping09
+under freshcoordinatedRAM/IO as noGPU/oldwrites, toprepareconcretevalidatedinputs.
+Enablehistoryonlyafteractualinventorypositive/proofreview. Then exact09graceful
+stop/completegroup+GPUteardown/freshexclusiveadmission precede newprepare-only
+launch. Ordinaryfullcoverage/currentpairedsmoke/checkpointzero/finalready remain;
+separate9e2currentactor/model gates beforeoptimizer. Nooptimizerstart yet.
+
+Owned integratedsourceworktrees retained-capture-import, native-audit-receipts,
+historical-native-audit and qat-server-freshness removed onlyafter cleanstatus,
+exact ownedfiletree equality withpublic01015/c0f3/6f144/a345 and workercompletion.
+Corresponding localbranches cleaned; sourceqt-server-freshness remotebranch
+cleanup follows fullypublishedmain equivalence. Ignoredpackets/evidence and all
+peeruntrackedfiles/worktrees preserved. Root ownsprojectcheckpoint/Goal/SAME
+heartbeat; prep01a0fdd6 ownsSAMEsoleLuna and everyremotejob/transport. No rootSSH.

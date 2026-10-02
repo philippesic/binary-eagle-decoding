@@ -4,6 +4,21 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
+## Audit reuse and runtime fix public — October 2, 22:17 UTC
+
+Historical full-pass recognition is integrated as `6f1444b`, after 49 focused
+CPU tests and independent review. It requires the exact archived supervisor08
+source/launch/completion records, complete ordered readiness/index/sidecar joins,
+unchanged semantic audit code, and current payload integrity verification before
+publishing durable receipts. Live metadata must still match before enabling it.
+The server timestamp fix is public `a345f87`, with 23 tests and independent review;
+its six-guard-tested static-only rerun packet is cleared for the sole operator.
+
+The first metadata query failed at the Windows-to-WSL command boundary before
+Linux execution. A minimal transport wrapper correction is underway; this is not
+a corpus or audit failure. Frozen recovery09 remains untouched, supporting research
+stays stopped, and optimizer updates remain zero. [Execution checkpoint](goals/qat-optimization-readiness.md#audit-reuse-and-runtime-fix-public--october-2-2217-utc).
+
 ## Build succeeded; audit provenance check dispatched — October 2, 22:08 UTC
 
 CPU server03 actually ran: configure/build succeeded, static inspection rejected
