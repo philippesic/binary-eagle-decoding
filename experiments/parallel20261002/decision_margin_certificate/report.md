@@ -23,7 +23,9 @@ low and all other coordinates high; its maximum reverses those endpoints.
 Compute centered exponentials BEFORE division by T and expand the endpoints
 by the caller's absolute probability arithmetic allowance. Each coordinate has
 its own attaining vertex: collecting upper bounds does not create a probability
-vector. F64/libm rounding is not proved here; a safety claim is conditional on
+vector. Prefix/suffix exclusion normalizers and a second-largest anchor for
+removing the largest coordinate evaluate all extrema in O(vocabulary size),
+without subtraction of nearly equal mass totals. F64/libm rounding is not proved here; a safety claim is conditional on
 the externally justified arithmetic allowance enclosing implementation error.
 Numerically collapsed/overflowed finite box endpoints fail closed. Common
 1e300 offsets and opposite-sign 1e308 logits are covered by owner checks,
@@ -70,3 +72,9 @@ CPU only, F64 floats; Ruff lint/format pass. Independent validation presently
 passes 8/8 checks in 0.003 seconds; its fixture census is in validation/.
 Owner commits: `c615bc8` implementation and `920d43c` arithmetic hardening.
 No native backend invocation or device measurement was performed.
+
+Final implementation `359765e` adds linear-time normalization; independent
+validator now passes 10/10 checks in 0.002 seconds. A separate complete 32000
+coordinate synthetic smoke returns stable and 32000 intervals in 0.0533 seconds
+on the same Darwin arm64 CPU/Python binary64 environment. This is a local
+prototype usability check, not native inference throughput or CUDA evidence.
