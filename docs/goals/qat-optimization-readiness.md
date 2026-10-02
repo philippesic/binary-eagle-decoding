@@ -2407,3 +2407,19 @@ V5 authority, preserving source/process/resource/exclusive-use gates. Local
 operator/GO state is not connection/GPU/result proof. No duplicate root SSH.
 13% latest weekly remaining, original reset unchanged, monitoring active.
 [Checkpoint](../parallel20261002/supervisor.md#evaluator-correction-and-host-resolution--october-2-1945-utc).
+
+
+## Connected process-loss checkpoint — October 2, 19:56 UTC
+
+Trusted strict-key connection succeeds; fresh19:51:59CPUcheck finds original
+supervisor674/child676 absent with stale running state. Raw proof cbe45a89…ce200,
+saved statec29bbc3a…fedf5aed; stored353/10,000train/1,002dev and no ready receipt.
+Recorded counters are not live optimizer/resource evidence. Local operator
+closed, fixtureGOinactive; no hold/GPUquery/test/signals/recovery. User notified.
+
+Sole prep owner classifies fresh boot/process/terminal/source/budget/pause state
+under existing protocol before bounded recovery or handoff. No stale PID grant,
+duplicate operator or inferred GPU-free state. Recovery admission pending
+classification; existing authorization remains. QAT owner coordinates future
+new verified exclusive native validation and complete training gates.
+[Checkpoint](../parallel20261002/supervisor.md#trusted-connection-and-process-loss-observation--october-2-1956-utc).

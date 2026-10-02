@@ -405,3 +405,29 @@ Protected host-save owner similarly retired only its reviewed/pushed worktree
 after equality and patch-equivalence. Peer evaluator worktree remains preserved
 until public adoption is verified. Monitor remains active, latest check87%used/
 13%remaining original window, no reset; no new research slate without evidence.
+
+
+## Trusted connection and process-loss observation — October 2, 19:56 UTC
+
+Strict trusted-key SSH to the human-corrected endpoint succeeded. At remote
+19:51:59.210794UTC the sole preparation check found supervisor674 and child676
+absent although saved state says running. Raw proof SHA256
+cbe45a89b8da5a974e36e7b2b80bd7f4ed9016eb5a083d04b7a67b7145fce200;
+saved state SHA256c29bbc3aa3eb3b2e32757130cda8285ab4ef34398b1a07abb05f2975fedf5aed.
+Stored353 manifests/10,000train/1,002dev and recorded zero/model fields remain;
+no final ready receipt. These files do not prove live optimizer/RAM/GPU state.
+The existing trusted server key was pinned via alias, with strict checks and
+no trust-store changes; host correction did not weaken identity validation.
+
+LOCAL202/keeper53069 closed, operator inactive, fixtureGOinactive. No hold,
+GPU query/test, signal or recovery charge. User notified once of this new
+process-loss observation. Existing PID-bound fixture authorization cannot be
+used against absent processes.
+
+Sole preparation owner performs one CPU classification of boot/session/project
+process identities, terminal/stdout/status, frozen source/config/math, budget
+and pause markers before recovery or handoff. No duplicate root/protected-agent
+SSH operator. Bounded recovery remains authorized by the existing protocol
+when its conditions pass; no recovery has started and no new permission gate
+is invented. A new exclusive grant needs fresh resource/ownership evidence.
+QAT/source fixes and monitoring continue; no native or training-start claim.

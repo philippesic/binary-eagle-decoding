@@ -4,14 +4,16 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Current coordination — October 2, 19:45 UTC
+## Current coordination — October 2, 19:56 UTC
 
 Active goal remains [QAT optimization readiness](goals/qat-optimization-readiness.md).
 Supervisor01a0fddd owns integration/usage; QAT owner01a0fc3d and preparation
 owner01a0fdd6 have ACTIVE protected heartbeats. A direct human host correction
-cleared the pending-info gate. Sole preparation operator owns one guarded
-renewed preflight; current local operator/GO state does not verify connection,
-GPU use, native results or training.
+cleared the pending-info gate. Trusted connection now succeeds; fresh19:51:59
+CPU check finds original supervisor/child absent with stale saved running state.
+Stored full captures remain, final readiness receipt absent. Sole preparation
+owner classifies source/terminal/budget/pause/process state before bounded
+recovery or handoff. No GPU query/test, stale-PID grant or training is verified.
 
 Local corrections: learned-head59ef557/f9a21f3 (82-test proof), checkpoint
 host-save d2c4dca/8d17b0e (42-test proof), evaluator e6ab963 (70 author checks/
@@ -23,7 +25,7 @@ removal remain unapplied performance proposals. Astra found no justified fifth
 CPU batch until new evidence. Monitoring continues at latest13% weekly remaining,
 original reset1791049896: stop research at<=1%; stop research monitor on reset,
 preserving QAT and available-credit continuation.
-[Latest checkpoint](parallel20261002/supervisor.md#evaluator-correction-and-host-resolution--october-2-1945-utc).
+[Latest checkpoint](parallel20261002/supervisor.md#trusted-connection-and-process-loss-observation--october-2-1956-utc).
 
 Earlier preparation and research observations follow.
 
