@@ -794,3 +794,50 @@ proposals and complete decoding cost against Q4_0 before promotion.
 No option is selected by publishing the audit. New training, capture, architecture
 or deployment experiments remain user-owned. The user requests simpler,
 high-impact explanations from now on; detailed evidence remains in the reports.
+
+## Preparation resume audit cost — 2026-10-02
+
+The preparation owner inspected frozen source `7547d253`, without contacting or
+changing the running supervisor08. At07:41:20.302347UTC the saved CPU observation
+was healthy at audit ordinal200/353, with327 completed manifests retaining
+10,000train and224of1,002development prompts. All optimizer counters remain zero.
+The remaining778development prompts need native response/feature capture and
+label construction; the current ordinal instead describes repeat audit progress.
+
+The frozen capture loop skips native capture for an existing labels manifest,
+but always calls `audit_native_labels`. Every resume starts this loop at zero.
+The CPU audit hashes all manifest-owned files, re-derives labels/maps/prefix joins,
+rebuilds accepted-prefix features in a temporary directory and compares their
+hashes, then validates traces, feature ledgers and request/response ancestry.
+Provider manifests are assembled after the entire capture/audit loop. This is
+substantial CPU/file work, not regeneration of the already retained prompts.
+
+Five existing saved observations advanced109→200 between06:42:04.636798 and
+07:41:20.302347UTC:91shards in3,555.666seconds, about39.1seconds/shard or92shards/hour.
+Individual intervals were approximately38–40seconds/shard. At that observed rate,
+roughly127retained shards still ahead imply another83minutes of repeat audit;
+this is a conditional estimate, not an ETA for full preparation. Native capture,
+readiness/coverage assembly, paired CUDA smoke and checkpoint-zero save follow.
+No timing of those remaining stages is established by these CPU observations.
+Recorded free disk at07:41 was424,596,348,928bytes (395.4GiB); the registered
+622,868,961,328byte forecast is a conservative full-corpus upper bound, not actual
+occupied storage. No CPU-versus-disk bottleneck profile or device throughput was
+measured, so neither disk capacity nor GPU speed is identified as the cause.
+
+**Proposal, not selected or deployed:** persist an atomic successful per-shard
+audit receipt bound to the audit implementation/schema, frozen runtime/config,
+prompt bytes/count/split, capture manifest and every owned payload hash, including
+request/response provenance. On a later explicitly coordinated resume, rehash the
+current bytes and verify exact inventory/ancestry against that receipt before
+reusing the completed deterministic derivation result. Missing/changed/unreadable
+evidence must fall back to the full audit; changed gates or semantics invalidate
+receipts. Do not merely trust manifest existence or a cursor. CPU fixtures must
+prove unchanged results and fail-closed handling of altered payloads, identities,
+inventory and interrupted receipt publication; a bounded same-data timing check
+must establish whether avoiding reconstruction actually saves time after hashing.
+This requires review of the validation-equivalence tradeoff before adoption.
+
+The current frozen preparation continues unchanged, with soleRTX5080ownership
+and `--prepare-only`. No restart, audit bypass, source deployment, new experiment
+or optimizer update is authorized by this proposal. The validation/training owner
+still waits for full preparation and verified GPU release.
