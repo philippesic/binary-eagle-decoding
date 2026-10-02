@@ -12,10 +12,12 @@ and memory/timing remain unverified. [Integration report](../experiments/qat-opt
 All12 profile preparation/planning CLIs also pass on the published checkout;
 [completion audit](../experiments/qat-optimization-readiness/12-completion-audit.md)
 records requirement-specific CPU proof and missing GPU evidence.
-The human assigned this chat ownership of validation and later training after
-verified release by the dataset-preparation owner. RTX2080Ti remains paused.
-Required new-feature GPU evidence is pending; the preparation owner retains sole
-RTX5080 assignment until release. Root handoff monitor is ACTIVE every15minutes;
+The human now authorizes early GPU validation during the preparation CPU audit,
+subject to a coordinated exclusive GPU reservation, fresh resource proof and a
+safe handback before preparation resumes GPU work. Training still requires full
+verified data/current gates and GPU handoff. [Overlap policy](QAT_GPU_AUDIT_OVERLAP.md). RTX2080Ti remains paused.
+Required new-feature GPU evidence is pending; the preparation owner retains data/job ownership; QAT owner may obtain a bounded
+exclusive RTX5080 validation lease while audit is CPU-only. Root handoff monitor is ACTIVE every15minutes;
 [handoff plan](QAT_TRAINING_HANDOFF.md) requires current zero-update validation
 before the newly authorized training starts. Existing frozen prep stays
 --prepare-only. FreshCPUcheck06:03:52UTC: healthyreaudit52/353,zerooptimizer,

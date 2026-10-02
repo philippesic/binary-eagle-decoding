@@ -629,3 +629,27 @@ shards, conditional on unchangedpace; unfinisheddevcapture and laterreadiness/
 pairedsmoke/checkpointzero are additional,unestimatedwork. The human’s question
 changes no frozen runningjob or validationgate. Preparationowner asked for
 source-grounded timing/bottleneck explanation usingexistinghealth evidence.
+
+
+## Human authorizes early GPU validation during CPU audit — October2
+
+Human: “If it's cpu only then can the optimizer do the gpu testing it needs
+before qat? If so have it do gpu testing for its changes, then once all training
+data is verified, it can also start its qat.” This supersedes the full-preparation
+wait for VALIDATION only. Parent dispatched the instruction to QATowner
+01a0f934-dd65-7e33-a5bf-0ba591e713a4 and prepowner
+01a0fb62-cbdb-72f0-8e86-4055b2ccb4ed for immediate coordination. Fulldata/current
+CUDArecipe gates and exclusivehandoff still precede realoptimizerupdates.
+
+Bounded exclusive5080validation lease duringCPUaudit requires fresh proof of
+GPUprocess/context/memory availability and hostheadroom, a recordeddeadline and
+safehandback before automaticnativecapture/pairedsmoke resumes. CPUphase alone
+is notidleproof. Owners may coordinate a reversible liveprocessboundaryhold,
+preserving source/data/job and avoiding restart/re-audit, if necessary. No
+concurrent GPUcomputation, changedfrozenjob or2080Ti use. Separate newcheckout/run
+and supervisedprocessgroups for allvalidation. Scope in
+[QAT_GPU_AUDIT_OVERLAP.md](../QAT_GPU_AUDIT_OVERLAP.md). Parent owns scopefiles;
+QATowner owns heartbeat/runbook/handoff and lease/validation evidence. No actual
+GPUlease/teststart is claimed at dispatch. No further trainingconfirmation needed
+once allrequiredverifieddata and gates pass. Overnight/oncredits protection
+continues; researchusage/reset controls do not apply to QAT.
