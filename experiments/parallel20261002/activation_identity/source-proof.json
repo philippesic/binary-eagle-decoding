@@ -1,0 +1,32 @@
+{
+  "device": "CPU",
+  "historical_fixture_alignment": "scoped complete-source map in both synthetic maps",
+  "math_source_sha256": {
+    "activation_reuse.py": "a3bce5484733420588b54d72f696a255d20928594324ff646a87177565102002",
+    "affine_binary.py": "edad3b513413eac5dc027cb949da6ae4e8d3ca4184d66b7d0f97b880c6252ebc",
+    "continuous_qat.py": "8e0ed5930d33c8a717536872ec809d4e4b0bfe0826e778ae61ef434a0ea5da0a",
+    "fusion_correction.py": "23247735fc7250c8d74bf7a2a605ba8c71ce0b0b8ccd0a3f22b39414ce8265e2",
+    "learned_activation.py": "458894b5bfa2f15c428d8d9b2c403a01c28ec902e3a95ff90488fd87b7181af9",
+    "native_step.py": "5be7faa64ff49214c2ce44d5f47d9a0c933e412da1c0ac359fa944a4bba1c634",
+    "qat_curriculum.py": "ec133082768e7c167bb67a7a1e4013883e51bc9a721ba78884a7c39904742dce",
+    "qat_optimization.py": "d2da18a4f4db612dd3cb51916af688109593d2c9d4cf119a21f8129567c305f7",
+    "qat_readiness.py": "48a8d83b0a09796ed49335f1a22712385d87eecfc6a9dfaedbfb0340c96ab2f5",
+    "qat_state.py": "10eec0f235fa9d1b65f8d7d1a98e38e0be43a7249ccca88cfb7604ea5e17d9ed",
+    "recurrent_binary.py": "7624fa4486bcb130440cbc6b84c2463af01f0750e0145236063a125ab8b3de06",
+    "recurrent_loss.py": "c41b0ae64898ca02078c0120fe63383717711e5ee9659a09b45b1da3b05d31b0",
+    "recurrent_provider.py": "36c7eda803baede517add00ced7715307035e989730f10edc5e8c98eb3aebd9a",
+    "recurrent_qat.py": "f2b6d83b8929807b65b6f21826cc99097a6ddd70f99ff23ca0836aebe4db1224",
+    "recurrent_rollout.py": "a286b198cb921b66cbf9ff86126be929b9ca452baa7a205c11f5caed093afc2b",
+    "recurrent_trace.py": "c8213c72dae47c65eba8ba78a79160c74e83ce667681866271980bb54129b991"
+  },
+  "passed": true,
+  "platform": "macOS-27.0-arm64-arm-64bit",
+  "preserved_feature_sha256": {
+    "activation_reuse.py": "a3bce5484733420588b54d72f696a255d20928594324ff646a87177565102002",
+    "learned_activation.py": "458894b5bfa2f15c428d8d9b2c403a01c28ec902e3a95ff90488fd87b7181af9",
+    "native_step.py": "5be7faa64ff49214c2ce44d5f47d9a0c933e412da1c0ac359fa944a4bba1c634"
+  },
+  "receipt_scope": "synthetic CUDA schema context only; no actual GPU admission",
+  "tests_run": 52,
+  "torch_version": "2.14.0"
+}

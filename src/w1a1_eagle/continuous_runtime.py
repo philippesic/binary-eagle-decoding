@@ -24,6 +24,7 @@ MATH_FILES = (
     "qat_optimization.py",
     "qat_curriculum.py",
     "learned_activation.py",
+    "activation_reuse.py",
     "fusion_correction.py",
 )
 

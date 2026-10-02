@@ -56,6 +56,7 @@ EXTRA_MATH = (
     "qat_curriculum_runner.py",
     "qat_optimization.py",
     "learned_activation.py",
+    "activation_reuse.py",
     "fusion_correction.py",
     "affine_binary.py",
 )

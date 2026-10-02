@@ -204,6 +204,11 @@ def validate_optimization_readiness(
     sources = _object(runtime_identity.get("math_source_sha256"), "math_source_sha256")
     if not sources:
         raise ValueError("actual math-source identity required")
+    # learned_activation imports this helper unconditionally, including when
+    # the adapter's reuse option is false. Mutual omission from a supplied
+    # context and its receipt must not bypass the source identity comparison.
+    if "activation_reuse.py" not in sources:
+        raise ValueError("actual math-source identity requires activation_reuse.py")
     for name, digest in sources.items():
         _hash(digest, f"math source {name}")
     cuda_math = _object(runtime_identity.get("cuda_math"), "cuda_math")
