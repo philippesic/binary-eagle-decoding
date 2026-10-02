@@ -76,6 +76,14 @@ Capture nearing completion does not release GPU; final preparation endpoint and
 all new CUDA/model/recipe gates remain pending. CPU server job is still local,
 unlaunched. [Checkpoint](goals/qat-optimization-readiness.md#runtime-admission-and-reservation-safety--october2-1208-utc).
 
+**Full capture measured, October2 12:13 UTC:** same preparation job now has
+353 completed label manifests /10,000train /1,002dev exactly. CPU checker is
+healthy/nonterminal at teacher_shard_complete, zerooptimizer/no readyreceipt.
+Final readiness/coverage/paired smoke/checkpointzero/terminal and fresh GPU
+release proof remain required. The sole Luna has CPU-only GO for a bounded
+server target/static inspection protecting7operator artifacts; dispatch is not
+job-start proof. No GPU lease, CUDA retest or training. [Checkpoint](goals/qat-optimization-readiness.md#full-capture-measured--october2-1213-utc).
+
 **Validation task rotation at a safe boundary:** after two compactions, the
 validation/training owner transferred to acknowledged successor
 01a0fc3d-bbe1-7e93-a19b-a9200dfa186c (Continue QAT validation and training). No owned remote

@@ -1317,3 +1317,45 @@ before CPU GO. Transfer will use small hash-bound chunks, avoiding long SSH
 payload assumptions. GPUplan f112/validator4b765 stays frozen and CUDA repair
 retest pending. Active SAME15min heartbeat/protection continues; no actual model,
 backward, memory/timing, optimizer or quality/throughput claim from CPU code.
+
+## Full capture measured — October2 12:13 UTC
+
+Preparation owner's ONE scheduled CPU query12:13:42.770119UTC passed:
+healthy/nonterminal preparing/teacher_shard_complete353/353;353completed labels
+manifests contain exactly10,000TRAIN/1,002development. optimizer_started=false,
+steps{},readyreceipt=null,originalsupervisor674/child676 live. Hostavailable
+19,582,734,336B;disk392,381,906,944B. Raw ignored
+health-snapshot-20261002T121342+0000.json and last-health.json record
+capture_complete=true/preparation_complete=false. Sole LOCAL180 closed/absence
+verified, no GPU query/hold/release. Owner continues SAME monitor and will notify
+verified readiness/coverage/provider assembly/paired CUDA smoke/checkpointzero/
+terminal/matching receipt plus fresh groups/GPU-empty proof; those gates still
+precede handoff. A full capture count is not preparation completion or release.
+
+Root reviewed final CPU server runner, including actual GNU Make per-target cwd,
+relative object/link paths and progress cleanup, readonly dependency traversal,
+protected-artifact mutation detection,14GiB fresh admission and foreground nested
+timeouts keeping compiler children under remote_job's recorded process group.
+Local tiny parser fixtures accept12server/read-only actions/reject4mutations;
+bytecompile/timeout assertions and hash-bound16chunk package reconstruction pass.
+Final plan SHA603e7dc96239ad17cae816a50bffed002e632481871216ed381ef3a8a888dd44;
+runner SHAe940b40b42bb49e5a0624331717ed97f9e4e0f055034bdaf71c209ef425df3ae.
+Package SHAb7d03afa498da49c9594ad13c931fbba3c7e258d8414493aa2182637abc0879e,
+chunk manifest SHA913ad8dd45510ca81214071d19301f498607a70a4b0ecc2bd78462af75174034.
+Root issued CPU-ONLY GO to SAME /root/cuda_retest_operator for unique
+qat-cpu-server-prepare-20261002-01 after fresh local5080unpaused/2080paused checks.
+This is authorization/dispatch, NOT an actual remote launch report. Every SSH/
+transfer uses tmux MCP; chunks avoid long-command assumptions. Server target
+only/parallel2/600s and overall900s; sourceb32/native9e2/external helper748exact,
+seven ready operator artifacts must remain byte-identical before/after preview/
+build. No automatic configure, GPU query/context/test/server execution/model/
+data/optimizer/frozen preparation modification. Fresh CPU MemAvailable admission
+is independent of the completed-shard guard for GPU leases. On RAM/dependency/
+metadata failure preserve evidence and stop/prove owned groups gone; no retry or
+repin without evidence. Actual job IDs/state/startticks/teardown pending.
+
+GPU plan f112/validator4b765 remains frozen; retest and all current-model/recipe/
+full-provider source-bound backward/memory/timing gates remain pending after
+actual preparation release. No training recipe selected or optimizer updates.
+Published Python source guard eaa applies to later admission; native synthetic
+operator build remainsb32/9e2. No new schedule/goal/research policy decision.
