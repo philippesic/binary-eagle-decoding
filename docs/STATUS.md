@@ -22,6 +22,18 @@ saved healthy preparation checkpoint has 10,000 train / 288 development prompts
 and zero optimizer updates; no validation lease, CUDA retest, or training start
 is verified.
 
+**Latest validation checkpoint, October2 14:16 UTC:** reservation04 is closed,
+original preparation resumed before its deadline, and no CUDA fixture launched.
+Saved owner check14:06 verifies the same original child676/start85132 running,
+full353/10,000train/1,002dev, zero updates and no final receipt. The stale heartbeat
+warning remains; CPU audits are active. A new single-operator atomic plan is
+accepted for local implementation/mock tests only: verified hold, immediate
+prebuilt120s CUDA fixture, teardown and guarded return in one durable controller.
+Maximum hold600s, return reserve180s; backendops deferred. Exact implementation,
+unique identities and supervision pins require review before acquisition/test GO.
+Root validation Luna remains offline; no active lease or owned remote job.
+[Checkpoint](goals/qat-optimization-readiness.md#atomic-fixture-controller-planning--october2-1416-utc).
+
 **Active goal:** [QAT optimization readiness](goals/qat-optimization-readiness.md).
 All five requested controls plus raw fusion correction and affine binary weights
 are implemented;952CPUtests/fourskips and native CPU fixtures pass. Actual CUDA

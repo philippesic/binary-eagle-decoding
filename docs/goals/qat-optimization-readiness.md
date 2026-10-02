@@ -1577,3 +1577,49 @@ automatic lease retry, expiry-based resume, implicit renewal or training start.
 Next normal one-query tick compares CPU counters and watches full preparation
 endpoint. Future validation needs separately coordinated fresh ownership and
 sufficient execution/return time; current frozen preparation remains sole owner.
+
+
+## Atomic fixture controller planning — October2 14:16 UTC
+
+Current acknowledged validation owner01a0fc3d-bbe1-7e93-a19b-a9200dfa186c and
+preparation owner01a0fb62-cbdb-72f0-8e86-4055b2ccb4ed match their existing ACTIVE
+15minute automation targets. Latest saved preparation check14:06:37UTC retains
+full353/10,000train/1,002development, models{}/updates0, preparing/readiness_complete,
+no finalreceipt and SAME stale heartbeat warning. Child676R/start85132 and
+supervisor674S/start85124 are unchanged. Active CPU counter progress is separately
+classified; no recovery/restart, fresh GPU release or training admission follows.
+
+Both owners and overnight parent accept the single preparation-operator mechanism
+to avoid request04's cross-chat delay. NEW ignored local plan
+runs/luna-continuous-a8-a1-20260929/atomic-owner-fixture-local-plan-20261002.json,
+actual SHA f9dc6f99a3456a37214db9eb8472a9a74519a83be4314bb4468ad3ac697796ce,
+is accepted for LOCAL implementation/mock tests ONLY. Root reverified reference
+guard9f5035ae, expectedcb662c55, frozen fixture planf112c39e, validator4b765073
+and unchanged collectore0f2d8f8. Request04 files and receipt history stay immutable.
+
+One SAME preparation-owner Luna will own fresh preflight, reversible verified
+hold, immediate exact prebuilt CUDA synthetic fixture, owned-group teardown and
+original-group return inside a durable remote_job/host-tmux CPU controller. Root
+validation Luna stays offline with no transport/job. Max600s hold includes
+posthold guards; native fixture timeout120s/kill-after10s and >=180s return reserve.
+No build/setup/model/data/optimizer work in the hold; first transaction defers
+backendops. Raw receipt64hex SHA is computed on host from actual bytes; no
+interchat GO, receipt transfer or documentation waits during the lease.
+
+Before execution: require NEW immutable executable/expected configuration,
+unused lease/controller/fixture/session/output IDs, exact remote_job pins,
+local fail-closed tests and both owners' concrete review/conditional test GO.
+Controller must supervise separate fixture groups, survive transport loss,
+stop only owned groups, reject late launch, prove terminal states/groups and
+command survivors absent/GPUempty, then same original frozen identity before
+ONE SIGCONT. Unknown teardown never permits expiry-based resume. Post-return
+verify same-process CPU activity, one unchanged checker, preserve raw files,
+then transfer/report and run unchanged collector. No acquisition/test GO or
+new lease is active at this checkpoint; new code has not yet been reviewed.
+Astra gives bounded source-only signal/group advice; no remote query delegated.
+
+Next action: review actual controller/config/test evidence promptly, authorize
+one immutable coordinated transaction under existing human authority only when
+all guards are concrete, then report actual CUDA outcome and verified return.
+Full model/recipe/backward/memory/timing/provider and final preparation handoff
+remain separate training gates. No selected recipe or optimizer update.
