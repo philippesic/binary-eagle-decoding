@@ -5,6 +5,16 @@ latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
 
+**Preparation owner rotation — October 2, 18:10 UTC tick:** handoff is
+pending; the original remote job must continue untouched. Parent coordinator
+`01a0fb34-e010-7b11-ac9a-f72cf2367c6c` owns the interrupted transport diagnosis
+and local tmux `$198`; no duplicate SSH/checker was launched by this tick.
+The human reports the host reachable and requests a persistent `sleep infinity`
+connection through tmux. The exact successful procedure/result is still pending;
+previous local timeouts do not establish physical host unreachability.
+[Preparation handoff](goals/qat-optimization-readiness.md#preparation-owner-rotation--october-2-1810-utc-tick)
+records current jobs, proofs, next actions and monitor transfer requirements.
+
 **Current preparation connectivity — October2 16:11 UTC:** remote health is
 UNKNOWN. Atomic05's first SSH connection to the registered RTX5080 host timed
 out before any staging. Zero successful chunks; no hold/controller/fixture,
@@ -80,6 +90,15 @@ test occurred, local cleanup is verified, and remote health is unknown. The leas
 record is `atomic05_transport_unknown_no_remote_execution` with no active
 operator/reservation. Do not infer GPU free or training failure from the timeout;
 both existing owner monitors remain active.
+
+At 16:18 UTC preparation published its timeout checkpoint and keeps the existing
+monitor active. Remote health is still unknown; no lease or CUDA result is
+verified. Do not infer GPU availability from the stale lease record.
+
+At 16:38 UTC the registered host is still unreachable (`No route to host`) on
+the preparation owner's observation-only check. QAT reports no validation lease
+or test. Remote health remains unknown; do not claim the GPU is free or the
+preparation job failed.
 
 The checkpoint is prepared for a fresh Codex task, but task creation was
 rejected by the app's automatic approval gate (`approval policy is never`). No

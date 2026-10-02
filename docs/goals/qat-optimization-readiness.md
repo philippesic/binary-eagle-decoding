@@ -129,6 +129,17 @@ operator/reservation. Do not infer GPU free or training failure from the timeout
 Both existing owner monitors remain active. Codex remains 77% used / 23% remaining
 in the original window.
 
+**16:18 UTC status refresh:** preparation published its timeout checkpoint and
+keeps its existing monitor active. Remote health remains unknown, and no lease or
+CUDA result is verified. Do not infer GPU availability from the stale lease
+record. Codex remains 77% used / 23% remaining in the original window.
+
+**16:38 UTC status refresh:** the registered host remains unreachable (`No route
+to host`) on the preparation owner's observation-only check. QAT reports no
+validation lease or test. Remote health remains unknown; do not claim the GPU is
+free or the preparation job failed. Codex remains 77% used / 23% remaining in
+the original window.
+
 The clean-checkpoint repository snapshot was at `42e6419` before the current
 uncommitted research notes; do not discard unmerged/uncommitted files. Recent
 visible commits include `f6815c3` (atomic CUDA plan), `a5127e6` (preparation
@@ -1922,3 +1933,106 @@ GO plus all source/ownership/resource guards and unused IDs. Full preparation,
 current recipe/model/native/backward/memory/timing/full-provider evidence and
 final GPU handoff still precede authorized later training; no user decision or
 new goal/architecture was introduced by this failed transport attempt.
+
+
+## Preparation owner rotation — October 2, 18:10 UTC tick
+
+Objective remains complete SAME native W1A8/W1A1 capture, full audits,
+readiness/coverage, paired CUDA forward/backward smoke and zero-update checkpoint,
+then stop before QAT optimizer updates. Do not create a new goal or change frozen
+math/source/runtime/data/precision/config/caps or sealed finals. Q4_0 is primary
+comparison; RTX2080Ti remains paused. This checkpoint transfers preparation
+monitoring only; validation/training owner remains
+`01a0fc3d-bbe1-7e93-a19b-a9200dfa186c`.
+
+Completed: full 353 completed captures / 10,000 train / 1,002 development prompts
+verified at 12:13 UTC; original child remained active in readiness provider audits
+at last connected observation 14:06:37.959029 UTC. Zero optimizer updates, no
+preparation-ready receipt, no completion/release proof. Post-readiness provider
+construction adds 959 full audits without intervening heartbeat. The stale
+heartbeat checker warning remains real, separately classified by positive CPU/I/O
+progress; never change checker thresholds or equate capture completion with prep
+completion. Current remote health is UNKNOWN after local SSH failures, most
+recent 18:01:36 UTC; these do not prove physical host offline or training failure.
+Snapshot health-snapshot-20261002T140637Z.json contains actual last connected
+proof; health-observation-20261002T180136Z.json contains latest local failure.
+Both live under ignored runs/luna-continuous-a8-a1-20260929/.
+
+Commits pushed: 15fbbd6 provider audit monitoring/checkpoint; a5127e6 request04
+returned before expiry; 4eefd98 coordinated conditional atomic fixture authority;
+552c680 atomic05 connection timeout before staging. Atomic05 immutable packet
+passed 20/20 LOCAL mocked safety tests (test-result SHA
+c3fd9aea9d844cf0f171215a3eaf5ee4e418959a34d2212c799aa06a810c1abc).
+No actual CUDA retest follows. First staging SSH failed: zero chunks staged,
+no hold/controller/fixture/signal/GPU query/recovery charge. Conditional GO is
+inactive despite preserved authorization.json; future acquisition requires fresh
+coordination. Request04 hold and return proofs remain unchanged.
+
+Remote job (historical ownership; freshly verify after transport works): root
+/home/philip/binary-eagle-decoding; run runs/luna-continuous-a8-a1-native-order-20260930;
+status /home/philip/binary-eagle-decoding/runs/luna-continuous-a8-a1-native-order-20260930/status.json;
+supervisor luna-supervisor-a8-a1-native-order-20261002-08, state
+/home/philip/binary-eagle-decoding/runs/luna-supervisor-a8-a1-native-order-20261002-08/state.json.
+Linux host tmux socket binary-eagle-runtime / session
+continuous-a8-a1-native-order-20261002-08 is protected: never attach/send keys/kill.
+Server673/start85124; supervisor674/PGID674/start85124; child676/PGID676/start85132.
+Child --start --allow-cuda --resume --prepare-only; stages runs/continuous-preparation/stages.json.
+Preserve WSL instanceIdleTimeout=-1. Sole approved launcher delta SHA
+82f0185ab9ac38bc622749d2ca5e5c5a297a72494dcbf3d16d2b08df249cdade.
+Read current registration.experiment for authoritative identities/paths, not old
+failed pre-correction sections.
+
+No prep subagent is running: collaboration list confirmed all historical Luna
+operators completed and owned local transports closed. Exception: parent
+coordinator 01a0fb34-e010-7b11-ac9a-f72cf2367c6c began one transport diagnosis;
+its turn was interrupted by the human's research-team request. It owns LOCAL
+MCP session $198 (eagle-root-connect-20261002-01), windows @224/@225, panes
+%226/%227. No saved successful connection/health result is yet available to prep.
+Lease operator_active/coordinated_transport_diagnosis remain true deliberately;
+no new SSH/checker/operator until parent confirms completion/cancel/transfer.
+Never touch these parent transport panes without explicit ownership transfer.
+Human explicitly instructed persistent sleep infinity connection after timeout.
+Parent attempted ssh -tt ... wsl.exe -e sleep infinity, then described a local
+persistent sleep prerequisite; successful exact procedure is unverified. Do not
+invent a fix or infer sleep itself establishes SSH connectivity. Obtain parent's
+raw proof/procedure and save it before changing future monitoring transport.
+
+Exact next actions:
+1. Receive parent diagnosis result/ownership transfer; persist raw current proof.
+   If parent already ran one CPU checker, consume that result without re-running.
+   Clear diagnosis-active only on explicit completion/cancel, never elapsed time.
+2. Fresh registry hosts.toml and pause control, local gpu-validation-lease.json,
+   monitor-registration.json, last-health.json, recovery-budget.json precede each
+   tick. No held lease is currently verified and no atomic GO is active.
+3. Once no operator active, exactly one Luna/high fork_turns none executes the
+   current saved CPU query ONCE through fresh LOCAL tmux MCP and corrected proven
+   transport. monitor-query-command.json is a JSON STRING, 3811 ASCII bytes;
+   embedded source SHA d68fd8ebcb62cf138a2d60e915e434896eac49a440223a7738a9c9cf266b7439.
+   Load with literal cat via exec_command and JSON.parse output; do not interpolate
+   quoted nested Python or print/copy/rebuild command. Do not use ordinary SSH.
+   Preserve raw MCP/pane/producer B64; Python decode original bytes for hashes.
+4. Record actual timestamp, CPU/audit/capture vs optimizer progress separately.
+   Count only completed label manifests actual prompt_count train/development.
+   While healthy no GPU/extra logs. SSH unknown: no recovery/restart/free-GPU claim,
+   duplicate connectivity family suppressed, historical baseline preserved.
+5. Positive optimizer counters are unauthorized: notify and gracefully stop ONLY
+   owned supervisor. Prep completion needs successful ready receipt, stopped
+   preparation_complete true, all model/global/Adam counters zero and owned groups
+   gone/GPU release before notification and pausing SAME monitor.
+6. At most one bounded authorized recovery/tick under runbook; no recovery on
+   transport unknown, hold, numerical/cache/data/eligibility failure, intentional
+   stop or unresolved ownership. Preserve recovery-budget.json; no charge this tick.
+
+Rotation must preserve SAME automation a8-a1-health-check-enable-after-manual-start,
+name A8/A1 Luna health and recovery, ACTIVE 15-minute cadence and preferences.
+Old prep owner 01a0fb62-cbdb-72f0-8e86-4055b2ccb4ed retains responsibility until
+successor is created and acknowledges checkpoint/jobs. Then retarget existing
+heartbeat and registration/lease owner, verify readback, inform coordinator and
+validation owner, retire old owner; no duplicate schedule. If app autoapproval
+rejects creation, record rejection, explicitly transfer rotation to coordinator,
+keep existing monitor active and do not claim successful handoff. Ignored files
+remain available in original project checkout; successor must use local project,
+not a fresh checkout missing run artifacts. Preserve peer untracked research
+and overnight files and any concurrent STATUS/goal notes. No unresolved research
+choice is introduced by this rotation; transport proof and acceptance gates remain
+pending, zero prep optimization authorized.
