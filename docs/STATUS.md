@@ -58,6 +58,14 @@ plans pass locally. CPU preparation now addresses a separate current-server
 manifest helper; old frozen runtime/labels cannot be relabeled as new readiness.
 [Checkpoint](goals/qat-optimization-readiness.md#successor-retest-boundary-denied--october2-1101-utc).
 
+**Current-runtime CPU preparation published:** helper e5dcbb9 passes15 focused
+CPU guards; three frozen TRAIN gate prompts have exact selection ancestry.
+No CUDA readiness or provider eligibility follows. Latest owner CPU health
+11:23UTC is healthy340/353 /10,000train /640dev, zerooptimizer/no receipt.
+The sole Luna prepares a bounded CPU-only server target/static inspection,
+protecting all seven ready operator artifacts; no remote launch yet. Retest and
+training still await their separate gates. [Checkpoint](goals/qat-optimization-readiness.md#current-runtime-cpu-helper-published--october2-1128-utc).
+
 **Validation task rotation at a safe boundary:** after two compactions, the
 validation/training owner transferred to acknowledged successor
 01a0fc3d-bbe1-7e93-a19b-a9200dfa186c (Continue QAT validation and training). No owned remote

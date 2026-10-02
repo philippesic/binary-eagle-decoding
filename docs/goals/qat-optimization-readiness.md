@@ -1204,3 +1204,57 @@ After operators pass, follow current-server/actual-model/zero-update backward/
 recipe/every-precision/memory/timing/data ancestry gates. Full corpus/current
 selected passing recipe/final handoff remain mandatory before NEW authorized
 QAT. No training, real-data optimizer update or acceptance/speedup claim.
+
+## Current-runtime CPU helper published — October2 11:28 UTC
+
+New runtime-only helper scripts/prepare_qat_native_runtime.py and focused tests
+are reviewed, integrated and pushed as e5dcbb9 (worker07da576 rebased onto main).
+15 focused CPU tests pass, including direct existing verify_sources,
+verify_native_revision and verify_mapped_runtime compatibility/substitution
+checks; Ruff and diff checks pass. No full952suite rerun: numerical/training/
+frozen-source code is unchanged. Own isolated feature worktree/branch were
+cleaned after integration; retained native worktree remains owned by root.
+Helper SHA748a11fa4c80199f93d5b2d1be147d6ea5ce0ffb7ec5e475fca7120e0420ed91.
+It pins exact parent/native/gitlink, clean relevant sources, compiler/cache/
+compile objects, generated and compiled build identity, per-target working
+paths, main/server objects, W1Ax FTZ flag order, exact code architecture,
+project-library symlinks/hashes/ELF resolution and explicitly allowed external
+runtime search roots/dependency hashes. Unique manifests claim static CPU
+provenance only: no hardware measurement, training admission or CUDA readiness.
+Existing frozen runtime builder stays unchanged. External toolkit hashes are
+recorded but old downstream consumers do not recheck those after publication;
+reverify them from actual manifest bytes before later native execution.
+
+Root prepared exact three unsealed TRAIN prompts, one per domain, from frozen
+train shard0. Launch packet, corpus manifest, prompt/index shard and selected
+message content hashes match pinned ancestry; original raw lines are preserved.
+Ignored early-model-inputs-20261002/selection.json SHA
+34be13c5a424aad9a6a8d01f52450415946f08c43b32a4bb80333153ffc60ced;
+prompts.train.jsonl SHA
+3b79efcfa75ac99d74e33e9f8d057c51f8d5c5aeb11e1ed6e2547b0b224ab1de.
+IDs dolly:line-006957, magicoder:line-002668-index-295, gsm8k:train-005274.
+No development/reserve/sealed prompt payload read; this does not admit a provider,
+qualify incomplete corpus, or authorize an optimizer update.
+
+Latest owner NORMAL single CPU health11:23:03.264054UTC is healthy/nonterminal
+340/353,10,000train/640dev,362devremain,zerooptimizer/no readyreceipt;
+original674/676 live. MemAvailable19,569,639,424B exceeds proposed CPU build
+14GiB admission. Owner's LOCAL175 closed/absence verified, no GPU query.
+No new boundary acquisition check or GPU reservation; request02 remains denied.
+The SAME heartbeat stays ACTIVE/every15min/protected; no duplicate monitor.
+
+Sole Luna /root/cuda_retest_operator now prepares a separate CPU-only server
+build/static-inspection plan under ignored early-cuda-20261002/
+cpu-server-prepare-20261002-01; no remote launch yet. CPU work requires fresh
+host memory/pause/source admission, not the completed-shard guard reserved for
+GPU leases. Preparation owner acknowledges the independent scope and no current
+CPU resource conflict. Target only llama-server, parallel2, bounded600s/900s,
+no automatic configure, GPU queries, contexts, server execution, model/data or
+frozen preparation changes. Dry-run must prove no compile/relink/write to the
+seven pinned operator artifacts; check their exact hashes before/after preview
+and build. If dependencies would change, stop and propose a truthful repin rather
+than silently invalidate the frozen retest plan. Runtime inspection uses the
+published helper and exact declared toolkit root. Record groups/startticks/
+state/logs and prove teardown. Actual server manifest and CUDA retest remain
+pending. New source/recipe/current model/backward/memory/timing/full coverage/
+final preparation release gates still precede already-authorized QAT.
