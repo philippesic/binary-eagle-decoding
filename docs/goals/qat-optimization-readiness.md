@@ -2891,3 +2891,61 @@ CPU03PID/result/current serverinventory not yet verified at this checkpoint.
 Research remains stopped, QAT+necessary support/Goal/SAMEheartbeats ACTIVE.
 Actual native9e2 synthetic CUDA repair PASS/returned; actual-model/resource/
 recipe/save-resume/full corpus readiness and first optimizer update pending.
+
+
+## Actual server build and historical audit evidence — October 2, 22:08 UTC
+
+CPU03V2 ACTUALLY ran supervisor3303/PGID3303/UID1000/start1244700,
+timeout3304/PGID3304/start1244709, runner3306/samegroup. Configure0,
+llama-server incremental build0 (~1.12seconds), static1; ended21:59:18UTC.
+Exact staticstderr: w1a1 object predates current CMake flags/compile commands.
+Actual stage/launchrawSHA90865d37e802acd6d40cbbc906d5875b4549c6b84097d6c551c1d521c6418d97;
+returnSHAf0ee05a43581be506e009f8306d225c3043a2025585b9c2966e8288a096ab344.
+Distinct collector proves3303/3304groupsgone and all14frozen/7runtime bytes
+unchanged, zeroGPUqueries/contexts/modeldata/optimizer work. No inventoryready.
+Runtime worker owns isolated minimal optionalSHA-boundexisting-buildproof guard:
+only global compile_commands regenerated timestamp can be resolved using exact
+historical compile argv/source/CMake freshness and measured unchanged runtime
+provenance. Default guards/ELF/ldd/server/source/FTZ/architecture remain strict;
+no touch/objectmtime edits/rebuild/repin. Implementation/review/publication pending.
+
+Focused read-only advisor found actual production-time provenance alreadyretained:
+resume-operation-20261002-after-2315.json preflight.decoded_query05:24:31UTC
+records githead7547 and trackedstatus/diffONLY pinnedtrainer82f; actual08launch
+05:28:08UTC starts samecheckout/stages. OperationSHA
+ e77fd345a271dc2f2b549c307ee2f17e04077d5a41d0ef7c850bfac9798a9c37.
+health-snapshot-20261002T125939Z.json binds08child676/readiness_complete353
+SHA b89e1557743d27c7d343ae510108401e26b7134b4d4e54a6532c38bd8be13ef0.
+Source7547writes stages/readiness.json ONLY afterALL353 unconditionalsemantic
+audits return, storing ordered teacher_capture_manifest_sha256. Currentaudit
+AST exactlymatches7547 and sixsemanticdependencies are byteidentical; new
+receipt helper _files defaultsemantic branch must be independently verified.
+Historical audit adoption can legitimately recognize that completepass ONLY
+if actual oldreadiness/ordered353/currentmanifests/sidecar/index/source joins
+match, under established controlled frozencheckout provenance. It remains scoped
+audit evidence, not finalpreparationready/modelsmoke/checkpoint or optimizer proof.
+
+Retainedpacket worker LOCALmetadataquery reviewed SHA
+32f671ef3d4a8340158761c1f3f8c67b2a5c226f4195b80fdcc04732a8834c04,
+13526bytes/6271ASCIIcommand, internal30s/outer40s/max2MiBfile/32MiBtotal.
+Reads only353manifests/2gates/oldreadiness+indexes+audit sidecars+smallowner/pin
+records. No tensor/model/promptpayload open/hash, GPUquery, signal or oldwrites.
+Exactboot/PIDns/2713+2714births/healthyCPUphase/source before+after required.
+Root conditionalGO soleprepLuna executes ONEquery afterCPU03ownedcleanup;
+actualresult/oldreadiness353join stillpending. Manifest historicalprovenanceNULL.
+Necessary receiptworker owns newisolatedstage+historictests extension; explicit
+authentic08operation/completion/fullstage/readiness/index/orderedsidecar records,
+unchangedsemanticcode/dependencies and freshpayloadintegrity precede durable
+newsource receipts. Missingmismatch optionalproof rejects; NULL retains freshonce
+fallback. No generic skip/ordinal/sidecaralone trust or eligibilitypromotion.
+
+Public01015ac current source already has --prepare-only; no frozenlauncher overlay
+needed. NewfixedreferenceA8/A1 prep-only can perform semantic/coverage/current
+PyTorchpairedsmoke/zero-save/finalready before separate currentnative9e2 model
+checker; the latter needs actual preparedprovideridentity and must gateOPTIMIZER,
+not create a circular dependency before preparation. Allcaptures/gates/teacher
+ancestry remain originalb4, newactor source is current. Frozen09untouched until
+concrete reviewedpacket/newsource staging/freshadmission/completeold09teardown.
+Research stopped; soleoperator/2080Ti pause/SAMEheartbeats/nativeGoal preserved.
+Next actual milestones: inventory proof; narrowruntimehelper test/review/static
+inventory; historicalextension review/integration; safeNEWsource prep launch.

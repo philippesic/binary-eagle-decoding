@@ -4,6 +4,22 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
+## Build succeeded; audit provenance check dispatched — October 2, 22:08 UTC
+
+CPU server03 actually ran: configure/build succeeded, static inspection rejected
+`compile_commands.json` freshness against the existing W1Ax object. Both owned
+process groups are gone, all 7 runtime and 14 frozen files are unchanged. A narrow
+proof-bound runtime inspection fix is in progress; no rebuild or timestamp edit.
+
+Historical supervisor08 pre-launch records bind the clean frozen audit source,
+and its health snapshot reached completed stage readiness. The sole operator has
+conditional GO for one bounded metadata inventory to compare the saved readiness
+record's ordered hashes with all 353 retained manifests. This may support reuse
+of that completed semantic pass after current payload integrity verification.
+No historical shortcut is enabled. The reviewed new-source prepare-only packet
+is being completed; frozen recovery09 continues untouched and updates remain zero.
+[Evidence checkpoint](goals/qat-optimization-readiness.md#actual-server-build-and-historical-audit-evidence--october-2-2208-utc).
+
 ## Retained-capture adoption integrated — October 2, 22:03 UTC
 
 Audit receipts are public `c0f3d85`; retained native capture import is public
