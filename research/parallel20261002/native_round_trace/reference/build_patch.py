@@ -36,6 +36,7 @@ replace(
                 // separately rather than naming them the full transcript.
                 tr.session_context = {
                     {"generated_before", slot.stats.n_gen},
+                    {"new_proposal_tokens", 0},
                     {"remaining_before", slot.n_remaining()},
                     {"decoder_position", slot.prompt.tokens.pos_next()},
                     {"cached_prompt_token_ids", slot.prompt.tokens.get_text_tokens()},
@@ -50,6 +51,15 @@ replace(
 # Use vector rather than eager JSON arrays so disabled/reset path has no new allocations.
 modified = modified.replace(
     "    json target_batches = json::array();", "    std::vector<json> target_batches;"
+)
+replace(
+    "                slot.spec_trace_round.proposed = slot.spec_draft;\n",
+    """                slot.spec_trace_round.proposed = slot.spec_draft;
+                // Mirrors stats.n_draft_tokens increment in iterate(drafting).
+                // Replay reuses a proposal and bypasses this producing site.
+                slot.spec_trace_round.session_context["new_proposal_tokens"] =
+                    slot.spec_draft.size();
+""",
 )
 replace(
     "                    if (!tr.target_start_us) tr.target_start_us = t_target;\n",

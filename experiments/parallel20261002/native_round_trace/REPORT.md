@@ -20,13 +20,15 @@ reconcile native counter differences, and analyze named-stage overlap.
 
 The new adapter adds strict session validation and output-history root joins,
 separates correction versus bonus versus no-proposal emissions, conserves counts,
-and reconciles supplied native aggregates exactly. Replay quality roles remain
+and reconciles supplied native aggregates exactly. New proposal tokens are
+counted separately from all attempted proposal IDs: source increments the native
+proposed counter only in `iterate(drafting)`, while replay bypasses that site. Replay quality roles remain
 explicitly unresolved because native code subtracts a reused-token offset from
 accepted count. Source records raw accepted decisions before terminal emission
 truncation; these remain separate from actually emitted accepted tokens.
 
 The additive source extension records cached prompt + pending seed, generation
-position, effective remaining cap, decoder position, stop enum, and target/process
+position, effective remaining cap, decoder position, stop enum, newly generated proposal token count at its actual producing site, and target/process
 callback intervals and executed shapes. Astra source review confirmed that the
 cached prompt may shift and terminal cache contains un-emitted accepted suffix;
 therefore the extension does not call cache bytes the committed transcript.

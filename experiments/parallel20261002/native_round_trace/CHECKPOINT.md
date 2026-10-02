@@ -33,6 +33,12 @@ into main, rerun focused CPU checks, push main, archive ignored run receipts,
 then remove this clean merged worktree/branch. Root should append this result to
 the active-goal file and STATUS; the feature owner does not edit shared goal files.
 
+Astra final source audit corrected exact proposed reconciliation: source4308 counts
+new drafting only, while replay copies previously generated IDs. `proposed_new`
+now matches native metrics; `proposed_all` separately measures attempted work.
+The extension records `new_proposal_tokens` at actual iterate(drafting) producer.
+Replay native aggregate fixture now reconciles2 new versus4 attempted proposals.
+
 Remaining before any native adoption: full server/callback-insertion compile,
 private-state identity, replay linkage/role trace, external full-session clocks,
 exact fresh runtime/model/processor ancestry and an already admitted trajectory

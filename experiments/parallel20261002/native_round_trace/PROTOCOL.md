@@ -45,6 +45,7 @@ adapter uses actual `emitted_token_ids` for the next transcript root.
 | --- | --- |
 | `proposed_all` | Every trace attempt's `n_proposed`, including checkpoint attempts |
 | `proposed_quality` | Attempts except `checkpoint_replay` |
+| `proposed_new` | Actual newly generated proposal tokens; replay reuses existing IDs |
 | `accepted_decisions` | Quality `n_accepted` assigned before output processing |
 | `accepted_emitted` | Non-replay `min(n_accepted,n_emitted)` after ordered-prefix validation |
 | `accepted_not_emitted` | Non-replay verifier accepted suffix truncated by stop processing |
@@ -60,9 +61,12 @@ Emission conserves exactly as accepted-emitted + correction + bonus + no-proposa
 cost, but their tentative accepted count does not enter native acceptance totals.
 The replay flag and attempt index remain available; a logical-round linkage and
 replay role decomposition remain unresolved. Supplied request-native deltas must
-match exactly: proposed=all attempts, accepted=quality decisions,
+match exactly: proposed=newly generated tokens (original checkpoint attempts included,
+replay reuse excluded), accepted=quality decisions,
 rounds=complete rows. An API delta mismatch raises, rather than silently changing
-historical counter semantics. Missing deltas stay unresolved.
+historical counter semantics. Missing deltas stay unresolved. Legacy newly-generated
+proposal reconstruction from `!replay` is explicitly bound to source9e2 control
+flow; the extension's producing-site `new_proposal_tokens` field is authoritative.
 
 Native stop enum is separately recorded as none/eos/limit/word. A limit can be
 context capacity, newline/indent, time, or token cap; do not relabel all native

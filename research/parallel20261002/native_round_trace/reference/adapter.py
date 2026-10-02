@@ -96,6 +96,7 @@ def adapt_session(rows, metadata, aggregates=None):
     history = list(leading)
     totals = dict(
         proposed_all=0,
+        proposed_new=0,
         proposed_quality=0,
         accepted_decisions=0,
         accepted_emitted=0,
@@ -256,6 +257,17 @@ def adapt_session(rows, metadata, aggregates=None):
             totals["unresolved_role_emitted"] += role_unknown
             totals["emitted"] += len(e)
         totals["proposed_all"] += len(p)
+        # Legacy derivation is bound to source9e2 iterate(drafting)/replay flow.
+        # The additive producer field is authoritative when present.
+        newly_proposed = len(p) if not row["replay"] else 0
+        if native and "new_proposal_tokens" in native:
+            newly_proposed = native["new_proposal_tokens"]
+            require(
+                count(newly_proposed) and newly_proposed <= len(p),
+                "invalid newly generated proposal count",
+            )
+            require(not row["replay"] or newly_proposed == 0, "replay generated fresh proposals")
+        totals["proposed_new"] += newly_proposed
         terminal = []
         if e and e[-1] in eos:
             terminal.append("eos")
@@ -350,7 +362,7 @@ def adapt_session(rows, metadata, aggregates=None):
         "emission conservation",
     )
     expected = dict(
-        proposed=totals["proposed_all"],
+        proposed=totals["proposed_new"],
         accepted=totals["accepted_decisions"],
         rounds=totals["verified_rounds"],
     )
@@ -371,7 +383,7 @@ def adapt_session(rows, metadata, aggregates=None):
         verifier_mode=metadata["sampling_mode"],
         counts=totals,
         leading_untraced_emitted=len(leading),
-        response_emitted=len(history),
+        response_emitted=len(output) if output is not None else None,
         rounds=per_round,
         aggregate_reconciliation=reconciliation,
         costs=dict(
@@ -431,6 +443,12 @@ def pool_sessions(sessions):
                 stages.setdefault(key, []).append((interval["start_us"], interval["end_us"]))
     return dict(
         schema="native_session_pool_v1",
+        response_emitted=(
+            sum(s["response_emitted"] for s in sessions)
+            if all(s["response_emitted"] is not None for s in sessions)
+            else None
+        ),
+        leading_untraced_emitted=sum(s["leading_untraced_emitted"] for s in sessions),
         counts=counts,
         round_union_us_by_clock={k: union_us(v) for k, v in clocks.items()},
         stage_inclusive_union_us_by_clock={

@@ -45,6 +45,7 @@ int main(int argc, char **argv) {
     tr.process_start_us=112; tr.process_end_us=117;
     tr.proposed={10,99,12}; tr.n_accepted=3; tr.emitted={10,99};
     tr.session_context={{"generated_before",1},{"remaining_before",2},
+                        {"new_proposal_tokens",3},
                         {"cached_prompt_token_ids",{1,2}}, {"pending_seed_token_id",9}};
     tr.target_batches.push_back({{"start_us",105},{"end_us",112},{"batch_tokens",4},{"slot_tokens",4},{"slot_output_rows",4}});
     slot.stats.n_gen=3; slot.remaining=0; slot.stop=STOP_TYPE_EOS;

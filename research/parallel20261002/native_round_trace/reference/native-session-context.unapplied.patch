@@ -32,7 +32,7 @@
          round_trace_file << record.dump() << '\n';
          round_trace_file.flush();
      }
-@@ -4203,6 +4221,20 @@
+@@ -4203,6 +4221,21 @@
                  tr.parent_task_id = slot.task->id_parent;
                  tr.round_index = slot.spec_trace_round_index++;
                  tr.start_us = ggml_time_us();
@@ -41,6 +41,7 @@
 +                // separately rather than naming them the full transcript.
 +                tr.session_context = {
 +                    {"generated_before", slot.stats.n_gen},
++                    {"new_proposal_tokens", 0},
 +                    {"remaining_before", slot.n_remaining()},
 +                    {"decoder_position", slot.prompt.tokens.pos_next()},
 +                    {"cached_prompt_token_ids", slot.prompt.tokens.get_text_tokens()},
@@ -53,7 +54,18 @@
                  tr.begin_start_us = slot.spec_trace_begin_start_us;
                  tr.begin_end_us = slot.spec_trace_begin_end_us;
                  tr.begin_us = tr.begin_end_us > tr.begin_start_us ? tr.begin_end_us - tr.begin_start_us : 0;
-@@ -4969,6 +5001,25 @@
+@@ -4297,6 +4330,10 @@
+             if (slot.spec_trace_round.active) {
+                 slot.spec_trace_round.checkpoint_start_us = ggml_time_us();
+                 slot.spec_trace_round.proposed = slot.spec_draft;
++                // Mirrors stats.n_draft_tokens increment in iterate(drafting).
++                // Replay reuses a proposal and bypasses this producing site.
++                slot.spec_trace_round.session_context["new_proposal_tokens"] =
++                    slot.spec_draft.size();
+                 const auto & dp = common_speculative_get_draft_params(spec.get(), slot.id);
+                 slot.spec_trace_round.stopped_low_confidence = dp.stopped_low_confidence;
+                 slot.spec_trace_round.stop_probability = dp.stop_probability;
+@@ -4969,6 +5006,25 @@
              for (auto & slot : slots) {
                  if (trace_slot_in_batch(slot)) {
                      auto & tr = slot.spec_trace_round;
@@ -79,7 +91,7 @@
                      if (!tr.target_start_us) tr.target_start_us = t_target;
                      tr.target_end_us = t_end;
                  }
-@@ -5048,6 +5099,14 @@
+@@ -5048,6 +5104,14 @@
                  for (auto & slot : slots) {
                      if (trace_slot_in_batch(slot)) {
                          auto & tr = slot.spec_trace_round;

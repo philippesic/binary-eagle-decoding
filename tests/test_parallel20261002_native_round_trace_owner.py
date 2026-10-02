@@ -96,8 +96,10 @@ class OwnerTests(unittest.TestCase):
             event(0, [10, 11], 1, [], status="checkpoint_replay"),
             event(1, [10, 11], 0, [10, 12], start=130, replay=True),
         ]
-        result = adapt_session(rows, metadata([10, 12]), dict(proposed=4, accepted=0, rounds=1))
+        result = adapt_session(rows, metadata([10, 12]), dict(proposed=2, accepted=0, rounds=1))
         self.assertEqual(result["counts"]["checkpoint_attempts"], 1)
+        self.assertEqual(result["counts"]["proposed_new"], 2)
+        self.assertEqual(result["counts"]["proposed_all"], 4)
         self.assertEqual(result["counts"]["accepted_decisions"], 0)
         self.assertEqual(result["counts"]["unresolved_role_emitted"], 2)
         self.assertEqual(result["costs"]["round_sum_us"], 40)
