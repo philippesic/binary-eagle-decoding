@@ -25,9 +25,15 @@ The research supervisor does not own either GPU or preparation recovery.
 
 Initial observation at 2026-10-02 06:15 UTC: codex weekly allowance 68% used,
 32% remaining. Initial reported reset is Unix1791049896, October3 10:51:36PDT.
-The human expects the upcoming morning near10a.m.; conservatively stop research
-by **2026-10-02 16:55:00UTC / October2 09:55PDT** even if that reported reset is
-later. A later direct human instruction may revise this conservative cutoff.
+The human clarified on October2 that the reset may be later than10a.m. and
+must be monitored. **There is no fixed morning cutoff.** Track the live codex
+weekly window/reset and stop research before the actual reported original-window
+reset, or immediately on observed reset, whichever applies. A timestamp change
+alone can be a corrected reset estimate: update the original-window deadline if
+usage has not reset; do not mistake a later revised estimate for a fresh allowance.
+A new window plus reset usage is a reset and must latch stop. Never spend the
+new allowance on research. Initial reset1791049896 remains an observation, not
+a fixed override. The former October2 09:55PDT cutoff is superseded.
 
 One single-agent supervisor owns all research team leaders and descendants in
 its own collaboration tree, permitting direct interruption. Check usage every
@@ -40,10 +46,10 @@ Stop on the first of:
 
 - remaining <=1% (the goal is <2%, leaving a little stop/checkpoint room);
 - remaining0%, ordinary allowance disallowed, or a limit reached;
-- current time >= the earlier of the conservative cutoff and the latest known
-  reset for the original allowance window;
-- reset observed by a changed reset-window identity or an unexplained substantial
-  decrease in used percentage. Never reinterpret a fresh allowance as a new
+- current time >= the latest verified reset timestamp for the original allowance
+  window (checkpoint and stop just before that timestamp);
+- reset observed by a new allowance window with reset usage, or an unexplained
+  substantial decrease in used percentage. Never reinterpret a fresh allowance as a new
   research budget;
 - newer human stop.
 
@@ -54,7 +60,9 @@ unavailable checks; never assume unavailable means zero consumed.
 
 Before any new agent, phase, expensive reasoning/retrieval batch or CPU run,
 workers read the absolute control JSON. CPU experiment loops check it between
-iterations and honor the UTC deadline themselves. GPU/Metal and real-data
+iterations and honor the live original-window reset deadline themselves. The
+legacy hard_cutoff_utc/unix fields are null; workers must handle null as no fixed
+cutoff and read the current reset deadline/override before work. GPU/Metal and real-data
 optimizer updates are forbidden in these research teams; tiny synthetic CPU
 training is allowed. Agent research, not long CPU busywork, is the priority.
 

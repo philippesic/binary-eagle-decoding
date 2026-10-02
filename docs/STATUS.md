@@ -25,8 +25,8 @@ objective remains incomplete.
 **Overnight CPU research authorized (October1):** three teams investigate W1A1
 representation geometry, native accepted-prefix objectives and block-parallel
 drafter design, with one usage supervisor. QAT task and its monitor are protected
-and may use credits. Stop research at <=1% remaining, observed reset, or the
-conservative October2 09:55PDT cutoff, whichever comes first. No new active goal,
+and may use credits. Latest human correction: stop research at <=1% remaining or the actual monitored
+reset; the former09:55PDT cutoff is removed. Do not burn the new allowance. No new active goal,
 GPU ownership or frozen-training change. [Assignments and control](OVERNIGHT_RESEARCH.md).
 
 **Preparation supervision rotation (2026-10-02 06:42 UTC):** latest single CPU

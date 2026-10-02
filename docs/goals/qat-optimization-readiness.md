@@ -605,3 +605,27 @@ supervisor08running. No GPUreleaseclaim,duplicateremotequery,source/runtimechang
 oroptimizerupdate. Per-tick evidence remains ignoredhandoff-observations.jsonl;
 phasewaitingforfullprepandreleasedGPU. This internal supervision rotation does
 not change the successful-preparation/actual-CUDA-before-training requirements.
+
+
+## Human corrects overnight reset policy — October2
+
+The human clarified that reset may be later than10a.m. and must be monitored,
+not replaced by a time-only cutoff. Remove the conservative October2 09:55PDT
+cutoff from ACTIVE instructions, heartbeat and control; legacy fields become
+null. Continue useful research until <=1%remaining or the actual monitored
+original-window reset, then latchstop without burning the refreshed allowance.
+Track corrected reset estimates when usedusage has not reset; a timestamp change
+alone is not enough to identify a new allowance. QAT task/monitor remainexempt
+and mayuseavailablecredits. Parent updates the existing5minschedule in place,
+not duplicate monitors. This supersedes cutoff language in historical checkpoints.
+
+Preparation explanation from source scripts/w1ax_continuous_stages.py: each
+resume executes audit_native_labels for every completed manifest, rebuilding
+selected features and checking source/labels/prefixjoins/hashes on CPU. The
+10,000traincaptures are retainedcomplete;224of1002devcaptured. Fresh07:41:20UTC
+healthhealthyreaudit200/353,327retainedmanifests,zerooptimizer,stillpreparing.
+Recent22shards/14minutes suggests~80minutes to re-audit remaining completed
+shards, conditional on unchangedpace; unfinisheddevcapture and laterreadiness/
+pairedsmoke/checkpointzero are additional,unestimatedwork. The human’s question
+changes no frozen runningjob or validationgate. Preparationowner asked for
+source-grounded timing/bottleneck explanation usingexistinghealth evidence.
