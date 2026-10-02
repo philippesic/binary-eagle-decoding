@@ -1,0 +1,164 @@
+--- /dev/null
++++ b/src/w1a1_eagle/immediate_activation.py
+@@ -0,0 +1,84 @@
++"""Scoped learned quantization: reuse only immediate learned sibling groups."""
++
++from __future__ import annotations
++
++from contextlib import contextmanager
++from contextvars import ContextVar
++from dataclasses import dataclass, field
++
++import torch
++
++
++
++@dataclass
++class Group:
++    label: str
++    entries: dict = field(default_factory=dict)
++    hits: int = 0
++    misses: int = 0
++
++
++_GROUP: ContextVar[Group | None] = ContextVar("immediate_activation_group", default=None)
++
++
++@contextmanager
++def immediate_group(label, events=None):
++    """Release all cache-owned tensors before the next projection/step."""
++    if _GROUP.get() is not None:
++        raise ValueError("nested immediate activation group")
++    state = Group(label)
++    token = _GROUP.set(state)
++    try:
++        yield state
++    finally:
++        state.entries.clear()
++        _GROUP.reset(token)
++        if events is not None:
++            events.append(dict(label=label, hits=state.hits, misses=state.misses, retained=0))
++
++
++def _tensor_key(tensor):
++    try:
++        version = tensor._version
++    except RuntimeError:
++        return None  # Inference tensors cannot prove mutation identity.
++    return (id(tensor), version, tuple(tensor.shape), tensor.dtype, tensor.device,
++            tensor.requires_grad)
++
++
++def quantize(quantizer, input, **kwargs):
++    """Same-N reuse; fail closed for unrecognized options or unversioned tensors."""
++    original = getattr(quantizer, "_reuse_original_forward", quantizer.forward)
++    state = _GROUP.get()
++    if state is None:
++        return original(input, **kwargs)
++    if set(kwargs) - {"valid_mask", "normalization_count"}:
++        return original(input, **kwargs)
++    mask = kwargs.get("valid_mask")
++    count = kwargs.get("normalization_count")
++    if ((mask is not None and not isinstance(mask, torch.Tensor))
++            or (count is not None and type(count) is not int)):
++        return original(input, **kwargs)  # Preserve the original validation error.
++    keys = [_tensor_key(input), _tensor_key(quantizer.parameter)]
++    if mask is not None:
++        keys.append(_tensor_key(mask))
++    if any(key is None for key in keys):
++        state.misses += 1
++        return original(input, **kwargs)
++    # N's default is input.numel() (or mask count); mask identity/version covers
++    # its contents without an extra device-to-host reduction. Explicit N differs.
++    key = (id(quantizer), type(quantizer.bits), quantizer.bits, quantizer.boundary,
++           type(quantizer.in_features), quantizer.in_features,
++           tuple(keys), input.numel(), count,
++           torch.is_grad_enabled(), torch.is_inference_mode_enabled(),
++           torch.is_autocast_enabled(input.device.type),
++           torch.get_autocast_dtype(input.device.type))
++    if key in state.entries:
++        state.hits += 1
++        return state.entries[key][0]
++    state.misses += 1
++    result = original(input, **kwargs)
++    # Strong references prevent id recycling until this immediate group ends.
++    state.entries[key] = (result, input, quantizer, quantizer.parameter, mask)
++    return result
++
+--- a/src/w1a1_eagle/recurrent_qat.py
++++ b/src/w1a1_eagle/recurrent_qat.py
+@@ -21,6 +21,8 @@
+ 
+ import numpy as np
+ import torch
++
++from .immediate_activation import quantize
+ from torch import Tensor, nn
+ from torch.nn import functional as F
+ 
+@@ -287,7 +289,7 @@
+                 )
+                 identity = None
+             else:
+-                result = quantizer(input)
++                result = quantize(quantizer, input)
+                 values, scale, saturated, codes = (
+                     result.values,
+                     result.scale,
+@@ -310,7 +312,7 @@
+         if quantizer is not None:
+             if quantizer.bits != self.contract.activation_bits:
+                 raise ValueError("learned quantizer precision differs from linear contract")
+-            result = quantizer(input)
++            result = quantize(quantizer, input)
+             self.last_saturation_fraction = result.saturated.float().mean().detach()
+             if not torch.is_grad_enabled() or self.a1_computation == "single_forward":
+                 return _LearnedSingleForward.apply(
+--- a/src/w1a1_eagle/native_step.py
++++ b/src/w1a1_eagle/native_step.py
+@@ -21,6 +21,8 @@
+ from types import MappingProxyType
+ 
+ import torch
++
++from .immediate_activation import immediate_group
+ from torch import Tensor, nn
+ from torch.nn import functional as F
+ 
+@@ -583,9 +585,10 @@
+         trace("g_norm-0", normalized_feature)
+         fused = torch.cat((normalized_embedding, normalized_feature), dim=-1)
+         trace("concat_embd-0", fused)
+-        q = attn.q_proj(fused)
+-        k = attn.k_proj(fused)
+-        v = attn.v_proj(fused)
++        with immediate_group('qkv'):
++            q = attn.q_proj(fused)
++            k = attn.k_proj(fused)
++            v = attn.v_proj(fused)
+         trace("Qcur-0", q)
+         trace("Kcur-0", k)
+         trace("Vcur-0", v)
+@@ -650,13 +653,15 @@
+         trace("ffn_inp-0", residual)
+         post_attention = self._rms_norm(residual, layer.post_attention_layernorm)
+         trace("post_attn_norm-0", post_attention)
+-        gate = mlp.gate_proj(post_attention)
+-        activated = (
+-            self.native_cpu_operators.silu(gate)
+-            if self.attention_mode == "native_cpu_diagnostic"
+-            else F.silu(gate)
+-        )
+-        ffn = mlp.down_proj(activated * mlp.up_proj(post_attention))
++        with immediate_group('gate_up'):
++            gate = mlp.gate_proj(post_attention)
++            activated = (
++                self.native_cpu_operators.silu(gate)
++                if self.attention_mode == "native_cpu_diagnostic"
++                else F.silu(gate)
++            )
++            up = mlp.up_proj(post_attention)
++        ffn = mlp.down_proj(activated * up)
+         trace("ffn_out-0", ffn)
+         pre_norm = residual + ffn
+         trace("eagle3_prenorm-0", pre_norm)
