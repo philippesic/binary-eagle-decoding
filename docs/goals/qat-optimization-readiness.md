@@ -470,3 +470,105 @@ Protected QAT task/15-minuteheartbeat remain active; owner publishedf11b3b4
 with the human’s overnight/oncredits authorization. IDs, managed worktree paths,
 stop controls and next action: docs/overnight20261002/launch.md. No permission
 settings were changed and no GPU experiment was launched by research.
+
+
+## Preparation owner rotation — 2026-10-02 06:42 UTC
+
+This checkpoint transfers ONLY existing corpus preparation supervision from
+chat `01a0f47a-e246-75e1-a299-fcac42d34f8a` to the fresh successor recorded
+below and in ignored monitor registration. The one active objective remains QAT
+optimization readiness; separate validation/training owner
+`01a0f934-dd65-7e33-a5bf-0ba591e713a4` waits for preparation's verified release.
+Existing frozen preparation must finish data, audit, readiness, coverage, paired
+CUDA forward/backward smoke and initial checkpoint, then stop BEFORE optimizer
+updates. The human's preparation-only instruction remains binding for this job.
+No new goal, recipe, source deployment, experiment or optimizer launch is needed.
+
+Completed: prep-only launcher commit95428e0c3f0daaa7c1a168d1cce62827e7c8c217,
+integration5676254;21launcher+12health CPU tests, Ruff/diff check passed. Launcher
+SHA25682f0185ab9ac38bc622749d2ca5e5c5a297a72494dcbf3d16d2b08df249cdade is the only
+allowed tracked remote delta. Resume proof and audit-cost explanation were pushed
+in79b8876. Broader implementation eb66093/native8025a0777 has952CPUtests/fourskips;
+actual new-feature GPU gates remain unverified and belong to the other owner
+AFTER release. This rotation changes documentation/ownership records only.
+
+Latest single CPU health observation **2026-10-02T06:42:04.636798+00:00**:
+healthy/nonterminal, preparing `teacher_capture_audit`, re-audit109/353;327
+completed label manifests retain10,000train/224development prompts, zero optimizer
+updates, no preparation-ready receipt. This ordinal is resumed audit progress,
+not new captures or data loss. Every resume audits completed shards from the
+beginning before unfinished dev capture; text prompt pool already exists.
+Remaining capture target is1,002development prompts. No healthy GPU query was
+made, so this is not an idle/resource-release claim.
+
+Remote SAME frozen project `/home/philip/binary-eagle-decoding`, run
+`runs/luna-continuous-a8-a1-native-order-20260930`; status `${run}/status.json`.
+Current supervisor `luna-supervisor-a8-a1-native-order-20261002-08`, state
+`/home/philip/binary-eagle-decoding/runs/luna-supervisor-a8-a1-native-order-20261002-08/state.json`.
+Detached Linux host tmux socket `binary-eagle-runtime`, session
+`continuous-a8-a1-native-order-20261002-08`:server673/supervisor674(PGID674)/child676
+(PGID676). State pid/pgid mean child. Launch `remote_job.py` with300secondgrace,
+`.venv/bin/python scripts/train_continuous_w1ax.py --start --allow-cuda --resume
+--prepare-only --stages-manifest runs/continuous-preparation/stages.json --run-dir`
+SAMErun. Ownership/live prep flag verified after one reconnect05:32:52UTC.
+WSL20GB and instanceIdleTimeout=-1 unchanged. RTX5080 sole preparation assignment;
+RTX2080Ti paused. Derive fresh host from ~/.config/binary-eagle-decoding/hosts.toml
+and CURRENT ownership/paths from registration.experiment, never historical fields.
+
+Ignored authoritative files in `runs/luna-continuous-a8-a1-20260929/`:
+monitor-registration.json,last-health.json,recovery-budget.json,
+monitor-query-source.py,monitor-query-command.json. Current query JSON is a
+STRING, ASCII2,983characters, source SHA256
+6e8b3470a3b3138cc2949101c47024d22318f07c0972281031d44f1276511f92;
+binding08. Latest exact four-key raw snapshot
+`health-snapshot-20261002T064204Z.json` validated command byte equality, stdout,
+JSON and Git ignore. Resume evidence `resume-operation-20261002-after-2315.json`.
+Recovery budget old24hwindow began2026-09-30T21:55UTC, used1/manualsupervisor03;
+now expired but healthy checks do not reset it. Evaluate actual timestamps/fresh
+pause flags before any authorized failure recovery; human resumes do not charge.
+
+No live child agent/local command/transport remains: sole tick operator
+`/root/health_20261002_0639` completed and local session absence verified. All
+previous preparation agents are completed. GPU supervisor continues independently;
+do NOT interrupt it for rotation. No unmerged worker output or owned worktree
+requires transfer; root's docs-only temporary worktree is integrated/removed
+before retirement. Other project/team worktrees and jobs are outside this owner.
+
+Exact next actions: fresh successor read STATUS,this goal,AGENT_OPERATIONS and
+CONTINUOUS_W1AX_MONITOR; inspect ignored registration/last-health/budget and
+registry/pause flags LOCALLY, acknowledge that it can see current08 job and
+prep-only boundary. Do not run another remote checker for this completed tick.
+Parent transfers SAME existing ACTIVE15min automation
+`a8-a1-health-check-enable-after-manual-start` to successor with unchanged prompt,
+cadence/name/preferences and records native confirmation; no duplicate schedule.
+Next due tick: exactly one experiment_operator Luna/high with fork_turns none,
+no launch/recovery operator active; one CPU checker through fresh LOCAL tmux MCP
+transport, full saved JSON command passed directly without printed/truncated
+base64. SSH bridge uses Windows OpenSSH then wsl.exe -e python3. Salvage executed
+LOCAL pane output if wrapper capture fails, without rerunning checker. Never
+attach/send keys/kill HOST job tmux. Count completed prompt_count bytrain/dev,
+exclude partial/gate cells. Persist last-health and keep ordinary progress quiet;
+manual status direct compact read. No healthy extra logs/GPU query.
+
+New failure: notify verified error+retained counts BEFORE any recovery. Only
+allowed native transport failure/failedprocess or CUDAunknown sync after GPU
+usable qualifies. Fresh pause/STOP/budget, same math/native/runtime/data/config/
+precision identity, terminal supervisor/all owned groups gone and actual hardware/
+resource floors are mandatory; CPU recover-partial preserves bytes. Persist
+budget BEFORE at most one new supervisor/session launch per tick, SAMErun with
+--prepare-only and300secondgrace; close/reconnect once and verify actual health.
+Never retry gate/numeric/cache/data/eligibility/corruptcheckpoint/OOM/identitychange/
+intentionalstop/ownership ambiguity. UnknownSSH is unknownhealth, not failed
+training or freeGPU; notify once. No driver reset/reboot/source pull/finals.
+
+Endpoint: stopped+preparation_complete:true+successful matching SHA readyreceipt,
+zero global/A8/A1/Adam optimizer counters, checkpoint zero, full frozen coverage
+and supervisor terminalexit0. Then fresh proof both owned groups and project
+processes gone/GPU compute apps empty through LOCALtmuxMCP, before notifyingready
+and pausing SAMEmonitor. Save release proof for separate training owner; do not
+start its validation/training in this frozen checkout. Positive optimizer updates
+are unauthorized: notify and gracefully stop verified owned supervisor (STOP and
+SIGINT,300secgrace; never hosttmux panes/unrelatedwork). Explicit humanpause marks
+shared flag and pausesmonitor immediately, then verifies graceful cleanup before
+reporting GPUfree. Resume only new humanrequest. No unresolved human decision is
+needed for existing preparation continuation; no new feature recipe is selected.

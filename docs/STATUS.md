@@ -29,6 +29,15 @@ and may use credits. Stop research at <=1% remaining, observed reset, or the
 conservative October2 09:55PDT cutoff, whichever comes first. No new active goal,
 GPU ownership or frozen-training change. [Assignments and control](OVERNIGHT_RESEARCH.md).
 
+**Preparation supervision rotation (2026-10-02 06:42 UTC):** latest single CPU
+check healthy, re-audit109/353;327completed manifests retain10,000train/224dev,
+zerooptimizerupdates,no readyreceipt. SAME supervisor08 remains soleRTX5080
+preparation owner with --prepare-only;2080Ti paused. All tick agents/transports
+finished. Fresh successor inherits existing15min monitor without touching GPU
+job; [exact handoff](goals/qat-optimization-readiness.md#preparation-owner-rotation--2026-10-02-0642-utc)
+records source identity,job ownership,stopprocedure,tests and nextactions.
+Separate validation/training owner still waits for verified fullprep/GPUrelease.
+
 **Existing corpus preparation resumed and verified:** SAME --prepare-only run under supervisor08. CPU health **2026-10-02 05:31:39 UTC** (October1,10:31p.m.PDT), independent ownership **05:32:52UTC** confirms server673/supervisor674/child676 and live prep-only flag afterdisconnect/reconnect. Retained327manifests /10,000train /224dev,zeroQATsteps; re-audit4/353 then6/353 is not lostdata. Existing15min monitorACTIVE;2080Ti paused. No newcaptures yet: everyresume restarts the audit loop over completed data before unfinished dev capture. Same fullgates and automatic stop-before-QAT endpoint; new optimization-feature GPU checks still await ownership release.
 
 **Historical existing corpus preparation pause:** Verified **2026-10-01 23:15:28 UTC** (4:15 p.m. PDT): supervisor07 interrupted/exit0,owned groups1204/1205 absent,no project processes or GPU compute apps. Retained327completed manifests /10,000train /224of1,002dev,zeroQATsteps; preparation remains incomplete. Data/partials/stop-before-QAT boundary preserved. No auto-resume until new human resume instruction.
