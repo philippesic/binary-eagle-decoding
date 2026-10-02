@@ -60,7 +60,7 @@ until `optimizer.step()` returns, preserving a clear mutation boundary.
 
 ## CPU cost and limits
 
-Hardware: macOS 27 arm64 CPU, Torch 2.14.0, one Torch thread. No CUDA, Metal,
+Hardware: Apple M3 Max, macOS 27 arm64 CPU, Torch 2.14.0, one Torch thread. No CUDA, Metal,
 SSH, native target, real weights, captures, final evaluation, or optimizer
 updates on the live project were used. Tiny synthetic fixture optimizer
 updates exist only in process memory or temporary test directories.
@@ -80,23 +80,30 @@ justified.
 
 Owner checks: **42/42** unittest tests pass in 2.588 seconds across
 `test_step_metrics_feature`, `test_recurrent_qat`, `test_continuous_qat`, and
-`test_qat_curriculum_runner`. These include real fixture continuous resume
+`test_qat_curriculum_runner`. These include actual fixture continuous resume
 checks for parameters, optimizer moments, RNG and cursor, and curriculum
 midphase/boundary resume with optional parameter families. Source/report
 runner/test Ruff checks and `git diff --check` pass. The independent validator
-owns `test_step_metrics_feature_validation.py` and `VALIDATION.md`; its final
-receipt is recorded separately.
+owns `test_step_metrics_feature_validation.py` and [VALIDATION.md](VALIDATION.md).
+Its final **6/6** checks pass in 0.450 seconds, including mixed floating dtypes
+with a float64 value that would detect narrowing, int64 above 2^53, populated
+AdamW moment preservation on rejection, ownership/objective precedence and
+the post-update finite-parameter gate before scalar extraction. Validator
+commits are `2d16b11` and `b947a96`; source implementation is `bdb8b42`.
+The final combined **48/48** tests pass in 2.546 seconds, with Ruff and diff
+checks passing. No source edit occurred after the actual census proof.
 
 Reproduce the owner check from this worktree:
 
 ```sh
 PYTHONPATH=src:.:tests /Users/pippo/github/binary-eagle-decoding/.venv/bin/python -m unittest test_step_metrics_feature test_recurrent_qat test_continuous_qat test_qat_curriculum_runner
+PYTHONPATH=src:.:tests /Users/pippo/github/binary-eagle-decoding/.venv/bin/python -m unittest test_step_metrics_feature test_step_metrics_feature_validation test_recurrent_qat test_continuous_qat test_qat_curriculum_runner
 PYTHONPATH=src:.:tests /Users/pippo/github/binary-eagle-decoding/.venv/bin/python experiments/parallel20261002/step_metrics_feature/probe.py
 ```
 
-Remaining work: independent validator final receipt; root review of whether to
+Deliverable complete. Remaining integration work: root review of whether to
 adopt reporting batching given the CPU cost; future device measurement if
 batching is admitted. Root owns the active goal checkpoint and integration;
 this branch must remain isolated until reviewed and must not be removed while
 unmerged or unpublished. No persistent experiment process or device resource
-remains after the owner checks.
+remains after the owner and validator checks.
