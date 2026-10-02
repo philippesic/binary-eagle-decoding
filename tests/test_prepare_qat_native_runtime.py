@@ -2,6 +2,7 @@
 
 import contextlib
 import copy
+import hashlib
 import importlib.util
 import io
 import json
@@ -740,6 +741,71 @@ class NativeRuntimeInventoryTests(unittest.TestCase):
             self.assertNotIn("shell", kwargs)
         with self.assertRaisesRegex(ValueError, "only Git"):
             tool.run_checked(["llama-server", "--version"])
+
+    def test_rodata_invalid_utf8_is_lossless_and_only_exact_command_is_binary(self):
+        raw = b"nonmarker\x80\n  [   20]  " + NATIVE[:9].encode() + b"\n"
+        with patch.object(tool.subprocess, "run") as run:
+            run.return_value.stdout, run.return_value.stderr = raw, b""
+            text = tool.run_checked(["readelf", "--string-dump=.rodata", "/artifact"])
+            self.assertEqual(text.encode("utf-8", "surrogateescape"), raw)
+            self.assertIn("\udc80", text)
+            self.assertFalse(run.call_args.kwargs["text"])
+
+    def test_rodata_binary_noise_keeps_exact_commit_and_raw_hash(self):
+        raw = b"nonmarker\x80\n  [   20]  " + NATIVE[:9].encode() + b"\n"
+
+        def runner(argv):
+            if argv[:2] == ["readelf", "--string-dump=.rodata"]:
+                return tool.run_checked(argv)
+            return self.fixture.runner(argv)
+
+        with patch.object(tool.subprocess, "run") as run:
+            run.return_value.stdout, run.return_value.stderr = raw, b""
+            manifest = tool.inspect_runtime(
+                self.fixture.checkout, self.fixture.build, PARENT, NATIVE, runner=runner
+            )
+        self.assertTrue(manifest["build_info_observations"])
+        for observed in manifest["build_info_observations"]:
+            self.assertEqual(observed["output_sha256"], hashlib.sha256(raw).hexdigest())
+            self.assertEqual(observed["output_bytes"], len(raw))
+            self.assertEqual(observed["output_decoding"], "utf-8-surrogateescape")
+            self.assertEqual(observed["matched_commit"], NATIVE[:9])
+
+    def test_rodata_binary_noise_cannot_create_or_relax_commit_marker(self):
+        def runner(argv):
+            if argv[:2] == ["readelf", "--string-dump=.rodata"]:
+                return tool.run_checked(argv)
+            return self.fixture.runner(argv)
+
+        for raw in (
+            b"noise\x80no marker\n",
+            b"noise\x80\n [ 20] ccccccccc\n",
+            b"noise\x80\n [ 20] " + NATIVE[:9].encode() + b"extra\n",
+        ):
+            with self.subTest(raw=raw), patch.object(tool.subprocess, "run") as run:
+                run.return_value.stdout, run.return_value.stderr = raw, b""
+                with self.assertRaisesRegex(ValueError, "compiled server/common artifact lacks"):
+                    tool.inspect_runtime(
+                        self.fixture.checkout, self.fixture.build, PARENT, NATIVE, runner=runner
+                    )
+
+    def test_non_rodata_invalid_utf8_remains_strict(self):
+        commands = [
+            ["ldd", "/artifact"],
+            ["readelf", "-d", "/artifact"],
+            ["git", "rev-parse", "HEAD"],
+            ["readelf", "--string-dump=.data", "/artifact"],
+            ["readelf", "--string-dump=.rodata", "/artifact", "extra"],
+        ]
+
+        def strict(argv, **kwargs):
+            self.assertTrue(kwargs["text"])
+            b"\x80".decode("utf-8")
+
+        with patch.object(tool.subprocess, "run", side_effect=strict):
+            for argv in commands:
+                with self.subTest(argv=argv), self.assertRaises(UnicodeDecodeError):
+                    tool.run_checked(argv)
 
 
 if __name__ == "__main__":
