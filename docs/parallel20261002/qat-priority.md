@@ -32,6 +32,9 @@ both replacements. Neither action received an approval rejection. Preparation
 owner owns consistent registration ID/reference updates, preserving old history;
 the coordinating agent does not race its ignored registration edits.
 
+Preparation registration readback at 18:34:43 UTC confirms the new ACTIVE
+heartbeat ID, correct successor target, cadence, and restoration-proof path.
+
 The QAT coordinator restored scheduling and ownership only. It did not create a
 second GPU operator, take over frozen preparation, run SSH, signal a remote
 process, change a recipe, or claim a GPU result.
@@ -53,7 +56,7 @@ terminal preparation supervisor, and fresh GPU handoff.
 The successor metadata rebind passed the same 20 local mocked safety tests with
 unchanged controller/guard/entry code hashes. That is CPU process-safety evidence,
 not CUDA readiness. QAT owner is resuming renewal of ONE fixture-only conditional
-authorization; preparation owner is mechanically preparing the matching transport
+authorization, now renewed; preparation owner is mechanically preparing the matching transport
 packet. Frozen `--prepare-only` job and numerical/ancestry gates remain intact.
 
 ## Transport handoff and next action
@@ -61,12 +64,18 @@ packet. Frozen `--prepare-only` job and numerical/ancestry gates remain intact.
 The recorded parent-owned LOCAL198 transport diagnosis was still active at first
 inspection and blocked all new remote dispatch. Its archived owner was reopened
 and asked for explicit completion/cancel/transfer with raw proof. Its resumed
-turn states it will capture and close only its owned local tmux session and
-release the stale lock. Completion and raw cleanup proof are still pending;
-elapsed time alone does not release ownership.
+turn captured and closed only its owned local tmux session and explicitly
+released the lock. Fresh lease readback at 18:35:29 UTC records diagnosis inactive,
+completed, and transferred to the sole preparation operator; operator-active is
+false. Raw `parent-transport-diagnosis-20261002.json` SHA256
+`6711fe18e9de9992a28113f4ea135f07bae9dd033c6de20aff98322d29198c8f`
+was independently checked against its actual bytes. Proof preserves zero
+successful SSH connections, no CPU checker or GPU query, no remote job/signal,
+and closed LOCAL198. It establishes no successful persistent connection procedure
+or physical host-unavailability claim. Both current owners received the explicit
+handoff and raw proof reference.
 
-Next: consume that explicit handoff, verify the preparation registration's new
-heartbeat binding, then let the SAME sole preparation operator execute the
+Next: let the SAME sole preparation operator consume the exact handoff and execute the
 reviewed packet only after renewed owner authorization and fresh safe exclusive
 preflight. Consume its result; preserve any failure. Continue protected owner
 supervision and restart needs through credits and allowance reset.
