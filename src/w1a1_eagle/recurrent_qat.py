@@ -734,6 +734,25 @@ def compact_probability_loss(
     return -(numerator[mask] / mapped[mask]).mean()
 
 
+def _reporting_scalars(metrics: Mapping[str, Tensor | float | int]) -> dict[str, float | int]:
+    """Extract completed reporting values without mixing tensor dtypes.
+
+    This is only for reporting after the update's safety checks. In particular,
+    integer counts stay integer tensors, including during the host transfer.
+    """
+    groups: dict[tuple[torch.device, torch.dtype], list[tuple[str, Tensor]]] = {}
+    values = {}
+    for name, value in metrics.items():
+        if isinstance(value, Tensor):
+            groups.setdefault((value.device, value.dtype), []).append((name, value.detach()))
+        else:
+            values[name] = value
+    for group in groups.values():
+        scalars = torch.stack([value for _, value in group]).cpu().tolist()
+        values.update((name, scalar) for (name, _), scalar in zip(group, scalars))
+    return {name: values[name] for name in metrics}
+
+
 def joint_train_step(
     linears: Mapping[str, RowBinaryLinear | GroupedBinaryLinear],
     logits: Tensor,
@@ -757,7 +776,7 @@ def joint_train_step(
     owned = [p for group in optimizer.param_groups for p in group["params"]]
     if len(owned) != len(params) or {id(p) for p in owned} != {id(p) for p in params}:
         raise ValueError("optimizer must own exactly declared binary/activation/fusion parameters")
-    before_signs = [m.latent_sign.detach().clone() < 0 for m in linears.values()]
+    before_signs = [m.latent_sign.detach() < 0 for m in linears.values()]
     before_scales = [m.effective_scales().detach().clone() for m in linears.values()]
     optimizer.zero_grad(set_to_none=True)
     if config.objective == "hard_ce":
@@ -839,44 +858,40 @@ def joint_train_step(
     finite_parameters = torch.stack([torch.isfinite(p).all() for p in params])
     if not bool(finite_parameters.all()):
         raise ValueError("joint QAT update produced nonfinite parameters")
-    sign_flips = int(
-        torch.stack(
-            [
-                ((m.latent_sign.detach() < 0) != old).sum()
-                for m, old in zip(linears.values(), before_signs)
-            ]
-        ).sum()
+    sign_flips = torch.stack(
+        [
+            ((m.latent_sign.detach() < 0) != old).sum()
+            for m, old in zip(linears.values(), before_signs)
+        ]
+    ).sum()
+    scale_movement = torch.stack(
+        [
+            (m.effective_scales().detach() - old).abs().sum()
+            for m, old in zip(linears.values(), before_scales)
+        ]
+    ).sum()
+    latent_outside_clip = torch.stack(
+        [(m.latent_sign.detach().abs() > 1).sum() for m in linears.values()]
+    ).sum()
+    saturation_mean = torch.stack(
+        [
+            torch.as_tensor(getattr(m, "last_saturation_fraction", 0.0), device=logits.device)
+            for m in linears.values()
+        ]
+    ).mean()
+    return _reporting_scalars(
+        {
+            "loss": loss.detach(),
+            "token_loss": token_loss.detach(),
+            "midpoint_regularization": midpoint_penalty.detach(),
+            "gradient_tensors": gradient_tensors,
+            "gradient_norm": norm,
+            "sign_flips": sign_flips,
+            "scale_l1_movement": scale_movement,
+            "latent_outside_clip": latent_outside_clip,
+            "saturation_mean": saturation_mean,
+        }
     )
-    scale_movement = float(
-        torch.stack(
-            [
-                (m.effective_scales().detach() - old).abs().sum()
-                for m, old in zip(linears.values(), before_scales)
-            ]
-        ).sum()
-    )
-    latent_outside_clip = int(
-        torch.stack([(m.latent_sign.detach().abs() > 1).sum() for m in linears.values()]).sum()
-    )
-    saturation_mean = float(
-        torch.stack(
-            [
-                torch.as_tensor(getattr(m, "last_saturation_fraction", 0.0), device=logits.device)
-                for m in linears.values()
-            ]
-        ).mean()
-    )
-    return {
-        "loss": float(loss.detach()),
-        "token_loss": float(token_loss.detach()),
-        "midpoint_regularization": float(midpoint_penalty.detach()),
-        "gradient_tensors": gradient_tensors,
-        "gradient_norm": float(norm),
-        "sign_flips": sign_flips,
-        "scale_l1_movement": scale_movement,
-        "latent_outside_clip": latent_outside_clip,
-        "saturation_mean": saturation_mean,
-    }
 
 
 def save_joint_checkpoint(
