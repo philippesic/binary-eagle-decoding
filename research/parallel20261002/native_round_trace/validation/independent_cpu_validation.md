@@ -12,7 +12,7 @@ there were no model weights, captures, GPU, Metal, or remote host involved.
 - **Exact command:** `set -o pipefail; PYTHONPATH=. /Users/pippo/github/binary-eagle-decoding/.venv/bin/python -m unittest -v tests.test_parallel20261002_native_round_trace_independent 2>&1 | tee runs/parallel20261002/native-round-trace-validation/independent-02.log`
 - **Result:** exit 0; 10 tests passed in 0.001 seconds.
 - **Raw output:** `runs/parallel20261002/native-round-trace-validation/independent-02.log`
-- **Test SHA-256:** `5bf2b3c18395043739a79f33277a7270ccbdb104349c241e362bb840abd27747`
+- **Test SHA-256 after Ruff formatting:** `8326516121ac3354b42f711873469d96d8e7dfd215baf763eaf139f141e90e76`
 - **Adapter SHA-256:** `946a09df40a8851dd33f78c20ef54247656fb81a9174cb97dbfdf5663f8c8779`
 - **Raw log SHA-256:** `3fe6cafa9b54101ec3cbc61db8548dc5c826208d3946770cb3a0988260938d20`
 

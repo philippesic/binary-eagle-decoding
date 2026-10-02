@@ -1,11 +1,11 @@
 """Independent producer-shaped checks for native round accounting."""
+
 from __future__ import annotations
 
 import copy
 import unittest
 
 from research.parallel20261002.native_round_trace.reference.adapter import adapt_session
-
 
 BASE = {
     "schema": "w1ax_eagle_round_v1",
@@ -31,7 +31,10 @@ BASE = {
     "draft_seed_decode_us": 0,
     "draft_step_decode_us": 0,
     "draft_sampler_us": 0,
-    "timing_scope": "CPU wall; begin_us is outside round_us; batched decode/process spans are shared; no CUDA events",
+    "timing_scope": (
+        "CPU wall; begin_us is outside round_us; batched decode/process spans are shared; "
+        "no CUDA events"
+    ),
     "begin_us": 0,
     "round_start_us": 100,
     "round_end_us": 200,
@@ -122,14 +125,18 @@ class NativeRoundTraceIndependentTests(unittest.TestCase):
             row(0, proposed=[11, 12], accepted=2, emitted=[11, 12, 13]),
             row(1, proposed=[21, 22], accepted=0, emitted=[23]),
         ]
-        report = adapt_session(records, metadata([11, 12, 13, 23]), {"proposed": 4, "accepted": 2, "rounds": 2})
+        report = adapt_session(
+            records, metadata([11, 12, 13, 23]), {"proposed": 4, "accepted": 2, "rounds": 2}
+        )
         self.assertEqual(report["counts"]["bonus"], 1)
         self.assertEqual(report["counts"]["correction"], 1)
         self.assertEqual(report["counts"]["accepted_emitted"], 2)
         self.assertEqual(report["counts"]["emitted"], 4)
         self.assertEqual(report["aggregate_reconciliation"]["accepted"]["difference"], 0)
         self.assertEqual(report["rounds"][1]["root_generated_position"], 3)
-        self.assertNotEqual(report["rounds"][0]["root_prefix_sha256"], report["rounds"][1]["root_prefix_sha256"])
+        self.assertNotEqual(
+            report["rounds"][0]["root_prefix_sha256"], report["rounds"][1]["root_prefix_sha256"]
+        )
 
     def test_no_proposal_is_one_target_token(self):
         record = row(0, status="no_proposal", emitted=[77])
