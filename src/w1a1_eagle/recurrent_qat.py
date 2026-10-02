@@ -738,15 +738,22 @@ def _reporting_scalars(metrics: Mapping[str, Tensor | float | int]) -> dict[str,
     """Extract completed reporting values without mixing tensor dtypes.
 
     This is only for reporting after the update's safety checks. In particular,
-    integer counts stay integer tensors, including during the host transfer.
+    CPU scalars use item() directly to avoid grouping and stack allocations.
+    Other devices retain one host transfer per device/dtype group; integer
+    counts stay integer tensors, including during the host transfer.
     """
     groups: dict[tuple[torch.device, torch.dtype], list[tuple[str, Tensor]]] = {}
     values = {}
     for name, value in metrics.items():
         if isinstance(value, Tensor):
-            groups.setdefault((value.device, value.dtype), []).append((name, value.detach()))
+            if value.is_cpu:
+                values[name] = value.item()
+            else:
+                groups.setdefault((value.device, value.dtype), []).append((name, value.detach()))
         else:
             values[name] = value
+    if not groups:
+        return values
     for group in groups.values():
         scalars = torch.stack([value for _, value in group]).cpu().tolist()
         values.update((name, scalar) for (name, _), scalar in zip(group, scalars))
