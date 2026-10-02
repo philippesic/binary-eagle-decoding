@@ -1,0 +1,58 @@
+{
+  "hardware": "none; shape arithmetic only",
+  "ledger": {
+    "adam_moment_bytes_per_lane": 1746401280,
+    "before_scale_snapshot_bytes": 261120,
+    "before_sign_boolean_bytes": 218234880,
+    "configured_cuda_cap_bytes": 12884901888,
+    "conservative_nonconcurrent_step_envelope_excluding_graph_workspace": 7982274560,
+    "continuous_checkpoint_host_allowance_bytes": 2090858496,
+    "curriculum_save_core_and_adam": {
+      "additional_peak_bytes": 2947020836,
+      "current_allowance_bytes": 2636640328,
+      "excludes": "RNG, optional recipes, frozen biases and workspace; add their actual entries",
+      "final_clone_bytes": 2619863112,
+      "logical_excess_over_current_allowance_bytes": 310380508,
+      "proposed_allowance_bytes": 2964320328
+    },
+    "existing_estimated_peak_bytes": 10112064512,
+    "head_weights": 81920000,
+    "initial_scale_bytes_per_lane": 261120,
+    "largest_f32_tensor_bytes": 327680000,
+    "last_head_hard_sign_construction_bytes": 1610219520,
+    "master_bytes_per_lane": 873200640,
+    "one_gradient_bytes": 873200640,
+    "one_round_hard_sign_bytes": 872939520,
+    "optional_parameters_per_lane": {
+      "affine_all_rows": 65280,
+      "affine_fc_rows": 2560,
+      "fusion_output_bias": 2560,
+      "fusion_rank1_factors": 10240,
+      "fusion_rank4_factors": 40960,
+      "learned_activation_unique_scalars": 6
+    },
+    "packed_export_one_lane_bytes": 27540480,
+    "paired_persistent_bytes_with_configured_frozen": 6017638400,
+    "post_backward_known_bytes": 7109335040,
+    "row_npz_retained_bytes": 873200640,
+    "rows_per_lane": 65280,
+    "sign_diagnostics_host_two_lanes_bytes": 218234880,
+    "trainable_parameters_per_lane": 218300160,
+    "weights_per_lane": 218234880
+  },
+  "schema": "source_bound_allocation_ledger_v1",
+  "source_sha256": {
+    "configs/continuous_w1ax.json": "4ee4ce05139e0ae4762dfa35b6546b79a3fafc8c2b91be07b6ef76e9f5579c8e",
+    "scripts/export_recurrent_binary.py": "2232bf29d25324ca50e8b72e7308d8bb445485793c387fc2af155d4fbe081a2d",
+    "src/w1a1_eagle/affine_binary.py": "edad3b513413eac5dc027cb949da6ae4e8d3ca4184d66b7d0f97b880c6252ebc",
+    "src/w1a1_eagle/continuous_qat.py": "8e0ed5930d33c8a717536872ec809d4e4b0bfe0826e778ae61ef434a0ea5da0a",
+    "src/w1a1_eagle/continuous_resources.py": "27156473a17a13c5f5df25cce92e0f975ed51cdd36625e6f78d30df0085c5a62",
+    "src/w1a1_eagle/fusion_correction.py": "23247735fc7250c8d74bf7a2a605ba8c71ce0b0b8ccd0a3f22b39414ce8265e2",
+    "src/w1a1_eagle/learned_activation.py": "65b7b0863bb67806991ee4860ce327bf46bfbdf0e8d4e44226aa1ca268e880db",
+    "src/w1a1_eagle/qat_curriculum_runner.py": "2d2e1bf6edc28a16f75a009d77822f2134127a1711ceab3f19f8152b0adece84",
+    "src/w1a1_eagle/qat_optimization.py": "d2da18a4f4db612dd3cb51916af688109593d2c9d4cf119a21f8129567c305f7",
+    "src/w1a1_eagle/qat_state.py": "10eec0f235fa9d1b65f8d7d1a98e38e0be43a7249ccca88cfb7604ea5e17d9ed",
+    "src/w1a1_eagle/recurrent_binary.py": "7624fa4486bcb130440cbc6b84c2463af01f0750e0145236063a125ab8b3de06",
+    "src/w1a1_eagle/recurrent_qat.py": "f2b6d83b8929807b65b6f21826cc99097a6ddd70f99ff23ca0836aebe4db1224"
+  }
+}
