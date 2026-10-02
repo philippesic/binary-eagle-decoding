@@ -52,8 +52,9 @@ cross-boundary parameter aliasing.
 Worktree: `/private/tmp/eagle-parallel-20261002/auxiliary-vjp` on
 `research/20261002-auxiliary-vjp`. Runtime: macOS arm64 CPU, Python 3.11.3,
 PyTorch 2.8.0. The configured project interpreter
-`/Users/pippo/github/binary-eagle-decoding/.venv/bin/python` is absent, so
-`python3` was used. No GPU runtime was queried.
+`/Users/pippo/github/binary-eagle-decoding/.venv/bin/python` was not accessible
+in the validator execution context, so system `python3` was used. No GPU runtime
+was queried.
 
 Before each test run, `runs/parallel20261002/control.json` showed
 `research_stop=false`, `reset_observed=false`, reset `1791049896` unchanged,

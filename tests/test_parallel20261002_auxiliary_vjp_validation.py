@@ -32,8 +32,9 @@ class CombinedAuxiliaryVJPTests(unittest.TestCase):
                 c, b = codes, beta
 
                 # Two projections share the exact quantizer result and sum node.
-                signs_a = torch.tensor([[1.0, -1.0, 1.0, -1.0], [-1.0, 1.0, 1.0, 1.0],
-                                        [1.0, 1.0, -1.0, -1.0]])
+                signs_a = torch.tensor(
+                    [[1.0, -1.0, 1.0, -1.0], [-1.0, 1.0, 1.0, 1.0], [1.0, 1.0, -1.0, -1.0]]
+                )
                 alpha_a = torch.tensor([0.31, 0.22, 0.47], requires_grad=True)
                 midpoint_a = torch.tensor([0.13, -0.21, 0.09], requires_grad=True)
                 bias_a = torch.tensor([0.04, -0.03, 0.12], requires_grad=True)
@@ -49,7 +50,6 @@ class CombinedAuxiliaryVJPTests(unittest.TestCase):
                     correction.output_bias.copy_(torch.tensor([0.03, -0.06, 0.02]))
                 vh = correction.v.detach().half().float()
                 uh = correction.u.detach().half().float()
-                bias_c = correction.effective_bias()
 
                 with shared_affine_input_sums():
                     first = affine_binary_projection(
