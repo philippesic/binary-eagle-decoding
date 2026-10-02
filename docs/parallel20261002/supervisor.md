@@ -256,3 +256,38 @@ log present; receiptqat-worktree-cleanup.json. The protected agent continues
 mainread-only coordination, peer QAT source/integration worktrees untouched.
 Root usage19:03:23UTC84%used/16%remaining, original reset unchanged; third
 three teams/validators allactive, no refill/stop.
+
+
+## Third slate integrated — October 2, 19:11 UTC
+
+All three leaders/validators finished. Root reviewed/integrated memory
+d3b5c6a/a601720/b0e923d→27d09b4/6f1fe3b/54d439e; evaluator
+67e259b/0c41d70/65c2cd4→0b7e904/d225b80/577bf92; resume
+d0b9e63/8a70e0f→6f9bf78/a9fcb28. Artifacts/prototypes/unapplied proposals only;
+no third-slate production edit.
+
+Root checks26 pass across required entrypoints: evaluator owner6+independent6,
+memory5, resume owner5+independent4, projectTorch2.14/macOSarm64CPU. Initial
+generic evaluator unittest loading lacked the validator's mandatory run-dir
+configuration; the documented standalone command then passed6/6. No numerical
+gate was changed or failed product behavior suppressed. Whitespace checks pass.
+
+Confirmed savehost undercount310,380,508B (296.002MiB), narrow added-largestCUDA
+proposal preserves all floors. Evaluator old fixed construction fails12 of14
+A8/A1 named modern checkpoint cases; existing helper+publication inventory
+produces exact replay. Resume CPU-only staging prototype preserves live state
+on11 adversarial rejections and exact valid AdamW/SGD continuations; stronger
+missing-state detection needs optional participation receipts. CUDA staging
+requires separately admitted overlap and current source identity.
+
+All clean branch owned contents match main; ignored runs archived under
+archived-worktrees/<eval-recipe|resume-validation|memory-ledger>. Receipt
+third-slate-integration.json. Push before retirement; no unmerged work lost.
+Original weeklywindow remains84%used/16%remaining at19:08:23UTC. QAT protected
+monitors ACTIVE, host-info gate pending, no new connection/lease/GPU work.
+
+Astra prepares fourth slate of TWO bounded optimization prototypes: shared
+same-input quantizer computations and reduced diagnostic full-weight copies/
+scalar extraction. Exact packet/root launch pending. From next completion,
+usage monitor exclusively issues ONE Astra refill per generation; root launches
+teams/integrates. This prevents overlapping refill messages.

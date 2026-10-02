@@ -2322,3 +2322,22 @@ resume semantic validation/staging, full-shape memory ledger.17% original weekly
 remaining; QAT protected. Pending host-info flag registered; prep heartbeat
 quiet/local-only until reply, no duplicate unchanged connections.
 [Checkpoint](../parallel20261002/supervisor.md#protected-correction-and-third-slate--october-2-1901-utc).
+
+
+## Third CPU support integration — October 2, 19:11 UTC
+
+[Memory ledger](../../experiments/parallel20261002/memory_ledger/report.md)
+confirms savehost undercount310,380,508B; proposal adds largestCUDA tensor
+while preserving floor/workspace. [Evaluator](../../experiments/parallel20261002/eval_recipe/report.md)
+confirms modern deployment attachment failures and authentic publication/helper
+preflight remedy; all14 replays exact.
+[Resume staging](../../experiments/parallel20261002/resume_validation/README.md)
+passes11 adversarial mutation-preservation cases and valid AdamW/SGDnextupdates;
+prototypeCPU-only, optional receipt needed for missing moments.
+All three integrated as reports/prototypes/unapplied patches only. Root26checks
+pass across required CLI entrypoints, no core/live source or GPU fit claim.
+Exact worker/main hashes and raw archives in supervisor third-slate checkpoint.
+QAT owner received these findings for independently coordinated current-source
+adoption/readiness.16% originalweeklyremaining; monitor refills ONE batch when
+allteamsdone; Astra fourth boundedoptimization slate pending.
+[Checkpoint](../parallel20261002/supervisor.md#third-slate-integrated--october-2-1911-utc).
