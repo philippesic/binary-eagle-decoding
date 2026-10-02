@@ -4,6 +4,20 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
+## Actual native pass; preparation recovery next — October 2, 20:59 UTC
+
+Native9e2 FTZ repair passed ACTUAL RTX5080/SM120 CUDA fixtures:57pack,114loader,
+59graph,218arithmetic and36projection cases. Root reran unchanged raw validator;
+byte-exact report and fresh complete teardown/return are verified. Research and
+its monitor are stopped by human; QAT/prep and necessary support remain active.
+
+SAME prep Luna passed fresh09 recovery/source/corpus/resource preflight and
+current WSLconfig memory20GB/instanceIdleTimeout=-1. New90second CPUdisconnect
+proof precedes exact prep-only resume; actual09 start remains pending. Current
+model/data/resource gates and first optimizer update remain unverified. New-run
+authenticated completed-corpus reuse is tested/public1cb2999; frozen prep unchanged.
+[Actual result and next work](goals/qat-optimization-readiness.md#actual-cuda-repair-pass-and-protected-continuation--october-2-2059-utc).
+
 ## Native retry after exact wrapper failure — October 2, 20:36 UTC
 
 FreshRTX5080 census passes approved idle/context/resource/source guards. First

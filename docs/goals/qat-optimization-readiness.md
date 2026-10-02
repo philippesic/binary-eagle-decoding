@@ -2667,3 +2667,60 @@ QAT successor01a0fe3f and necessary prep/GPU support remain active and protected
 Native9e2 CUDA fixture actually ran832/834 and exited0; raw validation pending,
 no optimizertraining/readiness claim. Existing QAT monitors/credit continuation
 unchanged. [Stop checkpoint](../parallel20261002/supervisor.md#human-stop--october-2-2044-utc).
+
+
+## Actual CUDA repair pass and protected continuation — October 2, 20:59 UTC
+
+Native9e2 repair ACTUALLY PASSED on RTX5080/SM120. Unique job
+qat-no-ftz-postboot-20261002-06 ran20:44:29.565188→20:44:35.577695UTC,
+finishedexit0/no signals. Supervisor832/UID1000/PGID832/startticks796374;
+child834/PGID834/start796383. Source-bound V3 exact daemon-chain exemption
+resolved the real systemd/PAM cwd denial; original/v2 evidence preserved.
+Independent28guardtests and both owner admissions preceded execution.
+
+Unchanged raw validator4b765073a4e88a18426e27e9e91ec82531718b773e0c1dcb7d97b384011eee4f
+passes byte-exact native reportSHA
+4eca9b763f6053978f43e779dd86cf2f887682c77d6aafb077182f5a4b6873b4.
+Root independently reran it on saved raw bytes:57pack/114loader/59graph/218arithmetic
+nodes/36projection cases,9learned and27affine cases perprecision plus nonzero
+rank1/rank4correction. This closes the FTZ repair's actual synthetic CUDA gate;
+no actual-model/backward/memory/timing/acceptance/training proof follows.
+
+Distinct SSH observer at20:45:49.268204UTC verifies both owned groups gone,
+projectprocesses0/computeappsempty/util0 and all resource floors. Raw returnSHA
+d88402e5eadc6864ca3ebf1980f57319d58651c4f26daa3ce49bf56a5e7253df.
+Final ignored proof postboot-exclusive-native9e2-20261002-v3/operator-final-proof.json
+SHA2b810cfd4f8a9aecdeee8886f13f951129903a3dbeae9bfe359d3f67f97191d6.
+Owned LOCAL208/keeper66423 cleaned; operator completed/native lease returned.
+
+Human stopped ALL supporting research and teams; main supervisor verified
+research monitorPAUSED, stop latchtrue and all research CPUgroups absent,
+checkpointee1010f. QAT/prep/necessary operator and implementation support remain
+active, protected through usage/reset/available credits; no purchase/reset redemption.
+SAME QAT15minute/prep15minute monitors preserved.
+
+Prep SAME Luna now owns exact09 preparation-only recovery. Fresh20:56:51UTC
+preflight passes frozen14/runtime7/Git4/remote_job source, retained353/10,000train/
+1,002dev/zero/no finalreceipt,09unused IDs/oldgroups gone/current hardware/floors.
+Current Windows .wslconfig is read-verified memory20GB/instanceIdleTimeout=-1,
+UbuntuRunning/sameboot. A NEW CPU-only90second disconnect proof is in flight
+before final admission/budget debit and exact --resume --prepare-only launch
+under300sstopgrace. No recovery actual PID, model smoke or optimizer update is
+verified at this checkpoint. No optional server-build delay or redundant approval.
+
+Necessary new-run corpus reuse integrated/pushed1cb2999 from930e50c.
+Root independently38launcher tests pass; author and Luna review/lint/diff pass.
+ScriptSHA9f7ef9f2905a4b6f1d2d99f39ebec7b64053ca0c81a22b05fce81cb4d1f8f515;
+testSHAe60377e630fac7fd7b93672b50554b96bcea8a8e28d65829bfb516a8428ce3e4.
+New --prepared-run-dir/--prepared-ready-sha256 path skips recapture ONLY after
+complete stopped original preparation/zero checkpoint/source/smoke/coverage/
+fulltrain+dev metadata joins and independent A8/A1 provider/source digest audit.
+Current actor native/profile metadata may differ; frozen corpus/model/stages/dev/
+coverage/hardware stay exact. New lanes/smoke/save/current runtime gates still run;
+old optimizer is never resumed under changed source. Original remote prep untouched.
+
+Next: verify actual09 prep-only start/durability; coordinate resource-safe CPUserver03
+from accepted packet AFTER fixture return and phase admission; prepare current
+server/model sources from authenticated owner records; finish referenceA8/A1
+current actor/recipe/model/backward/memory/timing/save-resume and exact fullcorpus
+receipt joins, then launch new source-bound training without optional studies.
