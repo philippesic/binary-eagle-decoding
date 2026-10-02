@@ -102,14 +102,15 @@ Local phase-appropriate early-validation hold planning resumes under existing
 human authorization, with fresh occupancy/resource/posthold grant still required.
 [Checkpoint](goals/qat-optimization-readiness.md#stale-heartbeat-classified-as-active-cpu-audits--october2-1307-utc).
 
-**Reviewed preparation reservation04, October2 13:42 UTC:** the validation
-owner accepted the immutable hold/return guard and one fresh acquisition under
-the human's early-validation scope. Same preparation Luna is staging small
-hash-bound transport chunks; no hold/grant or validation job exists yet.
-Readiness_complete CPU provider audits retain full353/10,000train/1,002dev,
-zero updates and the classified stale heartbeat. Published15fbbd6 records
-CPU-counter monitoring and the prospective audit reuse proposal; frozen code
-and recovery budget remain unchanged. [Checkpoint](goals/qat-optimization-readiness.md#reviewed-provider-audit-reservation04--october2-1342-utc).
+**Reservation04 closed, October2 13:56 UTC:** original preparation child676
+resumed at13:56:16.319110,29seconds before its hard deadline; same supervisor
+and process identities, +199CPUticks after2seconds. No validation test was
+launched: coordination/receipt processing consumed the available fixture window,
+so its grant was revoked and cancellation acknowledged before fresh guarded
+return. Full353/10,000train/1,002dev and zero updates remain; one CPU checker
+still flags the same stale provider-audit heartbeat, with active work verified.
+GPU belongs to preparation again; SAME15minute monitorACTIVE, no recovery/restart.
+[Checkpoint](goals/qat-optimization-readiness.md#reservation04-returned-before-deadline--october2-1356-utc).
 
 **Validation task rotation at a safe boundary:** after two compactions, the
 validation/training owner transferred to acknowledged successor

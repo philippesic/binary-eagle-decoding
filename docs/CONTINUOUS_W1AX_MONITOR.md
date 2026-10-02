@@ -26,6 +26,31 @@ errors or absent progress require classification. No extra log/GPU/resource
 query while ordinary progress is understood. A validation planning/acquisition/
 return operator already active suppresses duplicate tick operators.
 
+## Provider-audit reservation04 closed — 2026-10-02 13:56 UTC
+
+One verified SIGSTOP held original676 from13:46:45UTC, with hard13:56:45deadline.
+All source/runtime/process/phase/resource gates passed; actual receipt SHA was
+verified from preserved raw Python JSON. No validation test launched: owner
+revoked the grant when120seconds plus180seconds return reserve no longer fit,
+and validation owner+operator acknowledged no GO/SSH/jobs or late dispatch.
+Fresh return verified no planned job states/groups/survivors and compute apps
+empty, unchanged frozen identity and same stopped child before one SIGCONT.
+Original676 resumed13:56:16.319110UTC,29seconds before deadline; +199CPUticks/2s.
+Same supervisor/server live; all LOCAL transports closed. Preparation ownsGPU.
+
+One post-resume CPU checker still reported ONLY the same stale provider-audit
+heartbeat; keep healthy=false and its previously notified fingerprint. Full353/
+10,000train/1,002dev, zero updates and absent finalreceipt remain. Preserve held
+observations separately; no restart/recovery charge/timeout change or completion
+claim. Lease is returned_resumed_no_validation_launched, SAME monitorACTIVE.
+
+**JSON fidelity:** MCP/JavaScript decode-and-reserialize can change integral
+float representation, causing a canonical receipt hash mismatch. Hash actual
+raw receipt bytes or decode the preserved original base64 payload in Python and
+use the producer's exact serialization. Never hash a normalized displayed/JS
+object and then weaken the guard when it differs. Request04 raw operation and
+receipts are preserved in ignored provider-audit-reservation-04/.
+
 ## Previous verified lease return — 2026-10-02 09:57 UTC
 
 Both validation reservations are CLOSED. The SAME supervisor08 preparation

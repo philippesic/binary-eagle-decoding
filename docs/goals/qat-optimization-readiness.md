@@ -1522,3 +1522,58 @@ At this checkpoint staging is pending/in progress, no verified hold/grant,
 no validation job and no preparation completion. Next action one actual
 acquisition outcome, immediate owner coordination, then verified same-group
 return if granted. Same15minute monitor remainsACTIVE; RTX2080Ti paused.
+
+
+## Reservation04 returned before deadline — October2 13:56 UTC
+
+The sole pinned preparation Luna health_20261002_1256 staged13 <=900byte chunks
+and verified exact helper/config hashes, then reread shared registry/pause and
+ran ONE acquisition. Hold started13:46:45.565648UTC; deadline13:56:45.565648UTC.
+Original676/PGID676/start85132 stopped;674/start85124 and673/start85124 stayed
+live. Full353/10,000train/1,002dev, preparing/readiness_complete, zero/models{},
+coverage/finalreceipt absent, CPU activity, frozen identities and7runtime pins/
+FTZ order/new-bin ldd passed. Actual resource checks before/after SIGSTOP passed:
+compute apps empty, utilization0%,12GiB GPU/14GiB host/8GiB disk floors.
+Actual hold receipt SHA
+ e415cd7449e451978c3bc489005c07c074167869b2501d9ab827b6bc7bcf011b.
+
+Raw return/acquisition proofs live under ignored
+runs/luna-continuous-a8-a1-20260929/provider-audit-reservation-04/.
+Receipt reconstruction from a JS-normalized decoded object did not match,
+because JSON round trips can change integral float representation. Decode the
+PRESERVED original OWNER_OPERATION_B64 in Python before hashing canonical
+receipt bytes, or hash actual preserved raw receipt bytes. Actual Python bytes
+matched the guard's64hex SHA; no receipt gate was relaxed or remote retry made.
+
+A time-bounded grant was sent immediately after raw receipt validation; the
+remaining window soon could not fit120second fixture plus180second return
+reserve. Owner revoked launch and validation owner+sole validation Luna explicitly
+acknowledged no GPU GO/SSH/query/job was ever issued and no late dispatch/renewal.
+Neither planned native01 nor backendops01 run was created. CUDA retest remains
+pending; no numerical/model/backward/readiness/optimizer proof follows. Receipt
+and coordination overhead consumed this short slot; preparation state was kept.
+
+The SAME preparation Luna ran the pre-staged700character return command ONCE.
+Fresh matching receipt/frozen identities/all-members-T/status/zero/resource
+checks passed; planned validation states, groups and command survivors were
+empty. Actual pre-return RTX5080CC12.0, compute apps empty/utilization0%,
+12,751MiB free. One SIGCONT at13:56:16.319110UTC,29.246538seconds BEFORE deadline,
+resumed original676R/start85132 under same674/673. CPUticks+199 in2seconds.
+Return receipt SHA
+ 5b4f5f308728e0469999bde94afd3cf2436b1399c9f2d5cb4fdb83a580840d44
+independently verified from actual preserved Python/raw bytes. Both LOCAL
+transports closed/absent; protected host tmux/panes/server untouched.
+
+Post-resume process observation13:56:18.338961UTC; exactlyone unchanged CPU
+checker ran after that and before13:56:18.381733UTC. Exit2, sole SAME stale
+heartbeat12:19:56UTC warning, healthy=false retained; preparing/readiness_complete,
+full353/10,000train/1,002dev, models{}/updates0, no checkpoint/coverage/finalreceipt.
+Active CPU progress is classified separately; do not flip checker health or
+recover/restart this live job. Lease returned_resumed_no_validation_launched;
+held observation archived separately from running-health timestamp. No budget
+charge/source/data/math/config/precision/cap/WSL change. Same monitor readback
+ACTIVE/every15minutes/target prepowner; RTX2080Ti stays paused. No new schedule,
+automatic lease retry, expiry-based resume, implicit renewal or training start.
+Next normal one-query tick compares CPU counters and watches full preparation
+endpoint. Future validation needs separately coordinated fresh ownership and
+sufficient execution/return time; current frozen preparation remains sole owner.
