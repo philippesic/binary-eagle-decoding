@@ -4,6 +4,20 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
+## New-source CPU validation packet accepted — October 2, 22:47 UTC
+
+The executable new-source staging/configuration packet passed 18 tests under
+both root and independent review. Its 11 file hashes match. The sole operator
+is authorized to run it after static server04 returns, with fresh resource and
+ownership checks. It validates actual retained payloads on CPU before any old09
+teardown; it does not construct models or permit optimizer updates.
+
+Fresh server04 preflight at 22:42 UTC verified recovery09 at audit139/353, all
+retained captures, zero updates, exact process/source/runtime identities and
+19.44 GB available host memory. A new five-minute CPU admission was issued;
+actual server04 start/result remains pending. QAT optimizer training has not
+started. [Execution packet checkpoint](goals/qat-optimization-readiness.md#new-source-cpu-validation-packet-accepted--october-2-2247-utc).
+
 ## Historical full audit pass verified — October 2, 22:26 UTC
 
 The actual read-only inventory matches all 353 manifests to the earlier completed

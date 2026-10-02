@@ -3071,3 +3071,74 @@ zero-save/finalready, separatecurrent9e2actualmodel/recipe/resource/save-resume
 andQ4development gates remain before actualoptimizertraining. No04actualPID/result,
 newsourceCPUpayloadverification/modelstart oroptimizerstep yet at this checkpoint.
 QATGoal/SAMEheartbeats active, researchstopped and2080Tipaused; no rootSSH/operator.
+
+
+## New-source CPU validation packet accepted — October 2, 22:47 UTC
+
+User check-in asks whetherQAT runs; root answereddirectly: optimizertraining
+hasNOTstarted/zero updates; full10kTRAIN/1002development and353oldsemanticpass
+proof verified; runtime/currentmodel/backward/memory/checkpoint/development gates
+pending. No measuredstartETA, no intent/PIDstatus usedasactualtraining claim.
+Previousgoalturn was progress: publicreusetests/source and actual353proof changed
+nextaction. Thiscontinuation creates/tests concreteexecutableNEWsource validation
+and obtains freshactualold09/source/resource evidence; goalremains fullscopeACTIVE.
+
+CPU04 delayed because its invalidtemplate was correctly ungranted and couldnot
+reuse03admission. Parentowns freshspecificgrant underrootGO. Literalpreflight
+adaptation caughtlocaldraftCPU03returnpath corruption BEFOREdispatch; onlynew
+candidatejob/output/helper/session changes accepted, oldreceiptsremain exact.
+ACTUAL22:42:23UTC CPU04preflightPASS raw
+ed851f9da455abecf089f6cc1df9a814f8fc4ec6b0d10bd3e25f84c53265f8d6,
+proof6542f7dff2d8ee61b53f3d4b90bfc2d869ad08deaaf159366ed2e858811146f7.
+Same09boot/ns/server2712/sup2713/child2714exactbirths, teacher_capture_audit139/353,
+fullcapturesretained/models{}/optimizerfalse, MemAvailable19,435,921,408B;
+14frozen+7runtime+4HEAD/unused04/d884fixture andf0ee05CPU03returns PASS.
+Newpacket-specific04grantSHA
+8bab2bba383b60705b8f0a396ea0f1dfbf5a4092683fa14e06ca311a5297e86f
+issued22:43:24→22:48:24UTC. SAMEsoleLuna stage/static/collectauthorizedimmediately;
+actual04PID/result notyet reported atcheckpoint. Observationexpiry is notterminal
+or restart authority. Parent remainssoleoperator, no rootSSH/GPUduplicates.
+
+Concrete NEWignoredpacket readyatretained-capture-adoption-20261002-01/
+cpu-staging-validation-20261002-01. Manifest
+85c9c9a2de8232b7246ee8094fba4bd7219eecf2b7bfd9ceeb39913c7f2b11a9,
+11exactfiles; root18+Luna18guards+manifest/source/group/budgetreview PASS.
+Runner34fcf75603f95781443da93c3a78bf235a5af8d0342099b6d2c3531221b9dc81,
+planb813d0c54ffcfa90ac2939f92160d4e0f9cc3595011526e4a3fb6b1269914a31,
+stagebuilderdf4016db37adbceb01162c3da60624a86c765b1a2fa0fbd964e4f690b6898678,
+invalidtemplate893f1cf4f4f5435094fea72759240dcc12603b884a49f8d3c281cb85a3a23f06.
+Copies ACTUALe148inventory/04b717typedimport/e77operation/b89completion verbatim.
+Rootfullsource review andphysical localGitlinkedworktree proof confirmsperworktree
+Gitmodules path; proofworktreeremovedclean. Currenttraining_runtime_identity(cpu)
+avoidsCUDAgetters; correctscope permits actualmodel/capturepayload SHAreads,
+prohibits model/native/serverexecution/CUDA/context/optimizer/old09STOP/signals/writes.
+
+SAMEoperatorconditionalROOTCPUconfigGO shippedAFTER04terminal+ownedcleanup and
+freshold09phase/kernel/pause/MemAvailable14GiB/disk10GiB/RAM-IOcoordination.
+MintNEW<=300specificpacket/input/boot/sourceadmission; neverreuseinvalidtemplate.
+build_stage_request.py withexactnewadmissionSHA/unusedabsoluteprefix produces
+selfcontainedstandardWindows→WSLUbuntu stdin/zlib/base64 stage/launchrequest;
+Linuxstageentry60s insideWSL, trustedknownalias43 andactualdestinationfromfresh
+registry/strictknownkey/noUpdate. Aliasprovenaccepted03transport/successfule148,
+notguessed; no addedhostprobe/keyedit needed. Allstagebytes androotpermission,
+old09births/frozen14/RAM beforeNEWdirectory creation; no actorcheckout alreadyexists.
+
+NEWremote_job retained-capture-cpu-validation-20261002-01 outer1200s TERM/kill10/
+grace10. Fetchpublic6f60s/worktree60/vendor9e2init120/CPUprobe45/localGitguards5;
+bootstrap MUSTfinish<=180s BEFORE900sconfigvalidation, reserving120finalevidence.
+Currentdetached6f/nativegitlink9e2/cleanseparatevendorGitmetadata/28sourcepins,
+sharedvenv exactPython/Torch/NumPy/currentROOTsrc+gguf-py precedence required.
+CPUprepare-retained-config validates ALLactualpayload/source/gate/historyjoins,
+writesNEWinputs/retained-stages.json onlyafterpass. Oldsource7547/b4+82fcontrol
+unchanged before/after; everycommand staysownCPUgroup. Failurespreserveoutputs/
+checkout; collectorrequiresexactterminalstate/emptyowngroup/absentsupervisor/
+currentvalidatedconfigSHA/old09stillmatching beforeCPUownership return.
+No actualCPUconfigjob/staging/payloadvalidation yet atcheckpoint. No newtracked
+feature/research/parallelfileedit; workercomplete/ignoredpacket preserved.
+
+Next: actual04staticinventory andCPUreturn; exactNEWsource/configCPUjob andactual
+payload/configresult; rootaccepts concretevalidatedNEWsource/config before exact
+09gracefulstop+completegroup/GPUteardown+exclusive NEW--prepare-only. Thenfull
+provider/coverage/currentpairedmodelsmoke/zero-save/finalready andcurrent9e2
+nativeactor/model/backward/memory/timing/save-resume/Q4development gates, then
+alreadyauthorizedoptimizertraining and actualcheckpoint/development progress.
