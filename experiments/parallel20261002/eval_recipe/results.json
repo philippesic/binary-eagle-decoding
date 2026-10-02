@@ -1,0 +1,509 @@
+{
+  "gate": {
+    "atol": 3e-05,
+    "exact_deployment_digest": true,
+    "rtol": 3e-06
+  },
+  "hardware": "Apple Silicon CPU; no Metal/CUDA execution or discovery",
+  "native_quality_or_performance_claim": false,
+  "rows": [
+    {
+      "bits": 8,
+      "checkpoint_sha256": "44899c3ae35abecccbd4b8ad17f8364f58fc8806532947bf306ed22354f0cff7",
+      "deployed_recipe_fields": {
+        "activation_quantizers": null,
+        "affine_weights": null,
+        "fusion_correction": null
+      },
+      "fixed_constructor_error": null,
+      "manifest_sha256": "aa73148f18cc893ab891fba88e48819ff0f667bf519a70f908c5d0d7287f5ecb",
+      "max_projection_output_abs_error": 0.0,
+      "max_recurrent_logits_abs_error": 0.0,
+      "profile": "baseline",
+      "replay_deployment_sha256": "e3cfac97835b932b760c8b2ac8882fe62d6c610ac0c6bd6ddc0489cc38462fe7",
+      "schema_version": 2,
+      "source_deployment_sha256": "e3cfac97835b932b760c8b2ac8882fe62d6c610ac0c6bd6ddc0489cc38462fe7"
+    },
+    {
+      "bits": 8,
+      "checkpoint_sha256": "9f3271f1b9485881166eeeb63ee56c4552da1083f42d2cfecfe5fc5c153631c8",
+      "deployed_recipe_fields": {
+        "activation_quantizers": {
+          "boundaries": {
+            "attn_output": {
+              "bits": 8,
+              "clip_ratio": 0.7310000061988831,
+              "threshold_delta": 0.0
+            },
+            "down": {
+              "bits": 8,
+              "clip_ratio": 0.7310000061988831,
+              "threshold_delta": 0.0
+            },
+            "fc": {
+              "bits": 8,
+              "clip_ratio": 0.7310000061988831,
+              "threshold_delta": 0.0
+            },
+            "gate_up": {
+              "bits": 8,
+              "clip_ratio": 0.7310000061988831,
+              "threshold_delta": 0.0
+            },
+            "head": {
+              "bits": 8,
+              "clip_ratio": 0.7310000061988831,
+              "threshold_delta": 0.0
+            },
+            "qkv": {
+              "bits": 8,
+              "clip_ratio": 0.7310000061988831,
+              "threshold_delta": 0.0
+            }
+          },
+          "version": 1
+        },
+        "affine_weights": null,
+        "fusion_correction": null
+      },
+      "fixed_constructor_error": "unknown or mismatched attached activation quantizer",
+      "manifest_sha256": "d0bdb992e96b2f1fa99f883489f14179441787a9b716eb8002148ab0c274e903",
+      "max_projection_output_abs_error": 0.0,
+      "max_recurrent_logits_abs_error": 0.0,
+      "profile": "learned-activations",
+      "replay_deployment_sha256": "d1d1f3ec92ccee3cbcd51ff7238e899eafac00766234acbc6a91ab4ebcba1c9f",
+      "schema_version": 3,
+      "source_deployment_sha256": "d1d1f3ec92ccee3cbcd51ff7238e899eafac00766234acbc6a91ab4ebcba1c9f"
+    },
+    {
+      "bits": 8,
+      "checkpoint_sha256": "04c1f398cd2a9978d9b4a8f9fbd5e72df01fe4c98db14f66766c966b51213547",
+      "deployed_recipe_fields": {
+        "activation_quantizers": null,
+        "affine_weights": null,
+        "fusion_correction": {
+          "arithmetic": "raw_f32_v_f16_dot_f32_u_f16_dot_f32_add_base_f32_bias_f32",
+          "bias_bound": null,
+          "bias_name": null,
+          "rank": 1,
+          "u_name": "fc.correction_u.weight",
+          "v_name": "fc.correction_v.weight",
+          "version": 1
+        }
+      },
+      "fixed_constructor_error": "checkpoint fusion correction differs from attached config",
+      "manifest_sha256": "b6d094bfb1bf0aa970333d80ff1065e168f052ce2648907aac66590cceab43b5",
+      "max_projection_output_abs_error": 0.0,
+      "max_recurrent_logits_abs_error": 0.0,
+      "profile": "fusion-rank1",
+      "replay_deployment_sha256": "6c0d0e2b776a1af2a342c51ef4bc3faa914bb934b2fd562c2425921e208617d2",
+      "schema_version": 4,
+      "source_deployment_sha256": "6c0d0e2b776a1af2a342c51ef4bc3faa914bb934b2fd562c2425921e208617d2"
+    },
+    {
+      "bits": 8,
+      "checkpoint_sha256": "f47a242c7bedbe117619dbbe60177bd75d825ff9806515b7ca2202dfeb1cc48a",
+      "deployed_recipe_fields": {
+        "activation_quantizers": null,
+        "affine_weights": null,
+        "fusion_correction": {
+          "arithmetic": "raw_f32_v_f16_dot_f32_u_f16_dot_f32_add_base_f32_bias_f32",
+          "bias_bound": null,
+          "bias_name": null,
+          "rank": 4,
+          "u_name": "fc.correction_u.weight",
+          "v_name": "fc.correction_v.weight",
+          "version": 1
+        }
+      },
+      "fixed_constructor_error": "checkpoint fusion correction differs from attached config",
+      "manifest_sha256": "ad9105d464dfbd5f542cb0853a5ecfbd1d26520b69533ad668ee74ed40d93442",
+      "max_projection_output_abs_error": 0.0,
+      "max_recurrent_logits_abs_error": 0.0,
+      "profile": "fusion-rank4",
+      "replay_deployment_sha256": "c5f21bb161908b4a3e1cad3f53e1e57cbf2636313569c5b09d40ab7dfed9f190",
+      "schema_version": 4,
+      "source_deployment_sha256": "c5f21bb161908b4a3e1cad3f53e1e57cbf2636313569c5b09d40ab7dfed9f190"
+    },
+    {
+      "bits": 8,
+      "checkpoint_sha256": "0a0b7f608867ddbe576a2fd20b8aaa3dcec91b1a2ac7da63f508d2a455ad91af",
+      "deployed_recipe_fields": {
+        "activation_quantizers": null,
+        "affine_weights": {
+          "arithmetic": "integer_dot_alpha_beta_plus_integer_sum_midpoint_beta_before_bias_f32",
+          "coverage": "fusion",
+          "tensors": {
+            "fc": "fc.w1ax_midpoint"
+          },
+          "version": 1
+        },
+        "fusion_correction": null
+      },
+      "fixed_constructor_error": "checkpoint affine midpoint coverage differs from attachment",
+      "manifest_sha256": "27e2e27821c6b8a062f1ab394f8c1aa1f6114bc6b7555c60da63904493ce7721",
+      "max_projection_output_abs_error": 0.0,
+      "max_recurrent_logits_abs_error": 0.0,
+      "profile": "affine-fusion",
+      "replay_deployment_sha256": "467e1fe48ba621f5bc899138d2cc157e81d275e5ab359e9bf71886fa0fe53acf",
+      "schema_version": 5,
+      "source_deployment_sha256": "467e1fe48ba621f5bc899138d2cc157e81d275e5ab359e9bf71886fa0fe53acf"
+    },
+    {
+      "bits": 8,
+      "checkpoint_sha256": "f6f9c1e735820ab328597b52f2262dca9ab0a4ea09e7bcd0979f54fab73c2792",
+      "deployed_recipe_fields": {
+        "activation_quantizers": null,
+        "affine_weights": {
+          "arithmetic": "integer_dot_alpha_beta_plus_integer_sum_midpoint_beta_before_bias_f32",
+          "coverage": "all",
+          "tensors": {
+            "blk.0.attn_k": "blk.0.attn_k.w1ax_midpoint",
+            "blk.0.attn_output": "blk.0.attn_output.w1ax_midpoint",
+            "blk.0.attn_q": "blk.0.attn_q.w1ax_midpoint",
+            "blk.0.attn_v": "blk.0.attn_v.w1ax_midpoint",
+            "blk.0.ffn_down": "blk.0.ffn_down.w1ax_midpoint",
+            "blk.0.ffn_gate": "blk.0.ffn_gate.w1ax_midpoint",
+            "blk.0.ffn_up": "blk.0.ffn_up.w1ax_midpoint",
+            "fc": "fc.w1ax_midpoint",
+            "output": "output.w1ax_midpoint"
+          },
+          "version": 1
+        },
+        "fusion_correction": null
+      },
+      "fixed_constructor_error": "checkpoint affine midpoint coverage differs from attachment",
+      "manifest_sha256": "985233f86dece66077bdfbdf5bd769f6dbe78938748fb245da62b40792c4fa54",
+      "max_projection_output_abs_error": 0.0,
+      "max_recurrent_logits_abs_error": 0.0,
+      "profile": "affine-all",
+      "replay_deployment_sha256": "7258497b50bef9ca77748a3ec4d23bfa0605397263af8ca88cca7831d1e79cba",
+      "schema_version": 5,
+      "source_deployment_sha256": "7258497b50bef9ca77748a3ec4d23bfa0605397263af8ca88cca7831d1e79cba"
+    },
+    {
+      "bits": 8,
+      "checkpoint_sha256": "43b832ee2e55d7b7e3afc53d517ad6e410ab2eb06290ae9f60f66b481acb61d8",
+      "deployed_recipe_fields": {
+        "activation_quantizers": {
+          "boundaries": {
+            "attn_output": {
+              "bits": 8,
+              "clip_ratio": 0.7310000061988831,
+              "threshold_delta": 0.0
+            },
+            "down": {
+              "bits": 8,
+              "clip_ratio": 0.7310000061988831,
+              "threshold_delta": 0.0
+            },
+            "fc": {
+              "bits": 8,
+              "clip_ratio": 0.7310000061988831,
+              "threshold_delta": 0.0
+            },
+            "gate_up": {
+              "bits": 8,
+              "clip_ratio": 0.7310000061988831,
+              "threshold_delta": 0.0
+            },
+            "head": {
+              "bits": 8,
+              "clip_ratio": 0.7310000061988831,
+              "threshold_delta": 0.0
+            },
+            "qkv": {
+              "bits": 8,
+              "clip_ratio": 0.7310000061988831,
+              "threshold_delta": 0.0
+            }
+          },
+          "version": 1
+        },
+        "affine_weights": {
+          "arithmetic": "integer_dot_alpha_beta_plus_integer_sum_midpoint_beta_before_bias_f32",
+          "coverage": "all",
+          "tensors": {
+            "blk.0.attn_k": "blk.0.attn_k.w1ax_midpoint",
+            "blk.0.attn_output": "blk.0.attn_output.w1ax_midpoint",
+            "blk.0.attn_q": "blk.0.attn_q.w1ax_midpoint",
+            "blk.0.attn_v": "blk.0.attn_v.w1ax_midpoint",
+            "blk.0.ffn_down": "blk.0.ffn_down.w1ax_midpoint",
+            "blk.0.ffn_gate": "blk.0.ffn_gate.w1ax_midpoint",
+            "blk.0.ffn_up": "blk.0.ffn_up.w1ax_midpoint",
+            "fc": "fc.w1ax_midpoint",
+            "output": "output.w1ax_midpoint"
+          },
+          "version": 1
+        },
+        "fusion_correction": {
+          "arithmetic": "raw_f32_v_f16_dot_f32_u_f16_dot_f32_add_base_f32_bias_f32",
+          "bias_bound": 0.1,
+          "bias_name": "fc.correction_bias",
+          "rank": 4,
+          "u_name": "fc.correction_u.weight",
+          "v_name": "fc.correction_v.weight",
+          "version": 1
+        }
+      },
+      "fixed_constructor_error": "unknown or mismatched attached activation quantizer",
+      "manifest_sha256": "1ccba7f7079c81f14346b8c6c13c577af0b09a58c1e30119afd0aed62c1f8464",
+      "max_projection_output_abs_error": 0.0,
+      "max_recurrent_logits_abs_error": 0.0,
+      "profile": "combined-contract-smoke",
+      "replay_deployment_sha256": "b60325832433714113772c9675b7476c888d8ceaed1c0d156b2a34da7e753f0a",
+      "schema_version": 5,
+      "source_deployment_sha256": "b60325832433714113772c9675b7476c888d8ceaed1c0d156b2a34da7e753f0a"
+    },
+    {
+      "bits": 1,
+      "checkpoint_sha256": "64a690a681ad4c4be5aa982f05a87cb24963a43329ddfd11e39484398056d770",
+      "deployed_recipe_fields": {
+        "activation_quantizers": null,
+        "affine_weights": null,
+        "fusion_correction": null
+      },
+      "fixed_constructor_error": null,
+      "manifest_sha256": "db61a64cbe255caabdd94b7e9476a54ed9f117e0bb64cb96b8c1e33efa6439f6",
+      "max_projection_output_abs_error": 0.0,
+      "max_recurrent_logits_abs_error": 0.0,
+      "profile": "baseline",
+      "replay_deployment_sha256": "d899e59e0971adf53de76f2c67f8f56c75b62ccbb2c60348bfcb10d23f078f44",
+      "schema_version": 2,
+      "source_deployment_sha256": "d899e59e0971adf53de76f2c67f8f56c75b62ccbb2c60348bfcb10d23f078f44"
+    },
+    {
+      "bits": 1,
+      "checkpoint_sha256": "fdda55ad5d28bb97454d444dc92f4c908c8524516295b857053be9f677f4bd84",
+      "deployed_recipe_fields": {
+        "activation_quantizers": {
+          "boundaries": {
+            "attn_output": {
+              "bits": 1,
+              "clip_ratio": 1.0,
+              "threshold_delta": 0.1476999968290329
+            },
+            "down": {
+              "bits": 1,
+              "clip_ratio": 1.0,
+              "threshold_delta": 0.18170000612735748
+            },
+            "fc": {
+              "bits": 1,
+              "clip_ratio": 1.0,
+              "threshold_delta": 0.1137000024318695
+            },
+            "gate_up": {
+              "bits": 1,
+              "clip_ratio": 1.0,
+              "threshold_delta": 0.1647000014781952
+            },
+            "head": {
+              "bits": 1,
+              "clip_ratio": 1.0,
+              "threshold_delta": 0.19869999587535858
+            },
+            "qkv": {
+              "bits": 1,
+              "clip_ratio": 1.0,
+              "threshold_delta": 0.1307000070810318
+            }
+          },
+          "version": 1
+        },
+        "affine_weights": null,
+        "fusion_correction": null
+      },
+      "fixed_constructor_error": "unknown or mismatched attached activation quantizer",
+      "manifest_sha256": "eb144f21073b243c9ebe0cfb7442f52ec9f1a788cbcc69bc0963f9090ba2d661",
+      "max_projection_output_abs_error": 0.0,
+      "max_recurrent_logits_abs_error": 0.0,
+      "profile": "learned-activations",
+      "replay_deployment_sha256": "a621c074b75e9b48cd151183207af47d3e694961e6c4a2b9172817b90430cce1",
+      "schema_version": 3,
+      "source_deployment_sha256": "a621c074b75e9b48cd151183207af47d3e694961e6c4a2b9172817b90430cce1"
+    },
+    {
+      "bits": 1,
+      "checkpoint_sha256": "4449aa76ae26fa59469a395dcc0e21946b9272411b67c756edc530d0e10b2815",
+      "deployed_recipe_fields": {
+        "activation_quantizers": null,
+        "affine_weights": null,
+        "fusion_correction": {
+          "arithmetic": "raw_f32_v_f16_dot_f32_u_f16_dot_f32_add_base_f32_bias_f32",
+          "bias_bound": null,
+          "bias_name": null,
+          "rank": 1,
+          "u_name": "fc.correction_u.weight",
+          "v_name": "fc.correction_v.weight",
+          "version": 1
+        }
+      },
+      "fixed_constructor_error": "checkpoint fusion correction differs from attached config",
+      "manifest_sha256": "541cb7ec60e4c7e72dd1322de46621b4578fa298501920c9dbaf1baeba3ecd7f",
+      "max_projection_output_abs_error": 0.0,
+      "max_recurrent_logits_abs_error": 0.0,
+      "profile": "fusion-rank1",
+      "replay_deployment_sha256": "1743200c74739169c25a57b8a40fb1c6eeef905865aabdf8bcee953c2ff390ee",
+      "schema_version": 4,
+      "source_deployment_sha256": "1743200c74739169c25a57b8a40fb1c6eeef905865aabdf8bcee953c2ff390ee"
+    },
+    {
+      "bits": 1,
+      "checkpoint_sha256": "b5c24eb1814e358acd9fb99861755d6365eb02b444ee72b57da5cc21d5d8c782",
+      "deployed_recipe_fields": {
+        "activation_quantizers": null,
+        "affine_weights": null,
+        "fusion_correction": {
+          "arithmetic": "raw_f32_v_f16_dot_f32_u_f16_dot_f32_add_base_f32_bias_f32",
+          "bias_bound": null,
+          "bias_name": null,
+          "rank": 4,
+          "u_name": "fc.correction_u.weight",
+          "v_name": "fc.correction_v.weight",
+          "version": 1
+        }
+      },
+      "fixed_constructor_error": "checkpoint fusion correction differs from attached config",
+      "manifest_sha256": "dc9e91418a2bc0ce5fb95af146a5e02ea46580ff758e670aca379ebff2ba9bda",
+      "max_projection_output_abs_error": 0.0,
+      "max_recurrent_logits_abs_error": 0.0,
+      "profile": "fusion-rank4",
+      "replay_deployment_sha256": "5a8dfcbe6ad8c344b91bcf0c58ac5541842b0d1d1d09bcb5d3a5192d7033f910",
+      "schema_version": 4,
+      "source_deployment_sha256": "5a8dfcbe6ad8c344b91bcf0c58ac5541842b0d1d1d09bcb5d3a5192d7033f910"
+    },
+    {
+      "bits": 1,
+      "checkpoint_sha256": "90a15999352491ee8151c3e0c10f474be4a642df6a5b1e9a041c6d163fb385e7",
+      "deployed_recipe_fields": {
+        "activation_quantizers": null,
+        "affine_weights": {
+          "arithmetic": "integer_dot_alpha_beta_plus_integer_sum_midpoint_beta_before_bias_f32",
+          "coverage": "fusion",
+          "tensors": {
+            "fc": "fc.w1ax_midpoint"
+          },
+          "version": 1
+        },
+        "fusion_correction": null
+      },
+      "fixed_constructor_error": "checkpoint affine midpoint coverage differs from attachment",
+      "manifest_sha256": "3ba9499a3ffaa157e67f28af215d9bdb088da6205c4b5045f3cb31b037c6e299",
+      "max_projection_output_abs_error": 0.0,
+      "max_recurrent_logits_abs_error": 0.0,
+      "profile": "affine-fusion",
+      "replay_deployment_sha256": "86247395548213ead5750daea3bb79a1cf1aa1e32484e8f40e03f7b2bee52c18",
+      "schema_version": 5,
+      "source_deployment_sha256": "86247395548213ead5750daea3bb79a1cf1aa1e32484e8f40e03f7b2bee52c18"
+    },
+    {
+      "bits": 1,
+      "checkpoint_sha256": "7130248e8d1b34d7394ba0962fc8942348256dac171eab5a3b2f908c663a0349",
+      "deployed_recipe_fields": {
+        "activation_quantizers": null,
+        "affine_weights": {
+          "arithmetic": "integer_dot_alpha_beta_plus_integer_sum_midpoint_beta_before_bias_f32",
+          "coverage": "all",
+          "tensors": {
+            "blk.0.attn_k": "blk.0.attn_k.w1ax_midpoint",
+            "blk.0.attn_output": "blk.0.attn_output.w1ax_midpoint",
+            "blk.0.attn_q": "blk.0.attn_q.w1ax_midpoint",
+            "blk.0.attn_v": "blk.0.attn_v.w1ax_midpoint",
+            "blk.0.ffn_down": "blk.0.ffn_down.w1ax_midpoint",
+            "blk.0.ffn_gate": "blk.0.ffn_gate.w1ax_midpoint",
+            "blk.0.ffn_up": "blk.0.ffn_up.w1ax_midpoint",
+            "fc": "fc.w1ax_midpoint",
+            "output": "output.w1ax_midpoint"
+          },
+          "version": 1
+        },
+        "fusion_correction": null
+      },
+      "fixed_constructor_error": "checkpoint affine midpoint coverage differs from attachment",
+      "manifest_sha256": "86baf0f5fb9f0786d740a9ae8cbce03aeb7d17c72bdc31019a283c50675f38e3",
+      "max_projection_output_abs_error": 0.0,
+      "max_recurrent_logits_abs_error": 0.0,
+      "profile": "affine-all",
+      "replay_deployment_sha256": "71a4d022a16263f206500f2042169bf88a4cf404daf0225be6f2d796d3f0cf18",
+      "schema_version": 5,
+      "source_deployment_sha256": "71a4d022a16263f206500f2042169bf88a4cf404daf0225be6f2d796d3f0cf18"
+    },
+    {
+      "bits": 1,
+      "checkpoint_sha256": "3f97dc3d279385a9901d4e0ab31a02c3fd287d9a2415e99aeabc5e593df905f6",
+      "deployed_recipe_fields": {
+        "activation_quantizers": {
+          "boundaries": {
+            "attn_output": {
+              "bits": 1,
+              "clip_ratio": 1.0,
+              "threshold_delta": 0.1476999968290329
+            },
+            "down": {
+              "bits": 1,
+              "clip_ratio": 1.0,
+              "threshold_delta": 0.18170000612735748
+            },
+            "fc": {
+              "bits": 1,
+              "clip_ratio": 1.0,
+              "threshold_delta": 0.1137000024318695
+            },
+            "gate_up": {
+              "bits": 1,
+              "clip_ratio": 1.0,
+              "threshold_delta": 0.1647000014781952
+            },
+            "head": {
+              "bits": 1,
+              "clip_ratio": 1.0,
+              "threshold_delta": 0.19869999587535858
+            },
+            "qkv": {
+              "bits": 1,
+              "clip_ratio": 1.0,
+              "threshold_delta": 0.1307000070810318
+            }
+          },
+          "version": 1
+        },
+        "affine_weights": {
+          "arithmetic": "integer_dot_alpha_beta_plus_integer_sum_midpoint_beta_before_bias_f32",
+          "coverage": "all",
+          "tensors": {
+            "blk.0.attn_k": "blk.0.attn_k.w1ax_midpoint",
+            "blk.0.attn_output": "blk.0.attn_output.w1ax_midpoint",
+            "blk.0.attn_q": "blk.0.attn_q.w1ax_midpoint",
+            "blk.0.attn_v": "blk.0.attn_v.w1ax_midpoint",
+            "blk.0.ffn_down": "blk.0.ffn_down.w1ax_midpoint",
+            "blk.0.ffn_gate": "blk.0.ffn_gate.w1ax_midpoint",
+            "blk.0.ffn_up": "blk.0.ffn_up.w1ax_midpoint",
+            "fc": "fc.w1ax_midpoint",
+            "output": "output.w1ax_midpoint"
+          },
+          "version": 1
+        },
+        "fusion_correction": {
+          "arithmetic": "raw_f32_v_f16_dot_f32_u_f16_dot_f32_add_base_f32_bias_f32",
+          "bias_bound": 0.1,
+          "bias_name": "fc.correction_bias",
+          "rank": 4,
+          "u_name": "fc.correction_u.weight",
+          "v_name": "fc.correction_v.weight",
+          "version": 1
+        }
+      },
+      "fixed_constructor_error": "unknown or mismatched attached activation quantizer",
+      "manifest_sha256": "badca961992a20813ac36523442b7d3adbaa8b115b51c6d388695f63a5890125",
+      "max_projection_output_abs_error": 0.0,
+      "max_recurrent_logits_abs_error": 0.0,
+      "profile": "combined-contract-smoke",
+      "replay_deployment_sha256": "d52dbbbf1bb7792fb5c9517e5d3ce5fa328a4eff7a0912e051e0137f16ef6396",
+      "schema_version": 5,
+      "source_deployment_sha256": "d52dbbbf1bb7792fb5c9517e5d3ce5fa328a4eff7a0912e051e0137f16ef6396"
+    }
+  ],
+  "schema": "development_recipe_synthetic_proof_v1",
+  "torch": "2.14.0"
+}

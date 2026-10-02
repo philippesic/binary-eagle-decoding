@@ -1,0 +1,109 @@
+--- a/scripts/w1ax_continuous_stages.py
++++ b/scripts/w1ax_continuous_stages.py
+@@ -1511,6 +1511,67 @@
+     }
+ 
+ 
++def _development_checkpoint_preflight(checkpoint_dir, base_hash):
++    """Validate both deployed recipes/arrays before export or native capture."""
++    from check_continuous_w1ax_readiness import checkpoint_joint_config
++    from export_recurrent_binary import (
++        check_manifest,
++        load_affine_weights,
++        load_checkpoint,
++        load_fusion_correction,
++    )
++
++    published = json.loads((Path(checkpoint_dir) / "manifest.json").read_text())
++    if published.get("schema") != "continuous_joint_w1ax_v1" or set(
++        published.get("exports", {})
++    ) != {"A8", "A1"}:
++        raise ValueError("published checkpoint export inventory is incomplete")
++    for lane in ("A8", "A1"):
++        inventory = published["exports"][lane]
++        if set(inventory) != {"joint.npz", "joint.json"}:
++            raise ValueError("published checkpoint export file inventory differs")
++        for name, expected_digest in inventory.items():
++            path = Path(checkpoint_dir) / lane / name
++            if path.is_symlink() or not path.is_file() or sha256(path) != expected_digest:
++                raise ValueError("published checkpoint export hash mismatch")
++    configs, identities = {}, {}
++    for bits in (8, 1):
++        checkpoint = Path(checkpoint_dir) / f"A{bits}/joint.npz"
++        manifest_path = Path(checkpoint_dir) / f"A{bits}/joint.json"
++        configs[bits] = checkpoint_joint_config(manifest_path, bits, base_hash)
++        manifest = json.loads(manifest_path.read_text())
++        expected = check_manifest(manifest, base_hash)
++        if sha256(checkpoint) != manifest["checkpoint_sha256"]:
++            raise ValueError("continuous precision checkpoint contract differs")
++        correction, affine = manifest.get("fusion_correction"), manifest.get("affine_weights")
++        extras = (
++            load_fusion_correction(checkpoint, correction, expected["fc"][1])
++            if correction is not None
++            else {}
++        )
++        midpoints = load_affine_weights(checkpoint, affine, expected) if affine is not None else {}
++        load_checkpoint(
++            checkpoint, expected, row_scale=True, extra_names=set(extras) | set(midpoints)
++        )
++        quantizers = manifest.get("activation_quantizers")
++        if (
++            quantizers is not None
++            and bits != 1
++            and any(item["clip_ratio"] < 2**-16 for item in quantizers["boundaries"].values())
++        ):
++            raise ValueError("deployed clip parameter is outside trainable quantizer contract")
++        identities[bits] = (sha256(checkpoint), sha256(manifest_path))
++    return configs, identities
++
++
++def _development_checkpoint_unchanged(checkpoint_dir, bits, identities):
++    if identities[bits] != (
++        sha256(Path(checkpoint_dir) / f"A{bits}/joint.npz"),
++        sha256(Path(checkpoint_dir) / f"A{bits}/joint.json"),
++    ):
++        raise ValueError("development checkpoint identity changed after preflight")
++
++
+ def _evaluate_development(config: dict, checkpoint_dir: Path, run_dir: Path) -> dict:
+     """Serialized current-checkpoint loss and native acceptance versus Q4_0.
+ 
+@@ -1528,8 +1589,6 @@
+     from w1a1_eagle.recurrent_loss import supported_prefix_ce
+     from w1a1_eagle.recurrent_provider import audit_provider_round, forward_torch_round
+     from w1a1_eagle.recurrent_qat import (
+-        JointQATConfig,
+-        W1AxContract,
+         install_joint_linears,
+         shared_round_hard_signs,
+     )
+@@ -1548,6 +1607,9 @@
+         "progress_file": str((Path(run_dir) / "status.json").resolve()),
+     }
+     check_stop(run_dir)
++    checkpoint_configs, checkpoint_identities = _development_checkpoint_preflight(
++        checkpoint_dir, sources["sha256"]["base_draft_gguf"]
++    )
+     prompts = Path(config["native_prompts"])
+     if sha256(prompts) != config["native_prompts_sha256"]:
+         raise ValueError("frozen development subset changed")
+@@ -1582,6 +1644,7 @@
+         checkpoint = checkpoint_dir / f"A{bits}/joint.npz"
+         manifest = checkpoint_dir / f"A{bits}/joint.json"
+         exported = folder / "student.gguf"
++        _development_checkpoint_unchanged(checkpoint_dir, bits, checkpoint_identities)
+         export_audit = export_model(
+             Path(sources["base_draft_gguf"]), checkpoint, manifest, exported
+         )
+@@ -1617,7 +1680,10 @@
+         "native_cell": file_record(q4 / "d_d/manifest.json"),
+     }
+     for bits in (8, 1):
+-        qat = JointQATConfig(W1AxContract(bits, "row"), device="cuda:0", allow_accelerator=True)
++        _development_checkpoint_unchanged(
++            checkpoint_dir, bits, checkpoint_identities
++        )
++        qat = replace(checkpoint_configs[bits], device="cuda:0", allow_accelerator=True)
+         provider = StreamingNativeProvider(qat, Path(config["providers_manifest"]))
+         if provider.data_split != "development" or provider.training_eligible:
+             raise ValueError("validation loss cannot use train ownership")
