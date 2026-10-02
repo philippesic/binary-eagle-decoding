@@ -2369,3 +2369,24 @@ floatclones9→0 while exactmetrics/updates/errorordering/boolsunchanged.
 [Report](../../experiments/parallel20261002/step_bookkeeping/report.md);
 unappliedpatch only, noCPU→CUDAclaim. Activationreuse finalownercheckpointpending.
 [Checkpoint](../parallel20261002/supervisor.md#qat-correction-ownership-and-snapshot-evidence--october-2-1921-utc).
+
+
+## Host-save guard and fourth-slate evidence — October 2, 19:32 UTC
+
+QAT-reviewed host-save53c2eaa/bde1144 integrated as d2c4dca/8d17b0e. All five
+file hashes match immutable42-test CPU proof. Admission now includes the largest
+CUDA transfer overlap, preserving host floor,16MiB, CPUtree, resume, smoke and
+math. Actual current-source save/resume resource receipts remain required.
+
+[Activation reuse](../../experiments/parallel20261002/activation_reuse/report.md)
+evidence integrated f1395df; root three tests and independent CLI pass.
+[Snapshot bookkeeping](../../experiments/parallel20261002/step_bookkeeping/report.md)
+evidence b858d33 already passes seven tests/independent CLI. Both remain
+isolated unapplied performance proposals pending QAT adoption/GPU measurement.
+Raw artifacts archived and clean worktrees ready for retirement after push.
+
+Astra's single fifth-batch assessment found no justified new CPU task; waiting
+for actionable evidence while usage/QAT monitoring continue.14% original weekly
+remaining, same reset1791049896. Evaluator source worker separate, host details
+pending, no remote or training-start claim.
+[Checkpoint](../parallel20261002/supervisor.md#fourth-slate-and-host-save-correction-integrated--october-2-1932-utc).

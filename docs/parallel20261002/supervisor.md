@@ -339,3 +339,35 @@ snapshot floatclones9→0, copiedpayload872,939,520B/lane-step, nominalread+writ
 GPUlatencyclaim. Core recurrent_qat.py unchanged; adoptionbelongsQATowner.
 Activationreuse independentvalidator now complete; owner finalcheckpointpending,
 so no next refill yet. Usagemonitor retains sole nextAstraprompt ownership.
+
+
+## Fourth slate and host-save correction integrated — October 2, 19:32 UTC
+
+Root reviewed activation-reuse evidence and integrated d26b5a8/4f14e87/62c9cda
+as fdc4f22/5d47444/f1395df. Three owner tests and the independent CPU CLI pass
+on main. Same-N immediate QKV calls3→1, gate/up2→1; all-family VJP and update
+gates pass, saved sibling payload960→360bytes in the reduced fixture.
+Snapshot evidence was already integrated as b858d33 with seven tests and
+independent CLI passing. Both performance patches remain unapplied; actual
+CUDA memory/throughput and QAT-owner source adoption are their next gates.
+
+Current QAT owner reviewed and explicitly approved host-save53c2eaa+bde1144
+for sole root integration. Main d2c4dca/8d17b0e contains the helper, guard and
+42-test immutable validation. All five documented source/test hashes match.
+The save guard now charges per-occurrence retained bytes plus largest CUDA
+transfer plus unchanged16MiB, above the unchanged host floor. Copy, optimizer,
+resume, smoke and math remain unchanged. No further unchanged test run needed.
+Actual current-source save/resume host/device receipts are still required.
+
+Both fourth-slate clean owned file sets match main; ignored runs archived in
+archived-worktrees/<activation-reuse|step-bookkeeping> before retirement.
+Receipt fourth-slate-integration.json records tips, equality and archive paths.
+Push precedes cleanup; protected host-save worktree stays with its owner.
+
+Astra assessed a fifth batch once and recommends no justified CPU team until
+new source-integration or actual phase evidence arrives. No repeated synthetic
+coverage is launched. Monitor remains ACTIVE every five minutes, protects QAT,
+and stops research at<=1%/reset according to user policy. Fresh root19:26:25
+usage86%used/14%remaining; monitor19:30:49 corroborates, original reset unchanged.
+Evaluator worker remains sole separate owner; host-info gate still suppresses
+SSH. No remote runtime adoption, native readiness or GPU run was verified.
