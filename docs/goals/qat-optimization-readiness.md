@@ -2423,3 +2423,97 @@ duplicate operator or inferred GPU-free state. Recovery admission pending
 classification; existing authorization remains. QAT owner coordinates future
 new verified exclusive native validation and complete training gates.
 [Checkpoint](../parallel20261002/supervisor.md#trusted-connection-and-process-loss-observation--october-2-1956-utc).
+
+
+## Executable QAT rotation checkpoint — October 2, 20:10 UTC
+
+Objective remains current-source QAT validation, followed autonomously by
+human-authorized training in a NEW source-bound run after complete verified
+corpus and all recipe/native/model/resource/development gates pass. Q4_0 is
+primary comparison; frozen target/verifier/data and sealed finals unchanged.
+Human explicitly reiterated at20:10 that research teams, QAT and usage monitor
+must execute, not merely remain registered. Research supervisor is directed to
+resume useful isolated CPU teams within original research usage/reset rules.
+QAT/preparation/necessary operators remain exempt, including available credits;
+no purchases or reset redemption. No redundant human permission is needed.
+
+Actual CPU classification at20:04:50.062523UTC: WSL boot changed from
+64c410b2-4892-46b4-bc6f-2bfd8573e802 to
+459b6210-e39c-4d3f-9ee3-5a9e0288e837. Original server673, supervisor674 and
+child676, dedicated binary-eagle-runtime tmux socket/session, and all current
+project processes are absent. Saved running/preparing state is stale.
+All14 frozen source/config pins,7 runtime pins and4 Git heads match. Stored
+353 completed manifests/10,000train/1,002development remain, zero recorded
+optimizer updates, but final preparation-ready receipt absent. CPU memory
+available20,223,393,792B and diskfree392,391,323,648B. This is NOT GPU-idle,
+final readiness, successful completion or training-admission evidence.
+
+Ignored proof: runs/luna-continuous-a8-a1-20260929/
+atomic05-classification-20261002T2004-proof.json, SHA
+f463c7f25799c68f4b9fac3e94e2c60ba0633cf5949e832ef81ecfc39d164937.
+Sole preparation Luna atomic05_owner_rebind finished; owned LOCAL203 absent,
+keeper93963 stopped. No GPU query, signal, recovery, native test or optimizer
+update. Old PID676 hold/return GO is revoked; NEVER run its obsolete guard.
+LOCAL198 diagnosis is closed. Human corrected endpoint to192.168.4.24, user
+philip/port22. Read actual machine-local hosts.toml and fresh gpu-control.json.
+Strict known-host alias192.168.4.43 verifies the existing ED25519 key
+SHA256:CFMXul7DWzihyD1Qr3ENOSZ7CUGJHzRh1tFjN0j4ZFI without changing
+known_hosts or accepting unknown keys. Connection now works. All SSH via tmux MCP.
+RTX2080Ti remains paused.
+
+Completed source corrections are public: learned-head59ef557/f9a21f3 with82
+immutable CPU checks; host-save d2c4dca/8d17b0e with42; recipe-aware development
+preflight e6ab963 with70 author/8 immutable reviewer checks. Current main
+checkpoint66fd5f6. CPU checks are not CUDA/model/memory/timing proof. Native
+9e2c7a90051e738751aab7d7bd7c2d8201fb76e3 FTZ repair is built, actual CUDA
+retest pending. Parent b32f7feca549fed1c17e05e6f56e20f6e68c9452/runtime
+provenance0bc8217aa18dba906a15cc2e7ca4194daf2a23b8d838afd2daac067abf2bd11f;
+separate remote attempt06 checkout and all7 artifact pins are in
+runs/qat-optimization-readiness/early-cuda-20261002/registration/
+early-cuda-build-artifact-provenance.json. Preserve old raw subnormal failure.
+Prebuilt learned fixture timeout120s plus10s kill; backend ops deferred until
+unchanged raw learned/fusion/affine fixture passes. No selected training recipe.
+A4/curriculum paired development remains unsupported; actual-model decisions,
+forward/backward, memory/timing, checkpoint/save/resume and Q4_0 development
+comparison still required for enabled launch recipes.
+
+Live ownership: QAT predecessor01a0fc3d-bbe1-7e93-a19b-a9200dfa186c has no
+owned remote job/lease or live worker. model_gate_plan and its runtime review
+are completed. Preparation owner01a0fdd6-8e11-7393-9aed-5c99bd08e428 retains
+sole remote coordination; derive later acknowledged rotations from its
+monitor-registration.json. Main supervisor01a0fddd-d4fd-7e70-8720-528a4e23006e
+owns research/usage. Its protected coordinator01a0fde2 is a subagent; relay
+through main supervisor, direct app-server messages to it fail. Human authorizes
+messages to both current owners. Four research batches finished; at checkpoint
+new execution request is sent, actual research restart is not yet verified.
+
+SAME ACTIVE monitors: qat-validation-and-training-handoff every15m (currently
+predecessor target), a8-a1-luna-health-and-recovery every15m (prep owner),
+parallel-research-usage-control every5m (main supervisor). Do not duplicate.
+Retarget ONLY QAT after successor acknowledgment; verify saved target then mark
+coordination_handoff acknowledged/automation_target_verified. Saved per-chat
+wait cursors are in training-handoff-registration.json. Never treat chat idle
+or absence of historic PIDs as GPU release.
+
+Exact next actions already directed to prep owner: SAME sole Luna obtains fresh
+GPU/context/process/resources/pause proof and NEW explicit short exclusive
+lease. If admitted, run exact pinned native9e2 fixture in NEW source-bound
+remote_job.py/detached Linux host tmux, verify disconnect/reconnect, preserve
+raw result and bounded teardown, return ownership. No simultaneous preparation
+recovery. Then admitted existing bounded prep-only recovery preserves completed
+captures and frozen source, verifies budget/ownership and completes final audit.
+If launcher is coupled to absent676, minimally replace obsolete hold assumptions
+with current-source exclusive-job admission; preserve gates, report actual
+implementation blocker, do not wait a heartbeat or ask redundant permission.
+After native pass, complete current actor/recipe/model/resource receipts and
+full-corpus admission, then new-run training under declared budgets and
+checkpoint/diagnostics. Notify actual starts/results/first optimizer updates.
+
+Owned clean evaluator worktree/private/tmp/eagle-development-recipe-preflight
+(branch feature/development-recipe-preflight) is fully patch-integrated; raw
+f314 source bundle preserved under runs/qat-optimization-readiness/
+development-preflight-owned-archive-20261002/f314-source.bundle. Retire only
+after verifying patch equivalence and no worker. Other own learned-head
+worktrees already archived/removed. Preserve peer untracked overnight docs,
+research and experiments; no peer cleanup. No unresolved human decision:
+remaining obstacles are implementation/execution gates, not approval.

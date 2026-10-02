@@ -4,6 +4,23 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
+## Current execution checkpoint — October 2, 20:10 UTC
+
+Active goal remains [QAT optimization readiness](goals/qat-optimization-readiness.md).
+Fresh CPU classification proves a changed WSL boot and absent original
+preparation processes/tmux; frozen source/runtime and stored full captures match,
+but final readiness receipt is absent. Sole operator has completed and cleaned
+its transport. No GPU availability, validation start, recovery or training is
+verified. Connection to human-corrected192.168.4.24 now works with the trusted key.
+
+Human reiterates actual research/QAT execution. Main supervisor is directed to
+resume useful isolated CPU research teams; preparation owner retains the SAME
+sole operator for fresh exclusive GPU proof/native repair retest, then serialized
+admitted preparation recovery. Old676 hold/return guard is obsolete. Training
+gates remain mandatory. QAT rotates at a safe boundary with no owned remote job
+or lease; transfer SAME heartbeat only after successor acknowledgment.
+[Executable checkpoint](goals/qat-optimization-readiness.md#executable-qat-rotation-checkpoint--october-2-2010-utc).
+
 ## Current coordination — October 2, 19:56 UTC
 
 Active goal remains [QAT optimization readiness](goals/qat-optimization-readiness.md).
