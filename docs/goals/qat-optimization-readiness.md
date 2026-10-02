@@ -693,3 +693,32 @@ then verifies exactchildidentity andSIGCONT. Deadline is not permission to
 SIGCONT into unknownactiveGPUwork: notify/requestboundedteardown if release
 proofmissing. GPUownership remains exclusive. Nextaction actualvalidation
 build/test evidence, thenverifiedhandoff and sameprocessauditresume.
+
+
+## Early validation toolchain attempts — October2 08:29UTC
+
+QATowner reports actual supervised attempt08:18:16.616UTC under hosttmux
+qat-early-cuda-validation-20261002,supervisor1412/child1414. It stopped before
+checkout/build/test on FileNotFoundError:nvcc. At08:19:14 ownedgroupsgone/GPUempty,
+free12751MiB/hostavailable19035292kB/disk424.6GB; rawtraceSHAf8354de2 prefix is
+indexed by owner. Existing nvcc13.1.115 andCMake3.31.10 were found; run-scopedPATH
+resolved compiler discovery without installation/globalenvironment changes.
+
+Pinnedparent7b0ef42/native8025a0777 attempt03 reached actual compileridentification,
+then failed on GCC15.2/glibc rsqrt/rsqrtf noexcept-declaration conflict, before
+build/tests. OnlyGCC15 reported installed. Groups1704/1706gone/GPUempty at08:29:25.
+No actual nativeCUDA/backward/readiness proof,optimizerupdate orfullcorpuspromotion.
+The preparation process remains intentionallyheld under the verifiedlease;
+09:30UTCteardowncutoff/09:40UTCdeadline still apply.
+
+A focused read-onlyAstrareview identified primarysource evidence for the specific
+header conflict. QATowner authorized ONE <=5minute private CUDA include overlay
+changing only two exceptiondeclarations, with no arithmeticbodies or global/
+frozen source/toolkit edits. Require exactoverlayhashes/diff, actual include
+selection and a compile/linkprobe before any new unique configuration/build;
+label the patched validationtoolchain truthfully. If probe fails, report exact
+blocker and promptly returnlease afterfresh groupsgone/GPUempty proof. If it
+passes, remaining build/tests stay within original09:30cutoff and all numerical/
+ancestry/data gates. Parent records owner-reported evidence, performs no duplicate
+remotequery, and does not claim overlay orCUDA success. Owner retains exact logs,
+probe/build source/toolchain identities and next action in its ignored records.

@@ -20,9 +20,11 @@ verified data/current gates and GPU handoff. [Overlap policy](QAT_GPU_AUDIT_OVER
 owner01a0f934 until October2 02:40:04PDT (09:40UTC). Preparation child676 is
 intentionally held in the same live process at audit244/353; supervisor674 stays
 live,10,000train/224dev retained,zerooptimizer. Fresh08:10UTC proof showed empty
-GPUcomputeapps and13.37GBGPU/19.47GBhost free. Validationoperator is bootstrapping
-publishedparent7b0ef42/native8025a0777 in a separate run; actual CUDA execution
-is not yet proved. Validation teardown cutoff02:30PDT, then preparation owner
+GPUcomputeapps and13.37GBGPU/19.47GBhost free. Validation reached compiler identification, then failed on GCC15.2/glibc
+rsqrt/rsqrtf exception declarations with CUDA13.1.115. The nvcc PATH issue is
+resolved. Owner is testing one <=5minute private CUDA-header overlay affecting
+only two exception declarations; no arithmetic/global/frozen changes. No CUDA
+build/test success or readiness receipt yet. Validation teardown cutoff02:30PDT, then preparation owner
 requires fresh ownedgroupsgone/GPUempty proof before sameprocessSIGCONT. Both
 hold-awareprep and QAT15minmonitors ACTIVE. [Lease checkpoint](goals/qat-optimization-readiness.md#exclusive-early-validation-lease-granted--october2).
 Training still requires complete verified data and current passing CUDA gates.
