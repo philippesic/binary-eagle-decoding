@@ -1,6 +1,32 @@
 # A8/A1 health and bounded recovery monitor
 
-## Current preparation ownership — 2026-10-02 09:57 UTC
+## Active CPU provider audits — 2026-10-02 13:07 UTC
+
+All353 completed capture manifests retain10,000 train/1,002 development prompts.
+The SAME original supervisor674/child676 remains `--prepare-only`, with zero
+optimizer updates and no final preparation receipt. Latest checker12:59:39UTC
+flagged only the stale phase heartbeat12:19:56UTC. A bounded2second classification
+at13:07:09UTC verified original child/startticks85132 running, +198CPUticks and
++258,823,036rchar bytes, with an open captured feature file. Preserve that checker
+warning; active CPU work does not make its stale-heartbeat result healthy.
+
+Frozen source constructs two train providers and coverage by repeatedly auditing
+complete shards:959 additional full audits after capture/readiness assembly.
+No heartbeat is published during those constructor/coverage loops.10.39hours
+at the earlier39.1seconds/shard is a source projection, not a measured phase ETA.
+See [audit reuse proposal](DECISIONS.md#provider-construction-repeats-full-audits--2026-10-02).
+No timeout/gate/source change, restart, recovery charge or GPU release follows.
+
+The combined ordinary query now records one read-only `/proc` CPU/I/O observation
+of the registered supervisor and child after running the unchanged CPU checker
+exactly once. Compare exact PID/startticks and counters with the previous saved
+observation. Record verified CPU activity separately, retain stale warnings and
+suppress only unchanged already-notified alerts; unexpected identities, new
+errors or absent progress require classification. No extra log/GPU/resource
+query while ordinary progress is understood. A validation planning/acquisition/
+return operator already active suppresses duplicate tick operators.
+
+## Previous verified lease return — 2026-10-02 09:57 UTC
 
 Both validation reservations are CLOSED. The SAME supervisor08 preparation
 child676/startticks85132 is running again under supervisor674/server673, with
@@ -69,9 +95,16 @@ it automatically starts missing native capture and later CUDA smoke. Therefore
 the reservation guard is a reversible SIGSTOP of its verified supervised child
 process group only, while the supervisor stays live. This temporarily stops CPU
 audit too but preserves its exact in-memory position, avoiding restart/re-audit.
-Before grant, prove current CPU audit/complete current shard, exact identities,
+Before grant, prove the actual current CPU phase and complete retained shard set, exact identities,
 all group members stopped, live supervisor, zero optimizer, no GPU compute apps
 or resident preparation CUDA contexts, actual hardware and resource floors.
+For post-capture provider audits require preparing/readiness_complete, all353
+completed manifests/10,000train/1,002dev, absent coverage/finalreceipt, original
+active CPU group and zero updates. Do not require a nonexistent capture353
+manifest or a fresh phase heartbeat. A feature FD or CPU activity is not GPU
+availability evidence. New prebuilt-fixture reservations are at most10minutes,
+with180seconds reserved for teardown/return, explicit owner grant only after
+post-SIGSTOP identity/resource proof and an exact-byte receipt SHA.
 Never signal host job tmux panes/session/server or unrelated processes.
 
 For held ticks, run one bounded Luna/high CPU identity/status/lease proof via
@@ -173,10 +206,10 @@ is established. No second observation or GPU recovery was attempted.
 
 A compact stdlib combined query is locally compiled in ignored
 `runs/luna-continuous-a8-a1-20260929/monitor-query-source.py` (SHA256
-6e8b3470a3b3138cc2949101c47024d22318f07c0972281031d44f1276511f92).
-The current command JSON is a STRING (ASCII length2,983; derive dynamic length
+d68fd8ebcb62cf138a2d60e915e434896eac49a440223a7738a9c9cf266b7439).
+The current command JSON is a STRING (ASCII length3,811; derive dynamic length
 from registration.monitor_query_command_length). Query includes readyreceipt
-metadata ifexists. Operator objectwrappers/stalebinding were normalized locally;
+metadata ifexists and CPU/I/O process counters without extra device queries. Operator objectwrappers/stalebinding were normalized locally;
 validate commandstring equality/current08binding before everydispatch.
 The exact current command is JSON in `monitor-query-command.json` and copied
 into registration.experiment.monitor_query_command, bound to supervisor08.

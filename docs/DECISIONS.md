@@ -841,3 +841,33 @@ The current frozen preparation continues unchanged, with soleRTX5080ownership
 and `--prepare-only`. No restart, audit bypass, source deployment, new experiment
 or optimizer update is authorized by this proposal. The validation/training owner
 still waits for full preparation and verified GPU release.
+
+
+## Provider construction repeats full audits — 2026-10-02
+
+Full capture is measured:353 manifests/10,000train/1,002development. At
+12:59:39UTC the frozen checker flagged a stale readiness_complete heartbeat;
+13:07:09UTC original child676/startticks85132 advanced198CPUticks and259MB of
+rchar in2seconds while reading captured features. No failure/restart or GPU
+release is established. Frozen7547d253 source plus the approved preparation-only
+launcher82f0185a explains substantial additional work after capture assembly.
+
+`StreamingNativeProvider.__init__` constructs/audits each of320 train children.
+A8 and A1 provider construction repeats that twice. The launcher's coverage
+iteration audits319 more children, reusing the first:320+320+319=959 additional
+full audits. `NativeCaptureProvider` loads labels through `audit_native_labels`,
+which hashes payloads, reconstructs accepted-prefix features and validates
+response ancestry. No stage heartbeat is emitted during those loops. At the
+previous observed39.1seconds/shard this projects10.39hours; it is not measured
+provider-phase timing, remaining duration or a promised endpoint.
+
+Extend the audit-receipt proposal above to reuse a verified immutable audit
+result across provider construction and coverage within the same process.
+Receipts must bind implementation/schema, exact inventory/payload bytes and
+source/runtime/config/prompt/response ancestry; changed or incomplete evidence
+falls back to a full audit. First establish CPU equivalence and fail-closed
+changed-byte/identity/inventory tests, then measure actual same-data savings.
+A later reviewed implementation should also publish honest bounded progress
+heartbeats during full audits. No live source/gate bypass, timeout change,
+restart, new training recipe or optimizer update is selected here. Current
+frozen preparation continues unchanged; the user owns adoption of this proposal.
