@@ -19,6 +19,7 @@ from pathlib import Path
 
 LIBRARY = re.compile(r"lib(?:llama|ggml)[\w.-]*\.so(?:\.[\w.-]+)?$")
 COMMIT = re.compile(r"[0-9a-f]{40}$")
+SHA256 = re.compile(r"[0-9a-f]{64}$")
 
 
 def sha256(path):
@@ -213,6 +214,93 @@ def _arguments(entry, build, response_records):
     return expanded
 
 
+def _existing_build_proof(path, expected_sha, checkout, build, parent, native):
+    """Caller-approved provenance for a commands-file-only timestamp change.
+
+    No historical object hash is inferred. The exact known CUDA library bytes,
+    historical command and passed report provide the existing-build authority.
+    Source/flags/response/object/backend freshness remain separate requirements.
+    """
+    if not isinstance(expected_sha, str) or not SHA256.fullmatch(expected_sha):
+        raise ValueError("existing build proof requires an explicit SHA-256")
+    proof_record = record(path)
+    if proof_record["sha256"] != expected_sha:
+        raise ValueError("existing build proof SHA-256 differs")
+
+    def load(item, limit):
+        if not isinstance(item, dict) or not SHA256.fullmatch(item.get("sha256", "")):
+            raise ValueError("existing build evidence SHA-256 is missing")
+        actual = record(item["path"])
+        if actual != item or Path(actual["path"]).stat().st_size > limit:
+            raise ValueError("existing build evidence differs or exceeds bound")
+        return json.loads(Path(actual["path"]).read_text())
+
+    proof = load(proof_record, 64 * 1024)
+    if (
+        proof.get("schema") != "qat_existing_cuda_build_proof_v1"
+        or proof.get("checkout") != str(checkout)
+        or proof.get("build_directory") != str(build)
+    ):
+        raise ValueError("existing build proof refers to another checkout/build")
+    provenance = load(proof["provenance"], 2 * 1024**2)
+    report = load(proof["native_report"], 16 * 1024**2)
+    validation = load(proof["native_validation"], 64 * 1024)
+    if provenance.get("source") != {"parent": parent, "native": native}:
+        raise ValueError("existing build provenance source differs")
+    old_build = provenance["build"]
+    expected = {old_build["executable"]: old_build["sha256"]}
+    shared = provenance["shared_objects"]
+    if len(shared) != 6 or len({r["path"] for r in shared}) != 6:
+        raise ValueError("existing build provenance must bind six unique libraries")
+    expected.update({r["path"]: r["sha256"] for r in shared})
+    if proof.get("runtime_files") != expected or len(expected) != 7:
+        raise ValueError("existing build proof must bind all seven provenance artifacts")
+    names = {Path(p).name.split(".so")[0] for p in expected if ".so" in Path(p).name}
+    if names != {
+        "libggml-cuda",
+        "libggml-base",
+        "libggml",
+        "libggml-cpu",
+        "libllama",
+        "libllama-common",
+    }:
+        raise ValueError("existing build proof library set differs")
+    for artifact, digest in expected.items():
+        resolved = inside(artifact, build / "bin", "existing build artifact")
+        if str(resolved) != artifact or not SHA256.fullmatch(digest) or sha256(resolved) != digest:
+            raise ValueError("existing build runtime artifact differs")
+    executable = Path(old_build["executable"])
+    if executable.name != "test-eagle3-learned":
+        raise ValueError("existing build fixture executable differs")
+    if (
+        report.get("status") != "passed"
+        or report.get("input_scope") != "synthetic_operator"
+        or report.get("requested_backend") != "CUDA"
+        or report.get("backend", {}).get("registration") != "CUDA"
+        or not isinstance(report.get("runtime", {}).get("build_commit"), str)
+        or not re.fullmatch(r"[0-9a-f]{7,40}", report["runtime"]["build_commit"])
+        or not native.startswith(report["runtime"]["build_commit"])
+        or not isinstance(report.get("command"), list)
+        or not report["command"]
+        or report["command"][0] != str(executable)
+        or validation.get("status") != "passed"
+        or validation.get("report_sha256") != proof["native_report"]["sha256"]
+        or validation.get("build_commit") != report["runtime"]["build_commit"]
+    ):
+        raise ValueError("existing build passed native report differs")
+    command = old_build.get("w1a1_compile_command")
+    if not isinstance(command, str) or not command:
+        raise ValueError("existing build historical CUDA command missing")
+    return {
+        "proof": proof_record,
+        "provenance": proof["provenance"],
+        "native_report": proof["native_report"],
+        "native_validation": proof["native_validation"],
+        "runtime_files": expected,
+        "historical_arguments": shlex.split(command),
+    }
+
+
 def _object(entry, args, build):
     positions = [i for i, value in enumerate(args) if value == "-o"]
     if len(positions) != 1 or positions[0] + 1 == len(args):
@@ -287,6 +375,8 @@ def inspect_runtime(
     expected_code_arch="120a",
     runner=run_checked,
     allowed_runtime_roots=(),
+    existing_build_proof=None,
+    existing_build_proof_sha256=None,
 ):
     """Read explicit source/build artifacts and inspect ELF; never run a server."""
     if not COMMIT.fullmatch(expected_parent) or not COMMIT.fullmatch(expected_native):
@@ -299,6 +389,19 @@ def inspect_runtime(
     allowed_roots = tuple(sorted({Path(p).resolve(strict=True) for p in allowed_runtime_roots}))
     if any(not p.is_dir() for p in allowed_roots):
         raise ValueError("allowed runtime roots must be explicit existing directories")
+    if (existing_build_proof is None) != (existing_build_proof_sha256 is None):
+        raise ValueError("existing build proof and SHA-256 must be supplied together")
+    known_build = None
+    if existing_build_proof is not None:
+        known_build = _existing_build_proof(
+            existing_build_proof,
+            existing_build_proof_sha256,
+            checkout,
+            build,
+            expected_parent,
+            expected_native,
+        )
+    regeneration = None
 
     def git(directory, *args):
         return runner(["git", "-C", str(directory), *args]).strip()
@@ -376,10 +479,25 @@ def inspect_runtime(
             raise ValueError("compiled object predates its current source: " + label)
         if label != "w1a1" and args[0] != facts["compilers"]["CXX"]["path"]:
             raise ValueError("server/build-info compile command uses a different compiler")
-        if label == "w1a1" and obj.stat().st_mtime_ns < max(
-            flags_source.stat().st_mtime_ns, commands_path.stat().st_mtime_ns
-        ):
-            raise ValueError("w1a1 object predates current CMake flags/compile commands")
+        if label == "w1a1":
+            object_time = obj.stat().st_mtime_ns
+            if object_time < flags_source.stat().st_mtime_ns:
+                raise ValueError("w1a1 object predates current CMake flags/compile commands")
+            if object_time < commands_path.stat().st_mtime_ns:
+                raw_args = entry.get("arguments")
+                if raw_args is None:
+                    raw_args = shlex.split(entry["command"])
+                if known_build is None or raw_args != known_build["historical_arguments"]:
+                    raise ValueError("w1a1 object predates current CMake flags/compile commands")
+                if any(Path(p).stat().st_mtime_ns > object_time for p in response_records):
+                    raise ValueError("w1a1 response file is newer than inspected object")
+                regeneration = {
+                    "scope": "global compile_commands timestamp only",
+                    "object_mtime_ns": object_time,
+                    "commands_mtime_ns": commands_path.stat().st_mtime_ns,
+                    "evidence": known_build,
+                    "historical_object_hash_claimed": False,
+                }
         compiled[label] = {"source": record(source), "object": record(obj), "arguments": args}
     facts["w1a1_arguments"] = compiled["w1a1"]["arguments"]
     libraries = {}
@@ -457,6 +575,12 @@ def inspect_runtime(
         + facts["libraries"]
         + [server_record]
         + [v[k] for v in compiled.values() for k in ("source", "object")]
+        + (
+            [known_build[k] for k in ("proof", "provenance", "native_report", "native_validation")]
+            + [{"path": p, "sha256": h} for p, h in known_build["runtime_files"].items()]
+            if known_build
+            else []
+        )
     ):
         if sha256(item["path"]) != item["sha256"]:
             raise ValueError("source/build/runtime file changed during inspection")
@@ -500,6 +624,7 @@ def inspect_runtime(
         "cuda_code_architecture": expected_code_arch,
         "artifacts": artifacts + list(response_records.values()),
         "compiled": compiled,
+        "commands_regeneration_proof": regeneration,
         "dynamic_observations": observations,
         "allowed_runtime_roots": [str(p) for p in allowed_roots],
         "allowed_runtime_dependency_artifacts": list(runtime_dependencies.values()),
@@ -554,6 +679,8 @@ def main(argv=None):
     parser.add_argument("--expected-architecture", default="120")
     parser.add_argument("--expected-code-architecture", default="120a")
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--existing-build-proof", type=Path)
+    parser.add_argument("--existing-build-proof-sha256")
     parser.add_argument(
         "--allowed-runtime-root",
         type=Path,
@@ -575,6 +702,8 @@ def main(argv=None):
         expected_arch=args.expected_architecture,
         expected_code_arch=args.expected_code_architecture,
         allowed_runtime_roots=args.allowed_runtime_root,
+        existing_build_proof=args.existing_build_proof,
+        existing_build_proof_sha256=args.existing_build_proof_sha256,
     )
     runtime = write_inventory(manifest, args.output)
     print(

@@ -6,6 +6,7 @@ import importlib.util
 import io
 import json
 import os
+import shlex
 import sys
 import tempfile
 import unittest
@@ -154,6 +155,161 @@ class NativeRuntimeInventoryTests(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name).resolve()
         self.fixture = Fixture(self.root)
+
+    def existing_build_proof(self):
+        f = self.fixture
+        for name in ("libggml.so.1", "libggml-cpu.so.1", "test-eagle3-learned"):
+            (f.bin / name).write_bytes(b"\x7fELF" + name.encode())
+        f.fresh_times()
+        provenance_path = self.root / "original-build.json"
+        provenance = {
+            "source": {"parent": PARENT, "native": NATIVE},
+            "build": {
+                "executable": str(f.bin / "test-eagle3-learned"),
+                "sha256": tool.sha256(f.bin / "test-eagle3-learned"),
+                "w1a1_compile_command": shlex.join(f.entries[0]["arguments"]),
+            },
+            "shared_objects": [
+                tool.record(p) for p in sorted(f.bin.iterdir()) if p.name.endswith(".so.1")
+            ],
+        }
+        provenance_path.write_text(json.dumps(provenance))
+        report_path = self.root / "passed-native.json"
+        report_path.write_text(
+            json.dumps(
+                dict(
+                    status="passed",
+                    input_scope="synthetic_operator",
+                    requested_backend="CUDA",
+                    backend={"registration": "CUDA"},
+                    runtime={"build_commit": NATIVE[:9]},
+                    command=[str(f.bin / "test-eagle3-learned")],
+                )
+            )
+        )
+        validation_path = self.root / "native-validation.json"
+        validation_path.write_text(
+            json.dumps(
+                dict(
+                    status="passed", report_sha256=tool.sha256(report_path), build_commit=NATIVE[:9]
+                )
+            )
+        )
+        proof = dict(
+            schema="qat_existing_cuda_build_proof_v1",
+            checkout=str(f.checkout),
+            build_directory=str(f.build),
+            provenance=tool.record(provenance_path),
+            native_report=tool.record(report_path),
+            native_validation=tool.record(validation_path),
+            runtime_files={r["path"]: r["sha256"] for r in provenance["shared_objects"]},
+        )
+        proof["runtime_files"][provenance["build"]["executable"]] = provenance["build"]["sha256"]
+        path = self.root / "approved-proof.json"
+        path.write_text(json.dumps(proof))
+        os.utime(f.build / "compile_commands.json", ns=(4 * 10**9, 4 * 10**9))
+        return dict(existing_build_proof=path, existing_build_proof_sha256=tool.sha256(path))
+
+    def test_existing_proof_only_admits_regenerated_commands_timestamp(self):
+        kwargs = self.existing_build_proof()
+        with self.assertRaisesRegex(ValueError, "predates current CMake"):
+            self.fixture.inspect()
+        manifest = self.fixture.inspect(**kwargs)
+        evidence = manifest["commands_regeneration_proof"]
+        self.assertEqual(evidence["scope"], "global compile_commands timestamp only")
+        self.assertFalse(evidence["historical_object_hash_claimed"])
+        self.assertFalse(manifest["readiness_granted"])
+        self.assertFalse(manifest["hardware_measured"])
+        runtime = tool.write_inventory(manifest, self.root / "proved-output")
+        self.assertEqual(
+            runtime["immutable_manifest"]["sha256"],
+            tool.sha256(self.root / "proved-output/manifest.json"),
+        )
+
+    def test_existing_proof_requires_sha_and_matching_evidence(self):
+        kwargs = self.existing_build_proof()
+        with self.assertRaisesRegex(ValueError, "supplied together"):
+            self.fixture.inspect(existing_build_proof=kwargs["existing_build_proof"])
+        with self.assertRaisesRegex(ValueError, "SHA-256 differs"):
+            self.fixture.inspect(**{**kwargs, "existing_build_proof_sha256": "0" * 64})
+        (self.root / "original-build.json").write_text("{}")
+        with self.assertRaisesRegex(ValueError, "evidence differs"):
+            self.fixture.inspect(**kwargs)
+
+    def test_existing_proof_rejects_changed_runtime_artifact(self):
+        kwargs = self.existing_build_proof()
+        (self.fixture.bin / "libggml-cpu.so.1").write_bytes(b"changed")
+        with self.assertRaisesRegex(ValueError, "runtime artifact differs"):
+            self.fixture.inspect(**kwargs)
+
+    def test_existing_proof_rejects_changed_historical_command(self):
+        kwargs = self.existing_build_proof()
+        self.fixture.entries[0]["arguments"].insert(1, "-DNEW_SEMANTICS=1")
+        self.fixture.write_commands()
+        with self.assertRaisesRegex(ValueError, "predates current CMake"):
+            self.fixture.inspect(**kwargs)
+
+    def test_existing_proof_keeps_source_flags_and_backend_freshness(self):
+        kwargs = self.existing_build_proof()
+        for path, error in (
+            (self.fixture.flags, "predates current CMake"),
+            (Path(self.fixture.entries[0]["file"]), "predates its current source"),
+            (self.fixture.bin / "libggml-cuda.so.1", "backend predates"),
+        ):
+            with self.subTest(path=path):
+                old = path.stat().st_mtime_ns
+                tick = 0 if path.parent == self.fixture.bin else 5 * 10**9
+                os.utime(path, ns=(tick, tick))
+                with self.assertRaisesRegex(ValueError, error):
+                    self.fixture.inspect(**kwargs)
+                os.utime(path, ns=(old, old))
+
+    def test_existing_proof_rejects_new_response_file(self):
+        response = self.fixture.build / "includes.rsp"
+        response.write_text("-I" + str(self.fixture.native))
+        self.fixture.entries[0]["arguments"][1:1] = ["--options-file", str(response)]
+        self.fixture.write_commands()
+        kwargs = self.existing_build_proof()
+        self.fixture.inspect(**kwargs)
+        os.utime(response, ns=(5 * 10**9, 5 * 10**9))
+        with self.assertRaisesRegex(ValueError, "response file is newer"):
+            self.fixture.inspect(**kwargs)
+
+    def test_existing_proof_rechecks_authority_during_inspection(self):
+        kwargs = self.existing_build_proof()
+
+        def mutate(argv):
+            result = self.fixture.runner(argv)
+            if argv[0] == "ldd":
+                (self.root / "native-validation.json").write_text("{}")
+            return result
+
+        with self.assertRaisesRegex(ValueError, "file changed during inspection"):
+            tool.inspect_runtime(
+                self.fixture.checkout, self.fixture.build, PARENT, NATIVE, runner=mutate, **kwargs
+            )
+
+    def test_existing_proof_rejects_wrong_build_and_report_validation(self):
+        kwargs = self.existing_build_proof()
+        path = kwargs["existing_build_proof"]
+        proof = json.loads(path.read_text())
+        proof["build_directory"] = str(self.root / "other")
+        path.write_text(json.dumps(proof))
+        with self.assertRaisesRegex(ValueError, "another checkout/build"):
+            self.fixture.inspect(
+                existing_build_proof=path, existing_build_proof_sha256=tool.sha256(path)
+            )
+        proof["build_directory"] = str(self.fixture.build)
+        validation = self.root / "native-validation.json"
+        validation.write_text(
+            json.dumps(dict(status="passed", report_sha256="0" * 64, build_commit=NATIVE[:9]))
+        )
+        proof["native_validation"] = tool.record(validation)
+        path.write_text(json.dumps(proof))
+        with self.assertRaisesRegex(ValueError, "passed native report differs"):
+            self.fixture.inspect(
+                existing_build_proof=path, existing_build_proof_sha256=tool.sha256(path)
+            )
 
     def test_current_inventory_hashes_contract_and_no_execution(self):
         manifest = self.fixture.inspect()
