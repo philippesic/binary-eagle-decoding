@@ -22,6 +22,13 @@ before the newly authorized training starts. Existing frozen prep stays
 no readyreceipt,supervisor674/child676live; GPU not released. The readiness
 objective remains incomplete.
 
+**Overnight CPU research authorized (October1):** three teams investigate W1A1
+representation geometry, native accepted-prefix objectives and block-parallel
+drafter design, with one usage supervisor. QAT task and its monitor are protected
+and may use credits. Stop research at <=1% remaining, observed reset, or the
+conservative October2 09:55PDT cutoff, whichever comes first. No new active goal,
+GPU ownership or frozen-training change. [Assignments and control](OVERNIGHT_RESEARCH.md).
+
 **Existing corpus preparation resumed and verified:** SAME --prepare-only run under supervisor08. CPU health **2026-10-02 05:31:39 UTC** (October1,10:31p.m.PDT), independent ownership **05:32:52UTC** confirms server673/supervisor674/child676 and live prep-only flag afterdisconnect/reconnect. Retained327manifests /10,000train /224dev,zeroQATsteps; re-audit4/353 then6/353 is not lostdata. Existing15min monitorACTIVE;2080Ti paused. No newcaptures yet: everyresume restarts the audit loop over completed data before unfinished dev capture. Same fullgates and automatic stop-before-QAT endpoint; new optimization-feature GPU checks still await ownership release.
 
 **Historical existing corpus preparation pause:** Verified **2026-10-01 23:15:28 UTC** (4:15 p.m. PDT): supervisor07 interrupted/exit0,owned groups1204/1205 absent,no project processes or GPU compute apps. Retained327completed manifests /10,000train /224of1,002dev,zeroQATsteps; preparation remains incomplete. Data/partials/stop-before-QAT boundary preserved. No auto-resume until new human resume instruction.

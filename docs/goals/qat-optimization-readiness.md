@@ -417,3 +417,23 @@ Lunaobservercompleted; its ownLOCALtransportclosedandabsenceverified. No local
 command remains live. Nextscheduledobservation uses savedcursor/freshregistration;
 only successful fullprep+terminalgroups+freshresourceidle proof advances to
 newrecipeCUDAvalidation. Rootheartbeatconfirmedactive before checkpoint.
+
+
+## User-authorized overnight research teams and usage supervisor
+
+The human requested the three proposed long investigations and one single-agent
+usage monitor every5minutes, extending useful research until <2%weekly allowance
+remains. The existing QAT owner01a0f934-dd65-7e33-a5bf-0ba591e713a4 must continue
+allnight and may use credits; this supervisor must never pause it or its GPU job.
+Research must stop at exhaustion or reset and must not burn the new allowance.
+This is prospective supporting research within the existing active goal, including
+explicit authorization for reduced block-drafter research, not a live pivot.
+
+Assignments, message/interrupt authority, CPU-only boundaries and cutoff policy
+are in docs/OVERNIGHT_RESEARCH.md. Initial68%used/32%remaining; account reset
+1791049896 conflicts with the human’s upcoming-morning expectation. Conservative
+hard cutoff2026-10-02 16:55UTC is earlier. Registry and usage log will be retained
+under ignored runs/overnight-research-20261002; supervisor launches leaders in its
+own collaboration tree for direct stop control. Research-specific work is
+isolated from live QAT/runtime source and sealed finals. Launch IDs and verified
+control state will follow in the next checkpoint.
