@@ -588,3 +588,20 @@ interrupted. New task reads checkpoint6285415 plus this confirmation; next actio
 is the next scheduled single CPU check. Separate validation/training owner stays
 01a0f934-dd65-7e33-a5bf-0ba591e713a4 and must derive latest prepowner from registration,
 not assume the historical old chat. Stop-before-QAT boundary unchanged.
+
+
+## Validation owner follows current preparation supervisor
+
+QATowner verified the acknowledged preparation rotation to successorchat
+01a0fb62-cbdb-72f0-8e86-4055b2ccb4ed against coordination_handoff and the existing
+prepheartbeat target. It read both old and new compactwait snapshots, retained
+per-chat cursors, and updated its SAME ACTIVE qat-validation-and-training-handoff
+heartbeat to derive future acknowledged preparation-owner changes. Its own
+trainingowner target/name/15mincadence/notification preferences are unchanged.
+
+Currentowner'ssavedrawhealthsnapshot06:56:05.023881UTC proves healthy/nonterminal,
+reaudit130/353,retained10,000train/224dev,zerooptimizer,readyreceipt:null and SAME
+supervisor08running. No GPUreleaseclaim,duplicateremotequery,source/runtimechange
+oroptimizerupdate. Per-tick evidence remains ignoredhandoff-observations.jsonl;
+phasewaitingforfullprepandreleasedGPU. This internal supervision rotation does
+not change the successful-preparation/actual-CUDA-before-training requirements.

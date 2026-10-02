@@ -9,7 +9,9 @@ preparation-only restriction for this chat **after successful current validation
 It does not authorize optimizer updates before validation, interruption of the
 preparation run, changes to frozen target/verifier precision or sealed-final use.
 
-The existing preparation owner chat01a0f47a-e246-75e1-a299-fcac42d34f8a retains
+The current preparation owner is derived from the acknowledged
+monitor-registration.json coordination_handoff and confirmed against its existing
+heartbeat target. Successorchat01a0fb62-cbdb-72f0-8e86-4055b2ccb4ed currently retains
 RTX5080 until its preparation endpoint and verified release. Its source/native/
 config/data identity stays frozen; it must stop before optimizer updates. The
 training owner uses a new source-bound project/run and audited data ancestry.
@@ -18,7 +20,7 @@ RTX2080Ti remains paused. No training recipe is selected or launched yet.
 ## Persistent observation
 
 Heartbeat **qat-validation-and-training-handoff**, ACTIVE every15minutes, targets
-the training owner chat. It observes the preparation chat using compact wait
+the training owner chat. It observes the current preparation-owner chat using compact wait
 snapshots and the existing ignored preparation registration/last-health. Cursor,
 authorization and phase are saved under ignored
 runs/qat-optimization-readiness/training-handoff-registration.json. The existing
@@ -95,3 +97,19 @@ confirmedACTIVE. No duplicate schedule or source/runtime change. Saved current
 preparation observation from its owner at2026-10-02 06:13:55.765738UTC is healthy,
 reaudit67/353,retained10,000train/224development,zerooptimizer,nonterminal. This
 local saved observation is not a fresh release proof; validation remains queued.
+
+
+## Preparation-owner rotation followed
+
+Preparation supervision transferred from01a0f47a-e246-75e1-a299-fcac42d34f8a to
+acknowledged successor01a0fb62-cbdb-72f0-8e86-4055b2ccb4ed. Registration confirms
+acknowledged/automation_target_verified and native preparation heartbeat target
+matches the successor. QATheartbeat was updated IN PLACE to derive future owner
+rotations rather than keep polling a retired chat; its own target/cadence/name/
+notification preferences and all launch gates are unchanged. Per-chat cursors
+are retained in training-handoff-registration.json. No duplicate schedule.
+
+Saved owner health06:56:05.023881UTC is healthy/nonterminal,reaudit130/353,
+10,000train/224dev retained,zerooptimizer,no readyreceipt,supervisor08running.
+The GPU job remains the same; supervision rotation is not release. No remote
+query/sourcechange/training action occurred on this routine handoff observation.
