@@ -2063,3 +2063,15 @@ next fresh CPU connection/check before any guarded validation transaction.
 All previous parent connection attempts failed locally; no successful remote
 checker, lease, GPU result or optimizer update is implied. See updated
 [QAT support checkpoint](../parallel20261002/qat-priority.md).
+
+
+## CPU support findings — October 2, 18:39 UTC
+
+Four support teams remain active at20% original weekly allowance remaining.
+Preliminary actual-API LSQ batching probe finds learned head gradient scaling
+by sqrt(valid depth) despite equal forward loss; protected QAT coordinator
+informed to assess exposure in the pending launch recipe. Astra independently
+reviews semantics/remedy. Recurrent comparisons pass; curriculum resume-state
+validation and sign/capacity diagnostics are being finalized. No live source or
+recipe changed and no new GPU/training result inferred. Details and validation
+limits: [supervisor findings](../parallel20261002/supervisor.md#first-research-findings--october-2-1839-utc).

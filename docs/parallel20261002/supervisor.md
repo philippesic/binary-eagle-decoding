@@ -83,3 +83,36 @@ work at a budget stop.
    subsequent Astra packets only while original allowance permits.
 4. On a heartbeat, inspect actual agents and durable records before recreating
    anything; idle between healthy owner turns is not a failed GPU process.
+
+
+## First research findings — October 2, 18:39 UTC
+
+Fresh root usage:80% used/20% remaining, original weekly reset unchanged,
+ordinary usage permitted. Four leaders remain active; no refill is due. LSQ
+independent validator completed362935f; other independent validation is pending.
+Astra is doing a focused challenge of LSQ normalization/remedy semantics, rather
+than starting another task slate. Monitor retains control/log ownership.
+
+Preliminary owner reports, not integrated production changes:
+
+- LSQ team reproduces the real head path across72 synthetic cases: logits/loss
+  match, but serial:batched learned head clip/threshold gradients differ by
+  sqrt(valid depth); synthetic SGD step differs up to0.002749. Shared chain
+  normalization restores equivalence while changing serial semantics; a serial
+  learned-head fallback is a candidate preserving those semantics. QAT owner
+  was informed to assess actual pending recipe exposure before training.
+- Recurrent team reports216 composed CPU VJP comparisons passing, two synthetic
+  AdamW steps/resume matching serial, and a stale-cache negative control shifting
+  logits0.03090015. No production defect found so far; independent tests pending.
+- Curriculum team confirms activation reset/fresh optimizer is explicit policy,
+  retained binary/scale/correction/midpoint state is exact, and resumes accept
+  malformed Adam payloads in synthetic probes. Authentic transition crash replay
+  and trajectory consequences remain under independent validation.
+- Sign team distinguishes reachable sign patterns from infeasible XOR: existing
+  control variants can stall64steps at master magnitude.5; magnitude.02 reaches
+  a useful flip around20steps. Infeasible XOR can flip/chatter without useful
+  decision improvement. These are tiny CPU fixtures, not a selected live recipe.
+
+All teams keep source and live recipes untouched. Final source-bound reports,
+independent checks and commits precede root integration. CUDA readiness, actual
+acceptance and Q4_0 native throughput still require their existing GPU gates.
