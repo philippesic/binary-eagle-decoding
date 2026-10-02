@@ -42,9 +42,14 @@ def run_checked(argv):
         raise ValueError("only Git/ldd/readelf inspection is permitted")
     env = {k: v for k, v in os.environ.items() if not k.startswith(("LD_", "DYLD_"))}
     env["LC_ALL"] = "C"
-    result = subprocess.run(argv, capture_output=True, text=True, timeout=30, check=True, env=env)
+    binary_rodata = len(argv) == 3 and argv[:2] == ["readelf", "--string-dump=.rodata"]
+    result = subprocess.run(
+        argv, capture_output=True, text=not binary_rodata, timeout=30, check=True, env=env
+    )
     if len(result.stdout) + len(result.stderr) > 4 * 1024**2:
         raise ValueError("inspection output exceeds its bound")
+    if binary_rodata:
+        return result.stdout.decode("utf-8", errors="surrogateescape")
     return result.stdout
 
 
@@ -627,7 +632,11 @@ def inspect_runtime(
                 build_info_observations.append(
                     {
                         "command": ["readelf", "--string-dump=.rodata", str(path)],
-                        "output_sha256": hashlib.sha256(rodata.encode()).hexdigest(),
+                        "output_sha256": hashlib.sha256(
+                            rodata.encode("utf-8", errors="surrogateescape")
+                        ).hexdigest(),
+                        "output_bytes": len(rodata.encode("utf-8", errors="surrogateescape")),
+                        "output_decoding": "utf-8-surrogateescape",
                         "matched_commit": facts["build_commit"],
                     }
                 )
