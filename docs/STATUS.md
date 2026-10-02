@@ -84,6 +84,14 @@ release proof remain required. The sole Luna has CPU-only GO for a bounded
 server target/static inspection protecting7operator artifacts; dispatch is not
 job-start proof. No GPU lease, CUDA retest or training. [Checkpoint](goals/qat-optimization-readiness.md#full-capture-measured--october2-1213-utc).
 
+**CPU server attempts closed:** two bounded source/RAM/artifact preflights
+stopped before building: first a progress-count parser edge, then a real UI asset
+custom dependency outside the narrow approved scope. Both failures preserved;
+all7operator artifacts unchanged, owned groups/transports gone. No third CPU
+retry. Native9e2 CUDA fixture stays ready and untested, queued after verified
+preparation release. Normal12:45CPUhealth is full capture/readiness assembly,
+zerooptimizer/no finalreceipt/nonterminal. [Checkpoint](goals/qat-optimization-readiness.md#bounded-cpu-server-attempts-closed--october2-1253-utc).
+
 **Validation task rotation at a safe boundary:** after two compactions, the
 validation/training owner transferred to acknowledged successor
 01a0fc3d-bbe1-7e93-a19b-a9200dfa186c (Continue QAT validation and training). No owned remote

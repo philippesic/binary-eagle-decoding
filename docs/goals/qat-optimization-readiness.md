@@ -1359,3 +1359,62 @@ full-provider source-bound backward/memory/timing gates remain pending after
 actual preparation release. No training recipe selected or optimizer updates.
 Published Python source guard eaa applies to later admission; native synthetic
 operator build remainsb32/9e2. No new schedule/goal/research policy decision.
+
+## Bounded CPU server attempts closed — October2 12:53 UTC
+
+Actual source-bound CPU attempt01 ran under remote_job/detached host tmux and
+finished exit1 at12:24:26UTC before build. FreshMemAvailable19,564,617,728B,
+source/gitlink/cleanliness/CMake/privateoverlay and seven operator SHA guards
+passed. The60s preview completed but legitimate CMake progresscount61 was not
+accepted. No compile/static inspector/GPU/model/data/optimizer work. Supervisor
+14649/child14654 groups and session absent;1.5s exit prevented external starttick
+capture, recorded unavailable. Raw failure archive preserved local/remote,
+SHA07308daff4c1196171c954fea2c4469c808455858c2e4d526dcfe3c0c2a86c11.
+No existing artifacts or failed logs were overwritten for the corrective attempt.
+
+One narrow LOCAL correction admitted nonnegative progresscounts in canonical
+CMakeFiles and captured /proc lineage at runner startup; all other guards stayed.
+Attempt02 planSHA22f980c8332050f114483296090d2652b51245825c92618bbf31c7593a4c4517,
+runnerSHA822059ecf889c1ae288889cbd6093c9cacc36f3fa27445ac391337454662324d.
+Actual job qat-cpu-server-prepare-20261002-02 ran12:44:48.016828→12:44:49.518142UTC,
+finishedexit1. Supervisor15429/PGID15429/start2705061; timeoutchild15434/PGID15434/
+start2705067; runner15436/PPID15434/PGID15434/start2705068. Lineage errors empty;
+MemAvailable19,552,419,840B. Source/config/overlay/7pins pass; preview completes.
+Exact refusal: cannot parse CMake progress message. Underlying raw action is
+Provisioning UI assets followed by scripts/ui-assets.cmake and llama-ui-assets.
+This is a REAL custom server dependency outside the deliberately narrow approved
+server-object/link-only write scope, not a numerical CUDA failure. No build or
+static inspector ran. Root inspected published script locally: it can provision/
+download/generate UI assets and auxiliary outputs, so no blind allowlist widening.
+
+Actual02stateSHAef575bd4da49b18bfdc7bb1347c06d49dad8bd78e35e9c9fa84a8ad4e67e76fb;
+previewSHAf66191c6da837933321511c261a12b51bac6dc6b11c7df60e29863722105d7b9;
+operationSHAee5bae8aadf7033b5b83144adcd3770f0a7622613be08518ea8719e517cf1b05;
+stdoutSHA23d27f5b3e1b6450a4a42a267aad6905cb2a6b1054b28d1fbd03d4797bc70c5c.
+Exact1981B/5line snippetSHA817395862fc8d129c0b2ccbc0cee31638422f7f8dcb80f21ea441fce2247feb8
+is retained under remote early-cuda-20261002/cpu-server-prepare-20261002-02/logs/.
+Fresh hash check confirms all7operator artifacts unchanged.15429/15434groups
+empty, hostsession absent, own SSH/local181 disconnected/closed/absence verified.
+ONE Luna completed CPU assignment; no root-owned remote jobs/transports/lease.
+Both raw failed runs retained. No third CPU retry or automatic reconfigure.
+
+Latest normal owner CPU check12:45:00.878622UTC is healthy/nonterminal at
+readiness_complete/preparing,full353/10,000train/1,002dev,zerooptimizer/no final
+readyreceipt,original674/676 live. OwnerLOCAL183 closed/absent. Assembly completion
+is not full preparation or GPU release. Saved phase heartbeat12:19:56.950537UTC
+was~1504s old at that observation; any later stale alarm alone cannot prove a
+failed job/freeGPU or authorize recovery. Owner handles its scheduled bounded
+endpoint observations; root does not duplicate checks or change thresholds.
+
+Next action: follow SAME ACTIVE15min preparation/QAT monitors, quietly on healthy
+unchanged state. Owner must finish paired CUDA smoke/checkpointzero/readyreceipt/
+terminal plus fresh group/GPU-empty proof. After genuine finalrelease or fresh
+explicit safe lease, reuse ONE Luna for frozen prebuilt native9e2 fixture120s and
+conditional backendops180s; no build in that slot. Actual CUDA repair retest is
+still pending. Only after passing operators prepare current server with reviewed
+necessary build-tree dependency scope and reverify exact hashes; preserve frozen
+preparation and all prior failures. Then current actual-model/recipe/full-provider
+source-bound backward/memory/timing/everyprecision gates before NEW authorized
+training. FixedA8/A1 authentic frozen-provider reuse is supported; optional/A4
+bridge remains separate. No actual-model proof/optimizer update/readiness,
+convergence, acceptance gain or throughput claim from these CPU attempts.
