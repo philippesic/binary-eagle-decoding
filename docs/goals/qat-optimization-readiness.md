@@ -76,6 +76,39 @@ launch and is reviewing process-safety code. The preparation owner is also
 testing locally; staging and GPU execution remain blocked pending review. No
 lease, CUDA test, training or optimizer update is active.
 
+**15:13 UTC status refresh:** QAT completed checkpoint `86bd7ca`; its turn
+reports controller fixes still pending, with no GPU job or lease active. The
+preparation owner remains in local controller failure tests; staging and GPU
+execution remain blocked pending review. The Codex weekly window is unchanged
+at 77% used / 23% remaining, `resetsAt=1791049896`.
+
+**15:18 UTC status refresh:** QAT has implemented three local controller fixes;
+expanded tests and immutable review remain pending. The prep owner is still
+running local failure tests, with staging and GPU execution blocked pending
+review. Both owner heartbeats remain ACTIVE. There is no validation lease, CUDA
+test, training, optimizer update, or verified GPU release. Usage remains 77%
+used / 23% remaining in the original window.
+
+**15:38 UTC status refresh:** QAT reports expanded controller-safety tests still
+failing; CUDA execution remains blocked. The preparation owner found a PID-reuse
+identity edge case when the old process group appears empty, added a PID identity
+check, and is rerunning the corrected harness while preserving the first failure.
+No lease or GPU activity is active. Codex usage remains 77% used / 23% remaining
+in the original weekly window.
+
+**15:53 UTC status refresh:** QAT's focused review reports all three controller
+blockers fixed and PID-reuse checks fail closed. A final identity test and exact
+launch-packet review remain pending; no CUDA execution or lease started. The
+preparation owner continues rerunning the corrected harness. Codex remains 77%
+used / 23% remaining in the original weekly window.
+
+**15:58 UTC status refresh:** QAT reports all 20 local controller-safety tests
+passing and is verifying hashes, final code, and exact command before deciding on
+bounded-fixture authorization. Preparation is sending scripts, hashes, and the
+one-shot command for both-owner review. No remote staging, GPU lease, CUDA
+fixture, training, or optimizer update has started. Codex remains 77% used / 23%
+remaining in the original window.
+
 The clean-checkpoint repository snapshot was at `42e6419` before the current
 uncommitted research notes; do not discard unmerged/uncommitted files. Recent
 visible commits include `f6815c3` (atomic CUDA plan), `a5127e6` (preparation
@@ -1751,3 +1784,63 @@ Next: prep owner fixes local controller/tests; review new immutable packet and
 conditionally authorize one complete sole-operator transaction only after all
 checks pass. No actual CUDA repair, model/backward/memory/timing, corpus admission,
 recipe selection, training or acceptance/throughput claim at this milestone.
+
+
+## Atomic05 conditional fixture authorization — October2 16:00 UTC
+
+The three actual controller blockers are fixed at V4. Astra rechecked exact
+stable V4 hashes and the PID-reuse-outside-old-group fix, finding no remaining
+blocker within its bounded process/signal/deadline review. Final V5 change ONLY
+adds explicit controller process PID equality; root removed that clause and
+reconstructed exact accepted V4 controller hashfeaee59b. All20 mocked safety
+tests pass, with old14/20/19of20 failures preserved. No remote/model/GPU proof
+follows from these tests. Exact immutable packet is under ignored
+runs/luna-continuous-a8-a1-20260929/provider-audit-atomic-05/.
+
+Reviewed source/config SHA256:
+- controller.py:6a414f897a286fcd5037bc66c675fd814292d9ee849506c3d8eded9e2ecc7d5c
+- guard.py:3a02b322177c8c334cc6261ebd417957bef378b1d3b3fb0a8e8c41dcc3c14026
+- identity_entry.py:814dbad924e64f4d4847bed85cf72f64457e8f2550da833928f95c68bab668d5
+- expected.json:4ebdcbad026fd858ba02af3a98ebc7a476d7cb460c55517f8be35f8c2511944f
+- test-result.json:c3fd9aea9d844cf0f171215a3eaf5ee4e418959a34d2212c799aa06a810c1abc
+- test suite:cda08ea30ffbbc2322f35a1a734ecc5eb54a7ed2ae69d2e91e54000a6f12bc73
+- review-request.json:ac38ce205ba6e209c2d9b446ca7e11f88af791f03bb14cdf5803f30573c1312a
+
+Preparation owner explicitly accepts V5. Root wrote both-owner approved scope/
+pins authorization.json from the reviewed template; actual raw-byte SHA
+22b886151e139b9351d95a856b199127e2606fbce75539fcb99f021d739ad881.
+Root authorizes ONE conditional complete atomic05 transaction under existing
+human authority; no further interchat GO after the verified hold. Sole SAME
+preparation Luna owns all staging/acquisition/fixture/teardown/return through
+tmux MCP; root CUDA Luna remains offline, no root transport/query/job.
+
+Unique lease prep08-provider-audit-atomic-no-ftz-20261002-05; controller/host
+session prep08-atomic-no-ftz-controller-20261002-05; fixture/session
+qat-no-ftz-atomic-20261002-05; report early-cuda-20261002/atomic-05/native-operator.json.
+Durable host socket binary-eagle-runtime, remote_job controller grace180s and
+fixture grace10s. Actual remote_job bytes must freshly match
+e647966ad6405499446330ab70f2a25c458428f9deae94c4998ec635367c040e.
+Exact command template and all frozen math/runtime/source/resource pins are
+in reviewed packet. Approved native command: timeout --signal=TERM
+--kill-after=10s 120s pinned attempt06 test-eagle3-learned --backend CUDA
+--json-report NEWatomic05report, no foreground; no backendops/build/model/data/
+optimizer work.600s monotonic starts beforeSTOP; >370s remaining before dispatch
+AND immediately before native exec includes120+10+60overhead+180returnreserve.
+
+Fresh registry/pause/unused paths/packet authorization hashes precede acquisition.
+Fresh actual GPU apps/contexts/idle/resources, exact original676/674/673,
+full353captures/zero/status/frozen identity and posthold exclusive proof are
+mandatory. Root conditional authorization is not an actual lease or start.
+No chat/hash-transfer/docs wait in hold. Independent supervisor/child identities
+precede exec, cancellation/late launch gates are durable, unknown process/source/
+state fails closed. Teardown only owned groups, fresh GPUempty/frozen same-group
+proof then exactlyoneCONT, CPUactivity-verified return; unknown teardown requires
+coordination, never expiry-based resume. Return precedes raw report transfer and
+unchanged validator/collector. No automatic retry/renewal or request04 reuse.
+
+At this checkpoint actual hold/grant/fixture result/return remain unverified.
+Latest saved preparation health14:06 remains nonterminal/fullcapture/zero/no
+readyreceipt with stale warning classified separately; no fresh root health
+query. Next actual milestone is one owner-supervised outcome, with original
+job preserved. Training still requires complete preparation, current actor/
+recipe/native/backward/memory/timing/provider gates and final exclusive handoff.

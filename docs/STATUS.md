@@ -27,6 +27,34 @@ the preparation job's ownership; RTX2080Ti remains paused. Preserve the active
 goal and exact pending gates in
 [the QAT checkpoint](goals/qat-optimization-readiness.md#supervisor-rotation-checkpoint--october2-1505-utc).
 
+At 15:13 UTC the QAT owner completed checkpoint `86bd7ca`; controller fixes
+remain pending and no GPU job or lease is active. The prep owner is still in
+local controller failure tests with staging/GPU execution blocked pending review.
+The original weekly allowance remains 77% used / 23% remaining at
+`resetsAt=1791049896`.
+
+At 15:18 UTC QAT reports three controller fixes implemented locally, with
+expanded tests and immutable review still pending. The preparation owner remains
+in local failure tests; staging and GPU execution are still blocked pending
+review. Both 15-minute owner heartbeats remain ACTIVE; no lease or GPU activity.
+
+At 15:38 UTC the expanded QAT controller safety tests still fail, so CUDA
+execution remains blocked. Preparation found a PID-reuse identity edge case when
+the prior process group appears empty; the draft now checks PID identity and the
+corrected harness is being rerun. No lease, CUDA test, training, optimizer update,
+or GPU release is active.
+
+At 15:53 UTC QAT's focused review says the three controller blockers are fixed
+and PID-reuse checks fail closed; the final identity test and exact launch-packet
+review remain pending. Preparation is rerunning the corrected harness. No GPU
+lease or CUDA execution has started.
+
+At 15:58 UTC QAT reports all 20 local controller-safety tests passing. It is
+verifying hashes, the final change, and the exact command before deciding whether
+to authorize the bounded fixture. Preparation is sending the same scripts,
+hashes, and one-shot command for both-owner review. Nothing is staged remotely;
+no lease, CUDA fixture, training, or optimizer update has started.
+
 The checkpoint is prepared for a fresh Codex task, but task creation was
 rejected by the app's automatic approval gate (`approval policy is never`). No
 successor task was created. The existing single research heartbeat remains
@@ -50,15 +78,16 @@ saved healthy preparation checkpoint has 10,000 train / 288 development prompts
 and zero optimizer updates; no validation lease, CUDA retest, or training start
 is verified.
 
-**Latest validation checkpoint, October2 15:09 UTC:** the new atomic controller
-candidate has three executable review blockers: startup identity race can abort
-cleanup, delayed native exec lacks its own deadline/cancel gate, and zero CPU
-progress after return can be reported successful. Owner is fixing these locally;
-no staging, lease or GPU fixture GO. First local tests preserve9pass/1fail/4error
-from harness mismatches; passing corrected tests and immutable review remain
-required. Full capture remains10,000train/1,002dev; no final preparation receipt
-or optimizer updates. Root CUDA operator stays offline; both monitors ACTIVE.
-[Checkpoint](goals/qat-optimization-readiness.md#atomic-controller-candidate-review--october2-1509-utc).
+**Latest validation checkpoint, October2 16:00 UTC:** immutable V5 controller
+passes20/20 mocked local safety tests. Source re-review confirms prior blockers
+fixed; final PID-equality-only delta verified by reconstructing V4's exact hash.
+Both owners accept ONE conditional fixture-only atomic05 transaction, performed
+entirely by the SAME preparation Luna. Fresh source/ownership/resource/exclusive
+hold proof is still required before CUDA execution. Max600s/return reserve180s,
+prebuilt fixture120s; backendops deferred. Root CUDA operator remains offline.
+Actual grant, fixture start/result and same-process return are not yet verified;
+training admission and final preparation endpoint remain separate gates.
+[Checkpoint](goals/qat-optimization-readiness.md#atomic05-conditional-fixture-authorization--october2-1600-utc).
 
 **Active goal:** [QAT optimization readiness](goals/qat-optimization-readiness.md).
 All five requested controls plus raw fusion correction and affine binary weights
