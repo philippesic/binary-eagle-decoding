@@ -3,29 +3,29 @@
 **Comparison target:** Q4_0 EAGLE is the baseline to beat for acceptance,
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
-## Current coordination — October 2, 19:32 UTC
+
+## Current coordination — October 2, 19:45 UTC
 
 Active goal remains [QAT optimization readiness](goals/qat-optimization-readiness.md).
 Supervisor01a0fddd owns integration/usage; QAT owner01a0fc3d and preparation
-owner01a0fdd6 have ACTIVE protected heartbeats. A durable pending-host-info gate
-allows local observation and suppresses repeated unchanged SSH. Remote health
-is unknown; no new CUDA validation or training is verified.
+owner01a0fdd6 have ACTIVE protected heartbeats. A direct human host correction
+cleared the pending-info gate. Sole preparation operator owns one guarded
+renewed preflight; current local operator/GO state does not verify connection,
+GPU use, native results or training.
 
-Local learned-head correction59ef557/f9a21f3 has immutable82-test CPU proof.
-QAT-approved checkpoint host-save guard d2c4dca/8d17b0e has42-test proof and
-charges the omitted transfer overlap with floors unchanged. Evaluator correction
-remains with the separate QAT source worker. Frozen remote preparation unchanged;
-new current-source native/model/resource gates remain required.
+Local corrections: learned-head59ef557/f9a21f3 (82-test proof), checkpoint
+host-save d2c4dca/8d17b0e (42-test proof), evaluator e6ab963 (70 author checks/
+8 review checks). Current-source actual native/model/resource gates remain
+required; frozen remote preparation is untouched by these local source changes.
 
-Four CPU research batches are complete and integrated as reports/prototypes.
-Activation reuse and snapshot-copy removal are unapplied performance proposals.
-Astra found no justified fifth CPU batch until new evidence; monitoring remains
-active at14% weekly remaining, original reset1791049896. Stop research at<=1%;
-stop research monitor on reset, preserving QAT and available-credit continuation.
-[Latest checkpoint](parallel20261002/supervisor.md#fourth-slate-and-host-save-correction-integrated--october-2-1932-utc).
+Four CPU research batches are integrated. Activation reuse and snapshot-copy
+removal remain unapplied performance proposals. Astra found no justified fifth
+CPU batch until new evidence. Monitoring continues at latest13% weekly remaining,
+original reset1791049896: stop research at<=1%; stop research monitor on reset,
+preserving QAT and available-credit continuation.
+[Latest checkpoint](parallel20261002/supervisor.md#evaluator-correction-and-host-resolution--october-2-1945-utc).
 
-
-
+Earlier preparation and research observations follow.
 
 **Current QAT/preparation state — October2 18:40 UTC:** successor
 01a0fdd6-8e11-7393-9aed-5c99bd08e428 is acknowledged. Both restored15minute
