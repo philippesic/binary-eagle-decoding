@@ -12,8 +12,8 @@ form lower/upper endpoints l-e and l+e, expanded by the caller's separate
 absolute logit arithmetic allowance. The ordered reference winner w is stable
 iff its lower endpoint exceeds every earlier competitor's upper endpoint and
 is at least every later competitor's upper endpoint. Otherwise return ambiguous.
-Endpoint arithmetic is expanded one binary64 representable step for nonzero
-radii; zero-radius exact ties retain their order. Mapping must be injective and
+Radius addition and endpoint arithmetic are each expanded one binary64
+representable step for nonzero radii; zero-radius exact ties retain their order. Mapping must be injective and
 fixed. Input/state identity, vector and mapping SHA256, error provenance and
 arithmetic allowance provenance appear in the result.
 
@@ -26,7 +26,9 @@ its own attaining vertex: collecting upper bounds does not create a probability
 vector. F64/libm rounding is not proved here; a safety claim is conditional on
 the externally justified arithmetic allowance enclosing implementation error.
 Numerically collapsed/overflowed finite box endpoints fail closed. Common
-1e300 offsets and opposite-sign 1e308 logits are covered by owner checks.
+1e300 offsets and opposite-sign 1e308 logits are covered by owner checks,
+including temperature 1e308 (finite normalized separation despite overflowing
+unscaled subtraction). A half-difference fallback handles that case.
 
 The contract requires the entire fixed processed normalization domain, stable
 processor state and ordered token mapping, processor identity, first-in-order
@@ -48,10 +50,10 @@ not globally lowest token ID; backend argmax parity is unverified. The existing
 native-round adapter declares private cache/feature/processor state unresolved,
 so its event schema alone cannot satisfy this certificate's processor contract.
 
-Constructive RMS failure: with10000 coordinates, logits `[1e-5,0,-1,...]`,
-increase only coordinate1 by2e-5. The greedy winner changes from0 to1 while
-RMS error is2e-7, fifty times smaller than the original margin1e-5. Maximum
-coordinate error2e-5 exposes the flip. RMS must not be passed as e. Empirical
+Constructive RMS failure: with 10000 coordinates, logits `[1e-5,0,-1,...]`,
+increase only coordinate 1 by 2e-5. The greedy winner changes from 0 to 1 while
+RMS error is 2e-7, fifty times smaller than the original margin 1e-5. Maximum
+coordinate error 2e-5 exposes the flip. RMS must not be passed as e. Empirical
 CPU errors cannot establish universal CUDA coordinate bounds.
 
 Fixed-J directional expectation is deferred; it is optional and unnecessary
@@ -62,3 +64,9 @@ validator/report only. A future native admission must supply complete processed
 logits, fixed domain/order/state ancestry, externally justified coordinatewise
 maxima and separate numeric allowances. No CUDA gate or hardware performance
 result follows from these synthetic CPU checks.
+
+Owner verification: 9/9 unittest checks pass on Python 3.11.3, Darwin arm64,
+CPU only, F64 floats; Ruff lint/format pass. Independent validation presently
+passes 8/8 checks in 0.003 seconds; its fixture census is in validation/.
+Owner commits: `c615bc8` implementation and `920d43c` arithmetic hardening.
+No native backend invocation or device measurement was performed.

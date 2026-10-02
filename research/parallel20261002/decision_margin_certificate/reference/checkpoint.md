@@ -11,5 +11,8 @@ No GPU/Metal/SSH/model/data or persistent experiment process.
 Initial control95%used, latest97%used; original reset1791049896, stop false.
 Before every cost chunk read MAIN control; stop/checkpoint at<=1%remaining,
 research_stop, reset_observed or changed reset. No paid research.
-Remaining: run focused owner/independent tests, commit concrete result, report
-commit/checks to root and monitor. Root owns shared active-goal integration.
+Owner commits `c615bc8` and `920d43c`; 9/9 owner checks pass, Ruff pass.
+Current independent executable: 8/8 pass in 0.003 seconds on CPU F64.
+Remaining: independent validator final report/commit, push branch and handoff.
+Root owns shared active-goal checkpoint integration and main cherry-pick;
+this unique checkpoint avoids conflicting shared-goal edits.
