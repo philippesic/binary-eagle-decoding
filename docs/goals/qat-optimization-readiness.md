@@ -2353,3 +2353,19 @@ allocation counts, noCPU→CUDAperformanceinference. QATowner coordinates any
 sourceadoption of memory/eval/resume fixes with freshidentity+resourcegates.
 Originalweeklyremaining16%, monitorstop/refillpolicyunchanged, hostinfo pending.
 [Checkpoint](../parallel20261002/supervisor.md#fourth-slate-launched-third-worktrees-retired--october-2-1913-utc).
+
+
+## QAT correction partitions — October 2, 19:21 UTC
+
+Current QAT owner assigned protected qat_priority ONLY save-host-admission
+bound in qat_curriculum_runner.py+focusedtests; preserve floors/16MiB/current
+CPUtree/math/resume/smoke, no stagedresume adoption. model_gate_plan separately
+owns developmentpreflight/recipeconstruction in continuousstages+tests, with
+full-shape host admission before arrays. Root relayed/recordedexactownership.
+Frozenjobs untouched, newsourceidentity/actualgates beforedeployment.
+
+Stepbookkeeping evidence integratedb858d33; root7checks+independentCLIpass,
+floatclones9→0 while exactmetrics/updates/errorordering/boolsunchanged.
+[Report](../../experiments/parallel20261002/step_bookkeeping/report.md);
+unappliedpatch only, noCPU→CUDAclaim. Activationreuse finalownercheckpointpending.
+[Checkpoint](../parallel20261002/supervisor.md#qat-correction-ownership-and-snapshot-evidence--october-2-1921-utc).

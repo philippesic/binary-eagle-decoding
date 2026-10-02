@@ -316,3 +316,26 @@ fix; root does not turn14toy replays into fit admission. Pendinghost-info gate
 continues, no further SSH/GPU attempt. Usage at lastrootread16%originalremaining.
 Monitor owns ONE futureAstrarefill after both teams/descendants complete; root
 launches only independent justified packets, preserving direct project value.
+
+
+## QAT correction ownership and snapshot evidence — October 2, 19:21 UTC
+
+Current QAT owner explicitly assigns protected qat_priority an isolated
+HOST-SAVE admission correction: qat_curriculum_runner.py save bound+focused
+tests only, existing per-occurrencepayload+largestCUDAtransfer+unchanged16MiB/
+floors. No CPUtree/math/resume/moment_probe changes, no transactionalresume
+prototype adoption or actualfitclaim. Existing QAT model_gate_plan separately
+owns w1ax_continuous_stages.py development publication/recipe preflight, including
+full-shape staging allowance before arrays and unchanged floors/A8-A1scope.
+Root relayed partitions bycollaboration and notifiedcurrentowner; no overlap
+with readonlyresearch activationreuse/stepbookkeeping.
+
+Step bookkeeping owner/validator finished; evidencebc44748/c744995/9cbd689/
+5812261 integrated→87339e9/291bcc3/f1ea12f/b858d33. Root reviewed one-line
+unappliedpatch and7/7 owner checks plus configured independentCLI pass on
+projectTorch2.14/macOSarm64CPU. Bool storage/metrics/update/errorordering exact;
+snapshot floatclones9→0, copiedpayload872,939,520B/lane-step, nominalread+write
+1,745,879,040B, largest removed transient327,680,000B. No scalarcoalescing or
+GPUlatencyclaim. Core recurrent_qat.py unchanged; adoptionbelongsQATowner.
+Activationreuse independentvalidator now complete; owner finalcheckpointpending,
+so no next refill yet. Usagemonitor retains sole nextAstraprompt ownership.
