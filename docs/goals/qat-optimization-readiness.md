@@ -3017,3 +3017,57 @@ Corresponding localbranches cleaned; sourceqt-server-freshness remotebranch
 cleanup follows fullypublishedmain equivalence. Ignoredpackets/evidence and all
 peeruntrackedfiles/worktrees preserved. Root ownsprojectcheckpoint/Goal/SAME
 heartbeat; prep01a0fdd6 ownsSAMEsoleLuna and everyremotejob/transport. No rootSSH.
+
+
+## Historical full pass verified and new inputs bound — October 2, 22:26 UTC
+
+ACTUAL single correctedWSL read-only metadata query exited0 at22:23:00.526056UTC.
+Byteexactraw422612B SHAe148d9049b5c98ac72a0c3838bd4f892c0f32639ce7ebb6bf6a66f196bdbbac7;
+immutableownerproofeefe4386a4e1cd0c7e024963f8f25d65648825c6597dcbc23336dc25b1cd85bf.
+723metadatareads9,221,698B in0.373259s. stderrPQtransportwarning only, SHA
+048e2ba89ae430962e02f5341cf60c694fb7e131cb417790075a56b32ca09992.
+Originalfailed8551WindowsTIMEOUT evidence retained. AdoptedEXISTINGv2draft
+ e95e18c3572b1c1f087e860c6e5bfa52f093e5d90b947d748513505da466bf3c,
+manifest2b76fd1016f8b271bb0256503f7a5924b83ea011c15c471f4c77eae93d15b00b.
+Root6wrapperguards+ownerWinCRT/source/context bytecheck PASS. No duplicateedits
+or alternateexecution; sameoperatorLOCAL217/keeper14271 closed/inactive afterward.
+
+Exact SAME09boot459/PIDns and2713/2714births before/after, teacher_capture_audit
+109/353, models{}/optimizationfalse/zero, host19,447,668,736B. All353manifests,
+320TRAIN10,000 and33DEV1,002 retained. Entireoldorderedreadiness array, both
+providerindexreadiness/split/count joins andALL353audit sidecar joins match TRUE,
+missing/mismatch[]. OldreadinessSHA
+ cab889b9d9dcbe28c4662889a574501c4687d804d0bace3157ffbca7aa49b88e.
+No tensor/model/promptpayload open/hash, oldwrites, signals orGPUqueries.
+
+ROOT independently parsedactualraw/source32fSHA/ALLsidecarmatches and accepted
+legitimate earlierfullsemantic pass via tested public6f feature and archive
+operatione77/completionb89, subject to ordinary actualsource/AST/dependency/
+currentpayload/inventory verification. This removes the need to await frozen
+09's repeated353pass and959latersemantic audits. It does NOT claim final
+preparationready, currentmodel smoke/checkpointzero, save-resume or optimizer gate.
+
+Reviewedpublic6f launchplan-v2SHA
+94f375776c67ada28e334fb28a7c9ec6746d89e448fb93289caf44c18e16dbc5;
+smalltypedbuilder5202ea58230a54eab47bc498863cc3b8d5791587751a7d796a676f8a70deadcb;
+manifest e9b373fb4d05ae2678519334652b357e2b8023e3147442f510b94b08c7c605da.
+Root10+Luna10metadata checks PASS. ROOT ranbuilder againstACTUALe148raw,
+explicit --enable-reviewed-history: new LOCALtyped-inputs-reviewed-history-20261002-01/
+{import,binding}.json. ExactREMOTEinputs/import.json SHA
+04b717f3e7faa4d38126c3d2aef6295a5f7327da5b49b1d4475ad4ca6aa247e6,
+all353orderedcaptures+reports. Publicsource6f1444b/stage41f181/config4ee,
+externalreceiptsdir andNEWrun/checkout paths immutable. Historicalmetadataenabled
+in NEWtypedinputs only; trainingeligiblefalse/optimizerallowedfalse; no live09change.
+
+SAMEsoleLuna now acceptedCPU04static-only26df packet/freshadmission afterowned
+querycleanup. RootGO also authorizes next NEWdetached6f sourcefetch/worktree/vendor
+9e2init and exacttypedinput+archive staging, separately supervised CPUconfig
+verification under freshRAM/IO coordination BEFORE old09stop. Configvalidation
+hashesactualpayloads and is not the40smetadataquery; log/resource-bound it separately.
+No oldsource checkout/reset or data writes. Then rootreviews concreteNEWsource/
+config/admission, exact09gracefulstop+completegroup/GPUteardown precedes exclusive
+NEW--prepare-only launch. Ordinaryfullprovider/coverage/currentpairedPyTorchsmoke/
+zero-save/finalready, separatecurrent9e2actualmodel/recipe/resource/save-resume
+andQ4development gates remain before actualoptimizertraining. No04actualPID/result,
+newsourceCPUpayloadverification/modelstart oroptimizerstep yet at this checkpoint.
+QATGoal/SAMEheartbeats active, researchstopped and2080Tipaused; no rootSSH/operator.

@@ -4,6 +4,21 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
+## Historical full audit pass verified — October 2, 22:26 UTC
+
+The actual read-only inventory matches all 353 manifests to the earlier completed
+semantic pass, including both provider indexes and every audit sidecar. All
+10,000 TRAIN and 1,002 development prompts remain intact. Root approved the
+reviewed historical-audit path and generated source-bound inputs for a new
+`6f1444b` preparation-only run. Current payload integrity checks remain required;
+this does not establish final model readiness or permit optimizer updates.
+
+The sole operator has completed and cleaned the inventory transport. It next
+runs the accepted static-only server inspection, then stages and validates the
+new source/configuration before controlled recovery09 teardown and transfer.
+Frozen recovery09 remains untouched, last observed auditing 109/353 with zero
+updates. Research remains stopped. [Actual evidence and execution](goals/qat-optimization-readiness.md#historical-full-pass-verified-and-new-inputs-bound--october-2-2226-utc).
+
 ## Audit reuse and runtime fix public — October 2, 22:17 UTC
 
 Historical full-pass recognition is integrated as `6f1444b`, after 49 focused
