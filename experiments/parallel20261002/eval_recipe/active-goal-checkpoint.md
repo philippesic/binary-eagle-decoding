@@ -22,13 +22,14 @@ needed, no A4 evaluator extension. Effective F16 factors are deployment values,
 not restored F32 optimizer masters.
 
 Owner 6/6 tests, result matrix 14/14 exact, Ruff/format/patch applicability/whitespace
-pass. Independent validation is in validation.md; commit IDs will be reported to
-root. Only owned research/experiment files changed. No core/live recipe/model,
+pass. Independent validation 6/6 is in validation.md; owner 67e259b and
+validator 0c41d70 are integration ready. Authoritative final run 09 is in ignored
+`runs/parallel20261002/eval_recipe/validation-independent-09/`. Only owned research/experiment files changed. No core/live recipe/model,
 GPU/Metal/SSH/capture/final or optimizer work. Validator disclosed accidental
 read-only availability probes in abandoned exploratory runs; authoritative final
 run uses no accelerator discovery. No persistent research process remains.
 
-Control last read original window 1791049896,83% weekly used/research_stop=false.
+Control last read original window 1791049896,84% weekly used/research_stop=false.
 Remaining: integrate report/prototype/test commits, preserve ignored validator
 artifacts, push main and retire merged branch/worktree. Actual source adoption,
 new runtime identity and native/model/resource gates remain owner decisions.

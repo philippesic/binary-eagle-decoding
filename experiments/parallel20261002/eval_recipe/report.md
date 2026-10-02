@@ -111,8 +111,8 @@ Owner: six unittest cases pass on Python3.11.15/Torch2.14.0/NumPy2.4.6 CPU,
 including actual source-order contract, seven named paired recipes, fixedschema 2
 equivalence, actual recurrent logits, F16 factor restoration, exact extracted
 production helper, missing identity, downgrade and post-preflight mutation.
-Independent Luna validation is recorded in `validation.md`; its final authoritative
-run is the current source check. Ruff, format, patch applicability and whitespace
+Independent Luna validation 6/6 is recorded in `validation.md`; authoritative
+run 09 uses the current source and fixture. Combined acceptance is 12/12 tests. Ruff, format, patch applicability and whitespace
 checks pass. No native acceptance or performance result is claimed.
 
 ```sh
@@ -121,8 +121,8 @@ PYTHONPATH=src:scripts:tests:research/parallel20261002/eval_recipe/reference:/Us
   -s research/parallel20261002/eval_recipe/reference -p 'test_*.py' -v
 ```
 
-The bounded research deliverable is complete once independent validation is
-committed. Remaining integration work belongs to the orchestrator/QAT owner:
+The bounded research deliverable is complete; owner 67e259b and independent
+validator 0c41d70 are committed. Remaining integration work belongs to the orchestrator/QAT owner:
 review the unapplied source proposal, bind a fresh runtime, complete resource
 admission and validate actual native/model development under authorized ownership.
 No live recipe change, optimizer update or final-set access is authorized here.
