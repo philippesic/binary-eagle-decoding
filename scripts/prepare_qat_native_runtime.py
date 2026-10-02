@@ -1,0 +1,596 @@
+#!/usr/bin/env python3
+"""Inspect an explicit current CUDA server build on CPU; grant no readiness.
+
+Only Git, readelf and ldd are invoked, using argv and a clean loader environment.
+No server, compiler, build, accelerator, model or dataset is executed/opened.
+The frozen continuous runtime builder remains a separate authority.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import re
+import shlex
+import subprocess
+from pathlib import Path
+
+LIBRARY = re.compile(r"lib(?:llama|ggml)[\w.-]*\.so(?:\.[\w.-]+)?$")
+COMMIT = re.compile(r"[0-9a-f]{40}$")
+
+
+def sha256(path):
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def record(path):
+    path = Path(path).resolve(strict=True)
+    return {"path": str(path), "sha256": sha256(path)}
+
+
+def run_checked(argv):
+    """Read-only tools only. Never interpolate a shell or inherit loader overrides."""
+    if argv[0] not in {"git", "ldd", "readelf"}:
+        raise ValueError("only Git/ldd/readelf inspection is permitted")
+    env = {k: v for k, v in os.environ.items() if not k.startswith(("LD_", "DYLD_"))}
+    env["LC_ALL"] = "C"
+    result = subprocess.run(argv, capture_output=True, text=True, timeout=30, check=True, env=env)
+    if len(result.stdout) + len(result.stderr) > 4 * 1024**2:
+        raise ValueError("inspection output exceeds its bound")
+    return result.stdout
+
+
+def inside(path, directory, name):
+    try:
+        path = Path(path).resolve(strict=True)
+    except OSError as error:
+        raise ValueError(name + " is absent or cannot be resolved") from error
+    if not path.is_relative_to(directory):
+        raise ValueError(name + " resolves outside the intended build")
+    return path
+
+
+def parse_cache(text):
+    result = {}
+    for line in text.splitlines():
+        match = re.fullmatch(r"([^#/:][^:=]*):[^=]+=(.*)", line)
+        if match:
+            key, value = match.groups()
+            if key in result:
+                raise ValueError("duplicate CMake cache field: " + key)
+            result[key] = value
+    return result
+
+
+def parse_compiler(text, language):
+    result = {}
+    for match in re.finditer(r"set\((CMAKE_" + language + r"_[A-Z_]+)\s+\"([^\"]*)\"\)", text):
+        key, value = match.groups()
+        if key in result:
+            raise ValueError("duplicate compiler record: " + key)
+        result[key] = value
+    keys = [
+        "CMAKE_" + language + suffix
+        for suffix in ("_COMPILER", "_COMPILER_ID", "_COMPILER_VERSION")
+    ]
+    if any(not result.get(k) for k in keys):
+        raise ValueError("CMake " + language + " compiler identity is incomplete")
+    if not Path(result[keys[0]]).is_absolute():
+        raise ValueError("actual compiler path must be absolute")
+    return {"path": result[keys[0]], "id": result[keys[1]], "version": result[keys[2]]}
+
+
+def validate_facts(facts, expected_parent, expected_native, expected_arch, expected_code_arch):
+    """Pure validation of collected CPU facts; no imports, files or commands."""
+    if not COMMIT.fullmatch(expected_parent) or not COMMIT.fullmatch(expected_native):
+        raise ValueError("caller must pin full lowercase parent/native commits")
+    if not re.fullmatch(r"\d+[a-z]?", expected_arch) or not re.fullmatch(
+        r"\d+[a-z]?", expected_code_arch
+    ):
+        raise ValueError("caller must pin exact CUDA cache/code architectures")
+    if facts["parent_commit"] != expected_parent or facts["native_commit"] != expected_native:
+        raise ValueError("checkout differs from caller-pinned source commits")
+    if facts["parent_native_gitlink"] != expected_native:
+        raise ValueError("parent gitlink differs from native source")
+    if facts["parent_status"] or facts["native_status"]:
+        raise ValueError("relevant source files are dirty or untracked")
+    build_commit = facts["build_commit"]
+    if not re.fullmatch(r"[0-9a-f]{7,40}", build_commit) or not expected_native.startswith(
+        build_commit
+    ):
+        raise ValueError("generated native build-info belongs to stale source")
+    cache = facts["cache"]
+    if (
+        cache.get("GGML_CUDA") not in {"ON", "1", "TRUE"}
+        or cache.get("CMAKE_BUILD_TYPE") != "Release"
+    ):
+        raise ValueError("explicit Release/CUDA build required")
+    if cache.get("CMAKE_CUDA_ARCHITECTURES") != expected_arch:
+        raise ValueError("CUDA architecture differs from caller-pinned cache")
+    if cache.get("CMAKE_HOME_DIRECTORY") != facts["native_directory"]:
+        raise ValueError("CMake build points at another native source tree")
+    for language in ("C", "CXX", "CUDA"):
+        compiler = facts["compilers"][language]
+        if compiler["path"] != cache.get("CMAKE_" + language + "_COMPILER"):
+            raise ValueError("compiler metadata differs from CMake cache")
+    if facts["compilers"]["CUDA"]["id"] != "NVIDIA":
+        raise ValueError("actual NVIDIA CUDA compiler record required")
+    args = facts["w1a1_arguments"]
+    if args[0] != facts["compilers"]["CUDA"]["path"]:
+        raise ValueError("w1a1 compile command uses a different compiler")
+    forwarded = {
+        "-Xcompiler",
+        "--compiler-options",
+        "-Xptxas",
+        "--ptxas-options",
+        "-Xlinker",
+        "--linker-options",
+        "-Xcudafe",
+        "--cudafe-options",
+    }
+    device_args = []
+    index = 0
+    while index < len(args):
+        if args[index] in forwarded:
+            index += 2
+        else:
+            device_args.append(args[index])
+            index += 1
+    args = device_args
+    fast = [i for i, arg in enumerate(args) if arg in ("-use_fast_math", "--use_fast_math")]
+    ftz = [(i, arg) for i, arg in enumerate(args) if re.match(r"--?ftz(?:=|$)", arg)]
+    if (
+        not fast
+        or not ftz
+        or ftz[-1][1] not in {"--ftz=false", "-ftz=false"}
+        or ftz[-1][0] <= max(fast)
+    ):
+        raise ValueError("w1a1 must end with --ftz=false after fast_math")
+    generated = " ".join(args)
+    codes = set(re.findall(r"(?:compute|sm)_([0-9]+[a-z]?)", generated))
+    if codes != {expected_code_arch} or "sm_" + expected_code_arch not in generated:
+        raise ValueError("w1a1 generated CUDA code architecture differs")
+    if not facts["libraries"] or not any(
+        Path(r["path"]).name.startswith("libggml-cuda.so") for r in facts["libraries"]
+    ):
+        raise ValueError("current CUDA backend library is required")
+    if not any(Path(r["path"]).name.startswith("libllama.so") for r in facts["libraries"]):
+        raise ValueError("current llama library is required")
+    return True
+
+
+def _compiler_file(build, language):
+    matches = list((build / "CMakeFiles").glob("*/CMake" + language + "Compiler.cmake"))
+    if len(matches) != 1:
+        raise ValueError("one actual CMake " + language + " compiler record required")
+    return matches[0]
+
+
+def _arguments(entry, build, response_records):
+    directory = inside(entry["directory"], build, "compile command working directory")
+    args = entry.get("arguments")
+    if args is None:
+        args = shlex.split(entry["command"])
+    if not isinstance(args, list) or not args or any(not isinstance(v, str) for v in args):
+        raise ValueError("invalid compile arguments")
+    # NVCC options files may override flags: inspect them rather than trusting
+    # a visible --ftz=false outside the actual expanded command.
+    expanded = []
+
+    def expand(values, depth=0):
+        if depth > 4:
+            raise ValueError("recursive compile response file exceeds bound")
+        index = 0
+        while index < len(values):
+            token = values[index]
+            filename = None
+            if token in ("--options-file", "-optf"):
+                index += 1
+                if index == len(values):
+                    raise ValueError("missing compile response filename")
+                filename = values[index]
+            elif token.startswith(("--options-file=", "-optf=")):
+                filename = token.split("=", 1)[1]
+            elif token.startswith("@"):
+                filename = token[1:]
+            if filename is not None:
+                # NVCC accepts comma-separated files. Spaces are shlex-quoted.
+                for item in filename.split(","):
+                    response = inside(directory / item, build, "response file")
+                    response_records[str(response)] = record(response)
+                    expand(shlex.split(response.read_text()), depth + 1)
+            else:
+                expanded.append(token)
+            index += 1
+
+    expand(args)
+    return expanded
+
+
+def _object(entry, args, build):
+    positions = [i for i, value in enumerate(args) if value == "-o"]
+    if len(positions) != 1 or positions[0] + 1 == len(args):
+        raise ValueError("compile command must bind one actual object output")
+    path = inside(Path(entry["directory"]) / args[positions[0] + 1], build, "compiled object")
+    if path.stat().st_size < 1:
+        raise ValueError("compiled object is empty")
+    return path
+
+
+def _dynamic_paths(text, object_path, build, *, required=False, allowed_roots=()):
+    fields = re.findall(r"\((?:RUNPATH|RPATH)\).*?\[([^\]]*)\]", text)
+    if not fields and required:
+        raise ValueError("missing ELF RUNPATH/RPATH: " + str(object_path))
+    result = []
+    for field in fields:
+        for value in field.split(":"):
+            if not value:
+                raise ValueError("empty runtime search path is not admissible")
+            value = value.replace("${ORIGIN}", str(object_path.parent)).replace(
+                "$ORIGIN", str(object_path.parent)
+            )
+            if "$" in value or not Path(value).is_absolute():
+                raise ValueError("unsupported relative runtime search path")
+            try:
+                resolved = Path(value).resolve(strict=True)
+            except OSError as error:
+                raise ValueError("RUNPATH/RPATH directory is absent") from error
+            if not resolved.is_relative_to(build) and resolved not in allowed_roots:
+                raise ValueError("RUNPATH/RPATH resolves outside build and explicit runtime roots")
+            result.append(str(resolved))
+    return result
+
+
+def _dependencies(text, bin_dir, inventory):
+    if "not found" in text:
+        raise ValueError("runtime dependency is missing")
+    result = []
+    for line in text.splitlines():
+        match = re.match(r"\s*(\S+)\s+=>\s+(.+?)\s+\(0x[0-9a-fA-F]+\)", line)
+        if match:
+            name, raw = match.groups()
+        else:
+            direct = re.match(r"\s*(/.+?)\s+\(0x[0-9a-fA-F]+\)", line)
+            if not direct:
+                continue
+            raw = direct.group(1)
+            name = Path(raw).name
+        path = Path(raw)
+        if not path.is_absolute():
+            raise ValueError("ldd dependency has no absolute path")
+        resolved = path.resolve(strict=True)
+        if LIBRARY.fullmatch(name) or LIBRARY.fullmatch(resolved.name):
+            inside(resolved, bin_dir, "resolved llama/ggml dependency")
+            if name.split(".so")[0] != resolved.name.split(".so")[0]:
+                raise ValueError("resolved project dependency basename differs")
+            if str(resolved) not in inventory:
+                raise ValueError("resolved project dependency is absent from inventory")
+        result.append({"name": name, "path": str(resolved)})
+    if not result:
+        raise ValueError("ldd returned no dynamic dependency records")
+    return result
+
+
+def inspect_runtime(
+    checkout,
+    build_dir,
+    expected_parent,
+    expected_native,
+    *,
+    expected_arch="120",
+    expected_code_arch="120a",
+    runner=run_checked,
+    allowed_runtime_roots=(),
+):
+    """Read explicit source/build artifacts and inspect ELF; never run a server."""
+    if not COMMIT.fullmatch(expected_parent) or not COMMIT.fullmatch(expected_native):
+        raise ValueError("caller must pin full lowercase parent/native commits")
+    checkout = Path(checkout).resolve(strict=True)
+    native = (checkout / "third_party/llama.cpp").resolve(strict=True)
+    build = Path(build_dir).resolve(strict=True)
+    bin_dir = (build / "bin").resolve(strict=True)
+    server = inside(bin_dir / "llama-server", bin_dir, "server")
+    allowed_roots = tuple(sorted({Path(p).resolve(strict=True) for p in allowed_runtime_roots}))
+    if any(not p.is_dir() for p in allowed_roots):
+        raise ValueError("allowed runtime roots must be explicit existing directories")
+
+    def git(directory, *args):
+        return runner(["git", "-C", str(directory), *args]).strip()
+
+    link = git(checkout, "ls-tree", "HEAD", "third_party/llama.cpp")
+    if not re.fullmatch(r"160000 commit [0-9a-f]{40}\tthird_party/llama\.cpp", link):
+        raise ValueError("parent must bind a native submodule gitlink")
+    server_record = record(server)
+    facts = {
+        "parent_commit": git(checkout, "rev-parse", "HEAD"),
+        "native_commit": git(native, "rev-parse", "HEAD"),
+        "parent_native_gitlink": link.split()[2],
+        "parent_status": git(
+            checkout,
+            "status",
+            "--porcelain",
+            "--untracked-files=normal",
+            "--",
+            "scripts",
+            "src",
+            "configs",
+            "tests",
+            ".gitmodules",
+            "third_party/llama.cpp",
+        ),
+        "native_status": git(native, "status", "--porcelain", "--untracked-files=normal"),
+        "native_directory": str(native),
+        "cache": parse_cache((build / "CMakeCache.txt").read_text()),
+        "compilers": {},
+    }
+    artifacts = [record(build / "CMakeCache.txt"), record(build / "compile_commands.json")]
+    for language in ("C", "CXX", "CUDA"):
+        compiler_file = _compiler_file(build, language)
+        facts["compilers"][language] = parse_compiler(compiler_file.read_text(), language)
+        artifacts.append(record(compiler_file))
+        artifacts.append(record(facts["compilers"][language]["path"]))
+    info = build / "common/build-info.cpp"
+    matches = re.findall(r'LLAMA_COMMIT\s*=\s*"([^"]+)"', info.read_text())
+    if len(matches) != 1:
+        raise ValueError("generated native build-info commit is missing or ambiguous")
+    facts["build_commit"] = matches[0]
+    artifacts.append(record(info))
+    flags_source = native / "ggml/src/ggml-cuda/CMakeLists.txt"
+    artifacts.append(record(flags_source))
+    commands_path = build / "compile_commands.json"
+    commands = json.loads(commands_path.read_text())
+    if not isinstance(commands, list):
+        raise ValueError("compile commands must be an array")
+    required = {
+        native / "ggml/src/ggml-cuda/w1a1.cu": "w1a1",
+        native / "tools/server/main.cpp": "server",
+        native / "tools/server/server.cpp": "server_impl",
+        info: "build_info",
+    }
+    compiled = {}
+    response_records = {}
+    for source, label in required.items():
+        entries = [
+            e
+            for e in commands
+            if isinstance(e, dict)
+            and Path(e.get("directory", "."), e.get("file", "")).resolve() == source
+        ]
+        if len(entries) != 1:
+            raise ValueError("one current-source compile entry required for " + label)
+        entry = entries[0]
+        args = _arguments(entry, build, response_records)
+        if "-c" not in args or args.index("-c") + 1 >= len(args):
+            raise ValueError("compile command source is missing: " + label)
+        operand = Path(entry["directory"]) / args[args.index("-c") + 1]
+        if operand.resolve() != source:
+            raise ValueError("compile command source differs: " + label)
+        obj = _object(entry, args, build)
+        if obj.stat().st_mtime_ns < source.stat().st_mtime_ns:
+            raise ValueError("compiled object predates its current source: " + label)
+        if label != "w1a1" and args[0] != facts["compilers"]["CXX"]["path"]:
+            raise ValueError("server/build-info compile command uses a different compiler")
+        if label == "w1a1" and obj.stat().st_mtime_ns < max(
+            flags_source.stat().st_mtime_ns, commands_path.stat().st_mtime_ns
+        ):
+            raise ValueError("w1a1 object predates current CMake flags/compile commands")
+        compiled[label] = {"source": record(source), "object": record(obj), "arguments": args}
+    facts["w1a1_arguments"] = compiled["w1a1"]["arguments"]
+    libraries = {}
+    aliases = []
+    for path in sorted(bin_dir.iterdir()):
+        if not LIBRARY.fullmatch(path.name):
+            continue
+        resolved = inside(path, bin_dir, "library symlink")
+        if not resolved.is_file():
+            raise ValueError("runtime library is not a regular file")
+        libraries[str(resolved)] = record(resolved)
+        aliases.append({"path": str(path), "resolved_path": str(resolved)})
+    facts["libraries"] = list(libraries.values())
+    validate_facts(facts, expected_parent, expected_native, expected_arch, expected_code_arch)
+    if libraries:
+        cuda = next(
+            Path(r["path"])
+            for r in facts["libraries"]
+            if Path(r["path"]).name.startswith("libggml-cuda.so")
+        )
+        if cuda.stat().st_mtime_ns < Path(compiled["w1a1"]["object"]["path"]).stat().st_mtime_ns:
+            raise ValueError("CUDA backend predates the inspected w1a1 object")
+    if server.stat().st_mtime_ns < max(
+        Path(compiled[k]["object"]["path"]).stat().st_mtime_ns
+        for k in ("server", "server_impl", "build_info")
+    ):
+        raise ValueError("server predates inspected server/build-info objects")
+    observations = []
+    compiled_commit_artifacts = []
+    build_info_observations = []
+    runtime_dependencies = {}
+    for path in [server, *(Path(p) for p in libraries)]:
+        with path.open("rb") as stream:
+            if stream.read(4) != b"\x7fELF":
+                raise ValueError("runtime artifact must be an ELF file")
+        dynamic = runner(["readelf", "-d", str(path)])
+        search = _dynamic_paths(
+            dynamic, path, build, required=path == server, allowed_roots=allowed_roots
+        )
+        ldd = runner(["ldd", str(path)])
+        dependencies = _dependencies(ldd, bin_dir, libraries)
+        for dependency in dependencies:
+            dependency_path = Path(dependency["path"])
+            if any(dependency_path.is_relative_to(root) for root in allowed_roots):
+                runtime_dependencies.setdefault(str(dependency_path), record(dependency_path))
+        if path == server or path.name.startswith("libllama-common.so"):
+            rodata = runner(["readelf", "--string-dump=.rodata", str(path)])
+            if re.search(
+                r"\]\s+" + re.escape(facts["build_commit"]) + r"\s*$", rodata, re.MULTILINE
+            ):
+                compiled_commit_artifacts.append(record(path))
+                build_info_observations.append(
+                    {
+                        "command": ["readelf", "--string-dump=.rodata", str(path)],
+                        "output_sha256": hashlib.sha256(rodata.encode()).hexdigest(),
+                        "matched_commit": facts["build_commit"],
+                    }
+                )
+        observations.append(
+            {
+                "artifact": record(path),
+                "runtime_search_paths": search,
+                "readelf_dynamic": dynamic,
+                "ldd": ldd,
+                "dependencies": dependencies,
+            }
+        )
+    if not compiled_commit_artifacts:
+        raise ValueError("compiled server/common artifact lacks the current build-info commit")
+    # Recheck to reject files, source revisions or aliases replaced while inspecting.
+    for item in (
+        artifacts
+        + list(runtime_dependencies.values())
+        + list(response_records.values())
+        + facts["libraries"]
+        + [server_record]
+        + [v[k] for v in compiled.values() for k in ("source", "object")]
+    ):
+        if sha256(item["path"]) != item["sha256"]:
+            raise ValueError("source/build/runtime file changed during inspection")
+    if any(str(Path(a["path"]).resolve(strict=True)) != a["resolved_path"] for a in aliases):
+        raise ValueError("runtime symlink changed during inspection")
+    if (
+        git(checkout, "rev-parse", "HEAD") != expected_parent
+        or git(native, "rev-parse", "HEAD") != expected_native
+    ):
+        raise ValueError("source revision changed during inspection")
+    if git(
+        checkout,
+        "status",
+        "--porcelain",
+        "--untracked-files=normal",
+        "--",
+        "scripts",
+        "src",
+        "configs",
+        "tests",
+        ".gitmodules",
+        "third_party/llama.cpp",
+    ) or git(native, "status", "--porcelain", "--untracked-files=normal"):
+        raise ValueError("source files changed during inspection")
+    return {
+        "schema": "qat_current_native_server_build_v1",
+        "inventory_tool": record(Path(__file__)),
+        "parent_commit": expected_parent,
+        "native_commit": expected_native,
+        "checkout": str(checkout),
+        "build_directory": str(build),
+        "binary": server_record,
+        "libraries": facts["libraries"],
+        "library_aliases": aliases,
+        "build_commit": facts["build_commit"],
+        "compiled_commit_artifacts": compiled_commit_artifacts,
+        "build_info_observations": build_info_observations,
+        "cmake": facts["cache"],
+        "compilers": facts["compilers"],
+        "cuda_architecture": expected_arch,
+        "cuda_code_architecture": expected_code_arch,
+        "artifacts": artifacts + list(response_records.values()),
+        "compiled": compiled,
+        "dynamic_observations": observations,
+        "allowed_runtime_roots": [str(p) for p in allowed_roots],
+        "allowed_runtime_dependency_artifacts": list(runtime_dependencies.values()),
+        "scope": "CPU static source/build/ELF inspection; not measured native or CUDA readiness",
+        "training_eligible": False,
+        "readiness_granted": False,
+        "hardware_measured": False,
+        "optimizer_updates": 0,
+    }
+
+
+def write_inventory(manifest, output):
+    """Only publish to a unique directory, never replacing prior evidence."""
+    output = Path(output).absolute()
+    if output.exists():
+        raise FileExistsError("runtime inventory output already exists")
+    for item in [
+        manifest["binary"],
+        *manifest["libraries"],
+        *manifest.get("allowed_runtime_dependency_artifacts", []),
+    ]:
+        if sha256(item["path"]) != item["sha256"]:
+            raise ValueError("runtime artifact changed before publication")
+    output.mkdir(parents=True, exist_ok=False)
+    manifest_path = output / "manifest.json"
+    with manifest_path.open("x") as stream:
+        json.dump(manifest, stream, indent=2, sort_keys=True, allow_nan=False)
+        stream.write("\n")
+        stream.flush()
+        os.fsync(stream.fileno())
+    runtime = {
+        "schema": "qat_current_native_runtime_v1",
+        "directory": str(Path(manifest["binary"]["path"]).parent),
+        "immutable_manifest": record(manifest_path),
+        "libraries": manifest["libraries"],
+        "ld_library_path": str(Path(manifest["binary"]["path"]).parent),
+    }
+    with (output / "native-runtime.json").open("x") as stream:
+        json.dump(runtime, stream, indent=2, sort_keys=True, allow_nan=False)
+        stream.write("\n")
+        stream.flush()
+        os.fsync(stream.fileno())
+    return runtime
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--checkout", type=Path, required=True)
+    parser.add_argument("--build-dir", type=Path, required=True)
+    parser.add_argument("--expected-parent-commit", required=True)
+    parser.add_argument("--expected-native-commit", required=True)
+    parser.add_argument("--expected-architecture", default="120")
+    parser.add_argument("--expected-code-architecture", default="120a")
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument(
+        "--allowed-runtime-root",
+        type=Path,
+        action="append",
+        default=[],
+        help=(
+            "Explicit existing toolkit/system RUNPATH directory (repeatable); "
+            "project libraries still require this build/bin"
+        ),
+    )
+    args = parser.parse_args(argv)
+    if args.output.exists():
+        parser.error("output must be a new immutable inventory directory")
+    manifest = inspect_runtime(
+        args.checkout,
+        args.build_dir,
+        args.expected_parent_commit,
+        args.expected_native_commit,
+        expected_arch=args.expected_architecture,
+        expected_code_arch=args.expected_code_architecture,
+        allowed_runtime_roots=args.allowed_runtime_root,
+    )
+    runtime = write_inventory(manifest, args.output)
+    print(
+        json.dumps(
+            {
+                "native_runtime": runtime,
+                "binary": manifest["binary"],
+                "training_eligible": False,
+                "readiness_granted": False,
+                "hardware_measured": False,
+                "optimizer_updates": 0,
+            },
+            sort_keys=True,
+        )
+    )
+
+
+if __name__ == "__main__":
+    main()
