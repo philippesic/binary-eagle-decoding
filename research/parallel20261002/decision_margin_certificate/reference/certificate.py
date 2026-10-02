@@ -15,21 +15,49 @@ def _finite(value):
     return type(value) in (int, float) and math.isfinite(value)
 
 
-def _probability(values, index, temperature):
-    # Center BEFORE temperature scaling: common 1e300 offsets remain harmless.
-    maximum = max(values)
-    weights = []
-    for value in values:
-        difference = value - maximum
-        # Opposite-sign finite endpoints can overflow subtraction even when a
-        # large temperature makes their normalized separation modest.
-        scaled = (
-            (value / 2 - maximum / 2) / temperature * 2
-            if difference == -math.inf
-            else difference / temperature
-        )
-        weights.append(math.exp(scaled))
-    return weights[index] / math.fsum(weights)
+def _difference(left, right, temperature):
+    difference = left - right
+    # Center before scaling, with overflow-safe opposite-sign subtraction.
+    return (
+        (left / 2 - right / 2) / temperature * 2
+        if not math.isfinite(difference)
+        else difference / temperature
+    )
+
+
+def _excluding_normalizers(values, temperature):
+    """O(n) normalizers without subtracting nearly equal mass totals."""
+    if len(values) == 1:
+        return [(values[0], 0.0)]
+    maximum_index = max(range(len(values)), key=values.__getitem__)
+    maximum = values[maximum_index]
+    weights = [math.exp(_difference(value, maximum, temperature)) for value in values]
+    prefix, suffix = [0.0], [0.0] * (len(values) + 1)
+    for weight in weights:
+        prefix.append(prefix[-1] + weight)
+    for i in range(len(values) - 1, -1, -1):
+        suffix[i] = suffix[i + 1] + weights[i]
+    normalizers = [(maximum, prefix[i] + suffix[i + 1]) for i in range(len(values))]
+    # Removing the largest coordinate needs the second largest anchor: otherwise
+    # all surviving weights might underflow to zero despite a finite ratio.
+    others = values[:maximum_index] + values[maximum_index + 1 :]
+    second = max(others)
+    normalizers[maximum_index] = (
+        second,
+        math.fsum(math.exp(_difference(value, second, temperature)) for value in others),
+    )
+    return normalizers
+
+
+def _probability(own, normalizer, temperature):
+    maximum, weight_sum = normalizer
+    if weight_sum == 0.0:
+        return 1.0
+    log_odds = _difference(maximum, own, temperature) + math.log(weight_sum)
+    if log_odds >= 0:
+        weight = math.exp(-log_odds)
+        return weight / (1.0 + weight)
+    return 1.0 / (1.0 + math.exp(log_odds))
 
 
 def certify(logits, bounds=None, *, token_ids, identity, provenance, contract, numeric_allowance):
@@ -126,11 +154,11 @@ def certify(logits, bounds=None, *, token_ids, identity, provenance, contract, n
             and (lower[winner] <= upper[i] if i < winner else lower[winner] < upper[i])
         ]
         intervals = []
+        upper_normalizers = _excluding_normalizers(upper, temperature)
+        lower_normalizers = _excluding_normalizers(lower, temperature)
         for i in range(len(values)):
-            low_vertex, high_vertex = list(upper), list(lower)
-            low_vertex[i], high_vertex[i] = lower[i], upper[i]
-            lo = _probability(low_vertex, i, temperature)
-            hi = _probability(high_vertex, i, temperature)
+            lo = _probability(lower[i], upper_normalizers[i], temperature)
+            hi = _probability(upper[i], lower_normalizers[i], temperature)
             intervals.append(
                 [
                     max(0.0, math.nextafter(lo - p_allowance, -math.inf)),
