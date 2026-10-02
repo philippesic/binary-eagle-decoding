@@ -459,3 +459,14 @@ read,source/runtimechange oroptimizerupdate here. RootmonitorACTIVE; nextphase
 stillwaitingforverifiedfullprep and GPUrelease,thenactualnewrecipevalidation and
 alreadyauthorizedtraining. Ordinaryhealthywait remainsquiet; notifymeaningful
 release/failure/requiredaction/actualoptimizerstart.
+
+
+Overnight launch checkpoint: supervisor01a0fb45-5d1e-7bc3-a3a0-133d9942d822
+launched three Sol/high leaders and has ACTIVE five-minute heartbeat
+`overnight-research-usage-control`. All new research tasks currently await
+sandbox approval for Git writes; unattended progress is NOT verified. Parent
+requested the necessary app permission resolution and opened the supervisor.
+Protected QAT task/15-minuteheartbeat remain active; owner publishedf11b3b4
+with the human’s overnight/oncredits authorization. IDs, managed worktree paths,
+stop controls and next action: docs/overnight20261002/launch.md. No permission
+settings were changed and no GPU experiment was launched by research.
