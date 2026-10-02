@@ -142,6 +142,31 @@ def _cpu_tree(value):
     return value
 
 
+def _checkpoint_cpu_copy_bytes(value):
+    """Count retained clones and the largest overlapping CUDA transfer.
+
+    _cpu_tree clones every tensor occurrence, including aliases. Its sequential
+    detach().cpu().clone() also keeps one transferred CUDA tensor alive while
+    allocating that tensor's retained CPU clone. CPU inputs need no transfer.
+    Workspace and allocator overhead remain separate from this tensor bound.
+    """
+    if isinstance(value, torch.Tensor):
+        size = value.numel() * value.element_size()
+        return size, size if value.device.type == "cuda" else 0
+    if isinstance(value, dict):
+        children = value.values()
+    elif isinstance(value, (tuple, list)):
+        children = value
+    else:
+        return 0, 0
+    retained, largest_transfer = 0, 0
+    for child in children:
+        child_retained, child_transfer = _checkpoint_cpu_copy_bytes(child)
+        retained += child_retained
+        largest_transfer = max(largest_transfer, child_transfer)
+    return retained, largest_transfer
+
+
 class CurriculumRunner:
     """One current-student graph per round, fresh cache and optimizer per stage.
 
@@ -402,20 +427,11 @@ class CurriculumRunner:
             "unique_prompts": sorted(self.unique_prompts),
         }
         if torch.device(self.device).type == "cuda":
-
-            def tensor_bytes(value):
-                if isinstance(value, torch.Tensor):
-                    return value.numel() * value.element_size()
-                if isinstance(value, dict):
-                    return sum(tensor_bytes(v) for v in value.values())
-                if isinstance(value, (tuple, list)):
-                    return sum(tensor_bytes(v) for v in value)
-                return 0
-
+            retained_bytes, transfer_bytes = _checkpoint_cpu_copy_bytes(raw_payload)
             require_host_memory(
                 linux_host_memory(),
                 floor_bytes=self.config.min_host_available_bytes,
-                additional_bytes=tensor_bytes(raw_payload) + 16 * 1024**2,
+                additional_bytes=retained_bytes + transfer_bytes + 16 * 1024**2,
                 stage="curriculum atomic checkpoint CPU buffers",
             )
         payload = _cpu_tree(raw_payload)
