@@ -1,5 +1,40 @@
 # QAT optimization readiness
 
+## Audit reuse integration — October 2
+
+Root reviewed and integrated required QAT feature `0988b1c` as `c0f3d85`.
+The independent root receipt/stage/provider suite passed 39 CPU tests in 2.666s;
+the author also reports 48 checks and independent review. This is CPU correctness
+evidence, not actual corpus readiness or CUDA/model/training admission.
+
+Opt-in `native_label_audit_receipts_dir` stores external, atomically published
+per-shard receipts after successful full semantic audits. Receipts bind auditor
+source/runtime versions, manifest, prompts, every owned payload/request and report
+digest. Later stage/provider calls reverify those bindings and reuse the semantic
+result. Process-local hash caching invalidates on file identity/size/mtime/ctime
+changes; no persistent stat-only trust. Changed source/data/report/inventory fails
+closed, and legacy callers retain full-audit behavior. Old `audit.json` alone
+cannot initialize the new receipt.
+
+Actual sole-operator CPU proof `0cca95e211b8c518f8f264a9da30c3d44c7b6bc1d081f32b14dcb16d562fa6e4`
+at 21:32:00 UTC verified recovery09 same2713/2714 and audit35/353 versus2 at
+21:10:31. 33 shards/1289.174 seconds gives39.07 seconds/shard. Remaining318
+initial audits project3.45h;959 subsequent semantic rereads project10.41h only
+if comparable. Model/build/smoke/save work is unmeasured, so13.86h is audit-work
+projection and not an overall ETA. All353 captures/10,000train/1,002dev remain.
+The actual frozen stages/auditor hashes match their original source; historical
+producer authentication and complete data joins still govern any old-sidecar reuse.
+
+Frozen recovery09 continues unchanged and does not use this feature. QAT owner
+`01a0fe3f-0eff-78e3-bb75-af0b4b77b49e` owns reviewed new-source corpus adoption,
+with sole prep/operator `01a0fdd6-8e11-7393-9aed-5c99bd08e428` retaining remote
+control. No source mutation of a live job, readiness/coverage bypass or optimizer
+start is authorized by these CPU tests. Necessary CPU server03 staged packet
+failed before job start at21:38:38 on Dirty source; raw failureSHA
+`51a2b64ec3edb9feab2989f96af151befa5baea693b934bc5e3a5dd0d6107d02`
+is preserved. Its owner must classify exact dirty paths and review a narrow
+correction before fresh admission. Research and usage monitor remain stopped.
+
 ## Supervisor rotation checkpoint — October2 15:05 UTC
 
 This is the active goal handoff for the overnight research supervisor. The

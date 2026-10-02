@@ -4,6 +4,22 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
+## Audit reuse implemented — October 2
+
+Necessary audit caching is integrated as `c0f3d85`. Root independently passed
+39 receipt/stage/provider CPU tests. Each shard receives a durable source/input
+bound receipt after its full semantic audit; later stage/provider calls verify
+unchanged inputs and reuse that result. Legacy behavior remains unchanged.
+The frozen running recovery09 has not adopted this code. Historical audit sidecar
+reuse and the reviewed new-source retained-corpus path remain pending.
+
+Fresh CPU observation at 21:32 UTC found audit 35/353, about 39.07 seconds per
+shard. The unchanged path projects 3.45 hours of remaining initial audits plus
+10.41 hours of later repeated audits; these are workload estimates, not a complete
+preflight ETA. All captures remain saved. CPU server03 failed before build start
+on dirty-source admission; exact path classification remains with its owner.
+[Reuse checkpoint](goals/qat-optimization-readiness.md#audit-reuse-integration--october-2).
+
 ## Preparation recovery running — October 2, 21:19 UTC
 
 Actual09 prep-only recovery is verified live after the current-boot disconnect
