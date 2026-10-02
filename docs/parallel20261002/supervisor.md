@@ -233,3 +233,17 @@ actual unresolved gates; no live source modifications by research teams.
 
 Monitor18:59:32usage83%used/17%remaining, original reset unchanged; no next slate
 until all three teams/descendants complete. QAT and all descendants protected.
+
+
+Public push3121623 verified. Second-slate clean worktrees/branches retired after
+owned content equality and ignored-run preservation; second-slate receipt records
+actual retirement. Protected QAT worktrees are retained for their owners' cleanup.
+QAT owner acknowledges no production native_step change from researcha6f241f.
+
+Preliminary third-slate risks, independent closure pending: evaluator default
+fixed recipe rejects six modern named profiles across A8/A1 after native capture;
+existing checkpoint_joint_config plus actual loader passes14 syntheticcases.
+Memory ledger identifies host save transfer-temp overlap not charged in
+finalpayload+16MiB allowance (largest F32head327,680,000B); exact peak/storage
+calibration pending. Both findings relayed protected QAT owner, no unreviewed
+source/floor/recipe changes or GPU proof.
