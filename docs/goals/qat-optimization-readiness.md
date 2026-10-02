@@ -1479,3 +1479,46 @@ before direct120sfixture/conditional180sbackendops,>=180sreturnreserve,no build/
 model/data/optimizer. Root owns no live remote job/transport/lease. Training waits
 fullpreparation/currentrecipe/source-bound native/model/backward/memory/timing/
 full-provider evidence and finalGPUhandoff. No numerical gate or recipe selected.
+
+
+## Reviewed provider-audit reservation04 — October2 13:42 UTC
+
+Preparation owner read current STATUS/active goal after compaction. Monitor
+and DECISIONS documentation15fbbd6 is pushed: current saved combined query is
+3,811 ASCII characters, source SHA d68fd8ebcb62cf138a2d60e915e434896eac49a440223a7738a9c9cf266b7439;
+it runs the unchanged checker once and adds a CPU/I/O process observation.
+No remote query has used the new counter payload yet. Keep checker stale
+warning separately from verified active CPU work; no threshold/gate change.
+
+Successor validation owner accepted exact local guard9f5035ae…f8c2f82 and
+expected-configcb662c55…5759 for one new request
+prep08-provider-audit-no-ftz-retest-20261002-04. Full hashes/bytes are in ignored
+provider-audit-reservation-04/transport-plan.json, SHA
+2cd64a10c1f6231be935a374b0c3e7ed11202530241b35ee55f42d71347edd3e.
+The same sole pinned Luna health_20261002_1256 prepares thirteen <=900byte chunks
+into a NEW ignored helper directory; whole-byte SHA is required before a short
+636character acquisition command. Both hold and return code are ready before
+starting any lease clock. Previous request03 failure/safety proof is preserved.
+
+Before SIGSTOP require fresh local unpaused registry/control, preparing/
+readiness_complete/full353/10,000train/1,002dev, zero/models{}, coverage/finalreceipt
+absent, exact original676/674/673, CPU activity/captured feature FD, frozen
+source/config/math and seven validation runtime pins/FTZ order/new-bin ldd.
+Actual GPU compute apps empty/utilization<=5% and12GiB free,14GiB host and8GiB
+disk floors precede the signal; repeated immediate identity/status and posthold
+all-members-T/resource/frozen proof precede any grant. CPU activity/DXG FDs and
+stale heartbeat alone establish neither free GPU nor failure. No nonexistent
+capture353 manifest or fresh phase heartbeat is required during provider audits.
+
+Guard creates an exclusive receipt with actual SHA and600second deadline,
+180second teardown/return reserve. Failed posthold cannot grant; restore only
+exact original stopped group after supervisor/noSTOP/zero/compute-empty proof,
+otherwise alert and retain unknown hold. Return consumes actual receipt bytes,
+terminal validation job states/actual groups, absent survivors/compute apps and
+unchanged original identity before one SIGCONT. Same process CPU progress and
+one unchanged checker follow; a continuing stale warning remains classified.
+No restart/optimizer/model/data/build/source changes or recovery charge.
+At this checkpoint staging is pending/in progress, no verified hold/grant,
+no validation job and no preparation completion. Next action one actual
+acquisition outcome, immediate owner coordination, then verified same-group
+return if granted. Same15minute monitor remainsACTIVE; RTX2080Ti paused.

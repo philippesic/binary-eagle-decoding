@@ -102,6 +102,15 @@ Local phase-appropriate early-validation hold planning resumes under existing
 human authorization, with fresh occupancy/resource/posthold grant still required.
 [Checkpoint](goals/qat-optimization-readiness.md#stale-heartbeat-classified-as-active-cpu-audits--october2-1307-utc).
 
+**Reviewed preparation reservation04, October2 13:42 UTC:** the validation
+owner accepted the immutable hold/return guard and one fresh acquisition under
+the human's early-validation scope. Same preparation Luna is staging small
+hash-bound transport chunks; no hold/grant or validation job exists yet.
+Readiness_complete CPU provider audits retain full353/10,000train/1,002dev,
+zero updates and the classified stale heartbeat. Published15fbbd6 records
+CPU-counter monitoring and the prospective audit reuse proposal; frozen code
+and recovery budget remain unchanged. [Checkpoint](goals/qat-optimization-readiness.md#reviewed-provider-audit-reservation04--october2-1342-utc).
+
 **Validation task rotation at a safe boundary:** after two compactions, the
 validation/training owner transferred to acknowledged successor
 01a0fc3d-bbe1-7e93-a19b-a9200dfa186c (Continue QAT validation and training). No owned remote
