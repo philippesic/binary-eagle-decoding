@@ -429,10 +429,11 @@ def measure_lane(api, trainer, lane, rounds, flags):
     before = memory_snapshot(api, config)
     torch.cuda.synchronize(config.device)
     start = time.perf_counter()
-    losses, outputs, diagnostics = [], [], []
+    losses, outputs, diagnostics, head_execution = [], [], [], []
     with api.shared_round_hard_signs(lane.linears):
         for batch, audit in batches:
             observer = api.ObservedAdapter(lane.adapter)
+            head_metadata = {}
             logits = api.forward_torch_round(
                 batch,
                 observer,
@@ -440,7 +441,9 @@ def measure_lane(api, trainer, lane, rounds, flags):
                 optimize_cache=flags[0],
                 optimize_head=flags[1],
                 context_chunk_size=config.context_chunk_size,
+                execution_metadata=head_metadata,
             )
+            head_execution.append(head_metadata)
             diagnostics.append(api.later_gradient(logits, audit, observer))
             losses.append(
                 api.depth_weighted_supported_ce(
@@ -480,7 +483,9 @@ def measure_lane(api, trainer, lane, rounds, flags):
             "optimizer_updates": 0,
             "weighting": "equal_round_mean",
             "cache_optimized": flags[0],
-            "head_optimized": flags[1],
+            "head_optimization_requested": flags[1],
+            "head_optimized": all(r["effective_batched"] for r in head_execution),
+            "head_execution": head_execution,
             "forward_calls": len(rounds),
             "backward_calls": 1,
             "forward_seconds": forward_seconds,
@@ -976,6 +981,36 @@ def run_cuda(args, output):
         "model_shapes": PINNED_SHAPES,
         "native_evidence_sha256": sha256(args.native_evidence),
         "timing_repeats": 5,
+        "configured_head_execution": {
+            lane.name: {
+                "requested": config.optimize_head,
+                "paths": sorted(
+                    {
+                        h["path"]
+                        for r in b1
+                        if r["lane"] == lane.name and r["variant"] == "configured"
+                        for h in r["head_execution"]
+                    }
+                ),
+                "reasons": sorted(
+                    {
+                        h["reason"]
+                        for r in b1
+                        if r["lane"] == lane.name and r["variant"] == "configured"
+                        for h in r["head_execution"]
+                    }
+                ),
+                "saturation_scopes": sorted(
+                    {
+                        h["saturation_scope"]
+                        for r in b1
+                        if r["lane"] == lane.name and r["variant"] == "configured"
+                        for h in r["head_execution"]
+                    }
+                ),
+            }
+            for lane in lanes
+        },
         "grouped_probe_skips": skipped,
         "grouped_probe_recipe": (
             "independent graphs at one snapshot; no body batching or optimizer updates"

@@ -22,7 +22,14 @@ import numpy as np
 import torch
 from torch import Tensor, nn
 
-from .recurrent_qat import JointQATConfig, install_joint_linears, joint_optimizer, joint_train_step
+from .recurrent_binary import GroupedBinaryLinear
+from .recurrent_qat import (
+    JointQATConfig,
+    RowBinaryLinear,
+    install_joint_linears,
+    joint_optimizer,
+    joint_train_step,
+)
 from .recurrent_rollout import rebuild_prefix_cache, rollout_captured_prefix
 from .recurrent_trace import RoundAnchor, TraceAudit, validate_recurrent_trace
 
@@ -248,6 +255,44 @@ def audit_provider_round(batch: ProviderRound, provider: JointTrainingProvider) 
     )
 
 
+def _round_head_path(adapter, requested):
+    """Select a visible supported head without changing invocation-local VJPs."""
+    head = getattr(adapter, "decode_head", None)
+    reason = "not_requested"
+    if requested:
+        reason = "adapter_unavailable"
+        if getattr(adapter, "supports_batched_head", False) and callable(head):
+            linears = getattr(adapter, "linears", None)
+            linear = linears.get("lm_head") if isinstance(linears, Mapping) else None
+            reason = "head_contract_unavailable"
+            if type(linear) in (RowBinaryLinear, GroupedBinaryLinear):
+                quantizer = getattr(linear, "activation_quantizer", None)
+                if quantizer is None:
+                    reason = "batched"
+                else:
+                    from .learned_activation import LearnedActivationQuantizer
+
+                    if (
+                        type(quantizer) is LearnedActivationQuantizer
+                        and quantizer.boundary == "head"
+                        and quantizer.bits == linear.contract.activation_bits
+                        and quantizer.in_features == linear.in_features
+                    ):
+                        reason = (
+                            "trainable_learned_activation"
+                            if torch.is_grad_enabled() and quantizer.parameter.requires_grad
+                            else "batched"
+                        )
+    effective = reason == "batched"
+    return (head if effective else None), {
+        "requested": requested,
+        "effective_batched": effective,
+        "path": "batched" if effective else "serial",
+        "reason": reason,
+        "saturation_scope": "valid_chain_mean" if effective else "last_valid_row",
+    }
+
+
 def forward_torch_round(
     batch: ProviderRound,
     adapter: StepAdapter,
@@ -256,12 +301,14 @@ def forward_torch_round(
     optimize_cache: bool = False,
     optimize_head: bool = False,
     context_chunk_size: int = 64,
+    execution_metadata: dict | None = None,
 ) -> Tensor:
     """Rebuild context and retain proposal-state/K/V autograd links.
 
     Optional capabilities enable single-layer K/V-only reconstruction and one
-    head call over a captured chain. Generic/diagnostic adapters fall back to
-    serial execution. Reference controls change no optimizer/update cadence.
+    head call over a captured chain. Trainable learned head parameters retain
+    serial invocation-local gradient normalization. Invisible/unsupported head
+    contracts fail closed to serial execution. Controls change no update cadence.
     A wrapper's decode_step remains the proposal observation boundary.
     """
     if not batch.rows:
@@ -282,9 +329,13 @@ def forward_torch_round(
         if build_context is not None
         else None
     )
-    head = getattr(adapter, "decode_head", None)
-    if not (optimize_head and getattr(adapter, "supports_batched_head", False) and callable(head)):
-        head = None
+    if execution_metadata is not None and not isinstance(execution_metadata, dict):
+        raise ValueError("execution metadata must be a dictionary")
+    head, head_metadata = _round_head_path(adapter, optimize_head)
+    if not any(row.get("valid") is True for row in batch.rows):
+        head_metadata.update(
+            effective_batched=False, path="skipped", reason="no_valid_rows", saturation_scope="none"
+        )
     decode_step = adapter.decode_step
     if head is not None:
         # Call the public wrapper, not an underlying decode-body method: an
@@ -307,7 +358,7 @@ def forward_torch_round(
         or batch.rows[0].get("parent_position") != rebuilt.decoder_position
     ):
         raise ValueError("proposal seed token/position differs from rebuilt accepted prefix")
-    return rollout_captured_prefix(
+    logits = rollout_captured_prefix(
         batch.rows,
         rebuilt.seed_raw_features,
         encode_feature=adapter.encode_feature,
@@ -316,6 +367,11 @@ def forward_torch_round(
         draft_vocab_size=draft_vocab_size,
         decode_head=head,
     )
+    if head_metadata["path"] != "skipped":
+        head_metadata["saturation_scope"] = getattr(adapter, "head_saturation_scope", "unavailable")
+    if execution_metadata is not None:
+        execution_metadata.update(head_metadata)
+    return logits
 
 
 def train_from_provider(
