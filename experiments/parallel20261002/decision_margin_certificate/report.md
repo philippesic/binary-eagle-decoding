@@ -68,8 +68,8 @@ maxima and separate numeric allowances. No CUDA gate or hardware performance
 result follows from these synthetic CPU checks.
 
 Owner verification: 9/9 unittest checks pass on Python 3.11.3, Darwin arm64,
-CPU only, F64 floats; Ruff lint/format pass. Independent validation presently
-passes 8/8 checks in 0.003 seconds; its fixture census is in validation/.
+CPU only, F64 floats; Ruff lint/format pass. Independent validation finally
+passes 10/10 checks; its fixture census is in validation/.
 Owner commits: `c615bc8` implementation and `920d43c` arithmetic hardening.
 No native backend invocation or device measurement was performed.
 
@@ -78,3 +78,11 @@ validator now passes 10/10 checks in 0.002 seconds. A separate complete 32000
 coordinate synthetic smoke returns stable and 32000 intervals in 0.0533 seconds
 on the same Darwin arm64 CPU/Python binary64 environment. This is a local
 prototype usability check, not native inference throughput or CUDA evidence.
+
+Independent validator commit `c3e027d` covers 18 tiny boxes / 168 exhaustive
+vertices and final certificate SHA256
+`dd06cc138cfed102712b3e72165889acb74ebb55dc077c138e38e61e5355a8c5`.
+Its CPU checks establish the formulas on those fixtures, not a universal
+arithmetic error bound. Final control `research_stop=true`; all research has
+stopped with no persistent process or device allocation. Only checkpoint/push
+preservation and orchestrator integration remain.

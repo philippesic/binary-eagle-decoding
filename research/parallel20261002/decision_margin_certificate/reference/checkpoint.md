@@ -15,6 +15,9 @@ Owner commits `c615bc8` and `920d43c`; 9/9 owner checks pass, Ruff pass.
 Linear-time probability bound commit `359765e`; final independent executable
 10/10 pass in 0.002 seconds on CPU F64. Complete 32000-coordinate synthetic
 smoke stable with all intervals in 0.0533 seconds, Darwin arm64 Python 3.11.
-Remaining: independent validator final report/commit, push branch and handoff.
+Independent validator committed `c3e027d`, 18 boxes / 168 exhaustive vertices,
+10/10 checks, Ruff and diff pass. At final commit control research_stop became
+true: all research stopped, no live process/device allocation. Remaining only
+preservation push and handoff; no further research is authorized.
 Root owns shared active-goal checkpoint integration and main cherry-pick;
 this unique checkpoint avoids conflicting shared-goal edits.
