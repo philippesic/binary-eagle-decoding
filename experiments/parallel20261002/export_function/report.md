@@ -102,8 +102,12 @@ successful run are also retained; final report identities use only the final
 index. The initial abort was an owner harness metadata-key typo, corrected to
 the actual underscored GGUF field naming before any claimed results.
 
-Independent results and decoder live in `validation-report.md` and
-`research/parallel20261002/export_function/validation/` when complete.
+Independent validation is complete: all81 comparisons matched exactly. The
+second decoder also reads activation width from the serialized metadata and
+rejects a deliberately mismatched fixture width. Its Ruff format/check passed.
+Exact command, decoder/raw-result hashes and source interpretation are recorded
+in `validation-report.md`; decoder evidence commits are `ed8d93b` and `e7afc14`.
+The owner evidence commit is `446485b`.
 
 Integration: review/cherry-pick the owner and validator evidence commits into
 main, record the result in the active QAT goal, push, then remove the isolated

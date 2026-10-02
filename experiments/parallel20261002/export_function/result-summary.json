@@ -164,5 +164,81 @@
         "midpoint-mutated.gguf": "eb81498b033428febf73af3d7981f39accf878e7e94a52a7d820463ee3c6afaf"
       }
     }
-  ]
+  ],
+  "raw_index_sha256": "77b2f6cfc2d075217004f23ce75a2a703cbfe4442c12ae1aca1167fdc41b074c",
+  "independent_validation": {
+    "cases": 9,
+    "gate": {
+      "atol": 3e-05,
+      "rtol": 3e-06
+    },
+    "passed": true,
+    "records": [
+      {
+        "bits": 1,
+        "max_abs": 0.0,
+        "max_rel_atol_floor": 0.0,
+        "name": "a1-k33-r1",
+        "violations": 0
+      },
+      {
+        "bits": 1,
+        "max_abs": 0.0,
+        "max_rel_atol_floor": 0.0,
+        "name": "a1-k65-r4",
+        "violations": 0
+      },
+      {
+        "bits": 1,
+        "max_abs": 0.0,
+        "max_rel_atol_floor": 0.0,
+        "name": "a1-k130-r4",
+        "violations": 0
+      },
+      {
+        "bits": 4,
+        "max_abs": 0.0,
+        "max_rel_atol_floor": 0.0,
+        "name": "a4-k33-r1",
+        "violations": 0
+      },
+      {
+        "bits": 4,
+        "max_abs": 0.0,
+        "max_rel_atol_floor": 0.0,
+        "name": "a4-k65-r4",
+        "violations": 0
+      },
+      {
+        "bits": 4,
+        "max_abs": 0.0,
+        "max_rel_atol_floor": 0.0,
+        "name": "a4-k130-r4",
+        "violations": 0
+      },
+      {
+        "bits": 8,
+        "max_abs": 0.0,
+        "max_rel_atol_floor": 0.0,
+        "name": "a8-k33-r1",
+        "violations": 0
+      },
+      {
+        "bits": 8,
+        "max_abs": 0.0,
+        "max_rel_atol_floor": 0.0,
+        "name": "a8-k65-r4",
+        "violations": 0
+      },
+      {
+        "bits": 8,
+        "max_abs": 0.0,
+        "max_rel_atol_floor": 0.0,
+        "name": "a8-k130-r4",
+        "violations": 0
+      }
+    ]
+  },
+  "independent_decoder_sha256": "a3473da373be4ac8d2083929bb71de93a26b07f923e3004c8d1925583a4c41b9",
+  "independent_report_sha256": "01dad2b946d8007a00a5c16c9caa43036739db6f708c914f1239900145c3a80b"
 }
