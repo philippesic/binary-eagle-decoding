@@ -20,6 +20,8 @@ import torch
 from torch import Tensor, nn
 from torch.nn import functional as F
 
+from .activation_reuse import reuse_activation
+
 CONTRACT_VERSION = 1
 CLIP_FLOOR = 2.0**-16
 RECIPE = "relative_clip_lsq_a4a8_meanabs_threshold_a1_v1"
@@ -262,7 +264,7 @@ class LearnedActivationQuantizer(nn.Module):
     def forward(self, input: Tensor, **kwargs) -> ActivationResult:
         if input.ndim < 1 or input.shape[-1] != self.in_features:
             raise ValueError("input width differs from shared boundary")
-        return learned_activation(input, self.bits, self.parameter, **kwargs)
+        return reuse_activation(self, input, learned_activation, **kwargs)
 
     @torch.no_grad()
     def project_(self) -> None:

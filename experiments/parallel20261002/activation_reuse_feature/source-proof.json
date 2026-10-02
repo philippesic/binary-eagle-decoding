@@ -1,0 +1,86 @@
+{
+  "hardware": "macOS-27.0-arm64-arm-64bit",
+  "device": "CPU",
+  "torch": "2.14.0",
+  "precision": "F32 masters/arithmetic; F16 K/V/fusion factors",
+  "profile": "synthetic A4; learned activation + affine all + raw FC rank-1 correction",
+  "attached_draft_steps": 3,
+  "exact_logits": true,
+  "baseline_attached_quantizer_computations": {
+    "fc": 1,
+    "qkv": 9,
+    "attn_output": 3,
+    "gate_up": 6,
+    "down": 3,
+    "head": 3
+  },
+  "reused_attached_quantizer_computations": {
+    "fc": 1,
+    "qkv": 3,
+    "attn_output": 3,
+    "gate_up": 3,
+    "down": 3,
+    "head": 3
+  },
+  "baseline_unique_ste_saved_storages": {
+    "fc": 2,
+    "qkv": 18,
+    "attn_output": 6,
+    "gate_up": 12,
+    "down": 6,
+    "head": 6
+  },
+  "reused_unique_ste_saved_storages": {
+    "fc": 2,
+    "qkv": 6,
+    "attn_output": 6,
+    "gate_up": 6,
+    "down": 6,
+    "head": 6
+  },
+  "vjps_atol": 2e-06,
+  "vjps_rtol": 5e-05,
+  "max_vjp_abs_error": 1.4901161193847656e-08,
+  "effective_state": {
+    "requested_enabled": true,
+    "eligible_groups": [
+      "qkv",
+      "gate_up"
+    ],
+    "enabled_groups": [
+      "qkv",
+      "gate_up"
+    ],
+    "last_decode_events": [
+      {
+        "boundary": "qkv",
+        "hits": 2,
+        "misses": 1,
+        "retained_entries": 0
+      },
+      {
+        "boundary": "gate_up",
+        "hits": 1,
+        "misses": 1,
+        "retained_entries": 0
+      }
+    ],
+    "scope": "immediate_decode_siblings",
+    "persistent_tensor_cache": false
+  },
+  "source_sha256": {
+    "src/w1a1_eagle/activation_reuse.py": "a3bce5484733420588b54d72f696a255d20928594324ff646a87177565102002",
+    "src/w1a1_eagle/native_step.py": "5be7faa64ff49214c2ce44d5f47d9a0c933e412da1c0ac359fa944a4bba1c634",
+    "src/w1a1_eagle/learned_activation.py": "458894b5bfa2f15c428d8d9b2c403a01c28ec902e3a95ff90488fd87b7181af9",
+    "src/w1a1_eagle/recurrent_qat.py": "f2b6d83b8929807b65b6f21826cc99097a6ddd70f99ff23ca0836aebe4db1224",
+    "src/w1a1_eagle/affine_binary.py": "edad3b513413eac5dc027cb949da6ae4e8d3ca4184d66b7d0f97b880c6252ebc",
+    "src/w1a1_eagle/fusion_correction.py": "23247735fc7250c8d74bf7a2a605ba8c71ce0b0b8ccd0a3f22b39414ce8265e2",
+    "src/w1a1_eagle/recurrent_provider.py": "36c7eda803baede517add00ced7715307035e989730f10edc5e8c98eb3aebd9a",
+    "tests/test_parallel20261002_activation_reuse_feature.py": "4efb3e46527eee3b3abab72b437516d46d854303a443cfb8921f138d27be978d",
+    "research/parallel20261002/auxiliary_vjp/reference/audit.py": "39420bda1987c7f4f54936ad8e0eb78135d9312c882f6f82a8297b4a9e4de958"
+  },
+  "native_throughput_measured": false,
+  "gpu_work": false,
+  "qat_config_bound": false,
+  "live_optimization_adopted": false
+}

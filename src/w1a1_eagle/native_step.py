@@ -24,6 +24,7 @@ import torch
 from torch import Tensor, nn
 from torch.nn import functional as F
 
+from .activation_reuse import activation_reuse_group, shared_quantizer
 from .native_attention_oracle import NativeAttentionForward, native_forward_f32_backward
 from .native_cpu_diagnostic import NativeCPUDiagnosticOperators
 from .recurrent_binary import CANDIDATE_D_BASE_TO_PATH, GroupedBinaryLinear
@@ -101,8 +102,11 @@ class NativeStepAdapter(nn.Module):
         attention_mode: str = "f32",
         native_attention_oracle: NativeAttentionForward | None = None,
         native_cpu_operators: NativeCPUDiagnosticOperators | None = None,
+        activation_reuse: bool = False,
     ) -> None:
         super().__init__()
+        if type(activation_reuse) is not bool:
+            raise ValueError("activation_reuse must be boolean")
         config = getattr(drafter, "config", None)
         if config is None or getattr(config, "pretraining_tp", None) != 1:
             raise ValueError("one-step adapter requires pretraining_tp=1")
@@ -355,6 +359,40 @@ class NativeStepAdapter(nn.Module):
         self.supports_batched_head = attention_mode == "f32"
         self.head_saturation_scope = "last_valid_row"
         self.last_head_chain_saturation_fraction = None
+        self.activation_reuse = activation_reuse
+        self.last_activation_reuse_events: list[dict] = []
+
+    def activation_reuse_state(self) -> dict:
+        """Current capability, distinct from evidence of actual scope hits.
+
+        Constructor opt-in is deliberately separate from QAT recipe/config.
+        Fixed activations and unshared learned boundaries remain ineffective.
+        """
+        groups = {
+            "qkv": (
+                "midlayer.self_attn.q_proj",
+                "midlayer.self_attn.k_proj",
+                "midlayer.self_attn.v_proj",
+            ),
+            "gate_up": ("midlayer.mlp.gate_proj", "midlayer.mlp.up_proj"),
+        }
+        eligible = [
+            boundary
+            for boundary, paths in groups.items()
+            if shared_quantizer(
+                boundary,
+                tuple(getattr(self.linears[path], "activation_quantizer", None) for path in paths),
+            )
+            is not None
+        ]
+        return {
+            "requested_enabled": self.activation_reuse,
+            "eligible_groups": eligible,
+            "enabled_groups": eligible if self.activation_reuse else [],
+            "last_decode_events": [dict(event) for event in self.last_activation_reuse_events],
+            "scope": "immediate_decode_siblings",
+            "persistent_tensor_cache": False,
+        }
 
     def new_cache(self) -> NativeStepCache:
         shape = (self.kv_heads, 0, self.head_dim)
@@ -534,6 +572,8 @@ class NativeStepAdapter(nn.Module):
         compute_logits: bool = True,
         trace_callback: Callable[[str, Tensor], None] | None = None,
     ) -> DraftStep:
+        self.last_activation_reuse_events.clear()
+
         def trace(name: str, value: Tensor) -> None:
             if trace_callback is not None:
                 trace_callback(name, value.detach().clone())
@@ -583,9 +623,19 @@ class NativeStepAdapter(nn.Module):
         trace("g_norm-0", normalized_feature)
         fused = torch.cat((normalized_embedding, normalized_feature), dim=-1)
         trace("concat_embd-0", fused)
-        q = attn.q_proj(fused)
-        k = attn.k_proj(fused)
-        v = attn.v_proj(fused)
+        with activation_reuse_group(
+            "qkv",
+            fused,
+            tuple(
+                getattr(proj, "activation_quantizer", None)
+                for proj in (attn.q_proj, attn.k_proj, attn.v_proj)
+            ),
+            enabled=self.activation_reuse,
+            events=self.last_activation_reuse_events,
+        ):
+            q = attn.q_proj(fused)
+            k = attn.k_proj(fused)
+            v = attn.v_proj(fused)
         trace("Qcur-0", q)
         trace("Kcur-0", k)
         trace("Vcur-0", v)
@@ -650,13 +700,23 @@ class NativeStepAdapter(nn.Module):
         trace("ffn_inp-0", residual)
         post_attention = self._rms_norm(residual, layer.post_attention_layernorm)
         trace("post_attn_norm-0", post_attention)
-        gate = mlp.gate_proj(post_attention)
-        activated = (
-            self.native_cpu_operators.silu(gate)
-            if self.attention_mode == "native_cpu_diagnostic"
-            else F.silu(gate)
-        )
-        ffn = mlp.down_proj(activated * mlp.up_proj(post_attention))
+        with activation_reuse_group(
+            "gate_up",
+            post_attention,
+            tuple(
+                getattr(proj, "activation_quantizer", None) for proj in (mlp.gate_proj, mlp.up_proj)
+            ),
+            enabled=self.activation_reuse,
+            events=self.last_activation_reuse_events,
+        ):
+            gate = mlp.gate_proj(post_attention)
+            activated = (
+                self.native_cpu_operators.silu(gate)
+                if self.attention_mode == "native_cpu_diagnostic"
+                else F.silu(gate)
+            )
+            up = mlp.up_proj(post_attention)
+        ffn = mlp.down_proj(activated * up)
         trace("ffn_out-0", ffn)
         pre_norm = residual + ffn
         trace("eagle3_prenorm-0", pre_norm)
