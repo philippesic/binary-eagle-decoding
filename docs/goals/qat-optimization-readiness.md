@@ -653,3 +653,43 @@ QATowner owns heartbeat/runbook/handoff and lease/validation evidence. No actual
 GPUlease/teststart is claimed at dispatch. No further trainingconfirmation needed
 once allrequiredverifieddata and gates pass. Overnight/oncredits protection
 continues; researchusage/reset controls do not apply to QAT.
+
+
+## Exclusive early validation lease granted — October2
+
+Parent locally read the authoritative ignored
+runs/luna-continuous-a8-a1-20260929/gpu-validation-lease.json, statusgranted_held,
+holdverified/granted true,updated08:12:21UTC. Leaseprep08-validation-20261002:
+hold08:10:04.539686UTC -> deadline09:40:04.539686UTC (01:10 ->02:40PDT).
+Validationowner01a0f934-dd65-7e33-a5bf-0ba591e713a4 accepted explicitgrant; prepowner
+01a0fb62-cbdb-72f0-8e86-4055b2ccb4ed retains exact livepreparation/data ownership.
+
+Prepchild676/PGID676/startticks85132 isSIGSTOPstateT at trainaudit244/353;
+supervisor674/PGID674 andhosttmuxserver673 remainlive. Retained327manifests /
+10,000train /224development,zerooptimizer. Hold preserves exactprocess/source/
+config/data and avoids anotherrestart/re-audit. Two earlier guardordinalbugs
+are preserved: firstno-signalrefusal; secondbriefholdthenverifiedsameprocess
+SIGCONT. Final reviewedguard achieved verifiedhold. Routineprepmonitor is
+holdaware; intentionalhold is not recovery/failure.
+
+Before/afterhold emptyGPUcomputeapps and floors pass: RTX5080 capability12.0,
+GPUfree13,370,392,576B; hostavailable~19.47GB; diskfree424,596,344,832B. Rawproof
+lease-hold-attempt03-result-20261002.json; remoteleaseSHA
+690ac30794734cfcac2419a070f954e9af11910350aa83c90f8413e93c0e519d. Prep lease
+operatorcomplete,ownLOCAL151closed/absenceverified. Parent performed no extra
+remotequery or experiment action.
+
+QATowner reports sole /root/early_cuda_validation Lunaoperator explicitGO,
+fixedparent7b0ef42/native8025a0777/newcheckout,compilerparallelism<=2,
+09:30UTC/02:30PDT teardowncutoff leaving10minutehandoffmargin. FreshLOCAL152
+verified; bootstrapinprogress,actualbuild/supervisor/GPUexecutionproof pending.
+No CUDAreceipt/readinesssuccess/optimizerupdate claimed. Owner published
+3668321 earlyvalidationvs trainingadmissionrunbook/handoff and updated SAME
+ACTIVE15minmonitor. Fullcorpus/currentrecipe gates still precede actualQAT.
+
+Beforeleaseexpires validationowner must stop all ownedtestprocessgroups and
+prove groupsabsent+GPUcomputeappsempty through fresh tmuxMCP; onlypreparationowner
+then verifies exactchildidentity andSIGCONT. Deadline is not permission to
+SIGCONT into unknownactiveGPUwork: notify/requestboundedteardown if release
+proofmissing. GPUownership remains exclusive. Nextaction actualvalidation
+build/test evidence, thenverifiedhandoff and sameprocessauditresume.

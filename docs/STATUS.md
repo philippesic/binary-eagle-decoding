@@ -16,13 +16,17 @@ The human now authorizes early GPU validation during the preparation CPU audit,
 subject to a coordinated exclusive GPU reservation, fresh resource proof and a
 safe handback before preparation resumes GPU work. Training still requires full
 verified data/current gates and GPU handoff. [Overlap policy](QAT_GPU_AUDIT_OVERLAP.md). RTX2080Ti remains paused.
-Required new-feature GPU evidence is pending; the preparation owner retains data/job ownership; QAT owner may obtain a bounded
-exclusive RTX5080 validation lease while audit is CPU-only. Root handoff monitor is ACTIVE every15minutes;
-[handoff plan](QAT_TRAINING_HANDOFF.md) requires current zero-update validation
-before the newly authorized training starts. Existing frozen prep stays
---prepare-only. FreshCPUcheck06:03:52UTC: healthyreaudit52/353,zerooptimizer,
-no readyreceipt,supervisor674/child676live; GPU not released. The readiness
-objective remains incomplete.
+**Early validation lease granted:** RTX5080 is exclusively reserved for QAT
+owner01a0f934 until October2 02:40:04PDT (09:40UTC). Preparation child676 is
+intentionally held in the same live process at audit244/353; supervisor674 stays
+live,10,000train/224dev retained,zerooptimizer. Fresh08:10UTC proof showed empty
+GPUcomputeapps and13.37GBGPU/19.47GBhost free. Validationoperator is bootstrapping
+publishedparent7b0ef42/native8025a0777 in a separate run; actual CUDA execution
+is not yet proved. Validation teardown cutoff02:30PDT, then preparation owner
+requires fresh ownedgroupsgone/GPUempty proof before sameprocessSIGCONT. Both
+hold-awareprep and QAT15minmonitors ACTIVE. [Lease checkpoint](goals/qat-optimization-readiness.md#exclusive-early-validation-lease-granted--october2).
+Training still requires complete verified data and current passing CUDA gates.
+The readiness objective remains incomplete.
 
 **Overnight CPU research authorized (October1):** three teams investigate W1A1
 representation geometry, native accepted-prefix objectives and block-parallel
