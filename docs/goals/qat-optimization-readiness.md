@@ -17,7 +17,7 @@ target/verifier or existing preparation source/config identity. Tiny synthetic
 optimizer tests are permitted. RTX2080Ti remains paused. The earlier
 preparation-only boundary is historical; see the latest handoff checkpoint.
 RTX5080 belongs to the existing preparation operator in chat
-01a0f47a-e246-75e1-a299-fcac42d34f8a; new GPU checks require explicit ownership
+01a0fb62-cbdb-72f0-8e86-4055b2ccb4ed; new GPU checks require explicit ownership
 coordination and idle proof. Do not modify or stop that job from this goal.
 
 ## Completion evidence
@@ -572,3 +572,19 @@ SIGINT,300secgrace; never hosttmux panes/unrelatedwork). Explicit humanpause mar
 shared flag and pausesmonitor immediately, then verifies graceful cleanup before
 reporting GPUfree. Resume only new humanrequest. No unresolved human decision is
 needed for existing preparation continuation; no new feature recipe is selected.
+
+
+Preparation-owner transfer confirmed: successor chat
+`01a0fb62-cbdb-72f0-8e86-4055b2ccb4ed` completed local initialization, acknowledged
+supervisor08/current paths/server673/supervisor674/child676,06:42:04UTC healthy
+109/353,retained10,000train/224dev/327manifests,zerooptimizer/no receipt,
+RTX5080unpaused/2080Tipaused and no new remote check. Native automation update
+confirmed SAME `a8-a1-health-check-enable-after-manual-start` ACTIVE;
+TOML readback verifies successor target and unchanged every15minute cadence/prompt.
+Ignored coordination-rotation-20261002.json and monitor-registration.json record
+acknowledgment/previous owner/native confirmation and current preparation owner.
+The old owner now retires; no live subagent/command transferred and no GPU job
+interrupted. New task reads checkpoint6285415 plus this confirmation; next action
+is the next scheduled single CPU check. Separate validation/training owner stays
+01a0f934-dd65-7e33-a5bf-0ba591e713a4 and must derive latest prepowner from registration,
+not assume the historical old chat. Stop-before-QAT boundary unchanged.

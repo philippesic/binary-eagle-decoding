@@ -33,8 +33,8 @@ GPU ownership or frozen-training change. [Assignments and control](OVERNIGHT_RES
 check healthy, re-audit109/353;327completed manifests retain10,000train/224dev,
 zerooptimizerupdates,no readyreceipt. SAME supervisor08 remains soleRTX5080
 preparation owner with --prepare-only;2080Ti paused. All tick agents/transports
-finished. Fresh successor inherits existing15min monitor without touching GPU
-job; [exact handoff](goals/qat-optimization-readiness.md#preparation-owner-rotation--2026-10-02-0642-utc)
+finished. Acknowledged successor `01a0fb62-cbdb-72f0-8e86-4055b2ccb4ed` owns the SAME ACTIVE15min monitor; GPU
+job unchanged; [exact handoff](goals/qat-optimization-readiness.md#preparation-owner-rotation--2026-10-02-0642-utc)
 records source identity,job ownership,stopprocedure,tests and nextactions.
 Separate validation/training owner still waits for verified fullprep/GPUrelease.
 
