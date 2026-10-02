@@ -1,5 +1,53 @@
 # A8/A1 health and bounded recovery monitor
 
+## Current preparation ownership — 2026-10-02 09:57 UTC
+
+Both validation reservations are CLOSED. The SAME supervisor08 preparation
+child676/startticks85132 is running again under supervisor674/server673, with
+`--prepare-only` and zero optimizer updates. RTX5080 belongs to preparation;
+RTX2080Ti remains paused. The existing15minute monitor is ACTIVE and uses its
+normal registration-bound CPU query when the local lease is returned/resumed.
+Future validation requires a new explicit coordinated reservation or verified
+full preparation release; a CPU phase alone grants no GPU access.
+
+The initial lease resumed at09:27:19.132939UTC, audit244→245, after all14 validation
+groups were absent and GPU compute apps empty. A second prebuilt diagnostic-only
+fixture lease held the process at272 from09:45:20UTC, with a09:55:20 deadline.
+The fixture obtained the exact failing CUDA case: learnedA1 activation beta at
+the smallest positive F32 subnormal became zero; no model/data/optimizer work.
+It exited09:49; its groups8656/8658 and compute apps were empty at09:50.
+
+Second release initially sent NO signal because the local guard contained a
+65-character checksum copied from an operator message rather than the actual
+64-character raw receipt hash. Every other release check passed. The preparation
+owner corrected that construction error from parsed raw JSON and independently
+hashed canonical receipt bytes, preserving the denied attempt. Corrected fresh
+release checks passed and oneSIGCONT resumed the original676 at
+09:57:37.646130UTC; the audit advanced272→274 and one45second-postresume CPU check
+passed with zero steps. The hold exceeded its deadline by137seconds due to the
+guard error; no GPU overlap, implicit renewal, restart or audit reset occurred.
+All operator transports are closed. No GPU readiness or training claim follows.
+
+Ignored raw evidence: `lease-return-operation-20261002.json`,
+`beta-probe-hold-operation-20261002.json`,
+`beta-probe-return-operation-20261002.json` (denied/no signal), and
+`beta-probe-return-corrected-operation-20261002.json`, all under
+`runs/luna-continuous-a8-a1-20260929/`. The local lease/registration/last-health
+record closure and exact process ancestry. Retained327 completed manifests hold
+10,000train/224dev; resumed audit counters are separate from retained counts.
+Release scripts recorded precise preflight/resume times but no separate checker
+timestamp: last-health explicitly bounds postresume health after45seconds until
+the next normal combined query replaces it with an exact remote timestamp.
+
+**Proof construction rule:** load expected hashes, paths, lease IDs and deadline
+from parsed complete raw operation/receipt JSON or current registration. Validate
+SHA256 as exactly64 lowercase hex characters and check exact bytes before use.
+Never copy expected hashes from prose, abbreviated output or displayed messages.
+Preserve each failed guard attempt and fix its construction without weakening
+receipt/identity/data/numerical gates. Derive held-query bindings from the CURRENT
+lease: each new cycle has its own receipt, checksum, CPU ordinal and deadline.
+The healthy-query contract still forbids extra GPU/resource queries.
+
 ## Latest coordinated validation lease — October2
 
 The human now authorizes the separate QAT owner to validate its changes on
