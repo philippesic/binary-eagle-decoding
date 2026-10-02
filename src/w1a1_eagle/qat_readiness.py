@@ -19,6 +19,7 @@ or inferred, and no receipt overrides live resource checks.
 
 from __future__ import annotations
 
+import ast
 import hashlib
 import json
 import math
@@ -152,6 +153,66 @@ def _unique_object(pairs):
     return result
 
 
+def _source_inventory(filename, registry):
+    """Read the producer's literal registry without importing Torch or runners."""
+    try:
+        tree = ast.parse(Path(__file__).with_name(filename).read_text())
+        for statement in tree.body:
+            if isinstance(statement, ast.Assign) and any(
+                isinstance(target, ast.Name) and target.id == registry
+                for target in statement.targets
+            ):
+                names = ast.literal_eval(statement.value)
+                if (
+                    isinstance(names, tuple)
+                    and names
+                    and all(isinstance(name, str) and name.endswith(".py") for name in names)
+                    and len(set(names)) == len(names)
+                ):
+                    return names
+                break
+    except (OSError, SyntaxError, ValueError, TypeError) as error:
+        raise ValueError(f"cannot read required source inventory {registry}") from error
+    raise ValueError(f"invalid required source inventory {registry}")
+
+
+def _require_source_inventory(sources, filename, registry, label):
+    sources = _object(sources, label)
+    missing = set(_source_inventory(filename, registry)) - sources.keys()
+    if missing:
+        raise ValueError(f"actual {label} requires {', '.join(sorted(missing))}")
+    for name, digest in sources.items():
+        _hash(digest, f"math source {name}")
+
+
+def _require_math_sources(config, runtime):
+    _require_source_inventory(
+        runtime.get("math_source_sha256"), "continuous_runtime.py", "MATH_FILES",
+        "math-source identity",
+    )
+    curriculum = config.get("curriculum")
+    if curriculum is not None:
+        curriculum = _object(curriculum, "curriculum")
+    stages = curriculum.get("stages") if curriculum is not None else config.get("stages")
+    if curriculum is not None or "stages" in config:
+        if (
+            not isinstance(stages, list)
+            or not stages
+            or any(
+                not isinstance(stage, dict)
+                or type(stage.get("activation_bits")) is not int
+                or stage["activation_bits"] not in (8, 4, 1)
+                for stage in stages
+            )
+        ):
+            raise ValueError("readiness precision stages support only A8/A4/A1")
+    if curriculum is not None or "stages" in config or "curriculum_math_sha256" in runtime:
+        _require_source_inventory(
+            runtime.get("curriculum_math_sha256"), "qat_curriculum_runner.py", "EXTRA_MATH",
+            "curriculum math-source identity",
+        )
+
+
 def validate_optimization_readiness(
     config,
     *,
@@ -201,16 +262,9 @@ def validate_optimization_readiness(
     for field in ("python_version", "torch_version", "numpy_version"):
         if not isinstance(runtime_identity.get(field), str) or not runtime_identity[field]:
             raise ValueError(f"actual runtime {field} required")
-    sources = _object(runtime_identity.get("math_source_sha256"), "math_source_sha256")
-    if not sources:
-        raise ValueError("actual math-source identity required")
-    # learned_activation imports this helper unconditionally, including when
-    # the adapter's reuse option is false. Mutual omission from a supplied
-    # context and its receipt must not bypass the source identity comparison.
-    if "activation_reuse.py" not in sources:
-        raise ValueError("actual math-source identity requires activation_reuse.py")
-    for name, digest in sources.items():
-        _hash(digest, f"math source {name}")
+    # Comparing context to receipt alone admits matching incomplete maps.
+    # Require the same source inventory as the actual identity producers.
+    _require_math_sources(config, runtime_identity)
     cuda_math = _object(runtime_identity.get("cuda_math"), "cuda_math")
     if cuda_math.get("float32_matmul_precision") not in ("highest", "high", "medium"):
         raise ValueError("actual CUDA matmul precision required")
