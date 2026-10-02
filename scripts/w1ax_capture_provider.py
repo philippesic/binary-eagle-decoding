@@ -399,6 +399,9 @@ class NativeCaptureProvider:
         if not isinstance(spec, dict) or spec.get("schema") not in {SCHEMA, V2_SCHEMA}:
             raise ValueError("unsupported native train-provider manifest")
         v2 = spec.get("schema") == V2_SCHEMA
+        native_label_audit_receipt = spec.get("native_label_audit_receipt")
+        if native_label_audit_receipt is not None and not v2:
+            raise ValueError("native label audit receipt requires a v2 label-only provider")
         if v2 and config.objective != "hard_ce":
             raise ValueError("label-only v2 supports hard CE only")
         development = v2 and spec.get("split") == "development"
@@ -440,9 +443,18 @@ class NativeCaptureProvider:
         ):
             raise ValueError("provider changed frozen target or candidate-D identity")
         for name in ("capture_manifest", "prompts", "absolute_d2t", "model_snapshot_manifest"):
-            if sha256(self.paths[name]) != self.hashes[name]:
+            if native_label_audit_receipt is not None:
+                from w1ax_continuous_stages import checked_record
+
+                checked_record({"path": str(self.paths[name]), "sha256": self.hashes[name]})
+            elif sha256(self.paths[name]) != self.hashes[name]:
                 raise ValueError(f"provider {name} SHA256 mismatch")
         capture_manifest = json.loads(self.paths["capture_manifest"].read_text())
+        if (
+            native_label_audit_receipt is not None
+            and capture_manifest.get("schema") != "recurrent_native_label_capture_v2"
+        ):
+            raise ValueError("native label audit receipt requires native label-only capture")
         full_body_ready = (
             capture_manifest.get("schema") == "recurrent_binary_capture_v1"
             and capture_manifest.get("training_eligible") is True
@@ -571,7 +583,11 @@ class NativeCaptureProvider:
             ) or capture_manifest.get("source_cell")
             cell_path = self.paths["capture_manifest"].parent / cell_record["path"]
             cell_hash = cell_record["sha256"]
-        if not cell_path.is_file() or sha256(cell_path) != cell_hash:
+        if native_label_audit_receipt is not None:
+            from w1ax_continuous_stages import checked_record
+
+            checked_record({"path": str(cell_path), "sha256": cell_hash})
+        elif not cell_path.is_file() or sha256(cell_path) != cell_hash:
             raise ValueError("native capture cell source manifest is missing or changed")
         cell = json.loads(cell_path.read_text())
         if cell.get("target_sha256") != self.hashes["target_gguf"]:
@@ -651,6 +667,14 @@ class NativeCaptureProvider:
                     self.paths["capture_manifest"],
                     expected_prompt_sha256=self.hashes["prompts"],
                     expected_prompt_count=spec["prompt_count"],
+                    **(
+                        {
+                            "audit_receipt": native_label_audit_receipt,
+                            "expected_manifest_sha256": self.hashes["capture_manifest"],
+                        }
+                        if native_label_audit_receipt is not None
+                        else {}
+                    ),
                 )
         else:
             self.capture = capture_loader(

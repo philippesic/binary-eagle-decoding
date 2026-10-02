@@ -50,6 +50,8 @@ FROZEN_RUNTIME_MANIFEST_SHA256 = "a199cfdabd81b5ba7414509e31007eab338c125b881a92
 FROZEN_BINARY_SHA256 = "b5093749d67888bc2cafdb6a65c479f4c182f0a904820f1dae4870b6ae66d41c"
 Q4_0_GGUF_SHA256 = "2db40f99d27e404298b80b2865671b9fd0136060ffb503007cb2ae23759e7280"
 _VERIFIED_RECORDS = {}
+_OBSERVED_RECORDS = {}
+NATIVE_LABEL_RECEIPT_SCHEMA = "w1ax_native_label_audit_receipt_v1"
 
 LABEL_POLICY = {
     "objective": "hard_ce",
@@ -237,30 +239,34 @@ def file_record(path: Path) -> dict:
     return {"path": str(path), "sha256": sha256(path)}
 
 
+def _stat_identity(stat) -> tuple:
+    return (stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns)
+
+
 def checked_record(record: dict) -> Path:
     if not isinstance(record, dict) or set(record) != {"path", "sha256"}:
         raise ValueError("expected an exact path/SHA256 record")
+    if (
+        not isinstance(record["path"], str)
+        or not isinstance(record["sha256"], str)
+        or re.fullmatch(r"[0-9a-f]{64}", record["sha256"]) is None
+    ):
+        raise ValueError("expected an absolute path and lowercase SHA256")
     path = Path(record["path"])
     if not path.is_absolute() or path.is_symlink() or not path.is_file():
         raise ValueError("evidence must be an absolute regular file")
     stat = path.stat()
-    identity = (
-        str(path),
-        record["sha256"],
-        stat.st_dev,
-        stat.st_ino,
-        stat.st_size,
-        stat.st_mtime_ns,
-        stat.st_ctime_ns,
-    )
+    identity = (str(path), record["sha256"], *_stat_identity(stat))
     if identity not in _VERIFIED_RECORDS:
         if sha256(path) != record["sha256"]:
             raise ValueError("evidence SHA256 mismatch")
+        if _stat_identity(path.stat()) != _stat_identity(stat):
+            raise ValueError("evidence changed while hashing")
         _VERIFIED_RECORDS[identity] = True
     return path
 
 
-def _files(manifest: dict, directory: Path) -> dict[str, Path]:
+def _files(manifest: dict, directory: Path, *, verified: bool = False) -> dict[str, Path]:
     files = {}
     for name, record in manifest["files"].items():
         if not isinstance(record, dict) or set(record) != {"path", "sha256"}:
@@ -269,10 +275,249 @@ def _files(manifest: dict, directory: Path) -> dict[str, Path]:
         if not isinstance(basename, str) or Path(basename).name != basename:
             raise ValueError("label-only files must be owned basenames")
         path = directory / basename
-        if path.is_symlink() or not path.is_file() or sha256(path) != record["sha256"]:
+        if verified:
+            checked_record({"path": str(path.absolute()), "sha256": record["sha256"]})
+        elif path.is_symlink() or not path.is_file() or sha256(path) != record["sha256"]:
             raise ValueError("label-only file missing or changed")
         files[name] = path
     return files
+
+
+def native_label_audit_source() -> dict:
+    """Conservative identity of the auditor and its local/runtime dependencies."""
+    import torch
+
+    names = (
+        "scripts/w1ax_continuous_stages.py",
+        "scripts/w1ax_capture_provider.py",
+        "scripts/audit_recurrent_binary_capture.py",
+        "scripts/audit_recurrent_response.py",
+        "scripts/audit_recurrent_continuity.py",
+        "scripts/prepare_recurrent_native_rows.py",
+        "scripts/prepare_recurrent_native_features.py",
+        "src/w1a1_eagle/__init__.py",
+        "src/w1a1_eagle/adapter.py",
+        "src/w1a1_eagle/fake_binary.py",
+        "src/w1a1_eagle/fake_uniform.py",
+        "src/w1a1_eagle/recurrent_trace.py",
+    )
+    return {
+        "files": {name: _observed_record(ROOT / name)["sha256"] for name in names},
+        "python": sys.version,
+        "numpy": np.__version__,
+        "torch": torch.__version__,
+    }
+
+
+def _observed_record(path: Path) -> dict:
+    """Observe an unpinned small source/sidecar once per process file identity."""
+    path = Path(path).absolute()
+    if path.is_symlink() or not path.is_file():
+        raise ValueError("native label receipt evidence must be a regular file")
+    stat = path.stat()
+    identity = (str(path), *_stat_identity(stat))
+    if identity not in _OBSERVED_RECORDS:
+        record = {"path": str(path), "sha256": sha256(path)}
+        if _stat_identity(path.stat()) != _stat_identity(stat):
+            raise ValueError("native label receipt evidence changed while hashing")
+        _OBSERVED_RECORDS[identity] = record
+        _VERIFIED_RECORDS[(str(path), record["sha256"], *identity[1:])] = True
+    record = _OBSERVED_RECORDS[identity]
+    checked_record(record)
+    return record
+
+
+def _native_label_receipt_binding(
+    manifest_path: Path,
+    *,
+    expected_manifest_sha256: str,
+    expected_prompt_sha256: str,
+    expected_prompt_count: int,
+) -> dict:
+    """Verify actual bytes, including hardlinks, and owned inventory on each access.
+
+    Only in-process successful hashes are reused; their keys contain expected
+    SHA, path, device/inode, size, mtime and ctime. Nothing persists stat trust.
+    The manifest digest binds split, source cell, cache/sampler, teacher ancestry
+    and every semantic field; all referenced files are independently verified.
+    """
+    manifest_path = Path(manifest_path).absolute()
+    if manifest_path.is_symlink():
+        raise ValueError("native label manifest must be an owned regular file")
+    manifest_path = checked_record(
+        {
+            "path": str(manifest_path.resolve()),
+            "sha256": expected_manifest_sha256,
+        }
+    )
+    m = json.loads(manifest_path.read_text())
+    if (
+        m.get("schema") != LABEL_SCHEMA
+        or m.get("storage_policy") != LABEL_POLICY
+        or m.get("training_eligible") is not False
+        or m.get("readiness") != "preparation_only"
+        or m.get("split") not in {"train", "development"}
+        or m.get("prompts_sha256") != expected_prompt_sha256
+        or m.get("prompt_count") != expected_prompt_count
+        or type(expected_prompt_count) is not int
+        or not 1 <= expected_prompt_count <= 32
+    ):
+        raise ValueError("native label receipt prompt/split/policy binding differs")
+    files = _files(m, manifest_path.parent, verified=True)
+    owned = {manifest_path.name: expected_manifest_sha256}
+    for name, path in files.items():
+        owned[path.name] = m["files"][name]["sha256"]
+    checked_record({"path": str(files["prompts"]), "sha256": expected_prompt_sha256})
+    requests = m.get("requests")
+    if not isinstance(requests, list):
+        raise ValueError("native label receipt requests missing")
+    for record in requests:
+        for kind in ("request", "response", "prompt"):
+            rec = record[kind]
+            if (
+                not isinstance(rec, dict)
+                or set(rec) != {"path", "sha256"}
+                or not isinstance(rec["path"], str)
+                or Path(rec["path"]).name != rec["path"]
+            ):
+                raise ValueError("native label receipt request ownership differs")
+            checked_record(
+                {
+                    "path": str(manifest_path.parent / rec["path"]),
+                    "sha256": rec["sha256"],
+                }
+            )
+            owned[rec["path"]] = rec["sha256"]
+    # The ordinary sidecar is bound as input, never accepted as audit provenance.
+    sidecar = manifest_path.parent / "audit.json"
+    if sidecar.exists():
+        if sidecar.is_symlink() or not sidecar.is_file():
+            raise ValueError("native label sidecar must be an owned regular file")
+        owned[sidecar.name] = _observed_record(sidecar)["sha256"]
+    if {p.name for p in manifest_path.parent.iterdir()} != set(owned):
+        raise ValueError("native label receipt owned inventory differs")
+    return {
+        "capture_manifest": {"path": str(manifest_path), "sha256": expected_manifest_sha256},
+        "split": m["split"],
+        "prompts_sha256": expected_prompt_sha256,
+        "prompt_count": expected_prompt_count,
+        "owned_files": owned,
+        "audit_source": native_label_audit_source(),
+    }
+
+
+def audit_native_labels_with_receipt(
+    manifest_path: Path,
+    *,
+    expected_prompt_sha256: str,
+    expected_prompt_count: int,
+    expected_manifest_sha256: str,
+    receipt_path: Path,
+) -> dict:
+    """Explicit external per-shard cache; first use always does the full audit.
+
+    Wire API: callers bind the immutable manifest SHA and an absolute receipt
+    path outside the label directory. Existing mismatched receipts fail closed.
+    An old ``audit.json`` or status ordinal cannot initialize a receipt. Historical
+    producer provenance is intentionally unsupported: missing receipts require
+    the current full semantic audit once. No eligibility is conferred.
+    """
+    receipt_path = Path(receipt_path)
+    manifest_path = Path(manifest_path).absolute()
+    if manifest_path.is_symlink():
+        raise ValueError("native label manifest must be an owned regular file")
+    manifest_path = manifest_path.resolve()
+    if (
+        not receipt_path.is_absolute()
+        or receipt_path.is_symlink()
+        or receipt_path.resolve().is_relative_to(manifest_path.parent.resolve())
+    ):
+        raise ValueError("native label audit receipt must be external and absolute")
+    binding = _native_label_receipt_binding(
+        manifest_path,
+        expected_manifest_sha256=expected_manifest_sha256,
+        expected_prompt_sha256=expected_prompt_sha256,
+        expected_prompt_count=expected_prompt_count,
+    )
+    if receipt_path.exists():
+        receipt = json.loads(receipt_path.read_text())
+        if (
+            not isinstance(receipt, dict)
+            or set(receipt)
+            != {"schema", "binding", "report", "report_sha256", "full_semantic_audit"}
+            or receipt["schema"] != NATIVE_LABEL_RECEIPT_SCHEMA
+            or receipt["full_semantic_audit"] is not True
+            or receipt["binding"] != binding
+        ):
+            raise ValueError("native label audit receipt source/input binding differs")
+        report = receipt["report"]
+        if (
+            not isinstance(report, dict)
+            or receipt["report_sha256"] != _native_label_report_sha256(report)
+            or report.get("schema") != "recurrent_native_label_audit_v2"
+            or report.get("capture_manifest_sha256") != expected_manifest_sha256
+            or report.get("training_prompts_sha256") != expected_prompt_sha256
+            or report.get("training_prompt_count") != expected_prompt_count
+            or report.get("split") != binding["split"]
+            or report.get("training_eligible") is not False
+        ):
+            raise ValueError("native label audit receipt report binding differs")
+        return report
+    report = audit_native_labels(
+        manifest_path,
+        expected_prompt_sha256=expected_prompt_sha256,
+        expected_prompt_count=expected_prompt_count,
+    )
+    # Reject a mutation during the semantic audit before publication.
+    if binding != _native_label_receipt_binding(
+        manifest_path,
+        expected_manifest_sha256=expected_manifest_sha256,
+        expected_prompt_sha256=expected_prompt_sha256,
+        expected_prompt_count=expected_prompt_count,
+    ):
+        raise ValueError("native label audit inputs changed during audit")
+    _publish_native_label_receipt(receipt_path, binding, report)
+    return report
+
+
+def _native_label_report_sha256(report: dict) -> str:
+    return hashlib.sha256(
+        json.dumps(report, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+    ).hexdigest()
+
+
+def _publish_native_label_receipt(receipt_path: Path, binding: dict, report: dict) -> None:
+    """Called only after a successful full audit and unchanged input binding."""
+    receipt_path.parent.mkdir(parents=True, exist_ok=True)
+    receipt = {
+        "schema": NATIVE_LABEL_RECEIPT_SCHEMA,
+        "binding": binding,
+        "report": report,
+        "report_sha256": _native_label_report_sha256(report),
+        "full_semantic_audit": True,
+    }
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            dir=receipt_path.parent,
+            prefix=".native-audit-",
+            delete=False,
+        ) as stream:
+            temporary = Path(stream.name)
+            json.dump(receipt, stream, indent=2, sort_keys=True)
+            stream.write("\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, receipt_path)
+        directory_fd = os.open(receipt_path.parent, os.O_RDONLY)
+        try:
+            os.fsync(directory_fd)
+        finally:
+            os.close(directory_fd)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
 
 
 def audit_native_labels(
@@ -451,14 +696,37 @@ def audit_native_labels(
 
 
 def load_native_labels(
-    manifest_path: Path, *, expected_prompt_sha256: str, expected_prompt_count: int
+    manifest_path: Path,
+    *,
+    expected_prompt_sha256: str,
+    expected_prompt_count: int,
+    audit_receipt: dict | None = None,
+    expected_manifest_sha256: str | None = None,
 ) -> AuditedCapture:
-    report = audit_native_labels(
-        manifest_path,
-        expected_prompt_sha256=expected_prompt_sha256,
-        expected_prompt_count=expected_prompt_count,
+    if audit_receipt is None:
+        report = audit_native_labels(
+            manifest_path,
+            expected_prompt_sha256=expected_prompt_sha256,
+            expected_prompt_count=expected_prompt_count,
+        )
+    else:
+        # Provider manifests bind an already-published external receipt by SHA.
+        receipt_path = checked_record(audit_receipt)
+        if expected_manifest_sha256 is None:
+            raise ValueError("native label receipt requires explicit capture manifest SHA")
+        report = audit_native_labels_with_receipt(
+            manifest_path,
+            expected_prompt_sha256=expected_prompt_sha256,
+            expected_prompt_count=expected_prompt_count,
+            expected_manifest_sha256=expected_manifest_sha256,
+            receipt_path=receipt_path,
+        )
+        manifest_path = Path(manifest_path).resolve()
+    f = _files(
+        json.loads(Path(manifest_path).read_text()),
+        Path(manifest_path).parent,
+        verified=audit_receipt is not None,
     )
-    f = _files(json.loads(Path(manifest_path).read_text()), Path(manifest_path).parent)
     anchors = {
         (a["prompt_id"], a["round_index"]): RoundAnchor(**a) for a in read_jsonl(f["anchors"])
     }
@@ -486,11 +754,21 @@ def build_native_labels(
     *,
     split: str,
     target_vocab_size: int = 151936,
+    audit_receipt_path: Path | None = None,
 ) -> dict:
     """Publish fresh label-only data; never rewrite or retire a prior source."""
     require_unsealed_prompts(prompts)
     if split not in {"train", "development"} or output.exists():
         raise ValueError("new label-only output and train/development ownership required")
+    if audit_receipt_path is not None:
+        audit_receipt_path = Path(audit_receipt_path)
+        if (
+            not audit_receipt_path.is_absolute()
+            or audit_receipt_path.is_symlink()
+            or audit_receipt_path.resolve().is_relative_to(output.resolve())
+            or audit_receipt_path.exists()
+        ):
+            raise ValueError("fresh native label audit requires a new external receipt path")
     cell = capture_root / "d_d"
     source = json.loads((cell / "manifest.json").read_text())
     prompt_hash, count = sha256(prompts), len(read_jsonl(prompts))
@@ -595,6 +873,7 @@ def build_native_labels(
             }
         )
         write_json(publish / "manifest.json", m)
+        audit_source = native_label_audit_source() if audit_receipt_path is not None else None
         report = audit_native_labels(
             publish / "manifest.json",
             expected_prompt_sha256=prompt_hash,
@@ -602,6 +881,16 @@ def build_native_labels(
         )
         write_json(publish / "audit.json", report)
         os.rename(publish, output)
+        if audit_receipt_path is not None:
+            binding = _native_label_receipt_binding(
+                output / "manifest.json",
+                expected_manifest_sha256=report["capture_manifest_sha256"],
+                expected_prompt_sha256=prompt_hash,
+                expected_prompt_count=count,
+            )
+            if binding["audit_source"] != audit_source:
+                raise ValueError("native label audit source changed during publication")
+            _publish_native_label_receipt(audit_receipt_path, binding, report)
     return json.loads((output / "manifest.json").read_text())
 
 
@@ -759,7 +1048,14 @@ def validate_readiness(record: dict, *, activation_bits: int, common_hashes: dic
     return report
 
 
-def provider_manifest(sources: dict, capture: Path, readiness: Path, output: Path) -> dict:
+def provider_manifest(
+    sources: dict,
+    capture: Path,
+    readiness: Path,
+    output: Path,
+    *,
+    native_label_audit_receipt: dict | None = None,
+) -> dict:
     from w1ax_capture_provider import ANGELSLIM_REVISION
 
     m = json.loads(capture.read_text())
@@ -791,6 +1087,9 @@ def provider_manifest(sources: dict, capture: Path, readiness: Path, output: Pat
         "teacher": None,
         "continuous_readiness": file_record(readiness),
     }
+    if native_label_audit_receipt is not None:
+        checked_record(native_label_audit_receipt)
+        spec["native_label_audit_receipt"] = native_label_audit_receipt
     write_json(output, spec)
     return spec
 
@@ -887,6 +1186,14 @@ def _run_stages(config: dict, run_dir: Path) -> Path:
         raise ValueError("declared conservative capture budget exceeded; lower shard/token caps")
     stage_dir = Path(run_dir) / "stages"
     stage_dir.mkdir(parents=True, exist_ok=True)
+    # Explicit opt-in only. Receipts are external immutable per-shard evidence;
+    # provider manifests bind their path/SHA after publication. Legacy configs
+    # continue to run the full semantic audit on every existing call site.
+    receipt_dir = config.get("native_label_audit_receipts_dir")
+    if receipt_dir is not None:
+        receipt_dir = Path(receipt_dir)
+        if not receipt_dir.is_absolute() or receipt_dir.is_symlink():
+            raise ValueError("native label audit receipts directory must be absolute")
     host_admission("checkpoint-zero CPU model initialization", 12 * 1024**3)
     remaining = sum(
         c["storage_forecast"]["upper_bound_bytes"]
@@ -928,6 +1235,7 @@ def _run_stages(config: dict, run_dir: Path) -> Path:
         )
         results[str(bits)] = file_record(report)
     teacher_manifests = []
+    receipt_records = {}
     prompts_done = 0
     for ordinal, capture in enumerate(captures):
         stage_progress(
@@ -947,6 +1255,9 @@ def _run_stages(config: dict, run_dir: Path) -> Path:
             raise ValueError("stage frozen prompt bytes/count changed")
         folder = stage_dir / f"capture-{ordinal:05d}"
         manifest = folder / "labels/manifest.json"
+        receipt_path = (
+            receipt_dir / f"capture-{ordinal:05d}.json" if receipt_dir is not None else None
+        )
         if not manifest.exists():
             native_cell = folder / "native/d_d/manifest.json"
             if (folder / "native").exists():
@@ -968,13 +1279,24 @@ def _run_stages(config: dict, run_dir: Path) -> Path:
                 Path(sources["absolute_d2t"]),
                 folder / "labels",
                 split=capture["split"],
+                **({"audit_receipt_path": receipt_path} if receipt_path is not None else {}),
             )
         host_admission("bounded native label/feature CPU audit", 6 * 1024**3)
-        audit_native_labels(
-            manifest,
-            expected_prompt_sha256=capture["prompts_sha256"],
-            expected_prompt_count=capture["prompt_count"],
-        )
+        if receipt_path is None:
+            audit_native_labels(
+                manifest,
+                expected_prompt_sha256=capture["prompts_sha256"],
+                expected_prompt_count=capture["prompt_count"],
+            )
+        else:
+            audit_native_labels_with_receipt(
+                manifest,
+                expected_prompt_sha256=capture["prompts_sha256"],
+                expected_prompt_count=capture["prompt_count"],
+                expected_manifest_sha256=_observed_record(manifest)["sha256"],
+                receipt_path=receipt_path,
+            )
+            receipt_records[manifest] = file_record(receipt_path)
         teacher_manifests.append((manifest, capture))
         prompts_done += capture["prompt_count"]
         stage_progress(
@@ -1005,7 +1327,17 @@ def _run_stages(config: dict, run_dir: Path) -> Path:
     train_records, dev_records = [], []
     for ordinal, (manifest, capture) in enumerate(teacher_manifests):
         path = stage_dir / f"provider-{ordinal:05d}.json"
-        provider_manifest(sources, manifest, readiness, path)
+        provider_manifest(
+            sources,
+            manifest,
+            readiness,
+            path,
+            **(
+                {"native_label_audit_receipt": receipt_records[manifest]}
+                if manifest in receipt_records
+                else {}
+            ),
+        )
         record = {
             "ordinal": ordinal,
             "provider_manifest": str(path.resolve()),
