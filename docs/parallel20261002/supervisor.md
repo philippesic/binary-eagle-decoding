@@ -247,3 +247,12 @@ Memory ledger identifies host save transfer-temp overlap not charged in
 finalpayload+16MiB allowance (largest F32head327,680,000B); exact peak/storage
 calibration pending. Both findings relayed protected QAT owner, no unreviewed
 source/floor/recipe changes or GPU proof.
+
+
+At19:03UTC protected qat_priority retired its own two clean, fully integrated
+report/regression worktrees after patch-equivalence/exact-eight-file checks and
+raw preservation. Root verifies both worktrees/branches absent and before-fix
+log present; receiptqat-worktree-cleanup.json. The protected agent continues
+mainread-only coordination, peer QAT source/integration worktrees untouched.
+Root usage19:03:23UTC84%used/16%remaining, original reset unchanged; third
+three teams/validators allactive, no refill/stop.
