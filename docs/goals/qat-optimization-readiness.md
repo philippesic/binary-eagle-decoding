@@ -62,8 +62,9 @@ under experiments/qat-optimization-readiness/, and commits its own files.
 ## Current state
 
 Implementation is integrated and published on main eb66093; 952 CPU tests
-pass with four skips. Native8025a0777 is published and CPU-tested. Both GPUs
-remain paused; actual CUDA gates and complete data preparation are pending.
+pass with four skips. Native8025a0777 is published and CPU-tested. RTX5080 is assigned to the existing corpus preparation resume after the human
+continued it; RTX2080Ti remains paused. New implementation CUDA gates and complete
+data preparation are pending.
 See the final integration checkpoint below. No real-data optimizer updates.
 
 ## Added scope: tiny fusion correction
@@ -290,3 +291,24 @@ requirements. The scope and no-real-data-update/final/precision boundaries remai
 unchanged. Resume only after NEW human GPU authorization and sole-operator
 assignment; start a fresh blocked audit if the goal is resumed. Runbook and
 report12 give the exact next gates. No automatic GPU/monitor restart.
+
+## Existing corpus preparation resume reservation — 2026-10-02 05:15 UTC
+
+Human in preparation owner chat01a0f47a-e246-75e1-a299-fcac42d34f8a requested
+“Continue. Also why have you not made more prompt gen progress”. OnlyRTX5080
+sharedpause flag cleared;2080Ti paused. `/root/resume_prep_after_2315` has sole
+resume/preparation ownership, SAME frozen originaldata/maths/config/runtime and
+--prepare-only stop-before-QAT boundary. New optimization-feature CUDA checks
+must await separate ownership coordination and verified idle release; no local
+new feature/source bytes may be pulled into the frozen corpus preparation.
+
+Fresh preflight/CPUpartial preservation/new unique supervisor+hostsession and
+postdisconnect proof underway; monitor remainsPAUSED until verified. Retained
+10,000train/224dev in327completed manifests,zerooptimizer. Code review of the
+original stage loop confirms everyresume starts at firstcapture and audits
+existing label manifests; it skips native recapture but has no saved auditcursor.
+Previous supervisor07 ran20:43→23:15UTC and reachedreaudit220/353, before newdev
+capture. Human was told the restartcost; no data loss or newtraining claim.
+No gate/identity weakening to skipchecks is authorized. Keep GPUreservation
+until sameprep pipeline readiness/exit and verified release; actual new feature
+GPU readiness remains unestablished.
