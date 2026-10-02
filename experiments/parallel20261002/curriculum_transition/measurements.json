@@ -1,0 +1,227 @@
+{
+  "device": "cpu",
+  "floating_parameters": "F32, tiny frozen provider operands include FP16",
+  "hardware": "arm64",
+  "material_synthetic_reset_probe": [
+    {
+      "after_actual_tiny_step": {
+        "attn_output": 1.0,
+        "down": 0.9999983906745911,
+        "fc": 1.0,
+        "gate_up": 0.9999983310699463,
+        "head": 1.0,
+        "qkv": 0.9999983310699463
+      },
+      "after_transition": {
+        "attn_output": 1.0,
+        "down": 1.0,
+        "fc": 1.0,
+        "gate_up": 1.0,
+        "head": 1.0,
+        "qkv": 1.0
+      },
+      "before_transition": {
+        "attn_output": 0.6499999761581421,
+        "down": 0.75,
+        "fc": 0.550000011920929,
+        "gate_up": 0.699999988079071,
+        "head": 0.800000011920929,
+        "qkv": 0.6000000238418579
+      },
+      "canonical_attachment_passed": true,
+      "destination_bits": 4,
+      "isolated_same_a4_reset": {
+        "changed_integer_codes": 4,
+        "max_abs_output_difference": 0.19999998807907104,
+        "prior_clip": 0.800000011920929,
+        "reset_clip": 1.0
+      },
+      "new_activation_tensors": 6,
+      "new_optimizer_tensors": 0,
+      "old_adam_steps": [
+        1
+      ],
+      "old_optimizer_tensors": 36,
+      "post_transition_resume_exact": true,
+      "retained_core_buffers_exact": true,
+      "retained_exact": {
+        "fusion": 3,
+        "midpoint": 9,
+        "scale": 9,
+        "sign": 9
+      },
+      "source_bits": 8
+    },
+    {
+      "after_actual_tiny_step": {
+        "attn_output": 1.0,
+        "down": 1.0,
+        "fc": 0.9999966621398926,
+        "gate_up": 1.0,
+        "head": 0.9999966621398926,
+        "qkv": 0.9999966621398926
+      },
+      "after_transition": {
+        "attn_output": 0.0,
+        "down": 0.0,
+        "fc": 0.0,
+        "gate_up": 0.0,
+        "head": 0.0,
+        "qkv": 0.0
+      },
+      "before_transition": {
+        "attn_output": 0.6499999761581421,
+        "down": 0.75,
+        "fc": 0.550000011920929,
+        "gate_up": 0.699999988079071,
+        "head": 0.800000011920929,
+        "qkv": 0.6000000238418579
+      },
+      "canonical_attachment_passed": true,
+      "destination_bits": 1,
+      "isolated_same_a4_reset": null,
+      "new_activation_tensors": 6,
+      "new_optimizer_tensors": 0,
+      "old_adam_steps": [
+        1
+      ],
+      "old_optimizer_tensors": 36,
+      "post_transition_resume_exact": true,
+      "retained_core_buffers_exact": true,
+      "retained_exact": {
+        "fusion": 3,
+        "midpoint": 9,
+        "scale": 9,
+        "sign": 9
+      },
+      "source_bits": 4
+    }
+  ],
+  "no_acceptance_latency_or_gpu_claim": true,
+  "ordinary_tiny_training": [
+    {
+      "after_actual_tiny_step": {
+        "attn_output": 1.0,
+        "down": 0.9999983906745911,
+        "fc": 1.0,
+        "gate_up": 0.9999983310699463,
+        "head": 1.0,
+        "qkv": 0.9999983310699463
+      },
+      "after_transition": {
+        "attn_output": 1.0,
+        "down": 1.0,
+        "fc": 1.0,
+        "gate_up": 1.0,
+        "head": 1.0,
+        "qkv": 1.0
+      },
+      "before_transition": {
+        "attn_output": 1.0,
+        "down": 0.9999983906745911,
+        "fc": 1.0,
+        "gate_up": 0.9999983310699463,
+        "head": 1.0,
+        "qkv": 0.9999983310699463
+      },
+      "canonical_attachment_passed": true,
+      "destination_bits": 4,
+      "isolated_same_a4_reset": {
+        "changed_integer_codes": 0,
+        "max_abs_output_difference": 0.0,
+        "prior_clip": 1.0,
+        "reset_clip": 1.0
+      },
+      "new_activation_tensors": 6,
+      "new_optimizer_tensors": 0,
+      "old_adam_steps": [
+        1
+      ],
+      "old_optimizer_tensors": 36,
+      "post_transition_resume_exact": true,
+      "retained_core_buffers_exact": true,
+      "retained_exact": {
+        "fusion": 3,
+        "midpoint": 9,
+        "scale": 9,
+        "sign": 9
+      },
+      "source_bits": 8
+    },
+    {
+      "after_actual_tiny_step": {
+        "attn_output": 1.0,
+        "down": 1.0,
+        "fc": 0.9999966621398926,
+        "gate_up": 1.0,
+        "head": 0.9999966621398926,
+        "qkv": 0.9999966621398926
+      },
+      "after_transition": {
+        "attn_output": 0.0,
+        "down": 0.0,
+        "fc": 0.0,
+        "gate_up": 0.0,
+        "head": 0.0,
+        "qkv": 0.0
+      },
+      "before_transition": {
+        "attn_output": 1.0,
+        "down": 1.0,
+        "fc": 0.9999966621398926,
+        "gate_up": 1.0,
+        "head": 0.9999966621398926,
+        "qkv": 0.9999966621398926
+      },
+      "canonical_attachment_passed": true,
+      "destination_bits": 1,
+      "isolated_same_a4_reset": null,
+      "new_activation_tensors": 6,
+      "new_optimizer_tensors": 0,
+      "old_adam_steps": [
+        1
+      ],
+      "old_optimizer_tensors": 36,
+      "post_transition_resume_exact": true,
+      "retained_core_buffers_exact": true,
+      "retained_exact": {
+        "fusion": 3,
+        "midpoint": 9,
+        "scale": 9,
+        "sign": 9
+      },
+      "source_bits": 4
+    }
+  ],
+  "schema": "parallel_curriculum_transition_audit_v1",
+  "surrogate_finite_difference": [
+    {
+      "absolute_error": 2.763699130658992e-10,
+      "autograd_surrogate_vjp": -0.033479783684015274,
+      "bits": 8,
+      "frozen_code_surrogate_finite_difference": -0.03347978340764536,
+      "hard_fd_is_not_the_ste_contract": true,
+      "hard_forward_finite_difference": -0.3432855010032654,
+      "parameter": 0.71
+    },
+    {
+      "absolute_error": 7.245124167276629e-09,
+      "autograd_surrogate_vjp": -0.13437770307064056,
+      "bits": 4,
+      "frozen_code_surrogate_finite_difference": -0.1343776958255164,
+      "hard_fd_is_not_the_ste_contract": true,
+      "hard_forward_finite_difference": -0.2855173945426941,
+      "parameter": 0.71
+    },
+    {
+      "absolute_error": 2.982736246881501e-08,
+      "autograd_surrogate_vjp": -0.2891428470611572,
+      "bits": 1,
+      "frozen_code_surrogate_finite_difference": -0.28914281723379476,
+      "hard_fd_is_not_the_ste_contract": true,
+      "hard_forward_finite_difference": 0.0,
+      "parameter": 0.23
+    }
+  ],
+  "torch": "2.14.0"
+}
