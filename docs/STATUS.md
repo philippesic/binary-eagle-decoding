@@ -92,6 +92,16 @@ retry. Native9e2 CUDA fixture stays ready and untested, queued after verified
 preparation release. Normal12:45CPUhealth is full capture/readiness assembly,
 zerooptimizer/no finalreceipt/nonterminal. [Checkpoint](goals/qat-optimization-readiness.md#bounded-cpu-server-attempts-closed--october2-1253-utc).
 
+**New monitor alert classified, October2 13:07 UTC:** the unchanged preparation
+checker flagged a stale heartbeat at12:59. One bounded CPU sample confirms the
+original job actively reading captured features (+198CPUticks/+259MBrchar over2s),
+with full corpus/zerooptimizer/no finalreceipt. Source shows959additional full
+provider audits;10.39h is a projection, not an ETA. No restart/recovery/GPUrelease.
+Same owner monitor will retain stale classification plus CPU counter deltas.
+Local phase-appropriate early-validation hold planning resumes under existing
+human authorization, with fresh occupancy/resource/posthold grant still required.
+[Checkpoint](goals/qat-optimization-readiness.md#stale-heartbeat-classified-as-active-cpu-audits--october2-1307-utc).
+
 **Validation task rotation at a safe boundary:** after two compactions, the
 validation/training owner transferred to acknowledged successor
 01a0fc3d-bbe1-7e93-a19b-a9200dfa186c (Continue QAT validation and training). No owned remote

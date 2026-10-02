@@ -1418,3 +1418,64 @@ source-bound backward/memory/timing/everyprecision gates before NEW authorized
 training. FixedA8/A1 authentic frozen-provider reuse is supported; optional/A4
 bridge remains separate. No actual-model proof/optimizer update/readiness,
 convergence, acceptance gain or throughput claim from these CPU attempts.
+
+## Stale heartbeat classified as active CPU audits — October2 13:07 UTC
+
+Preparation owner's singleCPUchecker12:59:39.058932UTC exited2 on exact training
+heartbeat missing/stale/invalid. Recorded heartbeat12:19:56.950537UTC was~39min
+old. Full353/10,000train/1,002dev retained,zerooptimizer/models{},statuspreparing/
+readiness_complete,original674/676 reportedrunning;finalreceipt absent. User
+notified once. No restart, GPU query, recovery budget charge or release inference.
+
+SAME sole operator performed ONE bounded2s CPU/activity/fd/tiny-log classification
+at13:07:09.901375UTC. Original676/start85132 R/PGID676/PPID674, CPUticks+198
+(user189/sys9),rchar+258,823,036B/syscr+124/read_bytes+32,768B. These are actual
+CPU/file-interface progress counters, not measured whole-phase throughput/ETA.
+FD16 points to capture-00000/labels/features.npy; CUDA owner lock and /dev/dxg
+also present, explicitly NOT proof of a free GPU.674S/start85124 live;
+teacher_coverage/finalreceipt absent. Tiny log contains prior native capture
+rows with no new trace/numerical failure. Original job is actively doing CPU/file
+work, not a dead process. Raw local stale-cpu-activity-operation-20261002.json
+SHA7085eeaa36e61201702066e43380d22a39f7e32b3c5c70b7d436e2379b456a2a,
+exact invocation/PID/startticks validated; operator finished/local closed.
+
+Frozen-source review explains additional work after readiness_complete:
+provider_pair creates TWO StreamingNativeProvider constructors, each scanning
+320TRAIN children; _child→NativeCaptureProvider→load_native_labels→
+audit_native_labels performs full feature rederivation. Coverage provider.rounds
+then reloads319otherchildren.2×320+319=959additionalfullaudits; prior~39s/shard
+would project10.39h, explicitly a SOURCEPROJECTION, not measured current-phase
+elapsed time or finish estimate. No cache bypass, data/source/math/gate change.
+
+Owner's SAME normal combined CPU query adds only read-only /proc child/supervisor
+CPU/I/O counters after its EXACT unchanged checker once. Successive15min deltas
+can distinguish activity while keeping the stale alarm red/classified; checker
+threshold and recovery whitelist remain unchanged. Same already-notified alarm
+is quiet unless new errors/zeroactivity evidence/readiness appear. Root does not
+parallel-query or modify that monitor/frozen job. GPU ownership remains prep.
+
+Root's Sol bounded prospective-only assessment is under ignored
+provider-startup-assessment-20261002/ASSESSMENT.md + source-inventory.json:
+frozen754/currenta2 AST confirms these functions unchanged. Proposed NEW-source
+process-local typed audit session would preserve mandatory first full audit,
+closure file/source SHA+filesystem identities/inventory, independent precision/
+recipe/runtime admission, per-round mask/prefix validation and one-active-shard
+memory. No loaded tensor caching/eligibility flags/cross-process mutable trust.
+Report specifies invalidations/progress hooks/tests; no implementation/model/
+data payload/remote/GPU work. Parent's data_engine research can consume it rather
+than duplicate exploration. Current job cannot adopt future code in place.
+
+Human's existing early-validation scope covers a NEW phase-appropriate bounded
+CPU-audit hold if owner freshly proves exact source/phase/process/context/
+occupancy/resources and reversibly SIGSTOP prevents the next GPU smoke. Do not
+require nonexistent capture353labelsmanifest or a fresh heartbeat from this
+uninstrumented loop. Do not infer a grant from CPU counters or descriptor paths.
+Owner prepares LOCAL guards for readiness_complete/preparing/full353captures,
+zerooptimizer/models{},teacher_coverage absent/exactoriginalPID, compressed or
+stored short transport, fresh occupancy and posthold proof. Diagnostic is done;
+no acquisition or hold queued automatically. Root reuses SAME one Luna for LOCAL
+frozen f112plan/4b765validator readiness. Fresh explicit grant still required
+before direct120sfixture/conditional180sbackendops,>=180sreturnreserve,no build/
+model/data/optimizer. Root owns no live remote job/transport/lease. Training waits
+fullpreparation/currentrecipe/source-bound native/model/backward/memory/timing/
+full-provider evidence and finalGPUhandoff. No numerical gate or recipe selected.
