@@ -1,0 +1,17 @@
+{
+  "cuda_validated": false,
+  "device": "CPU",
+  "hardware": "arm64",
+  "precision": "F32 trainable core, moments, learned/fusion/midpoint; fixture frozen embedding FP16",
+  "schema": "resume_validation_source_binding_v1",
+  "source_adoption_requires_new_runtime_identity": true,
+  "source_sha256": {
+    "research/parallel20261002/resume_validation/reference/staged_resume.py": "73607572eb8fd2bf7b55edcb748c8f754d4c1751786705b6cfbae0842a09907d",
+    "src/w1a1_eagle/native_step.py": "844e52095ee0518cf507c81a10a895cdab7a61e32a1cb75836f2edb70e91d1c9",
+    "src/w1a1_eagle/qat_curriculum.py": "ec133082768e7c167bb67a7a1e4013883e51bc9a721ba78884a7c39904742dce",
+    "src/w1a1_eagle/qat_curriculum_runner.py": "2d2e1bf6edc28a16f75a009d77822f2134127a1711ceab3f19f8152b0adece84",
+    "src/w1a1_eagle/qat_optimization.py": "d2da18a4f4db612dd3cb51916af688109593d2c9d4cf119a21f8129567c305f7",
+    "src/w1a1_eagle/recurrent_qat.py": "f2b6d83b8929807b65b6f21826cc99097a6ddd70f99ff23ca0836aebe4db1224"
+  },
+  "torch": "2.14.0"
+}

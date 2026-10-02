@@ -1,0 +1,17 @@
+{
+  "candidate_additional_tensor_bytes_beyond_live_and_checkpoint": 428,
+  "candidate_extra_storage_count": 18,
+  "candidate_shared_with_checkpoint_bytes": 16056,
+  "candidate_shared_with_live_bytes": 208,
+  "candidate_unique_tensor_bytes": 16692,
+  "checkpoint_tensor_storage_count": 154,
+  "device": "CPU",
+  "excludes_numpy_rng_and_python_metadata": true,
+  "full_model_clone": false,
+  "live_unique_tensor_bytes": 9188,
+  "loaded_checkpoint_unique_tensor_bytes": 16484,
+  "schema": "resume_staging_storage_v1",
+  "staging_host_resident_union_bytes": 26100,
+  "torch": "2.14.0",
+  "transient_auxiliary_probes_excluded_from_observed_resident_snapshot": true
+}
