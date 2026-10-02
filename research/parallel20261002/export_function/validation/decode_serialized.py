@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import argparse
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import numpy as np
 
@@ -55,10 +55,8 @@ def qk_inverse(rows: np.ndarray, heads: int) -> np.ndarray:
 
 
 def activation(x: np.ndarray, bits: int, delta: float, clip: float):
-    """Reconstruct serialized learned A1/A4/A8 or F16 boundary values."""
+    """Reconstruct serialized learned A1/A4/A8 boundary values."""
     x = f32(x)
-    if bits == 16:
-        return x.astype(np.float16).astype(np.float32), None, f32(1.0)
     if bits == 1:
         # The scale reduction is explicitly F64 then rounded to F32.
         beta = f32(np.mean(np.abs(x).astype(np.float64), axis=-1, keepdims=True))
@@ -110,12 +108,19 @@ def packed_signs(reader, base: str) -> tuple[np.ndarray, np.ndarray, int]:
 
 
 def decode_case(gguf_path: Path, bits: int, inputs: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+    if bits not in (1, 4, 8):
+        raise ValueError(f"unsupported fixture activation width {bits}")
     gguf_py = Path(__file__).resolve().parents[4] / "third_party/llama.cpp/gguf-py"
     sys.path.insert(0, str(gguf_py))
     from gguf import GGUFReader  # type: ignore
 
     reader = GGUFReader(str(gguf_path))
     fields = {name: field.contents() for name, field in reader.fields.items()}
+    serialized_bits = int(fields["eagle3.w1a1.activation_bits"])
+    if serialized_bits != bits:
+        raise ValueError(
+            f"fixture activation width {bits} differs from serialized GGUF width {serialized_bits}"
+        )
     quantized = fields.get(Q_PREFIX + "version") == 1
     outputs = {}
     for base in BASES:
@@ -131,13 +136,9 @@ def decode_case(gguf_path: Path, bits: int, inputs: dict[str, np.ndarray]) -> di
         else:
             values, codes, beta = activation(x, bits, 0.0, 1.0)
         signs, alpha, _ = packed_signs(reader, base)
-        if bits == 16:
-            dot = f32(values @ signs.T)
-            out = f32(dot * alpha)
-        else:
-            # Integer dot is exact in int64; serialized row-scale then token-scale.
-            dot = np.asarray(codes, dtype=np.int64) @ np.asarray(signs, dtype=np.int64).T
-            out = f32(f32(f32(dot) * alpha) * beta)
+        # Integer dot is exact in int64; serialized row-scale then token-scale.
+        dot = np.asarray(codes, dtype=np.int64) @ np.asarray(signs, dtype=np.int64).T
+        out = f32(f32(f32(dot) * alpha) * beta)
         affine_key = AFFINE_PREFIX + "version"
         midpoint_name = base + ".w1ax_midpoint"
         if affine_key in fields and any(t.name == midpoint_name for t in reader.tensors):
@@ -151,8 +152,12 @@ def decode_case(gguf_path: Path, bits: int, inputs: dict[str, np.ndarray]) -> di
             out = f32(out + f32(f32(sums * midpoint) * beta))
         if base == "fc" and CORR_PREFIX + "version" in fields:
             tensors = {t.name: t for t in reader.tensors}
-            v = np.asarray(tensors["fc.correction_v.weight"].data, dtype=np.float16).astype(np.float32)
-            u = np.asarray(tensors["fc.correction_u.weight"].data, dtype=np.float16).astype(np.float32)
+            v = np.asarray(tensors["fc.correction_v.weight"].data, dtype=np.float16).astype(
+                np.float32
+            )
+            u = np.asarray(tensors["fc.correction_u.weight"].data, dtype=np.float16).astype(
+                np.float32
+            )
             # Match the contract's two separate F32 reductions and F16-rounded factors.
             latent = f32(x @ v.T)
             correction = f32(latent @ u.T)
@@ -186,8 +191,21 @@ def validate(index_path: Path) -> dict:
             denom = np.maximum(np.abs(want), atol)
             max_rel = max(max_rel, float(np.max(difference / denom)))
             bad += int(np.count_nonzero(difference > tolerance))
-        records.append({"name": case["name"], "bits": case["bits"], "max_abs": max_abs, "max_rel_atol_floor": max_rel, "violations": bad})
-    return {"cases": len(records), "gate": gate, "passed": all(r["violations"] == 0 for r in records), "records": records}
+        records.append(
+            {
+                "name": case["name"],
+                "bits": case["bits"],
+                "max_abs": max_abs,
+                "max_rel_atol_floor": max_rel,
+                "violations": bad,
+            }
+        )
+    return {
+        "cases": len(records),
+        "gate": gate,
+        "passed": all(r["violations"] == 0 for r in records),
+        "records": records,
+    }
 
 
 def main():

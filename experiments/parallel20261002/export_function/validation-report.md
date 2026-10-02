@@ -19,6 +19,11 @@ cast back to F32 for the two independent F32 reductions, followed by its F32
 bias. The script imports neither the exporter nor any training forward code;
 it imports only the llama.cpp GGUF reader.
 
+The final run also binds each fixture's requested bit width to the serialized
+`eagle3.w1a1.activation_bits` field and rejects widths outside A1/A4/A8, so an
+index typo cannot silently select the wrong activation function. Ruff format
+and lint both pass.
+
 The owner also reports a midpoint-byte mutation negative control: all nine
 mutated exports changed their forward outputs. That mutation check is separate
 from this decoder run.
@@ -31,6 +36,8 @@ Run details:
 - Device: local macOS CPU; no GPU, model weights, captures, builds, or SSH used.
 - Python: `3.11.15`; NumPy: `2.4.6`; GGUF reader: `/Users/pippo/github/binary-eagle-decoding/third_party/llama.cpp/gguf-py`.
 - Fixture index SHA-256: `77b2f6cfc2d075217004f23ce75a2a703cbfe4442c12ae1aca1167fdc41b074c`.
+- Decoder SHA-256 for the final run: `a3473da373be4ac8d2083929bb71de93a26b07f923e3004c8d1925583a4c41b9`.
+- Validation JSON SHA-256: `f2a1925119f5c323cf2c0e5fee6795be198cc54acc5c6bdfff2d918675d5faf5`.
 - Raw validation JSON: `independent-validation.json` in the run directory; it contains all per-case maxima and violation counts.
 
 Exact command:
