@@ -3242,3 +3242,73 @@ GPUteardown/exclusiveNEW--prepare-only (referenceA8/A1). Fullmodel/backward/memo
 zero-save/final-ready/current9e2actor/nativetiming/save-resume/Q4development and
 realoptimizer/checkpoint/developmentprogress remain unverified; goalfullscopeACTIVE.
 Researchstopped/2080Tipaused/SAMEheartbeats/protectedcredits unchanged; no rootSSH.
+
+
+## CPU configuration accepted — October 2, 23:14 UTC
+
+ACTUALCPUconfig85passedfinished23:02:52UTC: operation17921B SHA
+fb17ef087c60eea576235573f9a92c89ab45bc49c7fdc9da341e57efe3ca59f1,
+passedtrue/protectedunchanged/noerror/all28before==after==plan; bootstrap35.495s,
+current CPUruntimeproof055576f425ab40756136e5cfdacced61da5a069183d37b6c422f526daa1eb943:
+newsrc/gguf/deviceCPU/Python3.11.15/Torch2.14.0+cu130/NumPy2.4.6 exactoldversions.
+Actualvalidatedconfig577026B SHA
+ccc43a104a3a09e1a910746c319f55df33761bec5616378254a90e9339dbdafe,
+NEWremoteinputs/retained-stages.json, exact353/configschema/import04b717 join.
+No model/native/GPU/context/optimizer/old09signal/data writes.
+
+Originalcollector4715B SHA
+0d9ed9ad0ac16e6fa355b1842dd669fad37307b7cdfc5192b9597e45a59839fa
+hascpu_config_validation_passedFALSE solelybecause it incorrectlytests
+state.get(returncode)==0; actualremote_job producercontract uses exit_code.
+Allunderlyingoperation/config/source/protection/terminalstate/emptygroups/absent
+supervisor/ownershipreturned checksPASS. Actualstatefinished/exit_code0 hasNO
+returncodekey, exactjob/supervisor4108/child4109. DoNOTrewritefalsereceipt/rerun
+payloads orpromotetrainingreadiness. Rootreadrawdigests/producercontract andissued
+separate root-cpu-configuration-acceptance.json SHA
+494d0233a992d5d02d7dd3ba1c0951a698f8d54370c7fcb2b6efdad7c9c57998.
+Itbindsop/collector/actualconfig, exact28pins/beforeafter/zeroexec flags/groupreturn;
+marksCPUconfigurationpassonly; native-runtime-ready/training-ready/optimizerallowed
+FALSE. This issummaryschema correction, no numerical/data/sourcewaiver.
+Finaloperatorproof0dadf555bf7e63ef8b39658da4869edf3ba385a748b29d73ab9c02b97820364c;
+LOCAL218/keeper32003gone proofc63ad158bfbd80cd172be51a1111bf24adae719a78eec5ea0654733cae4e2dc7.
+Latestactualold09guard23:05:09.646523UTC same2713/2714births/audit174/353,
+models{}/optimizerfalse/fullretained10k1002/Mem19.46GB/sourceunchanged. Status
+captured_unique5448 iscurrentREAUDITprogress, notlostsavedcorpus. Formaloldchecker
+21:10snapshotnotrewritten; distinctguardobservation saved. SAMEprepheartbeatACTIVE15m
+verified23:11; leaseoperatorinactive/completed, GPUreservedTRUEold09, no releaseclaim.
+
+ActualELFcensus23:03:37.198036UTC raw38283B SHA
+86bbba6d99efd18419070e4c659c4d53329b15b07fd29be4253424cf8642eaf6:
+7/8(server/CPU/CUDA/ggml/common/llama/fixture) haveEXACTsingleRUNPATH
+ORIGINALbuild/bin plusTRAILINGcolon; basehasNOtag. All8unchanged/protected7match.
+patchelf/chrpath bothUNAVAILABLE. No old7mods/rebuild/repin/RPATHemptywaiver.
+Runtimefeatureowner implementsNEWimmutableCOPY package, fixed-slotDT_RUNPATH
+string-> $ORIGIN withNULpadding ONLY, everyotherbyte/code/.rodata/fatbin identity,
+originalall8unchanged, safeownedaliases, approvedcloseddependencyinventory.
+HelperoptionalSHA-boundpackage retainsoriginalcompile/source/old7provenance and
+freshnessgates, strictactualnewpackageELF/ldd paths; no data/math source change.
+FreshactualnativefixtureinNEWpackage requiredafterexclusiveGPU beforecurrent
+native-modelcollector claims; staticCPU packagingcannotgrantGPU/model/training.
+
+ActualserverDT_NEEDEDincludesnewlibllama-server-impl.so; linklogalso libmtmd.so,
+outsideinitial8census. RootreviewedONEclosureprobe source
+ aec824e9c525143e82b31ebf0d1544a1025593487092734b7369cc7fa8cc1631,
+ignoredcurrent-server-elf-closure-20261002-01/probe.py+payload+transport.
+Server+fixture+protected6 roots recursivelyfollowONLYsafeexistingprojectbin
+DT_NEEDED/SONAMEaliases/dedup<=24ELFs/aliases<=512; systemneedednameslistednot
+followed. ReturnallactualextraSHas/sections/RPATH/needed/aliases/missingprojectlibs,
+beforeafter/protected7. Eachcmd5/internal35/outer40kill5; no ldd/artifact/GPU/model/
+dataexecution/writes. ROOTconditionalGO SAMEsoleLuna onequeryfromexacttransport,
+no newoperator/SSH. Closedinventory neededbeforecopy so no serialloader-surprise.
+
+RootacceptedACTUALconfiguration/source beforeold09stop, asrequired. Retained
+workerownsONLYNEWignored postconfig-gpu-prep-transfer-20261002-01 executable
+exactold09STOP/300sgrace/completebothgroups+GPUcontextreturn/freshhardware/source/
+resources/pause/admission/uniqueexisting6f --start --allow-cuda --prepare-only
+job/tmuxpacket. Newcollector mustuseACTUALexit_codecontract. No oldsource/data
+editing/oldoptimizerresume/genericleaseframework/eligibilityfake. Runtimefix is
+INDEPENDENTofPyTorchprep-only currentmodelsmoke usingfrozenb4teacher/gates;
+no waitold09reaudit353 orrecapture. Packetrootreview/freshsoleowner gates precede
+anyold09signal/GPUtransfer. No newmodelsmoke/zero-save/finalready/currentnative
+actor/backward/memory/timing/save-resume/Q4development oroptimizerstepyet.
+FullgoalACTIVE, researchstopped/2080Tipaused/SAMEheartbeats/protectedcredits remain.

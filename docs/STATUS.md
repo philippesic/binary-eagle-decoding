@@ -4,6 +4,21 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
+## CPU payload/configuration validation accepted — October 2, 23:14 UTC
+
+The actual new-source CPU validation passed and its process groups returned.
+Root independently verified the successful operation, supervisor `exit_code=0`,
+all 28 source hashes, exact validated configuration and source preservation.
+The original collector's false summary is preserved; it used the wrong exit-code
+field. A separate bound acceptance records the actual success.
+
+The new source and retained payloads are validated for preparation. Optimizer
+QAT has not started. Next is controlled transfer from recovery09 to the new
+preparation-only model run; its executable transfer packet is being completed.
+Native runtime packaging is being fixed independently: seven ELF files have a
+trailing empty search-path entry, and original binaries remain untouched.
+[Accepted configuration and next execution](goals/qat-optimization-readiness.md#cpu-configuration-accepted--october-2-2314-utc).
+
 ## CPU payload validation running — October 2, 23:02 UTC
 
 The new-source CPU job actually started at 22:59 UTC. Fetch, detached checkout,
