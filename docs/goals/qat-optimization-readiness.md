@@ -2796,3 +2796,55 @@ and owner coordination; it does not execute server/model/native/GPU work or sign
 same CPU admission query, no model/capture payload copy. No actual server03 PID
 or current runtime inventory is yet verified. Actual-model/recipe/backward/
 memory/timing/save-resume/full-final-receipt joins still precede new training.
+
+
+## Measured repetition defect and required receipt work — October 2, 21:49 UTC
+
+Human asks concrete resolution to restarted audits; supporting research remains
+stopped, this is required QAT work. Same operator CPU admission21:32:00.728UTC
+records35/353 vs2/353 at21:10:31.553960:33shards/1289.174s=39.07s/shard.
+318remaining first-pass shards project12,423s/3.45h;959later semantic rereads at
+comparable rate project37,464s/10.41h. Combined13.86h AUDIT WORK ONLY, not
+complete training-preflight ETA; build/model/smoke/save work remains unmeasured.
+Raw proofSHA0cca95e211b8c518f8f264a9da30c3d44c7b6bc1d081f32b14dcb16d562fa6e4.
+All full captures retained, same09 identity/CPUphase,host19,260,305,408B; noGPUquery.
+
+Source equivalence now verified for original stage/audit files with trackedclean
+status: stage8b8c4e22d778862f5b978e5a237f93c92d85d3bda94892dc99ed497b67d96fb7
+matching7547/f0566 original. This is current source proof; historical receipt
+adoption still needs controlled original-producer lineage, not status ordinal.
+
+Focused required-QAT advisor confirms builder writes labels/audit.json ONLY after
+successful semantic audit and atomically publishes its directory. Missing explicit
+status/version is not a numerical failure. Historical reuse can be accepted with
+actual original producer/dependency provenance plus current manifest/everypayload/
+request/prompt hashes and cache/mask/source contracts. Without that provenance,
+audit each shard ONCE and persist a bound receipt; repeated semantic reruns for
+every provider construction are unnecessary. No generic skip-audit or readiness
+promotion. Receipts stay outside labels; one actual integrity scan per freshprocess.
+
+Protected feature_owner native_audit_receipts implemented0988b1c87217aaba3a27dff904673c476c606fc6
+in clean /private/tmp/eagle-qat-native-audit-receipts, branch native-audit-receipts.
+Owned ONLY scripts/w1ax_continuous_stages.py, scripts/w1ax_capture_provider.py,
+tests/test_native_label_audit_receipts.py.15receipt+19legacy+14provider CPUchecks,
+Ruff/diff and final independent Luna review pass. Root review/integration pending.
+Explicit external receipt API source/input-bound audit-once, immediate durable
+publication, same stage/provider verifier, process-local integrity reuse with
+path/device/inode/size/mtime/ctime+expecteddigest/inventory checks. Every fresh
+process hashes actual payloads once; no persistent stat-only cache. No historical
+shortcut yet, no live09/frozen source/job/data modification. New-source retained
+capture import/adoption remains necessary; completed-only1cb2999 importer cannot
+consume unfinished09 as ready. Preserve current coverage/readiness/smoke/zero gates.
+
+CPU server03 admission first had a source metadata parser error: sources is a
+mapping, not a6elementlist; only local parser corrected after frozenstagesSHA
+authentication. Actual packet staged871ec..., but launchpreflight then refused
+Dirtysource BEFORE outputmkdir/remote_job/tmux/configure/build. RawstageSHA
+51a2b64ec3edb9feab2989f96af151befa5baea693b934bc5e3a5dd0d6107d02;
+refusalproofeec25573a1b85d812ba7e54659e55d1356cd5f4d4662f9371fa685f8b33c3f53.
+Owned LOCAL212/keeper93770 gone, prep09 untouched. SAME sole Luna performs one
+bounded CPU classification of exact tracked/untracked paths/gitlink/HEAD/pins/
+phase/RAM, noGPU. Never infer benign dirty paths or broadly exempt them.
+Root owns narrow corrected packet after exact evidence; no actual server build
+or current model/optimizer start is claimed. Existing QAT/prep heartbeats ACTIVE;
+successor native task Goal continues the SAME project goal, not a new research goal.

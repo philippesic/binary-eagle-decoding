@@ -20,6 +20,19 @@ preflight ETA. All captures remain saved. CPU server03 failed before build start
 on dirty-source admission; exact path classification remains with its owner.
 [Reuse checkpoint](goals/qat-optimization-readiness.md#audit-reuse-integration--october-2).
 
+## Required audit reuse and server correction — October 2, 21:49 UTC
+
+Frozen prep09 remains live with all captures; current audit35/353 has measured
+39.07seconds/shard. Unchanged path projects3.45h first pass plus10.41h repeated
+semantic audits, before unmeasured model work. Required QAT per-shard receipts
+feature0988b1c has48CPUchecks/independent review; root review/new-source import
+and provenance-bound historical adoption remain pending. No live frozen change.
+
+Server03 failed Dirtysource before build/start; sole operator classifies exact
+paths for narrow correction. Native9e2 synthetic CUDA is passed/returned; actual
+model/finalreceipt and optimizer updates remain pending. Research remains stopped.
+[Measured defect and implementation](goals/qat-optimization-readiness.md#measured-repetition-defect-and-required-receipt-work--october-2-2149-utc).
+
 ## Preparation recovery running — October 2, 21:19 UTC
 
 Actual09 prep-only recovery is verified live after the current-boot disconnect
