@@ -1148,3 +1148,59 @@ train / 288 development prompts, and zero optimizer updates. No exclusive
 validation lease, CUDA retest, or training start is confirmed. The CUDA repair
 retest and all actual-model/data admission gates remain pending.
 
+## Successor retest boundary denied — October2 11:01 UTC
+
+Acknowledged successor01a0fc3d-bbe1-7e93-a19b-a9200dfa186c verified SAME ACTIVE
+15minute heartbeat transfer and source/runtime/host/pause/ownership records.
+Preparation owner01a0fb62-cbdb-72f0-8e86-4055b2ccb4ed retains original
+supervisor674/child676, frozen prepare-only; RTX2080Ti remains paused.
+A new request prep08-no-ftz-retest-20261002-02 was denied before hold:
+ONE CPU-only boundary inspection11:01:24.096682UTC found current ordinal334's
+labels manifest absent. Original child/group identity and supervisor live,
+zerooptimizer/noSTOP guards pass. Completed334manifests contain10,000train/
+448development;554development remain. No GPU query, signal, clock, lease grant,
+validation run or new capture was initiated by this owner. This separate
+boundary observation is not the normal full-health checker or GPU release.
+Raw ignored proof no-ftz-cpu-boundary-operation-20261002.json SHA
+f06adcb590ecedb9a990acd7a99eb265384a31b08ebe2769c3182feef9ee5166;
+lease artifact denied_cpu_boundary/operatorinactive. Owner's local transport
+was closed and absence verified. Do not urgently repeat boundary checks.
+
+Sole fresh Luna /root/cuda_retest_operator completed LOCAL-only preparation,
+without SSH/remote jobs. Frozen ignored early-cuda-20261002/retest-plan-20261002-01/
+plan.json SHAf112c39ec3f2435f216e12d6bf1823c9d20a0c71c5db38f106a0fd1a71c35b7c,
+validator SHA4b765073a4e88a18426e27e9e91ec82531718b773e0c1dcb7d97b384011eee4f.
+Direct learned fixture120s then conditional backendops180s; collector checks
+A1/A4/A8 learned/all-affine/nonzero rank1/rank4 correction and actual native9e2
+runtime. Acquire only after NEW fresh explicit exclusive grant; consume owner's
+acquisition proof, avoid duplicate checks, reserve>=180s for teardown/handback.
+No rebuild/model/data/optimizer during the slot. Reuse this operator via followup
+only after a real grant/fullrelease; denied and returned receipts never qualify.
+Current parentb32/native9e2/executable plus six-library pins remain unchanged.
+
+Feature owner /root/model_gate_plan completed independent CPU-only preparation:
+12 native9e2 profile configs and plan CLI checks pass; collector/curriculum
+no-action plans pass. No model/provider/accelerator discovery/remote/source work.
+Ignored actual-model-gates-plan-20261002/PLAN.md SHA
+ ee8902a04869bc406a3821a888bc4779df1c3fa3bff8fc219ac9ec245711b396
+and evidence.json SHA47bbb19c060a47ce5dac30eae4aa2e35124a522337a3b8c50656fb20af52d948
+contain exact next-stage commands and input inventory. Existing952CPU/four skips
+are retained without rerun. Critical scripts/src/configs/tests b32→024c9db unchanged.
+
+Concrete model-stage gaps: built operator does not bind a fresh llama-server;
+frozen native_runtime_inventory remains pinned to retained b4 runtime. A separate
+current-source manifest builder is needed, followed by a CPU server build outside
+any short hold, truthful current teacher capture and independent bounded TRAIN
+w1ax_continuous_readiness_v2 admission. Raw preparation_only labels are not
+promoted. Root assigned same feature owner bounded isolated new
+scripts/prepare_qat_native_runtime.py + tests/test_prepare_qat_native_runtime.py;
+no frozen-builder changes, server execution, GPU/model/data work or readiness
+claim. Worker will report worktree/commit/tests before root integration.
+
+Next: continue independent CPU helper work while healthy development capture
+advances; observe preparation through its SAME monitor and saved evidence,
+coordinate a fresh safe retest or finalrelease without duplicate monitoring.
+After operators pass, follow current-server/actual-model/zero-update backward/
+recipe/every-precision/memory/timing/data ancestry gates. Full corpus/current
+selected passing recipe/final handoff remain mandatory before NEW authorized
+QAT. No training, real-data optimizer update or acceptance/speedup claim.

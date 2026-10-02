@@ -47,6 +47,17 @@ Preparation can now advance new dev capture. Root waits a verified safe CPU
 boundary or full release; CUDA repair retest remains pending. [Handoff](QAT_TRAINING_HANDOFF.md).
 QATheartbeat remainsACTIVE every15minutes; no CUDA-ready or training-start claim.
 
+**Successor retest deferred, October2 11:01 UTC:** a NEW short request was
+denied before any GPU query or signal because current development ordinal334
+has no completed labels manifest. The one CPU boundary observation confirms
+334 completed manifests /10,000train /448dev, zerooptimizer and original674/676
+live;554dev remain. This is boundary evidence, not a fresh full-health checker
+or GPU release. The sole Luna's prebuilt120s/conditional180s retest plan is
+frozen and ready; no new validation job or hold. Twelve current-native profile
+plans pass locally. CPU preparation now addresses a separate current-server
+manifest helper; old frozen runtime/labels cannot be relabeled as new readiness.
+[Checkpoint](goals/qat-optimization-readiness.md#successor-retest-boundary-denied--october2-1101-utc).
+
 **Validation task rotation at a safe boundary:** after two compactions, the
 validation/training owner transferred to acknowledged successor
 01a0fc3d-bbe1-7e93-a19b-a9200dfa186c (Continue QAT validation and training). No owned remote
