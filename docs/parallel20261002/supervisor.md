@@ -371,3 +371,37 @@ and stops research at<=1%/reset according to user policy. Fresh root19:26:25
 usage86%used/14%remaining; monitor19:30:49 corroborates, original reset unchanged.
 Evaluator worker remains sole separate owner; host-info gate still suppresses
 SSH. No remote runtime adoption, native readiness or GPU run was verified.
+
+
+## Evaluator correction and host resolution — October 2, 19:45 UTC
+
+Current QAT owner approved evaluator f314faa for sole root integration; main
+e6ab963 contains authenticated A8/A1 publication preflight, manifest-derived
+recipe construction and pre-allocation host admission. Source SHA9352f32d…b5ae4
+and test SHA32e3b6bb…16d7d exactly match reviewed immutable proof. Author70
+relevant CPU checks and QAT-owner8 focused checks pass; no repeat is needed
+without source changes. The paired evaluator continues to exclude A4/curriculum.
+Existing resource floors, provider ownership, target/verifier and evaluation
+semantics remain unchanged. Full-shape/native fit and current-source receipts
+remain separate required evidence.
+
+The old research source-order assertion now reads its exact ce5da6b historical
+Git blob rather than expecting the live evaluator defect. Six research owner
+checks pass; Ruff/whitespace pass. Historical reports/raw proof remain intact;
+current production regression is test_development_checkpoint_preflight.py.
+
+A direct human answer in the QAT chat resolved the registered PC address. Root
+verified the shared local registry; no address guessing or root SSH occurred.
+At19:42:45UTC preparation registration/lease cleared pending-info; saved query
+was rebound only at its outer address while embedded source stayed unchanged.
+Sole preparation Luna owns the renewed guarded atomic05 transaction. Latest
+local evidence says operator active/conditionalGO; it does not prove a
+connection, GPU lease or native result. Root/protected coordinator launch no
+parallel operator.
+
+Fourth-slate worktrees/branches retired after public f9de611 push, exact owned
+content and raw archives; receipt fourth-slate-integration.json records it.
+Protected host-save owner similarly retired only its reviewed/pushed worktree
+after equality and patch-equivalence. Peer evaluator worktree remains preserved
+until public adoption is verified. Monitor remains active, latest check87%used/
+13%remaining original window, no reset; no new research slate without evidence.

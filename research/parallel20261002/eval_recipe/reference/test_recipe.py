@@ -8,7 +8,6 @@ from pathlib import Path
 
 import check_continuous_w1ax_readiness as gate
 import torch
-import w1ax_continuous_stages as stages
 from adapter import construct_and_load, digest, preflight_checkpoint, preflight_pair
 from test_recurrent_provider import dense_drafter
 from torch import nn
@@ -110,10 +109,26 @@ def produce(root, bits, name):
 
 
 class RecipeTests(unittest.TestCase):
-    def test_actual_call_chain_source_has_fixed_construction_after_capture(self):
-        import inspect
+    def test_historical_call_chain_has_fixed_construction_after_capture(self):
+        import ast
+        import subprocess
 
-        source = inspect.getsource(stages._evaluate_development)
+        # Preserve the source-bound reproducer after the live evaluator remedy.
+        historical = subprocess.check_output(
+            [
+                "git",
+                "show",
+                "ce5da6bf484346181a1e9d6d916a313d3d346f3b:scripts/w1ax_continuous_stages.py",
+            ],
+            cwd=ROOT,
+            text=True,
+        )
+        function = next(
+            node
+            for node in ast.parse(historical).body
+            if isinstance(node, ast.FunctionDef) and node.name == "_evaluate_development"
+        )
+        source = ast.get_source_segment(historical, function)
         self.assertLess(
             source.index("native_capture(sources"), source.index("qat = JointQATConfig")
         )

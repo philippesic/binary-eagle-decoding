@@ -2390,3 +2390,20 @@ for actionable evidence while usage/QAT monitoring continue.14% original weekly
 remaining, same reset1791049896. Evaluator source worker separate, host details
 pending, no remote or training-start claim.
 [Checkpoint](../parallel20261002/supervisor.md#fourth-slate-and-host-save-correction-integrated--october-2-1932-utc).
+
+
+## Evaluator adoption and renewed preflight — October 2, 19:45 UTC
+
+QAT-reviewed evaluator f314faa integrated as e6ab963, exact approved source/test
+hashes. Producer publication plus both lane NPZ/JSON identities pass before
+arrays/export/capture; faithful manifest recipe and strict loader replace fixed
+construction. Host staging admission precedes arrays with unchanged floor.
+Author70 and reviewer8 CPU checks pass, research historical source assertion
+version-bound; no current native/model/memory-fit claim. A4 support unchanged.
+
+Human host correction cleared pending-info at19:42:45UTC; root verified shared
+registry. Sole preparation operator refreshes guarded preflight under renewed
+V5 authority, preserving source/process/resource/exclusive-use gates. Local
+operator/GO state is not connection/GPU/result proof. No duplicate root SSH.
+13% latest weekly remaining, original reset unchanged, monitoring active.
+[Checkpoint](../parallel20261002/supervisor.md#evaluator-correction-and-host-resolution--october-2-1945-utc).
