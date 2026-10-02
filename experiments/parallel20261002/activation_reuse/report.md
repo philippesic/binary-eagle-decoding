@@ -41,8 +41,18 @@ aliased view, mask mutation, explicit N change, no-grad→grad boundary,
 new group, inference tensors without mutation counters, and exception cleanup.
 An equal-valued invalid floating N still raises the baseline validation error.
 
-Independent validation and storage accounting are recorded in the sibling
-validation report. Owner results and exact source hashes are in
+Independent validation reads the learned STE node's actual saved tensors,
+rather than estimating storage from quantizer call counts. Across the three
+attached proposals, QKV support/derivative storages fall 18→6 and gate/up 12→6.
+Those sibling saved payloads total 960→360 bytes in this reduced fixture:
+120 duplicate BOOL support and F32 derivative elements (600 bytes) disappear.
+These are payload bytes, not allocator peak or traffic measurements. A weak
+reference proves cache-owned results disappear after immediate group exit and
+the caller reference is dropped. Independent A1/A4/A8 comparison to the prior
+handwritten algebraic projection/correction VJP oracle also passes: maximum
+tensor differences are 5.96e-8, 2.38e-7 and 2.38e-7 at the declared tolerance.
+More evidence is in `validation_report.md`.
+Owner results and exact source hashes are in
 `summary.json`; full per-tensor tables are outside Git at
 `runs/parallel20261002/activation-reuse/results.json` in the isolated worktree.
 
@@ -55,8 +65,12 @@ PYTHONPATH=src:. .venv/bin/python -m research.parallel20261002.activation_reuse.
 git apply --check research/parallel20261002/activation_reuse/reference/integration.patch
 ```
 
-Checks use PyTorch 2.14.0 on local Apple ARM64 CPU, F32 masters/arithmetic and
-F16 K/V/factor casts. There is no CPU timing extrapolation or CUDA/SM75
+Owner checks use PyTorch 2.14.0 on local Apple M3 Max/Mac15,10 ARM64 CPU,
+F32 masters/arithmetic and F16 K/V/factor casts. Independent validation passes
+on PyTorch 2.8.0 and the owner's final PyTorch 2.14.0 cross-check; the latter's
+raw result is `runs/parallel20261002/activation_reuse/validation-crosscheck-2.14/result.json`
+(SHA256 `65000c022f0a79aaf3b179388ce964df51e0836dbd514129f9bdf275cf838620`).
+The independent 2.8.0 result retains its report hash. There is no CPU timing extrapolation or CUDA/SM75
 performance claim. Fixed-activation reuse was not needed for this gate.
 The unapplied source-bound patch is for QAT-owner review; its next admission
 gates are current source regression and actual hardware memory/throughput.

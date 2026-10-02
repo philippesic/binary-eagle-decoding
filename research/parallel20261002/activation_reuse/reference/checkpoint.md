@@ -21,7 +21,14 @@ bounded feature checkpoint for fourth-slate packet 1, not a new research goal.
 - At last owner cost-chunk check: MAIN control 85% used /15% original weekly
   allowance remaining, reset1791049896 unchanged, stop=false. Control remains
   absolute MAIN path; no fresh/paid research allowance authorized.
-- Remaining work at this checkpoint: independent validation storage report,
-  combined final run/commit; root reviews/integrates/pushes and preserves ignored
+- Owner commit `d26b5a8`; independent direct saved-storage census confirms QKV
+  18→6 and gate/up12→6 support/derivative storages, sibling payload960→360 bytes.
+  Weakref cache-release control passes. Hardware Apple M3 Max/Mac15,10 CPU.
+- Independent validator commit `4f14e87` complete: handwritten A1/A4/A8 oracle,
+  saved-storage/lifetime, stale-value controls, one clipped A8 update including
+  optimizer states/metrics all pass. Final combined owner3/3 + independent
+  script on Torch2.14 pass; validator's Torch2.8 exact raw hash also preserved.
+  Ruff entire feature, diff checks, unapplied patch apply-check pass.
+- Remaining work: root reviews/integrates/pushes and preserves ignored
   raw runs before retirement. QAT owner decides whether to adopt the patch.
 - No persistent experiment process or GPU resources owned.
