@@ -4,6 +4,17 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
+## Native retry after exact wrapper failure — October 2, 20:36 UTC
+
+FreshRTX5080 census passes approved idle/context/resource/source guards. First
+launcher stage failed before admission on /proc/366/cwd permission; no native
+job started. Minimalv2 preserves process identity, classifies transport ancestors
+first and retains project/unknown-ownership denial. Independent25guardtests pass;
+both owners accept, SAME sole operator retries with a new helper directory.
+Actual native start/result/recovery/training remain unverified. First supported
+training path is fixed reference A8/A1 with Q4_0 development evaluation.
+[Exact failure and retry](goals/qat-optimization-readiness.md#exact-stage-failure-and-minimal-v2--october-2-2036-utc).
+
 ## Executable packet accepted — October 2, 20:21 UTC
 
 QAT successor reviewed the minimal postboot fixture packet;19 local guard tests

@@ -2607,3 +2607,49 @@ This joins runtime/source registration/three exact TRAIN prompts as metadata;
 actual downstream byte verification and all admission gates remain separate.
 Owned clean worktree removed after exact patch equality; no peer cleanup.
 Both implementation workers complete; sole remote operator remains with prep.
+
+
+## Exact stage failure and minimal v2 — October 2, 20:36 UTC
+
+Actual20:20:42 GPU census passesRTX5080/SM120,util0,compute-appsempty,
+projectgroups0,14/7/4source-runtime-Gitpins,host20,205,371,392B,disk392,391,319,552B,
+GPUfree14,188MiB. Used1,790MiB with empty compute list is not a new zero-used
+gate; accepted floors/idle/context/project checks stay unchanged.
+
+First postboot stage connected/wrote helper but failed before admission:
+PermissionError13 reading /proc/366/cwd. No inspection GPU query, grant, lease,
+launch intent, native job/output or signal. Raw failure proof SHA
+615cd08673c977cc4c61e4ccf6c001d346952816c01ec35156328010837a4027,
+ignored postboot-exclusive-native9e2-20261002/stage-inspection-failure-proof.json.
+Owned LOCAL205 and keeper79894 cleaned; no recovery budget charge.
+
+QAT minimally corrected relevance-first process inspection in NEW
+postboot-exclusive-native9e2-20261002-v2/. Original packet/helper/evidence retained.
+Kernel stat UID/command/PPID identities survive inaccessible cwd. Recorded safe
+transport ancestors are classified first; foreign UID does not require cwd;
+absolute project args/project cwd and unknown same-UID candidates still deny.
+Denial now preserves PID metadata as JSON for concrete classification.
+Independent25/25 mocked guards pass; exact source diff reviewed. V2manifestSHA
+0bb743cec3215626d5ec91e539c32601d8fbd111dcbf4e874fcfc4554dd2e939;
+expectedSHA b9f7793f95d1b4c7f233d413a50ae3971dbbf3a58dcdb24b8d5d0eae4837c9ef;
+launcherSHA20b114b2aa204684aa878d8e8e93338f3bba5dc346052c1ac8a6120bcae4261d.
+Only remote helper directory changes;06job/report must still prove unused.
+Both owners accept; SAME sole Luna now stages/inspects/grants/launches/collects
+without another chat approval when fresh guards pass. Actual native start/result
+remain unverified; no duplicate operator or new schedule.
+
+Protected local server03 packet ready, independent15mocktests pass, no remoteGO.
+Manifest871ec850c53789a425046955a98bdca305450ee9022d2715a3d415007eaa845c
+at runs/qat-optimization-readiness/current-server-cpu-20261002-03/. After verified
+fixture return, it adds explicit UIoff configuration45s/serveronlyparallel2build900s/
+statichelper180s/outer1200s, preserving7operator/14frozenpins under exact remote_job.
+Helper timestamp caveat: compile_commands mtime newer than w1a1.o can reject even
+UI-only reconfigure; record actual pre/post SHA+mtime rather than repinning/touching
+objects or weakening proof. This packet must not delay the native fixture.
+
+Read-only smallest-recipe audit53a968452b33d694f0c0a477a9ec601848bb593f7f87c47743722b992f34c19c:
+reference fixed A8/A1 is shortest supported complete path; direct A1 lacks the
+paired Q4development evaluator. Optional controls remain outside first launch.
+Authentic frozen corpus admission/current actor receipts must be joined separately;
+metadata caches do not substitute959 repeated v1 provider audits. No label/data
+eligibility, finalreceipt, actual-model smoke/checkpointzero or training claim.
