@@ -198,3 +198,38 @@ All three clean second-slate worktrees owned content matches main; ignored
 run folders copied to main archived-worktrees/<slug>. Receipt
 second-slate-integration.json records original tips/paths before retirement.
 Retire only after successful push; protected QAT worktrees are separate.
+
+
+## Protected correction and third slate — October 2, 19:01 UTC
+
+Current QAT owner explicitly deferred main integration to this root. Source
+correction67fe388→59ef557, adapted auditaf82c93→f9a21f3, immutable validation
+9f8b6db→45c41aa, protected reportea782f2→5b67aab integrated. All four final
+source/test SHA256 values exactly match accepted82/82 immutable CPU evidence;
+QAT owner separately confirms82/82 on its isolated combined branch. Main native
+step source did not change during research integration; a6f241f modified only
+the research GGUF decoder/report. No unchanged-source retest is needed.
+
+Trainable learned head under gradients preserves serial invocation normalization;
+fixed/frozen/no-grad supported batching remains enabled. Requested/effective
+execution and saturation scope are explicit in readiness metadata. Historical
+LSQ report/raw evidence/privatepatch unchanged; current tests assert preserved
+gradients/updates. No frozen remote source/config or model job was changed.
+New current-source CUDA/model/recipe/readiness receipts remain mandatory before
+training; CPU passes are not native performance evidence.
+
+Second-slate20/20 tests also pass against the corrected main provider, closing
+new-report dependency integration. Pending host-address reply is now durably
+registered by preparation owner, whose heartbeat remainsACTIVE/local observation
+only with no duplicate unchanged SSH until that gate resolves.
+
+Third slate launched all three: `/root/eval_recipe`, `/root/resume_validation`,
+`/root/memory_ledger`, each Sol high+independent Luna. Worktrees under
+/private/tmp/eagle-parallel-20261002/<eval-recipe|resume-validation|memory-ledger>,
+branchesresearch/20261002-<slug>; exact packets in astra-third-slate.md. Owned
+research/experiments topic dirs+unique tests only. Evaluator recipe construction,
+staged semantic resume prototype, and source-bound peak-memory ledger target
+actual unresolved gates; no live source modifications by research teams.
+
+Monitor18:59:32usage83%used/17%remaining, original reset unchanged; no next slate
+until all three teams/descendants complete. QAT and all descendants protected.

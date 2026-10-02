@@ -2303,3 +2303,22 @@ Root combined second-slate20/20 tests passed on project Torch2.14 CPU.
 Integrated worker tips26f4e65→b606b50, b53da23→92f6e10,8273e25→9e39ff1;
 source core unchanged by this slate. Receipt second-slate-integration.json
 records exact preserved branch contents/raw archives before retirement.
+
+
+## Learned-head correction integrated — October 2, 19:01 UTC
+
+Sole-root integration acknowledged by current QAT owner. Correction67fe388→
+59ef557 and regressionaf82c93→f9a21f3 preserve serial learned-head normalization
+while retaining fixed/frozen/no-grad batching. Readiness reports effective
+fallback/saturation scope; four file hashes match immutable82/82 CPU acceptance
+(9f8b6db→45c41aa). Second-slate20/20 tests pass on corrected main as well.
+Historical discrepancy reports/raw evidence preserved. This changes local
+current-source identity; frozen preparation/config/runtime untouched, no native
+CUDA/model/recipe/provider/memory/throughput readiness inferred. Current QAT
+owner must regenerate source-bound actual gates before new training admission.
+
+Third CPU slate active: development evaluator recipe reconstruction, isolated
+resume semantic validation/staging, full-shape memory ledger.17% original weekly
+remaining; QAT protected. Pending host-info flag registered; prep heartbeat
+quiet/local-only until reply, no duplicate unchanged connections.
+[Checkpoint](../parallel20261002/supervisor.md#protected-correction-and-third-slate--october-2-1901-utc).
