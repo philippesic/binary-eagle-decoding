@@ -437,3 +437,25 @@ under ignored runs/overnight-research-20261002; supervisor launches leaders in i
 own collaboration tree for direct stop control. Research-specific work is
 isolated from live QAT/runtime source and sealed finals. Launch IDs and verified
 control state will follow in the next checkpoint.
+
+
+## Overnight protection verified
+
+Incoming overnight coordinator message was checked against direct human text in
+chat01a0fb34-e010-7b11-ac9a-f72cf2367c6c, not treated as standalone permission.
+Human requires the QAT agent continue overnight,includingavailablecredits,while
+research alone stops near exhaustion/reset. Rootheartbeat was updated IN PLACE
+and native tool returnedACTIVE, preserving15mincadence/name/target/notifications.
+Its protection applies to thischat,agents,ownedGPUjobs and monitor; all source/
+recipe/data/frozenprecision/native/memory/ownership gates remain intact. No paid
+credit purchase or usage-reset redemption performed orauthorized.
+
+Read docs/OVERNIGHT_RESEARCH.md: three CPUresearchteams cannot change liveQAT
+source/recipe orclaimGPUownership. Existing5080preparationowner stayssoleowner.
+Compactwait snapshot advancedsavedcursor to b7452744-5e68-4e46-b168-50b5b2f76802:9;
+owner'ssavedhealth06:13:55.765738UTC healthy/nonterminal,reaudit67/353,retained
+10,000train/224dev,zerooptimizer. No releaseproof,newremotecheck,model/data/final
+read,source/runtimechange oroptimizerupdate here. RootmonitorACTIVE; nextphase
+stillwaitingforverifiedfullprep and GPUrelease,thenactualnewrecipevalidation and
+alreadyauthorizedtraining. Ordinaryhealthywait remainsquiet; notifymeaningful
+release/failure/requiredaction/actualoptimizerstart.

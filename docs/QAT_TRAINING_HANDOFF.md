@@ -71,3 +71,27 @@ Actual optimization-feature CUDA receipts are still absent. Fresh bounded CPU ch
 reaudit52/353,retained10,000train/224dev/327manifests,zerooptimizer,readyreceipt:null.
 Supervisor674 andchild676 remainlive; release is notproven. The ignored
 handoff-observation-20261002.json records rawcheck and localtransportcleanup.
+
+
+## Overnight QAT protection
+
+Confirmed from the direct human message in overnight coordinator chat
+01a0fb34-e010-7b11-ac9a-f72cf2367c6c: QAT supervision/validation/training must
+continue all night, including available paid credits after included allowance
+exhaustion. Supporting research's usage threshold, allowance reset and morning
+cutoff do not apply to this chat, its workers, owned GPU jobs or heartbeat.
+Never stop this monitor solely because research stops or included usage resets.
+No account reset redemption or credit purchase is authorized by this instruction.
+
+The same current validation/data/cache/frozen precision/sealed-final/ownership
+requirements still apply. The dataset owner retainsRTX5080 until verified
+successful preparation/release. Research teams are isolated CPU work under
+docs/OVERNIGHT_RESEARCH.md and cannot change live source/recipe or take GPU
+ownership. Newer direct human pause/stop remains authoritative.
+
+Heartbeatqat-validation-and-training-handoff was updated in place with this
+protection, preserving its15minute cadence,target,name and notification policy;
+confirmedACTIVE. No duplicate schedule or source/runtime change. Saved current
+preparation observation from its owner at2026-10-02 06:13:55.765738UTC is healthy,
+reaudit67/353,retained10,000train/224development,zerooptimizer,nonterminal. This
+local saved observation is not a fresh release proof; validation remains queued.
