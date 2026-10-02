@@ -9,6 +9,9 @@ All five requested controls plus raw fusion correction and affine binary weights
 are implemented. Final CPU suite:952tests/fourskips; native CPU packing/operator/
 encoder checks pass. Actual CUDA compilation, full-model backward, native decisions
 and memory/timing remain unverified. [Integration report](../experiments/qat-optimization-readiness/11-integration.md).
+All12 profile preparation/planning CLIs also pass on the published checkout;
+[completion audit](../experiments/qat-optimization-readiness/12-completion-audit.md)
+records requirement-specific CPU proof and missing GPU evidence.
 Both GPUs remain explicitly PAUSED; zero real-data optimizer updates. The goal
 is open pending a new human GPU resume and measured readiness gates.
 
