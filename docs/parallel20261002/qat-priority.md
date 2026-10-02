@@ -143,3 +143,48 @@ and profile assessment; require source/config-bound gradient/update equivalence
 or a reference-preserving fallback before enabling the affected combination.
 The single packing fixture and existing actual-model/native/memory/full-prep
 gates remain separate; no synthetic or CPU result admits optimizer updates.
+
+## Correction review and immutable CPU acceptance — 18:55 UTC
+
+The existing QAT owner's `model_gate_plan` worker retained sole production
+ownership in `/private/tmp/eagle-learned-head-serial` and committed the
+reference-preserving fix as `67fe388`. The protected coordinator made no competing
+provider edit. Read-only review confirms trainable learned head execution stays
+serial, fixed/frozen/no-gradient batching stays available, invisible/unsupported
+head contracts fall back conservatively, and readiness records requested versus
+effective execution, the fallback reason, and actual saturation scope. Curriculum
+measurements use the same helper and inherit that per-round metadata.
+
+Coordinator adaptation `af82c93` changes the existing LSQ tests to call the current
+provider and require serial gradient/update parity instead of reproducing the old
+bug. It preserves the historical source-pinned proposal, patch, report and raw
+records. The audit now records source paths/hashes of modules actually imported,
+so tests against a separate corrected checkout do not misattribute provenance.
+The protected synthetic QAT tests do not depend on a machine-local research-stop
+file; standalone research execution retains its original stop guard.
+
+Independent Luna first passed 72 focused tests and 10 adapted tests, but marked
+the first focused run provisional because its test file changed during the
+interval. After the source owner committed, the coordinator created an isolated
+combined validation branch with adaptation `af82c93` and correction cherry-pick
+`7d0a968` (equivalent to source-owner `67fe388`). Exactly one final combined run
+passed **82/82 tests in 3.854 seconds**, with all four provider/readiness/focused/
+adaptation file hashes unchanged before and after, no source/test diff, and the
+process exited. Full commands, hardware/precision, raw paths and exact hashes are
+in [the validation record](qat-lsq-validation.md), committed as `9f8b6db`.
+This is macOS ARM64 CPU / Python 3.11.15 / PyTorch 2.14.0 evidence, not CUDA/SM75
+performance, model readiness, convergence, or Q4_0-relative quality.
+
+Integration: current QAT owner and orchestrator coordinate original `67fe388`,
+adaptation `af82c93`, and validation record `9f8b6db`; do not apply the equivalent
+core cherry-pick twice. Regression worktree is
+`/private/tmp/eagle-qat-lsq-regression`, branch `feature/qat-lsq-regression`.
+Current source-bound CUDA/native/full-model/memory/recipe and final complete
+preparation/release gates still precede any optimizer launch.
+
+The root asked the human for current RTX5080 SSH address/user/port. The SAME ACTIVE
+preparation heartbeat was updated in place and its target/cadence read back,
+preserving protection while deferring duplicate unchanged-address SSH/alerts
+until actual human evidence or explicit root coordination resolves pending
+transport information. Preparation owner owns its durable pending-info flag;
+there is no duplicate user question or frozen-job change.
