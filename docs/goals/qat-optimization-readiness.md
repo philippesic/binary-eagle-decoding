@@ -2848,3 +2848,46 @@ phase/RAM, noGPU. Never infer benign dirty paths or broadly exempt them.
 Root owns narrow corrected packet after exact evidence; no actual server build
 or current model/optimizer start is claimed. Existing QAT/prep heartbeats ACTIVE;
 successor native task Goal continues the SAME project goal, not a new research goal.
+
+
+## Retained-capture adoption integrated — October 2, 22:03 UTC
+
+Required QAT audit receipts are already public c0f3d85 (reviewed 0988b1c).
+Root reviewed retained importer b5e8a62 and independently passed19importer+
+15receipt+19legacy=53 CPUtests using project environment. Integrated/pushed
+01015ac4c8a003ee18e2f6ff0f83a2568d37a925. Explicit original stages path/SHA,
+all353ordered manifest path/SHA records and both original independently validated
+A8/A1 gates are authenticated. New source config must preserve original source,
+prompts, split, teacher/cache/mask/ancestry. Old labels/readiness are never rewritten,
+recaptured or promoted. Separate output/external receipt dirs and alias guards apply.
+One fresh semantic audit per missing source-bound receipt; stage/provider reruns
+reuse trusted receipts after actual integrity checks. No historical audit.json
+shortcut/provenance assumption. Ordinary new-run coverage/current paired model
+smoke/checkpointzero/final-ready gates still run; no optimizer authorization yet.
+
+Retained source worker owns ONLY LOCAL ignored executable adoption/inventory
+packet next. No live09patch or signal. Sole prep owner01a0fdd6 retains remoteLuna.
+Before transfer: concrete reviewed packet, new immutable source checkout, authenticated
+metadata inventory, fresh ownership/resource/pause gates, old09 graceful stop and
+complete process-group/GPU teardown proof. No duplicate root SSH/operator.
+
+CPU03V2 narrow dirty-source correction accepted after actual classification:
+only ROOT raw unstaged ` M scripts/train_continuous_w1ax.py`, intentional95line
+prepare-only overlay, exact frozenSHA82f0185ab9ac38bc622749d2ca5e5c5a297a72494dcbf3d16d2b08df249cdade.
+Runtime/native checkout clean, all7operator/14frozen/4HEADgitlink pins match.
+Staged modification/extra paths/untracked/wrongSHA/runtime or native dirt still deny.
+Root independent20mockguards pass; v2manifest
+ a7add2a2a4241936286c4e4ee3fb7db4a88798567515a0d83fca5bb3d9d4acb1,
+runner eae48e5d458e969b35a1ae62844fa94324122568ef3214b617523c8eeb1da5fd.
+SAME03job/output guarded unused; UI-off45s/server-only900s/static-helper180s/
+outer1200s bounds and7/14bytepins unchanged. No generic dirty exception.
+
+Actual CPU admission21:56:22UTC passes same09server2712/sup2713/child2714
+births/boot459/current audit71/353/zero/no finalreceipt, host19,238,989,824B,
+v2helper+03job-output-session unused. Recent55to71/627.67s=39.23s/shard.
+Remaining282+959later semantic rereads project13.52h auditonly on unchanged
+path, not fullpreflightETA. Operator launching corrected CPU build; actual
+CPU03PID/result/current serverinventory not yet verified at this checkpoint.
+Research remains stopped, QAT+necessary support/Goal/SAMEheartbeats ACTIVE.
+Actual native9e2 synthetic CUDA repair PASS/returned; actual-model/resource/
+recipe/save-resume/full corpus readiness and first optimizer update pending.

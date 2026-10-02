@@ -4,34 +4,23 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Audit reuse implemented — October 2
+## Retained-capture adoption integrated — October 2, 22:03 UTC
 
-Necessary audit caching is integrated as `c0f3d85`. Root independently passed
-39 receipt/stage/provider CPU tests. Each shard receives a durable source/input
-bound receipt after its full semantic audit; later stage/provider calls verify
-unchanged inputs and reuse that result. Legacy behavior remains unchanged.
-The frozen running recovery09 has not adopted this code. Historical audit sidecar
-reuse and the reviewed new-source retained-corpus path remain pending.
+Audit receipts are public `c0f3d85`; retained native capture import is public
+`01015ac`. Root reviewed the import and independently passed 53 importer,
+receipt and legacy stage CPU tests. The new path references every saved capture
+and original A8/A1 gate by explicit SHA, writes external durable audit receipts,
+and runs ordinary provider, coverage, model smoke and checkpoint-zero readiness
+gates in a separate new-source run. It does not require the unfinished old run
+to be declared ready. Historical sidecars are not assumed trusted; absent new
+receipts require one full semantic audit per shard.
 
-Fresh CPU observation at 21:32 UTC found audit 35/353, about 39.07 seconds per
-shard. The unchanged path projects 3.45 hours of remaining initial audits plus
-10.41 hours of later repeated audits; these are workload estimates, not a complete
-preflight ETA. All captures remain saved. CPU server03 failed before build start
-on dirty-source admission; exact path classification remains with its owner.
-[Reuse checkpoint](goals/qat-optimization-readiness.md#audit-reuse-integration--october-2).
-
-## Required audit reuse and server correction — October 2, 21:49 UTC
-
-Frozen prep09 remains live with all captures; current audit35/353 has measured
-39.07seconds/shard. Unchanged path projects3.45h first pass plus10.41h repeated
-semantic audits, before unmeasured model work. Required QAT per-shard receipts
-feature0988b1c has48CPUchecks/independent review; root review/new-source import
-and provenance-bound historical adoption remain pending. No live frozen change.
-
-Server03 failed Dirtysource before build/start; sole operator classifies exact
-paths for narrow correction. Native9e2 synthetic CUDA is passed/returned; actual
-model/finalreceipt and optimizer updates remain pending. Research remains stopped.
-[Measured defect and implementation](goals/qat-optimization-readiness.md#measured-repetition-defect-and-required-receipt-work--october-2-2149-utc).
+Frozen recovery09 remains untouched, observed at 71/353 at 21:56 UTC with all
+10,000 TRAIN/1,002 development prompts retained and zero optimizer updates.
+The corrected CPU server03 packet passed fresh resource/source admission;
+actual build PID/result remains pending with the sole preparation operator.
+A concrete new-source adoption packet is being prepared before ownership transfer.
+Supporting research remains stopped. [Current checkpoint](goals/qat-optimization-readiness.md#retained-capture-adoption-integrated--october-2-2203-utc).
 
 ## Preparation recovery running — October 2, 21:19 UTC
 
