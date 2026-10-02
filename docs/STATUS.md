@@ -20,11 +20,11 @@ verified data/current gates and GPU handoff. [Overlap policy](QAT_GPU_AUDIT_OVER
 owner01a0f934 until October2 02:40:04PDT (09:40UTC). Preparation child676 is
 intentionally held in the same live process at audit244/353; supervisor674 stays
 live,10,000train/224dev retained,zerooptimizer. Fresh08:10UTC proof showed empty
-GPUcomputeapps and13.37GBGPU/19.47GBhost free. Actual CUDA compilation is confirmed running at08:45:40UTC: attempt06 CMake
-configuration passed and ggml-cuda .cu objects compile with parallelism2. The
-private two-declaration header overlay compiled/linked in0.937s; exactdiff/header
-selection/hash preserved, globalheaders unchanged. CUDA13.1.115/GCC15.2,
-RTX5080SM120. GPU fixtures and readiness remain unproved. Validation teardown cutoff02:30PDT, then preparation owner
+GPUcomputeapps and13.37GBGPU/19.47GBhost free. Actual CUDA build completed; the first RTX5080 fixture executed at08:56:45UTC
+and failed `pack beta mismatch` (activation scale). Backend-ops/model readiness
+and QAT remain unproved. Failed evidence is preserved; a targeted native-owner
+investigation is underway without gate weakening. Validationgroups2254/2256
+were gone and GPUcomputeappsempty at08:57:31UTC. Validation teardown cutoff02:30PDT, then preparation owner
 requires fresh ownedgroupsgone/GPUempty proof before sameprocessSIGCONT. Both
 hold-awareprep and QAT15minmonitors ACTIVE. [Lease checkpoint](goals/qat-optimization-readiness.md#exclusive-early-validation-lease-granted--october2).
 Training still requires complete verified data and current passing CUDA gates.

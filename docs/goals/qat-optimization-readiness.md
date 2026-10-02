@@ -742,3 +742,23 @@ held under existinglease. GPUfixtures have NOT executed, zerooptimizer, no
 fullcorpuspromotion/readinessclaim. Lease09:40deadline and09:30teardowncutoff
 unchanged. Next buildcompletion/operatorfixture evidence or preservedfailure,
 thenleasecleanup+fresh GPUhandoff proof before sameprocessauditresume.
+
+
+## First actual CUDA fixture fails pack beta — October2 08:56UTC
+
+QATowner reports attempt06 built alltargets with pinnedparent7b0ef42/native8025
+and the hashedprivate two-exception-declaration overlay. Actual
+`test-eagle3-learned --backend CUDA --json-report <NEW>` executed onRTX5080CUDA0,
+CC12.0,16275MiB at08:56:45.987UTC and failed `pack beta mismatch`. This is actual
+GPUfailure evidence, not compile-only proof or a passing readinessreceipt.
+No backend-ops,actual-model readiness,optimizer/model/data/final work followed.
+
+Fresh08:57:31proof: validationgroups2254/2256gone,GPUcomputeappsempty,
+free12751MiB,hostavailable19006424kB,disk422.94GB. Lease remainsheld with original
+09:30teardowncutoff/09:40harddeadline; prepowner informed. QATowner is inspecting
+exactfailedpack case and CUDA beta source; a dedicatednativeowner will diagnose
+and fix only the concrete packing/scale risk. Preserve failure and sourceancestry,
+require targeted retest and actualnative admission without weakening gates.
+If no fast supportedfix exists, returnlease promptly with fresh proof so the
+sameheldpreparationprocess resumes. No fullcorpuspromotion/readiness/training
+claim. Owner retains exactfailedstdout/reports/toolchain/build/evidence paths.
