@@ -4,6 +4,19 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
+## Runtime copy passed; GPU transfer cleared — October 2, 23:48 UTC
+
+The isolated ten-file runtime copy passed. Static inspection failed only while
+decoding non-UTF-8 bytes from a readelf metadata dump; the new package and all
+original files are preserved. A lossless, metadata-only decoder fix passed 43
+CPU tests and is under final review.
+
+The GPU transfer packet passed all 21 tests under root and independent review.
+Root authorized the sole operator to stop the exact old preparation process,
+verify complete GPU release, and launch the new `6f1444b` preparation-only run
+with the validated configuration. Actual transfer and new model start remain
+pending. This does not permit optimizer updates. [Execution checkpoint](goals/qat-optimization-readiness.md#runtime-copy-success-and-gpu-transfer-go--october-2-2348-utc).
+
 ## Clean runtime fix public — October 2, 23:30 UTC
 
 The loader packaging fix is integrated and pushed as `973d10c`, after 39 CPU

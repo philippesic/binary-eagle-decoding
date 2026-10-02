@@ -3385,3 +3385,72 @@ worktreeremovedclean. Coordinator/private/tmp/eagle-qat-continuity-20261002 and
 branchoriginalcommitsPRESERVEDperexplicitKEEPuntilseparateclean/live/publicproof.
 Peeruntrackedovernightdirs preserved. FullQATgoal/SAMEheartbeats/researchstop/
 2080Tipause/credits remain; actualGPUmodel/optimizer/finalready stillunverified.
+
+
+## Runtime copy success and GPU transfer GO — October 2, 23:48 UTC
+
+ACTUALCPU98started23:37:40.660194UTC supervisor4591/PGID4591/start1835486,
+timeout4592/PGID4592/start1835492, runner4594/samegroup/start1835492 UID1000.
+Fresh5f3d/73d0 preflight oldaudit218/RAM19.49GB/original10+7+14/4HEAD/returns/
+unusedpathsPASS; adjacentgrant9fc8b6ca9a141eff9c9f9b90a7711c7e8f4376f17e4ce835fddef017acaac040,
+launchraw3655B SHA72835bbbca5c719ac72ddeb39c051c5f646c12f3f7101bb11ab532ddf1a5ebc3.
+COPY40s succeeded, newREADONLYcomplete10/14 package-manifest SHA
+9dbdd4050c1a9df5efc061b5088c568592b8f7f5b29dd69e6e9173f9b29ad4bc,
+requiresfreshnativevalidation/readinessfalse/hardwarefalse/zerooptimizer.
+StaticfailedmetadataUTF8ONLY: readelf--string-dump=.rodata copiedllama-server
+Python3.14subprocess text=True UnicodeDecodeError byte0x80 offset164608.
+Exactstderr1878B SHA3b8548b20b690729937fe922c2427caaea2fdcc3f5d18d6ca7c700c478265e18;
+operationb9026a7017a04ba6d6f1f20563f0540dd7ea583b3bf63a463c6adfbfde8cbbf7,
+collector a4c69ed9c5d01bfad8c5cfed1806cccd118530b1c4c81bd7d12755f12133b0b6.
+Terminal23:37:44.662807UTC exit1/noSignal; exactgroups4591/4592gone/ownership
+returned/original10+7+14unchanged/zeroGPU/model/data/optimizer. Finalproof
+f315d4e39f824041a028913241ba3e904ff059c58078a70955d089d3745a3029;
+LOCAL222/keeper20165closedverified/leaseinactive/completed; old09GPUreservedtrue.
+No recopy/overwrite/delete/oldartifactmodify needed.
+
+Runtimeworker minimalrodataONLYfix e5c3bb0 published: EXACTlen3readelf--string-dump
+.rodata capturesbinary, losslessutf8-surrogateescape; allothercommands stillstrict
+UTF8. ExactASCIIcompiledcommitmarkerregex unchanged. ObservationSHAroundtripsraw
+bytes/bytecount/decoding provenance; no replacement/erasure/source/numericwaiver.
+Root43targetedchecks/source-delta reviewPASS, author43/Ruff/diffPASS; finalLuna
+pending. Newstatic-onlypacket willuseexistingpackage9db; ownedadjacentsymlink
+resolvesORIGINALapprovedCPU98packagercanonicalpath+4d0c5d bytes so creatorproof
+identity unchanged, no packagerbehaviorchange ornewcensus. Actor6f/math/data/config
+unchanged. Staticmetadatafix isINDEPENDENTofPyTorch GPU preparation criticalpath.
+
+GPUtransfer FINALpacket reviewedandrootGOshipped23:44:21UTC:
+postconfig-gpu-prep-transfer-20261002-01/manifest
+c89979a8240491bc4c17eee5d4e0d72f76e49df5c7cfcca697d221d9654abe9c,
+21files; core375d94031dc028f5142128d66ea3450ed18d2692ece16321566e772aa49b6a75,
+builder7ac89cae1a065d817cf91973bc30d0bbe8fbbbd69b9cb9c924c327df13d7e3d6.
+Rootfullcore/transportreview+21tests+ALL21SHA/sizesPASS; Luna21/source/group/
+actualexit_code/pause/CANCEL/knownOS/transportmanifest reviewPASS/no blocker.
+Exactcpu494/ccc/import04/e77b89/old14/current28/runtime7/stored353/zero/PIDbirths
+andactualoldlive phase beforeANYSTOP; pidfdSIGTERMONLYrecordedsupervisor2713,
+OLDSTOP intentional marker, existingremote_job300grace owns2714cleanup;
+350sboundbothgroups+oldsession gone, freshGPUproject/context/hardware5080SM120/
+RAM14/disk10/pause/Wsl20-idle-1/samebootproof/newuniquejob andrun beforeNEW
+existing6f --start --allow-cuda --prepare-only. Nooldresume/optimizer/eligibility
+promotion/CPP-ready condition. OSproofsameboot366/370 exactchain, stat-only
+transportancestry/unreadablesameUIDdeny. NewjobCUDA0 andLD/DYLD/PYcleanupexplicit.
+Collectactualexit_code int0/pairedA8+A1smoke/checkpoint0/finalreadySHA thenfresh
+GPU/projectcontextcensus beforeownershipreturn, avoidingpriorfalsefieldbug.
+
+Freshspecificinitial<=300s ROOTtransferGO afteroldlive/pause/source/returns/
+unusedadmission; mechanicaladjacentmint/literalWSLstaging/execution already
+explicitlydelegatedtoSAMEsoleoperator, nootherchat/humanapprovalwhenallguardsPASS.
+Controller600s/transport620wait/660outerTERMkill10, copiedpacketmetadata4MiBbound.
+Parentpropagates userpause/revocationwithREMOTEpacketCANCEL oradmissionbytes change
+whileoldcleanup; controllerchecksCANCELduringteardown andSHA/CANCELadjacentdispatch.
+No fallbacksigntounknownPGID/no newrecoverbudget. ActualnewPIDbirth/sources/paths
+receiptthenSAMEACTIVEheartbeat rebindcurrent28/configccc/vendor9e2/NEWjob/run/IDs,
+archiveoldquery/no newautomation. No transfer/oldstop/newmodel actualPID reported
+atcheckpoint. GPUmodelsmoke remainsseparatefromactualoptimizertraining.
+
+Previousordinaryheartbeatactual23:24CPUhealth204/353/allretained/zero/healthy/
+positiveCPU-IO/actualsup-child births, nofreshserverbirth/GPUfreeclaim. Exact
+wrappedMCPafef4f492017a678aedbb4c7c790c2e74bbbf9e30e2f85ed1fb971bb249ec04e;
+proof5f24dea39cb81b2ae3ada6ab5834fa1359ae953ee5cb87086d5e08edc833d57d,
+JSONlinewrapinterpretation862ebdc3c24a6787d983e7c67835020a3359cf823aa5cdea85969312feb4eec3.
+LOCAL221/keeper16586closed/leaseinactive/2of2budgetunchanged. TrainingQAToptimizer
+stillzero; fullscopeGoal/SAMEheartbeats/researchstop/2080Tipause/creditprotection.
