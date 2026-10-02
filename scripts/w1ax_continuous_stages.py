@@ -10,12 +10,14 @@ conversion policy remains unchanged.
 from __future__ import annotations
 
 import argparse
+import ast
 import hashlib
 import json
 import os
 import re
 import shutil
 import signal
+import subprocess
 import sys
 import tempfile
 import time
@@ -53,6 +55,12 @@ Q4_0_GGUF_SHA256 = "2db40f99d27e404298b80b2865671b9fd0136060ffb503007cb2ae23759e
 _VERIFIED_RECORDS = {}
 _OBSERVED_RECORDS = {}
 NATIVE_LABEL_RECEIPT_SCHEMA = "w1ax_native_label_audit_receipt_v1"
+HISTORICAL_AUDIT_SCHEMA = "w1ax_historical_native_audit_full_pass_v1"
+HISTORICAL_PRODUCER_COMMIT = "7547d253b6bf7d8a04ddb3c868e997afad39f31a"
+HISTORICAL_OPERATION_SHA256 = "e77fd345a271dc2f2b549c307ee2f17e04077d5a41d0ef7c850bfac9798a9c37"
+HISTORICAL_COMPLETION_SHA256 = "b89e1557743d27c7d343ae510108401e26b7134b4d4e54a6532c38bd8be13ef0"
+_HISTORICAL_SOURCE_PROOFS = set()
+_HISTORICAL_PASS_PROOFS = {}
 
 LABEL_POLICY = {
     "objective": "hard_ce",
@@ -267,7 +275,7 @@ def checked_record(record: dict) -> Path:
     return path
 
 
-def _files(manifest: dict, directory: Path, *, verified: bool = False) -> dict[str, Path]:
+def _files(manifest: dict, directory: Path) -> dict[str, Path]:
     files = {}
     for name, record in manifest["files"].items():
         if not isinstance(record, dict) or set(record) != {"path", "sha256"}:
@@ -276,10 +284,23 @@ def _files(manifest: dict, directory: Path, *, verified: bool = False) -> dict[s
         if not isinstance(basename, str) or Path(basename).name != basename:
             raise ValueError("label-only files must be owned basenames")
         path = directory / basename
-        if verified:
-            checked_record({"path": str(path.absolute()), "sha256": record["sha256"]})
-        elif path.is_symlink() or not path.is_file() or sha256(path) != record["sha256"]:
+        if path.is_symlink() or not path.is_file() or sha256(path) != record["sha256"]:
             raise ValueError("label-only file missing or changed")
+        files[name] = path
+    return files
+
+
+def _receipt_files(manifest: dict, directory: Path) -> dict[str, Path]:
+    """Receipt integrity uses the process hash cache; the full auditor stays exact."""
+    files = {}
+    for name, record in manifest["files"].items():
+        if not isinstance(record, dict) or set(record) != {"path", "sha256"}:
+            raise ValueError("invalid label-only file record")
+        basename = record["path"]
+        if not isinstance(basename, str) or Path(basename).name != basename:
+            raise ValueError("label-only files must be owned basenames")
+        path = directory / basename
+        checked_record({"path": str(path.absolute()), "sha256": record["sha256"]})
         files[name] = path
     return files
 
@@ -364,7 +385,7 @@ def _native_label_receipt_binding(
         or not 1 <= expected_prompt_count <= 32
     ):
         raise ValueError("native label receipt prompt/split/policy binding differs")
-    files = _files(m, manifest_path.parent, verified=True)
+    files = _receipt_files(m, manifest_path.parent)
     owned = {manifest_path.name: expected_manifest_sha256}
     for name, path in files.items():
         owned[path.name] = m["files"][name]["sha256"]
@@ -420,8 +441,9 @@ def audit_native_labels_with_receipt(
     Wire API: callers bind the immutable manifest SHA and an absolute receipt
     path outside the label directory. Existing mismatched receipts fail closed.
     An old ``audit.json`` or status ordinal cannot initialize a receipt. Historical
-    producer provenance is intentionally unsupported: missing receipts require
-    the current full semantic audit once. No eligibility is conferred.
+    retained-import full-pass provenance may initialize a historical receipt
+    through its separate restricted adoption path. Otherwise missing receipts
+    require the current full semantic audit once. No eligibility is conferred.
     """
     receipt_path = Path(receipt_path)
     manifest_path = Path(manifest_path).absolute()
@@ -444,7 +466,7 @@ def audit_native_labels_with_receipt(
         receipt = json.loads(receipt_path.read_text())
         if (
             not isinstance(receipt, dict)
-            or set(receipt)
+            or set(receipt) - {"audit_origin"}
             != {"schema", "binding", "report", "report_sha256", "full_semantic_audit"}
             or receipt["schema"] != NATIVE_LABEL_RECEIPT_SCHEMA
             or receipt["full_semantic_audit"] is not True
@@ -463,6 +485,8 @@ def audit_native_labels_with_receipt(
             or report.get("training_eligible") is not False
         ):
             raise ValueError("native label audit receipt report binding differs")
+        if "audit_origin" in receipt:
+            _validate_historical_receipt_origin(receipt["audit_origin"], binding, report)
         return report
     report = audit_native_labels(
         manifest_path,
@@ -487,7 +511,13 @@ def _native_label_report_sha256(report: dict) -> str:
     ).hexdigest()
 
 
-def _publish_native_label_receipt(receipt_path: Path, binding: dict, report: dict) -> None:
+def _publish_native_label_receipt(
+    receipt_path: Path,
+    binding: dict,
+    report: dict,
+    *,
+    audit_origin: dict | None = None,
+) -> None:
     """Called only after a successful full audit and unchanged input binding."""
     receipt_path.parent.mkdir(parents=True, exist_ok=True)
     receipt = {
@@ -497,6 +527,8 @@ def _publish_native_label_receipt(receipt_path: Path, binding: dict, report: dic
         "report_sha256": _native_label_report_sha256(report),
         "full_semantic_audit": True,
     }
+    if audit_origin is not None:
+        receipt["audit_origin"] = audit_origin
     temporary = None
     try:
         with tempfile.NamedTemporaryFile(
@@ -723,10 +755,9 @@ def load_native_labels(
             receipt_path=receipt_path,
         )
         manifest_path = Path(manifest_path).resolve()
-    f = _files(
+    f = (_receipt_files if audit_receipt is not None else _files)(
         json.loads(Path(manifest_path).read_text()),
         Path(manifest_path).parent,
-        verified=audit_receipt is not None,
     )
     anchors = {
         (a["prompt_id"], a["round_index"]): RoundAnchor(**a) for a in read_jsonl(f["anchors"])
@@ -1135,41 +1166,381 @@ def _retained_path(value: str) -> Path:
     return path
 
 
+def _historical_audit_source_proof() -> dict:
+    """Prove the unchanged semantic auditor against authenticated commit7547.
+
+    That controlled launch wrote readiness only after every full shard audit.
+    Compare ASTs without line/format attributes, never normalize semantic code.
+    The receipt API has a separate file helper so the original auditor's helper
+    and its six local semantic dependencies remain exactly comparable.
+    """
+    source = native_label_audit_source()
+    identity = _native_label_report_sha256(source)
+    if identity in _HISTORICAL_SOURCE_PROOFS:
+        return source
+    names = (
+        "scripts/w1ax_continuous_stages.py",
+        "scripts/audit_recurrent_binary_capture.py",
+        "scripts/audit_recurrent_response.py",
+        "scripts/audit_recurrent_continuity.py",
+        "scripts/prepare_recurrent_native_rows.py",
+        "scripts/prepare_recurrent_native_features.py",
+        "src/w1a1_eagle/recurrent_trace.py",
+    )
+    original = {}
+    for name in names:
+        result = subprocess.run(
+            ["git", "-C", str(ROOT), "show", f"{HISTORICAL_PRODUCER_COMMIT}:{name}"],
+            check=True,
+            capture_output=True,
+            timeout=10,
+        )
+        original[name] = result.stdout
+        if name != names[0] and hashlib.sha256(result.stdout).hexdigest() != source["files"][name]:
+            raise ValueError("historical audit semantic dependency changed: " + name)
+
+    def semantic_nodes(text):
+        selected = {}
+        for node in ast.parse(text).body:
+            if isinstance(node, ast.FunctionDef) and node.name in {"audit_native_labels", "_files"}:
+                selected[node.name] = ast.dump(node, include_attributes=False)
+            elif isinstance(node, ast.Assign):
+                for target in node.targets:
+                    if isinstance(target, ast.Name) and target.id in {
+                        "LABEL_SCHEMA",
+                        "LABEL_POLICY",
+                    }:
+                        selected[target.id] = ast.dump(node, include_attributes=False)
+            elif isinstance(node, ast.ImportFrom) and node.module in {
+                "audit_recurrent_binary_capture",
+                "audit_recurrent_response",
+                "prepare_recurrent_native_features",
+                "prepare_recurrent_native_rows",
+                "w1a1_eagle.recurrent_trace",
+            }:
+                selected[node.module] = ast.dump(node, include_attributes=False)
+        return selected
+
+    if semantic_nodes(original[names[0]]) != semantic_nodes((ROOT / names[0]).read_bytes()):
+        raise ValueError("historical audit semantic functions/imports/policy changed")
+    _HISTORICAL_SOURCE_PROOFS.add(identity)
+    return source
+
+
+def _historical_retained_pass(import_record: dict) -> tuple[dict, dict]:
+    """Authenticate the one retained supervisor08 pass; no model/payload reads.
+
+    Trust roots are the exact archived operation and completion bytes. The
+    original ordered readiness and both complete provider indexes must bind
+    every current manifest and sidecar. A success cache retains only metadata;
+    all its path/SHA identities are checked on access, including after mutation.
+    """
+    source = _historical_audit_source_proof()
+    cache_key = (
+        str(checked_record(import_record)),
+        import_record["sha256"],
+        _native_label_report_sha256(source),
+    )
+    if cache_key in _HISTORICAL_PASS_PROOFS:
+        adoption, original, records = _HISTORICAL_PASS_PROOFS[cache_key]
+        for record in records:
+            _retained_path(record["path"])
+            checked_record(record)
+        return adoption, original
+    records = [import_record]
+
+    def read(record):
+        path = _retained_path(record["path"])
+        checked_record(record)
+        records.append(record)
+        return json.loads(path.read_text())
+
+    adoption = read(import_record)
+    if (
+        not isinstance(adoption, dict)
+        or set(adoption)
+        != {
+            "schema",
+            "original_stages",
+            "original_run_dir",
+            "captures",
+            "precision_gates",
+            "audit_receipts_dir",
+            "output_run_dir",
+            "historical_audit_provenance",
+        }
+        or adoption["schema"] != RETAINED_IMPORT_SCHEMA
+    ):
+        raise ValueError("historical audit requires the retained import contract")
+    provenance = adoption.get("historical_audit_provenance")
+    if (
+        not isinstance(provenance, dict)
+        or set(provenance)
+        != {"schema", "operation", "completion", "readiness", "provider_indexes", "audit_reports"}
+        or provenance["schema"] != HISTORICAL_AUDIT_SCHEMA
+        or provenance["operation"]["sha256"] != HISTORICAL_OPERATION_SHA256
+        or provenance["completion"]["sha256"] != HISTORICAL_COMPLETION_SHA256
+    ):
+        raise ValueError("historical audit requires authenticated full-pass provenance")
+    operation, completion = read(provenance["operation"]), read(provenance["completion"])
+    original = read(adoption["original_stages"])
+    if original.get("schema") != STAGES_SCHEMA:
+        raise ValueError("historical audit original stage schema differs")
+    old_run = _retained_path(adoption["original_run_dir"])
+    checkout = old_run.parent.parent
+    preflight = operation["preflight"]["decoded_query"]
+    identity = preflight["identity"]
+    launch = operation["launch"]["decoded_query"]
+    observed = completion["decoded_query"]
+    supervisor = operation["first_health"]["decoded_query"]["supervisor"]
+    total = len(original["captures"])
+    if (
+        preflight.get("all_checks_pass") is not True
+        or identity.get("git_head") != HISTORICAL_PRODUCER_COMMIT
+        or identity.get("git_diff_name_only") != ["scripts/train_continuous_w1ax.py"]
+        or identity.get("git_status_tracked") != [" M scripts/train_continuous_w1ax.py"]
+        or identity.get("launcher_sha256")
+        != "82f0185ab9ac38bc622749d2ca5e5c5a297a72494dcbf3d16d2b08df249cdade"
+        or identity.get("stages_sha256") != adoption["original_stages"]["sha256"]
+        or launch.get("returncode") != 0
+        or launch.get("cwd") != str(checkout)
+        or launch.get("supervisor_id") != "luna-supervisor-a8-a1-native-order-20261002-08"
+        or observed["status"].get("phase") != "readiness_complete"
+        or observed["status"].get("optimization_started") is not False
+        or observed["status"].get("models") != {}
+        or observed["status"].get("captures_done") != total
+        or observed["status"].get("captures_total") != total
+        or observed.get("completed_label_manifest_count") != total
+        or any(
+            observed["supervisor"].get(key) != supervisor.get(key)
+            for key in ("pid", "pgid", "supervisor_pid", "started_at_utc")
+        )
+    ):
+        raise ValueError("historical audit controlled source/launch/full-pass identity differs")
+    command = launch["exact_command"][-1]
+    stages_relative = _retained_path(adoption["original_stages"]["path"]).relative_to(checkout)
+    if (
+        f"--stages-manifest {stages_relative} --run-dir {old_run}" not in command
+        or "--start --allow-cuda --resume --prepare-only" not in command
+        or str(old_run / "status.json") not in observed["checker_command"]
+        or launch["supervisor_state_path"] not in observed["checker_command"]
+    ):
+        raise ValueError("historical audit launch does not bind the original stages/run")
+    captures = adoption["captures"]
+    if len(captures) != total or any(entry["ordinal"] != i for i, entry in enumerate(captures)):
+        raise ValueError("historical audit capture ordering differs")
+    ready_record = provenance["readiness"]
+    if _retained_path(ready_record["path"]) != old_run / "stages/readiness.json":
+        raise ValueError("historical audit readiness path differs")
+    ready = read(ready_record)
+    sources = original["sources"]
+    common = {
+        k: sources["sha256"][k]
+        for k in (
+            "target_gguf",
+            "candidate_d_gguf",
+            "base_draft_gguf",
+            "absolute_d2t",
+            "model_snapshot_manifest",
+        )
+    }
+    if (
+        ready.get("schema") != READINESS_SCHEMA
+        or ready.get("objective") != "hard_ce"
+        or ready.get("scale_layout") != "row"
+        or ready.get("unresolved_gates") != []
+        or ready.get("scope") != "joint_body_head_exact_prefix_teacher_forced_training"
+        or ready.get("common_source_sha256") != common
+        or ready.get("native_binary_sha256") != sources["sha256"]["binary"]
+        or ready.get("native_runtime") != sources["native_runtime"]
+        or ready.get("precisions") != adoption["precision_gates"]
+        or ready.get("teacher_capture_manifest_sha256")
+        != [entry["label_manifest"]["sha256"] for entry in captures]
+    ):
+        raise ValueError("historical audit full ordered readiness/source binding differs")
+    reports = provenance["audit_reports"]
+    if not isinstance(reports, list) or len(reports) != total:
+        raise ValueError("historical audit reports incomplete")
+    manifests = []
+    for ordinal, (entry, capture, audit_record) in enumerate(
+        zip(captures, original["captures"], reports, strict=True)
+    ):
+        path = old_run / f"stages/capture-{ordinal:05d}/labels/manifest.json"
+        if _retained_path(entry["label_manifest"]["path"]) != path:
+            raise ValueError("historical audit manifest path/ordinal differs")
+        m = read(entry["label_manifest"])
+        manifests.append(m)
+        if _retained_path(audit_record["path"]) != path.parent / "audit.json":
+            raise ValueError("historical audit report ownership differs")
+        report = read(audit_record)
+        if (
+            report.get("schema") != "recurrent_native_label_audit_v2"
+            or report.get("capture_manifest_sha256") != entry["label_manifest"]["sha256"]
+            or report.get("training_prompts_sha256") != capture["prompts_sha256"]
+            or report.get("training_prompt_count") != capture["prompt_count"]
+            or report.get("split") != capture["split"]
+            or report.get("training_eligible") is not False
+            or report.get("execution_device") != "cpu"
+            or report.get("raw_target_logits_in_bundle") is not False
+            or report.get("probability_recomputation") != "unavailable_label_only_storage"
+            or not isinstance(report.get("counts"), dict)
+            or not isinstance(report.get("feature_ledger"), dict)
+            or report.get("response_requests") != len(m["requests"])
+        ):
+            raise ValueError("historical audit report manifest/prompt/split contract differs")
+    indexes = provenance["provider_indexes"]
+    if not isinstance(indexes, dict) or set(indexes) != {"train", "development"}:
+        raise ValueError("historical audit requires both complete provider indexes")
+    for split, index_record in indexes.items():
+        if _retained_path(index_record["path"]) != old_run / f"stages/{split}-providers.json":
+            raise ValueError("historical audit provider index path differs")
+        index = read(index_record)
+        selected = [(i, c) for i, c in enumerate(original["captures"]) if c["split"] == split]
+        if (
+            index.get("schema") != "w1ax_streaming_train_v2"
+            or index.get("split") != split
+            or index.get("continuous_readiness") != ready_record
+            or not isinstance(index.get("shards"), list)
+            or len(index["shards"]) != len(selected)
+        ):
+            raise ValueError("historical audit index/readiness/full coverage differs")
+        for ordinal, (record, (global_ordinal, capture)) in enumerate(
+            zip(index["shards"], selected, strict=True)
+        ):
+            path = old_run / f"stages/provider-{global_ordinal:05d}.json"
+            if (
+                record.get("ordinal") != ordinal
+                or _retained_path(record["provider_manifest"]) != path
+            ):
+                raise ValueError("historical audit provider ordering differs")
+            spec = read({"path": str(path), "sha256": record["provider_manifest_sha256"]})
+            entry = captures[global_ordinal]["label_manifest"]
+            prompt_path = (
+                Path(entry["path"]).parent / manifests[global_ordinal]["files"]["prompts"]["path"]
+            )
+            if (
+                spec.get("schema") != PROVIDER_SCHEMA
+                or spec.get("split") != split
+                or spec.get("prompt_count") != capture["prompt_count"]
+                or spec.get("capture_id") != entry["sha256"]
+                or spec.get("continuous_readiness") != ready_record
+                or spec.get("teacher") is not None
+                or spec["paths"].get("capture_manifest") != entry["path"]
+                or spec["paths"].get("prompts") != str(prompt_path)
+                or spec["sha256"].get("capture_manifest") != entry["sha256"]
+                or spec["sha256"].get("prompts") != capture["prompts_sha256"]
+                or any(spec["sha256"].get(k) != v for k, v in common.items())
+            ):
+                raise ValueError("historical audit provider capture/readiness/source join differs")
+    _HISTORICAL_PASS_PROOFS[cache_key] = adoption, original, records
+    return adoption, original
+
+
+def _validate_historical_receipt_origin(origin: dict, binding: dict, report: dict) -> None:
+    if (
+        not isinstance(origin, dict)
+        or set(origin)
+        != {"kind", "producer_commit", "retained_import", "provenance_sha256", "ordinal"}
+        or origin["kind"] != "historical_full_semantic_pass"
+        or origin["producer_commit"] != HISTORICAL_PRODUCER_COMMIT
+        or type(origin["ordinal"]) is not int
+    ):
+        raise ValueError("historical audit receipt origin differs")
+    adoption, _ = _historical_retained_pass(origin["retained_import"])
+    ordinal = origin["ordinal"]
+    provenance = adoption["historical_audit_provenance"]
+    if (
+        not 0 <= ordinal < len(adoption["captures"])
+        or origin["provenance_sha256"] != _native_label_report_sha256(provenance)
+        or binding["capture_manifest"] != adoption["captures"][ordinal]["label_manifest"]
+        or report != json.loads(checked_record(provenance["audit_reports"][ordinal]).read_text())
+    ):
+        raise ValueError("historical audit receipt provenance/report/shard binding differs")
+
+
+def _adopt_retained_historical_audit(import_record: dict, ordinal: int, receipt_path: Path) -> None:
+    adoption, original = _historical_retained_pass(import_record)
+    entry, capture = adoption["captures"][ordinal], original["captures"][ordinal]
+    report_record = adoption["historical_audit_provenance"]["audit_reports"][ordinal]
+    binding = _native_label_receipt_binding(
+        Path(entry["label_manifest"]["path"]),
+        expected_manifest_sha256=entry["label_manifest"]["sha256"],
+        expected_prompt_sha256=capture["prompts_sha256"],
+        expected_prompt_count=capture["prompt_count"],
+    )
+    origin = {
+        "kind": "historical_full_semantic_pass",
+        "producer_commit": HISTORICAL_PRODUCER_COMMIT,
+        "retained_import": import_record,
+        "provenance_sha256": _native_label_report_sha256(adoption["historical_audit_provenance"]),
+        "ordinal": ordinal,
+    }
+    report = json.loads(checked_record(report_record).read_text())
+    _validate_historical_receipt_origin(origin, binding, report)
+    if receipt_path.exists():
+        existing = json.loads(receipt_path.read_text())
+        if existing.get("audit_origin") != origin:
+            raise ValueError("historical audit receipt existing origin differs")
+    else:
+        if (
+            not receipt_path.is_absolute()
+            or receipt_path.is_symlink()
+            or receipt_path.resolve().is_relative_to(Path(entry["label_manifest"]["path"]).parent)
+        ):
+            raise ValueError("historical audit receipt must be external and absolute")
+        _publish_native_label_receipt(receipt_path, binding, report, audit_origin=origin)
+
+
 def _validate_retained_import(config: dict, run_dir: Path) -> dict:
     """Authenticate explicit old artifacts without granting training readiness.
 
-    Historical audit.json producer authentication is deliberately an extension
-    point, not evidence accepted here. Only the ordinary source-bound external
-    receipt API may skip a full shard audit.
+    Optional historical provenance authenticates only the original full shard
+    audit pass. It never replaces final preparation, smoke or training gates.
     """
     record = config["retained_native_capture_import"]
     path = _retained_path(record["path"])
     adoption = json.loads(checked_record(record).read_text())
     if (
         not isinstance(adoption, dict)
-        or set(adoption) != {
-            "schema", "original_stages", "original_run_dir", "captures",
-            "precision_gates", "audit_receipts_dir", "output_run_dir",
+        or set(adoption)
+        != {
+            "schema",
+            "original_stages",
+            "original_run_dir",
+            "captures",
+            "precision_gates",
+            "audit_receipts_dir",
+            "output_run_dir",
             "historical_audit_provenance",
         }
         or adoption["schema"] != RETAINED_IMPORT_SCHEMA
-        or adoption["historical_audit_provenance"] is not None
     ):
         raise ValueError("unsupported retained import/provenance contract")
     original_path = _retained_path(adoption["original_stages"]["path"])
     original = json.loads(checked_record(adoption["original_stages"]).read_text())
-    expected = {**original, "retained_native_capture_import": record,
-                "native_label_audit_receipts_dir": adoption["audit_receipts_dir"]}
-    if (original.get("schema") != STAGES_SCHEMA
-            or "retained_native_capture_import" in original or config != expected):
+    expected = {
+        **original,
+        "retained_native_capture_import": record,
+        "native_label_audit_receipts_dir": adoption["audit_receipts_dir"],
+    }
+    if (
+        original.get("schema") != STAGES_SCHEMA
+        or "retained_native_capture_import" in original
+        or config != expected
+    ):
         raise ValueError("retained import changes original stages/source/prompt configuration")
     old_run = _retained_path(adoption["original_run_dir"])
     new_run = _retained_path(adoption["output_run_dir"])
     receipts = _retained_path(adoption["audit_receipts_dir"])
-    if (new_run != Path(run_dir).absolute()
-            or new_run.is_relative_to(old_run) or old_run.is_relative_to(new_run)
-            or receipts.is_relative_to(old_run) or old_run.is_relative_to(receipts)
-            or path.is_relative_to(old_run) or original_path == path):
+    if (
+        new_run != Path(run_dir).absolute()
+        or new_run.is_relative_to(old_run)
+        or old_run.is_relative_to(new_run)
+        or receipts.is_relative_to(old_run)
+        or old_run.is_relative_to(receipts)
+        or path.is_relative_to(old_run)
+        or original_path == path
+    ):
         raise ValueError("retained import requires separate new output and external receipts")
     if config["native_label_audit_receipts_dir"] != str(receipts):
         raise ValueError("retained import receipt directory changed")
@@ -1189,29 +1560,37 @@ def _validate_retained_import(config: dict, run_dir: Path) -> dict:
     if not isinstance(captures, list) or len(captures) != len(original["captures"]):
         raise ValueError("retained import requires every original capture in order")
     for ordinal, (entry, capture) in enumerate(zip(captures, original["captures"], strict=True)):
-        if (not isinstance(entry, dict) or set(entry) != {"ordinal", "label_manifest"}
-                or type(entry["ordinal"]) is not int or entry["ordinal"] != ordinal):
+        if (
+            not isinstance(entry, dict)
+            or set(entry) != {"ordinal", "label_manifest"}
+            or type(entry["ordinal"]) is not int
+            or entry["ordinal"] != ordinal
+        ):
             raise ValueError("retained import capture ordinals differ")
         manifest = _retained_path(entry["label_manifest"]["path"])
         if manifest != old_run / f"stages/capture-{ordinal:05d}/labels/manifest.json":
             raise ValueError("retained import label manifest is not the original capture")
         m = json.loads(checked_record(entry["label_manifest"]).read_text())
-        if (m.get("split") != capture["split"]
-                or m.get("prompt_count") != capture["prompt_count"]
-                or m.get("prompts_sha256") != capture["prompts_sha256"]
-                or m.get("activation_bits") != 16
-                or m.get("target_sha256") != sources["sha256"]["target_gguf"]
-                or m.get("draft_sha256") != sources["sha256"]["candidate_d_gguf"]
-                or m.get("binary_sha256") != sources["sha256"]["binary"]
-                or m.get("files", {}).get("absolute_d2t", {}).get("sha256")
-                   != sources["sha256"]["absolute_d2t"]):
+        if (
+            m.get("split") != capture["split"]
+            or m.get("prompt_count") != capture["prompt_count"]
+            or m.get("prompts_sha256") != capture["prompts_sha256"]
+            or m.get("activation_bits") != 16
+            or m.get("target_sha256") != sources["sha256"]["target_gguf"]
+            or m.get("draft_sha256") != sources["sha256"]["candidate_d_gguf"]
+            or m.get("binary_sha256") != sources["sha256"]["binary"]
+            or m.get("files", {}).get("absolute_d2t", {}).get("sha256")
+            != sources["sha256"]["absolute_d2t"]
+        ):
             raise ValueError("retained import teacher/source/prompt/split ancestry differs")
-        require_unsealed_prompts(Path(capture["prompts"]), sources=sources,
-                                 expected_sha256=capture["prompts_sha256"])
+        require_unsealed_prompts(
+            Path(capture["prompts"]), sources=sources, expected_sha256=capture["prompts_sha256"]
+        )
         checked_record({"path": capture["prompts"], "sha256": capture["prompts_sha256"]})
         # This checks every file and cache/sampler input; it never trusts audit.json.
         _native_label_receipt_binding(
-            manifest, expected_manifest_sha256=entry["label_manifest"]["sha256"],
+            manifest,
+            expected_manifest_sha256=entry["label_manifest"]["sha256"],
             expected_prompt_sha256=capture["prompts_sha256"],
             expected_prompt_count=capture["prompt_count"],
         )
@@ -1220,24 +1599,36 @@ def _validate_retained_import(config: dict, run_dir: Path) -> dict:
     gates = adoption["precision_gates"]
     if not isinstance(gates, dict) or set(gates) != {"8", "1"}:
         raise ValueError("retained import requires both original precision gates")
-    common = {k: sources["sha256"][k] for k in (
-        "target_gguf", "candidate_d_gguf", "base_draft_gguf",
-        "absolute_d2t", "model_snapshot_manifest",
-    )}
+    common = {
+        k: sources["sha256"][k]
+        for k in (
+            "target_gguf",
+            "candidate_d_gguf",
+            "base_draft_gguf",
+            "absolute_d2t",
+            "model_snapshot_manifest",
+        )
+    }
     for bits in (8, 1):
         gate_path = _retained_path(gates[str(bits)]["path"])
         if gate_path != old_run / f"stages/gate-a{bits}/gate.json":
             raise ValueError("retained import gate is not the original stage gate")
         gate = json.loads(checked_record(gates[str(bits)]).read_text())
-        if (gate.get("schema") != "w1ax_continuous_precision_gate_v1"
-                or gate.get("native_binary_sha256") != sources["sha256"]["binary"]
-                or gate.get("native_runtime") != sources["native_runtime"]):
+        if (
+            gate.get("schema") != "w1ax_continuous_precision_gate_v1"
+            or gate.get("native_binary_sha256") != sources["sha256"]["binary"]
+            or gate.get("native_runtime") != sources["native_runtime"]
+        ):
             raise ValueError("retained import gate runtime/recipe differs")
         validate_gate_report(gate, bits, common)
         labels = json.loads(checked_record(gate["evidence"]["native_capture_manifest"]).read_text())
-        if (labels.get("prompts_sha256") != original["gate_prompts_sha256"]
-                or labels.get("split") != "train"):
+        if (
+            labels.get("prompts_sha256") != original["gate_prompts_sha256"]
+            or labels.get("split") != "train"
+        ):
             raise ValueError("retained import gate prompt/split differs")
+    if adoption["historical_audit_provenance"] is not None:
+        _historical_retained_pass(record)
     return adoption
 
 
@@ -1251,8 +1642,11 @@ def prepare_retained_config(import_manifest: Path, output: Path) -> dict:
     import_manifest = _retained_path(str(import_manifest.absolute()))
     adoption = json.loads(import_manifest.read_text())
     original = json.loads(checked_record(adoption["original_stages"]).read_text())
-    result = {**original, "retained_native_capture_import": file_record(import_manifest),
-              "native_label_audit_receipts_dir": adoption["audit_receipts_dir"]}
+    result = {
+        **original,
+        "retained_native_capture_import": file_record(import_manifest),
+        "native_label_audit_receipts_dir": adoption["audit_receipts_dir"],
+    }
     _validate_retained_import(result, Path(adoption["output_run_dir"]))
     output = _retained_path(str(output.absolute()))
     if output.exists() or output.is_relative_to(Path(adoption["original_run_dir"])):
@@ -1266,8 +1660,11 @@ def _run_stages(config: dict, run_dir: Path) -> Path:
     if config.get("schema") != STAGES_SCHEMA:
         raise ValueError("unsupported continuous stage configuration")
     check_stop(run_dir)
-    retained = (_validate_retained_import(config, run_dir)
-                if "retained_native_capture_import" in config else None)
+    retained = (
+        _validate_retained_import(config, run_dir)
+        if "retained_native_capture_import" in config
+        else None
+    )
     sources = config["sources"]
     sources = {
         **sources,
@@ -1364,12 +1761,17 @@ def _run_stages(config: dict, run_dir: Path) -> Path:
             detail="bounded native/CUDA math/cache/export/backward gate; no optimization",
         )
         check_stop(run_dir)
-        report = (checked_record(retained["precision_gates"][str(bits)])
-                  if retained is not None else run_gate(
-                      sources, Path(config["gate_prompts"]),
-                      stage_dir / f"gate-a{bits}", bits,
-                      expected_prompt_sha256=config["gate_prompts_sha256"],
-                  ))
+        report = (
+            checked_record(retained["precision_gates"][str(bits)])
+            if retained is not None
+            else run_gate(
+                sources,
+                Path(config["gate_prompts"]),
+                stage_dir / f"gate-a{bits}",
+                bits,
+                expected_prompt_sha256=config["gate_prompts_sha256"],
+            )
+        )
         results[str(bits)] = file_record(report)
     teacher_manifests = []
     receipt_records = {}
@@ -1391,8 +1793,11 @@ def _run_stages(config: dict, run_dir: Path) -> Path:
         ):
             raise ValueError("stage frozen prompt bytes/count changed")
         folder = stage_dir / f"capture-{ordinal:05d}"
-        manifest = (checked_record(retained["captures"][ordinal]["label_manifest"])
-                    if retained is not None else folder / "labels/manifest.json")
+        manifest = (
+            checked_record(retained["captures"][ordinal]["label_manifest"])
+            if retained is not None
+            else folder / "labels/manifest.json"
+        )
         receipt_path = (
             receipt_dir / f"capture-{ordinal:05d}.json" if receipt_dir is not None else None
         )
@@ -1427,13 +1832,21 @@ def _run_stages(config: dict, run_dir: Path) -> Path:
                 expected_prompt_count=capture["prompt_count"],
             )
         else:
+            if retained is not None and retained["historical_audit_provenance"] is not None:
+                _adopt_retained_historical_audit(
+                    config["retained_native_capture_import"],
+                    ordinal,
+                    receipt_path,
+                )
             audit_native_labels_with_receipt(
                 manifest,
                 expected_prompt_sha256=capture["prompts_sha256"],
                 expected_prompt_count=capture["prompt_count"],
-                expected_manifest_sha256=(retained["captures"][ordinal]["label_manifest"]["sha256"]
-                                          if retained is not None else
-                                          _observed_record(manifest)["sha256"]),
+                expected_manifest_sha256=(
+                    retained["captures"][ordinal]["label_manifest"]["sha256"]
+                    if retained is not None
+                    else _observed_record(manifest)["sha256"]
+                ),
                 receipt_path=receipt_path,
             )
             receipt_records[manifest] = file_record(receipt_path)
@@ -2488,9 +2901,12 @@ def main() -> None:
         }
     elif args.command == "prepare-retained-config":
         config = prepare_retained_config(args.import_manifest, args.output)
-        result = {"config": str(args.output), "execution_device": "cpu",
-                  "training_eligible": False,
-                  "retained_native_capture_import": config["retained_native_capture_import"]}
+        result = {
+            "config": str(args.output),
+            "execution_device": "cpu",
+            "training_eligible": False,
+            "retained_native_capture_import": config["retained_native_capture_import"],
+        }
     elif args.command == "recover-partial":
         result = recover_partial(args.run_dir, args.stages_config)
     elif args.command == "make-refresh-provider":
