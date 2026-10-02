@@ -62,12 +62,29 @@ PYTHONPATH=src:tests:. /Users/pippo/github/binary-eagle-decoding/.venv/bin/pytho
 `source-proof.json` binds the measured graph/count/storage evidence to exact
 feature, dependency and fixture source SHA256 values. Independent validation is
 recorded separately in `independent-validation.md` and its uniquely named test.
+Luna's independent five-test suite passes on Torch 2.8.0 CPU (0.123 seconds):
+synthetic A1/A8 two-step graph/cache/input/parameter VJPs and manual SGD updates,
+actual compute reductions, default state dictionaries, exceptional and normal
+weak-reference cleanup, and the unchanged serial learned-head provider path.
+Its commit is `70c2d08`; the source implementation commit is `c7b07d9`.
 
 ## Integration needs and remaining work
 
 Review and merge only with root/QAT source-owner coordination. Do not enable
-this optimization in existing live preparation/training. A future separately
-owned config binding must add an explicit default-false capability, pass it to
+this optimization in existing live preparation/training. **Source integration
+requires a separately owned identity-binding change first or in the same
+coordinated review.** The NEW helper `activation_reuse.py` is an unconditional
+runtime dependency of `learned_activation.py`, including when reuse is false.
+The present `continuous_runtime.MATH_FILES` and curriculum `EXTRA_MATH` omit
+the helper; `qat_readiness` validates the supplied math-source mapping without
+requiring a dependency closure. Thus existing runtime/readiness inventories do
+not yet bind every file in this feature. These protected modules are outside
+this owner's assigned file scope. Before adopting this source into a training
+runtime, add the helper to those critical-source inventories, add a test that a
+helper edit changes the CPU-built identity and invalidates a prior bound
+readiness receipt, and refresh source-bound receipts under the QAT owner.
+
+A later separately owned config binding must add an explicit default-false capability, pass it to
 the adapter constructor, record requested/effective state and source hashes in
 the existing execution metadata, and update source-bound readiness receipts.
 Observers need to forward that metadata if the runner consumes it. The adapter
@@ -76,7 +93,8 @@ restoring weights does not silently enable reuse. New runtime adoption needs
 fresh native/device readiness and bounded same-device acceptance/throughput
 gates, under the existing QAT owner's protocol.
 
-Assigned feature checkpoint: implementation and owner acceptance complete;
-independent validation pending at report creation. No persistent experiment
+Assigned feature checkpoint: implementation, owner acceptance and independent
+validation complete; runtime identity binding and explicit config adoption
+remain with the coordinating root/QAT source owners. No persistent experiment
 process, GPU/Metal/SSH/model/capture/final-set work, or live adoption. Root owns
 the active goal checkpoint and will copy this deliverable into its goal record.
