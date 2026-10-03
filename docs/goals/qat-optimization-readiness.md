@@ -32,15 +32,17 @@ successor uses one pinned operator only when no other is active. Root creates
 no second remote operator. Protected QAT/preparation
 supervision continues; no credit purchase or reset redemption.
 
-**Current state — October 3, 11:57 UTC:** ACTUAL source-bound model gate job
-launched11:49 after authenticated fullsource CPUstage, current copied native pass
-and fresh ownership/source/context/resource checks. SAME sole Luna242 keeps its
-connection live; bootstrap/A8/A1/collect naturalexit0, paired backward/memory/five
-repeat readiness and terminal artifact/context/group return pending. Optimizer
-updates ZERO; next optimizer packetaa1a is ready/reviewed but not granted. No
-repeated fixture/corpus audit, source/math change or user confirmation required.
-Use actual stdout/producer records rather than stale compact chat commentary.
-Latest milestone below carries exact job/command/grant identities.
+**Current state — October 3, 12:07 UTC:** ACTUAL ALL5 current full-source model
+phases passed11:55:55 exit0;164originals/readiness3badd/sidecar481615/currentrecipe
+validator/owned group-context return independently verified.30forward30back/five
+repeats/finite+latergrads/native12caseszerochanged/memory9.11Greserved>=6.48Gfree.
+SAME Luna242 is retained for training handoff. Frozen optimizer packetaa1a has
+root16guard/whole-code review and currentbootdurability; CPUstage sourceapproval
+issued. Final concrete launch pinreview/freshfullproof/<=300sadmission +actual
+fulloriginalzero restore/currentpairedsmoke precede already-authorized updates.
+No source/math change, gate repetition or prelaunchheldoutQ4report. Actualfirst
+updates/checkpoints/disconnect survival/Q4trainingdevelopment remain; optimizer
+updates ZERO. SAME15minute QAT/prep monitors, paused2080/research preserved.
 
 **Historical state — October 3, 09:44 UTC:** preparation ACTUALLY completed at
 08:57:52, observed by healthy/terminal checker09:39:55. Supervisor exit0,
@@ -55,6 +57,72 @@ conditional released-mode copied-fixture GO requires actual final release and
 fresh source/context/resource/control facts; no readiness from the CPU pass.
 Then complete current native/actual-model/backward/memory/timing/save-resume
 gates and launch the previously authorized NEW training run without confirmation.
+
+## Actual full-source model readiness passed — October 3, 11:55 UTC
+
+ALL5 source-bound phases naturally passed exit0; supervisor6044/group6045 finished
+11:55:55.775302 UTC, no signal. Final return proves main group/model contexts empty,
+no optimizer/training. Same soleLuna242 keeps transport for immediate handoff; model
+GO consumed terminal, not authority for optimizer. Root/parent independently
+verified164 original files/14,223,850bytes and raw stdout19,128,081bytes SHA
+`612c5638a3b0e8bfccc9792d71487db84d013c187b885196aba9493a4771ede3`.
+Exact originals are saved under the operator's ignored directory, index
+`46432a440dd244c24acf65f5e11d8842cc82df7c63365608b44e45039241773b`.
+Final-return SHA `bb140224d8bbacebd6bfbcb64af243361bdb82885fecb717a6608159cc1756d5`;
+state SHA `2f90bd469221f7f1e6345d1856473a43322ff5823256e7e216cff5b2be443099`.
+
+Genuine readiness
+`3badd9775a848ff5ace09fd96e573f96e19b86e85a88a9bb81aa18d8d3e608c7`
+and untouched orchestration sidecar
+`4816152723691eb94df34529a1174af0036a3e8a4622cec4ac609e14d0a68a13`
+bind fullsourceb1/10000TRAIN/3899930rows, external6f/currentnative9e2,
+actualRTX5080/SM120, originalTorch2.14+cu130/NumPy2.4.6/Python3.11.15/
+highestF32/matmulTF32false/cudnnTF32true and all3helper hashes. Root ran existing
+readiness validator plus exact current recipe comparison locally without CUDA.
+30actual full-model forward/30backward calls, finite gradients/positive later
+state0.1743/K0.7075/V0.29997, five timing repetitions; paired B1 memory:
+peakallocated8,559,173,120B/reserved9,107,931,136B/minfree6,483,345,408B.
+Native12cases, changed choices0/materialchanges0, maximum logitrelativeRMS
+0.0064278825/state0.0026283134; practical numeric/decision gates pass. These are
+current-model/TRAIN/readiness measurements, not held-out acceptance, convergence
+or serving-throughput wins. Larger graph probes remain independent, not optimizer
+cadence changes. Q4_0 stays primary comparison during training development.
+
+Latent state bothlanes
+`5e3a49a87dbbdc58d82e334b89fa38586146b74114066e6d757e373205dbe008`;
+A8effective deployment
+`7e27f46db27a113d29ba13c96f24d3abca19be53f593d2d5dcbda54ef141e5e2`,
+A1 `4091ceddd4c828f9392d4670c05532a8060d65ffcd60eeac7cdc02ec3cd9249a`.
+Root acceptance `actual-model-root-acceptance-20261003-01.json` SHA
+`e2fa0145aaf5b86962f1850e8142fb824a1279565af1480c1300455c3a6e7d2a`;
+selected passing recipe/actual source/runtime/hardware/new helper hashes recorded
+in training registration. Recipe is unchanged fixed reference paired A8/A1,
+originalseeds8101/1101/warmup100/signLR0.001/scaleLR1e-5/clipnorm1;
+cache/head/singlepass/learned/affine/correction/persistentdiagnostic options remain
+inactive, no unmeasured quality winner. Finite firstcaps1000steps/3600trainer
+seconds/1epoch/max_tokensnull; original checkpoint250/diagnostics100/dev1000.
+
+Root FINAL CPUstage source approval for existing reviewed optimizer packetaa1a
+is issued to same preparation owner/Luna. It may stage only NEW sibling operator
+transport and packet; actual model terminal/ready/sidecar pins above are wired by
+unchanged validators. Original e9 fullzero copy/resume/optimizer-RNG-cursor and
+current paired smoke/masterstate match remain enforced inside adapter before ANY
+optimizer step. Final source-bound launch command/guardian/wrapper review plus
+fresh full context/resource/pause/soleowner proof and <=300s admission are next;
+no redundant user confirmation, repeatgate/corpus/fixture or new source/math.
+New supervised Linux tmux training job differs from empty trainer directory.
+First genuine paired updates/checkpoints/diagnostics/disconnect survival and
+Q4development remain objective completion evidence; optimizer updates stillZERO.
+
+Q4prelaunch ambiguity corrected: controlling handoff explicitly says Q4development
+is existing training supervision and invented prelaunch triple-lane schemas were
+removed. TRAIN probes do not establish heldoutquality. Original full development
+pool1002/prompts/Q4 baseline are authenticated by preparation/reuse contract;
+existing evaluator atstep1000 (or serialized finalcheckpoint ifcapsstop earlier)
+provides actual Q4_0primary comparison. SAME QAT heartbeat was updated INPLACE
+ACTIVE15min/currentowner to actualnative/modelPASS/nexttraining and this exact
+boundary; no duplicate schedule. Preparation owner was asked to clarify SAMEprep
+heartbeat wording similarly. No new research or sealed data access.
 
 ## Actual source-bound model gates running — October 3, 11:49 UTC
 
