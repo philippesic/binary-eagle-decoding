@@ -91,7 +91,7 @@ class RequestMetricsTests(unittest.TestCase):
 
     def test_aggregate_is_count_over_sum_time_not_mean_rate(self):
         rows = []
-        for variant, times in (("Q4_0", [1, 3]), ("A8", [0.5, 1.5])):
+        for variant, times in (("Q4_0", [1, 3]), ("A8", [0.5, 1.5]), ("target_only", [2, 6])):
             for rep, wall in enumerate(times):
                 row = metrics.benchmark.extract_record(
                     response(2 if rep == 0 else 6),
@@ -104,6 +104,7 @@ class RequestMetricsTests(unittest.TestCase):
         self.assertEqual(result["variants"]["Q4_0"]["request_tokens_per_s"], 2)
         self.assertEqual(result["speedup_vs_q4_0"]["request_tokens_per_s"], 2)
         self.assertEqual(result["variants"]["A8"]["completion_tokens"], 8)
+        self.assertEqual(result["speedup_vs_no_speculation"]["request_tokens_per_s"], 4)
         self.assertEqual(result["generated_token_id_matches_q4_0"]["A8"]["matched_sequences"], 2)
         partial = metrics._summary(rows, False)
         self.assertIsNone(partial["variants"])
@@ -118,6 +119,41 @@ class RequestMetricsTests(unittest.TestCase):
             with self.assertRaises(InterruptedError):
                 metrics.remaining(time.monotonic() + 10, stop)
         self.assertLessEqual(metrics.remaining(time.monotonic() + 0.25), 0.25)
+
+    def test_target_only_removes_every_draft_control_with_same_target_policy(self):
+        from types import SimpleNamespace
+
+        args = SimpleNamespace(
+            binary=Path("binary"), target=Path("target"), port=18092, mode="recurrent-train"
+        )
+        drafts = {"A8": Path("a8"), "Q4_0": Path("q4")}
+        command = metrics.request_command(args, "target_only", drafts)
+        self.assertNotIn("-md", command)
+        self.assertFalse(any("spec-draft" in argument for argument in command))
+        self.assertEqual(command[command.index("--spec-type") + 1], "none")
+        for key, expected in (
+            ("--cache-type-k", "f16"),
+            ("--cache-type-v", "f16"),
+            ("--ctx-size", "2048"),
+            ("--parallel", "1"),
+        ):
+            self.assertEqual(command[command.index(key) + 1], expected)
+        for flag in ("--no-context-shift", "--no-cache-prompt", "--jinja", "--metrics"):
+            self.assertIn(flag, command)
+        self.assertEqual(
+            metrics.request_command(args, "A8", drafts),
+            capture.server_command(args, {"draft": "a8"}),
+        )
+        self.assertNotIn(
+            "GGML_W1AX_ACT_BITS",
+            metrics.clean_environment(
+                {
+                    "native_runtime": {"ld_library_path": "/pinned"},
+                    "evaluation_env": metrics.EVALUATION_ENV,
+                },
+                "target_only",
+            ),
+        )
 
     def test_owned_cleanup_kills_only_owned_group(self):
         process = subprocess.Popen(
@@ -235,12 +271,18 @@ class FullContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             result, spawned, calls, deadline = self.run_synthetic(Path(temp))
             self.assertTrue(result["complete"])
-            self.assertEqual(len(spawned), 10)
-            self.assertEqual(len(result["records"]), 240)
-            self.assertEqual(len(calls), 250)
+            self.assertEqual(len(spawned), 15)
+            self.assertEqual(len(result["records"]), 360)
+            self.assertEqual(len(calls), 375)
             self.assertTrue(all(call[1] == deadline for call in calls))
-            self.assertEqual(result["orders"][:2], [["Q4_0", "A8"], ["A8", "Q4_0"]])
+            self.assertEqual(
+                result["orders"][:2], [["Q4_0", "A8", "target_only"], ["A8", "target_only", "Q4_0"]]
+            )
             self.assertEqual(result["variants"]["A8"]["requests"], 120)
+            self.assertEqual(result["variants"]["target_only"]["requests"], 120)
+            self.assertIsNone(result["drafts_sha256"]["target_only"])
+            for repeat, order in enumerate(result["orders"]):
+                self.assertEqual(order.index("Q4_0") < order.index("A8"), repeat % 2 == 0)
             self.assertTrue(
                 all(cell["server_stop"]["process_group_gone"] for cell in result["servers"])
             )
