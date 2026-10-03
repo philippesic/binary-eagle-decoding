@@ -46,6 +46,57 @@ fresh source/context/resource/control facts; no readiness from the CPU pass.
 Then complete current native/actual-model/backward/memory/timing/save-resume
 gates and launch the previously authorized NEW training run without confirmation.
 
+## Successor review and context-permission diagnosis — October 3, 10:40 UTC
+
+Same incomplete goal is acknowledged by coordinator
+`01a1014d-9673-7a31-8292-72f8748501f6` at exact checkpoint
+`31750d3d7112ccfddc1b9d2209652aaf38daedc6`. Predecessor verified and rebound the
+SAME ACTIVE15minute heartbeat and training registration, then retired with
+ownership note `fdfa747`. Acknowledgment is ignored
+`runs/qat-optimization-readiness/qat-coordinator-successor-20261003-01.json`.
+Preparation owner `01a10084-101e-7311-94e9-9658f9dc648f` retains the SAME sole Luna
+operator/transport; no new GPU operator, team, research goal or user confirmation.
+
+Actual <=90second CPU-only diagnosis completed once on LOCAL241/%270,
+keeper10523. UID1000 systemd user manager367/PPID1/PGID367/birth275 and373 have
+unreadable FD facts under the ordinary reader. `sudo -n` returned1 requiring
+interactive authentication. No CUDA, GPU query, slot, signals or model work.
+Context absence remains UNKNOWN. Original script SHA
+`37185adcbe9b14592784d9e870ffb0e44a739afadfacdf4d1ed8d4840581371b`, command SHA
+`d035b019a2c4591781d9b5ad74f786d57e092f6d2115d1f7a0d3d5aa6b32dfea`
+and raws are in ignored
+`runs/luna-continuous-a8-a1-20260929/current-context-permission-diagnosis-20261003-01/`.
+Coordinator authorizes ONE <=90second authenticated WindowsSSH-to-WSL root
+READONLY proc census through the retained SAME MCP transport, bound to current
+shared hosts.toml, boot/namespace, readerUID0 and target process births. No
+privileged launch, policy/config change, credential prompt, signals or actor
+exclusion. Unknown/changing/unreadable actors still deny. Preparation owner owns
+narrow controller correction/tests; coordinator review precedes conditional
+released native fixture under fresh full proof.
+
+Local DRAFT `dd19f09` independent Sol review found actual interface issues:
+current-checker imports occur before external6f provider binding; checker forces
+cudnnTF32=false while prepared runtime pins true; admission identity/expiry is
+checked too late (after model/backward work); restored latent-state receipt and
+immutable config/stages/fixed-budget admission joins are incomplete. Baseline
+reference A8/A1 does NOT need an internal optimized-config locator; preserve the
+original checkpoint configuration, with external mandatory actual readiness
+admission. Refuse optimized-recipe expansion through this baseline adapter.
+Sol owns only the adapter/provider/new explicitly pinned validation wrapper and
+focused tests in the preserved feature worktree. The wrapper will bootstrap
+exact6f before imports and preserve the authentic prepared math settings while
+using unchanged measured producer functions, with separate sidecar provenance;
+never rewrite measured receipt fields. No remote adoption or launch yet.
+
+Independent local Luna owns tiny genuine Torch CPU save/copy/resume and import
+ordering tests in separate test-only scope; existing12stdlib guards pass. Use
+repository Python/Torch2.14.0; system/bundled Python lacksTorch. Full-model CUDA,
+current native decisions, five-repeat timing and launch remain pending. Preparation
+success/full coverage/original backward-memory/checkpointzero are already joined;
+never repeat the completed full-corpus audit. Optimizer updates remain ZERO.
+RTX2080Ti/supporting research remain paused. The latest direct human instruction
+still authorizes NEW training as soon as genuine gates pass.
+
 ## Coordinator rotation checkpoint — October 3, 10:24 UTC
 
 **Objective remains incomplete:** start the already-authorized, source-bound NEW
