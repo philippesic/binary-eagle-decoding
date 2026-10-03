@@ -40,9 +40,9 @@ No Q4report/qualityclaim. Actualreadonlyreconnect verifies terminalownedgroupemp
 source/runtime/pairedcheckpoint/exports; all5raworiginals rootverified. Training
 continued after12:36:31connectionclosure and reachedterminal>306slater; no sameLIVE
 birthpostreconnectclaim sincejobterminated. SAME soleowner/operator must collect
-terminal logs/currentFULLcontext/resources/source release. Local SAMEfeatureowner
-prepares NEWserializedfinalevalpacket02 narrowly accepting exactoriginalpoststep1000
-RAMfailure/intactcheckpoint, no relabel/restart/caps/source/memorygate waiver. Then
+terminal logs/currentFULLcontext/resources/source release. NEWserializedfinalevalpacket02 fd5439 reviewedwholecode/20CPUtests/all14pins,
+rootconditionalCPUstage sourceapproval issued. Exactoriginalpoststep1000RAMfailure/
+intactcheckpoint exception only; no relabel/restart/caps/source/memorygate waiver. Then
 actualCPUstage/freshfullrelease/ownerGO→unchangedQ4_0eval. Goal incomplete.
 
 **Historical state — October 3, 09:44 UTC:** preparation ACTUALLY completed at
@@ -58,6 +58,38 @@ conditional released-mode copied-fixture GO requires actual final release and
 fresh source/context/resource/control facts; no readiness from the CPU pass.
 Then complete current native/actual-model/backward/memory/timing/save-resume
 gates and launch the previously authorized NEW training run without confirmation.
+
+## Serialized checkpoint evaluation packet reviewed — October 3, 12:49 UTC
+
+Root reviewed NEWimmutablefinaldevelopmentpacket02 whole01code+exactdelta, all20CPU
+tests and14manifest pins PASS; original01 preserved2369097. Manifest
+`fd5439f88fc94921bd66615106d2eec4f998fc9e45e78ddd7939742bdf0b7233`,
+helper `71e2df0ffd7b8bc0d300103d79b8d2af2513614a6e2f1993ff2c15170207e6f4`.
+`root-final-review.json` is current02review; manifest-pinned root-review.json is
+historical01copy, not currentGPUauthority. Solechangedterminalacceptance supports
+completed/exit0 OR EXACT original naturalexit1/status80507/supervisoraf7b51/
+manifestb48c/resume62f88/configfea/max_steps1000==actualpaired1000/specific hostRAM
+preflight error/resume flag. Everyotherfailure/partialpair/runtime/signal/unachieved
+cap rejected; originalfailurebytes/status preserved, staginglabeltruthful.
+
+CPUregressions include genuine captured original status/state/manifest/identities/
+launch/configbytes. Local latest.jsonfixture is explicitly DERIVED from original
+status.checkpoint, never remoteevidence; realremote stage must read/authenticate
+actual latest.json. Mac/Linux /home canonical difference is not waived: narrow
+classifier usesrealbytes, strictpublication helpers aretested withlocalcanonical
+fixtures. Original14rawfiles/producers preserved; no source/math/data/precision/
+verifier or resource/memoryfloor change. Conditional finalCPUstageSOURCEapproval
+sent to SAMEprepowner/soleoperator after actualfulltraininggroup/nativecontext/
+resource/source/control release. Actual stage/fullrelease and concrete sourcebound
+wrapper/argv/guardian review +freshownerGO still precede any evaluationGPUstart.
+
+Existing source6f evaluator/API/report/nativecancellation remain; separateunused
+NEWevaluationrun/supervisor, originalCUDA math/locks/1200s cap/24promptsubset from
+1002development/max48lossrounds perlane, frozen b4native evaluator/Q4_0primary.
+No optimizerrestart/newtrainingbudget/automaticreplication/prelaunchgate. SAME
+QAT15minuteheartbeat updatedINPLACE to1000checkpoint+truthfulRAMfailure/nextrelease/
+serializedeval; no duplicate monitor. Q4report and actualownedfinalcontextreturn
+remain goalcompletion evidence; noquality/convergence/servingthroughputclaim.
 
 ## Actual 1000-step checkpoint; development RAM failure — October 3, 12:42 UTC
 
