@@ -18,6 +18,7 @@ from w1a1_eagle.qat_optimization import initialize_latents_
 from w1a1_eagle.qat_recipe_audit import (
     QATRecipeTelemetry,
     QATUpdateProbe,
+    audit_a8_execution,
     audit_a8_recipe,
     comparison_joint_recipe,
     comparison_training,
@@ -188,6 +189,7 @@ class A8RecipeTests(unittest.TestCase):
     def test_candidate_inference_observes_batched_head(self):
         config, expected, linears, optimizer, adapter = fixture()
         _, _, evidence = round_forward(adapter, config, training=False)
+        self.assertEqual(audit_a8_execution(evidence, config, training=False)["status"], "observed")
         result = audit_a8_recipe(
             linears, optimizer, config, expected, training=False, execution_evidence=evidence
         )
