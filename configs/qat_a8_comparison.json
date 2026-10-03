@@ -1,0 +1,82 @@
+{
+  "schema": "qat_a8_comparison_v1",
+  "base_config": "configs/continuous_w1ax.json",
+  "primary_baseline": "Q4_0 EAGLE",
+  "initialization": "fresh_from_same_dense_signs_and_scales_not_historical_step1000",
+  "shared_training": {
+    "activation_bits": [8],
+    "development_lifecycle": "standalone",
+    "a1_computation": "single_forward",
+    "optimize_cache": true,
+    "optimize_head": true,
+    "context_chunk_size": 64,
+    "sign_lr": 0.001,
+    "scale_lr": 0.00001,
+    "max_grad_norm": 1.0,
+    "seeds": [8101, 1101],
+    "warmup_steps": 100,
+    "checkpoint_every": 1000,
+    "diagnostics_every": 100,
+    "persistent_sign_diagnostics": true,
+    "development_every": 5000,
+    "max_seconds": 7200,
+    "max_steps": null,
+    "max_tokens": null,
+    "max_epochs": null,
+    "activation_lr": 0.00001,
+    "fusion_correction": null,
+    "depth_loss_decay": 1.0
+  },
+  "arms": {
+    "reference": {
+      "activation_quantization": "fixed",
+      "affine_weights": null,
+      "binary_optimization": {
+        "optimizer": "adamw",
+        "latent_magnitude": 0.5,
+        "sign_lr": 0.001,
+        "scale_lr": 0.00001,
+        "sign_gradient_rule": "baseline",
+        "scale_gradient_rule": "baseline",
+        "clip_policy": "joint",
+        "max_grad_norm": 1.0
+      }
+    },
+    "candidate": {
+      "activation_quantization": "learned",
+      "affine_weights": {
+        "enabled": true,
+        "coverage": "all",
+        "midpoint_lr": 0.00001,
+        "mild_l2": 0.000001,
+        "midpoint_bound": null
+      },
+      "binary_optimization": {
+        "optimizer": "adamw",
+        "latent_magnitude": 0.1,
+        "sign_lr": 0.001,
+        "scale_lr": 0.00001,
+        "sign_gradient_rule": "baseline",
+        "scale_gradient_rule": "baseline",
+        "clip_policy": "joint",
+        "max_grad_norm": 1.0
+      }
+    }
+  },
+  "budget": {
+    "training_seconds_total": 14400,
+    "training_seconds_per_arm": 7200,
+    "development_seconds_per_transaction": 1200,
+    "development_before_training": true,
+    "development_at_budget_end": true,
+    "sealed_final_allowed": false,
+    "a1_held_out": true
+  },
+  "head_execution": {
+    "reference_training": "batched",
+    "candidate_training": "serial_trainable_learned_activation",
+    "candidate_inference": "batched",
+    "reason": "Learned head uses invocation-local LSQ normalization; serial training preserves the existing gradient contract."
+  },
+  "scope": "Matched A8-only experiment. AdamW updates floating-point latents; signs flip at zero crossings. No Bop, fusion correction, curriculum, depth weighting or trajectory refresh. Execution flags are requested in both arms; effective head paths intentionally differ during training."
+}
