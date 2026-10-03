@@ -322,6 +322,18 @@
     "processor": "arm"
   },
   "implementation_revision": "67cb7fe",
+  "independent_validation": {
+    "commit": "14195f8fd70c9ed10cf1fcd543b7d9d7ab879d01",
+    "cpu_tests_passed": 6,
+    "cpu_tests_total": 6,
+    "integration_tests_passed": 6,
+    "integration_unittest_log_sha256": "8813707c68aefdf0d7216e86f1a7e0ee823b4f90687aed7c39ae97176e154e86",
+    "report_file_sha256": "9ac6b54af0a79fdb908410aa0b89ab6f0284ebf902749d96422792c2351aa48b",
+    "ruff_log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+    "ruff_passed": true,
+    "test_file_sha256": "ae55eafe3004af1cbfec40b18f0483a4e2ad00ccecb42bc7ebcd62ccaaf3334a",
+    "unittest_log_sha256": "9f5fa68244fcba2964edecdb7e22f83d2b4db121489f3765b85bdb6b93faa9ca"
+  },
   "limitations": "F32-BLAS frozen-layer reconstruction teacher; native A8 exported candidate arithmetic. Fusion-coordinate decisions are not vocabulary logits. No native acceptance or GPU throughput evaluated.",
   "manifest_sha256": "26c9281404b646c3f5620585cec28ca9a27abf0c76c5a983b82b9632bce47c18",
   "metrics": {
