@@ -6,6 +6,13 @@ The target/verifier model precision remains as frozen for each experiment.
 
 ## Active: A8 QAT recovery and comparison — October 3, 2026
 
+**Latest ownership direction:** the human requested a separate Codex chat with
+no involvement from this chat. The four inline workers are interrupted and this
+chat's recovery heartbeat is PAUSED. A standalone project chat is being created
+to claim sole ownership, review preserved partial work and activate its own
+monitor. See the [handoff](goals/a8-qat-recovery-and-comparison.md#standalone-chat-handoff--october-3-2026).
+The old coordinator will stop after dispatch; no actual QAT launch is claimed.
+
 The human authorized a team to fix integration, run the proposed matched
 comparison under a recovering monitor, and defer A1. The only active goal is
 [A8 QAT recovery and comparison](goals/a8-qat-recovery-and-comparison.md).

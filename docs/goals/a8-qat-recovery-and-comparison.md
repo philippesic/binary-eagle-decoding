@@ -1,5 +1,55 @@
 # A8 QAT recovery and comparison
 
+## Standalone chat handoff — October 3, 2026
+
+The human corrected the execution structure: “just launch it as a seperate codex
+task and dont touch it i dont want any cross incolvement”. The historical
+coordinator chat has interrupted all four native workers and PAUSED its
+`a8-qat-recovery-monitor`. It will create one standalone project chat with this
+handoff, then perform no further coordination, messaging, monitoring or edits
+for this goal. The new chat is authorized to own the goal/team, fix integration,
+run the comparison and retarget/rewrite the paused heartbeat to itself. It must
+claim ownership in STATUS/this file/ignored registration and use its own bounded
+workers. Do not contact the old coordinator or reuse its interrupted workers.
+
+Preserved implementation state (do not discard):
+
+- `/private/tmp/eagle-qat-a8-integration`, branch
+  `feature/qat-a8-integration-20261003`: uncommitted changes to continuous_qat.py,
+  train_continuous_w1ax.py, train_prepared_continuous_w1ax.py and
+  w1ax_continuous_stages.py, plus new test_a8_continuous_integration.py. Implements
+  activation_bits=(8,), current authenticated PreparedProvider reuse and
+  standalone evaluation request/result binding. Targeted tests were in progress.
+- `/private/tmp/eagle-qat-a8-recipe`, branch `feature/qat-a8-recipe-20261003`:
+  uncommitted configs/qat_a8_comparison.json and qat_recipe_audit.py. Recipe
+  materialization, effective attachments/optimizer audit and telemetry draft;
+  tests not yet verified. Preserve partial work and review before adoption.
+- `/Users/pippo/github/binary-eagle-decoding-a8-readiness`, branch a8-readiness:
+  clean committed `99a53ee3dfc6447566e23262c2a40c732ed8b9c7`, four owned files;
+  selected-lane readiness/native collector, 59 focused CPU tests plus Ruff/diff
+  pass. Not integrated into main. Independent integrated verification remains.
+- `/private/tmp/eagle-qat-a8-operator`, branch
+  `feature/qat-a8-operator-20261003`: clean at83a3153. Operator's fresh read-only
+  evidence found retained corpus and original zero checkpoint intact. Registry
+  address was reachable via tmux MCP; RTX5080 idle/no project compute process,
+  WSL boot517c4a36-e475-4a5f-9fa6-65de57edc6fe, ~20.08GB host available and
+  357.35GB disk. `.wslconfig` has20GB and instanceIdleTimeout=-1. Remote main has
+  preexisting dirty source/untracked dirs: preserve and deploy new checkout.
+
+The last operator observations did not start a CUDA model or optimizer. Fresh
+availability must still be checked by the new sole operator; do not infer a
+perpetual free-GPU claim. RTX5080 local pause flag was resumed for this authorized
+goal, RTX2080Ti remains paused. The new team should verify no leftover owned
+test/operator commands before acquiring the GPU; old worker interruption is not
+a remote process teardown claim. Original data/checkpoints/raw failures and
+untracked overnight research remain untouched.
+
+Outstanding root review: ensure failed work since the last checkpoint remains
+charged to a durable cumulative time budget; exact resume must not refund it.
+Keep the documented learned-head serial-training exception. Do not repeat full
+corpus semantic audit on each restart. Reuse existing operator machinery rather
+than building a new chain of permission wrappers.
+
 ## Human authorization — October 3, 2026
 
 “launch a team to do that for qat, fix it, then run with a monitor that will heal

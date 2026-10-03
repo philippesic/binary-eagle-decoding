@@ -130,6 +130,20 @@ additional proof protocols or redoing completed audit work.
 
 ### 2026-10-03: Separate implemented QAT features from the executed recipe
 
+### 2026-10-03: Keep the requested QAT execution in a standalone chat
+
+- Context: The human requested a QAT team and recovering monitor, then clarified
+  that it must run as a separate Codex task with no cross involvement.
+- Status: Confirmed coordination mismatch; no user mistake. This chat had
+  interpreted the team request as inline subagents and attached a monitor here.
+- Agent contribution: The coordinator started implementation inside the advisory
+  chat despite the project preference for long work in an inspectable Codex task.
+- Practical lesson: Once standalone ownership is requested, checkpoint and stop
+  inline workers/monitor, dispatch a single independent chat, and cease observing
+  or messaging it. Preserve unfinished work so the new owner can review it.
+- Resolution: Four workers interrupted, original heartbeat paused, partial
+  worktrees and readiness commit retained, standalone handoff recorded.
+
 - Context: In the retrospective, the human asked whether the 1,000-step run used sign flipping instead of gradient descent, midpoint adjustment, and all implemented optimizations.
 - Evidence: The original step1000 manifest records reference A1 computation, fixed activations, null binary_optimization/affine_weights/fusion_correction, and disabled cache/head optimization and persistent sign diagnostics. The baseline uses AdamW on floating latent signs with a hard-sign forward and surrogate backward; 398 A8 and 54 A1 cumulative sign flips do not establish a direct bit-flip optimizer. The recipes report explicitly deferred Bop.
 - Status: Confirmed gap between implemented features and the executed recipe, with user/agent confusion about that distinction; no user mistake established. The fixed-reference numerical checks passed, but they do not validate the requested combined optimized recipe.
