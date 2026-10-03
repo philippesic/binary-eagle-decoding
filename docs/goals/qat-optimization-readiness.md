@@ -35,8 +35,19 @@ producer and pre-stop zero state explain that schema failure; no optimization
 was observed. The new-v2 terminal continuation was NOT approved or dispatched.
 Existing sole prep operator `/root/atomic05_owner_rebind`, controlled by chat
 `01a0fdd6-8e11-7393-9aed-5c99bd08e428`, owns only bounded final shutdown/verification
-and closure of existing local MCP223 / keeper55194. Final proof pending here;
-root must not open a second connection. RTX2080Ti remains paused. Recovery budget
+and closure of existing local MCP223 / keeper55194. The final operator report
+confirms disconnection: MCP223 not found; keeper55194 interrupted, then absent.
+The assigned final verification wrapper failed locally on a malformed stderr
+redirect before SSH (exit1, empty remote output). No retry, corrected command,
+new connection or fresh GPU/context query followed. Root must not reconnect.
+The last actual remote classification remains 23:54:28 UTC, raw SHA
+`22844a0cb376b81d3e5aba4ca7e4f7fcb3d65456e6f4329241e5b2b2e5807fcd`,
+proof SHA `313b4b9c04d54691673607225356c66aa0bf8800951f02eb9ce98fae33a49a64`: old09
+interrupted exit0, both groups empty, new job/run/launch absent. Known CPU98 and
+configuration jobs had already returned. This is prior terminal evidence plus
+local connection closure, not fresh GPU release; current GPU availability remains
+unverified. Local closure-proof artifact is being saved by the existing owner.
+RTX2080Ti remains paused. Recovery budget
 2/2 remains exhausted; no new recovery charge or old09 restart.
 
 **Live work and ownership:** root's active local worker
@@ -63,8 +74,9 @@ Preserve clean-runtime worker worktree and continuity worktree pending their
 owners' cleanup audits. Preserve peer untracked overnight reports. Never drop
 unmerged work or raw evidence.
 
-**Exact next local actions:** record sole operator's shutdown proof, checkpoint
-all work, and rotate root at this safe boundary after two compactions. Successor
+**Exact next local actions:** finish binding the existing operator's local closure
+artifact, preserving the failed wrapper and prior terminal proof without a remote
+retry. The predecessor completed the rotation at this safe boundary. Successor
 must first read this section and latest STATUS; carry the same incomplete goal
 under LOCAL MAC ONLY, without reopening SSH or launching/rebinding automations.
 Local review and implementation may repair the unfinished v2 schema/test/manifest

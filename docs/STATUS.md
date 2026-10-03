@@ -12,7 +12,10 @@ Both host pause flags are true; QAT and preparation heartbeats are PAUSED.
 All root agents were notified, and the main supervisor relayed the stop to its
 teams. The sole existing preparation operator is restricted to shutdown and
 verification, then disconnect. No new remote CPU/GPU job, transfer, polling,
-recovery or SSH is permitted. Actual final shutdown proof is pending.
+recovery or SSH is permitted. The sole operator reports MCP223 and keeper55194
+closed. Its final verification wrapper failed locally before SSH; no remote
+query occurred and no retry is permitted. Last remote evidence confirms old09
+stopped and no replacement launched; current GPU availability is unverified.
 
 Optimizer updates remain zero. Old09 was already stopped; the proposed new
 preparation continuation was never approved and is cancelled. Local unfinished
