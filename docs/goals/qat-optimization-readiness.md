@@ -58,6 +58,30 @@ fresh source/context/resource/control facts; no readiness from the CPU pass.
 Then complete current native/actual-model/backward/memory/timing/save-resume
 gates and launch the previously authorized NEW training run without confirmation.
 
+## Training CPU-stage typed API repair — October 3
+
+Actual reviewed optimizer packet01 CPUstage executed ONCE on SAME242, then failed
+BEFORE output publication/model/GPU/optimizer: launch.inputs passed config string
+into exact6f load_config(), which requires Path.read_text(). Error is concrete
+`AttributeError: str object has no attribute read_text`; one-line operational fix
+is `api.load_config(Path(p['config']))`. Original packetaa1a/staged01/source/claim
+and1738B stderr SHA
+`c50e7bc132bc5cc468b1bb3048f03b776f471c084a47ebfc0a663942aa789c38`
+remain preserved under `prepared-training-launch-operator-20261003-01/`.
+No GPU slot/model or optimizer action; training output directory was not created.
+
+Same local feature owner owns NEW immutable trainingpacket02 only, preserving
+01 and changing only the typed API/new packet-output references. Add genuine
+exact6f/current-identical CPU loader test, inspect remaining actual API calls;
+no source/math/data/caps/control changes or new gates. Parent owns only NEW
+operator02 transport after final pins. SAME Luna242/keeper72822 remains held;
+no silent replay of consumed claim, no new operator, model/fixture/corpus rerun
+or user confirmation. ALL actualmodel/readiness/numeric/memory/timing/teardown
+proofs3badd/481615/bb140 and original zeroe9 remain valid. Root's16mocked CPU
+checks/fullcode review also missed the caller's actual Path contract; lesson is
+recorded factually. Current original restore/current paired smoke still must
+actually execute inside adapter before first updates. Optimizer updates ZERO.
+
 ## Actual full-source model readiness passed — October 3, 11:55 UTC
 
 ALL5 source-bound phases naturally passed exit0; supervisor6044/group6045 finished

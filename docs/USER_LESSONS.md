@@ -103,3 +103,11 @@ additional proof protocols or redoing completed audit work.
 - Agent contribution: The execution wrapper lacked an exclusive local dispatch claim; repeated tool invocation reused its output paths. Coordination initially relayed only the first result's hash.
 - Practical lesson: Separate dry prechecks from a one-shot dispatch claim, use unique request/output names, and inspect saved command completion before reissuing a bounded operation. Never overwrite original raw evidence during parsing or retries.
 - Correction or resolution: First bytes were recovered using the actual producer's exact serializer and matched the coordinator's earlier independent SHA; explicitly label recovery. Second original bytes/parse and both pane captures are separate. A local one-shot claim and fresh per-nonce readonly census outputs are required for the next controller transaction.
+
+### 2026-10-03: Exercise the pinned loader with real argument types
+
+- Observation and evidence: After all five actual full-source model gates passed, the training CPU-stage wrapper called exact6f load_config with a string. The producer calls Path.read_text; CPU staging failed before creating training output or GPU/optimizer execution.
+- Status: Confirmed agent integration/test mistake; no user mistake, data problem or failed model gate.
+- Agent contribution: Feature implementation passed the plan's string directly. Local16tests mocked the source loader contract, and root whole-code review missed this caller/producer mismatch despite reading the producer earlier.
+- Practical lesson: Add one genuine pinned-API probe using the exact config/path types before execution; test successful real producer calls, not only invented/mocked schemas. For a narrow typed-API failure, preserve old packet/claim/raws and create a corrected immutable packet without repeating passed model/corpus work.
+- Correction or resolution: Source/math/config/caps are unchanged; packet02 coerces config to Path and adds a genuine loader test. No extra human confirmation or numerical diagnostic is required.
