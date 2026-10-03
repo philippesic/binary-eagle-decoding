@@ -158,3 +158,12 @@ additional proof protocols or redoing completed audit work.
 - Status: Confirmed agent interpretation error, corrected before model execution; no user mistake or measured quality failure.
 - Agent contribution: Root froze the initial short length before auditing its graph meaning; the native owner and advisor then exposed the distinction. A guarded reference path now computes all seven trained noise slots and proposes only the first three, with actual runtime counts to be checked.
 - Practical lesson: Audit runtime input slots, masks and read slots for a short proposal arm. Checkpoint block-size metadata alone does not establish the released reference's conditioning. Preserve default runtime behavior outside the explicit reference mode and require same-prefix native proposal checks.
+
+
+## October 3: shared pause record lacks request provenance
+
+- Context: The human authorized an independent released-architecture study on RTX2080Ti and explicitly resumed that host for the study. Root resumed its shared flag at startup; the operator initially observed it unpaused.
+- Evidence: Immediately before first model load, the flag was true with update time22:52:45UTC. The control schema stores only a boolean and timestamp, so the study cannot identify its writer or whether it reflects a newer human pause. No model or measurement was launched; completed CPU preparation is preserved and owned GPU contexts are absent.
+- Status: Confirmed shared-state conflict; pause provenance and human intent remain uncertain. No user mistake or agent fault for the pause is asserted.
+- Agent contribution: The team relied on initial resume during lengthy CPU preparation, then performed the required adjacent launch check. Root held the launch and asked the human for clarification without contacting the independent QAT/fusion owners.
+- Practical lesson: Store host-control writer, reason and authorizing request when ownership changes. Recheck immediately before a GPU launch and honor an unexplained newer pause while clarifying its scope; preserve completed preparation so a resume does not repeat audits/builds.
