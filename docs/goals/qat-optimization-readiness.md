@@ -22,7 +22,7 @@ polling/source investigation or routine coordination updates. This is not a GPU
 pause, cancellation, new goal or permission to restart supporting research.
 
 **Goal and owner:** same incomplete QAT optimization-readiness goal; acknowledged
-QAT owner `01a0ff1c-1007-75e3-a772-eaeb078179b3`. Optimizer updates remain zero.
+QAT owner `01a1014d-9673-7a31-8292-72f8748501f6`. Optimizer updates remain zero.
 The SAME QAT heartbeat is ACTIVE every 15 minutes, bound to this owner with the
 latest resume wording and all launch/training gates preserved; no new schedule.
 Preparation owner is now acknowledged successor
@@ -160,6 +160,22 @@ first updates/checkpoints/sign-quantizer diagnostics/Q4_0 development evaluation
 (6) Notify meaningful milestones only; stay quiet unchanged healthy state.
 Registration/heartbeat rotation is effective only after successor acknowledgment;
 preparation owner/operator continue uninterrupted across this coordinator rotation.
+
+**Rotation completed — October3,10:28UTC:** successor
+`01a1014d-9673-7a31-8292-72f8748501f6` explicitly acknowledged checkpoint31750d3,
+completed prep/current native blocker, same sole prep operator and draftdd19f09.
+Acknowledgment in `runs/qat-optimization-readiness/qat-coordinator-successor-20261003-01.json`
+and training-handoff-registration.json bind the successor. SAME existing
+qat-validation-and-training-handoff ACTIVE15minute target independently read back
+matching successor; no duplicate automation. Prior coordinator01a0ff1c retires.
+Preparation owner acknowledged continued ownership across rotation; same sole Luna
+LOCAL241/%270/keeper10523 reserved for approved CPU-only diagnosis, exact command
+d035b019... reviewed; no actual diagnosis result known to predecessor. New owner
+must derive current lease/transport/result from prep owner, never infer from this
+reservation. Successor owns review/finish of clean published draftdd19f09.
+Actual draft restore evidence is NEWrun/save-resume.json, not actualrestore.json.
+No human decision pending; no readiness/training claim. No GPU job was interrupted
+for rotation. Merged root docs worktree will be removed; draft worktree remains.
 
 **Historical state at08:48 UTC:** Static05 actually launched and finished
 exit0; its collector verifies passed CPU inventory, unchanged protected bytes

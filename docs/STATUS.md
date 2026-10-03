@@ -14,7 +14,7 @@ Latest direct human priority is **“Gpu is free I expect qat to run asap.”**
 Start the already-authorized new training run as soon as current data/model/native
 and ownership gates pass; no redundant confirmation or gate waiver.
 The same QAT monitor is ACTIVE and bound to
-acknowledged owner `01a0ff1c-1007-75e3-a772-eaeb078179b3`; the same preparation
+acknowledged owner `01a1014d-9673-7a31-8292-72f8748501f6`; the same preparation
 owner/operator retain sole remote control. No duplicate schedule or operator.
 
 **Preparation completed successfully at08:57:52 UTC, observed09:39:55.**
@@ -45,6 +45,12 @@ remain pending. No new user decision or confirmation is required.
 Local launch-path worker finished: draftdd19f09,12focused CPU tests passed;
 no actual-model integration or independent review yet. Its clean feature worktree
 is preserved for the successor; original frozen preparation is untouched.
+
+**Ownership transfer verified10:28UTC:** QAT successor
+`01a1014d-9673-7a31-8292-72f8748501f6` acknowledged the durable checkpoint and
+now owns registration plus the SAME existing ACTIVE15minute heartbeat. Prior
+coordinator retires; same preparation owner and sole operator continue. No new
+goal/operator/schedule, GPU interruption or human confirmation.
 
 **Historical preparation progress:** the unique job launched at06:43UTC, supervisor806/
 child807, after verified current-boot durability and fresh launch guards. Prep
