@@ -13,7 +13,7 @@
   "enable_thinking": false,
   "cache_prompt": false,
   "warmups_per_cell": 2,
-  "repetitions": 5,
+  "repetitions": 6,
   "candidate_lengths": [
     3,
     7
