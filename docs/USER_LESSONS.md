@@ -82,3 +82,16 @@ evidence changes the lesson.
 - Agent contribution: This lead added local ownership/controller work while following indirect owner snapshots. The preparation owner also spent time on that local work; the usual15-minute observation cadence did not detect the terminal transition promptly.
 - Practical lesson: Preserve a short normal health/terminal observation at its cadence while local implementation proceeds. A successful terminal transition cancels obsolete hold work immediately and moves the same operator to release verification, remaining model gates and training.
 - Correction or resolution: Actual success is checkpointed; held-slot work is stopped and preserved without any hold signal. The sole operator is redirected to final release and the reviewed released-mode native fixture, with no new preparation or redundant audit.
+
+## October3: released validation delayed by local orchestration checks
+
+After actual final preparation release09:46UTC, constructing the native wrapper
+and two incorrect local evidence-path guards delayed validation. Parent ownership
+resolved the guards; the first actual Linux attempt then refused an unreadable
+/proc/367 FD table before CUDA launch. Root contributed by supplying a reviewed
+fixture controller without a complete concrete transport/evidence wrapper and
+by not testing the real process-permission boundary early. This is an agent
+coordination/implementation issue, not a user mistake or numeric failure. Keep
+one operator, give it one complete reviewed transaction, test permission/ancestry
+census with actual evidence, and preserve unknown-actor denial without inventing
+additional proof protocols or redoing completed audit work.

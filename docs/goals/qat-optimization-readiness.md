@@ -46,6 +46,108 @@ fresh source/context/resource/control facts; no readiness from the CPU pass.
 Then complete current native/actual-model/backward/memory/timing/save-resume
 gates and launch the previously authorized NEW training run without confirmation.
 
+## Coordinator rotation checkpoint — October 3, 10:24 UTC
+
+**Objective remains incomplete:** start the already-authorized, source-bound NEW
+QAT training run after genuine current gates, then supervise real updates,
+checkpoints and Q4_0 development evaluation. No optimizer update has occurred.
+No unresolved human research decision or new confirmation is required. The
+latest human priority remains “Gpu is free I expect qat to run asap.” RTX2080Ti
+and supporting research stay paused; no credits purchased or resets redeemed.
+
+**Completed evidence:** preparation exited0 naturally at08:57:52.886441 UTC;
+full10,000 TRAIN prompts/3,899,930 rows, 320 TRAIN shards within353 retained
+manifests and1,002 development prompts; A8/A1 step0. Ready
+`bdfa56f8b10e44e82a6d807a71f32d68c39143af7094e6f8f0da63504d41a498`,
+zero checkpoint `e9d01984f6323cc9789b110cc3029e43f97f5596b3840fb5911256202adf2f15`.
+Final03 raw `6e7b62789fcf524f2e0e96e43b9cd09268732cedb9adf081d1984dd21261087d`
+and source
+`b1a9f991246f07c3b3b078f2602ace339416904295a303f77c2d72c6c1427509`.
+09:46:56 final release passed: original806/807 absent, both groups empty,
+no project workers/compute apps; GPUfree14,190,379,008B,
+hostavailable20,232,368,128B, disk384,120,688,640B. These are dated measurements.
+Boot `3abb0e06-8bd4-474b-82a7-7480d59b8002`, RTX5080/SM120, Python3.11.15,
+Torch2.14.0+cu130/NumPy2.4.6, TF32matmul=false/highest, cudnnTF32=true.
+
+Root independently hash-verified original metadata and exact ready joins at10:23:
+`runs/luna-continuous-a8-a1-20260929/final-preparation-return-20261003-01/readiness-metadata-20261003-01/`.
+`dual_smoke.json` SHA308620aa111a5d8686b7587f1c7ec5750c6aa89e1510f46294dee1280b4e6966
+matches ready.dual_smoke_sha256; teacher_coverage SHA
+7ce0e7e707f50127cf400ddb25f7ebe39e5aaf6f9b482f50d4663c22c5ff42c8 matches ready
+coverage; latest SHA8e1ad6493063955b0e91b30b319ec22f0406cb5b6be68fc7405f7c51352966c1
+matches ready.checkpoint exactly. Both lanes have positive later state/K/V/position
+gradients; loss A8=6.1430826187/A1=7.8489999771, actual CUDApeak8,816,427,008B.
+This is genuine paired backward/memory evidence; it does not supply current
+native actor/decision, five-repeat timing or all remaining save/resume gates.
+
+**Current native blocker, no CUDA launch:** final reviewed fixture packet
+11bce4b1b9cba7f5dad591ed4792c31ea92ab9d39c3dc1a09c012d50b5c00c43,
+controller a3fd8ecc434e3bbfd091d62958934658da31e4b26f44c155c0758b57860544cf,
+wrapper6b70efe57a43a424912186156f626cfbeb5dfc3c87e252d51333f7b725c91257,
+seven focused root CPU tests passed. Same operator's released transaction
+wrapper d00ea70a5666d3a87621dea06202fd9dff2ebb0941dd3946eeef3585e9a6d272
+attempt03 actually reached Linux but refused before owner directory/slot/launch:
+PermissionError reading /proc/367/fd/0 at controller.contexts(). No numeric or
+CUDA fixture failure. Previous two attempts failed locally on evidence paths.
+Closure c7e9554f0b523f43acba342ef5d7d1a08e95b8162b85e200365dec53222127a7
+under final-preparation-return/released-package-transaction-20261003-01 binds
+15artifacts; LOCAL240 session absent, keeper61158 exited130, native=false,
+Flaunch=false, no slot. Prep lease now operator_active=false.
+
+Root transferred narrow diagnosis/controller correction to preparation owner
+01a10084-101e-7311-94e9-9658f9dc648f at10:23. SAME sole Luna
+`/root/current_source_health_20261003_0650` (child chat01a10086-a62b-7911-8806-4d147eeb2901)
+may use fresh tmux MCP/current hosts.toml for <=90s CPU-only readonly367/ancestor
+identity and FD-permission census, including sudo-n readonly census if available.
+No signals/holds/models/CUDA/slot or source/runtime change for diagnosis. Unknown
+or changing actors continue to deny admission. Owner owns narrow actual-evidence
+fix/review and then the already conditionally authorized one-shot released native
+transaction. No parallel operator. The old hold plan is obsolete; no hold occurred.
+Old09 remains terminal; recovery2/2 exhausted; never signal/restart it or806/807.
+Latest compact prep cursor f9b18014-0bc4-4dc3-8c47-7ad6baff2a68:75.
+
+**Local implementation checkpoint:** /root/terminal_continuation owns only new
+prepared-state entrypoint/provider/tests in
+`/private/tmp/eagle-prepared-state-launch-20261003`, branch
+`feature/prepared-state-launch-20261003`, based d13b004. It is not ready/adopted.
+Standard6f prepared-run CLI repeats provider/coverage startup; new adapter pins
+EXTERNAL exact6f/native9e2, authenticates FULL source, lazily uses unchanged
+providers, copies full zero snapshot atomically to NEWrun and restores trainer.
+Root requested quick commit/tests/checkpoint. Review immutable config/runtime,
+full source membership/cache/masks, every-stage smoke, snapshot publication and
+actual measured readiness/state before integration/adoption. Do not use fabricated
+`prepared_training_project_measurements_v1` locators as new blocking gates:
+Q4_0 comparison is required supervision, not an invented pre-start triple-lane
+report. Preserve genuine before-training save/resume and current model/native/
+backward/memory/timing gates, mapped to actual existing producers. No remote work
+by local worker. Completed held_slot_advice/static_runtime_packet are preserved
+local historical work; do not revive old hold/prototype claims.
+
+**Commits/tests/worktrees:** main and origin/main d13b004 (finalrelease/startup),
+490d46e (preparation success),561e70a (fixture review/ASAP). Static05 actualCPU
+inventory passed,35local guards/41pins; terminal46tests; future-stage common
+hash cache public30ddbd3,80independent/31root CPU tests; no live6f edits.
+Root docs worktree `/private/tmp/eagle-qat-preparation-complete-20261003`, branch
+checkpoint/qat-preparation-complete-20261003. Preserve existing overnight untracked
+files and unmerged worktrees. Raw evidence/weights remain outside Git.
+
+**Exact successor actions:** (1) acknowledge sole QAT ownership, same goal,
+training-handoff-registration.json and SAME15minute heartbeat; no duplicate.
+(2) Follow prep owner's bounded diagnosis/native result via compact snapshot,
+keep source6f/native9e2/configccc and original target/verifier precision frozen.
+(3) Finish/review/test prepared-state helper; integrate/push only coherent reviewed
+code. Map actual existing gates; avoid redoing completed full corpus audit or
+accepting a partial source as full. (4) Once native fixture returns, validate
+current actual-model actor/decision and every enabled stage, backward/memory,
+five-repeat timing and save/resume from authenticated full source/checkpoint.
+(5) Record passing recipe, fixed budgets/data/source/native/runtime/hardware and
+new helper hashes; launch NEW detached tmux/remote_job.py training without human
+reconfirmation. Verify exact identities, teardown and disconnect survival, real
+first updates/checkpoints/sign-quantizer diagnostics/Q4_0 development evaluation.
+(6) Notify meaningful milestones only; stay quiet unchanged healthy state.
+Registration/heartbeat rotation is effective only after successor acknowledgment;
+preparation owner/operator continue uninterrupted across this coordinator rotation.
+
 **Historical state at08:48 UTC:** Static05 actually launched and finished
 exit0; its collector verifies passed CPU inventory, unchanged protected bytes
 and complete owned helper-group return. Local transport/keeper closure is

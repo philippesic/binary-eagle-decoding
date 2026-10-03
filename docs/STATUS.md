@@ -30,6 +30,18 @@ Root issued conditional GO for one reviewed released-mode copied-fixture CUDA
 test after verified release, then the remaining actual-model/native/backward/
 memory/timing/save-resume gates and already-authorized new training run.
 
+**10:24 UTC coordinator checkpoint:** the copied CUDA fixture has not launched.
+Its released-mode guard refused unreadable /proc/367/fd/0 before slot/launch;
+transport closed with exact evidence. Same preparation owner/sole Luna owns
+bounded readonly diagnosis and narrow census correction. Original ready/smoke/
+coverage/checkpoint metadata joins independently passed; actual paired backward
+and memory evidence is retained. A local prepared-checkpoint launch helper is
+being checkpointed for review, to avoid repeating the completed full audit.
+After two compactions this coordinator is rotating at this safe boundary;
+see [durable handoff](goals/qat-optimization-readiness.md#coordinator-rotation-checkpoint--october-3-1024-utc).
+Training still has zero updates; native/current model/timing/save-resume gates
+remain pending. No new user decision or confirmation is required.
+
 **Historical preparation progress:** the unique job launched at06:43UTC, supervisor806/
 child807, after verified current-boot durability and fresh launch guards. Prep
 owner `01a10084-101e-7311-94e9-9658f9dc648f` acknowledged the same job and active
