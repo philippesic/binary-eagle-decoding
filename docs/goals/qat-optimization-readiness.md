@@ -32,16 +32,16 @@ successor uses one pinned operator only when no other is active. Root creates
 no second remote operator. Protected QAT/preparation
 supervision continues; no credit purchase or reset redemption.
 
-**Current state — October 3, 13:14 UTC:** actual1000pairedcheckpoint62f88/b48c
-intact; originalautomaticdevelopment RAMfailure/exit1 preserved. Fulltrainingrelease
-and actualevalCPUstagec1e/latest98e/source/runtime/dev auth passed. Rootwhole final
-wrapper/guardian/argv/payload/AST/localdryguard pins PASS; FINAL EVAL GPU GO issued
-13:12. SAME soleLuna244/273/71024 has ACTUALLY launched unique serializedevaljob,
-ownerGOb8ce33; originalsource6f/Q4_0 baseline/24subset/fixedprecision/math/locks/
-1200bound unchanged. WrapperholdsWSL/SSH toterminal<=1320/fullownednativecontext/
-protectedresource return+actualreport, outer1500. Launch is not report/qualityproof.
-Actual evaluation terminal/readout/finalcontextreturn remain; SAME ACTIVE15min
-heartbeat binds exactpendingcommand/currentowner, no repeat/restart/newoperator.
+**Current state — October 3, 13:24 UTC:** original1000pairedcheckpoint remains
+verified. Serializedevalwrapper reached its terminal/group/protected/physical
+collection branch, then FAILED16MiBcap on rawA1/native/d_d/heads.jsonl mistakenly
+classifiedasmetadata. MCPf33 returnedexit1; this is actualCOLLECTORfailure, producer
+exit/report/currentreturn stillunverified untilsmalloriginals read. SAME soleLuna
+244/273/71024 retained; rootcleared ONE necessary<=4MiBREADONLY explicitmetadata
+collector/freshcensus fromsamejob, no extraapproval/newexperiment/optimizer/eval
+rerun/sourceedit/claim replay. Originalrawfailure andrawtensors remainremote.
+Auditcurrent6model/11startup/5reconnect/7terminal/2evalCPU originalpins reverified;
+actualQ4report/readout/fullownedreturn remain. Goal incomplete.
 
 **Historical state — October 3, 09:44 UTC:** preparation ACTUALLY completed at
 08:57:52, observed by healthy/terminal checker09:39:55. Supervisor exit0,
@@ -56,6 +56,39 @@ conditional released-mode copied-fixture GO requires actual final release and
 fresh source/context/resource/control facts; no readiness from the CPU pass.
 Then complete current native/actual-model/backward/memory/timing/save-resume
 gates and launch the previously authorized NEW training run without confirmation.
+
+## Evaluation collection cap; explicit metadata retrieval — October 3, 13:24 UTC
+
+SAME currenthandlef33d5979-e6cc-4af7-b862-262afdde8a8a wasauthoritativelypending at
+13:20:14 UTC via actualMCPget-command-result rawresponse, notjustchat/lease/launch.
+It then returned wrapperexit1 after its terminal/group/M.protected/M.physical
+branch; the broad*.json/*.jsonl walk attempted rawA1/native/d_d/heads.jsonl and
+hit perfile16MiBguard. Rawfailure stdout585B SHA
+`649707f69529fa2b9098e52b8aec42e64b5d5d8b7fd895366f4ad8c1c46a2139`,
+stderr681B `abc23c657cc30d4db45c45faeec75723482b2460ca560badf5407a8606dbb5dc6`.
+Originaloneclaim consumed; source/failedcollection/stdout preserved. Thisis
+collectorcapfailure, notprovennativeproducerfailure orsuccess. Codeordering
+suggestsproducerterminal/currentreturn branchreached, butcurrentactualmetadata
+stillmust be read before quality/release claims. No evalrerun oroptimizerresume.
+
+Rootcleared necessaryONEbounded READONLY explicitmetadata collection on SAME
+244/273/keeper71024 underexistingtask/evalGO, no furtherconfirmation. Existing
+checkedfd/source/currentboot/actualkernel/jobcommand/freshwholecensus/current
+resources/protectedsource semantics remain. Onlyfixed state.json/runneridentity/
+launch/evalstatus/development.jsonIFpresent/cpu-stage.json/terminal-full-release
+and actualsmall referenced reportmetadata, <=4MiB. Rawheads/tensorJSONL remain
+remote, allfailures preserved; no secondoperator/newGPUjob/proofschema/fieldwaiver.
+Originalevaluationexit/reportabsence must be truthfulifproducerfailed. Root
+acknowledged missedrawJSONL inclusionduringwholewrapperreview; usermade noerror.
+
+Completionaudit recheckedcurrent6selectedmodeloriginalpins,11actualstartup,
+5trainingreconnect,7terminalrelease and2evalCPU originals. Nativefixture and full
+actualmodel/native/backward/memory/fivetiming scopesremainseparate; exactfullzero
+restore/currentpairedsmoke and1000optimizer/checkpoint/quantizer diagnostics
+verified. Currenttrainingrecipe is fixedA8/A1; optionalrecipe admission/evidence
+requirements in originalgoalandrunbookremain, no globaloptimizedrecipe readiness
+claim. Completionisunproven until actualQ4report/readout/fullownedreturn and
+originaldeliverable audit. Audit JSON savedignored; nativeGoal staysACTIVE.
 
 ## Serialized evaluation final GO and actual launch — October 3, 13:14 UTC
 

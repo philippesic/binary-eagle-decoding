@@ -121,7 +121,10 @@ conditionalCPUstage sourceapproval issued for intact1000checkpoint+specificRAMfa
 actualrunlatest98e7/source1002dev/failedterminal/final1000checkpoint joined.
 FINAL EVAL GPU GO13:12 forreviewedcommandd5dc/wrappera8ef; ACTUAL separate
 evaluation joblaunched by SAMEsoleLuna244, ownerGOb8ce33. Existing1200bound/
-source6f/Q4baseline/math/memory gates unchanged; actualreport/finalreturn pending. Goal incomplete.
+source6f/Q4baseline/math/memory gates unchanged. EvalCOLLECTORfailed16MiBcap on
+rawheads.jsonl afterterminal-return branch; actualproducerexit/report/currentreturn
+stillunverified. SAMEsoleLuna244 doesONE<=4MiB explicit READONLY metadata/fresh
+return collection; no evalrerun/optimizer/newoperator. Goal incomplete.
 No repeat corpus audit or unit fixture, source changes or new user confirmation.
 See the [native milestone](goals/qat-optimization-readiness.md#actual-copied-native-cuda-fixture-passed--october-3-1110-utc).
 

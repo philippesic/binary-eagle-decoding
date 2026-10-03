@@ -119,3 +119,11 @@ additional proof protocols or redoing completed audit work.
 - Agent contribution: Older goal wording still referred to Q4 development launch gates, and the preparation owner repeated that ambiguous wording. The coordinator initially had to reconcile the stale wording with the newer explicit handoff.
 - Practical lesson: Read the current agreed measurement boundary before adding a launch prerequisite. Authenticate the frozen development pool and baseline before launch, then collect the existing scheduled or serialized checkpoint evaluation. Preserve actual model/data/ownership gates without inventing a new proof schema or asking for redundant human confirmation.
 - Correction or resolution: The same monitors were clarified, training ran for 1,000 paired updates, and the original development RAM-preflight failure remains recorded. Separate evaluation of its intact checkpoint is being prepared with unchanged memory and ownership checks.
+
+### 2026-10-03: File extensions do not distinguish metadata from raw tensors
+
+- Evidence: After the saved-checkpoint evaluation entered its terminal collection branch, the wrapper recursively included every JSON and JSONL file. A1 native heads.jsonl contains raw tensor data and exceeded the 16 MiB per-file collection cap, so collection exited before returning the actual report and terminal receipts.
+- Status: Confirmed agent collector/review mistake; producer success or failure still needs its own original evidence. No user mistake or need to repeat evaluation follows.
+- Agent contribution: The operator used an extension-based recursive collector, and root accepted it during whole-code review without restricting raw native tensor files.
+- Practical lesson: Collect an explicit list of small status, report, identity and manifest files. Keep tensor/logit dumps remote, record their producer hashes where required, and label log tails as partial. A collector failure does not establish producer failure.
+- Resolution: Original failed bytes and claim are preserved. The same operator is authorized to retrieve bounded explicit metadata and fresh resource-return evidence without rerunning the GPU evaluation.
