@@ -64,3 +64,46 @@ operator is resolving actual Windows .wslconfig before a long launch. First
 failed CPU quoting proof is preserved. No released model GPU load has occurred.
 Existing fixed target SHA05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6,
 Q4_0 EAGLE SHA2db40f99d27e404298b80b2865671b9fd0136060ffb503007cb2ae23759e7280.
+
+## Released inputs and published native source
+
+Both released model SHA256s match pins after completed supervised acquisition.
+DSpark config SHA494e5665481ff8216c4e857a531c401f72b7fb795434a8201f45252c0ad7568a;
+DFlash config SHAe4d3ad2f79210e91cf8b4d78547d23afda9a8cd2a90c4c6b97c9ea617d8f94f1.
+Final native76847aa877261817026e2f29472f080235b6a829 is published on user's
+llama.cpp fork branch feature/dspark-admission. Root reviewed all changes;
+Sol CPU release build passes. No parent gitlink update before published native
+source; main gitlink remains9e2c7a900. Root integrated helper4374058 as c1b1071
+on own branch and independently ran all10 admission-validator tests.
+
+Final runtime adds actual mask-key visibility, named CUDA profiling nodes,
+immutable target binding checks and compute7/propose3 guard. Detail timings
+preserve original async behavior; extra component synchronization is opt-in for
+diagnostics only. Generic CUDA events are used separately for component costs.
+Root published CUDA-event analyzer879b78b with no parent/child double-counting
+and explicit event-truncation rejection. Root harness nine checks passed before
+profiler analyzer addition; tenth analyzer check passed, file-close warning fixed.
+
+Operator current state: no actual architecture GPU model load. Native configure
+failed first from generator mismatch, then missing Conda activation/header root,
+then a relative path after supervisor cwd change; all failed receipts retained.
+Known working prior toolchain activation supplied from the SM75 report. Exact
+final76847aa checkout/build with absolute paths and micromamba is now underway;
+canonical source-copy comparison/BF16 conversion can proceed independently.
+Current measurement inference budget used=0; build/admission overhead separate.
+
+Sole operator reports .wslconfig was absent and created with
+[general]instanceIdleTimeout=-1, SHA4808e110c79c1924e9c61bb9ff8dd5683230f68a6ae8a56202cb0383f630bbe1.
+Setting applies after a later restart; no reboot requested. The current-boot
+109second detached CPU disconnect/reconnect proof is actual durability evidence.
+Operator parent checkout is under registry workdir ignored runs/checkouts;
+all model/raw inputs remain outside Git. Root helper cleanup now records server
+PID/PGID immediately and completes within6seconds, below supervisor10second
+grace; independent Luna review found no issue.
+
+Next: source/copy/export checks and final SM75 build; one supervised actual model
+probe producing computed admission.json; separate tiny CUDA-event costs; then
+fixed24/five-repeat balanced paired measurement. Do not re-audit completed input
+hashes or CPU contracts without a new change/failure. Source owner is preparing
+probe.py in its partition; root owns harness/analyzers/report, Luna owns all remote
+operation. Astra review is terminal/checkpointed. A8 STATUS/goal ownership untouched.
