@@ -27,6 +27,13 @@ See the [final report](../experiments/qat-optimization-readiness/first-1000-pair
 and pendingdecision inDECISIONS. Theboundedgoal iscomplete for theadmittedrecipe;
 same monitorsretainterminalfacts withoutnewruns/deadqueries ornewbudget selection.
 
+**14:01 UTC terminal supervision checkpoint:** completion audit/report publication
+`f8668fa` verified locally; all owned jobs and the sole Luna operator remain
+terminal, no remote action this tick. The preparation owner is checkpointing its
+safe context rotation; current QAT coordinator remains `01a1014d-9673-7a31-8292-72f8748501f6`.
+See the [terminal supervision handoff](goals/qat-optimization-readiness.md#terminal-supervision-rotation-checkpoint--october-3-1401-utc).
+The SAME monitors retain quiet terminal facts; no new goal/run/budget is selected.
+
 ## RTX5080 QAT pipeline resumed — October 3, 06:11 UTC
 
 The human said **“Gpu is free resume now.”** RTX5080 is resumed for the existing

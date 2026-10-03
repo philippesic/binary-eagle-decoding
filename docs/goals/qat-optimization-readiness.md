@@ -58,6 +58,56 @@ fresh source/context/resource/control facts; no readiness from the CPU pass.
 Then complete current native/actual-model/backward/memory/timing/save-resume
 gates and launch the previously authorized NEW training run without confirmation.
 
+## Terminal supervision rotation checkpoint — October 3, 14:01 UTC
+
+The bounded objective is complete: implement and admit the fixed reference A8/A1
+QAT pipeline, verify current native/model/data/memory/backward/timing/save-resume
+gates, perform the authorized capped training and compare its saved checkpoint
+with Q4_0 on unsealed development data. Completion publication is
+`f8668faf4ae191d343de2f6713a11e943e95364b`, pushed to origin/main. Helper `d211275`
+and native `9e2c7a9` are published; original producer `6f1444b` remains frozen.
+The completion record and final report below retain the source hashes, independent
+CPU reviews and actual CUDA/model/native evidence. This tick verified the final
+report SHA `2b36d2495d1259c82375c6e65ccaebdf63373d9fb5bbf26cdbdbb9654ee15ad0`
+and coordinator's completed deliverable audit locally. Retained tests include
+57 pack/114 loader/59 graph/218 arithmetic/36 projection CUDA cases,
+30 full-model forward/backward pairs and five timing repetitions; all enabled
+reference gates passed. No test or remote command
+was rerun; the verified evidence is dated, not a fresh GPU-availability observation.
+
+Both arms reached 1,000 optimizer updates using 13 prompts/4,846 rows from the
+prepared 10,000 TRAIN prompts/3,899,930 rows. Preserve original training exit1
+(RAM preflight after checkpoint publication), separate development evaluation
+exit0, the original collector cap failure and below-Q4_0 acceptance. All prep,
+fixture, model, training and evaluation jobs are terminal. Final evaluator
+7620/birth2511237 and 7621/birth2511244 groups/native contexts were absent in the
+13:29:21 release proof; LOCAL244/keeper71024 closed at13:38:45. Sole Luna operator
+`/root/current_source_health_20261003_0650` is completed. There are no live experiment operators,
+leases, remote jobs or local transports to transfer. Historical sessions198/226
+and all consumed one-shot query/launch/collector claims must not become live locks
+or executable permissions. Recovery remains2/2 exhausted.
+
+Preparation owner `01a10084-101e-7311-94e9-9658f9dc648f` has reached its required
+safe context-rotation boundary. Current QAT coordinator remains
+`01a1014d-9673-7a31-8292-72f8748501f6` and acknowledged the documentation partition.
+The local tick audit and before-records are in ignored
+`runs/luna-continuous-a8-a1-20260929/terminal-goal-completion-checkpoint-20261003-01/`.
+Rotation transfers only quiet terminal record maintenance of the SAME preparation
+heartbeat and its owner registration. Successor acknowledgment and automation
+readback must precede retiring the old owner; a failed creation must be preserved
+and explicitly transferred to the current coordinator rather than retried blindly.
+No new goal, schedule, operator, remote query, fixture, collector, evaluation or
+optimizer run is part of this handoff.
+
+Exact next actions: reconcile the SAME monitor to COMPLETE/no-live-job state,
+checkpoint the owner transfer and preserve quiet completed-state monitoring.
+If a later direct human instruction selects further work, the coordinator must
+record its new scope, budget, source/data/precision and admissions before any new
+live registration. The unresolved user decision is broader fixed-recipe training
+coverage versus a separately admitted optimization/refresh recipe, including a
+resource-safe evaluation lifecycle. No option is selected here. RTX2080Ti and
+supporting research remain paused. Never purchase credits or redeem resets.
+
 ## Final verified result and completion record — October 3, 13:52 UTC
 
 The original native evaluation naturally finished13:20:22.087644UTC exit0,
