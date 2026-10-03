@@ -42,6 +42,10 @@ see [durable handoff](goals/qat-optimization-readiness.md#coordinator-rotation-c
 Training still has zero updates; native/current model/timing/save-resume gates
 remain pending. No new user decision or confirmation is required.
 
+Local launch-path worker finished: draftdd19f09,12focused CPU tests passed;
+no actual-model integration or independent review yet. Its clean feature worktree
+is preserved for the successor; original frozen preparation is untouched.
+
 **Historical preparation progress:** the unique job launched at06:43UTC, supervisor806/
 child807, after verified current-boot durability and fresh launch guards. Prep
 owner `01a10084-101e-7311-94e9-9658f9dc648f` acknowledged the same job and active
