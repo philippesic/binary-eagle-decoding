@@ -40,6 +40,32 @@ and initial learned clips. Next: complete/test integrated recipe+trainer, then
 one decisive actual-model/native/resume validation and the fixed-budget matched
 comparison. Failed post-checkpoint work must remain charged.
 
+### Integrated review checkpoint
+
+Recipe worker committed3d5fafa/20c2cad; root adopted23a0f5d/f8c504a.
+Root21CPU recipe/cache-head checks plus Ruff/diff pass on Torch2.14.0.
+Readiness50checks also pass on the project Torch2.14.0 runtime after supplying
+the existing gguf-py module path. Recipe tests establish identical deployed
+initial signs/scales; zero-affine CPU logit drift max1.19e-7 is bounded by
+1e-6relative/2e-7absolute tolerance and identical argmax. No deployment failure
+is inferred from that floating difference.
+
+Root found the historical development evaluator uses frozenb4 while the enabled
+learned/affine native support belongs to9e2. The team is adding explicit
+`evaluation_native` metadata for current supported executable/libraries and
+separately preserving original teacher/capture binary ancestry. Model/verifier
+precision and request settings remain frozen. New native evaluation enables
+shared packing and unused-head pruning for both arms; Torch cache/head audit
+remains distinct, including the learned-head serial-gradient exception.
+
+Crash-budget implementation preserves unresolved trainer charges and excludes
+normal standalone evaluation/startup. Conservative uncertain downtime charging
+on the same boot, or unresolved remaining reservation consumption after reboot,
+must be disclosed if recovery uses it. New optional-family movement evidence is
+measured by optimizer hooks, bounded samples and per-tensor finite gradients;
+first-update float32 nonmovement during warmup cannot alone prove a broken
+parameter family. A bounded early-update family gate retains actual proof.
+
 ## Standalone chat handoff — October 3, 2026
 
 The human corrected the execution structure: “just launch it as a seperate codex
