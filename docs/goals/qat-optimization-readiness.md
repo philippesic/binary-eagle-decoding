@@ -4209,3 +4209,21 @@ audited protocol. No remote hold/lease/test is authorized yet. Preserve the
 old printer and every failed/original record. If quiescence or whole-producer
 proof cannot be established, withhold GO and report that precise gap. Actual
 preparation continues unchanged while this routine ownership plan is reviewed.
+
+Local source/advisor reports are now saved under
+`current-clean-runtime-held-source-assessment-20261003-01/`:
+source-assessment SHA810162d80a1f6351d57eb54e2939d753bbee51c4c8c130a0f773f2d5bd39dba4,
+policy-advice4459ca2fedcc4f85bb81809ec83de8f342258e652ddd536d0fb2a088b72902da.
+They are DERIVED local analyses, not physical quiescence/admission. Source
+assessment pins seven exact6f Git file bytes and retains queued-work/live-census
+limitations. Reports cannot authorize a hold or GPU test.
+
+Held-slot prototype checkpointdbac25d5280e86442b2f0bff4a3534e5563407f5df0c9ce2a0a2c631744dfde4
+is HARD-DISABLED. It recorded GNU timeout as the CUDA submitter; collection
+cannot certify actual fixture/context teardown from that identity. A single
+<=10-minute local correction uses an authenticated exec wrapper recording its
+own kernel identity then execve into the immutable fixture in the same PID,
+with focused actual-producer/fast-terminal/teardown checks. Preserve prototype
+and old command printer. Actual owner hold/quiescence/deadline proof is still
+pending; no remote hold, timed lease or native command may precede completed
+reviewable controller/proposal and root GO.
