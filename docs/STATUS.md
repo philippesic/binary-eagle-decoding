@@ -4,6 +4,22 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
+## All project agents stopped and archived — October 3, 18:18 UTC
+
+The user requested: “Go ahead and stop and archive all agents.” Both active
+QAT/preparation heartbeats were paused; supporting research monitoring was already
+paused. Eight remaining project chats were archived, with the terminal preparation
+chat to archive after this checkpoint. No other project agent is registered live.
+Both GPU hosts are locally paused against new work. No remote query or job was
+started: the last verified experiment groups, native contexts and operator
+transport were already terminal and closed.
+
+The QAT goal remains COMPLETE. Preserve the original 1,000-update checkpoint,
+training exit1 after the RAM preflight, separate evaluation exit0 and below-Q4_0
+result. Unmerged research worktrees and all experiment evidence remain intact.
+No further monitoring or agent work is scheduled. See the
+[shutdown checkpoint](goals/qat-optimization-readiness.md#user-stop-and-archive-all-agents--october-3-1818-utc).
+
 ## QAT optimization-readiness goal complete — October 3
 
 The admitted fixed A8/A1 recipe has current RTX5080/SM120 native/model/backward/

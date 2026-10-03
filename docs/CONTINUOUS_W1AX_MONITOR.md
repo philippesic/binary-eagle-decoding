@@ -1,5 +1,14 @@
 # A8/A1 health and bounded recovery monitor
 
+## User stopped all project agents — October 3, 18:18 UTC
+
+The user requested “Go ahead and stop and archive all agents.” QAT and preparation
+heartbeats are stopped, research monitoring remains stopped, and project chats are
+archived after preserving the completed goal and shutdown checkpoint. Historical
+monitor/query/lease instructions below do not authorize another tick or remote
+operation. Both GPU hosts are locally paused. See the
+[goal shutdown record](goals/qat-optimization-readiness.md#user-stop-and-archive-all-agents--october-3-1818-utc).
+
 ## Current remote observation unknown — 2026-10-02 16:11 UTC
 
 Atomic05's first staging SSH connection timed out before any remote command.

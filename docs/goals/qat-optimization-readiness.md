@@ -1,5 +1,26 @@
 # QAT optimization readiness
 
+## User stop and archive all agents — October 3, 18:18 UTC
+
+**Controlling instruction:** “Go ahead and stop and archive all agents.” The
+same completed goal stays COMPLETE; this supersedes quiet terminal monitoring.
+The existing `a8-a1-luna-health-and-recovery` and
+`qat-validation-and-training-handoff` heartbeats were paused through the app.
+The research heartbeat was already paused. Eight remaining project chats were
+archived; this terminal preparation chat archives after publishing this record.
+No new agents, goals, schedules, experiments or remote queries were created.
+Both host pause flags now block new work. Dated final experiment release and
+operator closure evidence remain the basis for the terminal state; this is not a
+fresh GPU observation.
+
+Ignored shutdown proof and before-record snapshots are under
+`runs/luna-continuous-a8-a1-20260929/user-stop-all-agents-20261003/`.
+All checkpoint/report/source/data ancestry and original failures remain preserved,
+including 1,000 paired updates, original training exit1 and separate development
+exit0. No Q4_0 win or new research choice is claimed. Unmerged research worktrees
+remain intact. Any future work requires new direct human scope and admissions;
+no automatic restart, credit purchase or reset redemption.
+
 ## Human resume: RTX5080 QAT pipeline — October 3, 06:11 UTC
 
 **Controlling instruction:** the human said “Gpu is free resume now” in predecessor
