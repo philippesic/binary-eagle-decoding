@@ -1,25 +1,31 @@
 # A8 QAT recovery and comparison
 
-## Current execution checkpoint — October 3, 16:36 PDT
+## Current execution checkpoint — October 3, 16:50 PDT
 
-- Sole operator `/root/gpu_supervisor` is proceeding under existing pipeline GO;
-  frozen execution source583480c79f3ca090de0952deca8278dcb7f15c2d, native9e2,
-  RTX5080/SM120; A1 and RTX2080Ti stay paused.
-- Both current native decision/operator suites and evidence collection PASSED.
-  Reference native evidence SHA180fdc4b...; candidate evidence SHA84d211c6...
-  includes actual learned-quantizer/all-nine affine artifacts. Candidate decision
-  gate00c2cadc... has6cases from3balanced TRAIN domains; CUDA unit counts include
-  59encoder/114loader/57pack/36projection cases, optimizer updates0.
-- Reference full-model/backward/memory/five-repeat readiness PASSED in78.0s;
-  current receipt SHA dfc0641e13d2155cfd1d1447ce7de259e5b71ab433f90815be6ea01aba124073.
-  The production config now pins that receipt; actual optimizer updates remain0.
-- Candidate full-model readiness is running under supervisor6327/birth524426,
-  child6332/birth524432. Next: each fresh trainer step-zero publication and
-  standalone development evaluation, first100budgeted updates, graceful stop/
-  exact resume and the two7200-second training arms.
-- Sole-operator ledger carries exact runtime sessions, PIDs/birth ticks, config/
-  source/evidence locators and incident state. No originating-chat involvement.
-  Prompt-domain incident recovered on attempt1/2 with all original failures kept.
+Both A8 native/current-model/backward/memory/five-repeat admissions PASSED on
+RTX5080/SM120, frozen source `583480c79f3ca090de0952deca8278dcb7f15c2d`, native9e2.
+Reference receipt `dfc0641e...a124073` (78 seconds); candidate receipt
+`8cd38c63...203996c` (93 seconds), with learned-quantizer and all-nine affine
+native evidence. Both bind identical full prepared source `b1a9f991...` and
+optimizer updates0. A1 and RTX2080Ti remain paused.
+
+Reference fresh step-zero checkpoint is published and archived:
+`resume.pt` SHA `647988c7530ec6d56d1325ca25277d9366c8eccce1a0552c4400ba6c5dbad4aa`.
+Actual TRAIN smoke loss6.1445, later state/K/V gradients0.1747/0.7120/0.3007;
+cache/head requested and effective (one cache call, batched head). No optimizer
+update. Current standalone reference development is running under supervisor
+6797/birth589178, evaluator6802/birth589184 and native server6846/birth591690,
+within the1200-second bound on the24fixed unsealed development prompts.
+
+Next: finish/archive reference step-zero evaluation; fresh candidate publication
+and step-zero development; first100budgeted realupdates per arm, graceful stop/
+exact resume and matched7200-second training. Optimizer updates remain0 until
+both step-zero evaluations pass. No originating-chat involvement. The prompt-
+domain incident recovered on attempt1/2 with every raw failure preserved.
+
+Ignored operator-ledger.json is authoritative for current command/run paths,
+process births/groups/sessions, config/receipt/checkpoint hashes and observations;
+root owns monitor-registration.json. The existing heartbeat stays ACTIVE.
 
 ## Standalone ownership claimed — October 3, 2026
 
