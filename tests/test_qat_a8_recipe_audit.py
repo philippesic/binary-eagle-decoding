@@ -109,6 +109,7 @@ class A8RecipeTests(unittest.TestCase):
     def test_rejects_silent_budget_lane_math_or_feature_change(self):
         cases = [
             ("shared_training", "activation_bits", [8, 1]),
+            ("shared_training", "a1_computation", "single_forward"),
             ("shared_training", "max_seconds", 7300),
             ("shared_training", "objective", "compact_probability"),
             ("shared_training", "optimize_cache", False),
