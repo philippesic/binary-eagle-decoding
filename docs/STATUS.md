@@ -4,6 +4,29 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
+## QAT optimization-readiness goal complete — October 3
+
+The admitted fixed A8/A1 recipe has current RTX5080/SM120 native/model/backward/
+memory/five-repeat and full-source save/resume evidence. Both models completed
+1,000 optimizer updates and saved an intact paired checkpoint. Separate original
+Q4_0development evaluation completedexit0: accepted drafts/roundQ4_0=1.306255,
+A8=0.127287,A1=0.069031 on24 unsealed development prompts, all24 response token-ID
+sequences matcheachbinaryarm toQ4. Thischeckpoint isfarbelow theprimarybaseline;
+no accuracy/speed/serving-throughput win orglobaloptimizedrecipe readinessclaim.
+
+Originalautomaticdevelopment hostRAMfailure afterstep1000 and rawtensorcollection
+capfailure remainpreserved. Freshall-ownedgroups/nativecontexts/source/resource
+return andoperator244/71024closureverified; no ownedexperiment remains. Actual
+trainingused13prompts/4846rows from10000TRAIN/3899930rows. Optionalrecipes/A4/
+curricula/calibration/refresh requiretheir owncurrentadmissions; longertraining
+andresource-safe evaluator lifecycle aretheuser's nextresearchdecision. RTX2080Ti
+and supportingresearchremainpaused; no new goal/budget/recipe selected.
+
+See the [final report](../experiments/qat-optimization-readiness/first-1000-paired-steps-2026-10-03.md),
+[completion checkpoint](goals/qat-optimization-readiness.md#final-verified-result-and-completion-record--october-3-1352-utc),
+and pendingdecision inDECISIONS. Theboundedgoal iscomplete for theadmittedrecipe;
+same monitorsretainterminalfacts withoutnewruns/deadqueries ornewbudget selection.
+
 ## RTX5080 QAT pipeline resumed — October 3, 06:11 UTC
 
 The human said **“Gpu is free resume now.”** RTX5080 is resumed for the existing

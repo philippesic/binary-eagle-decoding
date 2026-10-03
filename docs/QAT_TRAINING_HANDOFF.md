@@ -74,15 +74,31 @@ is the authorization. Any newer human pause/stop takes precedence. Report actual
 first optimizer updates and meaningful validation, failures or required actions;
 no convergence, acceptance gain or throughput claim follows from launch alone.
 
-## Current baseline
+## Completed reference handoff — October 3, 2026
 
-Implementationeb66093, native8025a07773b7828bdeb4f3e0b834c8b54cb65c66;952CPUtests
-withfourskips and native CPU fixtures pass. All12 prepared profile CLI plans pass.
-Actual optimization-feature CUDA receipts are still absent. Fresh bounded CPU check at2026-10-02 06:03:52.658738UTC was healthy,
-reaudit52/353,retained10,000train/224dev/327manifests,zerooptimizer,readyreceipt:null.
-Supervisor674 andchild676 remainlive; release is notproven. The ignored
-handoff-observation-20261002.json records rawcheck and localtransportcleanup.
+Acknowledged QAT owner01a1014d-9673-7a31-8292-72f8748501f6 coordinated with
+preparation owner01a10084-101e-7311-94e9-9658f9dc648f and its same sole Luna
+operator. Source6f/native9e2/current recipe readiness3badd, full10,000 TRAIN/
+1,002-development preparation, actual zero-checkpoint restore and current paired
+smoke passed. A8/A1 each reached1,000 optimizer steps and saved pairedcheckpoint62f88.
+Original automatic development then failed its host-RAM admission; original
+status/exit1 remain preserved. Serialized evaluation of that same checkpoint
+completed exit0, reportfc4f, and fresh full group/context/source/resource return
+and local244/keeper71024 closure are verified.
 
+On24 unsealed development prompts, accepted drafts/round are Q4_0=1.306255,
+A8=0.127287 and A1=0.069031. All24 response token-ID sequences matched Q4_0 for
+each binary arm. This is an acceptance-only result; the current checkpoint is
+not competitive with the primary baseline. See the [full bounded report](../experiments/qat-optimization-readiness/first-1000-paired-steps-2026-10-03.md).
+Inactive optional recipes still need their own current full-model/native receipts;
+no A4/curriculum/calibration or global optimized speed claim is admitted.
+
+The same monitors record terminal facts and stay quiet on unchanged state.
+Neither this historical authorization nor poor acceptance chooses a new training
+budget, permits replay of a consumed admission, or resumes paused research/RTX2080Ti.
+The next research fork belongs to the user. Historical early-validation/preparation
+records above retain their original identities; derive current ownership from
+registration and the latest durable goal checkpoint.
 
 ## Overnight QAT protection
 

@@ -871,3 +871,24 @@ A later reviewed implementation should also publish honest bounded progress
 heartbeats during full audits. No live source/gate bypass, timeout change,
 restart, new training recipe or optimizer update is selected here. Current
 frozen preparation continues unchanged; the user owns adoption of this proposal.
+
+## Pending: next QAT research fork after the first 1,000 paired steps — October 3, 2026
+
+The bounded readiness/training handoff is complete for the admitted fixed A8/A1
+recipe. The [actual report](../experiments/qat-optimization-readiness/first-1000-paired-steps-2026-10-03.md)
+shows accepted drafts/round Q4_0=1.306255, A8=0.127287, A1=0.069031 on24 unsealed
+development prompts; both binary arms matched Q4_0 response token IDs on all24.
+No matched step-zero development control establishes the training effect.
+Training covered13 prompts/4,846 rows from10,000 TRAIN/3,899,930 supervised rows.
+
+The user owns the next fork; no option or additional GPU budget is selected:
+
+| Option | Evidence and work needed | Limit |
+|---|---|---|
+| Broaden training with the fixed recipe | Retain the intact step1000 checkpoint; define more data exposure and an explicit budget, positive-checkpoint resume and resource-safe evaluation lifecycle. | This small pilot cannot predict acceptance recovery; in-process evaluation RAM admission currently fails after CPU offload. |
+| Qualify and compare an optimization/quantizer/refresh recipe | Use implemented controls with fresh exact full-source/provider/effective-model/native/backward/memory/timing admission for every enabled family. | Current reference receipts and native synthetic feature tests cannot admit optional full-model deployments or choose a quality winner. |
+
+Q4_0 remains primary. Target/verifier precision, frozen data ancestry, cache/mask
+semantics and sealed finals stay unchanged. RTX2080Ti and supporting research
+remain paused. No new goal, calibration fit, trajectory recapture or optimizer
+restart is implied by this decision record.

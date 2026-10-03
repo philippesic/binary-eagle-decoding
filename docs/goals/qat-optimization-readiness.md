@@ -32,16 +32,17 @@ successor uses one pinned operator only when no other is active. Root creates
 no second remote operator. Protected QAT/preparation
 supervision continues; no credit purchase or reset redemption.
 
-**Current state — October 3, 13:24 UTC:** original1000pairedcheckpoint remains
-verified. Serializedevalwrapper reached its terminal/group/protected/physical
-collection branch, then FAILED16MiBcap on rawA1/native/d_d/heads.jsonl mistakenly
-classifiedasmetadata. MCPf33 returnedexit1; this is actualCOLLECTORfailure, producer
-exit/report/currentreturn stillunverified untilsmalloriginals read. SAME soleLuna
-244/273/71024 retained; rootcleared ONE necessary<=4MiBREADONLY explicitmetadata
-collector/freshcensus fromsamejob, no extraapproval/newexperiment/optimizer/eval
-rerun/sourceedit/claim replay. Originalrawfailure andrawtensors remainremote.
-Auditcurrent6model/11startup/5reconnect/7terminal/2evalCPU originalpins reverified;
-actualQ4report/readout/fullownedreturn remain. Goal incomplete.
+**Status: COMPLETE — October 3, 13:54 UTC.** Completion evidence is verified for
+original implementation deliverables and the admitted fixed A8/A1 bounded handoff.
+Current native/model/backward/memory/five-repeat gates, originalzero actualresume/
+smoke,1,000 pairedoptimizer updates/checkpoint/quantizer diagnostics and actual
+Q4_0development reportfc4f/exit0/fullownedreturn/local244closure allpassed their
+scoped requirements. Q4_0 wins: accepted/round1.306255 vsA8.127287/A1.069031;
+all24response token IDs matcheacharm. Originalautomatictraining RAMfailure and
+collector16MiBrawheads failure remainpreserved. Optionalfull-model admissions,
+longertraining/inprocessevalRAM lifecycle andSM75/servingperformance remainlimits,
+notclaimedcomplete/selectednewresearch. Finalreport/runbook/status/audit publication isrecorded below; no ownedjobs/operator
+remain. RTX2080Ti/researchpaused.
 
 **Historical state — October 3, 09:44 UTC:** preparation ACTUALLY completed at
 08:57:52, observed by healthy/terminal checker09:39:55. Supervisor exit0,
@@ -56,6 +57,62 @@ conditional released-mode copied-fixture GO requires actual final release and
 fresh source/context/resource/control facts; no readiness from the CPU pass.
 Then complete current native/actual-model/backward/memory/timing/save-resume
 gates and launch the previously authorized NEW training run without confirmation.
+
+## Final verified result and completion record — October 3, 13:52 UTC
+
+The original native evaluation naturally finished13:20:22.087644UTC exit0,
+no signal, actualsupervisor7620/group7620/birth2511237 and child7621/group7621/
+birth2511244. Smallread-onlycollector returned8original files302734B, no missing
+metadata; rootindependentlyjoined eachbybase64/SHA/length. Rawstdout6b0c382b and
+originaldevelopmentreport SHA
+`fc4f6bdf3379c621f6b187a979082d4d6fc97821a5a224f77f74ebd47e3be5b9`.
+Schema/split/sealedFalse/actualhardwareRTX5080/source/precision/initialization/
+checkpoint b48+62/pairedNPZd29+2f84/currentruntime frozenmath/actualnativecounts/
+paired48roundprefix selections229labels/frozenprompt131 andQ4/sourcehashes checked.
+Separateevaluationstatuscompleted retainscopiedoriginal RAMerror field; evaluator
+exit0/report isactualsuccess, not relabelof originaltrainingfailedstatus80507.
+
+Q4_0primary accepted1.306255 drafts/round; A8.127287 (9.7444%ofQ4), A1.069031
+(5.2846%ofQ4). Proposal acceptance26.5917%/2.6037%/1.4132%; validation losses
+A8=6.930126/A1=8.373848. All24response token-ID sequences matcheachbinaryarm toQ4;
+2,834tokens emittedperarm. Original24unsealed development subset/1native repetition,
+48lossrounds/229labels fromsamefrozenprefix selection perlane, no finaldata/no
+servinglatencythroughput/no convergenceclaim. Originalfrozenb4 evaluationruntime
+isdistinct fromcurrent9e2 CUDAunit/modelreadiness. Thischeckpoint isnotcompetitive;
+nomatched step-zero development control proves learningeffect. Fullreport:
+[1,000 pairedsteps and Q4 development](../../experiments/qat-optimization-readiness/first-1000-paired-steps-2026-10-03.md).
+
+Freshfullreturn13:29:21.874UTC: bothoriginalgroups/births absent, contexts{}/apps/
+projectsubmittersempty, GPUfree13533MiB/host20,272,418,816B/disk357,356,077,056B,
+protectedsource/config/data untouched. Soleoperator local244/keeper71024 closed
+13:38:45UTC, keeper130, rawsessionlist c1a152/244absence andallreport/indexpins
+verified. Closuree65706f2/parentfinalacceptanced77f1e43. No newGPUjobs/optimizer
+resume/evalrepeat/source ormemoryfloor waiver. Rootacceptance/indices/raw failures/
+weights remainignoredoutsideGit. SAMEownerledgeroperator_active=false/allownedjobs
+terminal; same monitors recordterminalfacts anddo not repeatdeadqueries/newruns.
+
+Independent originaldeliverableaudit13mappings SHA48c4f0c9 coverscomputation/custom
+VJP, cache/head, binary controls/ownership/resume, learnedquantizers/export/failclosed
+boundary, curricula/refresh, addedrawcorrection/affine, independentCPUintegration,
+actualenabledreferenceCUDA/model/data/handback andpublication/cleanup. Alloriginal
+implementation deliverablesare supported bysource/tests/reports. RequiredGPU
+proof isfor enabledrecipes; inactiveoptionalfullmodelreceipts andrealcalibration
+fit remainunproven/unauthorized limits, notglobalGPUready/fasterclaims. Largergraph
+investigationactuallyhas90B1/B2/B4×reference/cache/configured×A8/A1×5repeat records,
+no skips, sourcea8119; selectedtrainingstillB1/reference/headserial. Current6model/
+11startup/5reconnect/7terminal/2evalCPU/8final originals reverified. Thedisconnected
+trainingjobprogressed toterminal306secondsafterphysicalclose; no sameLIVEpostreconnect
+birthclaim becauseitended beforequery. Prelaunchsame-boot CPUdurability proof remains.
+
+Nativeworkerworktree/private/tmp/eagle-native-learned wasclean, hadzeroignoredfiles/
+no matchinglocalprocess andHEAD9e2 matchedparentgitlink; HTTPSls-remote confirmed
+9e2 publishedonforkref beforeitsworktree/localbranch removal. Publicationref is
+retained tokeepgitlinkfetchable. Preparedfeature/docsworktrees integrated/pushed
+andretired; unrelatedunmerged/pausedresearchworktrees untouched. Final reporting,
+runbook/currenthandoff/decision boundary andthisgoal/status update arepublished in
+onecoherentcommit. Theboundedreadiness/train/evalhandoff completion isverified against thisrecord;
+thisdoesnotselect nextresearchgoal/budget orclaim aQ4win. Nextfork inDECISIONS belongs
+totheuser. RTX2080Ti/supportingresearch remainpaused, no creditpurchase/reset.
 
 ## Evaluation collection cap; explicit metadata retrieval — October 3, 13:24 UTC
 

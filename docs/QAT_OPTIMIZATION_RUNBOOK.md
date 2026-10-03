@@ -1,29 +1,37 @@
 # QAT optimization readiness runbook
 
-## Current boundary
+## Current boundary — October 3, 2026
 
-Latest human instruction permits early GPU validation during CPU-only dataset
-audit under a bounded exclusive reservation coordinated with the dataset owner.
-See [early-validation policy](QAT_GPU_AUDIT_OVERLAP.md). Training still waits for
-complete verified data and final GPU handoff. See
-[training handoff](QAT_TRAINING_HANDOFF.md). During validation, zero real-data
-optimizer updates are allowed; after current launch gates pass, training is
-explicitly authorized without another confirmation. The old preparation-only
-restriction is superseded for that transition. Existing frozen preparation
-remains --prepare-only and must not be interrupted or changed.
+The current fixed A8/A1 reference recipe has actual RTX5080/SM120 native and
+full-model CUDA evidence, original-zero save/resume/current smoke,1,000 paired
+optimizer updates, an intact checkpoint and a completed Q4_0 development
+comparison. See [bounded training report](../experiments/qat-optimization-readiness/first-1000-paired-steps-2026-10-03.md)
+and the latest [goal checkpoint](goals/qat-optimization-readiness.md).
 
-RTX5080 is resumed and preparation-owned; new validation requires an explicit
-exclusive lease with fresh occupancy/resources and next-phase guard, or verified
-final release;
-RTX2080Ti remains paused. Read docs/STATUS.md and the shared host registry before
-remote action. Every SSH connection goes through tmux MCP. Respect newer human
-pause/stop instructions immediately; preserve frozen precision/data and sealed
-finals. See docs/AGENT_OPERATIONS.md.
+Current receipt3badd is bound to source6f/native9e2/full captured sourceb1,
+actual runtime/hardware and the fixed reference configuration. It admits that
+recipe only. Native synthetic optional operators and CPU feature tests do not
+admit single-forward/head/learned/correction/affine/curriculum training configurations;
+each enabled option requires its own current measured contract. An optimized
+launcher continues to refuse missing or stale readiness. A4 remains independent.
 
-The CPU suite and native CPU fixtures establish implementation correctness,
-not CUDA performance, memory fit, or native GPU readiness. An optimized CUDA
-launcher refuses a missing/stale measured readiness receipt. There is currently
-no passing real CUDA receipt for this goal.
+Full preparation and the owned training/evaluation jobs are terminal. The original
+training status retains its post-step1000 automatic-development host-RAM failure;
+a separate unchanged evaluation completed exit0. A8/A1 accepted0.127287/0.069031
+drafts per round versus Q4_0's1.306255 on24 unsealed development prompts. No serving
+latency/throughput or convergence win follows. The original in-process evaluation
+RAM limitation remains; use an explicitly reviewed resume/evaluation lifecycle
+for future work, not replay of the completed run's permits.
+
+The completed transaction's GPU contexts/groups and local transport are returned.
+RTX2080Ti and supporting research remain paused. A new budget/recipe is a separate
+user-owned research decision; underperformance does not authorize an automatic
+restart or another goal. Read current STATUS and the shared host registry before
+any new authorized GPU work. All SSH uses the same owner-coordinated tmux MCP
+operator and fresh occupancy/source/resource/precision controls; newer human pause
+wins. Preserve weights, raw failures/data and sealed finals. During validation,
+zero real-data optimizer updates remain mandatory; training requires every
+current gate and the explicit authorization in the [handoff](QAT_TRAINING_HANDOFF.md).
 
 ## Prepared controls
 
