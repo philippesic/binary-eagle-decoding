@@ -125,6 +125,25 @@ SHA1ca0c1d9..., exact immutable manifest/library pins and native_commit. This is
 static identity evidence, not native CUDA readiness. Sole operator will record
 actual process/run/source identities and effective CUDA deployment next.
 
+### Sole-operator pipeline GO
+
+Frozen execution source is published583480c79f3ca090de0952deca8278dcb7f15c2d;
+main integration is8583b68. A concurrent independent CPU feature added files to
+main; they were preserved, and the A8 deployment stays on the reviewed exact
+source583480c. No old-chat coordination occurred. Final malformed-receipt/import
+fix passed7root checks. The root integrated82checks and worker167affected checks
+remain positive; no actual optimizer/GPU launch is inferred from CPU evidence.
+
+Root authorized `/root/gpu_supervisor` to deploy that source into a new immutable
+checkout, perform fresh source/runtime/resource/ownership checks, and progress
+through native+model gates, each fresh step-zero native development evaluation,
+first100budgeted realupdates/graceful stop/exact resume, and the matched7200s arms
+without repeated root confirmation. Existing gates must pass; max2recoveries per
+incident, raw failures preserved, exact owned groups/contexts released before
+retry, no scientific/feature/budget fallback. The existing monitor remains ACTIVE.
+The operator restored the unexpectedly clear RTX2080Ti local pause flag without
+connecting to that host; this does not establish remote RTX2080Ti resource state.
+
 ## Standalone chat handoff — October 3, 2026
 
 The human corrected the execution structure: “just launch it as a seperate codex
