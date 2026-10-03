@@ -144,6 +144,30 @@ retry, no scientific/feature/budget fallback. The existing monitor remains ACTIV
 The operator restored the unexpectedly clear RTX2080Ti local pause flag without
 connecting to that host; this does not establish remote RTX2080Ti resource state.
 
+### Deployment and worker retirement checkpoint
+
+Trainer final TEST-ONLY1fdd126 is merged through5dd0a3d;10root A8integration
+checks pass. Recipe/timing/readiness original histories are fully merged into
+main89ad18c, with all runtime/config source bytes unchanged from frozen583480c.
+After confirming clean tracked state and only disposable Python/Ruff caches,
+root removed merged trainer, recipe, timing and readiness worktrees/local branches.
+Their commits remain reachable on published main; no unfinished code was dropped.
+The operator worktree and root integration worktree stay live for this run.
+
+Sole operator fetched frozen583480c and created clean detached remote checkout
+`/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7`, native gitlink9e2;
+old dirty remote main remains untouched. Fresh resource check still shows same
+boot517c4a36, no project compute process and zero GPU utilization.
+
+A CPU-only supervised disconnect probe is owned by that operator:
+run`a8-cpu-disconnect-proof-20261003-01`, runtime session
+`a8-cpu-idle-proof-20261003-01`, supervisor1676 and child group1682, started22:59:22UTC.
+Reconnection after at least165s must verify identities then stop/verify that exact
+probe group before GPU work. The initially proposed15–20minute wait was narrowed
+to the established bounded proof; prior same-boot163.512s proof remains retained.
+No new GPU model/optimizer is claimed. Local ignored registration carries these
+identities and active sole ownership; heartbeat is unchanged and ACTIVE.
+
 ## Standalone chat handoff — October 3, 2026
 
 The human corrected the execution structure: “just launch it as a seperate codex
