@@ -1,5 +1,20 @@
 # Decision log
 
+## Selected: A8 integration and controlled QAT comparison — October 3, 2026
+
+The human selected the proposed QAT repair team and monitored comparison,
+explicitly deferring A1. The active [A8 goal](goals/a8-qat-recovery-and-comparison.md)
+defines a two-hour-per-arm initial budget, shared validated execution
+optimizations, and a candidate with learned A8 quantizers, all-nine affine
+midpoints and the existing lower-inertia AdamW recipe. Direct-bit Bop and
+architecture/refresh/curriculum changes are deferred. This closes the prior
+pending fork for this bounded experiment; it does not select a quality winner.
+Actual effective configuration, parameter movement, step-zero controls and
+native checkpoint evaluation are required. The recovering monitor may repair
+execution defects and resume exact state within the recorded budget; it may
+not silently drop features or change the scientific comparison. Old paired
+step1000 and raw failures remain historical.
+
 ## Active user direction: EAGLE W1 preparation (2026-09-28)
 
 The user requested the [overarching plan](W1_RESEARCH_PLAN.md) and a fresh team

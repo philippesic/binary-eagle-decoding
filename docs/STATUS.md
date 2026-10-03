@@ -4,6 +4,28 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
+## Active: A8 QAT recovery and comparison — October 3, 2026
+
+The human authorized a team to fix integration, run the proposed matched
+comparison under a recovering monitor, and defer A1. The only active goal is
+[A8 QAT recovery and comparison](goals/a8-qat-recovery-and-comparison.md).
+Coordinator is this chat `01a103c6-9cbd-7e70-ab05-7de1c49acf79`; four workers own
+trainer/evaluator integration, effective recipe/movement audits, selected-lane
+readiness/native tools, and independent checks plus sole GPU operation.
+
+RTX5080 is resumed for this work; RTX2080Ti and unrelated research remain paused.
+Reuse completed data and preserve the historical paired checkpoint. Initial
+training budget is two cumulative hours per A8 control/candidate arm, plus
+separately bounded step-zero/checkpoint/final evaluation. Candidate enables
+learned A8 quantizers, all-nine midpoints and existing lower-inertia AdamW; both
+arms request validated cache/head optimizations, with the deliberate learned-head
+serial-training exception disclosed. A1/Bop/fusion/curriculum/refresh are deferred.
+
+One 15-minute heartbeat supervises bounded recovery from committed checkpoints
+without silent recipe/budget changes. Sole operator verified fresh idle RTX5080
+and located retained preparation; no new actual model or training start yet.
+Historical complete/stopped sections below describe the previous goal.
+
 ## All project agents stopped and archived — October 3, 18:18 UTC
 
 The user requested: “Go ahead and stop and archive all agents.” Both active
