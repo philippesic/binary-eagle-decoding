@@ -4,16 +4,21 @@
   "primary_baseline": "Q4_0 EAGLE",
   "initialization": "fresh_from_same_dense_signs_and_scales_not_historical_step1000",
   "shared_training": {
-    "activation_bits": [8],
+    "activation_bits": [
+      8
+    ],
     "development_lifecycle": "standalone",
     "a1_computation": "single_forward",
     "optimize_cache": true,
     "optimize_head": true,
     "context_chunk_size": 64,
     "sign_lr": 0.001,
-    "scale_lr": 0.00001,
+    "scale_lr": 1e-05,
     "max_grad_norm": 1.0,
-    "seeds": [8101, 1101],
+    "seeds": [
+      8101,
+      1101
+    ],
     "warmup_steps": 100,
     "checkpoint_every": 1000,
     "diagnostics_every": 100,
@@ -23,9 +28,10 @@
     "max_steps": null,
     "max_tokens": null,
     "max_epochs": null,
-    "activation_lr": 0.00001,
+    "activation_lr": 1e-05,
     "fusion_correction": null,
-    "depth_loss_decay": 1.0
+    "depth_loss_decay": 1.0,
+    "objective": "hard_ce"
   },
   "arms": {
     "reference": {
@@ -35,7 +41,7 @@
         "optimizer": "adamw",
         "latent_magnitude": 0.5,
         "sign_lr": 0.001,
-        "scale_lr": 0.00001,
+        "scale_lr": 1e-05,
         "sign_gradient_rule": "baseline",
         "scale_gradient_rule": "baseline",
         "clip_policy": "joint",
@@ -47,15 +53,15 @@
       "affine_weights": {
         "enabled": true,
         "coverage": "all",
-        "midpoint_lr": 0.00001,
-        "mild_l2": 0.000001,
+        "midpoint_lr": 1e-05,
+        "mild_l2": 1e-06,
         "midpoint_bound": null
       },
       "binary_optimization": {
         "optimizer": "adamw",
         "latent_magnitude": 0.1,
         "sign_lr": 0.001,
-        "scale_lr": 0.00001,
+        "scale_lr": 1e-05,
         "sign_gradient_rule": "baseline",
         "scale_gradient_rule": "baseline",
         "clip_policy": "joint",

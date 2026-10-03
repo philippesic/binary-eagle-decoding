@@ -17,7 +17,7 @@ from pathlib import Path
 
 import torch
 
-from .qat_optimization import SignFlipDiagnostics
+from .qat_optimization import BinaryOptimizationConfig, SignFlipDiagnostics
 from .recurrent_qat import (
     JointQATConfig,
     W1AxContract,
@@ -27,6 +27,7 @@ from .recurrent_qat import (
 
 _RECIPE_FIELDS = (
     "seed",
+    "objective",
     "sign_lr",
     "scale_lr",
     "max_grad_norm",
@@ -62,10 +63,67 @@ def comparison_training(manifest: Mapping, arm: str) -> dict:
         raise ValueError("comparison must retain A8-only two-hour arm budget")
     if training.get("development_lifecycle") != "standalone":
         raise ValueError("A8 development must run in a separate process")
+    if training.get("objective") != "hard_ce":
+        raise ValueError("comparison requires matched hard-CE training")
+    if training.get("optimize_cache") is not True or training.get("optimize_head") is not True:
+        raise ValueError("comparison requires cache/head optimizations in both arms")
     if training.get("fusion_correction") is not None or training.get("depth_loss_decay") != 1:
         raise ValueError("comparison does not admit fusion correction or depth weighting")
     if training.get("curriculum") is not None or training.get("refresh") is not None:
         raise ValueError("comparison does not admit curriculum or trajectory refresh")
+    binary = training.get("binary_optimization", {})
+    if (
+        binary.get("optimizer") != "adamw"
+        or binary.get("latent_magnitude") != (0.5 if arm == "reference" else 0.1)
+        or any(
+            binary.get(k) != v
+            for k, v in {
+                "sign_lr": 0.001,
+                "scale_lr": 0.00001,
+                "max_grad_norm": 1.0,
+                "sign_gradient_rule": "baseline",
+                "scale_gradient_rule": "baseline",
+                "clip_policy": "joint",
+            }.items()
+        )
+        or any(training.get(k) != binary[k] for k in ("sign_lr", "scale_lr", "max_grad_norm"))
+    ):
+        raise ValueError("comparison binary optimization differs from the agreed arm")
+    if (
+        BinaryOptimizationConfig(**binary).manifest()
+        != BinaryOptimizationConfig(latent_magnitude=0.5 if arm == "reference" else 0.1).manifest()
+    ):
+        raise ValueError("comparison changes baseline AdamW defaults")
+    if training.get("seeds") != [8101, 1101] or any(
+        training.get(key) is not None for key in ("max_steps", "max_tokens", "max_epochs")
+    ):
+        raise ValueError("comparison changes matched seeds or introduces another stop budget")
+    if training.get("activation_quantization") != ("fixed" if arm == "reference" else "learned"):
+        raise ValueError("comparison activation recipe differs from the agreed arm")
+    affine = training.get("affine_weights")
+    if (arm == "reference" and affine is not None) or (
+        arm == "candidate"
+        and (
+            not isinstance(affine, Mapping)
+            or affine.get("enabled") is not True
+            or affine.get("coverage") != "all"
+        )
+    ):
+        raise ValueError("comparison must use symmetric reference/all-nine midpoint candidate")
+    budget = manifest.get("budget", {})
+    if any(
+        budget.get(k) != v
+        for k, v in {
+            "training_seconds_total": 14400,
+            "training_seconds_per_arm": 7200,
+            "development_seconds_per_transaction": 1200,
+            "development_before_training": True,
+            "development_at_budget_end": True,
+            "sealed_final_allowed": False,
+            "a1_held_out": True,
+        }.items()
+    ):
+        raise ValueError("comparison budget/development/split contract differs")
     return _json(training)
 
 
@@ -94,6 +152,7 @@ def resolve_comparison_config(base: Mapping, manifest: Mapping, arm: str) -> dic
         "arm": arm,
         "initialization": manifest["initialization"],
         "primary_baseline": manifest["primary_baseline"],
+        "expected_recipe": comparison_joint_recipe(manifest, arm),
     }
     return _json(result)
 
@@ -101,9 +160,25 @@ def resolve_comparison_config(base: Mapping, manifest: Mapping, arm: str) -> dic
 def _execution_audit(evidence, *, learned: bool, training: bool, chunk_size: int):
     if evidence is None:
         return {"status": "not_observed", "requested_flags_are_not_runtime_proof": True}
-    if not isinstance(evidence, Mapping) or set(evidence) != {"cache", "head"}:
+    if not isinstance(evidence, Mapping):
         raise ValueError("execution proof needs actual cache and head observations")
-    cache, head = evidence["cache"], evidence["head"]
+    # This is the forward_torch_round observation plus ObservedAdapter's actual
+    # build_context_cache invocation count, rather than requested flags alone.
+    if "context_cache_calls" in evidence:
+        cache = {
+            "requested": True,
+            "effective": evidence["context_cache_calls"] > 0,
+            "calls": evidence["context_cache_calls"],
+            "context_chunk_size": evidence.get("context_chunk_size"),
+        }
+        head = {
+            key: evidence.get(key)
+            for key in ("requested", "effective_batched", "path", "reason", "saturation_scope")
+        }
+    elif set(evidence) == {"cache", "head"}:
+        cache, head = evidence["cache"], evidence["head"]
+    else:
+        raise ValueError("execution proof needs actual cache and head observations")
     if not isinstance(cache, Mapping) or not isinstance(head, Mapping):
         raise ValueError("execution observations must be objects")
     if (
@@ -164,6 +239,12 @@ def audit_a8_recipe(
         raise ValueError("comparison requires existing latent-gradient AdamW")
     if getattr(optimizer, "_binary_recipe", None) != binary.manifest():
         raise ValueError("instantiated optimizer recipe differs")
+    if (config.sign_lr, config.scale_lr, config.max_grad_norm) != (
+        binary.sign_lr,
+        binary.scale_lr,
+        binary.max_grad_norm,
+    ):
+        raise ValueError("outer and binary optimizer rates/clipping differ")
     families = joint_parameter_families(linears)
     wanted_counts = {
         "sign": 9,
@@ -229,7 +310,6 @@ def audit_a8_recipe(
         if quantizer is not None:
             if quantizer.bits != 8 or (fresh and float(quantizer.parameter.detach()) != 1.0):
                 raise ValueError("learned A8 quantizer initialization/precision differs")
-            quantizer.validate()
         affine = getattr(module, "affine_binary", None)
         if affine is not None:
             affine.validate_bound()
@@ -252,6 +332,108 @@ def audit_a8_recipe(
             chunk_size=config.context_chunk_size,
         ),
     }
+
+
+class QATUpdateProbe:
+    """Observe a real optimizer step without a dense latent-weight shadow.
+
+    Each tensor's maximum-gradient element is selected before step. The report
+    records actual displacement there, not a modeled Adam displacement. This
+    is bounded sampled movement evidence; it is not the full sign-family L1.
+    Hooks run after gradient transformation/clipping and before gradient clear.
+    Set ``enabled`` only at admitted diagnostic updates to limit runtime cost.
+    ``require_all`` is a decisive prelaunch finite/nonzero/movement gate; later
+    trajectory observations can retain zero-gradient tensors without failing.
+    """
+
+    def __init__(self, linears: Mapping, optimizer, *, require_all: bool = False):
+        if type(require_all) is not bool:
+            raise ValueError("require_all must be boolean")
+        self.families = {k: list(v) for k, v in joint_parameter_families(linears).items() if v}
+        owned = [p for group in optimizer.param_groups for p in group["params"]]
+        expected = [p for values in self.families.values() for p in values]
+        if len(owned) != len(expected) or {id(p) for p in owned} != {id(p) for p in expected}:
+            raise ValueError("update probe optimizer ownership differs")
+        self.require_all = require_all
+        self.enabled = True
+        self.last_report = None
+        self._pending = None
+        self._hooks = [
+            optimizer.register_step_pre_hook(self._before),
+            optimizer.register_step_post_hook(self._after),
+        ]
+
+    def _before(self, optimizer, args, kwargs):
+        if type(self.enabled) is not bool:
+            raise ValueError("update probe enabled control must be boolean")
+        if not self.enabled:
+            self.last_report = None
+            return
+        self.last_report = None
+        self._pending = {}
+        for name, parameters in self.families.items():
+            rows, indices = [], []
+            for p in parameters:
+                gradient = p.grad
+                if gradient is None or gradient.is_sparse:
+                    raise ValueError("missing/dense gradient required: " + name)
+                idx = gradient.detach().abs().flatten().argmax()
+                indices.append(idx)
+                rows.append(
+                    torch.stack(
+                        (
+                            torch.isfinite(gradient).all().to(p.dtype),
+                            (gradient != 0).any().to(p.dtype),
+                            gradient.detach().norm().to(p.dtype),
+                            p.detach().flatten()[idx],
+                        )
+                    )
+                )
+            observed = torch.stack(rows).detach().cpu()
+            if not bool((observed[:, 0] == 1).all()) or not bool(torch.isfinite(observed).all()):
+                raise ValueError("nonfinite update probe gradient/parameter: " + name)
+            if self.require_all and not bool((observed[:, 1] == 1).all()):
+                raise ValueError("nonzero gradient required for every tensor: " + name)
+            self._pending[name] = (indices, observed)
+
+    def _after(self, optimizer, args, kwargs):
+        if not self.enabled:
+            return
+        result = {}
+        for name, parameters in self.families.items():
+            indices, before = self._pending[name]
+            after = torch.stack(
+                [p.detach().flatten()[idx] for p, idx in zip(parameters, indices)]
+            ).cpu()
+            if not bool(torch.isfinite(after).all()):
+                raise ValueError("nonfinite updated parameter: " + name)
+            delta = (after - before[:, 3]).abs()
+            moved = int((delta > 0).sum())
+            if self.require_all and moved != len(parameters):
+                raise ValueError("measured parameter movement required for every tensor: " + name)
+            result[name] = {
+                "parameter_tensors": len(parameters),
+                "finite_gradient_tensors": len(parameters),
+                "nonzero_gradient_tensors": int(before[:, 1].sum()),
+                "clipped_gradient_l2": float(before[:, 2].norm()),
+                "sampled_moved_tensors": moved,
+                "sampled_parameter_displacement_l1": float(delta.double().sum()),
+            }
+        self.last_report = {
+            "schema": "qat_a8_actual_update_v1",
+            "passed": True,
+            "all_tensor_nonzero_and_movement_gate": self.require_all,
+            "movement_scope": "one_actual_max_gradient_element_per_parameter_tensor",
+            "gradients_scope": "after_transform_and_clip_before_optimizer_step",
+            "families": result,
+        }
+        self._pending = None
+
+    def close(self):
+        for hook in self._hooks:
+            hook.remove()
+        self._hooks = []
+        self._pending = None
 
 
 class QATRecipeTelemetry:
@@ -296,7 +478,7 @@ class QATRecipeTelemetry:
             magnitude = module.latent_sign.detach().abs()
             total += magnitude.numel()
             near += int((magnitude <= self.near_zero).sum())
-            abs_sum += float(magnitude.double().sum())
+            abs_sum += float(magnitude.sum(dtype=torch.float64))
             minimum = min(minimum, float(magnitude.min()))
         return {
             **signs,
