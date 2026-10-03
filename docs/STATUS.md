@@ -16,12 +16,14 @@ recovery or SSH is permitted. The sole operator reports MCP223 and keeper55194
 closed. Its final verification wrapper failed locally before SSH; no remote
 query occurred and no retry is permitted. Last remote evidence confirms old09
 stopped and no replacement launched; current GPU availability is unverified.
+The local closure proof is saved and its SHA independently verified; the sole
+operator lease is closed. See the linked goal for its path, hash and limitations.
 
 Optimizer updates remain zero. Old09 was already stopped; the proposed new
 preparation continuation was never approved and is cancelled. Local unfinished
 work and all original evidence are preserved. The goal remains incomplete;
 only local Mac work may continue. Acknowledged successor chat
-`01a0ff1c-1007-75e3-a772-eaeb078179b3` owns the local checkpoint and recording
+`01a0ff1c-1007-75e3-a772-eaeb078179b3` owns the local checkpoint and has recorded
 the existing operator’s final shutdown result. See the [local-only handoff](goals/qat-optimization-readiness.md#local-only-stop-and-successor-handoff--october-3-0010-utc).
 
 ## Old preparation stopped; continuation repair — October 2, 23:59 UTC

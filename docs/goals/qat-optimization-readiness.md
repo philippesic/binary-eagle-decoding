@@ -46,7 +46,12 @@ proof SHA `313b4b9c04d54691673607225356c66aa0bf8800951f02eb9ce98fae33a49a64`: ol
 interrupted exit0, both groups empty, new job/run/launch absent. Known CPU98 and
 configuration jobs had already returned. This is prior terminal evidence plus
 local connection closure, not fresh GPU release; current GPU availability remains
-unverified. Local closure-proof artifact is being saved by the existing owner.
+unverified. The owner saved `human-stop-local-closure-proof.json` in the preserved
+`runs/qat-optimization-readiness/retained-capture-adoption-20261002-01/postconfig-gpu-prep-transfer-20261002-01/`
+directory, SHA `518d377ce7f2b6f521c8fed1e9e78cb662886d04b270684eed4dc550c54f3e88`.
+Successor verified that file, the empty verification output, original classification
+and all local pause/monitor states. The operator lease is closed (inactive,
+completed, not ready); fresh GPU release remains false.
 RTX2080Ti remains paused. Recovery budget
 2/2 remains exhausted; no new recovery charge or old09 restart.
 
@@ -74,9 +79,9 @@ Preserve clean-runtime worker worktree and continuity worktree pending their
 owners' cleanup audits. Preserve peer untracked overnight reports. Never drop
 unmerged work or raw evidence.
 
-**Exact next local actions:** finish binding the existing operator's local closure
-artifact, preserving the failed wrapper and prior terminal proof without a remote
-retry. The predecessor completed the rotation at this safe boundary. Successor
+**Exact next local actions:** retain the verified local closure artifact, failed
+wrapper and prior terminal proof without a remote retry. The predecessor completed
+the rotation at this safe boundary. Successor
 must first read this section and latest STATUS; carry the same incomplete goal
 under LOCAL MAC ONLY, without reopening SSH or launching/rebinding automations.
 Local review and implementation may repair the unfinished v2 schema/test/manifest
