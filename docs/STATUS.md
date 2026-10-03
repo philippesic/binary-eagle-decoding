@@ -10,6 +10,9 @@ The human said **“Gpu is free resume now.”** RTX5080 is resumed for the exis
 QAT/preparation pipeline and necessary remote work. RTX2080Ti remains paused;
 supporting research remains stopped. The human assigned all preflight/QAT
 coordination to this single team; external supervisor intervention is stopped.
+Latest direct human priority is **“Gpu is free I expect qat to run asap.”**
+Start the already-authorized new training run as soon as current data/model/native
+and ownership gates pass; no redundant confirmation or gate waiver.
 The same QAT monitor is ACTIVE and bound to
 acknowledged owner `01a0ff1c-1007-75e3-a772-eaeb078179b3`; the same preparation
 owner/operator retain sole remote control. No duplicate schedule or operator.
@@ -43,7 +46,9 @@ reviewed and its actual inventory inputs are verified; fresh exclusive GPU
 ownership is still required before dispatch. The08:42 eligibility snapshot found
 all four completion markers absent and child807 holding two /dev/dxg handles.
 Zero utilization and an empty WSL compute-app list do not prove context absence;
-the native test remains inactive. Preparation retains GPU ownership.
+the native test remains inactive. The held-slot fixture controller is now
+code-reviewed after seven focused CPU checks; the owner's executable hold/return
+guard and actual physical proof remain pending. Preparation retains GPU ownership.
 A local source audit found repeated common GGUF hashing per shard;
 a small cache fix for FUTURE starts passed80 independent CPU tests and31 root
 checks. Current source6f/live preparation is unchanged. Old09 remains terminal,

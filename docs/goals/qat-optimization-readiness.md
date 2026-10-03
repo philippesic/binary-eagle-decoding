@@ -9,6 +9,12 @@ local RTX5080 pause flag is false. RTX2080Ti remains paused and supporting
 research remains stopped. The historical stop/closure evidence below is preserved
 but its local-only restriction is superseded for this pipeline.
 
+**Latest direct human priority:** “Gpu is free I expect qat to run asap,” verified
+as userMessage in preparation chat01a10084 turn01a10114-6508-7423-976a-bfb92c844830.
+Prioritize actual optimizer start after required data/model/native/ownership gates;
+no further confirmation. Existing807 remains prepare-only and unchanged; training
+will use the already-authorized NEW validated run. No recipe/data gate waiver.
+
 **Single-team coordination:** the newer human instruction assigns this QAT team
 sole responsibility for preflight and monitoring. Keep this lead, the existing
 preparation supervisor and one serialized operator; no external supervisor
@@ -4227,3 +4233,39 @@ with focused actual-producer/fast-terminal/teardown checks. Preserve prototype
 and old command printer. Actual owner hold/quiescence/deadline proof is still
 pending; no remote hold, timed lease or native command may precede completed
 reviewable controller/proposal and root GO.
+
+## Fixture controller reviewed; owner guard pending — October 3, 09:34 UTC
+
+The corrected11-file packet is now code-reviewed: manifest
+`11bce4b1b9cba7f5dad591ed4792c31ea92ab9d39c3dc1a09c012d50b5c00c43`,
+controller `a3fd8ecc434e3bbfd091d62958934658da31e4b26f44c155c0758b57860544cf`,
+exec wrapper `6b70efe57a43a424912186156f626cfbeb5dfc3c87e252d51333f7b725c91257`.
+Root passed seven focused CPU transaction checks after full code review. Actual
+fixture PID/birth is captured by the wrapper before same-PID execve; GNU timeout
+has a separate recorded identity. Management806 stays live; producer807 and full
+GPU-capable closure must be held. Original7df/dbac/0cc records are preserved.
+
+Root fixed two concrete cleanup blockers: read-only collector accepts the original
+expired/CANCELled slot without permitting new dispatch/resume, and reports a
+missing operation after group termination as FAILED/unknown, never success.
+Cancellation terminates inner GNU timeout first; fallback signals only the
+owned validation group. Actual producer/state/group/context and protected-byte
+handback evidence remain mandatory. No global context-free claim or numeric/
+data/source gate is weakened. Code review flag is true; actual CUDA GO is false.
+
+Owner LOCAL proposal SHA
+`d83db262a39c034ea0e1838cd9608b975b836a6ca0e87fbd53d19f951a9be812`
+at `runs/luna-continuous-a8-a1-20260929/current-package-held-owner-proposal-20261003-01/owner-proposal.json`
+binds derived source810/advice445 and reserves600s maximum/180s handback/min360s
+remaining before fixture dispatch. It is not executable or a physical grant.
+The preparation owner now owns an executable LOCAL hold/grant/return guard and
+focused tests in that same ignored directory; root owns only the fixture packet.
+Same sole Luna may stage/verify exact reviewed files before any hold; no staging
+or chat review inside a timed reservation. Final combined acquisition/fixture/
+handback GO waits for the concrete reviewed owner guard and actual proof.
+
+The latest human ASAP instruction is independently verified and recorded in
+root registration. No additional confirmation is needed after current required
+gates. Skip optional research/profiling/optimization work; finish the short
+native fixture, full model/readiness and source-bound training path. No main
+restart, hot edit, extra operator or premature optimizer. Goal remains incomplete.
