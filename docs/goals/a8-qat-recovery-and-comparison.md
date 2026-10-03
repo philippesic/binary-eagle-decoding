@@ -17,12 +17,28 @@ New bounded team:
 | Root | Readiness review, integration, durable records and existing monitor | `/private/tmp/eagle-a8-standalone` |
 
 Selected-lane readiness commit99a53ee is reviewed and adopted as a8c9986;
-integrated CPU checks are pending the trainer API. Partial trainer implementation
-is preserved by worker commita4a66fa. No actual model/training launch is claimed.
-The sole new operator is collecting fresh read-only resource and retained-input
-state, preserving remote preexisting dirty source. Next: complete/test integrated
-recipe+trainer, then one decisive actual-model/native/resume validation and the
-fixed-budget matched comparison. Failed post-checkpoint work must remain charged.
+all50readiness CPU checks pass, including the6new selected-lane checks. Ownership
+and readiness are integrated/published on main3e12ad6. Partial trainer and recipe
+implementations are preserved by workera4a66fa and3d5fafa respectively.
+
+A fourth bounded Sol worker `/root/native_request_metrics` owns a NEW native
+request timing helper and tests, with trainer owner stitching its API into the
+standalone evaluator. Existing tensor captures measure acceptance only; true
+full-request timing must be measured separately within the same1200s evaluation
+cap, with warmup/five repetitions and alternating variant order.
+
+Fresh sole-operator read-only check confirms same WSLboot517c4a36, RTX5080/SM120,
+zero utilization, no remote_job/trainer/native/pytest process or dedicated host
+tmux sessions, approximately20.27GB available host RAM and357.34GB disk. Native
+binaries and retained preparation-ready/zero-checkpoint artifacts are located;
+prior receipt/config identities match. Remote main dirty source and untracked
+checkouts remain untouched. No new model or optimizer has run.
+
+Reference latent magnitude0.5 matches original dense-sign initialization;
+candidate0.1 retains the same initial deployed signs/scales with zero midpoints
+and initial learned clips. Next: complete/test integrated recipe+trainer, then
+one decisive actual-model/native/resume validation and the fixed-budget matched
+comparison. Failed post-checkpoint work must remain charged.
 
 ## Standalone chat handoff — October 3, 2026
 
