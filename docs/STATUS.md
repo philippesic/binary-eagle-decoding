@@ -4,6 +4,21 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
+## RTX5080 QAT pipeline resumed — October 3, 06:11 UTC
+
+The human said **“Gpu is free resume now.”** RTX5080 is resumed for the existing
+QAT/preparation pipeline and necessary remote work. RTX2080Ti remains paused;
+supporting research remains stopped. The same QAT monitor is ACTIVE and bound to
+acknowledged owner `01a0ff1c-1007-75e3-a772-eaeb078179b3`; the same preparation
+owner/operator retain sole remote control. No duplicate schedule or operator.
+
+Fresh source/process/GPU/context/resource/durability proof is requested. Local
+workers are completing the terminal-only continuation and static metadata packets;
+original failed/paused evidence is preserved. Old09 remains terminal, no recovery
+or old-live actions are allowed, and actual new-model start remains pending.
+Optimizer updates remain zero; the existing goal is incomplete. See the
+[resume checkpoint](goals/qat-optimization-readiness.md#human-resume-rtx5080-qat-pipeline--october-3-0611-utc).
+
 ## Human stop: local Mac only — October 3, 00:10 UTC
 
 The human ordered: **“Stop gpu work. Only local Mac work allowed until I say so.

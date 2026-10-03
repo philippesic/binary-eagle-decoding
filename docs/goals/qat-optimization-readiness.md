@@ -1,8 +1,50 @@
 # QAT optimization readiness
 
+## Human resume: RTX5080 QAT pipeline — October 3, 06:11 UTC
+
+**Controlling instruction:** the human said “Gpu is free resume now” in predecessor
+chat `01a0fe3f-0eff-78e3-bb75-af0b4b77b49e`; its direct relay explicitly resumes
+the existing RTX5080 QAT/preparation pipeline and necessary remote work. The
+local RTX5080 pause flag is false. RTX2080Ti remains paused and supporting
+research remains stopped. The historical stop/closure evidence below is preserved
+but its local-only restriction is superseded for this pipeline.
+
+**Goal and owner:** same incomplete QAT optimization-readiness goal; acknowledged
+QAT owner `01a0ff1c-1007-75e3-a772-eaeb078179b3`. Optimizer updates remain zero.
+The SAME QAT heartbeat is ACTIVE every 15 minutes, bound to this owner with the
+latest resume wording and all launch/training gates preserved; no new schedule.
+Preparation owner `01a0fdd6-8e11-7393-9aed-5c99bd08e428` retains its SAME sole Luna
+operator. Root creates no second remote operator. Protected QAT/preparation
+supervision continues; no credit purchase or reset redemption.
+
+**Actual state and next execution:** old09 is terminal; no replacement launch was
+verified before the pause. Human resume is authority, not fresh resource proof.
+The sole prep operator is requested to collect one bounded fresh source/config/
+process/groups/context/GPU/RAM/disk/ownership/pause/durability admission. Old09
+must never be signalled, resumed or restarted; recovery budget 2/2 is exhausted.
+No stale GO or packet manifest is dispatchable.
+
+**Local work:** `/root/terminal_continuation` owns NEW ignored
+`runs/qat-optimization-readiness/retained-capture-adoption-20261002-01/postconfig-gpu-prep-transfer-20261002-03/`;
+`/root/static_runtime_packet` owns NEW ignored
+`runs/qat-optimization-readiness/current-clean-runtime-static-20261003-03/`.
+Both have bounded independent local testing/review and no remote authority.
+Original c899, paused-v2, static02 and all raw evidence remain unchanged. Root owns
+STATUS/goal and training registration. Existing checkpoint worktree
+`/private/tmp/eagle-qat-stop-closure-20261003` carries these documentation updates.
+The supervisor's independent lessons worker owns only USER_LESSONS.
+
+**Priority:** complete/test/review the terminal-only continuation packet, combine
+it with fresh admission and launch the unique current-source preparation-only
+run through the sole operator. Static metadata retry runs serially as needed and
+does not block PyTorch preparation. Then require actual native actor/model,
+forward/backward, memory/timing, save/resume, full corpus readiness and Q4_0
+development gates before previously-authorized source-bound training. Frozen
+source/data ancestry, target/verifier precision and sealed-final protection remain.
+
 ## Local-only stop and successor handoff — October 3, 00:10 UTC
 
-**Current controlling instruction:** “Stop gpu work. Only local Mac work allowed
+**Historical stop instruction:** “Stop gpu work. Only local Mac work allowed
 until I say so. Tell all agents.” All earlier remote permissions, admissions and
 GO statements are revoked. Both GPU pause flags are true. The existing QAT and
 preparation heartbeats are PAUSED with explicit local-only overrides; the
