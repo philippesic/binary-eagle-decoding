@@ -32,17 +32,17 @@ successor uses one pinned operator only when no other is active. Root creates
 no second remote operator. Protected QAT/preparation
 supervision continues; no credit purchase or reset redemption.
 
-**Current state — October 3, 12:07 UTC:** ACTUAL ALL5 current full-source model
-phases passed11:55:55 exit0;164originals/readiness3badd/sidecar481615/currentrecipe
-validator/owned group-context return independently verified.30forward30back/five
-repeats/finite+latergrads/native12caseszerochanged/memory9.11Greserved>=6.48Gfree.
-SAME Luna242 is retained for training handoff. Frozen optimizer packetaa1a has
-root16guard/whole-code review and currentbootdurability; CPUstage sourceapproval
-issued. Final concrete launch pinreview/freshfullproof/<=300sadmission +actual
-fulloriginalzero restore/currentpairedsmoke precede already-authorized updates.
-No source/math change, gate repetition or prelaunchheldoutQ4report. Actualfirst
-updates/checkpoints/disconnect survival/Q4trainingdevelopment remain; optimizer
-updates ZERO. SAME15minute QAT/prep monitors, paused2080/research preserved.
+**Current state — October 3, 12:16 UTC:** actual current full-source model/native
+readiness remains PASSED. Trainingpacket01 CPUstage failed before GPU/model/updates
+on a config string/Path API mismatch; original failure is preserved. NEW immutable
+packet02 changes only that call plus packet/output paths. Root genuine-loader
+regression/all17CPU checks/all15pins PASS; final CPUstage source approval sent to
+SAME preparation owner/sole Luna242. Actual output02 success and concrete launch
+wrapper/guardian pin review precede adjacent fresh context/resource/pause/soleowner
+proof and <=300s admission. Original fullzero restore/currentpaired smoke remain
+inside adapter before optimizer. No gate repetition/source/math change/newoperator/
+prelaunchheldoutQ4report/userconfirmation. Actualfirstupdates/checkpoints/disconnect
+survival/Q4trainingdevelopment remain; optimizer updates ZERO.
 
 **Historical state — October 3, 09:44 UTC:** preparation ACTUALLY completed at
 08:57:52, observed by healthy/terminal checker09:39:55. Supervisor exit0,
@@ -57,6 +57,24 @@ conditional released-mode copied-fixture GO requires actual final release and
 fresh source/context/resource/control facts; no readiness from the CPU pass.
 Then complete current native/actual-model/backward/memory/timing/save-resume
 gates and launch the previously authorized NEW training run without confirmation.
+
+## Corrected training packet reviewed — October 3, 12:16 UTC
+
+Root reviewed NEW packet02 against preserved01: sole executable correction is
+`api.load_config(Path(p['config']))`; plan changes only remote_packet/output02.
+All17CPUtests passed under project.venv, including genuine exact6f-identical loader
+and actual launch.inputs call. All15manifest members/payloads and original01 SHA
+verified. New manifest
+`c1f19884de4bb4c39f3c273f8103ae6cb2ccf0baa899db9a9fd7415efd9ada15`,
+launch `6e427e975e8756f9abb28f46d22670daaf510c3b664b080e330843f4c2801710`,
+stage payload `0c619141fdfaa46a03eafe37adb58bfa73e76c971ec01b93d4ae1676b63afec8`.
+Root source approval sent to SAME prepowner for ONE new claimed CPUstage02 on
+SAME Luna242/keeper72822; no optimizer GO yet. Training directory/supervisor,
+source/config/originalzero/readiness/sidecar/caps unchanged. Actual CPUstage success
+then reviewed concrete wrapper/guardian plus fresh physical admission permit the
+already-authorized optimizer start. Preserve original01 failure/consumedclaim;
+no model/fixture/corpus rerun or redundant confirmation. Root derived review saved
+`runs/qat-optimization-readiness/prepared-training-launch-packet-20261003-02/root-review.json`.
 
 ## Training CPU-stage typed API repair — October 3
 
