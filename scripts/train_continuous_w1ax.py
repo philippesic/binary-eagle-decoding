@@ -35,6 +35,8 @@ def load_config(path: Path) -> tuple[dict, ContinuousConfig]:
         raise ValueError("unsupported continuous experiment config")
     kwargs = dict(spec["training"])
     kwargs["seeds"] = tuple(kwargs["seeds"])
+    if "activation_bits" in kwargs:
+        kwargs["activation_bits"] = tuple(kwargs["activation_bits"])
     config = ContinuousConfig(**kwargs)
     if config.device != "cuda:0":
         raise ValueError(
@@ -63,8 +65,8 @@ def provider_pair(spec, config):
     if not separator or not module_name or not factory:
         raise ValueError("provider factory requires MODULE:FACTORY")
     create = getattr(importlib.import_module(module_name), factory)
-    providers = [create(config.qat(bits), Path(spec["manifest"])) for bits in (8, 1)]
-    if providers[0].source_metadata != providers[1].source_metadata:
+    providers = [create(config.qat(bits), Path(spec["manifest"])) for bits in config.activation_bits]
+    if any(provider.source_metadata != providers[0].source_metadata for provider in providers[1:]):
         raise ValueError("A8/A1 providers must bind identical immutable data/resources")
     for provider in providers:
         if provider.training_eligible is not True or not provider.full_body_qat_eligible:
@@ -153,7 +155,7 @@ def require_zero_optimizer_progress(trainer) -> None:
     if (
         type(trainer.step) is not int
         or trainer.step != 0
-        or set(trainer.metrics) != {"A8", "A1"}
+        or set(trainer.metrics) != {lane.name for lane in trainer.lanes}
         or any(
             type(model.get("step")) is not int or model["step"] != 0
             for model in trainer.metrics.values()
@@ -341,7 +343,7 @@ def prepared_corpus_inputs(spec: dict, run_dir: Path, prepared_dir: Path, ready_
     from w1a1_eagle.continuous_qat import immutable_config
 
     _, old_config = load_config(prepared_dir / "resolved_config.json")
-    if manifest.get("immutable_config") != immutable_config(asdict(old_config)):
+    if immutable_config(manifest.get("immutable_config", {})) != immutable_config(asdict(old_config)):
         raise ValueError("prepared checkpoint changes original training configuration")
     for lane, exports in manifest["exports"].items():
         if set(exports) != {"joint.npz", "joint.json"}:
@@ -474,6 +476,29 @@ def prepared_corpus_inputs(spec: dict, run_dir: Path, prepared_dir: Path, ready_
         "checkpoint_policy": "original_zero_checkpoint_evidence_only_new_model_smoke_and_save",
     }
     return binding, train_path, development
+
+
+def require_development_result(run_dir: Path, checkpoint: dict) -> None:
+    request_path = run_dir / "development-request.json"
+    if not request_path.exists():
+        return
+    request = json.loads(request_path.read_text())
+    requested_checkpoint = request.get("checkpoint", {})
+    if (type(requested_checkpoint.get("step")) is not int
+            or requested_checkpoint["step"] > checkpoint["step"]):
+        raise ValueError("pending development request is ahead of restored checkpoint")
+    result_path = run_dir / "development-result.json"
+    if not result_path.exists():
+        raise ValueError("standalone development must finish before training resume")
+    result = json.loads(result_path.read_text())
+    report_path = Path(result.get("report_path", ""))
+    if (result.get("checkpoint") != requested_checkpoint or result.get("completed") is not True
+            or not report_path.is_file() or sha256(report_path) != result.get("report_sha256")):
+        raise ValueError("standalone development result does not authenticate pending checkpoint")
+    report = json.loads(report_path.read_text())
+    if (Path(report.get("checkpoint", "")).resolve() != Path(requested_checkpoint["path"]).parent.resolve()
+            or report.get("split") != "development" or report.get("sealed_test_accessed") is not False):
+        raise ValueError("standalone development report contract differs")
 
 
 def main():
@@ -646,51 +671,83 @@ def main():
                     else run_stages(spec["stages"], run_dir))
         provider_spec = dict(spec["provider"])
         provider_spec["manifest"] = str(resolved)
-        providers = provider_pair(provider_spec, config)
-        provider = providers[0]
-        if (prepared is not None
-                and prepared_digest(provider.source_metadata) != prepared["source_sha256"]):
-            raise ValueError(
-                "independently audited full provider source differs from prepared binding"
+        if prepared is not None and config.activation_bits == (8,):
+            from prepared_continuous_provider import PreparedProvider, authenticate
+            from w1ax_capture_provider import NativeCaptureProvider
+
+            from types import SimpleNamespace
+
+            current_api = SimpleNamespace(prepared_corpus_inputs=prepared_corpus_inputs,
+                                          prepared_digest=prepared_digest)
+            authenticated = authenticate(current_api, spec, run_dir,
+                                         args.prepared_run_dir, args.prepared_ready_sha256)
+            if authenticated["binding"] != prepared:
+                raise ValueError("prepared metadata changed during authentication")
+            provider = PreparedProvider(authenticated, config.qat(8), NativeCaptureProvider)
+            if prepared_digest(provider.source_metadata) != prepared["source_sha256"]:
+                raise ValueError("prepared provider source differs from authenticated binding")
+            longest = deepest = None
+            # The completed full-corpus coverage remains authoritative; only the
+            # selected shard is read for actual current-model backward smoke.
+            for batch in provider.bounded_rounds():
+                audit = audit_provider_round(batch, provider)
+                if len(batch.prefix_token_ids) > config.max_prefix_tokens:
+                    raise ValueError("captured prefix exceeds memory-safe training limit")
+                if not any(audit.ce_mask[1:]):
+                    continue
+                if longest is None or len(batch.prefix_token_ids) > len(longest.prefix_token_ids):
+                    longest = batch
+                if deepest is None or len(batch.rows) > len(deepest.rows):
+                    deepest = batch
+            if longest is None or deepest is None:
+                raise ValueError("prepared shard lacks attached later-position smoke")
+            atomic_json(run_dir / "teacher_coverage.json", authenticated["ready"]["teacher_coverage"])
+        else:
+            providers = provider_pair(provider_spec, config)
+            provider = providers[0]
+            if (prepared is not None
+                    and prepared_digest(provider.source_metadata) != prepared["source_sha256"]):
+                raise ValueError(
+                    "independently audited full provider source differs from prepared binding"
+                )
+            del providers  # Release the independently audited A1 provider payload.
+            minimum = spec["coverage"]
+            if len(provider.allowed_prompt_ids) < minimum["min_unique_train_prompts"]:
+                raise ValueError("teacher data has too few independent train prompts for declared tier")
+            # Streaming audit/coverage count does not materialize all tensors. Keep
+            # only two challenging representative rounds for manual CUDA smoke.
+            count = 0
+            longest = deepest = None
+            observed_prompts = set()
+            for batch in provider.rounds():
+                audit = audit_provider_round(batch, provider)
+                count += sum(audit.ce_mask)
+                observed_prompts.add(batch.anchor.prompt_id)
+                if len(batch.prefix_token_ids) > config.max_prefix_tokens:
+                    raise ValueError("captured prefix exceeds fixed memory-safe training limit")
+                if not any(audit.ce_mask[1:]):
+                    continue
+                if longest is None or len(batch.prefix_token_ids) > len(longest.prefix_token_ids):
+                    longest = batch
+                if deepest is None or len(batch.rows) > len(deepest.rows):
+                    deepest = batch
+            if (
+                count < minimum["min_unique_supervised_rows"]
+                or len(observed_prompts) < minimum["min_unique_train_prompts"]
+            ):
+                raise ValueError("audited supervised teacher coverage below declared tier")
+            if longest is None or deepest is None:
+                raise ValueError("no native teacher round supports later-position gradient smoke")
+            atomic_json(
+                run_dir / "teacher_coverage.json",
+                {
+                    "unique_train_prompts": len(observed_prompts),
+                    "unique_supervised_rows": count,
+                    "source": provider.source_metadata,
+                    "smoke_longest_prefix": len(longest.prefix_token_ids),
+                    "smoke_max_depth": len(deepest.rows),
+                },
             )
-        del providers  # Release the independently audited A1 provider payload.
-        minimum = spec["coverage"]
-        if len(provider.allowed_prompt_ids) < minimum["min_unique_train_prompts"]:
-            raise ValueError("teacher data has too few independent train prompts for declared tier")
-        # Streaming audit/coverage count does not materialize all tensors. Keep
-        # only two challenging representative rounds for manual CUDA smoke.
-        count = 0
-        longest = deepest = None
-        observed_prompts = set()
-        for batch in provider.rounds():
-            audit = audit_provider_round(batch, provider)
-            count += sum(audit.ce_mask)
-            observed_prompts.add(batch.anchor.prompt_id)
-            if len(batch.prefix_token_ids) > config.max_prefix_tokens:
-                raise ValueError("captured prefix exceeds fixed memory-safe training limit")
-            if not any(audit.ce_mask[1:]):
-                continue
-            if longest is None or len(batch.prefix_token_ids) > len(longest.prefix_token_ids):
-                longest = batch
-            if deepest is None or len(batch.rows) > len(deepest.rows):
-                deepest = batch
-        if (
-            count < minimum["min_unique_supervised_rows"]
-            or len(observed_prompts) < minimum["min_unique_train_prompts"]
-        ):
-            raise ValueError("audited supervised teacher coverage below declared tier")
-        if longest is None or deepest is None:
-            raise ValueError("no native teacher round supports later-position gradient smoke")
-        atomic_json(
-            run_dir / "teacher_coverage.json",
-            {
-                "unique_train_prompts": len(observed_prompts),
-                "unique_supervised_rows": count,
-                "source": provider.source_metadata,
-                "smoke_longest_prefix": len(longest.prefix_token_ids),
-                "smoke_max_depth": len(deepest.rows),
-            },
-        )
         lanes = build_lanes(provider, config, run_dir)
         evaluator = None
         development = spec.get("development")
@@ -708,12 +765,18 @@ def main():
         )
         if recovery == "checkpoint":
             trainer.resume()
+            require_development_result(run_dir, trainer.checkpoint)
         if args.prepare_only:
             require_zero_optimizer_progress(trainer)
         trainer.status("smoke")
         trainer.smoke(longest)
         trainer.smoke(deepest)
         trainer.save()
+        if args.prepare_only and config.development_lifecycle == "standalone":
+            atomic_json(run_dir / "development-request.json", {
+                "checkpoint": trainer.checkpoint, "completed": False,
+                "training_elapsed_seconds": trainer.elapsed_seconds,
+            })
         if args.prepare_only:
             publish_preparation_ready(trainer, run_dir)
             return

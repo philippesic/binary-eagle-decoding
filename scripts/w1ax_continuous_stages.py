@@ -2439,11 +2439,12 @@ def _development_checkpoint_preflight(checkpoint_dir, base_hash):
     published = json.loads(publication.read_text())
     if published.get("schema") != "continuous_joint_w1ax_v1" or set(
         published.get("exports", {})
-    ) != {"A8", "A1"}:
+    ) not in ({"A8"}, {"A8", "A1"}):
         raise ValueError(
             "published paired A8/A1 export inventory required; A4/curriculum unsupported"
         )
-    for bits in (8, 1):
+    lanes = tuple(int(name[1:]) for name in published["exports"])
+    for bits in lanes:
         inventory = published["exports"][f"A{bits}"]
         if not isinstance(inventory, dict) or set(inventory) != {"joint.npz", "joint.json"}:
             raise ValueError("published checkpoint export file inventory differs")
@@ -2456,7 +2457,7 @@ def _development_checkpoint_preflight(checkpoint_dir, base_hash):
     _development_checkpoint_unchanged(checkpoint_dir, 8, identities)
     configs, manifests, shapes = {}, {}, {}
     peak_bytes = 0
-    for bits in (8, 1):
+    for bits in lanes:
         manifest_path = checkpoint_dir / f"A{bits}/joint.json"
         configs[bits] = checkpoint_joint_config(manifest_path, bits, base_hash)
         manifest = json.loads(manifest_path.read_text())
@@ -2486,7 +2487,7 @@ def _development_checkpoint_preflight(checkpoint_dir, base_hash):
         manifests[bits], shapes[bits] = manifest, expected
     _development_checkpoint_unchanged(checkpoint_dir, 8, identities)
     host_admission("development deployment preflight array staging", max(12 * 1024**3, peak_bytes))
-    for bits in (8, 1):
+    for bits in lanes:
         _development_checkpoint_unchanged(checkpoint_dir, bits, identities)
         checkpoint = checkpoint_dir / f"A{bits}/joint.npz"
         manifest, expected = manifests[bits], shapes[bits]
@@ -2517,7 +2518,7 @@ def _development_checkpoint_unchanged(checkpoint_dir, bits, identities):
         or sha256(publication) != identities["publication"]["sha256"]
     ):
         raise ValueError("development publication identity changed after preflight")
-    for lane in (8, 1):
+    for lane in identities["lanes"]:
         for name, digest in identities["lanes"][lane].items():
             path = checkpoint_dir / f"A{lane}" / name
             if path.is_symlink() or not path.is_file() or sha256(path) != digest:
@@ -2565,6 +2566,7 @@ def _evaluate_development(config: dict, checkpoint_dir: Path, run_dir: Path) -> 
     checkpoint_configs, checkpoint_identities = _development_checkpoint_preflight(
         checkpoint_dir, sources["sha256"]["base_draft_gguf"]
     )
+    lanes = tuple(checkpoint_configs)
     prompts = Path(config["native_prompts"])
     if sha256(prompts) != config["native_prompts_sha256"]:
         raise ValueError("frozen development subset changed")
@@ -2590,7 +2592,7 @@ def _evaluate_development(config: dict, checkpoint_dir: Path, run_dir: Path) -> 
     )
     prune_owned_evaluations(output.parent, config.get("keep_native_evaluations", 3), active=output)
     results = {}
-    for bits in (8, 1):
+    for bits in lanes:
         check_stop(run_dir)
         if time.monotonic() >= deadline:
             raise TimeoutError("development aggregate deadline exceeded before native capture")
@@ -2636,7 +2638,7 @@ def _evaluate_development(config: dict, checkpoint_dir: Path, run_dir: Path) -> 
         "native_accepted_per_round": q4_accepted / q4_rounds,
         "native_cell": file_record(q4 / "d_d/manifest.json"),
     }
-    for bits in (8, 1):
+    for bits in lanes:
         _development_checkpoint_unchanged(checkpoint_dir, bits, checkpoint_identities)
         qat = replace(checkpoint_configs[bits], device="cuda:0", allow_accelerator=True)
         provider = StreamingNativeProvider(qat, Path(config["providers_manifest"]))
@@ -2734,7 +2736,7 @@ def _evaluate_development(config: dict, checkpoint_dir: Path, run_dir: Path) -> 
             "target_weights": "F16",
             "target_kv": "F16",
             "draft_kv": "F16",
-            "binary_drafts": "row W1A8 and row W1A1",
+            "binary_drafts": " and ".join(f"row W1A{bits}" for bits in lanes),
             "primary_baseline": "frozen Q4_0 draft with native Q8_1 activation conversion",
         },
         "native_repetitions": 1,
@@ -2897,8 +2899,44 @@ def main() -> None:
     refresh.add_argument("--activation-bits", type=int, choices=(1, 4, 8), required=True)
     refresh.add_argument("--output", type=Path, required=True)
     refresh.add_argument("--allow-cuda", action="store_true")
+    evaluate = sub.add_parser("evaluate", help="standalone development after training process exits")
+    evaluate.add_argument("--run-dir", type=Path, required=True)
+    evaluate.add_argument("--development-manifest", type=Path, required=True)
+    evaluate.add_argument("--allow-cuda", action="store_true")
     args = parser.parse_args()
-    if args.command == "audit":
+    if args.command == "evaluate":
+        if not args.allow_cuda:
+            parser.error("standalone evaluation requires --allow-cuda")
+        from train_continuous_w1ax import lock
+        import torch
+
+        run_dir = args.run_dir.resolve()
+        run_lock = lock(run_dir / ".owner.lock")
+        gpu_lock = lock(Path.home() / ".cache/binary-eagle-decoding/cuda-0.owner.lock")
+        try:
+            properties = torch.cuda.get_device_properties("cuda:0")
+            if properties.name != "NVIDIA GeForce RTX 5080" or [properties.major, properties.minor] != [12, 0]:
+                raise RuntimeError("standalone evaluation requires RTX5080 SM120")
+            checkpoint = json.loads((run_dir / "latest.json").read_text())
+            resume = Path(checkpoint["path"])
+            if (not resume.resolve().is_relative_to(run_dir / "checkpoints")
+                    or sha256(resume) != checkpoint["sha256"]):
+                raise ValueError("standalone evaluation checkpoint identity differs")
+            request = run_dir / "development-request.json"
+            if request.exists() and json.loads(request.read_text()).get("checkpoint") != checkpoint:
+                raise ValueError("standalone evaluation must use requested latest checkpoint")
+            report = evaluate_development(json.loads(args.development_manifest.read_text()), resume.parent, run_dir)
+            result_path = run_dir / "development.json"
+            write_json(result_path, report)
+            write_json(run_dir / "development-result.json", {
+                "checkpoint": checkpoint, "completed": True,
+                "report_path": str(result_path), "report_sha256": sha256(result_path),
+            })
+            result = report
+        finally:
+            gpu_lock.close()
+            run_lock.close()
+    elif args.command == "audit":
         result = audit_native_labels(
             args.manifest,
             expected_prompt_sha256=args.prompts_sha256,

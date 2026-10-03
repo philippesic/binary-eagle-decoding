@@ -268,6 +268,41 @@ def start(args):
         run_lock.close()
 
 
+def create_current_provider(config, manifest_path):
+    """Current-source bounded gate view of an authenticated complete TRAIN corpus.
+
+    This is distinct from the historical source6f zero-checkpoint launcher. The
+    old checkpoint authenticates data provenance; new model state belongs to
+    the current recipe and is not loaded from the old checkpoint.
+    """
+    record = json.loads(Path(manifest_path).read_text())
+    require(record.get("schema") == "current_prepared_provider_v1", "Current provider binding required")
+    api = importlib.import_module("train_continuous_w1ax")
+    files = Files()
+    locator = record["config"]
+    spec, continuous = api.load_config(files.check(locator["path"], locator["sha256"]))
+    if record.get("stages_manifest") is not None:
+        stages = record["stages_manifest"]
+        spec["stages"] = files.read(stages["path"], stages["sha256"])
+    require(dataclasses.asdict(config) == dataclasses.asdict(continuous.qat(config.contract.activation_bits)),
+            "Gate changes current declared prepared recipe")
+    require(config.contract.activation_bits in continuous.activation_bits, "Undeclared current lane")
+    auth = authenticate(api, spec, record["validation_run_dir"], record["prepared_run_dir"],
+                        record["prepared_ready_sha256"])
+    child = importlib.import_module("w1ax_capture_provider").NativeCaptureProvider
+    provider = PreparedProvider(auth, config, child, record.get("selected_shard", 0))
+
+    class BoundedCurrentProvider:
+        provider_manifest_sha256 = sha256(manifest_path)
+
+        def __getattr__(self, name):
+            return getattr(provider, name)
+        def rounds(self):
+            return provider.bounded_rounds()
+
+    return BoundedCurrentProvider()
+
+
 def parser():
     p = argparse.ArgumentParser(description=__doc__)
     mode = p.add_mutually_exclusive_group()
