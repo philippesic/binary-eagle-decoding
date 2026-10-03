@@ -1,5 +1,26 @@
 # A8 QAT recovery and comparison
 
+## Current execution checkpoint — October 3, 16:36 PDT
+
+- Sole operator `/root/gpu_supervisor` is proceeding under existing pipeline GO;
+  frozen execution source583480c79f3ca090de0952deca8278dcb7f15c2d, native9e2,
+  RTX5080/SM120; A1 and RTX2080Ti stay paused.
+- Both current native decision/operator suites and evidence collection PASSED.
+  Reference native evidence SHA180fdc4b...; candidate evidence SHA84d211c6...
+  includes actual learned-quantizer/all-nine affine artifacts. Candidate decision
+  gate00c2cadc... has6cases from3balanced TRAIN domains; CUDA unit counts include
+  59encoder/114loader/57pack/36projection cases, optimizer updates0.
+- Reference full-model/backward/memory/five-repeat readiness PASSED in78.0s;
+  current receipt SHA dfc0641e13d2155cfd1d1447ce7de259e5b71ab433f90815be6ea01aba124073.
+  The production config now pins that receipt; actual optimizer updates remain0.
+- Candidate full-model readiness is running under supervisor6327/birth524426,
+  child6332/birth524432. Next: each fresh trainer step-zero publication and
+  standalone development evaluation, first100budgeted updates, graceful stop/
+  exact resume and the two7200-second training arms.
+- Sole-operator ledger carries exact runtime sessions, PIDs/birth ticks, config/
+  source/evidence locators and incident state. No originating-chat involvement.
+  Prompt-domain incident recovered on attempt1/2 with all original failures kept.
+
 ## Standalone ownership claimed — October 3, 2026
 
 Coordinator `01a103da-0980-7332-a041-3f95aca6a3f5` owns this goal exclusively.
