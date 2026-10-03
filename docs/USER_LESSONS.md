@@ -130,6 +130,13 @@ additional proof protocols or redoing completed audit work.
 
 ### 2026-10-03: Separate implemented QAT features from the executed recipe
 
+- Context: In the retrospective, the human asked whether the 1,000-step run used sign flipping instead of gradient descent, midpoint adjustment, and all implemented optimizations.
+- Evidence: The original step1000 manifest records reference A1 computation, fixed activations, null binary_optimization/affine_weights/fusion_correction, and disabled cache/head optimization and persistent sign diagnostics. The baseline uses AdamW on floating latent signs with a hard-sign forward and surrogate backward; 398 A8 and 54 A1 cumulative sign flips do not establish a direct bit-flip optimizer. The recipes report explicitly deferred Bop.
+- Status: Confirmed gap between implemented features and the executed recipe, with user/agent confusion about that distinction; no user mistake established. The fixed-reference numerical checks passed, but they do not validate the requested combined optimized recipe.
+- Agent contribution: Describing the bounded reference handoff as goal completion made the broader implementation scope easy to confuse with actual training coverage. Reporting flip counts without naming the optimizer also left the mechanism unclear.
+- Practical lesson: Before a training launch, state the effective enabled recipe in plain language, including latent-gradient versus direct-bit optimization, midpoint coverage, and performance switches. Report implementation completion, recipe validation, and training results separately. A reference pilot must not imply the combined optimized recipe was exercised.
+- Retrospective timing: First paired update to step1000 was approximately 13 minutes 29 seconds; launch to terminal was approximately 15 minutes 20 seconds on RTX5080/SM120. Only 13 prompts and 4,846 supervised rows were consumed. No new run or budget is authorized by this clarification.
+
 ### 2026-10-03: Keep the requested QAT execution in a standalone chat
 
 - Context: The human requested a QAT team and recovering monitor, then clarified
@@ -143,10 +150,3 @@ additional proof protocols or redoing completed audit work.
   or messaging it. Preserve unfinished work so the new owner can review it.
 - Resolution: Four workers interrupted, original heartbeat paused, partial
   worktrees and readiness commit retained, standalone handoff recorded.
-
-- Context: In the retrospective, the human asked whether the 1,000-step run used sign flipping instead of gradient descent, midpoint adjustment, and all implemented optimizations.
-- Evidence: The original step1000 manifest records reference A1 computation, fixed activations, null binary_optimization/affine_weights/fusion_correction, and disabled cache/head optimization and persistent sign diagnostics. The baseline uses AdamW on floating latent signs with a hard-sign forward and surrogate backward; 398 A8 and 54 A1 cumulative sign flips do not establish a direct bit-flip optimizer. The recipes report explicitly deferred Bop.
-- Status: Confirmed gap between implemented features and the executed recipe, with user/agent confusion about that distinction; no user mistake established. The fixed-reference numerical checks passed, but they do not validate the requested combined optimized recipe.
-- Agent contribution: Describing the bounded reference handoff as goal completion made the broader implementation scope easy to confuse with actual training coverage. Reporting flip counts without naming the optimizer also left the mechanism unclear.
-- Practical lesson: Before a training launch, state the effective enabled recipe in plain language, including latent-gradient versus direct-bit optimization, midpoint coverage, and performance switches. Report implementation completion, recipe validation, and training results separately. A reference pilot must not imply the combined optimized recipe was exercised.
-- Retrospective timing: First paired update to step1000 was approximately 13 minutes 29 seconds; launch to terminal was approximately 15 minutes 20 seconds on RTX5080/SM120. Only 13 prompts and 4,846 supervised rows were consumed. No new run or budget is authorized by this clarification.
