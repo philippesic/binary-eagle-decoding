@@ -27,14 +27,15 @@ Model smoke/checkpoint-zero and full readiness remain pending. At07:49 the
 checker reports only a stale-heartbeat failure; exact child807 remains active
 with positive CPU/I/O progress. This warning is preserved, not waived. Both
 active precision gates are legacy v1, so the modern NPZ validation branch is
-inactive. One bounded stack sample using an already-installed profiler is
-pending to locate the remaining startup work.
+inactive. The bounded diagnostic at08:01 found no installed profiler and
+stopped before sampling; the exact remaining startup hot path is unmeasured.
 
 The terminal continuation passed46 root/independent local tests. CPU static04
 returned exit1 with all owned groups gone: its descriptor referenced three
 metadata files under a never-staged directory. Static05 fixes only those paths
-and passed35 local guards; actual execution is pending behind the startup
-diagnostic. Preparation retains GPU ownership. A local source audit found
+and passed35 local guards; the same operator has conditional CPU GO after
+transport return and fresh execution guards. Preparation retains GPU ownership.
+A local source audit found
 repeated common GGUF hashing per shard;
 a small cache fix for FUTURE starts passed80 independent CPU tests and31 root
 checks. Current source6f/live preparation is unchanged. Old09 remains terminal,

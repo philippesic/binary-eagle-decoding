@@ -3998,3 +3998,30 @@ stop this diagnostic. The purpose is an operational critical-path decision,
 not a numerical parity investigation. Static05 remains lower priority until
 this slot returns. All live6f source/config/data/runtime remain unchanged;
 public common-hash cache30dd applies only to future starts. Goal incomplete.
+
+## Existing-only stack diagnostic returned — October 3, 08:03 UTC
+
+Actual wrapper at08:01:55 returned0 with py-spy unavailable on PATH and the
+single permitted original ROOT venv/bin path. No version/help, sudo/ptrace
+check, profile, output directory, GPU query, signal, source change, installation
+or fallback occurred. Target before/after identities are null because discovery
+stopped before that branch; do not use this as a fresh child-health check. The
+exact Python hot path and remaining ETA are still unknown. Raw observation
+`runs/luna-continuous-a8-a1-20260929/live-stack-20261003-01/live-stack-20261003-01.observation.json`
+SHA126fc849ea64e936b5850e1a7cec6fceb04e45ca926f575e70176f164cbe3f42
+is preserved. Closure at08:03:14 confirms LOCAL235/keeper85984 closed; root
+verified all10 artifact pins. Original local false-positive guards are preserved;
+no remote dispatch preceded their correction.
+
+Root issued conditional CPU GO for the exact accepted Static05 packet to the
+same preparation supervisor01a10084 and same sole Luna. After the diagnostic
+transport returns, mint actual admission adjacent to dispatch from fresh
+current owner/pause/source/phase/receipt/RAM/disk facts; expiry<=300s, phase<=60s.
+Do not reuse templates/old GO. Model/coverage progress has priority. Exact
+NEW05 only, inner180/outer240/grace10, collect terminal owned groups and unchanged
+protected bytes; embedded failure logs remove another classification round trip.
+No live6f/preparation change or optimizer authority. Actual Static05 result and
+paired model preparation/readiness remain pending. CPU GO is durably recorded
+in root-owned ignored training registration; public checkpointcf64cb5 is pushed
+and its merged clean worktree/branch removed. This next checkpoint uses
+`/private/tmp/eagle-qat-runtime-result-20261003`.
