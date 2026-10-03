@@ -66,7 +66,17 @@ def inspect(source: Path, target: Path, draft: Path, config: Path, llama: Path, 
         raise ValueError("head omitted despite failed canonical equality")
     target_reader = GGUFReader(str(target))
     target_tensors = {t.name: t for t in target_reader.tensors}
-    for name in ("token_embd.weight", "output.weight"):
+    target_head_name = "output.weight"
+    if target_head_name not in target_tensors:
+        from compare_frozen import tied_target_proof
+        proof = tied_target_proof(Path(canonical["target_config_path"]), canonical["target_config_sha256"],
+                                  llama, target_reader.get_field("general.architecture").contents())
+        if not canonical.get("target_tied_head_fallback") or canonical.get("target_head_source_tensor") != "token_embd.weight" or proof["target_loader_sha256"] != canonical["target_loader_sha256"]:
+            raise ValueError("canonical/native target tied-head proof differs")
+        target_head_name = "token_embd.weight"
+    elif canonical.get("target_tied_head_fallback"):
+        raise ValueError("canonical tied-head fallback disagrees with actual target inventory")
+    for name in ("token_embd.weight", target_head_name):
         if target_tensors[name].tensor_type != GGMLQuantizationType.F16:
             raise ValueError("fixed target embedding/head must remain F16")
     with source.open("rb") as f:
@@ -96,6 +106,10 @@ def inspect(source: Path, target: Path, draft: Path, config: Path, llama: Path, 
             "canonical_comparison_path": str(comparison), "canonical_comparison_sha256": sha256(comparison),
             "matrix_storage_types": sorted(matrix_types), "borrows_embedding": borrows_embedding,
             "borrows_head": borrows_head, "private_copy_identity": copies,
+            "target_tied_head_fallback": canonical.get("target_tied_head_fallback", False),
+            "target_head_source_tensor": target_head_name,
+            "target_config_path": canonical.get("target_config_path"),
+            "target_config_sha256": canonical.get("target_config_sha256"),
             "target_embedding_dtype": "F16", "target_head_dtype": "F16",
             "native_tensor_bytes": sum(t.n_bytes for t in reader.tensors),
             "tensor_inventory": [{"name": t.name, "type": t.tensor_type.name,
