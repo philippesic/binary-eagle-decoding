@@ -21,8 +21,10 @@ passed26 tests separately and does not delay preparation. All local workers are
 finished. The unique new preparation-only job actually launched at06:43UTC,
 supervisor806/child807; source/configuration and fresh launch guards passed.
 Preparation supervision is acknowledged by `01a10084-101e-7311-94e9-9658f9dc648f`
-with the SAME active heartbeat and job. Initial CPU health/model readiness and
-full gate results remain pending;
+with the SAME active heartbeat and job. First post-launch CPU check passed at
+06:51UTC: same live processes, all353 retained manifests/10,000TRAIN/1,002development,
+phase teacher_shard_complete, active CPU/I/O, no models built yet and zero updates.
+Model smoke/checkpoint-zero and full gate results remain pending;
 original failed/paused evidence is preserved. Old09 remains terminal, no recovery
 or old-live actions are allowed. Launch is verified; actual model smoke,
 checkpoint-zero and final readiness remain pending.

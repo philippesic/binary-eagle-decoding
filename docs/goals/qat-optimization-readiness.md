@@ -81,7 +81,19 @@ birth166197/child807birth166204/UID1000/currentboot3abb, source6f/native9e2/conf
 Controller returned0/passed/new_dispatched=true/uncertain=false. Prelaunch
 contexts/project workers were empty, GPUutil0/free13,533MiB/RAM20,078,047,232B.
 These are prelaunch observations, not current release. Static metadata does not
-delay it. Actual model smoke/checkpoint/full readiness remain pending.
+delay it. Actual model smoke/checkpoint/full readiness remain pending. First
+post-launch CPU check at06:51:01UTC passed under acknowledged prep successor:
+same806/807 kernel births, statuspreparing/teacher_shard_complete, models{} and
+zero updates. Retained353 manifests/10,000TRAIN/1,002development are intact and
+capture counters353/353; complete model/readiness remains unverified. Child is
+running with CPU/I/O activity (365,652,435,840 physical read bytes since launch),
+so this is active preparation, not GPU release. Parsed snapshot SHA
+`9fde5801fd8011e4c4dbeeea9002f08e0fa8097f6821b788040357a571227a60`,
+local closure proof SHA `9355350a4cb4def79c0c932748b48e858542fbafc4b2d2069740a3ade2ab46fd`
+under `runs/luna-continuous-a8-a1-20260929/current-source-monitor-20261003-01/`.
+Root verified both hashes locally; sole operator/transport are closed and the
+SAME15minute monitors remain ACTIVE. Continue current model/coverage gates and
+coordinate actual native/runtime/recipe validation at a verified GPU handoff.
 
 **Local work:** `/root/terminal_continuation` owns NEW ignored
 `runs/qat-optimization-readiness/retained-capture-adoption-20261002-01/postconfig-gpu-prep-transfer-20261002-03/`;
