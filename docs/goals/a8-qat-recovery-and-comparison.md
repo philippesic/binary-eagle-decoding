@@ -179,3 +179,35 @@ Monitor creation succeeded. Registration is saved outside Git at
 `runs/qat-a8-recovery/monitor-registration.json`. This local registration records
 the worker identities, sole GPU owner, initial budget, retry cap and phase;
 actual-model/optimizer flags remain false until observed evidence exists.
+
+## Native request timing helper — standalone bounded feature
+
+`/root/native_request_metrics` owns only the new
+`scripts/a8_native_request_metrics.py` and focused tests in
+`/private/tmp/eagle-a8-native-metrics` (branch
+`feature/a8-native-metrics-20261003`). Existing trainer/stages files are untouched.
+The deliverable reuses `benchmark_native_eagle` parsing/count aggregation and
+`run_binary_head_capture.server_command` for the exact24development request
+policy (F16 target/draft KV, greedy seed42, max128 outputs, draft5/pmin0).
+Tensor capture and trace environment hooks are absent. Both native arms require
+current `9e2c7a90051e738751aab7d7bd7c2d8201fb76e3` with shared pack and unused-head
+pruning; historical teacher b4 source remains separate and is refused for timing.
+
+Callable: `measure_a8_requests(sources, prompts, draft, output,
+deadline=caller_absolute_monotonic_deadline, stop_file=STOP)`.
+Five alternating repetitions each run both A8/Q4_0 with one warmup per server:
+240measured requests and10warmups. The helper shares the evaluator's1200s
+aggregate deadline and cannot start a new budget. Raw request/response/counts,
+HTTP wall, server prefill/decode spans, IDs, kernel markers and mapped runtime
+are retained. Aggregate count/time ratios and distributions lead with Q4_0;
+TTFT is explicitly unavailable from the nonstreaming endpoint. Incomplete runs
+publish no performance ratios, retain raw failures and exact teardown evidence.
+
+Acceptance check:11focused CPU tests passed, including full synthetic contract,
+count/time aggregation, frozen policy, historical-runtime rejection, no capture
+hooks, deadline/STOP handling and real local owned-process-group cleanup without
+killing an unrelated process. Ruff and diff checks pass. No SSH/GPU or measured
+performance result. Remaining integration: trainer calls the helper after export
+using derived current evaluation sources (explicit commit/env/runtime inventory),
+rejects incomplete timing, binds its manifest and attaches actual hardware evidence;
+sole Luna executes within the existing evaluation deadline.
