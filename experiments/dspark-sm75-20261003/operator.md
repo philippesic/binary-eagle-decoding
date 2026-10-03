@@ -9,11 +9,11 @@ machine-local; only the host alias is recorded here.
 
 ## Host and initial admission evidence
 
-Read-only commands, issued over the tmux MCP pane (host address redacted here; exact commands remain in ignored operator evidence):
+Read-only commands, issued over the tmux MCP pane (DS_SCREEN_HOST is the registry host; exact commands remain in ignored operator evidence):
 
 ```sh
-ssh -p 22 philip@<registry-host> 'hostname; date -Is; uname -a; nvidia-smi --query-gpu=name,uuid,memory.total,memory.used,driver_version,pstate,temperature.gpu,clocks.current.sm,clocks.current.memory,power.draw --format=csv; nvidia-smi; ps -eo pid,ppid,pgid,sid,stat,etime,cmd --sort=pid | head -100; tmux -L binary-eagle-runtime ls 2>&1'
-ssh -p 22 philip@<registry-host> '/usr/lib/wsl/lib/nvidia-smi --query-gpu=name,uuid,memory.total,memory.used,driver_version,pstate,temperature.gpu,clocks.current.sm,clocks.current.memory,power.draw --format=csv'
+ssh -p 22 philip@"$DS_SCREEN_HOST" 'hostname; date -Is; uname -a; nvidia-smi --query-gpu=name,uuid,memory.total,memory.used,driver_version,pstate,temperature.gpu,clocks.current.sm,clocks.current.memory,power.draw --format=csv; nvidia-smi; ps -eo pid,ppid,pgid,sid,stat,etime,cmd --sort=pid | head -100; tmux -L binary-eagle-runtime ls 2>&1'
+ssh -p 22 philip@"$DS_SCREEN_HOST" '/usr/lib/wsl/lib/nvidia-smi --query-gpu=name,uuid,memory.total,memory.used,driver_version,pstate,temperature.gpu,clocks.current.sm,clocks.current.memory,power.draw --format=csv'
 ```
 
 The host was `DESKTOP-T4JKGJB`, WSL2 kernel `6.18.33.2-microsoft-standard-WSL2`.
