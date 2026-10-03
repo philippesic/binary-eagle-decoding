@@ -26,12 +26,11 @@ successor uses one pinned operator only when no other is active. Root creates
 no second remote operator. Protected QAT/preparation
 supervision continues; no credit purchase or reset redemption.
 
-**Current state — October 3, 08:16 UTC:** Static05 actually launched and finished
+**Current state — October 3, 08:30 UTC:** Static05 actually launched and finished
 exit0; its collector verifies passed CPU inventory, unchanged protected bytes
 and complete owned helper-group return. Local transport/keeper closure is
-verified. Exact inventory metadata is queued with the next due normal health
-connection, avoiding a separate reconnect. The last preparation check
-is07:49:40: exact806/807 are active with positive CPU/I/O progress, zero optimizer
+verified. Exact inventory metadata is collected and joined to the operation.
+The last preparation check is08:24:04: exact806/807 are active with positive CPU/I/O progress, zero optimizer
 updates and only a stale-heartbeat checker failure. All353 provider manifests
 are complete. Paired model smoke/checkpoint-zero/full readiness and GPU release
 remain unverified. The08:01 existing-only profiler check found py-spy unavailable
@@ -4112,3 +4111,32 @@ exclusive-slot eligibility from actual current phase/context/resources, never
 stale model fields. Actual eligible-TRAIN actor, model/backward/memory/timing/
 save-resume/full readiness/Q4_0 gates remain. The local worker is completed;
 no new research team, operator, source hot-edit, preparation restart or schedule.
+
+## Actual inventory inputs and fresh preparation health — October 3, 08:30 UTC
+
+Same operator ran saved normal health06 FIRST, then read only the three owned
+Static05 metadata outputs on the same LOCAL237 connection. Total182,283B is
+within1MiB; no GPU query, signal, model/tensor read or repeat health. Actual
+operation99a013b0 joins manifest SHA
+`c472e36da5d441cae76a813f076cac13f5eff45f7d0e5ec03d75d9deaadc8ba0` (138388B);
+native-runtime SHA
+`4c15cee806c4485c81f4bdacbdcb6cade6f222a9159d4851389f39efae8a9e44` (2189B)
+joins that same manifest. Root independently verified all three raw bytes,
+operation/result and sourceb32/native9e2/package9db scope with readiness/training
+false and zero optimizer. Exact files live under the Static05 operator directory's
+`metadata-collection-20261003-01/operator-20261003-01/`. MCP capture error is
+preserved; bounded local pane output ended0 and exact base64/SHA joins passed.
+
+Fresh08:24:04.998772 CPU health remains preparing/readiness_complete,
+checkerexit2 with only stale-heartbeat failure, no ready receipt or optimizer.
+Same806birth166197/807birth166204, childR. Since07:49:40: +204665 user/+1349 system
+ticks,4,159,967,560 logical/26,964,508,672 physical read bytes, no new writes.
+This is active CPU/I/O, not exact hot-path, model readiness, recovery or release.
+Combined closure SHA16bd02abc89f88a3cff0ad86e964b582c7b511f7dc31d18ad7027522ad1a0c69
+verifies LOCAL237 absent/keeper73687 exited130; root verified all12 artifact pins.
+
+Actual static inputs are saved separately from the immutable seven-file plan in
+`current-clean-runtime-cuda-20261003-01/root-actual-static-inputs-20261003-01.json`.
+No CUDA GO: exclusive current-owner physical GPU proof and adjacent dispatch/
+teardown still remain. Existing preparation/job/source/config/precision unchanged;
+model/coverage/smoke/checkpoint and full actual native/backward gates remain pending.

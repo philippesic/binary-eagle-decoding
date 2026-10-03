@@ -23,7 +23,7 @@ updates. At07:21 the data-stage marker advanced to readiness_complete; metadata
 at07:26 confirms all353 provider manifests and indexes exist. The repeated shared
 GGUF manifest hash loop is finished. Model/coverage markers are being checked;
 empty model records alone do not establish whether model loading has begun.
-Model smoke/checkpoint-zero and full readiness remain pending. At07:49 the
+Model smoke/checkpoint-zero and full readiness remain pending. At08:24 the
 checker reports only a stale-heartbeat failure; exact child807 remains active
 with positive CPU/I/O progress. This warning is preserved, not waived. Both
 active precision gates are legacy v1, so the modern NPZ validation branch is
@@ -36,11 +36,11 @@ metadata files under a never-staged directory. Static05 fixes only those paths
 and passed35 local guards. Actual Static05 finished at08:13 UTC with exit0;
 the08:14 collector verifies passed inventory, unchanged protected files and
 empty helper groups. Local transport/keeper closure and all41 evidence file pins
-are verified. Exact inventory metadata remains to be read during the next normal
-health connection. This is CPU static proof; current-package CUDA and actual-model
+are verified. All three exact inventory records are now read back and hash-joined
+to the successful operation. This is CPU static proof; current-package CUDA and actual-model
 gates remain pending. A bounded copied-fixture CUDA command plan is locally
-reviewed; actual inventory bindings and fresh exclusive GPU ownership are still
-required before dispatch. Preparation retains GPU ownership.
+reviewed and its actual inventory inputs are verified; fresh exclusive GPU
+ownership is still required before dispatch. Preparation retains GPU ownership.
 A local source audit found repeated common GGUF hashing per shard;
 a small cache fix for FUTURE starts passed80 independent CPU tests and31 root
 checks. Current source6f/live preparation is unchanged. Old09 remains terminal,
