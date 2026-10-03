@@ -12,7 +12,10 @@ uninvolved. The SAME `a8-qat-recovery-monitor` is retargeted here and ACTIVE.
 Three new bounded workers own trainer/evaluator/resume, recipe/movement audits,
 and independent checks plus sole GPU operation; root reviews readiness and
 integrates. See the [ownership checkpoint](goals/a8-qat-recovery-and-comparison.md#standalone-ownership-claimed--october-3-2026).
-No new actual QAT launch is claimed. The only active goal is
+Integrated fixes are published (frozen execution source583480c; main8583b68).
+CPU integration/recipe/receipt/resume checks pass. Sole operator has GO for
+immutable deployment and the gated native/model/step-zero/training pipeline;
+actual GPU/model/optimizer start still requires observed evidence. The only active goal is
 [A8 QAT recovery and comparison](goals/a8-qat-recovery-and-comparison.md).
 
 RTX5080 is resumed for this work; RTX2080Ti and unrelated research remain paused.
