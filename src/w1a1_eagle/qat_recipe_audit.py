@@ -63,6 +63,8 @@ def comparison_training(manifest: Mapping, arm: str) -> dict:
         raise ValueError("comparison must retain A8-only two-hour arm budget")
     if training.get("development_lifecycle") != "standalone":
         raise ValueError("A8 development must run in a separate process")
+    if training.get("a1_computation") != "reference":
+        raise ValueError("A8 comparison preserves reference surrogate-gradient arithmetic")
     if training.get("objective") != "hard_ce":
         raise ValueError("comparison requires matched hard-CE training")
     if training.get("optimize_cache") is not True or training.get("optimize_head") is not True:
