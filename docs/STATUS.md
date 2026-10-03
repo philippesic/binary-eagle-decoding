@@ -33,10 +33,13 @@ stopped before sampling; the exact remaining startup hot path is unmeasured.
 The terminal continuation passed46 root/independent local tests. CPU static04
 returned exit1 with all owned groups gone: its descriptor referenced three
 metadata files under a never-staged directory. Static05 fixes only those paths
-and passed35 local guards; the same operator has conditional CPU GO after
-transport return and fresh execution guards. Preparation retains GPU ownership.
-A local source audit found
-repeated common GGUF hashing per shard;
+and passed35 local guards. Actual Static05 finished at08:13 UTC with exit0;
+the08:14 collector verifies passed inventory, unchanged protected files and
+empty helper groups. Local transport/keeper closure and all41 evidence file pins
+are verified. Exact inventory metadata remains to be read during the next normal
+health connection. This is CPU static proof; current-package CUDA and actual-model
+gates remain pending. Preparation retains GPU ownership.
+A local source audit found repeated common GGUF hashing per shard;
 a small cache fix for FUTURE starts passed80 independent CPU tests and31 root
 checks. Current source6f/live preparation is unchanged. Old09 remains terminal,
 its recovery budget is exhausted, and original evidence is preserved. RTX2080Ti

@@ -26,9 +26,11 @@ successor uses one pinned operator only when no other is active. Root creates
 no second remote operator. Protected QAT/preparation
 supervision continues; no credit purchase or reset redemption.
 
-**Current state — October 3, 08:06 UTC:** the sole preparation supervisor has
-reserved its same Luna operator for Static05 after verified stack-diagnostic
-return. No Static05 dispatch is yet reported. The last actual preparation check
+**Current state — October 3, 08:16 UTC:** Static05 actually launched and finished
+exit0; its collector verifies passed CPU inventory, unchanged protected bytes
+and complete owned helper-group return. Local transport/keeper closure is
+verified. Exact inventory metadata is queued with the next due normal health
+connection, avoiding a separate reconnect. The last preparation check
 is07:49:40: exact806/807 are active with positive CPU/I/O progress, zero optimizer
 updates and only a stale-heartbeat checker failure. All353 provider manifests
 are complete. Paired model smoke/checkpoint-zero/full readiness and GPU release
@@ -4040,3 +4042,43 @@ paired model preparation/readiness remain pending. CPU GO is durably recorded
 in root-owned ignored training registration; public checkpointcf64cb5 is pushed
 and its merged clean worktree/branch removed. This next checkpoint uses
 `/private/tmp/eagle-qat-runtime-result-20261003`.
+
+## Copied runtime CPU inventory passed — October 3, 08:16 UTC
+
+The sole operator staged and strictly verified all31 Static05 file pins,
+descriptor relocation8154/90e65 and unchanged original metadata4eca/b38/0bc.
+Fresh phase proof SHA0cbc6a2bc96909b914a2f5dbc3365c52f5c0f30728f76f03eeaa0bc1f17f999d
+verified source6f/configccc, old09 terminal/empty groups, original CPU98bd43 and
+fixtured884, current boot3abb, host available19,187,924,992B/disk391,507,726,336B.
+Adjacent admission7b8eafe0c0f50547a2c632ccda80c40a64d83fc81450701c22133a1dc076133f
+was0.273s old at successful launch return. Original phase/admission bytes match
+the wrapper's exact base64 outputs and pinned hashes under root review.
+
+Actual job/session `qat-clean-runtime-static-20261003-05` ran08:13:15–08:13:19 UTC,
+supervisor2219/child-group2220, bounded inner180/outer240/grace10. State finished
+exit0, no signal. At08:14:53 the reviewed collector returned
+passed_cpu_static_inventory=true/protected_unchanged=true/ownership_returned=true;
+supervisor absent and both groups empty. Original10/runtime7/frozen14 preserved.
+Root independently verified original exact8310B return receipt and its base64
+transport equality, including all producer fields and success/return flags.
+Receipt SHA093c833a9ad17be29f6f10708f111ced518f0d33e418b44e4b29c65899b53104;
+operation99a013b04d2092c6ab201d1b6073c64ca975c1a73ec812d59dce9dbe849d1618;
+state557111aae97fa75d13a95c9eef958fd0ee52cd0302cd1b6d9b403a38619fee23.
+Evidence lives under `runs/luna-continuous-a8-a1-20260929/cpu-static05-operator-20261003-01/`.
+Closure SHA07b3f851040fa0d8ad749ef857da5de29f36afff917f141c25ce04d32c87a04c
+proves LOCAL236 closed and keeper39802 exited130; root verified all41 file pins.
+Exact owned operation/runtime-inventory metadata remains pending, bounded to1MiB
+and no arbitrary walk/log classification/model read. Since transport is closed,
+read it with the next due ordinary health connection, not a separate reconnect.
+
+This proves static build/ELF/package provenance only. No GPU query, CUDA context,
+model/backward, ready receipt, optimizer or GPU-release claim. Main6f/806807
+remains untouched and preparation-owned. The existing local packet worker
+`/root/static_runtime_packet` owns only NEW ignored
+`runs/qat-optimization-readiness/current-clean-runtime-cuda-20261003-01/` to prepare
+the minimum next current-package CUDA plan using existing runners/contracts,
+with actual inventory hash and fresh exclusive lease/final release required.
+No new remote operator or broad testing slate. After CPU collection returns,
+the same prep supervisor/operator handles due normal health. Current-package
+native/actor/model/backward/memory/timing/save-resume/full preparation gates still
+precede previously-authorized training. Full goal remains incomplete.
