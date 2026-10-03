@@ -17,7 +17,18 @@ The same QAT monitor is ACTIVE and bound to
 acknowledged owner `01a0ff1c-1007-75e3-a772-eaeb078179b3`; the same preparation
 owner/operator retain sole remote control. No duplicate schedule or operator.
 
-The unique current-source preparation-only job launched at06:43UTC, supervisor806/
+**Preparation completed successfully at08:57:52 UTC, observed09:39:55.**
+Supervisor exited0;806/807 are absent. The checker reports healthy/terminal,
+complete coverage of10,000 TRAIN prompts/3,899,930 supervised rows, paired A8/A1
+step-zero models and checkpoint. Ready receipt SHA bdfa56f8 and checkpoint
+e9d01984 are recorded in the goal. Optimizer updates remain zero. Exact terminal
+collection and fresh final GPU-release proof are underway through the sole
+operator. The held-slot plan is obsolete and preserved; no hold occurred.
+Root issued conditional GO for one reviewed released-mode copied-fixture CUDA
+test after verified release, then the remaining actual-model/native/backward/
+memory/timing/save-resume gates and already-authorized new training run.
+
+**Historical preparation progress:** the unique job launched at06:43UTC, supervisor806/
 child807, after verified current-boot durability and fresh launch guards. Prep
 owner `01a10084-101e-7311-94e9-9658f9dc648f` acknowledged the same job and active
 heartbeat. Checks at06:51 and06:55 verified live kernel identities, retained353
@@ -47,8 +58,9 @@ ownership is still required before dispatch. The08:42 eligibility snapshot found
 all four completion markers absent and child807 holding two /dev/dxg handles.
 Zero utilization and an empty WSL compute-app list do not prove context absence;
 the native test remains inactive. The held-slot fixture controller is now
-code-reviewed after seven focused CPU checks; the owner's executable hold/return
-guard and actual physical proof remain pending. Preparation retains GPU ownership.
+code-reviewed after seven focused CPU checks. Final preparation completion now
+supersedes that hold plan; released-mode physical proof is required before native
+dispatch. GPU release remains unverified until that collection completes.
 A local source audit found repeated common GGUF hashing per shard;
 a small cache fix for FUTURE starts passed80 independent CPU tests and31 root
 checks. Current source6f/live preparation is unchanged. Old09 remains terminal,

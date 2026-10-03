@@ -32,7 +32,18 @@ successor uses one pinned operator only when no other is active. Root creates
 no second remote operator. Protected QAT/preparation
 supervision continues; no credit purchase or reset redemption.
 
-**Current state — October 3, 08:48 UTC:** Static05 actually launched and finished
+**Current state — October 3, 09:44 UTC:** preparation ACTUALLY completed at
+08:57:52, observed by healthy/terminal checker09:39:55. Supervisor exit0,
+no signal,806/807 absent, ready receiptbdfa56f8, checkpointe9d01984, both A8/A1
+integerstep0, full10,000 TRAIN/3,899,930 supervised rows and zero optimizer.
+Same sole operator is collecting exact terminal final03/release evidence.
+The held-slot implementation is stopped/preserved; no hold occurred. Root's
+conditional released-mode copied-fixture GO requires actual final release and
+fresh source/context/resource/control facts; no readiness from the CPU pass.
+Then complete current native/actual-model/backward/memory/timing/save-resume
+gates and launch the previously authorized NEW training run without confirmation.
+
+**Historical state at08:48 UTC:** Static05 actually launched and finished
 exit0; its collector verifies passed CPU inventory, unchanged protected bytes
 and complete owned helper-group return. Local transport/keeper closure is
 verified. Exact inventory metadata is collected and joined to the operation.
@@ -4269,3 +4280,45 @@ root registration. No additional confirmation is needed after current required
 gates. Skip optional research/profiling/optimization work; finish the short
 native fixture, full model/readiness and source-bound training path. No main
 restart, hot edit, extra operator or premature optimizer. Goal remains incomplete.
+
+## Full preparation successful; final release and native gate — October 3, 09:44 UTC
+
+Actual health08 at09:39:55.294040: checker0/healthy/terminal/no failures,
+supervisor finished exit0 at08:57:52.886441, no signal; both806/807 absent.
+Parsed original SHA b28c62855d3c2a5e88d522a83600205404bd0227377281bb1af4e6c490315e19
+under `current-source-monitor-20261003-01/health-20261003-successor-08.parsed-query.json`.
+Summary of actual `continuous_w1ax_preparation_ready_v1` ready receipt SHA
+`bdfa56f8b10e44e82a6d807a71f32d68c39143af7094e6f8f0da63504d41a498`:
+preparation_complete=true, prepare_only stop, optimization_started=false,
+step0 and paired A8/A1 integerstep0, coverage3,899,930 supervised rows/10,000
+TRAIN prompts. Zero-update checkpoint SHA
+`e9d01984f6323cc9789b110cc3029e43f97f5596b3840fb5911256202adf2f15`
+at NEW run `checkpoints/step-000000000000-e000000-r000000000000/resume.pt`.
+Root independently verified the saved query/summary; original full ready/smoke/
+coverage/checkpoint/terminal bytes and fresh complete release are being collected.
+This is successful preparation, not an optimizer/training/convergence claim.
+
+Root immediately stopped obsolete owner-hold implementation/staging. No STOP/
+CONT/hold occurred; all local proposal/prototype/controller/source/adviser evidence
+is preserved. Same sole Luna prioritizes final03 authenticated terminal
+collection and fresh groups/context/resource/source/paired-checkpoint release.
+Existing source6f/native9e2/configccc and retained ancestry remain unchanged.
+
+Conditional GO is recorded for exactly one RELEASED-mode current-package CUDA
+fixture transaction using reviewed11bce4/a3fd8ecc/exec6b70. Stage/hashverify BEFORE
+any slot lifetime, then owner mints fresh root/owner slot <=600s/min360 remaining
+only after actual final-release/census/context/source/config/package/resources/
+controls/durability/uniquejob facts pass. Mode released, both original groups/
+births absent, no other active submitter, actual empty retained-context census
+and owner_verified_final_release quiescence proof. No old admission/template
+permission. One native30s/kill5/grace10/outer90 job only; actual terminal groups/
+submitter/context teardown and unchanged protected bytes before return. Failure
+remains real failure with bounded logs; no numeric/data gate waiver.
+
+After current-package proof, finish the remaining genuine prepared-checkpoint
+eligible-TRAIN actor/native decisions, actual-model every-enabled-stage backward,
+memory/timing, save/resume and Q4_0 development launch gates. Reuse authenticated
+prepared state, do not repeat full corpus/provider audits or enable optional
+unvalidated features. Record exact selected passing recipe/source/data/runtime/
+hardware/checkpoint/fixed budgets before previously authorized NEW training.
+Direct human ASAP instruction is verified; no redundant confirmation is needed.

@@ -74,3 +74,11 @@ evidence changes the lesson.
 - Agent contribution: This lead's broad whole-producer wording did not distinguish management and GPU execution roles sufficiently. The worker reused wrapper identity and successful-operation assumptions instead of the actual executor and cancellation producer branches.
 - Practical lesson: Specify process roles and exact owned groups up front. Record real kernel identity across exec, test natural fast completion and interrupted cleanup, preserve a live management supervisor, and separate expired execution authority from read-only cleanup evidence.
 - Correction or resolution: Original hard-disabled prototypes are preserved. Seven focused CPU checks cover same-PID execution, live-manager/held-child roles, failure/missing-operation collection and expired/CANCEL cleanup. Actual hold/quiescence/context-return proof remains required before a native test.
+
+### 2026-10-03: Keep terminal detection on the critical path
+
+- Observation and evidence: Preparation ended successfully at08:57:52 UTC, but the next collected health observation detected it at09:39:55. During that interval agents developed a held-slot protocol that became unnecessary once the job finished. The human reiterated that QAT should run as soon as possible.
+- Status: Confirmed supervision/priority delay; no user mistake and no failure of the completed preparation.
+- Agent contribution: This lead added local ownership/controller work while following indirect owner snapshots. The preparation owner also spent time on that local work; the usual15-minute observation cadence did not detect the terminal transition promptly.
+- Practical lesson: Preserve a short normal health/terminal observation at its cadence while local implementation proceeds. A successful terminal transition cancels obsolete hold work immediately and moves the same operator to release verification, remaining model gates and training.
+- Correction or resolution: Actual success is checkpointed; held-slot work is stopped and preserved without any hold signal. The sole operator is redirected to final release and the reviewed released-mode native fixture, with no new preparation or redundant audit.
