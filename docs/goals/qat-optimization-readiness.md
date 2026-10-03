@@ -32,16 +32,15 @@ successor uses one pinned operator only when no other is active. Root creates
 no second remote operator. Protected QAT/preparation
 supervision continues; no credit purchase or reset redemption.
 
-**Current state — October 3, 11:45 UTC:** original full preparation/zero and
-current copied native CUDA pass are verified. ACTUAL model CPUstage authenticated
-clean helperd211/external6f/full10000TRAIN/3899930rows, provider binding4f794;
-no model or optimizer execution. Final13guard model packetac7f is frozen/reviewed,
-SAME soleLuna on NEW242/%271/keeper72822; parent owns only final operational GPU
-wrapper/GO. Fresh full physical/context/resource/pause proof and concrete command
-pin review precede one zero-update3600s model transaction. Next optimizer packet
-aa1a is independently prepared/reviewed16tests; actual model/native/timing/restore
-receipts and training still pending. Optimizer updates ZERO. No user confirmation
-or repeated corpus/fixture work. Latest checkpoint below carries exact evidence.
+**Current state — October 3, 11:57 UTC:** ACTUAL source-bound model gate job
+launched11:49 after authenticated fullsource CPUstage, current copied native pass
+and fresh ownership/source/context/resource checks. SAME sole Luna242 keeps its
+connection live; bootstrap/A8/A1/collect naturalexit0, paired backward/memory/five
+repeat readiness and terminal artifact/context/group return pending. Optimizer
+updates ZERO; next optimizer packetaa1a is ready/reviewed but not granted. No
+repeated fixture/corpus audit, source/math change or user confirmation required.
+Use actual stdout/producer records rather than stale compact chat commentary.
+Latest milestone below carries exact job/command/grant identities.
 
 **Historical state — October 3, 09:44 UTC:** preparation ACTUALLY completed at
 08:57:52, observed by healthy/terminal checker09:39:55. Supervisor exit0,
@@ -56,6 +55,41 @@ conditional released-mode copied-fixture GO requires actual final release and
 fresh source/context/resource/control facts; no readiness from the CPU pass.
 Then complete current native/actual-model/backward/memory/timing/save-resume
 gates and launch the previously authorized NEW training run without confirmation.
+
+## Actual source-bound model gates running — October 3, 11:49 UTC
+
+Root whole operational wrapper/payload/guardian review and dry guard passed.
+Exact command `4c12daef34c70c948de8945caec2788453c43d563288341f44d4988ed695fcc7`
+(1309bytes), wrapper
+`3d17d65677d61fde46264fbb94faaf15063a865efeebf4f9c25efac2391bcf34`,
+payload `4e14131f2a6af98a5a76b7bf30cf08ac388bc3b337923168163329fa78115cc3`,
+guardian `ad6a722fa1baf68d1c4a56ee42d42321e1ddf301140a1e4c0f50ca626d355905`.
+Root issued final one-shot MODEL GO; SAME sole Luna242/%271/keeper72822 executes
+this command and retains its WSL/SSH connection through terminal collection.
+No additional operator/query, source change, fixture/corpus repetition or optimizer.
+
+Actual grant11:49:19.564382 UTC, job `qat-prepared-model-gates-20261003-01`,
+ownerGO SHA `9f6e48e6e8b0e2684515f5381276e44e24a0e6bc1938007e2136f606a3a87dda`,
+fixed expiry1791031759.5643818/3600s, optimizerfalse. Actual wrapper stdout proves
+launch returned and bootstrap/A8/A1/collect each naturalexit0. Markers bootstrap
+`61793214d85228d9560b4c0444c10457ddad381f9f734d71473848f7f387572a`,
+A8 `e5fface8e33f55ce33343ebdb4d4a4eec3890cc22d06bb1074c567618ee4c435`,
+A1 `14a1196d...` (full exact original upon final collection), collect
+`5d274cc805422115c5d17a78132a55a38424d4b356330260638e66c5edf916a7`.
+These are live phase-return observations; actual current backward/memory/five
+repetitions/readiness report, full artifact/hardware/state/source joins and complete
+owned terminal/context/group return still pending. No optimizer update.
+
+Raw live output is ignored operator directory `gpu-model.stdout.jsonl`; do not
+hash-pin it as terminal until producer finishes. Original MCPcommand
+`4af2a802-8bac-48bb-8c4a-c6e95c2d2474` remains pending; capture difficulty is not
+execution failure or replay authority. Existing compact chat commentary can lag
+actual stdout; rely on actual kernel/status/producer records. Root's redundant
+GO-status relay did not cause another dispatch because exclusive local claim
+and unique job/output protect the operation. Continue current readiness/collection
+without new status/proof loops. Already-prepared next optimizer packet is reviewed,
+but GPU/training GO requires genuine final model receipts plus original fullzero
+restore/current paired smoke. SAME QAT/prep monitors and paused2080/research remain.
 
 ## Actual full-source model CPU stage passed — October 3, 11:34 UTC
 

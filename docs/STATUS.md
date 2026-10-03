@@ -104,8 +104,9 @@ public/tested `d211275` (17guards plus genuine tiny CPU restore/real Git imports
 Actual model CPUstage now passed: original full10000TRAIN/3899930rows and zero
 checkpoint are authenticated, generated binding4f794 pins clean helperd211/source6f.
 Final13guard model packetac7f is frozen/reviewed; SAME Luna has NEW242 transport.
-Parent's concrete GPU operational wrapper/fresh physical GO is next, then actual
-model/native/backward/memory/five-repeat timing. NEXT optimizer packetaa1a also
+ACTUAL model gate job launched11:49 on SAME operator242; bootstrap/A8/A1/collect
+naturalexit0, paired backward/memory/five-repeat readiness and terminal return
+pending. Connection remains live; no replay or extra remote query. NEXT optimizer packetaa1a also
 has16root/worker guards and whole-code review, but actual model receipts/restore
 and optimizer launch remain pending.
 No repeat corpus audit or unit fixture, source changes or new user confirmation.
