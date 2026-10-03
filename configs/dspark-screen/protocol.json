@@ -30,5 +30,8 @@
     "dspark_7",
     "dflash_3",
     "dflash_7"
-  ]
+  ],
+  "native_noise_tokens": 7,
+  "short_layout": "compute seven trained bidirectional noise slots; propose/verify first three",
+  "accepted_count_policy": "preserve raw verified matches and useful emitted accepted prefix separately"
 }
