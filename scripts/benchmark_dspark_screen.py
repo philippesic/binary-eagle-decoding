@@ -44,6 +44,10 @@ def round_summary(records: list[dict], maximum: int) -> dict:
             raise ValueError("invalid native round counts")
         if len(r["proposed_token_ids"]) != r["n_proposed"] or len(r["emitted_token_ids"]) != r["n_emitted"]:
             raise ValueError("native round token/count mismatch")
+        if "n_accepted_usable_prefix" in r and not 0 <= r["n_accepted_usable_prefix"] <= min(r["n_accepted"], r["n_emitted"]):
+            raise ValueError("invalid usable accepted prefix")
+        if "verified_token_ids" in r and r["emitted_token_ids"] != r["verified_token_ids"][:r["n_emitted"]]:
+            raise ValueError("emitted IDs differ from consumed verifier prefix")
     proposed = sum(r["n_proposed"] for r in complete)
     accepted = sum(r["n_accepted"] for r in complete)
     usable = sum(r["n_accepted_usable_prefix"] for r in complete) if complete and all("n_accepted_usable_prefix" in r for r in complete) else None

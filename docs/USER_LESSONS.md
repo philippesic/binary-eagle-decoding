@@ -165,3 +165,11 @@ additional proof protocols or redoing completed audit work.
 - Practical lesson: Audit the executed precision branch before calling a flag
   irrelevant. Preserve agreed gradient rules in matched comparisons and record
   deliberate effective-path exceptions explicitly.
+
+## October 3: released block metadata does not establish runtime noise length
+
+- Context: The human authorized a released DSpark/DeepSpec DFlash screen with short and trained-maximum proposals on RTX2080Ti.
+- Evidence: Agents initially configured native proposal length three as the short reference. Focused Astra review found that the native driver also shrank the bidirectional noise block from seven slots to three, changing the conditioning of the first three predictions despite checkpoint metadata still declaring block seven.
+- Status: Confirmed agent interpretation error, corrected before model execution; no user mistake or measured quality failure.
+- Agent contribution: Root froze the initial short length before auditing its graph meaning; the native owner and advisor then exposed the distinction. A guarded reference path now computes all seven trained noise slots and proposes only the first three, with actual runtime counts to be checked.
+- Practical lesson: Audit runtime input slots, masks and read slots for a short proposal arm. Checkpoint block-size metadata alone does not establish the released reference's conditioning. Preserve default runtime behavior outside the explicit reference mode and require same-prefix native proposal checks.
