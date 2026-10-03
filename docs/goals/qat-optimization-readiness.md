@@ -32,14 +32,18 @@ successor uses one pinned operator only when no other is active. Root creates
 no second remote operator. Protected QAT/preparation
 supervision continues; no credit purchase or reset redemption.
 
-**Current state — October 3, 12:29 UTC:** ACTUAL QAT OPTIMIZER UPDATES VERIFIED.
-First complete pairedstep1 at12:27:51.373, collectedstatusstep3/bothlanes. Root
-verified all11originals, unchanged actualresume/currentpairedsmoke/state/runtime
-and existing pairedmetrics validator. Finite18gradtensors/9layers, positive scale
-movement, zero signflips under originalwarmup, no convergence/heldoutqualityclaim.
-SAME supervisor7101/trainer7102/soleLuna242 continue unchanged. Actual >zero paired
-checkpoint/disconnect survival/Q4dev supervision next; SAME15minmonitors and
-paused2080/research unchanged. Goal incomplete.
+**Current state — October 3, 12:42 UTC:** ACTUAL pairedtraining reached1000steps,
+4846unique supervisedrows/13prompts; savedpairedcheckpoint62f88/manifestb48c.
+Originalautomaticdevelopment FAILED hostRAM preflight requiring15.03GBavailable;
+supervisornaturallyfinished12:41:37.746exit1/no signal, statusfailed preserved.
+No Q4report/qualityclaim. Actualreadonlyreconnect verifies terminalownedgroupempty,
+source/runtime/pairedcheckpoint/exports; all5raworiginals rootverified. Training
+continued after12:36:31connectionclosure and reachedterminal>306slater; no sameLIVE
+birthpostreconnectclaim sincejobterminated. SAME soleowner/operator must collect
+terminal logs/currentFULLcontext/resources/source release. Local SAMEfeatureowner
+prepares NEWserializedfinalevalpacket02 narrowly accepting exactoriginalpoststep1000
+RAMfailure/intactcheckpoint, no relabel/restart/caps/source/memorygate waiver. Then
+actualCPUstage/freshfullrelease/ownerGO→unchangedQ4_0eval. Goal incomplete.
 
 **Historical state — October 3, 09:44 UTC:** preparation ACTUALLY completed at
 08:57:52, observed by healthy/terminal checker09:39:55. Supervisor exit0,
@@ -54,6 +58,51 @@ conditional released-mode copied-fixture GO requires actual final release and
 fresh source/context/resource/control facts; no readiness from the CPU pass.
 Then complete current native/actual-model/backward/memory/timing/save-resume
 gates and launch the previously authorized NEW training run without confirmation.
+
+## Actual 1000-step checkpoint; development RAM failure — October 3, 12:42 UTC
+
+Exact reviewed one-shot readonlyreconnect returned currentterminal metadata at
+12:41:48.296628 UTC on sameboot3abb/ns. Source snapshot SHA/status80507ed5 confirms
+original supervisor7101/trainer7102/exactcommand/job/source/runtime, ended
+12:41:37.746138UTC, exit1, received_signalnull, owned primarygroupempty. Paired
+step1000/cursor1001/epoch0,4846unique supervisedrows/13prompts. Bothlanes18finite
+gradienttensors/latentoutsideclip0; cumulative signflipsA8=398/A1=54, currentstep
+one each, scaleL1movementA8.0957618/A1.0862354. Final observed TRAIN losses3.91576/
+5.81204 are different prompt/round observations; no heldoutquality or convergence
+inference. Actual1000 optimizer pairs is substantive progress, not fullcorpus
+training coverage or end-to-end serving throughput.
+
+Authentic current pairedcheckpoint
+`checkpoints/step-000000001000-e000000-r000000001001/resume.pt`, SHA
+`62f88fdd4c696fbfa4e6d0aeba0b260debab0d0a132886ce0050787e34200cb6`,
+manifest `b48c556510697b6f178e671808a96cc5b3e84692f1d179898269b07d0d6fe63e`.
+Existing source-bound observer hashed resume+bothlaneexport inventories and joined
+manifest/status/source/runtime. Root independently verified5raworiginals by
+base64/SHA/length under `actual-training-reconnect-root-verified-20261003-01/`.
+No development.json. Exact originalerror:
+`RuntimeError: host available RAM below development deployment preflight array staging admission: requires 15032385536 bytes including safety floor`.
+Statusfailed/resume_from_last_committed_pairtrue is preserved. This is an actual
+posttraining automaticevaluation preflight failure; do not callwholejobexit0.
+
+Physical localconnection242/keeper72822closed12:36:31.813153UTC, no remote signals;
+raw3pins and sessionabsence independentlyverified. Originaljob reached1000 and
+terminated306secondsafterdisconnect; exact savedkernel/job/source/command/boot
+and terminalprogress are retained. Since it naturallyterminated before reconnect,
+no sameLIVEpostreconnectbirth check was possible. Report this specificterminal
+progress proof, not observer's genericdisconnectFalse as a fakegrant or broad
+WSLuptime claim. Current fullGPU/nativecontext/resource release remainspending.
+
+Sameprepowner/soleoperator next collect terminalstdout/development resource
+admission and unchanged source/currentboot/fullownedgroups/context/resources.
+NO optimizerrestart/resume/caps/sourcechange or newexperiment operator. SAME
+localfeatureworker owns NEWimmutablefinaldevelopmentpacket02 minimal acceptance
+of exactcompletepaired originalmax_steps1000 plus thisspecificposttraining RAM
+error/intactcheckpoint. Preserve originalsuccessful-only01; reject every other
+failure/partialpair/runtime change. FreshreleasedRAMfloors must pass unchanged
+before separateoriginalsource6f evaluator runs on savedcheckpoint; no memorygate
+waiver or automatic source math change. Rootwholecode/CPUstage/physical/finalGO
+remain before futureevaluation. Q4_0primary original24subset/1002pool/b4native,
+no sealeddata or serving-throughput claim. Goal remainsincomplete.
 
 ## Actual paired optimizer updates verified — October 3, 12:29 UTC
 

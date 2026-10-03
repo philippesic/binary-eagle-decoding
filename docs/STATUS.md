@@ -107,16 +107,16 @@ Final13guard model packetac7f is frozen/reviewed; SAME Luna has NEW242 transport
 ACTUAL ALL5 model gate phases PASSED11:55:55 exit0; all164originals/currentreceipt
 validator/group-context return checked.30forward30back/five repeats, finite/later
 grads; native12caseszero changed choices, reserved9.11GB/minfree6.48GB. This is
-TRAIN/readiness evidence, not heldoutacceptance or convergence. Corrected trainingpacket02 actual CPUstage PASSED12:20:57;
-rootall5originals/source/zero/ready/sidecar/durability joins pass. FINAL TRAINING
-GO12:23 issued for reviewed wholewrapper/argv/guardian commandbe89 to SAME Luna242,
-with freshfullphysical/soleowner/pause and unchanged<=300s admission, actualzero
-copy/resume/currentpairedsmoke before optimizer. Actual supervised job launched12:26:17,
-supervisor7101/trainer7102 exactbirths/command verified; current phase restore/
-currentpairedsmoke before optimizer. ACTUAL firstpaired optimizerstep1 verified12:27:51,
-collectedstatusstep3/all11originals/restore/currentSmoke/finite18gradtensors and
-9layer scale movement pass. Checkpoint>0/disconnect survival/Q4dev remain. Q4development is existing training supervision;
-no invented prelaunchheldoutreport. Optimizer progress is now verified; development quality remains unmeasured.
+TRAIN/readiness evidence, not heldoutacceptance or convergence. ACTUAL QAT reached1000pairedsteps and published checkpoint62f88/manifestb48c.
+Originalautomaticdevelopment then FAILED hostRAMpreflight15.03GB; supervisor
+finished12:41:37exit1/no signal, preservedstatusfailed and no Q4report. Bothlanes
+finite18gradtensors, signflipsA8=398/A1=54; noquality/convergenceclaim. Exact
+readonlyreconnect/all5originals verifies checkpoint/exports/source/runtime and
+terminalgroupempty, jobprogressafterconnectionclosure306s (no sameLIVEbirth
+postreconnectclaim). SAME owner/operator collects fullcontext/resource/logrelease;
+SAME localworker builds NEWserializedevalpacket02 narrowly for intact1000checkpoint
+and specificRAMfailure. No trainingrestart/source/caps/memorygate waiver. Fresh
+releasedRAM then unchanged originalQ4_0eval remain. Goal incomplete.
 No repeat corpus audit or unit fixture, source changes or new user confirmation.
 See the [native milestone](goals/qat-optimization-readiness.md#actual-copied-native-cuda-fixture-passed--october-3-1110-utc).
 
