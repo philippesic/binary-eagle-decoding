@@ -32,17 +32,16 @@ successor uses one pinned operator only when no other is active. Root creates
 no second remote operator. Protected QAT/preparation
 supervision continues; no credit purchase or reset redemption.
 
-**Current state — October 3, 12:16 UTC:** actual current full-source model/native
-readiness remains PASSED. Trainingpacket01 CPUstage failed before GPU/model/updates
-on a config string/Path API mismatch; original failure is preserved. NEW immutable
-packet02 changes only that call plus packet/output paths. Root genuine-loader
-regression/all17CPU checks/all15pins PASS; final CPUstage source approval sent to
-SAME preparation owner/sole Luna242. Actual output02 success and concrete launch
-wrapper/guardian pin review precede adjacent fresh context/resource/pause/soleowner
-proof and <=300s admission. Original fullzero restore/currentpaired smoke remain
-inside adapter before optimizer. No gate repetition/source/math change/newoperator/
-prelaunchheldoutQ4report/userconfirmation. Actualfirstupdates/checkpoints/disconnect
-survival/Q4trainingdevelopment remain; optimizer updates ZERO.
+**Current state — October 3, 12:23 UTC:** actual CPUstage02 PASSED, all5originals
+joined by root to source/config/zero/ready/sidecar/binding/currentbootdurability.
+Root entire concrete trainingwrapper/argv/guardian plus decodedpayload/pins and
+localguard drycheck PASS; FINAL TRAINING GO issued to SAME prepowner/sole Luna242.
+One claimed commandbe89 starts unique detached supervised referenceA8/A1 run only
+on fresh fullphysical/owner/pause/resources/interop/currentboot proof and <=300s
+admission. Adapter still requires actual fullzero copy/resume/currentpaired smoke
+before optimizer. No gate repeat/source/math/newoperator/userconfirmation. Actual
+launch/kernel/firstupdates/checkpoint/disconnect survival/Q4development remain
+unverified; optimizer updates ZERO in latest verified evidence.
 
 **Historical state — October 3, 09:44 UTC:** preparation ACTUALLY completed at
 08:57:52, observed by healthy/terminal checker09:39:55. Supervisor exit0,
@@ -57,6 +56,47 @@ conditional released-mode copied-fixture GO requires actual final release and
 fresh source/context/resource/control facts; no readiness from the CPU pass.
 Then complete current native/actual-model/backward/memory/timing/save-resume
 gates and launch the previously authorized NEW training run without confirmation.
+
+## Training final GO after actual CPUstage — October 3, 12:23 UTC
+
+Actual corrected CPUstage02 completed at12:20:57UTC with zero model/GPU/optimizer;
+original stdout33168B SHA
+`0975544c22ab5f126e5deb0b5a34957fbfbae616f17008fe9f4a062f2ef2dc76`.
+Root verified all5originals by raw base64/SHA/length and localcopy equality;
+actual stage `27c0a25e69016c9ceb7e0d389ff9eb8e3cb5eb62855fa1c3d968c00d00cc9b82`.
+Readiness3badd/sidecar481615/modelreturnbb140/binding4f794/sourceb1/configfea/
+originalfullzeroe9/durabilitya7fe joins pass. Root acceptance is
+`runs/qat-optimization-readiness/prepared-training-cpu-stage02-root-acceptance.json`.
+First root parser assumed compact JSONlines and rejected producer's pretty first
+object; sequential original JSON decoder then passed without changing evidence.
+
+Root reviewed entire final wrapper/guardian/argv and exact decoded payload;
+localguard dryPASS/tmp, command1395B SHA
+`be89d4b62fc9ca8f69176fb187ea6da15fcbf111120d536e1e15190b81ac4420`,
+wrapper `3d09d4aa37a4b8356d83b33a519bde3814425e38a94c6a2c62283d80cfda2174`,
+guardian `fc879f007de202b72cce65cd18a5b5a8156148d66e2ecace3679ce58e8430b01`.
+FINAL TRAINING GO sent12:23UTC to SAME prepowner/soleLuna242/271/keeper72822.
+One O_EXCLclaim before SSH; exactpacketc1f/stage27c then fresh whole rootcensus,
+context/resources/soleowner/pause/currentboot/interop proof; existing plain300s
+ownerGO/unchanged300s adapter admission. Unique detached job
+`qat-prepared-reference-a8-a1-supervisor-20261003-01` is separate from empty trainer
+`runs/qat-prepared-reference-a8-a1-20261003-01`. Adapter fullzero copy/resume/current
+paired smoke/currentstate enforcement remains before any optimizer step. Fixed
+referenceA8/A1 caps1000steps/3600trainerseconds/1epoch, original250checkpoint/
+100diagnostics/1000development cadence. No extra confirmation or prelaunchQ4 gate.
+
+Wrapper observes exact live births then real all-nine finite first pairedstep1
+within900s, preserves source producer save-resume/launch-gates/zero-origin/status/
+smoke/metrics originals. Launch receipt alone does not prove updates. On observation
+failure preserve already-started job, sameoperator retains supervision, no replay.
+Final rootGO registration is saved; actual launch/kernel/updates remain pending.
+Currentboot CPU disconnect evidence is accepted; actualTRAINING disconnect/reconnect
+survival and >zero pairedcheckpoint/Q4development remain objective evidence.
+Local samefeatureworker prepares serialized original development helper only if
+caps stop beforestep1000; never concurrentGPU or a prelaunch gate. Original
+1002dev pool selects24native prompts/max48lossrounds perlane; Q4_0primary and frozen
+b4native evaluator scope, no serving-throughput claim. No changes to frozen data,
+verifier precision, source math or paused2080/research.
 
 ## Corrected training packet reviewed — October 3, 12:16 UTC
 
