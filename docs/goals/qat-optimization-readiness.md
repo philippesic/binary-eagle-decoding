@@ -3711,3 +3711,129 @@ overwrite/code/math/modelchange. CPUcurrent-ownerphase mustreflectstopped09
 beforeanynewCPUgrant; doNOTreuseoldlive-phase protocol blindly. CriticalGPU
 continuationpriority; parsermetadatafix neverblocksPyTorchmodelprep-only.
 FullQATgoalACTIVE; actualmodel/finalready/optimizerupdates stillunverified/zero.
+
+## Preparation supervision rotation — October 3, 06:43 UTC
+
+**Objective:** continue the existing incomplete QAT optimization-readiness goal.
+Preparation is bounded to current-source A8/A1 construction, full authenticated
+retained data/receipt/coverage/audits, paired smoke and checkpoint-zero. No
+optimizer update or training admission follows from this launch. Q4_0 EAGLE
+remains the primary acceptance/latency/throughput baseline; target/verifier
+precision and sealed final data remain frozen. No new goal, duplicate schedule,
+credit purchase or reset redemption.
+
+**Controlling authorization and owners:** the human's later “Gpu is free resume
+now” resumes only the existing RTX5080 QAT/preparation pipeline and necessary
+remote support. Actual shared gpu-control.json currently has RTX5080 false and
+RTX2080Ti true. Supporting research remains stopped. Acknowledged QAT coordinator
+is `01a0ff1c-1007-75e3-a772-eaeb078179b3`, verified against training registration.
+Preparation predecessor is `01a0fdd6-8e11-7393-9aed-5c99bd08e428`. The existing
+Luna/high operator `/root/atomic05_owner_rebind` finished its sole dispatch and
+local closure; no active local operator, lease acquisition, return or transport
+remains. A successor must acknowledge the written handoff before any remote
+operation; the old chat then retires. It must use one pinned experiment_operator
+Luna/high, only after confirming no competing operator. No root GPU operator.
+
+**Completed implementation and checks:** source `6f1444b86dd01862da878c2d5d2434a1d9165c29`
+with native `9e2c7a90051e738751aab7d7bd7c2d8201fb76e3` and config
+`ccc43a104a3a09e1a910746c319f55df33761bec5616378254a90e9339dbdafe`
+passed actual CPU retained-payload/config validation. All353 original manifests
+retain10,000 TRAIN/1,002 development prompts and authentic historical full semantic
+pass ancestry. The current boot CPU-only disconnect fixture survived163.512s of
+heartbeat advancement with exact identities, then honestly expired240s (exit2,
+time_limit); complete groups/session/local closure is accepted, not model success.
+Final terminal03 packet SHA
+`bc2176fd410308a78ff7f371c9768a62a4745f5c6f475b033350ccf94a98b4e6`
+passed46 local tests under author, independent Luna and QAT root, with all37
+file pins matching. No tests were repeated after those accepted checks. Earlier
+public source/loader fixes: `c0f3d85`, `01015ac`, `6f1444b`, `a345f87`, `973d10c`,
+`3bf0ca8`; latest documentation commits before this rotation are `4068d3c`,
+`336da67`, `adf881a`, `8f7bd48`, `1068a3f`. Static03 metadata packet passed26
+local tests separately; actual static/native copied-package outcome is pending
+and must not delay preparation.
+
+**Actual launch:** fresh parent admission
+`be4686812ab7a0d93e06b85002b66d73c55ba5debe12953b73ae8080d7e841d8`
+was minted adjacent to execution from fresh local owner/controls/returned-fixture
+records. Controller reverified source28/old14/runtime7/config/import/corpus,
+terminal old09 zero evidence, current boot/census/durability and actual GPU/RAM/
+disk/context before dispatch. Only the emitted literal transport was executed,
+once, through tmux MCP. Raw launch receipt under
+`runs/qat-optimization-readiness/retained-capture-adoption-20261002-01/postconfig-gpu-prep-transfer-20261002-03/root-adjacent-launch-20261003-01.raw.json`
+is24794B, SHA `e57ff6f935bd2de086e11605f1e274b9660ec03755c3304898839f46789172db`.
+Actual controller returncode0, new_dispatched=true, uncertain=false. Prelaunch
+RTX5080/SM120 compute apps were empty, utilization0, resource floors passed.
+These are prelaunch observations, not a current release claim.
+
+**Exact live remote job:** boot `3abb0e06-8bd4-474b-82a7-7480d59b8002`, namespace
+`pid:[4026532221]`, UID1000. Supervisor806/PGID806/SID806/startticks166197;
+child807/PGID807/SID807/startticks166204/PPID806. Both cwd:
+`/home/philip/binary-eagle-decoding/runs/qat-optimization-readiness/retained-capture-adoption-20261002-01/checkout`.
+Host socket `binary-eagle-runtime`, session/job `retained-a8-a1-prepare-20261002-01`.
+State at checkout `/runs/retained-a8-a1-prepare-20261002-01/state.json`;
+run at checkout `/runs/retained-a8-a1-preparation-20261002-01`.
+Child argv is the absolute original ROOT `.venv/bin/python`,
+`scripts/train_continuous_w1ax.py --config configs/continuous_w1ax.json --start
+--allow-cuda --prepare-only --stages-manifest` the absolute validated
+`.../retained-capture-adoption-20261002-01/inputs/retained-stages.json`, `--run-dir`
+the absolute NEW run. No --resume, no optimizer. Supervisor uses
+`scripts/remote_job.py --stop-grace-seconds 300`. Any required user-stop teardown
+must reverify current boot/namespace/UID/PID birth/argv/groups before signalling
+only the owned supervisor; its normal handler terminates child group with300s
+grace. Never signal a host tmux pane/server or old09; verify owned groups and
+GPU contexts gone before release. Never interrupt the job solely for rotation.
+
+**Operator closure:** LOCAL226/pane255 and keeper15771 are closed/absent; no health
+query or other remote action followed dispatch. Original operator proof at
+`.../postconfig-gpu-prep-transfer-20261002-03/root-adjacent-launch-20261003-01.operator-proof.json`
+SHA `bcdb155587568cd25d44e7083e8231ac6adb3fcdba6a9840f4d66c3c20b8ddcd`
+is independently verified. The operator's prose path omitted a directory;
+actual file discovery/hash corrected the reference without modifying evidence.
+Local producer-matched `new-launch-local-producer-derived.json` SHA
+`196b89123d5c0f2104d2f73909c5605d9468afe24ea3460ea9560a4dcaebd3fd`
+is explicitly DERIVED, not an original remote-byte hash. Collection must verify
+actual remote new-launch bytes against this pinned producer encoding; preserve
+any discrepancy, never weaken receipt checks.
+
+**Monitor binding and local state:** ignored
+`runs/luna-continuous-a8-a1-20260929/monitor-registration.json` experiment now
+binds this NEW source/run/job/actual kernel identities/config. The exact CPU
+query lives at `current-source-monitor-20261003-01/monitor-query-command.json`
+relative to that run registry; source SHA
+`ba9188bedeb2f2397ee226c1234549a68b653ccd38d6b20e18fa6bb3ef889cac`, command SHA
+`fa134992a8d4adb25960e0da9d75a0e36a377bc6649098ca60790a30517947da`.
+It has been compiled locally but NOT executed. It runs the current checkout's
+CPU checker exactly once, guards boot/source/config/actual PID births/argv/UID,
+reads only metadata and process CPU/I/O, and counts original retained label
+manifests separately from NEW audit counters. No GPU/model/tensor read. Previous
+registry/lease/health/query bytes are archived beside it. Do not use archived
+old09 query or old-launch source14 as the NEW live identity. Recovery2/2 stays
+exhausted; terminal old09 never gets restart/recovery authority. ParentLOCAL198
+diagnosis is explicitly completed; no invented lock.
+
+**Exact next actions:** finish successor/owner acknowledgment and rebind SAME
+ACTIVE preparation heartbeat `a8-a1-luna-health-and-recovery` to the successor,
+no duplicate schedule. Re-read STATUS, this goal, operations/monitor runbook,
+current ignored registration/lease/budget/last-health, fresh shared hosts.toml
+and GPU controls. Dispatch exactly one pinned Luna/high for the saved command,
+loaded verbatim and SHA/length checked; all SSH through fresh LOCAL tmux MCP
+with own persistent local keeper, preserve raw output and close own transport.
+Keep CPU/I/O audit activity, retained353 captures and zero optimizer separate.
+Known stale audit heartbeat with proven activity does not permit recovery.
+If exact NEW job becomes terminal, use reviewed final03 builder collect with
+actual bound launch SHA, then sole operator proves both NEW groups/supervisor
+absent and fresh contexts/resource/source/census release. Success additionally
+requires terminal exit0, final ready receipt, complete coverage/audits, paired
+A8/A1 integerstep0, paired smoke and checkpoint SHA. Coordinate QAT owner for
+exclusive leases/final release; current native actor/model forward/backward,
+memory/timing/save-resume/Q4_0 development gates precede training. No readiness,
+release or optimizer claim while these remain pending.
+
+**Unresolved decisions/work:** no human decision is needed to continue this
+already authorized preparation/supervision. No new research or major recipe
+change is authorized. Full preparation/current native/model gates and first
+optimizer update remain pending. The only live work is the detached NEW job;
+all old preparation/fixture/transport work is terminal and preserved. This
+checkpoint worktree `/private/tmp/eagle-prep-rotation-20261003` owns only appended
+STATUS/goal sections; integrate/push then remove it after verified successor
+handoff. Other untracked research files and QAT root worktrees are untouched.

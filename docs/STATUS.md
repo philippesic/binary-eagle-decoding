@@ -1405,3 +1405,16 @@ recipe construction defect; isolated resume validation prototype also passes.
 QAT owner assesses adoption/fresh identity, frozen jobs unchanged.16% original
 weeklyremaining; Astra prepares fourth2optimization tasks, no GPU/SSHwhilehost
 info pending. [Checkpoint](parallel20261002/supervisor.md#third-slate-integrated--october-2-1911-utc).
+
+## Preparation launch and supervision rotation — October 3, 06:43 UTC
+
+The unique current-source preparation-only job actually started. Supervisor806 /
+child807 run in detached host tmux, with zero optimizer updates authorized.
+Launch receipt, fresh resource/source checks and the sole operator's complete
+local transport closure are verified. Full model readiness and GPU release
+remain pending; old09 is historical and cannot be resumed or restarted.
+The saved one-check CPU monitor query now binds the actual new job and current
+source, and counts retained captures from their original authenticated paths.
+The preparation owner is rotating after two compactions without interrupting
+the detached job; explicit successor acknowledgment and SAME heartbeat transfer
+are recorded in the [preparation rotation checkpoint](goals/qat-optimization-readiness.md#preparation-supervision-rotation--october-3-0643-utc).
