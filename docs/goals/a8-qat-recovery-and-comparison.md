@@ -66,6 +66,24 @@ measured by optimizer hooks, bounded samples and per-tensor finite gradients;
 first-update float32 nonmovement during warmup cannot alone prove a broken
 parameter family. A bounded early-update family gate retains actual proof.
 
+### Matched gradient arithmetic correction
+
+Sole-operator independent review found `a1_computation=single_forward` also
+selects the alternate learned A8 VJP. The prior assumption that this flag is
+irrelevant to A8 was wrong. Recipe commit2a3c489, adopted29ee3b3, selects
+`reference` for both arms, preserving the agreed gradient baseline and all
+requested candidate features. The execution exception for learned-head serial
+training remains explicit. Cheap execution observations run each round; dense
+recipe audits/packed sign telemetry run at initialization and diagnostic cadence.
+Movement admission accumulates finite/nonzero gradients and measured displacement
+for every enabled family across at most the first100budgeted updates, preserving
+per-tensor evidence and exact checkpoint state.
+
+Native timing helper49c7511 is adopted43ed317; its11CPUchecks are pending root
+integration. The mandatory same-target no-speculation timing reference is being
+added within the SAME1200s evaluation deadline; Q4_0 remains primary. No extra
+training/evaluation budget or new research arm is selected.
+
 ## Standalone chat handoff — October 3, 2026
 
 The human corrected the execution structure: “just launch it as a seperate codex

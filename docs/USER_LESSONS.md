@@ -150,3 +150,18 @@ additional proof protocols or redoing completed audit work.
   or messaging it. Preserve unfinished work so the new owner can review it.
 - Resolution: Four workers interrupted, original heartbeat paused, partial
   worktrees and readiness commit retained, standalone handoff recorded.
+
+### 2026-10-03: Validate an execution flag on the selected precision
+
+- Context: The standalone A8 comparison requested learned quantizers, all-nine
+  midpoints and lower-inertia AdamW, while A1 remained held out.
+- Evidence: The draft shared config used `a1_computation=single_forward`.
+  Sole-operator source review found this also selects `_LearnedSingleForward`
+  for a learned A8 module, whereas fixed A8 ignores that selector. Its name
+  therefore hid a candidate-only gradient implementation difference.
+- Status: Confirmed agent configuration/integration mistake, not a user error.
+  The recipe owner corrected both arms to `a1_computation=reference`; requested
+  quantizers, midpoint coverage, inertia and cache/head optimizations remain.
+- Practical lesson: Audit the executed precision branch before calling a flag
+  irrelevant. Preserve agreed gradient rules in matched comparisons and record
+  deliberate effective-path exceptions explicitly.
