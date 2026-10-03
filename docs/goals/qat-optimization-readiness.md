@@ -13,8 +13,11 @@ but its local-only restriction is superseded for this pipeline.
 QAT owner `01a0ff1c-1007-75e3-a772-eaeb078179b3`. Optimizer updates remain zero.
 The SAME QAT heartbeat is ACTIVE every 15 minutes, bound to this owner with the
 latest resume wording and all launch/training gates preserved; no new schedule.
-Preparation owner `01a0fdd6-8e11-7393-9aed-5c99bd08e428` retains its SAME sole Luna
-operator. Root creates no second remote operator. Protected QAT/preparation
+Preparation owner is now acknowledged successor
+`01a10084-101e-7311-94e9-9658f9dc648f`, with the SAME active heartbeat/job. The
+predecessor's launch operator/transport completed before explicit transfer;
+successor uses one pinned operator only when no other is active. Root creates
+no second remote operator. Protected QAT/preparation
 supervision continues; no credit purchase or reset redemption.
 
 **Actual state and next execution:** old09 is terminal; no replacement launch was
@@ -71,14 +74,20 @@ specific GO at06:37:55UTC to the SAME sole preparation owner/operator: mint a
 NEW<=300s admission adjacent to execution, then run only the emitted transport.
 Current source/runtime/terminal-zero/GPU/context/process/RAM/disk/unique paths
 and late-expiry/CANCEL checks still deny any failed guard. Old09 cannot be
-signalled/restarted; no optimizer or recovery charge. Actual new launch remains
-pending and static metadata does not delay it.
+signalled/restarted; no optimizer or recovery charge. Actual NEW launch passed
+at06:43:13UTC, raw SHA
+`e57ff6f935bd2de086e11605f1e274b9660ec03755c3304898839f46789172db`, supervisor806
+birth166197/child807birth166204/UID1000/currentboot3abb, source6f/native9e2/configccc.
+Controller returned0/passed/new_dispatched=true/uncertain=false. Prelaunch
+contexts/project workers were empty, GPUutil0/free13,533MiB/RAM20,078,047,232B.
+These are prelaunch observations, not current release. Static metadata does not
+delay it. Actual model smoke/checkpoint/full readiness remain pending.
 
 **Local work:** `/root/terminal_continuation` owns NEW ignored
 `runs/qat-optimization-readiness/retained-capture-adoption-20261002-01/postconfig-gpu-prep-transfer-20261002-03/`;
 `/root/static_runtime_packet` owns NEW ignored
 `runs/qat-optimization-readiness/current-clean-runtime-static-20261003-03/`.
-Both have bounded independent local testing/review and no remote authority.
+Both completed bounded independent local testing/review with no remote authority.
 Original c899, paused-v2, static02 and all raw evidence remain unchanged. Root owns
 STATUS/goal and training registration. Existing checkpoint worktree
 `/private/tmp/eagle-qat-stop-closure-20261003` carries these documentation updates.

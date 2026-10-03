@@ -18,9 +18,14 @@ new bounded CPU disconnect/system-identity proof passed with complete teardown.
 The terminal continuation passed46 local tests under root and independent review,
 and its specific launch GO was sent to the same sole operator. Static metadata
 passed26 tests separately and does not delay preparation. All local workers are
-finished; actual new-job launch remains pending;
+finished. The unique new preparation-only job actually launched at06:43UTC,
+supervisor806/child807; source/configuration and fresh launch guards passed.
+Preparation supervision is acknowledged by `01a10084-101e-7311-94e9-9658f9dc648f`
+with the SAME active heartbeat and job. Initial CPU health/model readiness and
+full gate results remain pending;
 original failed/paused evidence is preserved. Old09 remains terminal, no recovery
-or old-live actions are allowed, and actual new-model start remains pending.
+or old-live actions are allowed. Launch is verified; actual model smoke,
+checkpoint-zero and final readiness remain pending.
 Optimizer updates remain zero; the existing goal is incomplete. See the
 [resume checkpoint](goals/qat-optimization-readiness.md#human-resume-rtx5080-qat-pipeline--october-3-0611-utc).
 
