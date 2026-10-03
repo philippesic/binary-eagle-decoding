@@ -86,6 +86,8 @@ class ContinuousConfig:
     persistent_sign_diagnostics: bool = False
     optimization_readiness: dict | None = None
     affine_weights: object | None = None
+    activation_bits: tuple[int, ...] = (8, 1)
+    development_lifecycle: str = "in_process"
 
     def __post_init__(self):
         if torch.device(self.device).type not in {"cpu", "cuda"}:
@@ -140,6 +142,11 @@ class ContinuousConfig:
                 or (name != "max_seconds" and type(value) is not int)
             ):
                 raise ValueError(f"{name} must be positive or null")
+        object.__setattr__(self, "activation_bits", tuple(self.activation_bits))
+        if self.activation_bits not in {(8,), (8, 1)}:
+            raise ValueError("continuous lanes must be A8 only or paired A8/A1")
+        if self.development_lifecycle not in {"in_process", "standalone"}:
+            raise ValueError("development lifecycle must be in_process or standalone")
         if len(self.seeds) != 2 or self.seeds[0] == self.seeds[1]:
             raise ValueError("A8 and A1 need distinct seeds")
         if any(
@@ -206,6 +213,11 @@ def immutable_config(config: dict) -> dict:
     result = json.loads(json.dumps(config))
     for field in ("max_steps", "max_tokens", "max_seconds", "max_epochs"):
         result.pop(field, None)
+    # Preserve old paired publications without changing their saved bytes.
+    if result.get("activation_bits") == [8, 1]:
+        result.pop("activation_bits")
+    if result.get("development_lifecycle") == "in_process":
+        result.pop("development_lifecycle")
     return result
 
 
@@ -295,40 +307,43 @@ def build_lanes(provider, config: ContinuousConfig, run_dir: Path | None = None)
         p.requires_grad_(False)
     first_config = config.qat(8)
     linears = install_joint_linears(drafter, target, replace(first_config, device="cpu"))
-    if config.device != "cpu":
-        admission["before_independent_model_copy"] = require_host_memory(
-            linux_host_memory(),
-            floor_bytes=config.min_host_available_bytes,
-            additional_bytes=model_storage_bytes(drafter, device_type="cpu"),
-            stage="second independent binary drafter CPU copy",
-        )
-        if run_dir is not None:
-            atomic_json(Path(run_dir) / "initialization_resource_admission.json", admission)
-    other = copy.deepcopy(drafter)
-    other_linears = {path: other.get_submodule(path) for path in linears}
-    for module in other_linears.values():
-        module.contract = config.qat(1).contract
-    if config.activation_quantization == "learned":
-        from .learned_activation import LearnedActivationBank
-
-        bank = LearnedActivationBank(1, {name: m.in_features for name, m in other_linears.items()})
+    models = [(8, drafter, linears)]
+    if config.activation_bits == (8, 1):
+        if config.device != "cpu":
+            admission["before_independent_model_copy"] = require_host_memory(
+                linux_host_memory(),
+                floor_bytes=config.min_host_available_bytes,
+                additional_bytes=model_storage_bytes(drafter, device_type="cpu"),
+                stage="second independent binary drafter CPU copy",
+            )
+            if run_dir is not None:
+                atomic_json(Path(run_dir) / "initialization_resource_admission.json", admission)
+        other = copy.deepcopy(drafter)
+        other_linears = {path: other.get_submodule(path) for path in linears}
         for module in other_linears.values():
-            del module.activation_quantizer
-        bank.attach(other_linears)
-        other.qat_activation_bank = bank
-    # Share only frozen operands while both copies are still on CPU. Native
-    # norm rebinding by each adapter may later replace tiny norm parameters;
-    # embedding ownership stays shared without a second GPU allocation.
-    first_params = dict(drafter.named_parameters())
-    for name, parameter in list(other.named_parameters()):
-        if not parameter.requires_grad:
-            reference = first_params[name]
-            if parameter.shape != reference.shape or not torch.equal(parameter, reference):
-                raise ValueError("frozen drafter copies disagree")
-            parent, _, leaf = name.rpartition(".")
-            setattr(other.get_submodule(parent) if parent else other, leaf, reference)
+            module.contract = config.qat(1).contract
+        if config.activation_quantization == "learned":
+            from .learned_activation import LearnedActivationBank
+
+            bank = LearnedActivationBank(1, {name: m.in_features for name, m in other_linears.items()})
+            for module in other_linears.values():
+                del module.activation_quantizer
+            bank.attach(other_linears)
+            other.qat_activation_bank = bank
+        # Share only frozen operands while both copies are still on CPU. Native
+        # norm rebinding by each adapter may later replace tiny norm parameters;
+        # embedding ownership stays shared without a second GPU allocation.
+        first_params = dict(drafter.named_parameters())
+        for name, parameter in list(other.named_parameters()):
+            if not parameter.requires_grad:
+                reference = first_params[name]
+                if parameter.shape != reference.shape or not torch.equal(parameter, reference):
+                    raise ValueError("frozen drafter copies disagree")
+                parent, _, leaf = name.rpartition(".")
+                setattr(other.get_submodule(parent) if parent else other, leaf, reference)
+        models.append((1, other, other_linears))
     lanes = []
-    for bits, model, modules in ((8, drafter, linears), (1, other, other_linears)):
+    for bits, model, modules in models:
         lane_config = config.qat(bits)
         model.to(config.device)
         model.eval()
@@ -357,15 +372,47 @@ def build_lanes(provider, config: ContinuousConfig, run_dir: Path | None = None)
     return lanes
 
 
+def validate_lane_ownership(lane: Lane) -> None:
+    """Require every attached trainable to belong to exactly one optimizer family."""
+    families = joint_parameter_families(lane.linears)
+    expected = {name: {id(p) for p in params} for name, params in families.items() if params}
+    actual = {}
+    seen = set()
+    for group in lane.optimizer.param_groups:
+        family = group.get("family")
+        ids = [id(p) for p in group["params"]]
+        if family in actual or len(ids) != len(set(ids)) or seen.intersection(ids):
+            raise ValueError("duplicate optimizer family or parameter ownership")
+        actual[family] = set(ids)
+        seen.update(ids)
+    if actual != expected or seen != {id(p) for p in lane.drafter.parameters() if p.requires_grad}:
+        raise ValueError("attached model/optimizer parameter families differ")
+    if lane.config.contract.activation_bits != int(lane.name[1:]):
+        raise ValueError("lane activation contract differs")
+    if any(lane.drafter.get_submodule(name) is not module for name, module in lane.linears.items()):
+        raise ValueError("declared binary module is detached from drafter")
+    if (lane.config.activation_quantization == "learned") != bool(families["activation"]):
+        raise ValueError("requested learned activation attachments differ")
+    if (lane.config.affine_weights is not None) != bool(families["midpoint"]):
+        raise ValueError("requested midpoint attachments differ")
+    if (lane.config.fusion_correction is not None) != bool(families["fusion"]):
+        raise ValueError("requested fusion attachments differ")
+
+
 class ObservedAdapter:
     """Keep first proposal state/K/V for bounded later-position gradient gates."""
 
     def __init__(self, adapter):
         self.adapter = adapter
         self.first = None
+        self.context_cache_calls = 0
 
     def __getattr__(self, name):
         return getattr(self.adapter, name)
+
+    def build_context_cache(self, *args, **kwargs):
+        self.context_cache_calls += 1
+        return self.adapter.build_context_cache(*args, **kwargs)
 
     def decode_step(self, *args, **kwargs):
         step = self.adapter.decode_step(*args, **kwargs)
@@ -409,8 +456,8 @@ class ContinuousTrainer:
         *,
         development_evaluator=None,
     ):
-        if [lane.name for lane in lanes] != ["A8", "A1"]:
-            raise ValueError("continuous run requires both independent A8 and A1 lanes")
+        if [lane.name for lane in lanes] != [f"A{bits}" for bits in config.activation_bits]:
+            raise ValueError("continuous lane inventory differs from declared activation_bits")
         if provider.training_eligible is not True or provider.split != "train":
             raise ValueError("substantive audited training eligibility required")
         if getattr(provider, "readiness_scope", None) == "row_a16_hard_ce_100_steps":
@@ -419,11 +466,22 @@ class ContinuousTrainer:
             {id(p) for group in lane.optimizer.param_groups for p in group["params"]}
             for lane in lanes
         ]
-        if owned[0] & owned[1]:
+        if len(owned) == 2 and owned[0] & owned[1]:
             raise ValueError("models/optimizers must have independent trainable state")
+        for lane in lanes:
+            validate_lane_ownership(lane)
         self.provider, self.lanes, self.config = provider, lanes, config
         self.run_dir = Path(run_dir).resolve()
         self.run_dir.mkdir(parents=True, exist_ok=True)
+        atomic_json(self.run_dir / "effective-config.json", {
+            "config": asdict(config),
+            "lanes": {lane.name: {"config": asdict(lane.config),
+                "optimizer": type(lane.optimizer).__name__,
+                "parameter_families": {name: sum(p.numel() for p in params)
+                    for name, params in joint_parameter_families(lane.linears).items()}}
+                for lane in lanes},
+            "attachments_and_optimizer_exact": True,
+        })
         self.evaluator = development_evaluator
         self.stop_requested = False
         self.step = self.epoch = self.cursor = self.tokens = 0
@@ -496,7 +554,9 @@ class ContinuousTrainer:
                 "source_sha256": self.source,
                 "training_runtime": self.runtime_identity,
                 "checkpoint": self.checkpoint,
-                "scheduling": "A8 then A1 on identical rounds; one live autograd graph",
+                "training_elapsed_seconds": self.elapsed_seconds,
+                "scheduling": " then ".join(lane.name for lane in self.lanes)
+                + " on identical rounds; one live autograd graph",
                 **extra,
             },
         )
@@ -537,6 +597,7 @@ class ContinuousTrainer:
             device_batch = replace(
                 batch, raw_target_features=batch.raw_target_features.to(self.config.device)
             )
+            execution = {}
             with shared_round_hard_signs(lane.linears):
                 logits = forward_torch_round(
                     device_batch,
@@ -545,7 +606,10 @@ class ContinuousTrainer:
                     optimize_cache=self.config.optimize_cache,
                     optimize_head=self.config.optimize_head,
                     context_chunk_size=self.config.context_chunk_size,
+                    execution_metadata=execution,
                 )
+            execution.update(context_cache_calls=observer.context_cache_calls,
+                             context_chunk_size=self.config.context_chunk_size)
             diagnostics = later_gradient(logits, audit, observer)
             if any(
                 diagnostics[key] is None or diagnostics[key] <= 0
@@ -575,7 +639,7 @@ class ContinuousTrainer:
             # AdamW moment buffers are resident during smoke, before any update.
             # Reuse these initialized buffers in training instead of allocating
             # moments later and invalidating the admission measurement.
-            report[lane.name] = {"loss": float(loss.detach()), **diagnostics}
+            report[lane.name] = {"loss": float(loss.detach()), **diagnostics, "execution": execution}
             lane.optimizer.zero_grad(set_to_none=True)
             del logits, loss, observer, device_batch
         report["resources"] = self.resources()
@@ -803,6 +867,16 @@ class ContinuousTrainer:
             set(payload["unique_prompts"]),
             set(payload["unique_rows"]),
         )
+        budget_path = self.run_dir / "budget-used.json"
+        if budget_path.exists():
+            budget = json.loads(budget_path.read_text())
+            if (budget.get("source_sha256") != self.source
+                    or budget.get("max_seconds") != self.config.max_seconds
+                    or type(budget.get("training_seconds")) not in (int, float)
+                    or not math.isfinite(budget["training_seconds"])
+                    or budget["training_seconds"] < 0):
+                raise ValueError("persisted training budget contract differs")
+            self.elapsed_seconds = max(self.elapsed_seconds, budget["training_seconds"])
         self.metrics, self.checkpoint = payload["metrics"], latest
         restore_rng(payload["global_rng"], self.config.device)
         atomic_json(self.run_dir / "latest.json", latest)
@@ -905,6 +979,16 @@ class ContinuousTrainer:
                 handlers[sig] = signal.signal(sig, lambda *_: setattr(self, "stop_requested", True))
         started = time.monotonic()
         elapsed_base = self.elapsed_seconds
+
+        def persist_training_time():
+            self.elapsed_seconds = max(self.elapsed_seconds, elapsed_base + time.monotonic() - started)
+            if self.config.development_lifecycle == "standalone":
+                atomic_json(self.run_dir / "budget-used.json", {
+                    "source_sha256": self.source,
+                    "max_seconds": self.config.max_seconds,
+                    "training_seconds": self.elapsed_seconds,
+                })
+
         try:
             while not self.stop_requested and not self.capped():
                 yielded = False
@@ -915,6 +999,7 @@ class ContinuousTrainer:
                     if self.stop_requested or (self.run_dir / "STOP").exists():
                         self.stop_requested = True
                         break
+                    persist_training_time()
                     if self.capped():
                         break
                     if len(batch.prefix_token_ids) > self.config.max_prefix_tokens:
@@ -944,6 +1029,7 @@ class ContinuousTrainer:
                             batch,
                             raw_target_features=batch.raw_target_features.to(self.config.device),
                         )
+                        execution = {}
                         with shared_round_hard_signs(lane.linears):
                             logits = forward_torch_round(
                                 device_batch,
@@ -952,7 +1038,10 @@ class ContinuousTrainer:
                                 optimize_cache=self.config.optimize_cache,
                                 optimize_head=self.config.optimize_head,
                                 context_chunk_size=self.config.context_chunk_size,
+                                execution_metadata=execution,
                             )
+                        execution.update(context_cache_calls=observer.context_cache_calls,
+                                         context_chunk_size=self.config.context_chunk_size)
                         diagnostics = (
                             later_gradient(logits, audit, observer)
                             if (self.step % self.config.diagnostics_every == 0)
@@ -1004,6 +1093,7 @@ class ContinuousTrainer:
                                     else float(module.last_saturation_fraction),
                                 }
                         item["layers"] = layer_diagnostics
+                        item["execution"] = execution
                         item["cumulative_sign_flips"] = (
                             self.metrics[lane.name].get("cumulative_sign_flips", 0)
                             + item["sign_flips"]
@@ -1022,8 +1112,8 @@ class ContinuousTrainer:
                             grad_finite=True,
                             step_seconds=time.monotonic() - begin,
                             sign_flip_rate=item["sign_flips"] / sign_count,
-                            sign_lr=self.config.sign_lr * factor,
-                            scale_lr=self.config.scale_lr * factor,
+                            sign_lr=rates["sign"] * factor,
+                            scale_lr=rates["scale"] * factor,
                             **diagnostics,
                         )
                         self.metrics[lane.name] = item
@@ -1039,7 +1129,7 @@ class ContinuousTrainer:
                         for i, flag in enumerate(audit.ce_mask)
                         if flag
                     )
-                    self.elapsed_seconds = elapsed_base + time.monotonic() - started
+                    persist_training_time()
                     self.log(
                         {
                             "step": self.step,
@@ -1054,6 +1144,13 @@ class ContinuousTrainer:
                         self.save()
                     if self.step % self.config.development_every == 0:
                         self.save()
+                        if self.config.development_lifecycle == "standalone":
+                            atomic_json(self.run_dir / "development-request.json", {
+                                "checkpoint": self.checkpoint, "completed": False,
+                                "training_elapsed_seconds": self.elapsed_seconds,
+                            })
+                            self.status("awaiting_development", **self.resources())
+                            return
                         if self.evaluator is not None:
                             # Explicitly serialized; evaluator may only use dev.
                             self.status("development_evaluation", **self.resources())
@@ -1068,9 +1165,11 @@ class ContinuousTrainer:
                     raise ValueError("provider yielded no supported training labels")
                 self.epoch += 1
                 self.cursor = 0
+            persist_training_time()
             self.save()
             self.status("stopped" if self.stop_requested else "completed", **self.resources())
         except InterruptedError as error:
+            persist_training_time()
             if (self.run_dir / "STOP").exists():
                 self.stop_requested = True
             if self.stop_requested:
@@ -1087,6 +1186,7 @@ class ContinuousTrainer:
                 )
                 raise
         except BaseException as error:
+            persist_training_time()
             self.status(
                 "failed",
                 error=f"{type(error).__name__}: {error}",
