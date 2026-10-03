@@ -94,17 +94,17 @@ its recovery budget is exhausted, and original evidence is preserved. RTX2080Ti
 and research stay paused. The existing goal is incomplete; see the
 [resume checkpoint](goals/qat-optimization-readiness.md#human-resume-rtx5080-qat-pipeline--october-3-0611-utc).
 
-Prepared adapter corrections are reviewed/integrated/pushed as `d211275`:
-17 root guards and genuine tiny CPU6f save/copy/resume plus real Git import
-bootstrap pass. Original full preparation is preserved; no repeat full audit.
-Privileged readonly census reported no unknown/changed target-user contexts;
-narrow current controller correction and raw-provenance clarification are pending.
-The narrow census correction now passes16root/owner guards with14verified pins.
-Same operator is authorized to stage one bounded readonly actual WSLinterop
-precheck, then conditional current native fixture under fresh full proof and
-reviewed complete transport. Neither has yet executed. Current model/actor/
-five-repeat timing and actual restore/live admission gates remain. Optimizer updates are still ZERO. See the
-[adapter milestone](goals/qat-optimization-readiness.md#prepared-adapter-integrated-actual-gates-pending--october-3-1035-utc).
+**Actual current native CUDA fixture PASSED at11:10 UTC on RTX5080/SM120.**
+All22raw artifacts and the unchanged Python report validator pass;57pack/
+114loader/59graph/218arithmetic/36projection cases. Owned groups/submitter/
+contexts returned; protected source/config/runtime unchanged. LOCAL241/keeper
+10523 are closed; same sole operator awaits a NEW source-bound model transaction.
+This is synthetic scope; optimizer updates remain ZERO. Prepared adapter is
+public/tested `d211275` (17guards plus genuine tiny CPU restore/real Git imports).
+Concrete CPUstage/model/native/readiness packet is under local review; full-model
+actor/backward/memory/five-repeat timing/actual restore and NEW training follow.
+No repeat corpus audit or unit fixture, source changes or new user confirmation.
+See the [native milestone](goals/qat-optimization-readiness.md#actual-copied-native-cuda-fixture-passed--october-3-1110-utc).
 
 ## Human stop: local Mac only — October 3, 00:10 UTC
 

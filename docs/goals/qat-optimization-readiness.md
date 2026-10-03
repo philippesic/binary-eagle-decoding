@@ -32,20 +32,16 @@ successor uses one pinned operator only when no other is active. Root creates
 no second remote operator. Protected QAT/preparation
 supervision continues; no credit purchase or reset redemption.
 
-**Current state — October 3, 10:49 UTC:** full preparation/coverage/original
-paired backward-memory/checkpointzero are authenticated; no optimizer update.
-Prepared baseline adapter is reviewed, independently CPU-tested and public
-`d211275`; main latest documentation `96ee47f`. Native packet02's narrow fresh
-readonly root census fix now passes16root/owner guards and all14pins, reviewed
-manifest `51004c15e55ae3019f8b6d72b9b4bc17d4bec9d92198416f505e46ff0701d9d3`.
-Owner may mark reviewed and finalize/stage one concrete CPU-only WSLinterop
-precheck through SAME Luna/LOCAL241/%270/keeper10523. Native conditional on actual
-interop success, finalized transport review and fresh full physical/source/
-context/resource/pause/ownership proof; current controller/precheck has not yet
-executed. Exactly TWO earlier diagnostic root queries are preserved/recovered
-honestly; no third diagnosis. Local exclusive dispatch claim prevents repetition.
-Full-source actual-model/native/timing/restore gates and training still pending.
-Latest milestone sections immediately below carry exact evidence and plan.
+**Current state — October 3, 11:23 UTC:** full preparation and original zero
+checkpoint are authenticated. Prepared adapter is public/tested `d211275`.
+ACTUAL copied native fixture PASSED11:10 on RTX5080/SM120 with current native9e2;
+all22raws/root validator/owned group-context return verified. LOCAL241 and
+keeper10523 CLOSED; same sole operator available for a NEW serialized model gate
+transaction. Existing preparation/QAT heartbeats remain SAME/ACTIVE and correctly
+bound. Actual full-model/native actor/five-repeat timing/restore and optimizer
+launch remain pending; optimizer updates ZERO. Concrete local gate packet is
+under construction/review, then already-authorized NEW training after genuine
+gates. Latest milestone immediately below carries exact evidence.
 
 **Historical state — October 3, 09:44 UTC:** preparation ACTUALLY completed at
 08:57:52, observed by healthy/terminal checker09:39:55. Supervisor exit0,
@@ -60,6 +56,57 @@ conditional released-mode copied-fixture GO requires actual final release and
 fresh source/context/resource/control facts; no readiness from the CPU pass.
 Then complete current native/actual-model/backward/memory/timing/save-resume
 gates and launch the previously authorized NEW training run without confirmation.
+
+## Actual copied native CUDA fixture passed — October 3, 11:10 UTC
+
+Actual source-bound copied fixture finished naturally at11:10:47.128742 UTC,
+supervisor4068/group4069 exit0, signalNone. Real same-PID exec submitter4092/
+birth1770967/UID1000 was observed. BackendCUDA/CUDA0 on RTX5080/SM120 passed57
+pack cases,114loader cases,59graph cases,218arithmetic nodes,36projection cases.
+This is synthetic operator/encoder execution, not full-model readiness, training,
+acceptance or throughput evidence. Expected invalid-loader stderr is part of the
+passing rejection cases. No optimizer update. Original source6f/configccc,
+compiled native9e2/copied runtime and all protected files remain unchanged.
+
+Raw TWO-line transaction stdout SHA
+`50b4aa5f3dd1ca149b79eb8759b4ead2856743792870444e71cd162ffefcb6e0` (2,083,601bytes),
+actual native report SHA
+`a1ac624a618c0bb5f1ce0d65113467ebb0f7ae8dbfd76531313d9f820023ce22` (1,491,403bytes),
+actual operation SHA `55d92e23ed1b63e9172efa166af771fbec5607e0ac40240dbad92c660ba54acf`.
+All22collected raw files independently hash/byte-verified by parent AND root,
+1,547,178totalbytes; root also ran unchanged Python operator-report validator.
+Return proves complete owned groups/submitter/context absence and protected bytes;
+retainedctx{} but no global GPU-zero-memory claim. Measured prelaunch freeGPU
+13,533MiB/host20,155,731,968B/disk384,119,271,424B are dated observations.
+
+Raw/collected files live under ignored
+`runs/luna-continuous-a8-a1-20260929/final-preparation-return-20261003-01/released-package-census-transaction-20261003-03/`.
+Parent native acceptance SHA
+`339692fafb3a1e387f4a8eefecb484e16d6d1fbfbfa8bd30536d0e3a7d3a9d3a`.
+Remote actual report remains
+`/home/philip/binary-eagle-decoding/runs/qat-optimization-readiness/current-clean-runtime-cuda-released-census-20261003-03-output/native-operator.json`;
+reuse it via existing `--unit-report`, no repeat unit fixture.
+
+LOCAL241 absent and keeper10523 exited130; sole operator/lease is now CLOSED,
+no live native job/slot. Original closure9405 has an erroneous post-close-list
+hex field instead of SHA; preserved. Separate acceptance
+`8a660e1be6d8f83c41115783a26fa1faf6413e9ca9d8af1421e634c81e81858c` joins actual
+raw-list SHA `c1a152d79bc93fee25caa4e7b4fe836aa06a36d5ed8a04f6ea1ed1d02189abe7`,
+parsed241absence and keeper exit. Prep heartbeat is SAME15min/ACTIVE/owner,
+updated to terminal prep/current native pass/model-gate handoff; no old806/807
+poll/recovery or duplicate schedule. RTX2080Ti/research remain paused.
+
+Next: complete/review ONE concrete source-bound model gate packet in ignored
+`runs/qat-optimization-readiness/prepared-model-gates-packet-20261003-01/`.
+Same local feature owner owns runner/staging/tests only; no remote work. CPUstage
+will create clean helperd211 checkout and authenticated immutable inputs/provider
+binding. Same sole Luna gets NEW serialized transport only after review. Actual
+native actor A8/A1, full-source eligible TRAIN backward/memory/five-repeat timing
+and genuine full-checkpoint restore remain; NEW optimizer training is already
+authorized immediately after they pass. Runner must track/clean only birth-bound
+native child groups (llama-server uses separate PGIDs), not claim free GPU from
+main group alone. No repeated full audit, source/mask/precision changes, new
+research winner, invented measurements or renewed user confirmation.
 
 ## Census provenance corrected; native packet review — October 3, 10:44 UTC
 
