@@ -2,10 +2,12 @@ import sys
 import unittest
 import json
 import tempfile
+import subprocess
+import signal
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from benchmark_dspark_screen import ARMS, command, order, round_summary
+from benchmark_dspark_screen import ARMS, command, order, round_summary, stop_owned_server
 from analyze_dspark_screen import summarize
 
 
@@ -52,6 +54,20 @@ class ScreenContracts(unittest.TestCase):
         self.assertEqual(result["cpu_wall_totals_us"]["draft_step_decode_us"], 5)
         self.assertEqual(result["cpu_wall_totals_us"]["draft_seed_decode_us"], 11)
         self.assertIsNone(result["cpu_wall_totals_us"]["process_us"])
+
+    def test_stubborn_owned_server_is_killed_before_supervisor_grace(self):
+        proc = subprocess.Popen([sys.executable, "-c",
+                                 "import signal,time;signal.signal(signal.SIGTERM,signal.SIG_IGN);print('ready',flush=True);time.sleep(60)"],
+                                start_new_session=True, stdout=subprocess.PIPE, text=True)
+        try:
+            self.assertEqual(proc.stdout.readline().strip(), "ready")
+            stop_owned_server(proc)
+            self.assertEqual(proc.returncode, -signal.SIGKILL)
+        finally:
+            if proc.poll() is None:
+                proc.kill()
+                proc.wait()
+            proc.stdout.close()
 
     def test_every_order_is_paired(self):
         for rep in range(5):

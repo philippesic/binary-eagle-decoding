@@ -12,11 +12,29 @@ from pathlib import Path
 
 from benchmark_native_eagle import (
     available_port, environment_manifest, execute_request, json_write,
-    load_prompts, request_body, sha256, stop_server, wait_ready,
+    load_prompts, request_body, sha256, wait_ready,
 )
 
 ARMS = ("target_only", "eagle_q4_0", "dspark_3", "dspark_7", "dflash_3", "dflash_7")
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def stop_owned_server(proc: subprocess.Popen) -> None:
+    # Finish below remote_job.py's default 10s grace so its SIGKILL cannot strand
+    # this separately recorded server process group.
+    try:
+        os.killpg(proc.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        return
+    try:
+        proc.wait(timeout=3)
+    except subprocess.TimeoutExpired:
+        pass
+    try:
+        os.killpg(proc.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
+    proc.wait(timeout=3)
 
 
 def order(rep: int) -> list[str]:
@@ -141,6 +159,7 @@ def run(config_path: Path, destination: Path, diagnostic: bool = False) -> None:
             with (cell / "server.log").open("wb") as log:
                 try:
                     proc = subprocess.Popen(cmd, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+                    json_write(cell / "owned_process.json", {"pid": proc.pid, "pgid": proc.pid, "command": cmd})
                     wait_ready(proc, f"http://127.0.0.1:{port}", 300)
                     json_write(cell / "startup.json", {"load_admission_s": time.monotonic()-start, "pid": proc.pid})
                     cases = [(True, i, prompts[i]) for i in range(protocol["warmups_per_cell"])]
@@ -172,7 +191,7 @@ def run(config_path: Path, destination: Path, diagnostic: bool = False) -> None:
                         json_write(destination / "progress.json", {"inference_s": inference_s, "records": records})
                 finally:
                     if proc is not None:
-                        stop_server(proc)
+                        stop_owned_server(proc)
     json_write(destination / "measurements.json", {"diagnostic": diagnostic, "inference_s": inference_s, "records": records})
 
 
