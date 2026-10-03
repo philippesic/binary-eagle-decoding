@@ -1,19 +1,23 @@
 """Actual tiny CPU A8 update/resume/export tests; no GPU claims."""
 
 import json
+import sys
 import tempfile
 import unittest
 from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
 
-import torch
-import train_continuous_w1ax as launcher
-import w1ax_continuous_stages as stages
-from test_continuous_qat import FixtureProvider, config, make
-from test_development_checkpoint_preflight import TinyProvider
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
 
-from w1a1_eagle.continuous_qat import (
+import torch  # noqa: E402
+import train_continuous_w1ax as launcher  # noqa: E402
+import w1ax_continuous_stages as stages  # noqa: E402
+from test_continuous_qat import FixtureProvider, config, make  # noqa: E402
+from test_development_checkpoint_preflight import TinyProvider  # noqa: E402
+
+from w1a1_eagle.continuous_qat import (  # noqa: E402
     ContinuousConfig,
     ContinuousTrainer,
     atomic_json,
@@ -21,7 +25,7 @@ from w1a1_eagle.continuous_qat import (
     sha256,
     validate_lane_ownership,
 )
-from w1a1_eagle.recurrent_qat import joint_parameter_families
+from w1a1_eagle.recurrent_qat import joint_parameter_families  # noqa: E402
 
 
 def a8(**kwargs):
