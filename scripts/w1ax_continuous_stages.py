@@ -491,6 +491,8 @@ def audit_native_labels_with_receipt(
         if pinned_receipt_sha256 is not None and sha256(receipt_path) != pinned_receipt_sha256:
             raise ValueError("native label receipt pinned identity differs")
         receipt = json.loads(receipt_path.read_text())
+        if not isinstance(receipt, dict):
+            raise ValueError("native label audit receipt source/input binding differs")
         stored_binding = receipt.get("binding", {})
         historical_reuse = False
         if (
