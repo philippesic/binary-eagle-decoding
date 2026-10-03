@@ -1,0 +1,20 @@
+{
+  "dspark": {
+    "repository": "deepseek-ai/dspark_qwen3_4b_block7",
+    "revision": "3457dff1417cb84927f6098a5fcb7cee85c934b7",
+    "url": "https://huggingface.co/deepseek-ai/dspark_qwen3_4b_block7/resolve/3457dff1417cb84927f6098a5fcb7cee85c934b7/model.safetensors",
+    "weight_sha256": "f9e31587608441f235d46410e7201f8cb1647be5cd077065c89cc02c37ae86a7",
+    "weight_file_bytes": 2786273970,
+    "config_sha256": "494e5665481ff8216c4e857a531c401f72b7fb795434a8201f45252c0ad7568a",
+    "source": "Hugging Face repository metadata and safetensors header, not a local full-weight hash"
+  },
+  "dflash": {
+    "repository": "deepseek-ai/dflash_qwen3_4b_block7",
+    "revision": "02d530b7962ea1412beaf41a05c0b8e36d5f9b1d",
+    "url": "https://huggingface.co/deepseek-ai/dflash_qwen3_4b_block7/resolve/02d530b7962ea1412beaf41a05c0b8e36d5f9b1d/model.safetensors",
+    "weight_sha256": "68d4138ec35864c47c4856d9f54004f1299d151818c33eacafd8ba19aad9cb9f",
+    "weight_file_bytes": 2630685488,
+    "config_sha256": "e4d3ad2f79210e91cf8b4d78547d23afda9a8cd2a90c4c6b97c9ea617d8f94f1",
+    "source": "Hugging Face repository metadata and safetensors header, not a local full-weight hash"
+  }
+}
