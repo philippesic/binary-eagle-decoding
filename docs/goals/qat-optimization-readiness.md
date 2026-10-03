@@ -32,18 +32,17 @@ successor uses one pinned operator only when no other is active. Root creates
 no second remote operator. Protected QAT/preparation
 supervision continues; no credit purchase or reset redemption.
 
-**Current state — October 3, 12:42 UTC:** ACTUAL pairedtraining reached1000steps,
-4846unique supervisedrows/13prompts; savedpairedcheckpoint62f88/manifestb48c.
-Originalautomaticdevelopment FAILED hostRAM preflight requiring15.03GBavailable;
-supervisornaturallyfinished12:41:37.746exit1/no signal, statusfailed preserved.
-No Q4report/qualityclaim. Actualreadonlyreconnect verifies terminalownedgroupempty,
-source/runtime/pairedcheckpoint/exports; all5raworiginals rootverified. Training
-continued after12:36:31connectionclosure and reachedterminal>306slater; no sameLIVE
-birthpostreconnectclaim sincejobterminated. SAME soleowner/operator must collect
-terminal logs/currentFULLcontext/resources/source release. NEWserializedfinalevalpacket02 fd5439 reviewedwholecode/20CPUtests/all14pins,
-rootconditionalCPUstage sourceapproval issued. Exactoriginalpoststep1000RAMfailure/
-intactcheckpoint exception only; no relabel/restart/caps/source/memorygate waiver. Then
-actualCPUstage/freshfullrelease/ownerGO→unchangedQ4_0eval. Goal incomplete.
+**Current state — October 3, 12:56 UTC:** actual1000pairedcheckpoint62f88/b48c
+intact; originalautomaticdevelopment RAMpreflightfailed/exit1 preserved. Actual
+FULL terminalrelease PASSED12:54:25: both7101/7102births/groupsabsent, current
+contexts{}/submitters[]/computeappsempty, GPU13533MiBfree/host20.293GBfree/disk359GB,
+protectedsource/math/control unchanged. Rootall7raworiginals/logtailprovenance
+verified. SAME soleLuna244/273/keeper71024 retained for immediate evalhandoff.
+NEWserializedevalpacket02 fd5439 wholecode/20tests/14pins rootreviewed; conditional
+CPUstageSOURCEapproval nowfulfilled/cleared, readsrealrun/latest and exactrecorded
+1000checkpoint/RAMfailure. ActualCPUstage+concreteevalwrapper/freshadjacentfullproof/
+ownerGO then unchangedoriginalQ4_0eval; no optimizerrestart/source/math/memorygate
+waiver. Goal incomplete; Q4report/actualeval+finalcontextreturn remain.
 
 **Historical state — October 3, 09:44 UTC:** preparation ACTUALLY completed at
 08:57:52, observed by healthy/terminal checker09:39:55. Supervisor exit0,
@@ -58,6 +57,37 @@ conditional released-mode copied-fixture GO requires actual final release and
 fresh source/context/resource/control facts; no readiness from the CPU pass.
 Then complete current native/actual-model/backward/memory/timing/save-resume
 gates and launch the previously authorized NEW training run without confirmation.
+
+## Actual full training release accepted — October 3, 12:56 UTC
+
+SAME soleoperator244/273/keeper71024 executed the exactterminalrelease query once.
+Actual12:54:25.493395 UTC fullphysical returns bothoriginal7101/7102births absent/
+ownedgroupsnone, censuscontexts{}, projectsubmitters[], computeappsempty, actual
+RTX5080GPUfree13533MiB/util0, hostMemAvailable20,293,378,048B/disk359,793,414,144B.
+Existing fullcensus03/rootreader/protectedsource/control/currentboot/resources
+semantics unchanged; allfloorsPASS. Root verified7rawmetadata originals by base64/
+SHA/length, saved under `actual-training-terminal-release-root-verified-20261003-01/`.
+Raw stdout SHA
+`3d193500d652876d3dafc458225f6c8ddf0af78c3dcd64642af47b83c8dc5aba`.
+Root acceptance `actual-training-terminal-release-root-acceptance-20261003-01.json`
+and registration mark complete currentfullrelease, not permanentavailability.
+
+Original logs confirm saved1000checkpoint then deploymentarray hostRAMpreflight
+before any nativecapture. Both logtails are explicitlylast65536B, notfullcopies;
+originalremotefull stdout SHA84f93f8e/metricsdbf7641f retained. Exactmissing list
+includes runtime_environment.json and wronglycollected checkpoints/latest.json.
+Root caught wronglatestpath afterqueryalreadyclaimed; parentpreservedoldquery/
+actualmissing instead ofhotediting/repeating. ActualfutureCPUstage still must read
+correctrun/latest.json directly. No numeric/data/source/memorygate waiver.
+
+Sourcecondition for reviewedserializedeval02 fd5439 nowSATISFIED. Root told SAME
+prepowner/soleLuna to immediate CPUstage/actualauth ofreal latest/final checkpoint/
+originalspecificfailedstatus/completepairedcap/source/dev metadata. Stage output
+and concretewrapper/argv/guardian finalreview/freshphysical/ownerGO remain before
+GPU evaluation. Same unusedisolatedevaluationrun+supervisor; unchangedoriginal
+source6f evaluator/Q4_0baseline/promptsubset/math/locks/1200s bound. No optimizer
+resume/newtrainingrun/newoperator or redundant humanconfirmation. Goal remains
+incomplete until actualdevelopmentresults and owned evaluationcontextreturn.
 
 ## Serialized checkpoint evaluation packet reviewed — October 3, 12:49 UTC
 
