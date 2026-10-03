@@ -46,6 +46,56 @@ fresh source/context/resource/control facts; no readiness from the CPU pass.
 Then complete current native/actual-model/backward/memory/timing/save-resume
 gates and launch the previously authorized NEW training run without confirmation.
 
+## Census provenance corrected; native packet review — October 3, 10:44 UTC
+
+Preparation owner confirmed TWO actual readonly privileged census executions:
+first root3657/birth1535099 at1791023482.0462246, second root3679/birth1547315
+at1791023604.2085695. The sole Luna overlooked completed query state and repeated
+the same command; no MCP bug is asserted. Both report currentboot3abb/namespace
+4026532221, complete/empty unknown/changed/contexts and stable367/373. The first
+stdout was overwritten. Its exact3570bytes are recovered from its actual parsed
+producer result using the authenticated producer serialization; recovered SHA
+`1b1461c1ed30d21c1b8bfa8bac81baadca3062fcf4e3bdcb18b7222a7a6ce237`
+matches root's independently recorded earlier hash. File is explicitly named
+`root-census.stdout.original-recovered.jsonl`, not a claimed original raw capture.
+Second original stdout SHA
+`e0ed9449af19829494963fc318ac89e5c07fefd8f33a08a1fb39310093fc3897`, separate second
+parsed SHA `5c9df02531a0052fd75caef61b983dd42684a7353a5092fa9251e0e30e82e6e2`.
+First parsed92e90 and both before/after pane captures remain. No third query.
+Owner is adding an exclusive local one-shot dispatch claim and unique per-request
+root audit outputs. This is provenance correction, not fresh GPU admission.
+
+NEW narrow native packet02 is ignored
+`runs/qat-optimization-readiness/current-clean-runtime-cuda-released-census-20261003-02/`.
+Original11bce4 packet is preserved. Current source6f/configccc/fixture50/native9e2/
+UID1000 math are unchanged. Only unprivileged FD PermissionError invokes pinned
+readonly root helper through Linux WSLinterop; source/nonce/readerUID/boot/ns/
+freshness/complete/unknown/changed/current process births all bind the response.
+Root reviewed14pins and15focused guards; requested ONE actual race fix: check
+all current census births against privileged declarations, including same-PID
+reuse between the individual proc reads and final census. Packet review flag
+stays false until corrected/tested. Actual Linux-to-WSL interop CPU precheck is
+pending; no fixture CUDA or optimizer execution. Same owner/sole operator only.
+
+Next complete model-gate PLAN is ignored
+`runs/qat-optimization-readiness/prepared-native-inputs-20261003-01/execution-plan.json`,
+SHA `fc6bc93447581426f741ad5300998626ba8618dd3769e42b4df35b70c6a0a702`.
+It uses explicit existing collector `--unit-report` to reuse the exact passing
+current copied fixture raw path after full source/runtime/binary/hardware joins;
+no duplicate unit execution merely to fit a default output location. Native
+collector requires current remote gpu-control.json; necessary current human
+resume mirroring preservesRTX2080pause and previous bytes, never bypasses it.
+After fixture return, same operator may stage/authenticate the published helpers
+and input metadata under NEW unique path; model/GPU dispatch requires concrete
+fresh ownership/resource/context proof and serial detached supervision.
+
+Initial operational caps are planned1000steps/3600trainer-accounted seconds/
+1epoch, preserving original seeds/warmup/checkpoint250/diagnostics100/development
+1000 cadence. These are finite first-run caps for the already-authorized unchanged
+reference A8/A1 training, not a new optimized math recipe or a measured quality
+winner. Actual selected passing recipe/state/data/source/runtime/new helper hashes
+must be recorded after genuine gates pass. Optimizer updates remain ZERO.
+
 ## Prepared adapter integrated; actual gates pending — October 3, 10:35 UTC
 
 Reviewed corrections `0f5f742fd64629679fc0d8f0c1c2f30a51835758` are integrated and

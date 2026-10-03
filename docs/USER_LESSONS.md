@@ -95,3 +95,11 @@ coordination/implementation issue, not a user mistake or numeric failure. Keep
 one operator, give it one complete reviewed transaction, test permission/ancestry
 census with actual evidence, and preserve unknown-actor denial without inventing
 additional proof protocols or redoing completed audit work.
+
+### 2026-10-03: Make bounded remote dispatch one-shot across inherited state
+
+- Observation and evidence: The coordinator authorized one readonly root FD census. The sole operator executed the same command twice after overlooking the first completed query in inherited state. The second output replaced the first stdout while the first parsed record remained; different reader births and timestamps exposed the mismatch. Both actual results reported no contexts or unknown actors.
+- Status: Confirmed agent repetition/provenance mistake; no human error or MCP defect established. No model, CUDA or signal action occurred.
+- Agent contribution: The execution wrapper lacked an exclusive local dispatch claim; repeated tool invocation reused its output paths. Coordination initially relayed only the first result's hash.
+- Practical lesson: Separate dry prechecks from a one-shot dispatch claim, use unique request/output names, and inspect saved command completion before reissuing a bounded operation. Never overwrite original raw evidence during parsing or retries.
+- Correction or resolution: First bytes were recovered using the actual producer's exact serializer and matched the coordinator's earlier independent SHA; explicitly label recovery. Second original bytes/parse and both pane captures are separate. A local one-shot claim and fresh per-nonce readonly census outputs are required for the next controller transaction.
