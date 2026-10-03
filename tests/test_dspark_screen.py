@@ -1,9 +1,12 @@
 import sys
 import unittest
+import json
+import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from benchmark_dspark_screen import ARMS, command, order, round_summary
+from analyze_dspark_screen import summarize
 
 
 def fixture(proposed, accepted, emitted=None, **extra):
@@ -58,6 +61,33 @@ class ScreenContracts(unittest.TestCase):
         self.assertEqual(cmd[cmd.index("--spec-draft-n-max")+1], "7")
         self.assertEqual(cmd[cmd.index("--spec-draft-p-min")+1], "0")
         self.assertEqual(cmd[cmd.index("--fit")+1], "off")
+
+    def test_analyzer_uses_pooled_rates_and_actual_joins(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "protocol.json").write_text(json.dumps(dict(prompt_count=2, repetitions=1, eagle_length=5)))
+            records = []
+            for arm in ARMS:
+                for idx, (tokens, seconds) in enumerate(((10, 1), (30, 3))):
+                    path = root / "rep-00" / arm / f"prompt-{idx:02d}"
+                    path.mkdir(parents=True)
+                    rec = dict(arm=arm, repetition=0, prompt_id=str(idx), warmup=False,
+                               completion_tokens=tokens, server_predicted_ms=seconds*1000,
+                               request_wall_s=seconds+1, server_response_id=f"{arm}-{idx}",
+                               generated_token_ids=[1, 2], artifact_path=str(path.relative_to(root)))
+                    records.append(rec)
+                    (path / "measurement.json").write_text(json.dumps(rec))
+                    (path / "rounds.json").write_text(json.dumps([fixture(3, idx)]))
+            (root / "measurements.json").write_text(json.dumps(dict(diagnostic=False, inference_s=1, records=records)))
+            result = summarize(root)
+            self.assertEqual(result["arms"]["eagle_q4_0"]["pooled_decode_tps"], 10)
+            self.assertAlmostEqual(result["arms"]["eagle_q4_0"]["pooled_request_tps"], 40/6)
+            self.assertIsNone(result["arms"]["dspark_3"]["native_rounds"]["cpu_wall_totals_us"]["draft_us"])
+            # Same aggregate totals cannot cover a missing paired request.
+            records[-1]["prompt_id"] = "0"
+            (root / "measurements.json").write_text(json.dumps(dict(diagnostic=False, inference_s=1, records=records)))
+            with self.assertRaises(ValueError):
+                summarize(root)
 
 
 if __name__ == "__main__":

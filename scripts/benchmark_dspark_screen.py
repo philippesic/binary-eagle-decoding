@@ -46,7 +46,7 @@ def round_summary(records: list[dict], maximum: int) -> dict:
         survived = sum(r["n_accepted"] >= pos for r in complete)
         position[str(pos)] = dict(eligible=eligible, reached=reached, survived=survived,
                                  conditional_survival=survived / reached if reached else None)
-    timings = {key: sum(r.get(key, 0) for r in complete) for key in (
+    timings = {key: sum(r[key] for r in complete) if complete and all(key in r for r in complete) else None for key in (
         "round_us", "draft_us", "target_decode_sync_us", "process_us", "kv_repair_us",
         "process_feature_copy_us", "process_draft_decode_us", "draft_step_decode_us", "draft_sampler_us")}
     return dict(rounds=len(complete), proposed=proposed, accepted=accepted,
@@ -135,12 +135,15 @@ def run(config_path: Path, destination: Path, diagnostic: bool = False) -> None:
                         before = len(rows(trace))
                         request_dir = cell / (f"warmup-{idx:02d}" if warmup else f"prompt-{idx:02d}")
                         started = time.monotonic()
-                        result = execute_request(f"http://127.0.0.1:{port}", request_body(request_config, prompt),
-                                                 min(180, remaining), request_dir)
-                        inference_s += time.monotonic()-started
+                        try:
+                            result = execute_request(f"http://127.0.0.1:{port}", request_body(request_config, prompt),
+                                                     min(180, remaining), request_dir)
+                        finally:
+                            inference_s += time.monotonic()-started
                         native = rows(trace)[before:]
                         json_write(request_dir / "rounds.json", native)
-                        result.update(arm=arm, repetition=rep, prompt_id=prompt["id"], warmup=warmup)
+                        result.update(arm=arm, repetition=rep, prompt_id=prompt["id"], warmup=warmup,
+                                      artifact_path=str(request_dir.relative_to(destination)))
                         if result["generated_token_ids"] is None:
                             raise RuntimeError("native server omitted raw generated token IDs")
                         if arm != "target_only":
