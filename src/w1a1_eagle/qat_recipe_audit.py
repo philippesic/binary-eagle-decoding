@@ -200,6 +200,22 @@ def _execution_audit(evidence, *, learned: bool, training: bool, chunk_size: int
     return {"status": "observed", "cache": _json(cache), "head": _json(head)}
 
 
+def audit_a8_execution(evidence: Mapping, config: JointQATConfig, *, training: bool = True) -> dict:
+    """Cheap per-round execution gate after full recipe/ownership admission.
+
+    Full model scans belong at construction/resume/admitted diagnostics rather
+    than every update. This checks actual cache/head observations each round.
+    """
+    if type(training) is not bool or not config.optimize_cache or not config.optimize_head:
+        raise ValueError("A8 comparison requires requested cache/head optimizations")
+    return _execution_audit(
+        evidence,
+        learned=config.activation_quantization == "learned",
+        training=training,
+        chunk_size=config.context_chunk_size,
+    )
+
+
 def audit_a8_recipe(
     linears: Mapping,
     optimizer: torch.optim.Optimizer,
