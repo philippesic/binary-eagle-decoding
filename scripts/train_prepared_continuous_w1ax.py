@@ -22,7 +22,64 @@ HERE = Path(__file__).resolve().parent
 
 def code_identity():
     return {name: sha256(HERE / name) for name in
-            ('train_prepared_continuous_w1ax.py', 'prepared_continuous_provider.py')}
+            ('train_prepared_continuous_w1ax.py', 'prepared_continuous_provider.py',
+             'check_prepared_continuous_readiness.py')}
+
+
+def input_pins(args):
+    def pin(path):
+        path = Path(path).resolve()
+        return {'path': str(path), 'sha256': sha256(path)}
+    return {'config': pin(args.config),
+            'stages_manifest': pin(args.stages_manifest) if args.stages_manifest else None,
+            'selected_shard': args.selected_shard,
+            'source_checkout': str(Path(args.source_checkout).resolve()),
+            'prepared_run_dir': str(Path(args.prepared_run_dir).resolve())}
+
+
+def launch_admission(args, auth=None):
+    """CPU-only checks precede CUDA, then repeat at the optimizer boundary."""
+    files = Files()
+    admission = files.read(args.admission, args.admission_sha256)
+    require(admission.get('schema') == 'prepared_continuous_launch_admission_v1'
+            and admission.get('orchestration_sha256') == code_identity()
+            and admission.get('source_commit') == SOURCE_COMMIT
+            and admission.get('native_commit') == NATIVE_COMMIT
+            and admission.get('prepared_ready_sha256') == args.prepared_ready_sha256
+            and admission.get('inputs') == input_pins(args)
+            and admission.get('run_dir') == str(Path(args.run_dir).resolve()),
+            'Specific current launch admission absent')
+    now = time.time()
+    require(type(admission.get('granted_unix')) in (int, float)
+            and type(admission.get('expires_unix')) in (int, float)
+            and admission['granted_unix'] <= now < admission['expires_unix'] <= admission['granted_unix'] + 300
+            and admission.get('sole_gpu_owner') is True
+            and admission.get('rtx5080_pause_requested') is False,
+            'Fresh exclusive unpaused admission absent')
+    require(not os.path.lexists(Path(args.run_dir) / 'CANCEL'), 'New run cancelled')
+    locator = admission.get('optimization_readiness')
+    evidence_locator = admission.get('measured_orchestration')
+    for name, record in (('optimization_readiness', locator), ('measured_orchestration', evidence_locator)):
+        require(isinstance(record, dict) and set(record) == {'path', 'sha256'}, 'Missing gate ' + name)
+        files.check(record['path'], record['sha256'])
+    evidence = files.read(evidence_locator['path'], evidence_locator['sha256'])
+    require(evidence.get('schema') == 'prepared_measurement_orchestration_v1'
+            and evidence.get('orchestration_sha256') == code_identity()
+            and evidence.get('prepared_ready_sha256') == args.prepared_ready_sha256
+            and evidence.get('receipt') == locator and evidence.get('producer') == 'readiness'
+            and evidence.get('source_commit') == SOURCE_COMMIT
+            and evidence.get('native_commit') == NATIVE_COMMIT,
+            'Actual measured orchestration/receipt binding differs')
+    require(evidence.get('optimizer_updates') == 0 and evidence.get('receipt_bytes_modified') is False
+            and evidence.get('producer_sha256') == sha256(Path(args.source_checkout) / 'scripts/check_qat_optimization_readiness.py'),
+            'Measured orchestration producer identity differs')
+    if auth is not None:
+        require(admission.get('source_sha256') == auth['binding']['source_sha256']
+                and admission.get('origin_zero_checkpoint_sha256') == auth['ready']['checkpoint']['sha256']
+                and evidence.get('source_sha256') == auth['binding']['source_sha256']
+                and evidence.get('training_runtime') == auth['ready']['training_runtime'],
+                'Admission changes authenticated prepared source/runtime/checkpoint')
+    return admission
 
 
 def checkpoint_inventory(auth):
@@ -83,27 +140,14 @@ def copy_zero(auth, run_dir):
 
 def enforce_gates(api, args, auth, config, provider, lanes):
     files = Files()
-    admission = files.read(args.admission, args.admission_sha256)
-    require(admission.get('schema') == 'prepared_continuous_launch_admission_v1'
-            and admission.get('orchestration_sha256') == code_identity()
-            and admission.get('source_commit') == SOURCE_COMMIT and admission.get('native_commit') == NATIVE_COMMIT
-            and admission.get('prepared_ready_sha256') == auth['binding']['prepared_ready_sha256']
-            and admission.get('source_sha256') == auth['binding']['source_sha256']
-            and admission.get('origin_zero_checkpoint_sha256') == auth['ready']['checkpoint']['sha256']
-            and admission.get('run_dir') == str(Path(args.run_dir).resolve()),
-            'Specific current launch admission absent')
-    now = time.time()
-    require(type(admission.get('granted_unix')) in (int, float)
-            and type(admission.get('expires_unix')) in (int, float)
-            and admission['granted_unix'] <= now < admission['expires_unix'] <= admission['granted_unix'] + 300
-            and admission.get('sole_gpu_owner') is True and admission.get('rtx5080_pause_requested') is False,
-            'Fresh exclusive unpaused admission absent')
+    admission = launch_admission(args, auth)
     runtime_module = importlib.import_module('w1a1_eagle.continuous_runtime')
     readiness = importlib.import_module('w1a1_eagle.qat_readiness')
     runtime = runtime_module.training_runtime_identity(config.device)
     require(runtime == auth['ready']['training_runtime'], 'Original zero checkpoint runtime differs')
     native_tool = importlib.import_module('check_qat_optimization_readiness')
     deployments = {lane.name: native_tool.runtime_api().deployment_state_sha256(lane.linears) for lane in lanes}
+    states = {lane.name: native_tool.deterministic_state_sha256(lane.linears) for lane in lanes}
     torch = importlib.import_module('torch')
     properties = torch.cuda.get_device_properties(config.device)
     hardware = {'device_type': 'cuda', 'name': properties.name,
@@ -117,8 +161,9 @@ def enforce_gates(api, args, auth, config, provider, lanes):
         source_sha256=auth['binding']['source_sha256'], runtime_identity=runtime,
         native_commit=NATIVE_COMMIT, backend='cuda', hardware=hardware)
     require(receipt.get('deployment_state_sha256') == deployments and receipt.get('optimizer_updates') == 0
+            and receipt.get('state_sha256') == states
             and receipt.get('timing_repeats') == 5, 'Actual restored state/five-repeat timing gate differs')
-    require(not os.path.lexists(Path(args.run_dir) / 'CANCEL'), 'New run cancelled')
+    launch_admission(args, auth)
     return {'admission_sha256': args.admission_sha256, 'runtime': runtime,
             'deployment_state_sha256': deployments, 'orchestration_sha256': code_identity()}
 
@@ -134,10 +179,15 @@ def prepare(args):
             'New run overlaps immutable preparation')
     require(not run_dir.exists(), 'New run must not exist')
     auth = authenticate(api, spec, run_dir, old, args.prepared_ready_sha256)
+    selected = getattr(args, 'selected_shard', 0)
+    require(type(selected) is int and 0 <= selected < len(auth['records']), 'Selected TRAIN shard is absent')
     old_spec, old_config = api.load_config(old / 'resolved_config.json')
     immutable = importlib.import_module('w1a1_eagle.continuous_qat').immutable_config
     require(immutable(dataclasses.asdict(config)) == immutable(dataclasses.asdict(old_config)),
             'Only existing four run caps may differ from zero checkpoint config')
+    readiness = importlib.import_module('w1a1_eagle.qat_readiness')
+    require(not readiness.optimization_requires_receipt(config),
+            'Prepared zero-checkpoint handoff supports unchanged reference recipe only')
     return api, spec, config, auth
 
 
@@ -150,7 +200,9 @@ def start(args):
         record = initial.get(name)
         require(isinstance(record, dict) and set(record) == {'path', 'sha256'}, 'Missing gate ' + name)
         Files().check(record['path'], record['sha256'])
+    launch_admission(args)
     api, spec, config, auth = prepare(args)
+    launch_admission(args, auth)
     torch = importlib.import_module('torch')
     require(torch.cuda.is_available(), 'Actual CUDA hardware required')
     frozen = auth['ready']['training_runtime']['cuda_math']
@@ -172,6 +224,7 @@ def start(args):
         provider = PreparedProvider(auth, config.qat(8), child, args.selected_shard)
         publication = copy_zero(auth, run)
         api.atomic_json(run / 'zero-checkpoint-origin.json', publication)
+        launch_admission(args, auth)
         lanes = api.build_lanes(provider, config, run)
         stages = importlib.import_module('w1ax_continuous_stages')
         development = auth['development']
@@ -208,6 +261,7 @@ def start(args):
                 'Current smoke mutated restored checkpoint weights')
         evidence = enforce_gates(api, args, auth, config, provider, lanes)
         api.atomic_json(run / 'launch-gates.json', evidence)
+        launch_admission(args, auth)
         trainer.run()
     finally:
         gpu_lock.close()
@@ -225,6 +279,7 @@ def parser():
     p.add_argument('--prepared-ready-sha256')
     p.add_argument('--config', type=Path)
     p.add_argument('--stages-manifest', type=Path)
+    p.add_argument('--measurement-config', type=Path)
     p.add_argument('--run-dir', type=Path)
     p.add_argument('--selected-shard', type=int, default=0)
     p.add_argument('--allow-cuda', action='store_true')
@@ -263,6 +318,9 @@ def main(argv=None):
                       'config': {'path': str(args.config.resolve()), 'sha256': sha256(args.config)}}
             if args.stages_manifest is not None:
                 record['stages_manifest'] = {'path': str(args.stages_manifest.resolve()), 'sha256': sha256(args.stages_manifest)}
+            if args.measurement_config is not None:
+                record['measurement_config'] = {'path': str(args.measurement_config.resolve()),
+                                                'sha256': sha256(args.measurement_config)}
             with args.emit_provider_binding.open('x') as stream:
                 json.dump(record, stream, sort_keys=True, indent=2); stream.write('\n')
                 stream.flush(); os.fsync(stream.fileno())

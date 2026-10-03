@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'scripts'))
 import prepared_continuous_provider as adapter
 import train_prepared_continuous_w1ax as launch
+import check_prepared_continuous_readiness as measured
 
 
 @dataclasses.dataclass
@@ -42,7 +43,8 @@ class StartupTests(unittest.TestCase):
             record = {'ordinal': ordinal, 'provider_manifest': str(child), 'provider_manifest_sha256': adapter.sha256(child)}
             self.records.append(record)
             self.source['shards'].append({'ordinal': ordinal, 'provider_manifest_sha256': record['provider_manifest_sha256'],
-                                          'capture_manifest_sha256': spec['sha256']['capture_manifest'], 'prompt_count': 1})
+                                          'capture_manifest_sha256': spec['sha256']['capture_manifest'], 'prompt_count': 1,
+                                          'round_count':1})
             self.artifacts.update({str(child): adapter.sha256(child), str(prompt): adapter.sha256(prompt)})
         self.index = self.prep / 'train-providers.json'
         self.index.write_text(json.dumps({'split': 'train', 'training_eligible': True, 'shards': self.records}))
@@ -76,6 +78,7 @@ class StartupTests(unittest.TestCase):
             return SimpleNamespace(training_eligible=True,full_body_qat_eligible=True,data_split='train',
                 allowed_prompt_ids={f'train-{ordinal}'},hashes=spec['sha256'],capture_id=spec['capture_id'],
                 d2t_offsets=(0,1),target_vocab_size=2,draft_vocab_size=2,max_depth=5,base_gguf_sha256='a'*64,
+                total_rounds=1,
                 rounds=lambda:iter([Batch(ordinal)]),load_models_cpu=lambda:(_ for _ in ()).throw(AssertionError('Model load')))
         self.factory=factory
 
@@ -161,6 +164,82 @@ class StartupTests(unittest.TestCase):
         with patch.object(launch,'prepare',side_effect=AssertionError('No model/source work')):
             with self.assertRaisesRegex(ValueError,'Missing gate optimization_readiness'):
                 launch.start(args)
+
+    def admission(self):
+        config=self.root/'config.json';config.write_text('{}')
+        receipt=self.root/'measured.json';receipt.write_text('{}')
+        locator={'path':str(receipt),'sha256':adapter.sha256(receipt)}
+        source=self.root/'source';(source/'scripts').mkdir(parents=True)
+        producer=source/'scripts/check_qat_optimization_readiness.py';producer.write_text('# synthetic producer')
+        evidence=self.root/'orchestration.json'
+        evidence.write_text(json.dumps({'schema':'prepared_measurement_orchestration_v1',
+            'orchestration_sha256':launch.code_identity(),'prepared_ready_sha256':self.ready_sha,
+            'receipt':locator,'producer':'readiness','source_commit':adapter.SOURCE_COMMIT,
+            'native_commit':adapter.NATIVE_COMMIT,'optimizer_updates':0,'receipt_bytes_modified':False,
+            'producer_sha256':adapter.sha256(producer)}))
+        args=SimpleNamespace(config=config,stages_manifest=None,selected_shard=0,
+            source_checkout=source,prepared_run_dir=self.prep,
+            prepared_ready_sha256=self.ready_sha,run_dir=self.root/'new',
+            admission=self.root/'admission.json')
+        record={'schema':'prepared_continuous_launch_admission_v1',
+            'orchestration_sha256':launch.code_identity(),'source_commit':adapter.SOURCE_COMMIT,
+            'native_commit':adapter.NATIVE_COMMIT,'prepared_ready_sha256':self.ready_sha,
+            'inputs':launch.input_pins(args),'run_dir':str(args.run_dir),
+            'granted_unix':100,'expires_unix':200,'sole_gpu_owner':True,
+            'rtx5080_pause_requested':False,'optimization_readiness':locator,
+            'measured_orchestration':{'path':str(evidence),'sha256':adapter.sha256(evidence)}}
+        def publish():
+            args.admission.write_text(json.dumps(record));args.admission_sha256=adapter.sha256(args.admission)
+        publish()
+        return args,record,publish
+
+    def test_admission_expires_and_cancel_is_rechecked(self):
+        args,record,publish=self.admission()
+        with patch.object(launch.time,'time',return_value=150):launch.launch_admission(args)
+        with patch.object(launch.time,'time',return_value=201):
+            with self.assertRaisesRegex(ValueError,'Fresh exclusive'):launch.launch_admission(args)
+        args.run_dir.mkdir();(args.run_dir/'CANCEL').touch()
+        with patch.object(launch.time,'time',return_value=150):
+            with self.assertRaisesRegex(ValueError,'cancelled'):launch.launch_admission(args)
+
+    def test_changed_config_and_shard_refuse_same_admission(self):
+        args,record,publish=self.admission()
+        args.selected_shard=1
+        with patch.object(launch.time,'time',return_value=150):
+            with self.assertRaisesRegex(ValueError,'Specific current'):launch.launch_admission(args)
+        args.selected_shard=0;args.config.write_text('{"changed_budget":true}')
+        with patch.object(launch.time,'time',return_value=150):
+            with self.assertRaisesRegex(ValueError,'Specific current'):launch.launch_admission(args)
+
+    def test_expired_admission_refuses_before_source_or_cuda(self):
+        args,record,publish=self.admission();args.allow_cuda=True
+        with patch.object(launch.time,'time',return_value=201), \
+             patch.object(launch,'prepare',side_effect=AssertionError('Source/CUDA work')):
+            with self.assertRaisesRegex(ValueError,'Fresh exclusive'):launch.start(args)
+
+    def test_receipt_sidecar_mismatch_refuses(self):
+        args,record,publish=self.admission()
+        record['optimization_readiness']['sha256']='0'*64;publish()
+        with patch.object(launch.time,'time',return_value=150):
+            with self.assertRaisesRegex(ValueError,'SHA differs'):launch.launch_admission(args)
+
+    def test_prepared_environment_preserves_actual_hardware_validation_and_math(self):
+        expected={'cuda_math':{'float32_matmul_precision':'highest',
+                 'matmul_allow_tf32':False,'cudnn_allow_tf32':True}}
+        calls=[]
+        torch=SimpleNamespace(set_float32_matmul_precision=lambda x:calls.append(x),
+            backends=SimpleNamespace(cuda=SimpleNamespace(matmul=SimpleNamespace(allow_tf32=None)),
+                                     cudnn=SimpleNamespace(allow_tf32=False)))
+        api=SimpleNamespace(torch=torch,training_runtime_identity=lambda device:expected)
+        def original(api,config,spec):
+            calls.append('hardware-validated');return {'actual':'cuda'}
+        environment=measured.prepared_environment(expected,original)
+        self.assertEqual(environment(api,SimpleNamespace(device='cuda:0'),{}),{'actual':'cuda'})
+        self.assertEqual(calls,['hardware-validated','highest'])
+        self.assertFalse(torch.backends.cuda.matmul.allow_tf32);self.assertTrue(torch.backends.cudnn.allow_tf32)
+        api.training_runtime_identity=lambda device:{'different':'runtime'}
+        with self.assertRaisesRegex(ValueError,'runtime differs'):
+            environment(api,SimpleNamespace(device='cuda:0'),{})
 
 
 if __name__=='__main__':unittest.main()

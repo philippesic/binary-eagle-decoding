@@ -154,6 +154,8 @@ class PreparedProvider:
                 and child.data_split == 'train' and set(child.allowed_prompt_ids) == set(ids)
                 and all(child.hashes[k] == self.source_metadata['common_source_sha256'][k] for k in COMMON)
                 and child.capture_id == spec['capture_id'], 'Lazy child membership/eligibility/source differs')
+        require(child.total_rounds == self.source_metadata['shards'][ordinal]['round_count'],
+                'Lazy child round inventory differs from completed source')
         if self._first is not None:
             require(tuple(child.d2t_offsets) == tuple(self._first.d2t_offsets)
                     and child.target_vocab_size == self._first.target_vocab_size
@@ -188,6 +190,8 @@ class PreparedProvider:
             child = self.first() if ordinal == self.selected_shard else self._child(ordinal)
             for batch in child.rounds():
                 yield dataclasses.replace(batch, shard_ordinal=ordinal)
+            if child is not self._first:
+                del child
 
 
 def create_provider(config, manifest_path):
