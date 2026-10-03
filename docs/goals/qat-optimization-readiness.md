@@ -32,16 +32,16 @@ successor uses one pinned operator only when no other is active. Root creates
 no second remote operator. Protected QAT/preparation
 supervision continues; no credit purchase or reset redemption.
 
-**Current state — October 3, 13:05 UTC:** actual1000pairedcheckpoint62f88/b48c
-intact; originalautomaticdevelopment RAMfailure/exit1 preserved. FULL terminal
-release passed12:54:25, contexts/groupsnone/host20.29GB/GPU13533MiB. SAME soleLuna
-244/273/keeper71024 retained. Reviewedserializedeval02 fd5439 ACTUAL CPUstage
-PASSED13:03:41.684; bothoriginals265285B/SHA/length verified. Stagec1e3 truthfully
-binds specificfailedterminal/sourceb1/runtime/API41f/frozen1002dev/actualcheckpoint;
-realrun/latest98e7/step1000/resume62f88 captured. Root acceptance/registration saved.
-NEXT concreteevalwrapper/argv/guardian finalreview +freshadjacentphysical/ownerGO
-then unchangedoriginalQ4_0eval. No optionalpayload replay/optimizerrestart/source/
-math/memorygate change. Actual Q4report/evaluation/finalcontextreturn remain.
+**Current state — October 3, 13:14 UTC:** actual1000pairedcheckpoint62f88/b48c
+intact; originalautomaticdevelopment RAMfailure/exit1 preserved. Fulltrainingrelease
+and actualevalCPUstagec1e/latest98e/source/runtime/dev auth passed. Rootwhole final
+wrapper/guardian/argv/payload/AST/localdryguard pins PASS; FINAL EVAL GPU GO issued
+13:12. SAME soleLuna244/273/71024 has ACTUALLY launched unique serializedevaljob,
+ownerGOb8ce33; originalsource6f/Q4_0 baseline/24subset/fixedprecision/math/locks/
+1200bound unchanged. WrapperholdsWSL/SSH toterminal<=1320/fullownednativecontext/
+protectedresource return+actualreport, outer1500. Launch is not report/qualityproof.
+Actual evaluation terminal/readout/finalcontextreturn remain; SAME ACTIVE15min
+heartbeat binds exactpendingcommand/currentowner, no repeat/restart/newoperator.
 
 **Historical state — October 3, 09:44 UTC:** preparation ACTUALLY completed at
 08:57:52, observed by healthy/terminal checker09:39:55. Supervisor exit0,
@@ -56,6 +56,41 @@ conditional released-mode copied-fixture GO requires actual final release and
 fresh source/context/resource/control facts; no readiness from the CPU pass.
 Then complete current native/actual-model/backward/memory/timing/save-resume
 gates and launch the previously authorized NEW training run without confirmation.
+
+## Serialized evaluation final GO and actual launch — October 3, 13:14 UTC
+
+Root reviewed entire finalwrapper/guardian/argv; allpins/decodedpayload/AST and
+localguard dryPASS/tmp. FINAL GPU evaluation GO sent13:12 for exactoneclaimed
+command1401B SHA
+`d5dc1d406db23d022864eeb8e64e9a70d2c8dc1bdda3416ba8ac55d4a4a5d32d`,
+wrapper `a8efd198cf3c5dcccd1092d61831965a5f0dd5ec4cc589f8d61e70d3294386d9`,
+guardian `90947c9552cc61a01d355b796a9462024ac5bc6c2364b476dddf3501fda0534e`,
+payload `e0590173fab2606e4d7c1d463f2a0ff44112b41f1d5fd59014986678ec951d6e`.
+SAME soleoperator244/273/keeper71024 executes afterexistingoneclaim/freshadjacent
+fullphysical/soleowner/pause/currentboot/source/interop/CPUstagec1e proof. Existing
+plain1200sdevelopmentGO/<=300startup and unchangedR.launch/run/GPUlocks/math/
+memadmissions; optimizerfalse. Originalfailedtrainingstatus preserved. Only
+originalsource6f A8/A1/Q4_0development on actual1000checkpoint62f88/manifestb48,
+24subset from1002pool/max48lossrounds/frozenb4native. No sealeddata, optionalrecipe,
+newtrainingbudget or memoryfloor waiver.
+
+Actual originalwrapperstdout nowprints actual_serialized_development_launch_returned,
+job `qat-prepared-final-development-a8-a1-supervisor-20261003-01`, ownerGO
+`b8ce33f8926587e829c571bcba314597c1e14aeb51dbbb8f82438053c5ebedab`,
+optimizerfalse/original_training_status_preservedtrue. This is actuallaunch only,
+notCUDAmodelcompletion/report/quality proof. Live operator evaluation.stdout.jsonl
+mustnotbehashedasfinaluntil producerterminal. Sameoperatorholds its WSL/SSH through
+naturalterminal/ownedgroups/protectedsource/fullnativecontext/resources return,
+observation<=1320s and outertransport1500; originalreport/JSONmetadata+explicit
+partiallogtails/fullremotebytehashes returned. Ifobservationfails preserveexact
+already-ownedjob and cleanup-onlyexactownedgroups/births/nativecancellation; never
+silentreplay or create secondoperator. Root saved finalGO in existingregistration.
+
+SAME QAT15minuteheartbeat updatedINPLACE ACTIVE/currentowner to actual1000checkpoint,
+truthfulRAMfailure, fullrelease/CPUstagepass and exactcurrentpendingevalGO/oneclaim.
+It reads newer actualrecords/pendingstdout beforeaction; no repeatstage/fixture/
+corpus/audit/newjob or redundantuserconfirmation. ActualQ4report/terminal/context
+return/readout remain goalcompletion evidence. RTX2080Ti/research remainpaused.
 
 ## Actual serialized evaluation CPUstage passed — October 3, 13:05 UTC
 
