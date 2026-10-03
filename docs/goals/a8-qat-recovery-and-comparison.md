@@ -187,6 +187,30 @@ This preserves matched initial controls and actual resume evidence without a new
 source/config/budget change. Failed raw evaluation attempts remain protected by
 source; large tensor JSONL is never treated as compact metadata collection.
 
+### First native bootstrap and bounded input recovery
+
+Reference zero-state CPU bootstrap completed23:14:25UTC/exit0 under dedicated
+session`a8-ref-native-bootstrap-20261003-01`, supervisor2082/child2087. It loaded
+original model snapshots and emitted only A8 (joint.npz873,206,016bytes), optimizer
+updates0 and data-eligibility false. Source583480c, Torch2.14.0+cu130 and actual
+RTX5080/SM120 identity are bound; this is CPU bootstrap, not optimizer training.
+
+First native run command refused the selected `train-00000.jsonl`: that shard
+contains prose without the gate's required code/reasoning domains. It failed
+before native GPU execution. Original failure.json/command-0.log are retained;
+operator verified no process/group, empty runtime tmux and unchanged idle GPU.
+Recovery1/2 for incident`native_gate_missing_domains`: use the existing declared
+balanced TRAIN gate_prompts with its frozen hash/membership, retain all original
+failures and reuse the successful authenticated bootstrap bundle in a new
+context/command attempt. Only gate prompt locator/output locations change; actual
+training corpus/order, recipe, precision and budget remain unchanged. No repeated
+model bootstrap or semantic corpus audit is authorized or needed.
+
+For durable file partitioning root owns monitor-registration.json; sole operator
+owns separate ignored operator-ledger.json/handoff evidence for actual commands,
+process births/groups/sessions, checkpoints and incident attempts. Milestones
+reconcile into the root registration and this goal file.
+
 ## Standalone chat handoff — October 3, 2026
 
 The human corrected the execution structure: “just launch it as a seperate codex
