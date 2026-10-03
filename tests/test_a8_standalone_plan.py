@@ -4,22 +4,28 @@ import copy
 import hashlib
 import json
 import subprocess
+import sys
 import tempfile
 import types
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-import test_continuous_launcher as launcher_fixtures
-import test_native_label_audit_receipts as receipt_fixtures
-import train_continuous_w1ax as launcher
-import train_prepared_continuous_w1ax as prepared
-import w1ax_continuous_stages as stages
-
-from w1a1_eagle.continuous_qat import ContinuousConfig
-from w1a1_eagle.qat_recipe_audit import load_comparison_manifest, resolve_comparison_config
-
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+
+import test_continuous_launcher as launcher_fixtures  # noqa: E402
+import test_native_label_audit_receipts as receipt_fixtures  # noqa: E402
+import train_continuous_w1ax as launcher  # noqa: E402
+import train_prepared_continuous_w1ax as prepared  # noqa: E402
+import w1ax_continuous_stages as stages  # noqa: E402
+
+from w1a1_eagle.continuous_qat import ContinuousConfig  # noqa: E402
+from w1a1_eagle.qat_recipe_audit import (  # noqa: E402
+    load_comparison_manifest,
+    resolve_comparison_config,
+)
+
 COMMIT = "9e2c7a90051e738751aab7d7bd7c2d8201fb76e3"
 
 
@@ -163,6 +169,9 @@ class StandalonePlanTests(unittest.TestCase):
         # A random old source hash has no compatibility authority.
         receipt["binding"]["audit_source"]["files"][wrapper] = "0" * 64
         launcher.atomic_json(fixture.receipt, receipt)
+        with self.assertRaisesRegex(ValueError, "source/input binding differs"):
+            fixture.load()
+        launcher.atomic_json(fixture.receipt, [])
         with self.assertRaisesRegex(ValueError, "source/input binding differs"):
             fixture.load()
 
