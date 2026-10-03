@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Plan or measure paired full-model QAT readiness with zero optimizer updates.
+"""Plan or measure selected full-model QAT lanes with zero optimizer updates.
 
 Default invocation is a CPU-only plan: no provider/model/native execution and
 no accelerator discovery. GPU ownership clearance is an external prerequisite.
@@ -176,6 +176,7 @@ def validate_config_spec(spec):
     training = spec.get("training")
     if not isinstance(training, dict) or training.get("device") != "cuda:0":
         raise ValueError("readiness requires the explicit cuda:0 full-model recipe")
+    selected_activation_bits(training)
     expected = spec.get("native", {}).get("expected_commit")
     checked_hex(expected, 40, "native.expected_commit")
     hardware = spec.get("hardware")
@@ -191,9 +192,28 @@ def validate_config_spec(spec):
     return spec
 
 
+def selected_activation_bits(config):
+    """Use the launch's selected lanes; old specs retain the paired default."""
+    bits = (
+        config.get("activation_bits", (8, 1))
+        if isinstance(config, dict)
+        else getattr(config, "activation_bits", (8, 1))
+    )
+    if (
+        not isinstance(bits, (tuple, list))
+        or not bits
+        or any(type(bit) is not int or bit not in (1, 4, 8, 16) for bit in bits)
+        or len(set(bits)) != len(bits)
+    ):
+        raise ValueError("activation_bits must select distinct supported precision lanes")
+    return tuple(bits)
+
+
 def plan(args):
+    bits = (8, 1)
     if args.config is not None:
-        validate_config_spec(read_json(args.config))
+        spec = validate_config_spec(read_json(args.config))
+        bits = selected_activation_bits(spec["training"])
     return {
         "schema": "qat_optimization_readiness_plan_v1",
         "evidence_device_type": "cpu",
@@ -220,7 +240,7 @@ def plan(args):
         ],
         "planned_cases": {
             "groups": [1, 2, 4],
-            "paired_lanes": ["A8", "A1"],
+            "paired_lanes": [f"A{bit}" for bit in bits],
             "warmups": 1,
             "timing_repeats": 5,
             "optimizer_updates": 0,
@@ -296,7 +316,9 @@ def make_provider(factory, manifest, config):
     if not separator or not name or not entry or ":" in entry:
         raise ValueError("provider requires MODULE:FACTORY")
     creator = getattr(importlib.import_module(name), entry)
-    providers = [creator(config.qat(bits), Path(manifest)) for bits in (8, 1)]
+    providers = [
+        creator(config.qat(bits), Path(manifest)) for bits in selected_activation_bits(config)
+    ]
     for provider in providers:
         if (
             provider.training_eligible is not True
@@ -310,11 +332,15 @@ def make_provider(factory, manifest, config):
             raise ValueError(
                 "readiness needs an eligible full-body train provider; calibration/finals excluded"
             )
-    if providers[0].source_metadata != providers[1].source_metadata:
-        raise ValueError("paired providers differ in immutable source identity")
+    if any(provider.source_metadata != providers[0].source_metadata for provider in providers[1:]):
+        raise ValueError("selected providers differ in immutable source identity")
     source = providers[0].source_metadata
     manifest_hash = sha256(manifest)
-    candidates = {source.get("execution_manifest_sha256"), source.get("provider_manifest_sha256")}
+    candidates = {
+        source.get("execution_manifest_sha256"),
+        source.get("provider_manifest_sha256"),
+        getattr(providers[0], "provider_manifest_sha256", None),
+    }
     if manifest_hash not in candidates:
         raise ValueError("provider does not bind the requested manifest bytes")
     return providers[0]
@@ -750,11 +776,14 @@ def validate_native_evidence(
     return gates
 
 
-def _aggregate_memory(records):
+def _aggregate_memory(records, *, lane_names=("A8", "A1")):
     snapshots = [row[k] for row in records for k in ("memory_before", "memory_after")]
     return {
         "passed": True,
-        "scope": "admitted_b1_paired_residency",
+        "scope": "admitted_b1_paired_residency"
+        if tuple(lane_names) == ("A8", "A1")
+        else "admitted_b1_selected_lane_residency",
+        "lanes": list(lane_names),
         "peak_allocated_bytes": max(s["peak_allocated_bytes"] for s in snapshots),
         "peak_reserved_bytes": max(s["peak_reserved_bytes"] for s in snapshots),
         "min_free_bytes": min(s["free_bytes"] for s in snapshots),
@@ -832,7 +861,10 @@ def run_cuda(args, output):
     """Only called after explicit allow-cuda and all required CLI inputs."""
     spec = validate_config_spec(read_json(args.config))
     evidence = read_json(args.native_evidence)
-    preflight_native(evidence, spec, Path(args.native_evidence).parent)
+    expected_lanes = tuple(f"A{bit}" for bit in selected_activation_bits(spec["training"]))
+    preflight_native(
+        evidence, spec, Path(args.native_evidence).parent, expected_lanes=expected_lanes
+    )
     api = runtime_api()
     config = api.ContinuousConfig(**spec["training"])
     hardware = cuda_environment(api, config, spec)
@@ -872,6 +904,7 @@ def run_cuda(args, output):
         binding,
         deployment_states,
         provider.allowed_prompt_ids,
+        expected_lanes=expected_lanes,
     )
     trainer = api.ContinuousTrainer(provider, lanes, config, output)
     records, skipped, smoke_rows = [], [], []
@@ -967,7 +1000,7 @@ def run_cuda(args, output):
             "later_key_gradient_norm": min(g["later_k_gradient_norm"] for g in gradients),
             "later_value_gradient_norm": min(g["later_v_gradient_norm"] for g in gradients),
         },
-        "memory": _aggregate_memory(b1 + smoke_rows),
+        "memory": _aggregate_memory(b1 + smoke_rows, lane_names=expected_lanes),
     }
     receipt = {
         "schema": SCHEMA,
