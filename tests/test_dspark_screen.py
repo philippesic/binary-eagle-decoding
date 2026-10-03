@@ -47,6 +47,12 @@ class ScreenContracts(unittest.TestCase):
         with self.assertRaises(ValueError):
             round_summary([record], 3)
 
+    def test_native_duration_vectors_and_missing_fields(self):
+        result = round_summary([fixture(3, 1, draft_step_decode_us=[2, 3], draft_sampler_us=[7], draft_seed_decode_us=11)], 3)
+        self.assertEqual(result["cpu_wall_totals_us"]["draft_step_decode_us"], 5)
+        self.assertEqual(result["cpu_wall_totals_us"]["draft_seed_decode_us"], 11)
+        self.assertIsNone(result["cpu_wall_totals_us"]["process_us"])
+
     def test_every_order_is_paired(self):
         for rep in range(5):
             self.assertEqual(set(order(rep)), set(ARMS))

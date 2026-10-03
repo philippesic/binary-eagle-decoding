@@ -29,6 +29,14 @@ def rows(path: Path) -> list[dict]:
     return [json.loads(line) for line in path.read_text().splitlines()] if path.exists() else []
 
 
+def duration_sum(value) -> int | float:
+    if isinstance(value, list):
+        return sum(duration_sum(v) for v in value)
+    if not isinstance(value, (int, float)) or isinstance(value, bool) or value < 0:
+        raise ValueError("invalid native duration")
+    return value
+
+
 def round_summary(records: list[dict], maximum: int) -> dict:
     complete = [r for r in records if r.get("status") == "complete" and not r.get("replay")]
     for r in complete:
@@ -38,6 +46,7 @@ def round_summary(records: list[dict], maximum: int) -> dict:
             raise ValueError("native round token/count mismatch")
     proposed = sum(r["n_proposed"] for r in complete)
     accepted = sum(r["n_accepted"] for r in complete)
+    usable = sum(r["n_accepted_usable_prefix"] for r in complete) if complete and all("n_accepted_usable_prefix" in r for r in complete) else None
     position = {}
     for pos in range(1, maximum + 1):
         # Conditional survival at a reached prefix; also preserve unconditional totals.
@@ -46,10 +55,12 @@ def round_summary(records: list[dict], maximum: int) -> dict:
         survived = sum(r["n_accepted"] >= pos for r in complete)
         position[str(pos)] = dict(eligible=eligible, reached=reached, survived=survived,
                                  conditional_survival=survived / reached if reached else None)
-    timings = {key: sum(r[key] for r in complete) if complete and all(key in r for r in complete) else None for key in (
-        "round_us", "draft_us", "target_decode_sync_us", "process_us", "kv_repair_us",
-        "process_feature_copy_us", "process_draft_decode_us", "draft_step_decode_us", "draft_sampler_us")}
+    timings = {key: sum(duration_sum(r[key]) for r in complete) if complete and all(key in r for r in complete) else None for key in (
+        "round_us", "begin_us", "draft_us", "target_decode_sync_us", "process_us", "kv_repair_us",
+        "process_feature_copy_us", "process_draft_decode_us", "draft_seed_decode_us", "draft_step_decode_us", "draft_sampler_us")}
     return dict(rounds=len(complete), proposed=proposed, accepted=accepted,
+                accepted_usable_prefix=usable,
+                usable_acceptance=usable / proposed if usable is not None and proposed else None,
                 emitted=sum(r["n_emitted"] for r in complete),
                 acceptance=accepted / proposed if proposed else None,
                 accepted_per_round=accepted / len(complete) if complete else None,
@@ -113,9 +124,11 @@ def run(config_path: Path, destination: Path, diagnostic: bool = False) -> None:
                 raise RuntimeError("screen port is occupied")
             env = {k: v for k, v in os.environ.items() if not k.startswith(("GGML_", "W1AX_", "EAGLE_", "DSPARK_"))}
             env.update(CUDA_VISIBLE_DEVICES="0", W1AX_ROUND_TRACE_JSONL=str(trace.resolve()))
+            if arm.startswith(("dspark_", "dflash_")):
+                env["DSPARK_REQUIRE_AUTHOR_LAYOUT"] = "1"
             # Diagnostic state traces stay outside throughput runs.
             if diagnostic:
-                env["DSPARK_STATE_TRACE_JSONL"] = str((cell / "state.jsonl").resolve())
+                env["DSPARK_ADMISSION_JSONL"] = str((cell / "state.jsonl").resolve())
             cmd = command(config, protocol, arm, port)
             json_write(cell / "launch.json", {"command": cmd, "trace_env": {k: v for k, v in env.items()
                        if k.startswith(("GGML_", "W1AX_", "EAGLE_", "DSPARK_", "CUDA_"))}})
