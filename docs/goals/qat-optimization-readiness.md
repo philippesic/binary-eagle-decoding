@@ -4140,3 +4140,12 @@ Actual static inputs are saved separately from the immutable seven-file plan in
 No CUDA GO: exclusive current-owner physical GPU proof and adjacent dispatch/
 teardown still remain. Existing preparation/job/source/config/precision unchanged;
 model/coverage/smoke/checkpoint and full actual native/backward gates remain pending.
+
+Root requested ONE bounded read-only CUDA eligibility snapshot from the same
+prep supervisor/sole operator after its current slot returns. Recheck shared
+host/pause/owner, exact current job/kernel/source/package, actual GPU contexts/
+utilization/memory, host RAM/disk and four small output markers; remote<=60s.
+No signal, hold, lease grant, native/test launch, model/tensor read, source change,
+new operator or schedule is authorized by this request. It determines whether
+the next exclusive test is possible now or must wait for final preparation.
+Actual result remains pending; no availability inference from CPU health.
