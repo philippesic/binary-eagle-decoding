@@ -37,6 +37,9 @@ supervision continues; no credit purchase or reset redemption.
 no signal,806/807 absent, ready receiptbdfa56f8, checkpointe9d01984, both A8/A1
 integerstep0, full10,000 TRAIN/3,899,930 supervised rows and zero optimizer.
 Same sole operator is collecting exact terminal final03/release evidence.
+Final03/release now PASSED: raw6e7b6278/sourceb1a9f991, both groups empty,
+source/runtime/checkpoint unchanged, resource/context/census floors verified.
+The same operator stages the reviewed released-mode fixture before native launch.
 The held-slot implementation is stopped/preserved; no hold occurred. Root's
 conditional released-mode copied-fixture GO requires actual final release and
 fresh source/context/resource/control facts; no readiness from the CPU pass.
@@ -4322,3 +4325,37 @@ prepared state, do not repeat full corpus/provider audits or enable optional
 unvalidated features. Record exact selected passing recipe/source/data/runtime/
 hardware/checkpoint/fixed budgets before previously authorized NEW training.
 Direct human ASAP instruction is verified; no redundant confirmation is needed.
+
+## Final03 release passed; avoid duplicate training startup — October 3, 09:52 UTC
+
+Actual original terminal03 raw SHA
+`6e7b62789fcf524f2e0e96e43b9cd09268732cedb9adf081d1984dd21261087d`,
+parsed a4649908e3677cb9c3bd93c420f7695ce5a5f9026f71a666a68dccbbdeda7934,
+under `runs/luna-continuous-a8-a1-20260929/final-preparation-return-20261003-01/`.
+Root verified controller return0 and retained_gpu_preparation_return_v1:
+exit0/gpu_preparation_ready/ownership_returned, both groups empty/supervisor
+absent, actual readybdfa/checkpointe9 step0; optimizer_allowed=false. Source
+proofb1a9f991246f07c3b3b078f2602ace339416904295a303f77c2d72c6c1427509
+binds current28/configccc/native9e2 plus original14/runtime7. Actual release
+resources at09:46:56 UTC: RTX5080/SM120, util0/compute apps empty/no project
+workers, GPUfree14,190,379,008B/host20,232,368,128B/disk384,120,688,640B.
+Training runtime: Python3.11.15/NumPy2.4.6/Torch2.14.0+cu130, matmulTF32false,
+float32_matmul_precision highest/cudnnTF32true; no precision change.
+
+Same sole operator LOCAL240/keeper61158 performs exact11bce4 fixture stage/
+adjacent RELEASED proof and one CUDA transaction under the already issued
+conditional GO; no hold/owner-guard work. Actual fixture launch/result/teardown
+and local transport closure remain pending. Release observation is dated,
+not a perpetual GPU-availability claim.
+
+Exact6f source analysis found a critical startup pitfall: --prepared-run-dir/
+--prepared-ready-sha256 skips data stages only. It rebuilds providers and full
+round coverage, then new models/smoke/save; it treats the old zero checkpoint
+as evidence only. --resume NEW lacks the required locally published checkpoint/
+resolvedconfig; there is no external-checkpoint CLI. Do not launch that path
+and repeat3,899,930-row audits. Source worker is identifying the narrow safe
+source-bound prepared-state reuse path preserving actual source/config/data/
+mask/native/checkpoint admissions; no monkeypatch or ready-flag waiver. Single
+TRAIN-child gate source cannot silently stand in for the full training provider.
+Actual-model/native/backward/memory/timing/save-resume/Q4_0 gates remain mandatory
+before the new optimizer run. No optional recipe features or corpus recapture.

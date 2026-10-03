@@ -22,8 +22,10 @@ Supervisor exited0;806/807 are absent. The checker reports healthy/terminal,
 complete coverage of10,000 TRAIN prompts/3,899,930 supervised rows, paired A8/A1
 step-zero models and checkpoint. Ready receipt SHA bdfa56f8 and checkpoint
 e9d01984 are recorded in the goal. Optimizer updates remain zero. Exact terminal
-collection and fresh final GPU-release proof are underway through the sole
-operator. The held-slot plan is obsolete and preserved; no hold occurred.
+collection and fresh final GPU-release proof passed at09:46 UTC through the sole
+operator: both groups empty, no project workers/compute apps, matching source/
+checkpoint and resource floors. The held-slot plan is obsolete and preserved;
+no hold occurred.
 Root issued conditional GO for one reviewed released-mode copied-fixture CUDA
 test after verified release, then the remaining actual-model/native/backward/
 memory/timing/save-resume gates and already-authorized new training run.
@@ -60,7 +62,9 @@ Zero utilization and an empty WSL compute-app list do not prove context absence;
 the native test remains inactive. The held-slot fixture controller is now
 code-reviewed after seven focused CPU checks. Final preparation completion now
 supersedes that hold plan; released-mode physical proof is required before native
-dispatch. GPU release remains unverified until that collection completes.
+dispatch. Final release is verified; the same operator stages the reviewed
+fixture before fresh adjacent native admission. Standard prepared-run training
+would repeat provider/coverage startup; a safe reuse path is being resolved.
 A local source audit found repeated common GGUF hashing per shard;
 a small cache fix for FUTURE starts passed80 independent CPU tests and31 root
 checks. Current source6f/live preparation is unchanged. Old09 remains terminal,
