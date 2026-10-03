@@ -40,9 +40,9 @@ def stop_owned_server(proc: subprocess.Popen, grace_s: float = 3) -> None:
 
 
 def order(rep: int) -> list[str]:
-    # Rotate positions and reverse alternate repetitions to reduce order drift.
-    seq = list(ARMS[rep % len(ARMS):] + ARMS[:rep % len(ARMS)])
-    return seq if rep % 2 == 0 else seq[::-1]
+    # Six-row Williams design balances every position and directed predecessor.
+    offsets = (0, 1, 5, 2, 4, 3)
+    return [ARMS[(offset + rep) % len(ARMS)] for offset in offsets]
 
 
 def rows(path: Path) -> list[dict]:

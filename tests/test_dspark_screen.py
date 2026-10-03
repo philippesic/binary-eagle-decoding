@@ -93,6 +93,10 @@ class ScreenContracts(unittest.TestCase):
             self.assertEqual(set(order(rep)), set(ARMS))
             self.assertEqual(len(order(rep)), len(ARMS))
         self.assertNotEqual(order(0), order(1))
+        for position in range(6):
+            self.assertEqual({order(rep)[position] for rep in range(6)}, set(ARMS))
+        transitions = [(left, right) for rep in range(6) for left, right in zip(order(rep), order(rep)[1:])]
+        self.assertEqual(len(set(transitions)), 30)
 
     def test_rank_zero_uses_author_driver(self):
         config = {key: {"path": key} for key in ("binary", "target", "dflash", "dspark", "eagle_q4_0")}
