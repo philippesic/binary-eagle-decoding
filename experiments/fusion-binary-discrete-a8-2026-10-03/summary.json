@@ -47,6 +47,36 @@
       "sha256": "52a6f718922c15c46c7bfaa2a2754795322652f7a7ee0d975a21af19c2f51649"
     }
   ],
+  "execution": {
+    "cwd": "/private/tmp/eagle-fusion-discrete-report",
+    "environment": {
+      "EAGLE_GGUF_PY": "/Users/pippo/github/binary-eagle-decoding/third_party/llama.cpp/gguf-py",
+      "OMP_NUM_THREADS": "2",
+      "OPENBLAS_NUM_THREADS": "2",
+      "VECLIB_MAXIMUM_THREADS": "2"
+    },
+    "fit_command": [
+      "/Users/pippo/github/binary-eagle-decoding/.venv/bin/python",
+      "scripts/fit_fusion_binary_discrete.py",
+      "--manifest",
+      "/Users/pippo/github/binary-eagle-decoding/results/fusion-binary-discrete-a8-20261003/final-fixture-v2/synthetic_manifest.json",
+      "--base-gguf",
+      "/Users/pippo/github/binary-eagle-decoding/results/fusion-binary-discrete-a8-20261003/final-fixture-v2/synthetic_base.gguf",
+      "--output-dir",
+      "/Users/pippo/github/binary-eagle-decoding/results/fusion-binary-discrete-a8-20261003/final-fit-v2"
+    ],
+    "fit_exit_code": 0,
+    "fixture_command": [
+      "/Users/pippo/github/binary-eagle-decoding/.venv/bin/python",
+      "scripts/create_fusion_binary_discrete_fixture.py",
+      "--output-dir",
+      "/Users/pippo/github/binary-eagle-decoding/results/fusion-binary-discrete-a8-20261003/final-fixture-v2"
+    ],
+    "fixture_exit_code": 0,
+    "native_exit_code": 0,
+    "native_report": "/Users/pippo/github/binary-eagle-decoding/results/fusion-binary-discrete-a8-20261003/final-native-v2/report.json",
+    "source_revision": "67cb7fe"
+  },
   "export": {
     "base_gguf_sha256": "ed8388a07789e10b8fde53715d7bff1e1a2cbd1e10aafda7b5fa06c40bd3f0ef",
     "fusion_only": true,
