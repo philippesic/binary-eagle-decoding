@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Uninstrumented A8/Q4_0 request measurements inside one existing eval deadline.
+"""Uninstrumented A8/Q4_0/target-only request measurements inside one existing eval deadline.
 
 This reuses benchmark_native_eagle response parsing/aggregation and the frozen
 run_binary_head_capture server policy. Capture elapsed time is never a rate.
@@ -23,7 +23,7 @@ from types import SimpleNamespace
 
 import benchmark_native_eagle as benchmark
 
-VARIANTS = ("Q4_0", "A8")
+VARIANTS = ("Q4_0", "A8", "target_only")
 NATIVE_COMMIT = "9e2c7a90051e738751aab7d7bd7c2d8201fb76e3"
 EVALUATION_ENV = {"GGML_EAGLE_SHARED_PACK": "1", "GGML_EAGLE_PRUNE_UNUSED_HEAD": "1"}
 HISTORICAL_CAPTURE_BINARY = "b5093749d67888bc2cafdb6a65c479f4c182f0a904820f1dae4870b6ae66d41c"
@@ -53,6 +53,45 @@ def clean_environment(sources: dict, variant: str) -> dict[str, str]:
     if variant == "A8":
         env["GGML_W1AX_ACT_BITS"] = "8"
     return env
+
+
+def request_orders(repetitions: int) -> list[list[str]]:
+    # Six balanced permutations; the primary A8/Q4 pair alternates on every repeat.
+    balanced = ((0, 1, 2), (1, 2, 0), (2, 0, 1), (2, 1, 0), (0, 2, 1), (1, 0, 2))
+    return [[VARIANTS[index] for index in balanced[repeat % 6]] for repeat in range(repetitions)]
+
+
+def request_command(args, variant: str, drafts: dict[str, Path]) -> list[str]:
+    from run_binary_head_capture import server_command
+
+    if variant != "target_only":
+        return server_command(args, {"draft": str(drafts[variant])})
+    # Build the identical frozen target policy, then remove each draft control.
+    command = server_command(args, {"draft": str(args.target)})
+    valued_options = {
+        "-md",
+        "--spec-type",
+        "--spec-draft-n-max",
+        "--spec-draft-p-min",
+        "--spec-draft-ngl",
+        "--spec-draft-type-k",
+        "--spec-draft-type-v",
+    }
+    flags = {"--no-spec-draft-backend-sampling"}
+    target_command = []
+    index = 0
+    while index < len(command):
+        option = command[index]
+        if option in valued_options:
+            index += 2
+        elif option in flags:
+            index += 1
+        else:
+            target_command.append(option)
+            index += 1
+    if any("spec-draft" in option for option in target_command):
+        raise ValueError("target-only policy retained an unknown speculative control")
+    return [*target_command, "--spec-type", "none"]
 
 
 def _json_request(url: str, body: dict | None, deadline: float, stop_file: Path | None):
@@ -162,6 +201,7 @@ def _summary(rows: list[dict], complete: bool) -> dict:
         return {
             "variants": None,
             "speedup_vs_q4_0": None,
+            "speedup_vs_no_speculation": None,
             "metrics_status": "unavailable_incomplete_five_repetition_contract",
         }
     aggregates = benchmark.aggregate(rows, VARIANTS)
@@ -191,10 +231,18 @@ def _summary(rows: list[dict], complete: bool) -> dict:
     for name in ("request_tokens_per_s", "decode_tokens_per_s"):
         reference, measured = q4[name], candidate[name]
         speedups[name] = measured / reference if reference and measured is not None else None
+    target = aggregates["target_only"]
+    no_spec_speedups = {}
+    for name in ("request_tokens_per_s", "decode_tokens_per_s"):
+        reference, measured = target[name], candidate[name]
+        no_spec_speedups[name] = (
+            measured / reference if reference and measured is not None else None
+        )
     parity = benchmark.generated_token_id_matches(rows, VARIANTS, "Q4_0")
     return {
         "variants": aggregates,
         "speedup_vs_q4_0": speedups,
+        "speedup_vs_no_speculation": no_spec_speedups,
         "generated_token_id_matches_q4_0": parity,
         "metrics_status": "complete_request_metrics"
         if all(
@@ -233,7 +281,7 @@ def measure_a8_requests(
     Other failures save that report and raise. No partial-run performance claim.
     Caller must bind the returned manifest and reject incomplete evaluations.
     """
-    from run_binary_head_capture import server_command, verify_mapped_runtime
+    from run_binary_head_capture import verify_mapped_runtime
     from w1ax_capture_provider import TARGET_GGUF_SHA256
     from w1ax_continuous_stages import (
         Q4_0_GGUF_SHA256,
@@ -301,7 +349,7 @@ def measure_a8_requests(
             "enable_thinking": False,
         }
     }
-    orders = benchmark.schedule(repetitions, VARIANTS)
+    orders = request_orders(repetitions)
     report = {
         "schema": "a8_native_request_metrics_v1",
         "kind": "native_request_timing_no_tensor_capture",
@@ -319,7 +367,10 @@ def measure_a8_requests(
         "hardware_status": "caller_manifest_required"
         if not sources.get("evaluation_hardware")
         else "caller_supplied_environment_manifest",
-        "drafts_sha256": {key: benchmark.sha256(path) for key, path in drafts.items()},
+        "drafts_sha256": {
+            **{key: benchmark.sha256(path) for key, path in drafts.items()},
+            "target_only": None,
+        },
         "request_options": {
             key: value
             for key, value in benchmark.request_body(request_config, prompt_rows[0]).items()
@@ -343,7 +394,7 @@ def measure_a8_requests(
                     remaining(deadline, stop_file)
                     directory = output / f"rep-{repetition:02d}" / variant
                     directory.mkdir(parents=True)
-                    command = server_command(args, {"draft": str(drafts[variant])})
+                    command = request_command(args, variant, drafts)
                     env = clean_environment(sources, variant)
                     cell = {
                         "repetition": repetition,
