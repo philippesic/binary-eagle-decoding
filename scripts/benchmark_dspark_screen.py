@@ -85,6 +85,7 @@ def round_summary(records: list[dict], maximum: int) -> dict:
     return dict(rounds=len(complete), proposed=proposed, accepted=accepted,
                 accepted_usable_prefix=usable,
                 usable_acceptance=usable / proposed if usable is not None and proposed else None,
+                usable_accepted_per_round=usable / len(complete) if usable is not None and complete else None,
                 emitted=sum(r["n_emitted"] for r in complete),
                 acceptance=accepted / proposed if proposed else None,
                 accepted_per_round=accepted / len(complete) if complete else None,
