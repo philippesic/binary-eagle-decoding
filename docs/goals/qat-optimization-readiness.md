@@ -51,7 +51,13 @@ unverified. The owner saved `human-stop-local-closure-proof.json` in the preserv
 directory, SHA `518d377ce7f2b6f521c8fed1e9e78cb662886d04b270684eed4dc550c54f3e88`.
 Successor verified that file, the empty verification output, original classification
 and all local pause/monitor states. The operator lease is closed (inactive,
-completed, not ready); fresh GPU release remains false.
+completed, not ready); fresh GPU release remains false. The proof's operator-entered
+`recorded_at_utc=00:02Z` precedes the observed human-stop relay and is not a
+validated execution/closure time. Original bytes remain unchanged; adjacent
+`human-stop-local-closure-timestamp-annotation.json`, SHA
+`97ce0da65b1a6ddd2ec5be72978f0c94df8572231fbc899f7d3ba94255206687`, records that
+limitation. Use the parent completion checkpoint and actual command/state
+evidence for chronology.
 RTX2080Ti remains paused. Recovery budget
 2/2 remains exhausted; no new recovery charge or old09 restart.
 
