@@ -99,8 +99,11 @@ Prepared adapter corrections are reviewed/integrated/pushed as `d211275`:
 bootstrap pass. Original full preparation is preserved; no repeat full audit.
 Privileged readonly census reported no unknown/changed target-user contexts;
 narrow current controller correction and raw-provenance clarification are pending.
-Current native fixture/model/actor/five-repeat timing and actual restore/live
-admission gates remain. Optimizer updates are still ZERO. See the
+The narrow census correction now passes16root/owner guards with14verified pins.
+Same operator is authorized to stage one bounded readonly actual WSLinterop
+precheck, then conditional current native fixture under fresh full proof and
+reviewed complete transport. Neither has yet executed. Current model/actor/
+five-repeat timing and actual restore/live admission gates remain. Optimizer updates are still ZERO. See the
 [adapter milestone](goals/qat-optimization-readiness.md#prepared-adapter-integrated-actual-gates-pending--october-3-1035-utc).
 
 ## Human stop: local Mac only — October 3, 00:10 UTC

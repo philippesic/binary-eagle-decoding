@@ -32,7 +32,22 @@ successor uses one pinned operator only when no other is active. Root creates
 no second remote operator. Protected QAT/preparation
 supervision continues; no credit purchase or reset redemption.
 
-**Current state — October 3, 09:44 UTC:** preparation ACTUALLY completed at
+**Current state — October 3, 10:49 UTC:** full preparation/coverage/original
+paired backward-memory/checkpointzero are authenticated; no optimizer update.
+Prepared baseline adapter is reviewed, independently CPU-tested and public
+`d211275`; main latest documentation `96ee47f`. Native packet02's narrow fresh
+readonly root census fix now passes16root/owner guards and all14pins, reviewed
+manifest `51004c15e55ae3019f8b6d72b9b4bc17d4bec9d92198416f505e46ff0701d9d3`.
+Owner may mark reviewed and finalize/stage one concrete CPU-only WSLinterop
+precheck through SAME Luna/LOCAL241/%270/keeper10523. Native conditional on actual
+interop success, finalized transport review and fresh full physical/source/
+context/resource/pause/ownership proof; current controller/precheck has not yet
+executed. Exactly TWO earlier diagnostic root queries are preserved/recovered
+honestly; no third diagnosis. Local exclusive dispatch claim prevents repetition.
+Full-source actual-model/native/timing/restore gates and training still pending.
+Latest milestone sections immediately below carry exact evidence and plan.
+
+**Historical state — October 3, 09:44 UTC:** preparation ACTUALLY completed at
 08:57:52, observed by healthy/terminal checker09:39:55. Supervisor exit0,
 no signal,806/807 absent, ready receiptbdfa56f8, checkpointe9d01984, both A8/A1
 integerstep0, full10,000 TRAIN/3,899,930 supervised rows and zero optimizer.
