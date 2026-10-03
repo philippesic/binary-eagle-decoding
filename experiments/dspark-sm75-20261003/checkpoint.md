@@ -145,3 +145,34 @@ On success verify exact groups/context return, then prepare frozen six-repeat
 benchmark config againstQ4_0; report evidence promptly. Preserve allocation/
 transport/schema errors and fix routine issues; no lowered target/verifier,
 training, low-bit draft or new track is authorized.
+
+
+## Shared pause observed before first model launch —23:54UTC
+
+Fresh host control showsRTX2080Ti pause_requested=true, updated22:52:45.606236UTC,
+after study startup/resume. The control file records no writer/reason/requestID;
+no newer human pause was received in this study chat. Root held model execution
+and asked human clarification whether to restore study-only resume or keep it
+paused. Required response is pending; do not infer approval from elapsed time.
+No contact/monitoring of originating/QAT/fusion chats occurred.
+
+Sole Luna completed exact return check23:54:24UTC: no owned supervisors/helpers/
+native servers or remote runtime sessions, empty compute-app query, only desktop
+Xwayland549MiB/11264MiB at0% GPU. No model load, admission-probe request, CUDA
+component profile or throughput request has occurred; inference budget used=0.
+Both original BF16 copies retained and export auditspassed; native SM75 buildpassed.
+Native/measurement goal remains incomplete; preservation is not a negative
+architecture/throughput verdict. Operator is terminal, ready to be resumed on
+human clarification with fresh registry/control/process/context/resource checks.
+
+Passed DSpark GGUF SHAdc5299bdb1e7e906b003334a9b806ba502e72111341432ac5a9fd11de22f520c;
+export SHAb0aa8f6686a822258be033707242c641cd8ef757f4dc90784580e82c774d4ae9.
+Passed DFlash GGUF SHA92925d9e4be49a82d1e4f9d9671aae0e3647c1146fccbd4004bfc8afe0c9896f;
+export SHAfa96afef39453b9bec6bac3a874681c0c878a103dc7bbd994250d060a49c3463.
+Estimated GPU target+draft+F16KV9922MiB DSpark/9773MiB DFlash, leaving793/942MiB
+before scratch afterdesktop549MiB. This is loader-based admission planning,
+not actual model residency/performance proof. Remote complete parent03f6c81
+protocol SHA6244571641791b4f47e2109295f9e28e2827d2c63c290670548f60893c16cf3c.
+All prepared assets/run paths, failures and operator-return evidence are in
+operator.md. Runtime source76847aa ispublic; parentgitlink remains9e2c7a900,
+awaiting model-admission validation before integration.
