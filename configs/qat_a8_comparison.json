@@ -8,7 +8,7 @@
       8
     ],
     "development_lifecycle": "standalone",
-    "a1_computation": "single_forward",
+    "a1_computation": "reference",
     "optimize_cache": true,
     "optimize_head": true,
     "context_chunk_size": 64,
