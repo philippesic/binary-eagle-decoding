@@ -43,6 +43,7 @@ _OPERATIONAL_FIELDS = {
     "keep_checkpoints",
     "diagnostics_every",
     "development_every",
+    "development_lifecycle",
     "min_free_disk_bytes",
     "max_cuda_reserved_bytes",
     "min_cuda_free_bytes",

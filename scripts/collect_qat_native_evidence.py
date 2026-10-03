@@ -508,7 +508,7 @@ def recipe_context(args, api):
     else:
         common.validate_config_spec(spec)
         config = api.ContinuousConfig(**spec["training"])
-        bits = (8, 1)
+        bits = common.selected_activation_bits(config)
         recipe = api.recipe_identity(config)
     hardware = common.cuda_environment(api, config, spec)
     runtime = (
@@ -741,6 +741,12 @@ def collect(args, output):
     args.config = None if context["curriculum"] else config_path
     api = runtime_api(context["curriculum"])
     spec, config, bits, recipe, runtime, hardware = recipe_context(args, api)
+    expected_lanes = {f"A{bit}" for bit in bits}
+    if (
+        set(context["bundles"]) != expected_lanes
+        or set(context["deployment_state_sha256"]) != expected_lanes
+    ):
+        raise ValueError("bootstrap lane inventory differs from the selected recipe")
     if (
         recipe != context["recipe"]
         or hardware != context["hardware"]
