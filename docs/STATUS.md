@@ -17,7 +17,9 @@ recovery or SSH is permitted. Actual final shutdown proof is pending.
 Optimizer updates remain zero. Old09 was already stopped; the proposed new
 preparation continuation was never approved and is cancelled. Local unfinished
 work and all original evidence are preserved. The goal remains incomplete;
-only local Mac work may continue. See the [local-only handoff](goals/qat-optimization-readiness.md#local-only-stop-and-successor-handoff--october-3-0010-utc).
+only local Mac work may continue. Acknowledged successor chat
+`01a0ff1c-1007-75e3-a772-eaeb078179b3` owns the local checkpoint and recording
+the existing operator’s final shutdown result. See the [local-only handoff](goals/qat-optimization-readiness.md#local-only-stop-and-successor-handoff--october-3-0010-utc).
 
 ## Old preparation stopped; continuation repair — October 2, 23:59 UTC
 

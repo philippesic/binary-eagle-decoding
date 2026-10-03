@@ -73,6 +73,15 @@ Actual GPU model/backward/memory/timing/checkpoint/Q4_0 gates and training remai
 pending. After a future explicit human resume, establish fresh source/resource/
 ownership checks and a reviewed new continuation rather than reusing old GO.
 
+**Acknowledged successor:** `01a0ff1c-1007-75e3-a772-eaeb078179b3`,
+“Continue QAT locally with GPUs paused,” read main `4eea55f`, the exact pause,
+recorded job identities and preserved local outputs. It explicitly accepted
+LOCAL MAC ONLY and the same incomplete goal, with no new connection, operator,
+remote query, monitor activation or push/fetch. Prep was told to relay only its
+already-assigned stop/closure proof to that successor. Predecessor retires after
+this checkpoint; successor owns recording final shutdown evidence. Local
+worker PAUSED-CHECKPOINT is complete; no root worker remains active.
+
 **Unresolved user decision:** only the human can lift the local-only pause. No
 other decision is needed to obey the stop; do not repeatedly ask for resumption.
 
