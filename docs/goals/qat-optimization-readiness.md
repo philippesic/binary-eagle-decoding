@@ -32,16 +32,16 @@ successor uses one pinned operator only when no other is active. Root creates
 no second remote operator. Protected QAT/preparation
 supervision continues; no credit purchase or reset redemption.
 
-**Current state — October 3, 11:23 UTC:** full preparation and original zero
-checkpoint are authenticated. Prepared adapter is public/tested `d211275`.
-ACTUAL copied native fixture PASSED11:10 on RTX5080/SM120 with current native9e2;
-all22raws/root validator/owned group-context return verified. LOCAL241 and
-keeper10523 CLOSED; same sole operator available for a NEW serialized model gate
-transaction. Existing preparation/QAT heartbeats remain SAME/ACTIVE and correctly
-bound. Actual full-model/native actor/five-repeat timing/restore and optimizer
-launch remain pending; optimizer updates ZERO. Concrete local gate packet is
-under construction/review, then already-authorized NEW training after genuine
-gates. Latest milestone immediately below carries exact evidence.
+**Current state — October 3, 11:45 UTC:** original full preparation/zero and
+current copied native CUDA pass are verified. ACTUAL model CPUstage authenticated
+clean helperd211/external6f/full10000TRAIN/3899930rows, provider binding4f794;
+no model or optimizer execution. Final13guard model packetac7f is frozen/reviewed,
+SAME soleLuna on NEW242/%271/keeper72822; parent owns only final operational GPU
+wrapper/GO. Fresh full physical/context/resource/pause proof and concrete command
+pin review precede one zero-update3600s model transaction. Next optimizer packet
+aa1a is independently prepared/reviewed16tests; actual model/native/timing/restore
+receipts and training still pending. Optimizer updates ZERO. No user confirmation
+or repeated corpus/fixture work. Latest checkpoint below carries exact evidence.
 
 **Historical state — October 3, 09:44 UTC:** preparation ACTUALLY completed at
 08:57:52, observed by healthy/terminal checker09:39:55. Supervisor exit0,
@@ -56,6 +56,63 @@ conditional released-mode copied-fixture GO requires actual final release and
 fresh source/context/resource/control facts; no readiness from the CPU pass.
 Then complete current native/actual-model/backward/memory/timing/save-resume
 gates and launch the previously authorized NEW training run without confirmation.
+
+## Actual full-source model CPU stage passed — October 3, 11:34 UTC
+
+Final local model packet SHA
+`ac7f7d5c9ded5e2abc08893ad42e725a1e9dcbb5985c226a2e32b05f78704dcc`
+passed13root/feature CPU tests,11pins and whole source review. Exact argv actor
+classification, immutable postlaunch GO, birth-bound native descendant cleanup,
+real log-size limits and collectable startup failure/identity ordering are tested.
+Original native fixture/source6f/math/data/curriculum remain unchanged; no repeated
+fixture or corpus semantic audit. Actual runner serializes wrapped bootstrap,
+A8/A1 native decisions, collect with real unitreporta1ac and five-repeat readiness.
+GPU GO is operational/zero-update only; whole3600s bound and current pause/CANCEL
+remain active. Native source servers use separate groups, all owned teardown must
+be verified. Live inherited WSL_INTEROP is held through validation terminal return.
+
+SAME Luna has NEW serialized LOCAL242/%271/keeper72822 (241/10523 previously
+closed). CPUstage ACTUALLY passed at1791027290.6906378; root independently read
+original stdout SHA
+`215c27f99f7e2c9d8522ed7877c31eda07949028a01e6d6b22a90ddf8d94bec7`
+and all5returned original file-byte/SHA joins. CPUstage
+`9dc51b95f0996169fd6c16ea006570730d664e8df884f2b13a66f36bdf89cd7b`,
+actual provider binding
+`4f794787add978b8ef635a887bc7aae4ccdc1faec8afd5fd19e84d27efc02310`.
+It pins clean helperd211275fc26a7cb0bfcf6c71f30c7396addcd972, external6f/native9e2,
+all3new helper hashes, original stagesccc/readybdfa/checkpointe9/fullsourceb1;
+original source auth reports10000TRAIN/3899930rows, no payload/model loaded,
+optimizer forbidden. Remote controls dbcc6d retain5080false/2080true. New training
+run remains absent. Original stage/index/code remain saved; no live math edit.
+
+Operational files/raws are ignored
+`runs/luna-continuous-a8-a1-20260929/prepared-model-gates-operator-20261003-01/`.
+Root acceptance
+`runs/qat-optimization-readiness/prepared-model-gates-root-cpu-acceptance-20261003-01.json`,
+SHA `2ff940c794f480a4711d144413b2bfcff459d27c6b52edcf3c04c4af7566fe3b`.
+Root has accepted conditional MODEL GO for this source-bound packet only after
+final concrete operational command pin review and fresh full context/resource/
+pause/ownership admission. Preparation owner owns ONLY independent transport/
+GO wiring in its operator directory; feature packet is frozen. Source review
+is complete; final operational GPU launch wrapper is the remaining immediate
+execution work. Do not repeat accepted evidence or request user confirmation.
+
+Independent local feature owner has also completed the NEXT optimizer packet
+under ignored `runs/qat-optimization-readiness/prepared-training-launch-packet-20261003-01/`,
+manifest `aa1a9ade7d707c59920e77c61208836d945231166d5fa7624e490695989f46b9`,
+16root/worker CPU tests and15pins. Root read whole launch/observation path. It
+preserves genuine existing currentboot durability aggregate/eight original raws,
+requires actual successful model terminal return/readiness/sidecar/source/state,
+then fresh sole-owner/context/resource/pause admission<=300s. Supervisor job
+`qat-prepared-reference-a8-a1-supervisor-20261003-01` differs from mandatory empty
+trainer directory `qat-prepared-reference-a8-a1-20261003-01`; otherwise remote_job
+would create it before adapter admission. Unchanged adapter performs authentic
+fullzero copy/resume and current paired smoke before any optimizer update.
+Actual startup births, first complete paired update/sign-scale diagnostics and
+paired checkpoint hashes are observable; disconnect/reconnect survival still
+requires real operator events. If finite caps stop before1000development cadence,
+flag serialized final-checkpoint Q4_0 evaluation needed. No source/recipe change,
+GPU/optimizer GO or remote work occurred in this local packet preparation.
 
 ## Actual copied native CUDA fixture passed — October 3, 11:10 UTC
 
