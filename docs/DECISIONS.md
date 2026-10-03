@@ -887,7 +887,7 @@ heartbeats during full audits. No live source/gate bypass, timeout change,
 restart, new training recipe or optimizer update is selected here. Current
 frozen preparation continues unchanged; the user owns adoption of this proposal.
 
-## Pending: next QAT research fork after the first 1,000 paired steps — October 3, 2026
+## Selected: matched A8 recovery comparison after the first 1,000 paired steps — October 3, 2026
 
 The bounded readiness/training handoff is complete for the admitted fixed A8/A1
 recipe. The [actual report](../experiments/qat-optimization-readiness/first-1000-paired-steps-2026-10-03.md)
@@ -896,7 +896,7 @@ development prompts; both binary arms matched Q4_0 response token IDs on all24.
 No matched step-zero development control establishes the training effect.
 Training covered13 prompts/4,846 rows from10,000 TRAIN/3,899,930 supervised rows.
 
-The user owns the next fork; no option or additional GPU budget is selected:
+The following options were pending after the completed pilot:
 
 | Option | Evidence and work needed | Limit |
 |---|---|---|
@@ -907,3 +907,15 @@ Q4_0 remains primary. Target/verifier precision, frozen data ancestry, cache/mas
 semantics and sealed finals stay unchanged. RTX2080Ti and supporting research
 remain paused. No new goal, calibration fit, trajectory recapture or optimizer
 restart is implied by this decision record.
+
+**Later human selection, October 3:** run a fresh matched A8-only reference and
+combined learned-A8/all-nine-midpoint/lower-inertia-AdamW candidate comparison,
+7200 cumulative trainer seconds per arm, with step-zero/scheduled/final native
+development evaluations (1200 seconds each), resource-safe standalone evaluation,
+exact resume and a bounded recovering monitor. A1, RTX2080Ti, Bop, curriculum,
+trajectory refresh and architecture changes remain deferred. The historical
+paired step1000 checkpoint is preserved, not reused as a new recipe's resume.
+The standalone owner and executed state are in
+[A8 QAT recovery and comparison](goals/a8-qat-recovery-and-comparison.md).
+Target/verifier precision and sealed finals remain frozen. This selection
+supersedes the preceding pending-budget statement for this bounded comparison.
