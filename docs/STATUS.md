@@ -1418,3 +1418,10 @@ source, and counts retained captures from their original authenticated paths.
 The preparation owner is rotating after two compactions without interrupting
 the detached job; explicit successor acknowledgment and SAME heartbeat transfer
 are recorded in the [preparation rotation checkpoint](goals/qat-optimization-readiness.md#preparation-supervision-rotation--october-3-0643-utc).
+
+Preparation transfer is complete: acknowledged successor
+`01a10084-101e-7311-94e9-9658f9dc648f` owns the unchanged detached job and the
+SAME ACTIVE15minute heartbeat. Predecessor and its sole operator are retired;
+no active transport or duplicate schedule. Exact transfer proof and remaining
+gates are in the linked rotation checkpoint. Full preparation readiness,
+GPU release and optimizer training remain pending.

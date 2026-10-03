@@ -3837,3 +3837,21 @@ all old preparation/fixture/transport work is terminal and preserved. This
 checkpoint worktree `/private/tmp/eagle-prep-rotation-20261003` owns only appended
 STATUS/goal sections; integrate/push then remove it after verified successor
 handoff. Other untracked research files and QAT root worktrees are untouched.
+
+**Transfer completed — October3 06:49UTC:** acknowledged preparation successor
+`01a10084-101e-7311-94e9-9658f9dc648f` verified exact current job/kernel/source/
+config/query/lease and completed predecessor local closure. Its original local
+ACK `preparation-successor-ack-20261003-01.json` under the ignored monitor run is
+SHA `38b348dc418938c3e43b6e8d7d74eaef71363de1060003c334641542d6076499`.
+Current coordination_handoff acknowledges this owner; SAME ACTIVE15minute
+`a8-a1-luna-health-and-recovery` target is independently verified to the successor,
+TOML SHA `f40c4aee33400d12407a158ef33998daadcefaa0b3ac0a44729d7dd94c785541`.
+Transfer-complete receipt `preparation-owner-transfer-complete-20261003-01.json`
+SHA `ddca2b1f929640a357e161da59241c04cd643ab88ade99c0b4106694b48b6fc7` records
+no remote work during transfer, no active operator and unchanged live NEW job.
+The predecessor sent explicit proceed authority for one saved-query Luna/high
+operator and is retired. QAT coordinator remains `01a0ff1c`; no replacement
+QAT owner/goal/schedule. Checkpoint launch commit `cc7389c` is pushed. Successor
+must record final transfer verification locally and continue the exact next
+actions above. The predecessor finishes only this documentary integration/push
+and worktree removal, with no further GPU/SSH/operator/registry action.
