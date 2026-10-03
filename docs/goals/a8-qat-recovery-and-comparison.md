@@ -84,6 +84,47 @@ integration. The mandatory same-target no-speculation timing reference is being
 added within the SAME1200s evaluation deadline; Q4_0 remains primary. No extra
 training/evaluation budget or new research arm is selected.
 
+### Integration ready for current-model execution
+
+Root integrated trainerf30dad6/3272936 as5e3276a/a16bff5, on top of selected-lane
+readiness, corrected recipe, accumulated movement, and native timing/target-only
+work. Root82integrated CPUchecks plus7latest launch-contract checks pass on the
+project Torch2.14.0 runtime with scripts/tests/src and populated gguf-py imports.
+Ruff and diff checks pass. Worker independently reports167affected checks; all
+actual GPU evidence is still pending. Current branch progress is published;
+main integration publication is the next action before immutable deployment.
+
+Prepared-data fixes preserve exact original receipt/data bytes: source6f's known
+stages-wrapper audit hash may be reused only with a pinned historical receipt,
+matching all actual data/runtime/dependency bytes, validated historical full-pass
+provenance, and unchanged semantic auditor AST. The data child is initialized
+under the original fixed teacher contract; actual current candidate linears,
+optimizers and admission use the untouched candidate config. TRAIN and
+standalone development use this explicit teacher/actor distinction.
+
+Current gate provider: `train_prepared_continuous_w1ax:create_current_provider`.
+Its CPU JSON record schema is `current_prepared_provider_v1`, with pinned arm
+config locator, optional stages_manifest locator, original prepared_run_dir and
+ready SHA, unique validation_run_dir and selected_shard0. Keep the production
+spec.provider declaration frozen; pass this factory/binding via gate CLI flags.
+Do not use the legacy `train_prepared --validate/--start` source6f launcher or its
+`prepared_provider_binding_v1` emission for the new recipes.
+
+Run sequence per arm: current native/model/backward/memory admissions; fresh
+`train_continuous_w1ax --start --prepare-only --allow-cuda` with original prepared
+corpus flags; native standalone step-zero development; exact resume into actual
+7200-second training. First100budgeted updates prove enabled family movement;
+then graceful `--stop` saves current state, verify group/context return and exact
+`--resume` under UNCHANGED production config before continuing. No temporary
+max_steps change or separate disposable trial. All updates remain charged to
+the same arm. Scheduled5000/final evaluations retain the same1200s bounds.
+
+Current evaluation runtime metadata is in ignored
+`runs/qat-a8-recovery/evaluation-native-runtime-9e2.json`: supported9e2 executable
+SHA1ca0c1d9..., exact immutable manifest/library pins and native_commit. This is
+static identity evidence, not native CUDA readiness. Sole operator will record
+actual process/run/source identities and effective CUDA deployment next.
+
 ## Standalone chat handoff — October 3, 2026
 
 The human corrected the execution structure: “just launch it as a seperate codex
