@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "prompt_file": "configs/dspark-screen/development.jsonl",
+  "prompt_sha256": "ea10a4cf40d17f69f9e33028336df17c02a74820e384bc1a916f8c10dafa2444",
+  "prompt_count": 24,
+  "target_precision": "f16",
+  "kv_precision": "f16",
+  "context_tokens": 2048,
+  "concurrency": 1,
+  "max_output_tokens": 128,
+  "temperature": 0.0,
+  "seed": 42,
+  "enable_thinking": false,
+  "cache_prompt": false,
+  "warmups_per_cell": 2,
+  "repetitions": 5,
+  "candidate_lengths": [
+    3,
+    7
+  ],
+  "eagle_length": 5,
+  "confidence_floor": 0,
+  "measurement_budget_s": 7200,
+  "verifier": "native greedy target sample-and-match",
+  "precision_policy": "released normal-precision drafts; no low-bit conversion, scheduling or training",
+  "arms": [
+    "target_only",
+    "eagle_q4_0",
+    "dspark_3",
+    "dspark_7",
+    "dflash_3",
+    "dflash_7"
+  ]
+}
