@@ -69,7 +69,8 @@ and ignored artifacts. SSH only through tmux MCP using the shared local registry
 
 ## Monitor and healing contract
 
-One 15-minute heartbeat attached to this coordinator continues from this file and
+ACTIVE heartbeat `a8-qat-recovery-monitor`, every 15 minutes, is attached to this
+coordinator and continues from this file and
 ignored A8 monitor registration. Stay quiet on unchanged healthy/non-actionable
 state; notify verified training start, meaningful milestones, failures/recovery,
 completion or required user action. Idle agent turns and disconnected transport
@@ -99,3 +100,8 @@ process, 0% utilization, about 20.08 GB available host RAM and 357.35 GB disk.
 Preexisting remote main changes are preserved; deploy a new immutable checkout.
 Retained prepared corpus was located. No new CUDA model or optimizer has run.
 The original below-Q4_0 result is historical and lacks a matched step-zero control.
+
+Monitor creation succeeded. Registration is saved outside Git at
+`runs/qat-a8-recovery/monitor-registration.json`. This local registration records
+the worker identities, sole GPU owner, initial budget, retry cap and phase;
+actual-model/optimizer flags remain false until observed evidence exists.
