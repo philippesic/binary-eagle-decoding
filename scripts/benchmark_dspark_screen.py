@@ -19,7 +19,7 @@ ARMS = ("target_only", "eagle_q4_0", "dspark_3", "dspark_7", "dflash_3", "dflash
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def stop_owned_server(proc: subprocess.Popen) -> None:
+def stop_owned_server(proc: subprocess.Popen, grace_s: float = 3) -> None:
     # Finish below remote_job.py's default 10s grace so its SIGKILL cannot strand
     # this separately recorded server process group.
     try:
@@ -27,7 +27,7 @@ def stop_owned_server(proc: subprocess.Popen) -> None:
     except ProcessLookupError:
         return
     try:
-        proc.wait(timeout=3)
+        proc.wait(timeout=grace_s)
     except subprocess.TimeoutExpired:
         pass
     try:
