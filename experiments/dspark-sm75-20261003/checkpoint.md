@@ -43,3 +43,24 @@ DFlash02d530b7962ea1412beaf41a05c0b8e36d5f9b1d, modelSHA
 Both released BF16. No FP16 draft fallback selected. Converter retains
 embedding by default; borrowing it requires actual equality against immutable
 target before dropping it, not simply an estimated saving.
+
+## Trained-layout review
+
+Astra read-only advisor approved Sol's guarded native patch: short arm computes
+all seven trained bidirectional noise rows but samples/verifies only first three;
+maximum arm computes/proposes seven. Root protocol now explicitly records this,
+and harness sets DSPARK_REQUIRE_AUTHOR_LAYOUT=1 in every DSpark/DFlash arm.
+Native default drivers and existing verifier remain unchanged. Actual same-prefix
+first-three invariance and complete removal of all seven noise rows remain gates.
+
+Native trace preserves original raw n_accepted plus separate usable emitted
+accepted prefix and verified IDs, avoiding post-EOS verifier tails in useful
+acceptance/output rates. Root timing aggregation now handles native vector fields
+and reports absent timing components as null. Eight focused CPU tests pass.
+Published root work: af80a9f/c4eb52b; main integrations4a5f0c1/caf2474.
+
+CPU disconnect proof completed after109seconds through detached Linux tmux;
+operator is resolving actual Windows .wslconfig before a long launch. First
+failed CPU quoting proof is preserved. No released model GPU load has occurred.
+Existing fixed target SHA05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6,
+Q4_0 EAGLE SHA2db40f99d27e404298b80b2865671b9fd0136060ffb503007cb2ae23759e7280.
