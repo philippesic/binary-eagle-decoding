@@ -42,6 +42,21 @@ restart old09 or charge recovery. Both local packets are adapting only boot-boun
 admission/history; original CPU configuration and terminal proofs stay unchanged.
 Pre-rollover continuation39 and static21 local tests/independent reviews passed;
 these passes do not authorize the changed-boot packet before final review.
+CPU fixture actually started at06:24:20UTC on current boot3abb: detached host
+session `currentboot-disconnect-20261002-01`, job
+`currentboot-disconnect-supervisor-20261002-01`, supervisor567/PGID567/start52920,
+child569/PGID569/start52928, UID1000. Same sole prep operator owns it; no root
+transport. Start raw SHA `7a1762b58f593529d403b578eacb54408aa6a851d9f5124bc93aac3554e179ab`
+under `runs/luna-continuous-a8-a1-20260929/currentboot-disconnect-proof-20261002-01/`.
+Baseline advanced without Torch; actual survival/teardown receipts remain pending.
+Boot-aware static03 final packet SHA
+`6b820b2b7cc6b79e87c540e139d0b3972a07c5c496f096378e38efedc9a2c23b` passed26 local
+guards under author, independent Luna and root, with all27 regular-file pins.
+Original stored CPU98 receipt expected SHA is derived from its pinned producer's
+exact encoder, not claimed as remotely measured; actual readback must match.
+Static outcome remains pending and independent of model preparation. Terminal03
+has44 local tests and actual new daemon bindings; final durability receipt pins
+and independent/root admission are still required before any model launch.
 
 **Local work:** `/root/terminal_continuation` owns NEW ignored
 `runs/qat-optimization-readiness/retained-capture-adoption-20261002-01/postconfig-gpu-prep-transfer-20261002-03/`;
