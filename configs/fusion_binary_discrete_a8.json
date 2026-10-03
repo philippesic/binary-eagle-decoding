@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "activation_bits": 8,
+  "activation_contract": "raw_f32_absmax_f32_reciprocal_nearest_even_clip127_dot_row_scale_token_scale_f32",
+  "teacher_contract": "raw_f32_original_bf16_promoted_f32_blas",
+  "scale_layout": "row",
+  "alternating_passes": 2,
+  "scans_per_pass": 2,
+  "max_flips_per_row": 32,
+  "max_proposals_per_row_per_scan": 64,
+  "row_batch": 16,
+  "max_samples": 1024,
+  "max_workspace_bytes": 1073741824,
+  "max_cpu_seconds": 43200,
+  "improvement_relative_margin": 1e-10,
+  "improvement_absolute_margin": 1e-12,
+  "scale_neighbor_steps": 16
+}
