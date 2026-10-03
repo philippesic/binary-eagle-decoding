@@ -54,6 +54,7 @@ FROZEN_BINARY_SHA256 = "b5093749d67888bc2cafdb6a65c479f4c182f0a904820f1dae4870b6
 Q4_0_GGUF_SHA256 = "2db40f99d27e404298b80b2865671b9fd0136060ffb503007cb2ae23759e7280"
 _VERIFIED_RECORDS = {}
 _OBSERVED_RECORDS = {}
+PROVIDER_SHARED_WEIGHTS = ("target_gguf", "candidate_d_gguf", "base_draft_gguf")
 NATIVE_LABEL_RECEIPT_SCHEMA = "w1ax_native_label_audit_receipt_v1"
 HISTORICAL_AUDIT_SCHEMA = "w1ax_historical_native_audit_full_pass_v1"
 HISTORICAL_PRODUCER_COMMIT = "7547d253b6bf7d8a04ddb3c868e997afad39f31a"
@@ -1087,6 +1088,7 @@ def provider_manifest(
     output: Path,
     *,
     native_label_audit_receipt: dict | None = None,
+    common_source_sha256: dict | None = None,
 ) -> dict:
     from w1ax_capture_provider import ANGELSLIM_REVISION
 
@@ -1107,6 +1109,18 @@ def provider_manifest(
         prompts=str((capture.parent / m["files"]["prompts"]["path"]).resolve()),
         **{f"{role}_model_dir": snap["models"][role]["directory"] for role in ("target", "draft")},
     )
+    shared = {}
+    if common_source_sha256 is not None:
+        if not isinstance(common_source_sha256, dict) or set(common_source_sha256) != set(
+            PROVIDER_SHARED_WEIGHTS
+        ):
+            raise ValueError("provider shared weight hash inventory differs")
+        for name, digest in common_source_sha256.items():
+            # Verify pinned bytes once per process/file identity, then recheck
+            # inode/size/mtime/ctime on every shard. Keep the logical path so a
+            # source replaced by a symlink cannot silently follow the cache.
+            checked_record({"path": str(Path(sources[name]).absolute()), "sha256": digest})
+            shared[name] = digest
     spec = {
         "schema": PROVIDER_SCHEMA,
         "split": m["split"],
@@ -1115,7 +1129,11 @@ def provider_manifest(
         "capture_id": sha256(capture),
         "angelslim_revision": ANGELSLIM_REVISION,
         "paths": paths,
-        "sha256": {k: sha256(Path(p)) for k, p in paths.items() if not k.endswith("_model_dir")},
+        "sha256": {
+            k: shared[k] if k in shared else sha256(Path(p))
+            for k, p in paths.items()
+            if not k.endswith("_model_dir")
+        },
         "teacher": None,
         "continuous_readiness": file_record(readiness),
     }
@@ -1885,6 +1903,9 @@ def _run_stages(config: dict, run_dir: Path) -> Path:
             manifest,
             readiness,
             path,
+            common_source_sha256={
+                name: sources["sha256"][name] for name in PROVIDER_SHARED_WEIGHTS
+            },
             **(
                 {"native_label_audit_receipt": receipt_records[manifest]}
                 if manifest in receipt_records
