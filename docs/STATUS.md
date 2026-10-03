@@ -12,8 +12,10 @@ supporting research remains stopped. The same QAT monitor is ACTIVE and bound to
 acknowledged owner `01a0ff1c-1007-75e3-a772-eaeb078179b3`; the same preparation
 owner/operator retain sole remote control. No duplicate schedule or operator.
 
-Fresh source/process/GPU/context/resource/durability proof is requested. Local
-workers are completing the terminal-only continuation and static metadata packets;
+Fresh read-only checks verified unchanged source/data, old09 stopped and no new
+run. RTX5080 has no listed compute apps and 13,143 MiB free. WSL boot changed; a
+new bounded CPU disconnect/system-identity proof is authorized before launch. Local
+workers are adapting the terminal-only continuation and static metadata packets;
 original failed/paused evidence is preserved. Old09 remains terminal, no recovery
 or old-live actions are allowed, and actual new-model start remains pending.
 Optimizer updates remain zero; the existing goal is incomplete. See the

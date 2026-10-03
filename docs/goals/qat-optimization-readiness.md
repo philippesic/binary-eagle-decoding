@@ -24,6 +24,25 @@ process/groups/context/GPU/RAM/disk/ownership/pause/durability admission. Old09
 must never be signalled, resumed or restarted; recovery budget 2/2 is exhausted.
 No stale GO or packet manifest is dispatchable.
 
+Fresh read-only admission actually completed at 06:15:34 UTC. Source14/current28/
+runtime7/configccc/import04 and all 353 retained metadata hashes/counts match;
+current6f checkout is clean. Old09 remains interrupted exit0, groups empty, STOP
+present and no replacement exists. Actual RTX5080/SM120 reports no compute apps,
+13,143 MiB free; host MemAvailable19,976,196,096B and disk391,521,812,480B. These
+are resource observations, not a zero-memory/GPU-idle claim. WSL boot changed to
+`3abb0e06-8bd4-474b-82a7-7480d59b8002`; old disconnect and daemon366/370 bindings
+cannot admit a new long job. Existing WSL20GB/idleTimeout=-1 settings are unchanged.
+Raw evidence `runs/luna-continuous-a8-a1-20260929/resume-fresh-proof-20261002-01/fresh-resume-query.raw.json`
+SHA `896dfe980f8730a49c17702e4c8ae36dadad9321886931470b41cd0772e01d87`,
+parent proof SHA `5ccf43f38eb4a76287954179a12a394939ef798946c5e692bda23420c0509b55`.
+Root authorized the SAME operator's NEW bounded stdlib CPU disconnect fixture
+(probe SHA15643679..., <=240s, >=90s without WSL clients), current system367/373
+stat/parent/kernel/cgroup binding and complete fixture teardown. This does not
+restart old09 or charge recovery. Both local packets are adapting only boot-bound
+admission/history; original CPU configuration and terminal proofs stay unchanged.
+Pre-rollover continuation39 and static21 local tests/independent reviews passed;
+these passes do not authorize the changed-boot packet before final review.
+
 **Local work:** `/root/terminal_continuation` owns NEW ignored
 `runs/qat-optimization-readiness/retained-capture-adoption-20261002-01/postconfig-gpu-prep-transfer-20261002-03/`;
 `/root/static_runtime_packet` owns NEW ignored
