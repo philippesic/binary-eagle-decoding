@@ -111,3 +111,11 @@ additional proof protocols or redoing completed audit work.
 - Agent contribution: Feature implementation passed the plan's string directly. Local16tests mocked the source loader contract, and root whole-code review missed this caller/producer mismatch despite reading the producer earlier.
 - Practical lesson: Add one genuine pinned-API probe using the exact config/path types before execution; test successful real producer calls, not only invented/mocked schemas. For a narrow typed-API failure, preserve old packet/claim/raws and create a corrected immutable packet without repeating passed model/corpus work.
 - Correction or resolution: Source/math/config/caps are unchanged; packet02 coerces config to Path and adds a genuine loader test. No extra human confirmation or numerical diagnostic is required.
+
+### 2026-10-03: Preserve the agreed Q4 development boundary
+
+- Context and evidence: The human requested QAT as soon as the GPU was free. After actual model gates passed, coordination briefly treated Q4 development as a required prelaunch report. The controlling training handoff instead retained Q4 development as existing training supervision and explicitly removed invented prelaunch report schemas.
+- Status: Agent interpretation disagreement, resolved against the controlling handoff; no user mistake. TRAIN readiness probes do not establish development quality.
+- Agent contribution: Older goal wording still referred to Q4 development launch gates, and the preparation owner repeated that ambiguous wording. The coordinator initially had to reconcile the stale wording with the newer explicit handoff.
+- Practical lesson: Read the current agreed measurement boundary before adding a launch prerequisite. Authenticate the frozen development pool and baseline before launch, then collect the existing scheduled or serialized checkpoint evaluation. Preserve actual model/data/ownership gates without inventing a new proof schema or asking for redundant human confirmation.
+- Correction or resolution: The same monitors were clarified, training ran for 1,000 paired updates, and the original development RAM-preflight failure remains recorded. Separate evaluation of its intact checkpoint is being prepared with unchanged memory and ownership checks.
