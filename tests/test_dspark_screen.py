@@ -9,6 +9,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from benchmark_dspark_screen import ARMS, command, order, round_summary, stop_owned_server
 from analyze_dspark_screen import summarize
+from analyze_dspark_events import analyze, union
 
 
 def fixture(proposed, accepted, emitted=None, **extra):
@@ -68,6 +69,24 @@ class ScreenContracts(unittest.TestCase):
                 proc.kill()
                 proc.wait()
             proc.stdout.close()
+
+    def test_cuda_costs_do_not_add_parent_and_child_spans(self):
+        base = dict(kind="node", model_arch="dflash", captured_inventory_only=False,
+                    cuda_ms=1, llama_context="draft", context="cuda", stream="main",
+                    frame=1, n_outputs=7, op="MUL_MAT")
+        nodes = [dict(base, node=0, tensor="body", gpu_begin_ms=0, gpu_end_ms=1),
+                 dict(base, node=1, tensor="result_output", gpu_begin_ms=1, gpu_end_ms=2),
+                 dict(base, node=2, tensor="dspark_markov_projection-0", gpu_begin_ms=2, gpu_end_ms=3),
+                 dict(kind="graph", model_arch="dflash", cuda_ms=3)]
+        with tempfile.TemporaryDirectory() as temp:
+            log = Path(temp) / "server.log"
+            log.write_text(''.join("CUDA_EAGLE_EVENT " + json.dumps(n) + "\n" for n in nodes))
+            result = analyze(log)
+            self.assertEqual(sum(v["cuda_ms_union"] for v in result["costs"].values()), 3)
+            self.assertEqual(union([(0, 3), (1, 2), (2, 4)]), 4)
+            log.write_text(log.read_text() + 'CUDA_EAGLE_EVENT {"kind":"truncation"}\n')
+            with self.assertRaises(ValueError):
+                analyze(log)
 
     def test_every_order_is_paired(self):
         for rep in range(5):
