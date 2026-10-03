@@ -94,14 +94,14 @@ its recovery budget is exhausted, and original evidence is preserved. RTX2080Ti
 and research stay paused. The existing goal is incomplete; see the
 [resume checkpoint](goals/qat-optimization-readiness.md#human-resume-rtx5080-qat-pipeline--october-3-0611-utc).
 
-Successor local review identified source-import, precision-setting and admission
-ordering gaps in the preserved draft. The same local feature owner is correcting
-them; independent CPU save/resume proof is in progress. Actual readonly process
-permission diagnosis returned; context absence remains unknown. The same sole
-operator is authorized for one bounded privileged readonly census through the
-existing WSL bridge, then narrow controller review. No CUDA/native fixture or
-optimizer update has yet occurred. See the
-[successor checkpoint](goals/qat-optimization-readiness.md#successor-review-and-context-permission-diagnosis--october-3-1040-utc).
+Prepared adapter corrections are reviewed/integrated/pushed as `d211275`:
+17 root guards and genuine tiny CPU6f save/copy/resume plus real Git import
+bootstrap pass. Original full preparation is preserved; no repeat full audit.
+Privileged readonly census reported no unknown/changed target-user contexts;
+narrow current controller correction and raw-provenance clarification are pending.
+Current native fixture/model/actor/five-repeat timing and actual restore/live
+admission gates remain. Optimizer updates are still ZERO. See the
+[adapter milestone](goals/qat-optimization-readiness.md#prepared-adapter-integrated-actual-gates-pending--october-3-1035-utc).
 
 ## Human stop: local Mac only — October 3, 00:10 UTC
 

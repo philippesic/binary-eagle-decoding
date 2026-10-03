@@ -46,7 +46,59 @@ fresh source/context/resource/control facts; no readiness from the CPU pass.
 Then complete current native/actual-model/backward/memory/timing/save-resume
 gates and launch the previously authorized NEW training run without confirmation.
 
-## Successor review and context-permission diagnosis — October 3, 10:40 UTC
+## Prepared adapter integrated; actual gates pending — October 3, 10:35 UTC
+
+Reviewed corrections `0f5f742fd64629679fc0d8f0c1c2f30a51835758` are integrated and
+pushed as main `d211275`. Root passed17 focused stdlib guards and checked the
+whole three-script orchestration path; independent Sol reviewed the actual6f
+APIs and owned corrections. Independent local Luna verified genuine tiny Torch
+CPU original save → complete atomic copy → unchanged6f trainer resume: exact
+parameters/AdamW zero buffers/global and lane RNG/source/runtime/metrics/counters.
+A separate REAL clean parent6f/native9e2 worktree subprocess verifies canonical
+launcher/trainer/provider imports and factory bootstrap. Both temporary CPU
+worktrees were removed. The earlier mocked archive bootstrap and A1 tiny fixture
+smoke failure remain preserved; that failed smoke is NOT paired-backward proof.
+CPU evidence is ignored `runs/qat-optimization-readiness/prepared-adapter-cpu-review-20261003-01/`.
+The merged adapter worktree/branch is removed; both original draft and corrected
+commit ancestry are retained in main/public history.
+
+New launcher/provider/wrapper SHA256 respectively:
+`7091c0eacdbfa5865ce6ae768c392fb7c85c55f081119b65167340ac542893c9`,
+`ae4f140aa8c3634c4b283f94be3c1c67506d64c856eb1aa1bf3b333efd619dc7`,
+`066cb32b0864e47deae118eda7f18fee40e9d51595892124fd6956b1520b113f`.
+External source6f/native9e2 and original preparation/checkpoint are unchanged.
+The adapter supports only the unchanged reference A8/A1 math/configuration;
+it refuses optimized-option expansion from that checkpoint. It authenticates
+full corpus metadata without repeating every payload/round audit, constructs
+unchanged per-shard providers lazily, copies all original zero files into NEWrun,
+restores unchanged trainer, performs current genuine paired smoke and validates
+actual full-source/native/backward/memory/five-repeat receipt/state/sidecar.
+Early and repeated source/config/stages/shard/code/lease/CANCEL guards protect
+model and optimizer boundaries. Wrapper authenticates prepared math BEFORE
+unchanged measured producer execution; measured receipt bytes are untouched.
+
+Authenticated next native METADATA plan is ignored
+`runs/qat-optimization-readiness/prepared-native-inputs-20261003-01/inputs-plan.json`,
+SHA `7c722e0314e1f5b951cab7a7afaacbb753305fd57e2c0d5feebd7701db727040`.
+It joins actual Static05 copied runtime inventory/server and existing five common
+source records, plus three original unsealed TRAIN prompt lines; no label/data
+eligibility promotion, source change, model execution or dispatch authority.
+Current recipe caps must be pinned with actual selected recipe before execution.
+
+ONE authorized privileged readonly census reported rootUID0/currentboot3abb/
+namespace4026532221, complete=true, unknown/changed empty, no UID1000 dxg holders.
+This is dated diagnosis, not fresh native or training admission. Preparation owner
+is constructing the narrow controller fallback; all unknown actors still deny.
+Local root noticed stdout now differs from the earlier parsed/raw digest and
+requested exact query-count/original-raw provenance clarification; do not reuse
+an inconsistent pin or repeat diagnostics to answer a local provenance question.
+No native fixture or optimizer update has yet occurred. The SAME preparation
+owner/sole operator retains all remote control, SAME ACTIVE monitor follows this
+coordinator. Genuine current fixture/model/actor/five-repeat timing/restore/live
+ownership gates remain. Continue to the already-authorized NEW training run as
+soon as they pass, without re-auditing the full corpus or human confirmation.
+
+## Successor review and context-permission diagnosis — October 3, 10:31 UTC
 
 Same incomplete goal is acknowledged by coordinator
 `01a1014d-9673-7a31-8292-72f8748501f6` at exact checkpoint
