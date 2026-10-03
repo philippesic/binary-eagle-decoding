@@ -429,6 +429,29 @@ def _native_label_receipt_binding(
     }
 
 
+def _compatible_prepared_receipt_source(saved: dict, current: dict) -> bool:
+    """Permit only retained source6f's wrapper hash with unchanged semantic auditor."""
+    wrapper = "scripts/w1ax_continuous_stages.py"
+    old = json.loads(json.dumps(saved))
+    new = json.loads(json.dumps(current))
+    if not isinstance(old.get("files"), dict) or wrapper not in old["files"]:
+        return False
+    original = subprocess.run(
+        ["git", "-C", str(ROOT), "show", "6f1444b86dd01862da878c2d5d2434a1d9165c29:" + wrapper],
+        check=True,
+        capture_output=True,
+        timeout=10,
+    ).stdout
+    if old["files"][wrapper] != hashlib.sha256(original).hexdigest():
+        return False
+    old["files"].pop(wrapper)
+    new["files"].pop(wrapper, None)
+    if old != new:
+        return False
+    _historical_audit_source_proof()
+    return True
+
+
 def audit_native_labels_with_receipt(
     manifest_path: Path,
     *,
@@ -436,6 +459,7 @@ def audit_native_labels_with_receipt(
     expected_prompt_count: int,
     expected_manifest_sha256: str,
     receipt_path: Path,
+    pinned_receipt_sha256: str | None = None,
 ) -> dict:
     """Explicit external per-shard cache; first use always does the full audit.
 
@@ -464,14 +488,29 @@ def audit_native_labels_with_receipt(
         expected_prompt_count=expected_prompt_count,
     )
     if receipt_path.exists():
+        if pinned_receipt_sha256 is not None and sha256(receipt_path) != pinned_receipt_sha256:
+            raise ValueError("native label receipt pinned identity differs")
         receipt = json.loads(receipt_path.read_text())
+        stored_binding = receipt.get("binding", {})
+        historical_reuse = False
+        if (
+            stored_binding != binding
+            and pinned_receipt_sha256 is not None
+            and "audit_origin" in receipt
+            and isinstance(stored_binding, dict)
+        ):
+            old_inputs = {k: v for k, v in stored_binding.items() if k != "audit_source"}
+            new_inputs = {k: v for k, v in binding.items() if k != "audit_source"}
+            historical_reuse = old_inputs == new_inputs and _compatible_prepared_receipt_source(
+                stored_binding.get("audit_source", {}), binding["audit_source"]
+            )
         if (
             not isinstance(receipt, dict)
             or set(receipt) - {"audit_origin"}
             != {"schema", "binding", "report", "report_sha256", "full_semantic_audit"}
             or receipt["schema"] != NATIVE_LABEL_RECEIPT_SCHEMA
             or receipt["full_semantic_audit"] is not True
-            or receipt["binding"] != binding
+            or (receipt["binding"] != binding and not historical_reuse)
         ):
             raise ValueError("native label audit receipt source/input binding differs")
         report = receipt["report"]
@@ -754,6 +793,7 @@ def load_native_labels(
             expected_prompt_count=expected_prompt_count,
             expected_manifest_sha256=expected_manifest_sha256,
             receipt_path=receipt_path,
+            pinned_receipt_sha256=audit_receipt["sha256"],
         )
         manifest_path = Path(manifest_path).resolve()
     f = (_receipt_files if audit_receipt is not None else _files)(
@@ -994,6 +1034,14 @@ def native_capture(
         native_runtime=sources.get("native_runtime"),
     )
     env = {"LD_LIBRARY_PATH": sources["native_runtime"]["ld_library_path"]}
+    if "evaluation_env" in sources:
+        expected_env = {"GGML_EAGLE_SHARED_PACK": "1", "GGML_EAGLE_PRUNE_UNUSED_HEAD": "1"}
+        if (
+            sources.get("evaluation_native_commit") != "9e2c7a90051e738751aab7d7bd7c2d8201fb76e3"
+            or sources["evaluation_env"] != expected_env
+        ):
+            raise ValueError("native evaluation execution controls differ")
+        env.update(expected_env)
     if cache_gate:
         env.update(
             {
@@ -2352,7 +2400,9 @@ def make_refresh_provider(
     return spec
 
 
-def prune_owned_evaluations(parent: Path, keep: int, *, active: Path | None = None) -> None:
+def prune_owned_evaluations(
+    parent: Path, keep: int, *, active: Path | None = None, preserve_failures: bool = False
+) -> None:
     if type(keep) is not int or keep < 1:
         raise ValueError("development retention needs at least one owned attempt")
     if not parent.exists():
@@ -2361,7 +2411,10 @@ def prune_owned_evaluations(parent: Path, keep: int, *, active: Path | None = No
         (
             p
             for p in parent.iterdir()
-            if p.is_dir() and not p.is_symlink() and (p / "ownership.json").is_file()
+            if p.is_dir()
+            and not p.is_symlink()
+            and (p / "ownership.json").is_file()
+            and (not preserve_failures or (p / "report.json").is_file())
         ),
         key=lambda p: p.stat().st_mtime_ns,
     )
@@ -2567,6 +2620,13 @@ def _evaluate_development(config: dict, checkpoint_dir: Path, run_dir: Path) -> 
         checkpoint_dir, sources["sha256"]["base_draft_gguf"]
     )
     lanes = tuple(checkpoint_configs)
+    if lanes == (8,) and (
+        sources.get("evaluation_native_commit") != "9e2c7a90051e738751aab7d7bd7c2d8201fb76e3"
+        or sources.get("evaluation_env")
+        != {"GGML_EAGLE_SHARED_PACK": "1", "GGML_EAGLE_PRUNE_UNUSED_HEAD": "1"}
+        or sources.get("native_runtime", {}).get("schema") != "qat_current_native_runtime_v1"
+    ):
+        raise ValueError("A8-only evaluation requires supported current native actor and execution")
     prompts = Path(config["native_prompts"])
     if sha256(prompts) != config["native_prompts_sha256"]:
         raise ValueError("frozen development subset changed")
@@ -2590,7 +2650,12 @@ def _evaluate_development(config: dict, checkpoint_dir: Path, run_dir: Path) -> 
         output / "ownership.json",
         {"schema": "continuous_development_owned_v1", "checkpoint": str(checkpoint_dir.resolve())},
     )
-    prune_owned_evaluations(output.parent, config.get("keep_native_evaluations", 3), active=output)
+    prune_owned_evaluations(
+        output.parent,
+        config.get("keep_native_evaluations", 3),
+        active=output,
+        preserve_failures=lanes == (8,),
+    )
     results = {}
     for bits in lanes:
         check_stop(run_dir)
@@ -2638,10 +2703,40 @@ def _evaluate_development(config: dict, checkpoint_dir: Path, run_dir: Path) -> 
         "native_accepted_per_round": q4_accepted / q4_rounds,
         "native_cell": file_record(q4 / "d_d/manifest.json"),
     }
+    request_timing = None
+    if lanes == (8,):
+        from a8_native_request_metrics import measure_a8_requests
+
+        _development_checkpoint_unchanged(checkpoint_dir, 8, checkpoint_identities)
+        properties = torch.cuda.get_device_properties("cuda:0")
+        sources["evaluation_hardware"] = {
+            "device_name": properties.name,
+            "compute_capability": [properties.major, properties.minor],
+            "total_memory_bytes": properties.total_memory,
+        }
+        request_timing = measure_a8_requests(
+            sources,
+            prompts,
+            output / "A8/student.gguf",
+            output / "request-timing",
+            deadline=deadline,
+            stop_file=Path(run_dir) / "STOP",
+        )
+        if request_timing.get("complete") is not True:
+            raise RuntimeError(
+                "bounded complete-request timing incomplete; raw timing report retained"
+            )
     for bits in lanes:
         _development_checkpoint_unchanged(checkpoint_dir, bits, checkpoint_identities)
         qat = replace(checkpoint_configs[bits], device="cuda:0", allow_accelerator=True)
-        provider = StreamingNativeProvider(qat, Path(config["providers_manifest"]))
+        if lanes == (8,):
+            from train_prepared_continuous_w1ax import create_current_native_child
+
+            provider = StreamingNativeProvider(
+                qat, Path(config["providers_manifest"]), child_factory=create_current_native_child
+            )
+        else:
+            provider = StreamingNativeProvider(qat, Path(config["providers_manifest"]))
         if provider.data_split != "development" or provider.training_eligible:
             raise ValueError("validation loss cannot use train ownership")
         host_admission("development CPU target/draft load after training offload", 12 * 1024**3)
@@ -2678,7 +2773,14 @@ def _evaluate_development(config: dict, checkpoint_dir: Path, run_dir: Path) -> 
                     continue
                 batch = replace(batch, raw_target_features=batch.raw_target_features.to("cuda:0"))
                 with shared_round_hard_signs(linears):
-                    logits = forward_torch_round(batch, adapter, provider.draft_vocab_size)
+                    logits = forward_torch_round(
+                        batch,
+                        adapter,
+                        provider.draft_vocab_size,
+                        optimize_cache=qat.optimize_cache,
+                        optimize_head=qat.optimize_head,
+                        context_chunk_size=qat.context_chunk_size,
+                    )
                 loss = supported_prefix_ce(logits, audit)
                 if not torch.isfinite(loss):
                     raise FloatingPointError("development loss is nonfinite")
@@ -2732,6 +2834,12 @@ def _evaluate_development(config: dict, checkpoint_dir: Path, run_dir: Path) -> 
         "prompts": file_record(prompts),
         "selected_native_prompts": 24,
         "frozen_source_sha256": sources["sha256"],
+        "teacher_capture_source_sha256": config.get("teacher_capture_sources", config["sources"])[
+            "sha256"
+        ],
+        "evaluation_native_commit": sources.get("evaluation_native_commit"),
+        "evaluation_native_runtime": sources.get("native_runtime"),
+        "evaluation_native_env": sources.get("evaluation_env"),
         "precision": {
             "target_weights": "F16",
             "target_kv": "F16",
@@ -2743,11 +2851,21 @@ def _evaluate_development(config: dict, checkpoint_dir: Path, run_dir: Path) -> 
         "hardware": torch.cuda.get_device_name(0),
         "execution_device": "cuda:0",
         "metrics": results,
-        "comparison": "Q4_0 primary; acceptance only, no timing claim",
+        "request_timing": request_timing,
+        "comparison": (
+            "Q4_0 primary; acceptance and separate complete-request timing"
+            if request_timing is not None
+            else "Q4_0 primary; instrumented acceptance only"
+        ),
         "sealed_test_accessed": False,
     }
     write_json(output / "report.json", report)
-    prune_owned_evaluations(output.parent, config.get("keep_native_evaluations", 3), active=output)
+    prune_owned_evaluations(
+        output.parent,
+        config.get("keep_native_evaluations", 3),
+        active=output,
+        preserve_failures=lanes == (8,),
+    )
     return report
 
 
@@ -2899,7 +3017,9 @@ def main() -> None:
     refresh.add_argument("--activation-bits", type=int, choices=(1, 4, 8), required=True)
     refresh.add_argument("--output", type=Path, required=True)
     refresh.add_argument("--allow-cuda", action="store_true")
-    evaluate = sub.add_parser("evaluate", help="standalone development after training process exits")
+    evaluate = sub.add_parser(
+        "evaluate", help="standalone development after training process exits"
+    )
     evaluate.add_argument("--run-dir", type=Path, required=True)
     evaluate.add_argument("--development-manifest", type=Path, required=True)
     evaluate.add_argument("--allow-cuda", action="store_true")
@@ -2907,31 +3027,59 @@ def main() -> None:
     if args.command == "evaluate":
         if not args.allow_cuda:
             parser.error("standalone evaluation requires --allow-cuda")
-        from train_continuous_w1ax import lock
         import torch
+        from train_continuous_w1ax import frozen_development_config, lock
 
         run_dir = args.run_dir.resolve()
         run_lock = lock(run_dir / ".owner.lock")
         gpu_lock = lock(Path.home() / ".cache/binary-eagle-decoding/cuda-0.owner.lock")
         try:
             properties = torch.cuda.get_device_properties("cuda:0")
-            if properties.name != "NVIDIA GeForce RTX 5080" or [properties.major, properties.minor] != [12, 0]:
+            if properties.name != "NVIDIA GeForce RTX 5080" or [
+                properties.major,
+                properties.minor,
+            ] != [12, 0]:
                 raise RuntimeError("standalone evaluation requires RTX5080 SM120")
             checkpoint = json.loads((run_dir / "latest.json").read_text())
             resume = Path(checkpoint["path"])
-            if (not resume.resolve().is_relative_to(run_dir / "checkpoints")
-                    or sha256(resume) != checkpoint["sha256"]):
+            if (
+                not resume.resolve().is_relative_to(run_dir / "checkpoints")
+                or sha256(resume) != checkpoint["sha256"]
+            ):
                 raise ValueError("standalone evaluation checkpoint identity differs")
             request = run_dir / "development-request.json"
             if request.exists() and json.loads(request.read_text()).get("checkpoint") != checkpoint:
                 raise ValueError("standalone evaluation must use requested latest checkpoint")
-            report = evaluate_development(json.loads(args.development_manifest.read_text()), resume.parent, run_dir)
+            development = frozen_development_config(run_dir)
+            if json.loads(args.development_manifest.read_text()) != development:
+                raise ValueError("standalone evaluation changes frozen development configuration")
+            report = evaluate_development(development, resume.parent, run_dir)
             result_path = run_dir / "development.json"
             write_json(result_path, report)
-            write_json(run_dir / "development-result.json", {
-                "checkpoint": checkpoint, "completed": True,
-                "report_path": str(result_path), "report_sha256": sha256(result_path),
-            })
+            write_json(
+                run_dir / "development-result.json",
+                {
+                    "checkpoint": checkpoint,
+                    "completed": True,
+                    "report_path": str(result_path),
+                    "report_sha256": sha256(result_path),
+                },
+            )
+            final = (
+                request.exists()
+                and json.loads(request.read_text()).get("final_training_complete") is True
+            )
+            status = json.loads((run_dir / "status.json").read_text())
+            write_json(
+                run_dir / "status.json",
+                {
+                    **status,
+                    "status": "completed" if final else "development_completed",
+                    "heartbeat_unix": time.time(),
+                    "development_result": str(result_path),
+                    "final_training_complete": final,
+                },
+            )
             result = report
         finally:
             gpu_lock.close()
@@ -2984,7 +3132,7 @@ def main() -> None:
         }
         require_unsealed_prompts(args.prompts, sources=sources, expected_sha256=args.prompts_sha256)
         import torch
-        from train_continuous_w1ax import lock
+        from train_continuous_w1ax import frozen_development_config, lock
 
         gpu_lock = lock(Path.home() / ".cache/binary-eagle-decoding/cuda-0.owner.lock")
         try:

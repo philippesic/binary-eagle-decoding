@@ -26,6 +26,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from .continuous_budget import TrainingBudget
 from .continuous_resources import (
     checkpoint_host_buffer_bytes,
     lane_storage_bytes,
@@ -53,6 +54,7 @@ SCHEMA = "continuous_joint_w1ax_v1"
 @dataclass(frozen=True)
 class ContinuousConfig:
     device: str = "cpu"
+    objective: str = "hard_ce"
     sign_lr: float = 0.001
     scale_lr: float = 0.00001
     warmup_steps: int = 100
@@ -166,6 +168,7 @@ class ContinuousConfig:
         return JointQATConfig(
             W1AxContract(bits),
             device=self.device,
+            objective=self.objective,
             allow_accelerator=self.device != "cpu",
             sign_lr=self.sign_lr,
             scale_lr=self.scale_lr,
@@ -214,6 +217,8 @@ def immutable_config(config: dict) -> dict:
     for field in ("max_steps", "max_tokens", "max_seconds", "max_epochs"):
         result.pop(field, None)
     # Preserve old paired publications without changing their saved bytes.
+    if result.get("objective") == "hard_ce":
+        result.pop("objective")
     if result.get("activation_bits") == [8, 1]:
         result.pop("activation_bits")
     if result.get("development_lifecycle") == "in_process":
@@ -325,7 +330,9 @@ def build_lanes(provider, config: ContinuousConfig, run_dir: Path | None = None)
         if config.activation_quantization == "learned":
             from .learned_activation import LearnedActivationBank
 
-            bank = LearnedActivationBank(1, {name: m.in_features for name, m in other_linears.items()})
+            bank = LearnedActivationBank(
+                1, {name: m.in_features for name, m in other_linears.items()}
+            )
             for module in other_linears.values():
                 del module.activation_quantizer
             bank.attach(other_linears)
@@ -455,6 +462,7 @@ class ContinuousTrainer:
         run_dir: Path,
         *,
         development_evaluator=None,
+        expected_recipe=None,
     ):
         if [lane.name for lane in lanes] != [f"A{bits}" for bits in config.activation_bits]:
             raise ValueError("continuous lane inventory differs from declared activation_bits")
@@ -473,15 +481,24 @@ class ContinuousTrainer:
         self.provider, self.lanes, self.config = provider, lanes, config
         self.run_dir = Path(run_dir).resolve()
         self.run_dir.mkdir(parents=True, exist_ok=True)
-        atomic_json(self.run_dir / "effective-config.json", {
-            "config": asdict(config),
-            "lanes": {lane.name: {"config": asdict(lane.config),
-                "optimizer": type(lane.optimizer).__name__,
-                "parameter_families": {name: sum(p.numel() for p in params)
-                    for name, params in joint_parameter_families(lane.linears).items()}}
-                for lane in lanes},
-            "attachments_and_optimizer_exact": True,
-        })
+        atomic_json(
+            self.run_dir / "effective-config.json",
+            {
+                "config": asdict(config),
+                "lanes": {
+                    lane.name: {
+                        "config": asdict(lane.config),
+                        "optimizer": type(lane.optimizer).__name__,
+                        "parameter_families": {
+                            name: sum(p.numel() for p in params)
+                            for name, params in joint_parameter_families(lane.linears).items()
+                        },
+                    }
+                    for lane in lanes
+                },
+                "attachments_and_optimizer_exact": True,
+            },
+        )
         self.evaluator = development_evaluator
         self.stop_requested = False
         self.step = self.epoch = self.cursor = self.tokens = 0
@@ -495,8 +512,27 @@ class ContinuousTrainer:
         ).hexdigest()
         self.runtime_identity = training_runtime_identity(config.device)
         self.smoke_passed = False
+        self.expected_recipe = expected_recipe
+        self.recipe_telemetry = {}
+        self.recipe_audit_step = 0
+        self.update_probes = {}
+        if expected_recipe is not None:
+            from .qat_recipe_audit import QATRecipeTelemetry, QATUpdateProbe, audit_a8_recipe
+
+            if config.activation_bits != (8,):
+                raise ValueError("comparison recipe requires A8-only lane")
+            lane = lanes[0]
+            self.recipe_audit = audit_a8_recipe(
+                lane.linears, lane.optimizer, lane.config, expected_recipe, fresh=True
+            )
+            self.recipe_telemetry[lane.name] = QATRecipeTelemetry(
+                lane.linears,
+                contract={"source_sha256": self.source, "expected_recipe": expected_recipe},
+            )
+            self.update_probes[lane.name] = QATUpdateProbe(lane.linears, lane.optimizer)
+            atomic_json(self.run_dir / "recipe-audit.json", self.recipe_audit)
         self.sign_diagnostics = {}
-        if config.persistent_sign_diagnostics:
+        if config.persistent_sign_diagnostics and expected_recipe is None:
             from .qat_optimization import SignFlipDiagnostics
 
             self.sign_diagnostics = {
@@ -608,8 +644,10 @@ class ContinuousTrainer:
                     context_chunk_size=self.config.context_chunk_size,
                     execution_metadata=execution,
                 )
-            execution.update(context_cache_calls=observer.context_cache_calls,
-                             context_chunk_size=self.config.context_chunk_size)
+            execution.update(
+                context_cache_calls=observer.context_cache_calls,
+                context_chunk_size=self.config.context_chunk_size,
+            )
             diagnostics = later_gradient(logits, audit, observer)
             if any(
                 diagnostics[key] is None or diagnostics[key] <= 0
@@ -639,7 +677,11 @@ class ContinuousTrainer:
             # AdamW moment buffers are resident during smoke, before any update.
             # Reuse these initialized buffers in training instead of allocating
             # moments later and invalidating the admission measurement.
-            report[lane.name] = {"loss": float(loss.detach()), **diagnostics, "execution": execution}
+            report[lane.name] = {
+                "loss": float(loss.detach()),
+                **diagnostics,
+                "execution": execution,
+            }
             lane.optimizer.zero_grad(set_to_none=True)
             del logits, loss, observer, device_batch
         report["resources"] = self.resources()
@@ -698,6 +740,16 @@ class ContinuousTrainer:
                     "optimizer": lane.optimizer.state_dict(),
                     "rng": lane.rng,
                     "recipes": recipe_state(lane.linears),
+                    "update_probe": (
+                        self.update_probes[lane.name].state_dict()
+                        if lane.name in self.update_probes
+                        else None
+                    ),
+                    "recipe_telemetry": (
+                        self.recipe_telemetry[lane.name].state_dict()
+                        if lane.name in self.recipe_telemetry
+                        else None
+                    ),
                     "sign_diagnostics": (
                         self.sign_diagnostics[lane.name].state_dict()
                         if lane.name in self.sign_diagnostics
@@ -855,6 +907,21 @@ class ContinuousTrainer:
                 module.load_state_dict(saved["linears"][name], strict=True)
             lane.optimizer.load_state_dict(saved["optimizer"])
             lane.rng = saved["rng"]
+            if lane.name in self.update_probes:
+                self.update_probes[lane.name].load_state_dict(saved["update_probe"])
+                if (
+                    self.update_probes[lane.name].admission_report()["observed_updates"]
+                    > counters[0]
+                ):
+                    raise ValueError("update admission evidence ahead of restored checkpoint")
+            elif saved.get("update_probe") is not None:
+                raise ValueError("undeclared comparison update checkpoint")
+            if lane.name in self.recipe_telemetry:
+                self.recipe_telemetry[lane.name].load_state_dict(
+                    saved["recipe_telemetry"], lane.linears, resumed_step=counters[0]
+                )
+            elif saved.get("recipe_telemetry") is not None:
+                raise ValueError("undeclared comparison telemetry checkpoint")
             if lane.name in self.sign_diagnostics:
                 self.sign_diagnostics[lane.name].load_state_dict(
                     saved["sign_diagnostics"], lane.linears, resumed_step=counters[0]
@@ -867,19 +934,62 @@ class ContinuousTrainer:
             set(payload["unique_prompts"]),
             set(payload["unique_rows"]),
         )
-        budget_path = self.run_dir / "budget-used.json"
-        if budget_path.exists():
-            budget = json.loads(budget_path.read_text())
-            if (budget.get("source_sha256") != self.source
-                    or budget.get("max_seconds") != self.config.max_seconds
-                    or type(budget.get("training_seconds")) not in (int, float)
-                    or not math.isfinite(budget["training_seconds"])
-                    or budget["training_seconds"] < 0):
-                raise ValueError("persisted training budget contract differs")
-            self.elapsed_seconds = max(self.elapsed_seconds, budget["training_seconds"])
+        if self.config.development_lifecycle == "standalone":
+            self.elapsed_seconds = TrainingBudget(
+                self.run_dir / "budget-used.json",
+                self.source,
+                self.config.max_seconds,
+                atomic_json,
+            ).load(self.elapsed_seconds)
+        if self.expected_recipe is not None:
+            from .qat_recipe_audit import audit_a8_recipe
+
+            lane = self.lanes[0]
+            self.recipe_audit = audit_a8_recipe(
+                lane.linears,
+                lane.optimizer,
+                lane.config,
+                self.expected_recipe,
+                lr_factor=min(1.0, self.step / max(1, self.config.warmup_steps))
+                if self.step
+                else 1.0,
+            )
+            self.recipe_audit_step = self.step
+            atomic_json(
+                self.run_dir / "recipe-audit.json",
+                {
+                    **self.recipe_audit,
+                    "restored_step": self.step,
+                    "actual_update_admission": self.update_probes[lane.name].admission_report(),
+                },
+            )
         self.metrics, self.checkpoint = payload["metrics"], latest
         restore_rng(payload["global_rng"], self.config.device)
         atomic_json(self.run_dir / "latest.json", latest)
+
+    def release_training_state(self) -> None:
+        """Drop trainer storage before releasing ownership to a separate evaluator."""
+        import gc
+
+        self.evaluator = None
+        self.provider = None
+        self.sign_diagnostics.clear()
+        self.recipe_telemetry.clear()
+        for probe in self.update_probes.values():
+            probe.close()
+        self.update_probes.clear()
+        for lane in self.lanes:
+            lane.optimizer.zero_grad(set_to_none=True)
+            lane.optimizer.state.clear()
+            lane.optimizer.param_groups.clear()
+            lane.adapter = None
+            lane.linears = {}
+            lane.drafter = None
+        self.lanes.clear()
+        gc.collect()
+        if torch.device(self.config.device).type == "cuda":
+            torch.cuda.synchronize(self.config.device)
+            torch.cuda.empty_cache()
 
     def evaluate_development(self):
         """Release CUDA storage during native evaluation; preserve all state.
@@ -977,17 +1087,21 @@ class ContinuousTrainer:
         if __import__("threading").current_thread() is __import__("threading").main_thread():
             for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP):
                 handlers[sig] = signal.signal(sig, lambda *_: setattr(self, "stop_requested", True))
+        budget = None
+        if self.config.development_lifecycle == "standalone":
+            budget = TrainingBudget(
+                self.run_dir / "budget-used.json", self.source, self.config.max_seconds, atomic_json
+            )
+            budget.begin(self.elapsed_seconds)
         started = time.monotonic()
         elapsed_base = self.elapsed_seconds
 
         def persist_training_time():
-            self.elapsed_seconds = max(self.elapsed_seconds, elapsed_base + time.monotonic() - started)
-            if self.config.development_lifecycle == "standalone":
-                atomic_json(self.run_dir / "budget-used.json", {
-                    "source_sha256": self.source,
-                    "max_seconds": self.config.max_seconds,
-                    "training_seconds": self.elapsed_seconds,
-                })
+            self.elapsed_seconds = (
+                budget.elapsed()
+                if budget is not None
+                else max(self.elapsed_seconds, elapsed_base + time.monotonic() - started)
+            )
 
         try:
             while not self.stop_requested and not self.capped():
@@ -1040,13 +1154,36 @@ class ContinuousTrainer:
                                 context_chunk_size=self.config.context_chunk_size,
                                 execution_metadata=execution,
                             )
-                        execution.update(context_cache_calls=observer.context_cache_calls,
-                                         context_chunk_size=self.config.context_chunk_size)
+                        execution.update(
+                            context_cache_calls=observer.context_cache_calls,
+                            context_chunk_size=self.config.context_chunk_size,
+                        )
                         diagnostics = (
                             later_gradient(logits, audit, observer)
                             if (self.step % self.config.diagnostics_every == 0)
                             else {}
                         )
+                        if lane.name in self.update_probes:
+                            from .qat_recipe_audit import audit_a8_execution, audit_a8_recipe
+
+                            execution_audit = audit_a8_execution(execution, lane.config)
+                            if self.step % self.config.diagnostics_every == 0:
+                                self.recipe_audit = audit_a8_recipe(
+                                    lane.linears,
+                                    lane.optimizer,
+                                    lane.config,
+                                    self.expected_recipe,
+                                    fresh=self.step == 0,
+                                    lr_factor=factor,
+                                    execution_evidence=execution,
+                                )
+                                self.recipe_audit_step = self.step + 1
+                            item_execution = execution_audit
+                            probe = self.update_probes[lane.name]
+                            probe.enabled = (
+                                self.step < 100 or self.step % self.config.diagnostics_every == 0
+                            )
+                            probe.require_all = False
                         item = joint_train_step(
                             lane.linears, logits, audit, lane.optimizer, lane.config
                         )
@@ -1057,6 +1194,33 @@ class ContinuousTrainer:
                             item["persistent_sign_diagnostics"] = self.sign_diagnostics[
                                 lane.name
                             ].observe(lane.linears, step=self.step + 1)
+                        if (
+                            lane.name in self.update_probes
+                            and self.update_probes[lane.name].enabled
+                        ):
+                            item["recipe_update"] = self.update_probes[lane.name].last_report
+                            item["recipe_admission"] = self.update_probes[
+                                lane.name
+                            ].admission_report(require_passed=self.step + 1 >= 100)
+                            item["recipe_execution"] = item_execution
+                            if self.step % self.config.diagnostics_every == 0:
+                                item["recipe_telemetry"] = self.recipe_telemetry[lane.name].observe(
+                                    lane.linears, step=self.step + 1
+                                )
+                                if self.config.persistent_sign_diagnostics:
+                                    item["persistent_sign_diagnostics"] = item["recipe_telemetry"]
+                            atomic_json(
+                                self.run_dir / "recipe-audit.json",
+                                {
+                                    **self.recipe_audit,
+                                    "step": self.step + 1,
+                                    "actual_update": item["recipe_update"],
+                                    "actual_update_admission": item["recipe_admission"],
+                                    "telemetry": item.get("recipe_telemetry"),
+                                    "execution": item_execution,
+                                    "full_recipe_audit_step": self.recipe_audit_step,
+                                },
+                            )
                         lane.rng = rng_state(self.config.device)
                         lane.optimizer.zero_grad(set_to_none=True)
                         if torch.device(self.config.device).type == "cuda":
@@ -1145,10 +1309,14 @@ class ContinuousTrainer:
                     if self.step % self.config.development_every == 0:
                         self.save()
                         if self.config.development_lifecycle == "standalone":
-                            atomic_json(self.run_dir / "development-request.json", {
-                                "checkpoint": self.checkpoint, "completed": False,
-                                "training_elapsed_seconds": self.elapsed_seconds,
-                            })
+                            atomic_json(
+                                self.run_dir / "development-request.json",
+                                {
+                                    "checkpoint": self.checkpoint,
+                                    "completed": False,
+                                    "training_elapsed_seconds": self.elapsed_seconds,
+                                },
+                            )
                             self.status("awaiting_development", **self.resources())
                             return
                         if self.evaluator is not None:
@@ -1167,7 +1335,21 @@ class ContinuousTrainer:
                 self.cursor = 0
             persist_training_time()
             self.save()
-            self.status("stopped" if self.stop_requested else "completed", **self.resources())
+            if not self.stop_requested and self.config.development_lifecycle == "standalone":
+                atomic_json(
+                    self.run_dir / "development-request.json",
+                    {
+                        "checkpoint": self.checkpoint,
+                        "completed": False,
+                        "training_elapsed_seconds": self.elapsed_seconds,
+                        "final_training_complete": True,
+                    },
+                )
+                self.status(
+                    "awaiting_development", final_training_complete=True, **self.resources()
+                )
+            else:
+                self.status("stopped" if self.stop_requested else "completed", **self.resources())
         except InterruptedError as error:
             persist_training_time()
             if (self.run_dir / "STOP").exists():
@@ -1194,5 +1376,18 @@ class ContinuousTrainer:
             )
             raise
         finally:
+            if budget is not None:
+                self.elapsed_seconds = budget.finish()
+                status_path = self.run_dir / "status.json"
+                if status_path.exists():
+                    state = json.loads(status_path.read_text())
+                    atomic_json(
+                        status_path,
+                        {
+                            **state,
+                            "training_elapsed_seconds": self.elapsed_seconds,
+                            "training_budget_ledger": str(budget.path),
+                        },
+                    )
             for sig, handler in handlers.items():
                 signal.signal(sig, handler)

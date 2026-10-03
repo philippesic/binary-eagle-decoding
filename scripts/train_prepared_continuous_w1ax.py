@@ -8,13 +8,20 @@ import hashlib
 import importlib
 import json
 import os
-from pathlib import Path
 import time
 import uuid
+from pathlib import Path
 
 from prepared_continuous_provider import (
-    COMMON, Files, NATIVE_COMMIT, SOURCE_COMMIT, PreparedProvider,
-    authenticate, identity, require, sha256, source_api,
+    NATIVE_COMMIT,
+    SOURCE_COMMIT,
+    Files,
+    PreparedProvider,
+    authenticate,
+    identity,
+    require,
+    sha256,
+    source_api,
 )
 
 HERE = Path(__file__).resolve().parent
@@ -268,6 +275,24 @@ def start(args):
         run_lock.close()
 
 
+def create_current_native_child(config, manifest_path):
+    """Read immutable fixed-teacher data without treating its receipt as actor proof.
+
+    Current actor linears/optimizers are separately installed and admitted by
+    the trainer/readiness producer. Data-provider model loading only supplies
+    the same dense/frozen operands; no quantizer or midpoint is installed here.
+    """
+    teacher_config = dataclasses.replace(
+        config, activation_quantization="fixed", affine_weights=None,
+        fusion_correction=None,
+    )
+    child = importlib.import_module("w1ax_capture_provider").NativeCaptureProvider(
+        teacher_config, manifest_path)
+    child.current_actor_config = config
+    child.teacher_data_config = teacher_config
+    return child
+
+
 def create_current_provider(config, manifest_path):
     """Current-source bounded gate view of an authenticated complete TRAIN corpus.
 
@@ -289,8 +314,7 @@ def create_current_provider(config, manifest_path):
     require(config.contract.activation_bits in continuous.activation_bits, "Undeclared current lane")
     auth = authenticate(api, spec, record["validation_run_dir"], record["prepared_run_dir"],
                         record["prepared_ready_sha256"])
-    child = importlib.import_module("w1ax_capture_provider").NativeCaptureProvider
-    provider = PreparedProvider(auth, config, child, record.get("selected_shard", 0))
+    provider = PreparedProvider(auth, config, create_current_native_child, record.get("selected_shard", 0))
 
     class BoundedCurrentProvider:
         provider_manifest_sha256 = sha256(manifest_path)
