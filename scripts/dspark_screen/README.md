@@ -17,6 +17,12 @@ Ten evidence-validator tests pass; no released model or SM75 result is claimed.
 Remaining: actual source-copy comparison/export, residency/dispatch, native
 trajectories, and same-device measurements under the root's frozen protocol.
 
+Follow-up checkpoint: `probe.py` now performs a supervised five-cell admission
+transaction without consuming an existing admission. Twenty-two focused tests
+pass, including complete mocked transaction, startup failure, cancellation in
+the spawn/receipt window, unsafe borrowing, supervisor grace, and tied-target
+source guards. These fixtures do not establish actual model/GPU readiness.
+
 Deliverable is executable export/evidence checking plus opt-in runtime state and
 graph diagnostics. Acceptance requires full released-source/target tensor
 comparisons, both BF16 exports, actual four DSpark/DFlash length cells, unchanged
@@ -87,6 +93,8 @@ conversion-input directory referencing the pinned weight file.
 python3 scripts/dspark_screen/compare_frozen.py \
   --source RELEASE/model.safetensors --target FIXED_TARGET_F16.gguf \
   --llama NATIVE --output canonical.json --config RELEASE/config.json \
+  --target-config FIXED_TARGET_TOKENIZER/config.json \
+  --target-config-sha256 PINNED_TARGET_CONFIG_SHA256 \
   --conversion-config-out CONVERSION_INPUT/config.json
 python3 NATIVE/convert_hf_to_gguf.py CONVERSION_INPUT \
   --target-model-dir FIXED_TARGET_TOKENIZER --outtype bf16 --outfile DRAFT.gguf
@@ -161,6 +169,80 @@ reports CPU wall, not CUDA event/kernel latency. Body is `inp_noise_embd` to
 `inp_g_embeddings` to `dspark_injection_end`. Do not use these profiled requests
 as uninstrumented throughput. The BF16 SM75 CUDA dispatch and any scratch
 conversion remain actual-hardware checks; source support alone is not proof.
+
+## Executable supervised admission transaction
+
+The fixed target is tied: independently inspected target HF config SHA256
+`8ba006f74fecfaaeb392872a60f4a480e7ec9860153d2e1b769ec81f9a147f8a`
+declares `Qwen3ForCausalLM` and `tie_word_embeddings=true`, and its GGUF has only
+F16 `token_embd.weight`, with no separate `output.weight`. The first comparison
+failed on that missing name and is preserved by the operator. Guarded comparison
+now requires the pinned config and selected native Qwen3 loader's actual fallback
+before using `token_embd.weight` for the target head role. Released embedding
+and head are still compared independently; no equality is inferred from tying.
+Canonical/export reports name this source alias. Native `TENSOR_DUPLICATED` can
+use separate objects/buffers, so admission retains each original role's identity
+and requires equal tied-source hashes/type/size, not equal role pointers.
+
+`probe.py` depends on root's reviewed `stop_owned_server(proc, grace_s=3)` helper.
+It refuses an older helper before model launch. The probe requests fifteen
+seconds for graceful server exit, then the helper has a bounded three-second
+kill/wait fallback, so full device hash teardown can produce `binding_end`.
+Launch with caller `remote_job.py --stop-grace-seconds 30`; the probe reads that
+actual supervisor receipt from `TMPDIR/../state.json` and rejects a shorter
+grace. The throughput harness keeps its original three-second default.
+
+```sh
+python3 scripts/remote_job.py UNIQUE_ADMISSION_RUN --stop-grace-seconds 30 -- \
+  python3 scripts/dspark_screen/probe.py /absolute/probe-config.json \
+  /absolute/results/UNIQUE_ADMISSION_RUN
+```
+
+The sole GPU operator dispatches this under detached Linux tmux with current
+hardware/ownership proof. No helper connects to a GPU host or resumes ownership.
+The probe checks fresh single-device RTX2080Ti/SM75 capability before launch,
+then runs target-only, DSpark3/7 and author DFlash3/7. Every cell has two warmups,
+the first two frozen development prompts, and a separate one-word YES/EOS case,
+all at128 output tokens, context2048, F16KV, seed42, temperature0 and non-thinking.
+It preserves exact requests/responses/measurements, immediate owned PID/PGID,
+startup/GPU snapshots, complete state/round traces and the computed validator
+manifest. It verifies EOS emission on the candidate fixture. Context reserve
+must cover the128-token output cap and all seven noise positions. Component
+sync and profiling environments are removed. After every owned server is
+terminal, it computes `admission.json` from `validate_native`; failures preserve
+`failure.json` and never create an admission receipt. Operator must still verify
+exact groups/native contexts absent before releasing the GPU.
+
+Probe config adds pinned source/conversion/canonical/export assets to each model;
+every path must be absolute. The same schema applies to `dflash`:
+
+```json
+{
+  "binary": {"path": "/absolute/llama-server", "sha256": "..."},
+  "target": {"path": "/absolute/fixed-target.gguf", "sha256": "..."},
+  "protocol_sha256": "hash of configs/dspark-screen/protocol.json",
+  "port": 18290,
+  "dspark": {
+    "path": "/absolute/dspark-bf16.gguf", "sha256": "...",
+    "source": {"path": "/absolute/dspark/model.safetensors", "sha256": "..."},
+    "conversion_config": {"path": "/absolute/dspark-conversion/config.json", "sha256": "..."},
+    "canonical": {"path": "/absolute/dspark-canonical.json", "sha256": "..."},
+    "export": {"path": "/absolute/dspark-export.json", "sha256": "..."}
+  },
+  "dflash": {
+    "path": "/absolute/dflash-bf16.gguf", "sha256": "...",
+    "source": {"path": "/absolute/dflash/model.safetensors", "sha256": "..."},
+    "conversion_config": {"path": "/absolute/dflash-conversion/config.json", "sha256": "..."},
+    "canonical": {"path": "/absolute/dflash-canonical.json", "sha256": "..."},
+    "export": {"path": "/absolute/dflash-export.json", "sha256": "..."}
+  }
+}
+```
+
+An explicit `protocol: {path,sha256}` asset can replace `protocol_sha256` when
+the frozen file is staged elsewhere; `--project-root` still binds its relative
+prompt file and root benchmark helper imports. No pre-existing `admission` entry
+is read. This is an admission transaction, not the five-repeat throughput study.
 
 CUDA-event component timing uses the existing generic runtime facility in a
 separate tiny pass: `GGML_CUDA_EAGLE_EVENTS=1`,

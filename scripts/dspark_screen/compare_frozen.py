@@ -15,18 +15,42 @@ from pathlib import Path
 from check_export import sha256
 
 
-def compare(source: Path, target: Path, llama: Path) -> dict:
+def tied_target_proof(target_config: Path | None, expected_sha: str | None, llama: Path, architecture: str) -> dict:
+    if target_config is None or expected_sha is None or sha256(target_config) != expected_sha:
+        raise ValueError("missing pinned target configuration for tied-head fallback")
+    config = json.loads(target_config.read_text())
+    if architecture != "qwen3" or config.get("tie_word_embeddings") is not True or config.get("architectures") != ["Qwen3ForCausalLM"]:
+        raise ValueError("missing-output fallback requires proven Qwen3 target tied embedding")
+    loader = llama / "src/models/qwen3.cpp"
+    text = loader.read_text()
+    fallback = 'output = create_tensor(tn(LLM_TENSOR_TOKEN_EMBD, "weight"), {n_embd, n_vocab}, TENSOR_DUPLICATED);'
+    if "if (output == NULL)" not in text or fallback not in text:
+        raise ValueError("selected native Qwen3 loader does not confirm tied output fallback")
+    return {"target_config_path": str(target_config.resolve()), "target_config_sha256": expected_sha,
+            "target_loader_path": str(loader.resolve()), "target_loader_sha256": sha256(loader),
+            "target_tied_head_fallback": True, "target_head_source_tensor": "token_embd.weight",
+            "target_head_binding_policy": "TENSOR_DUPLICATED may use distinct objects; each role retains original identity and equal source bytes"}
+
+
+def compare(source: Path, target: Path, llama: Path, target_config: Path | None = None,
+            target_config_sha256: str | None = None) -> dict:
     sys.path.insert(0, str(llama / "gguf-py"))
     import numpy as np
     from gguf import GGUFReader, GGMLQuantizationType
     reader = GGUFReader(str(target))
     tensors = {t.name: t for t in reader.tensors}
+    target_head_name = "output.weight"
+    target_proof = {"target_tied_head_fallback": False, "target_head_source_tensor": target_head_name}
+    if target_head_name not in tensors:
+        architecture = reader.get_field("general.architecture").contents()
+        target_proof = tied_target_proof(target_config, target_config_sha256, llama, architecture)
+        target_head_name = "token_embd.weight"
     with source.open("rb") as f:
         header_bytes = struct.unpack("<Q", f.read(8))[0]
         header = json.loads(f.read(header_bytes))
     report = {"schema": "dspark_frozen_comparison_v1", "source_sha256": sha256(source),
-              "target_sha256": sha256(target), "canonical_format": "little-endian FP32 row-major", "tensors": {}}
-    for suffix, destination in (("embed_tokens.weight", "token_embd.weight"), ("lm_head.weight", "output.weight")):
+              "target_sha256": sha256(target), "canonical_format": "little-endian FP32 row-major", "tensors": {}, **target_proof}
+    for suffix, destination in (("embed_tokens.weight", "token_embd.weight"), ("lm_head.weight", target_head_name)):
         name = next(n for n in header if n.endswith(suffix))
         row = header[name]
         tensor = tensors[destination]
@@ -39,6 +63,7 @@ def compare(source: Path, target: Path, llama: Path) -> dict:
         target_values = tensor.data.reshape(-1)
         left_hash, right_hash = hashlib.sha256(), hashlib.sha256()
         stats = dict(elements=count, source_dtype="BF16", target_dtype="F16", shape=row["shape"],
+                     target_tensor_name=destination,
                      differing_elements=0, source_nonfinite=0, target_nonfinite=0,
                      bf16_to_f16_underflow=0, bf16_to_f16_overflow=0, max_abs_difference=0.0, first_difference=None)
         for start in range(0, count, 1024 * 1024):
@@ -75,8 +100,10 @@ if __name__ == "__main__":
         p.add_argument("--" + key, type=Path, required=True)
     p.add_argument("--config", type=Path)
     p.add_argument("--conversion-config-out", type=Path)
+    p.add_argument("--target-config", type=Path)
+    p.add_argument("--target-config-sha256")
     a = p.parse_args()
-    result = compare(a.source, a.target, a.llama)
+    result = compare(a.source, a.target, a.llama, a.target_config, a.target_config_sha256)
     a.output.write_text(json.dumps(result, indent=2) + "\n")
     if a.conversion_config_out:
         if not a.config:

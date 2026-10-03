@@ -139,6 +139,15 @@ def validate(manifest):
         state = rows(cell["state"])
         proposal_map, summary = check_state(state, rows(cell["rounds"]), maximum)
         start = next(r for r in state if r["event"] == "binding_begin")
+        if export.get("target_tied_head_fallback"):
+            require(export["target_head_source_tensor"] == "token_embd.weight" and
+                    sha256(Path(export["target_config_path"])) == export["target_config_sha256"] and
+                    read(export["target_config_path"]).get("tie_word_embeddings") is True,
+                    "target tied-head configuration proof changed")
+            for embedding, head in (("embedding_hash_fnv1a64", "head_hash_fnv1a64"),
+                                    ("target_embedding_bytes", "target_head_bytes"),
+                                    ("target_embedding_dtype", "target_head_dtype")):
+                require(start[embedding] == start[head], "tied target roles differ in native source bytes/type/size")
         require(start["borrows_embedding"] == export["borrows_embedding"] and
                 start["borrows_head"] == export["borrows_head"], "native/private tensor ownership differs from export")
         for pair in cell["outputs"]:
