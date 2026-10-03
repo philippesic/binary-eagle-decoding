@@ -9,6 +9,12 @@ local RTX5080 pause flag is false. RTX2080Ti remains paused and supporting
 research remains stopped. The historical stop/closure evidence below is preserved
 but its local-only restriction is superseded for this pipeline.
 
+**Single-team coordination:** the newer human instruction assigns this QAT team
+sole responsibility for preflight and monitoring. Keep this lead, the existing
+preparation supervisor and one serialized operator; no external supervisor
+polling/source investigation or routine coordination updates. This is not a GPU
+pause, cancellation, new goal or permission to restart supporting research.
+
 **Goal and owner:** same incomplete QAT optimization-readiness goal; acknowledged
 QAT owner `01a0ff1c-1007-75e3-a772-eaeb078179b3`. Optimizer updates remain zero.
 The SAME QAT heartbeat is ACTIVE every 15 minutes, bound to this owner with the
@@ -87,7 +93,9 @@ same806/807 kernel births, statuspreparing/teacher_shard_complete, models{} and
 zero updates. Retained353 manifests/10,000TRAIN/1,002development are intact and
 capture counters353/353; complete model/readiness remains unverified. Child is
 running with CPU/I/O activity (365,652,435,840 physical read bytes since launch),
-so this is active preparation, not GPU release. Parsed snapshot SHA
+so this is active preparation, not GPU release. Empty model records are the
+stale stage status through provider/coverage/initial model construction and do
+not establish the actual constructor call site. Parsed snapshot SHA
 `9fde5801fd8011e4c4dbeeea9002f08e0fa8097f6821b788040357a571227a60`,
 local closure proof SHA `9355350a4cb4def79c0c932748b48e858542fbafc4b2d2069740a3ade2ab46fd`
 under `runs/luna-continuous-a8-a1-20260929/current-source-monitor-20261003-01/`.
@@ -3907,3 +3915,34 @@ QAT owner/goal/schedule. Checkpoint launch commit `cc7389c` is pushed. Successor
 must record final transfer verification locally and continue the exact next
 actions above. The predecessor finishes only this documentary integration/push
 and worktree removal, with no further GPU/SSH/operator/registry action.
+
+## Current hashing and critical-path status — October 3, 07:26 UTC
+
+Exact live source6f and fresh07:21 CPU observation show statuspreparing with
+phase readiness_complete, zero optimizer and no final ready/checkpoint. Source
+writes that marker ONLY after all provider manifests/indexes/development metadata.
+Actual bounded metadata at07:26:45 confirms353/353 provider manifests, remaining0,
+and train/development/development-subset indexes. Common GGUF sizes are
+8,051,285,280 /40,333,664 /442,700,800 bytes. Thus the353 repeated manifest hash loop
+is complete; applying the stage-only cache fix does not justify restarting this
+current healthy post-stage job. No exact remaining ETA is measured.
+
+Read-only remaining-path source note SHA
+`8e2d563410f3eef9b13a315393325cae897257b416b479610f60b7e3cf533db4`
+finds no repeated whole-GGUF loop in receipt-backed provider construction; large
+file byte hashes already use checked_record. Full metadata/coverage precedes
+build_lanes, and model loading hashes the three shared GGUFs once. Only modern
+recipe gates conditionally repeat NPZ actor tensor reconstruction/packing per
+child; active schema has not been observed, so do not infer that cost or patch
+an inactive path. Sole operator is collecting only current coverage/smoke/latest/
+ready marker metadata and small readiness schema before the secondary static
+stderr fetch. No source edit, job restart, GPU query, new experiment or recapture.
+
+Static04 failed exit1; both1503/1504 groups and supervisor are gone, protected
+original10/runtime7/frozen14 unchanged, transport closed. Generic wrapper error
+`Refusal: static returned 1` does not identify the inner cause; one bounded
+read-only fetch of exact owned logs/partial inventory is authorized. This is a
+metadata-runtime failure, not evidence of CUDA/model failure or GPU access loss.
+Current preparation806/807 retains GPU ownership. Cache worker worktree was
+removed only after public-file equality and clean/untracked/ignored-artifact
+audit; public30dd source remains a FUTURE revision, live6f unchanged.

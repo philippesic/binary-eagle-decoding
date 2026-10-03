@@ -46,3 +46,12 @@ evidence changes the lesson.
 - Agent contribution: The reused cleanup template assumed a still-live supervisor, while tool/report round trips consumed the remaining bounded lifetime. The root accepted that template without covering natural completion.
 - Practical lesson or reminder: Combine the after-snapshot and exact-owned cleanup in one bounded operation when possible. Handle already-terminal natural completion by checking recorded state, summary, identities, groups and session; do not restart the probe or signal a reused PID. Preserve real exit codes and distinguish fixture limits from model success gates.
 - Correction or resolution: A bounded read-only verification established complete return. The continuation joins the actual before/after/final receipts, accepts only the authenticated CPU probe time-limit contract, and still requires exit0 plus full readiness for preparation/model success.
+
+### 2026-10-03: Use one accountable team and distinguish stage status from model progress
+
+- Date and context: The human asked whether QAT was going after prolonged preflight, then directed one team to own preflight and QAT monitoring.
+- Observation and evidence: Optimizer updates were zero. Multiple supervisors relayed status questions and performed overlapping source investigation. The live program reported models{} through provider/coverage and initial model loading; a readiness_complete stage marker did not mean final model readiness. Fresh output metadata established353 provider manifests completed.
+- Status: Confirmed coordination and reporting confusion; no user mistake.
+- Agent contribution: External supervisor intervention and this lead's repeated coordination added complexity. This lead initially treated an empty model list as proof construction had not begun; exact source showed it was a stale stage field until trainer smoke status.
+- Practical lesson or reminder: Keep one QAT lead and its existing execution team. Report actual optimizer updates, dated process evidence, completed output markers and remaining gates. Do not infer an exact live call site or ETA from a stale stage field or CPU/I/O counters.
+- Correction or resolution: External routine coordination stopped by human instruction. The single team verified the shared-GGUF manifest loop completed and prioritized bounded coverage/smoke markers before choosing any controlled operational change; current source and captures remain protected.

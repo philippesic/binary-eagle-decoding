@@ -8,7 +8,9 @@ The target/verifier model precision remains as frozen for each experiment.
 
 The human said **“Gpu is free resume now.”** RTX5080 is resumed for the existing
 QAT/preparation pipeline and necessary remote work. RTX2080Ti remains paused;
-supporting research remains stopped. The same QAT monitor is ACTIVE and bound to
+supporting research remains stopped. The human assigned all preflight/QAT
+coordination to this single team; external supervisor intervention is stopped.
+The same QAT monitor is ACTIVE and bound to
 acknowledged owner `01a0ff1c-1007-75e3-a772-eaeb078179b3`; the same preparation
 owner/operator retain sole remote control. No duplicate schedule or operator.
 
@@ -17,7 +19,11 @@ child807, after verified current-boot durability and fresh launch guards. Prep
 owner `01a10084-101e-7311-94e9-9658f9dc648f` acknowledged the same job and active
 heartbeat. Checks at06:51 and06:55 verified live kernel identities, retained353
 manifests/10,000TRAIN/1,002development, active CPU/I/O, models{} and zero optimizer
-updates. Model smoke/checkpoint-zero and full readiness remain pending.
+updates. At07:21 the data-stage marker advanced to readiness_complete; metadata
+at07:26 confirms all353 provider manifests and indexes exist. The repeated shared
+GGUF manifest hash loop is finished. Model/coverage markers are being checked;
+empty model records alone do not establish whether model loading has begun.
+Model smoke/checkpoint-zero and full readiness remain pending.
 
 The terminal continuation passed46 root/independent local tests. CPU static04
 runtime inventory is running under fresh guards while preparation retains GPU
