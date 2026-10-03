@@ -261,6 +261,7 @@ class A8RecipeTests(unittest.TestCase):
             {
                 "linears": {name: m.state_dict() for name, m in linears.items()},
                 "optimizer": optimizer.state_dict(),
+                "probe": probe.state_dict(),
                 "telemetry": telemetry.state_dict(),
             }
         )
@@ -274,11 +275,13 @@ class A8RecipeTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "fresh latent"):
             audit_a8_recipe(rl, ro, rc, re, fresh=True)
         rp = QATUpdateProbe(rl, ro, require_all=True)
+        rp.load_state_dict(state["probe"])
         for ls, opt, cfg, ad in ((linears, optimizer, config, adapter), (rl, ro, rc, ra)):
             logits, audit, _ = round_forward(ad, cfg)
             joint_train_step(ls, logits, audit, opt, cfg)
         self.assertEqual(telemetry.observe(linears, step=2), restored.observe(rl, step=2))
         self.assertEqual(probe.last_report, rp.last_report)
+        self.assertEqual(probe.admission_report(), rp.admission_report())
         for name in rl:
             for key, value in rl[name].state_dict().items():
                 if isinstance(value, torch.Tensor):
@@ -303,6 +306,54 @@ class A8RecipeTests(unittest.TestCase):
                 state["near_zero"] = 0.2
             with self.subTest(kind=kind), self.assertRaises(ValueError):
                 telemetry.load_state_dict(state, linears, resumed_step=0)
+
+    def test_family_admission_accumulates_through_float32_warmup_rounding(self):
+        _, _, linears, optimizer, _ = fixture()
+        probe = QATUpdateProbe(linears, optimizer)
+        for group in optimizer.param_groups:
+            group["lr"] = 1e-12
+            for p in group["params"]:
+                p.grad = torch.full_like(p, 0.2)
+        optimizer.step()
+        pending = probe.admission_report()
+        self.assertFalse(pending["passed"])
+        self.assertEqual(pending["families"]["activation"]["nonzero_gradient_tensors_ever"], 6)
+        self.assertEqual(pending["families"]["activation"]["sampled_moved_tensors_ever"], 0)
+        with self.assertRaisesRegex(ValueError, "lacks observed"):
+            probe.admission_report(require_passed=True)
+        state = probe.state_dict()
+        probe.close()
+        restored = QATUpdateProbe(linears, optimizer)
+        restored.load_state_dict(state)
+        self.assertEqual(restored.admission_report(), pending)
+        for group in optimizer.param_groups:
+            group["lr"] = 1e-5
+        optimizer.step()
+        passed = restored.admission_report(require_passed=True)
+        self.assertTrue(passed["passed"])
+        self.assertEqual(passed["observed_updates"], 2)
+        self.assertEqual(passed["families"]["activation"]["sampled_moved_tensors_ever"], 6)
+        self.assertEqual(len(restored.last_report["families"]["activation"]["per_tensor"]), 6)
+        restored.close()
+
+    def test_probe_state_rejects_corrupt_counter_layout_or_coverage(self):
+        _, _, linears, optimizer, _ = fixture()
+        probe = QATUpdateProbe(linears, optimizer)
+        for kind in ("counter", "layout", "coverage", "bool", "contradiction"):
+            state = probe.state_dict()
+            if kind == "counter":
+                state["observed_updates"] = -1
+            elif kind == "layout":
+                state["layout"]["activation"][0] = [1]
+            elif kind == "coverage":
+                state["admission"]["activation"]["moved"].pop()
+            elif kind == "bool":
+                state["admission"]["activation"]["moved"][0] = 1
+            else:
+                state["admission"]["activation"]["moved"][0] = True
+            with self.subTest(kind=kind), self.assertRaises(ValueError):
+                probe.load_state_dict(state)
+        probe.close()
 
     def test_probe_can_disable_and_remove_hooks(self):
         config, _, linears, optimizer, adapter = fixture()
