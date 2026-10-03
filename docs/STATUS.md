@@ -117,8 +117,9 @@ postreconnectclaim). Actualfullrelease PASSED12:54:25: bothgroups/contexts gone,
 host20.293GB/GPU13533MiBfree, all7originals+logtail provenance verified;
 SAME soleLuna244/273/71024 retained for evalhandoff.
 NEWserializedevalpacket02 fd5439 passedrootwholecode/20CPUtests/all14pins;
-conditionalCPUstage sourceapproval issued for intact1000checkpoint+specificRAMfailure. No trainingrestart/source/caps/memorygate waiver. ActualCPUstage/finalconcretewrapper/freshadjacentphysical/ownerGO then unchanged
-originalQ4_0eval remain. Goal incomplete.
+conditionalCPUstage sourceapproval issued for intact1000checkpoint+specificRAMfailure. No trainingrestart/source/caps/memorygate waiver. ACTUAL serializedevalCPUstage PASSED13:03:41: bothoriginals265285B, stagec1e3/
+actualrunlatest98e7/source1002dev/failedterminal/final1000checkpoint joined.
+Finalconcretewrapper/freshadjacentphysical/ownerGO then unchangedQ4_0eval remain. Goal incomplete.
 No repeat corpus audit or unit fixture, source changes or new user confirmation.
 See the [native milestone](goals/qat-optimization-readiness.md#actual-copied-native-cuda-fixture-passed--october-3-1110-utc).
 

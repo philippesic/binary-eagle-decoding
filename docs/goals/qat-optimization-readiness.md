@@ -32,17 +32,16 @@ successor uses one pinned operator only when no other is active. Root creates
 no second remote operator. Protected QAT/preparation
 supervision continues; no credit purchase or reset redemption.
 
-**Current state — October 3, 12:56 UTC:** actual1000pairedcheckpoint62f88/b48c
-intact; originalautomaticdevelopment RAMpreflightfailed/exit1 preserved. Actual
-FULL terminalrelease PASSED12:54:25: both7101/7102births/groupsabsent, current
-contexts{}/submitters[]/computeappsempty, GPU13533MiBfree/host20.293GBfree/disk359GB,
-protectedsource/math/control unchanged. Rootall7raworiginals/logtailprovenance
-verified. SAME soleLuna244/273/keeper71024 retained for immediate evalhandoff.
-NEWserializedevalpacket02 fd5439 wholecode/20tests/14pins rootreviewed; conditional
-CPUstageSOURCEapproval nowfulfilled/cleared, readsrealrun/latest and exactrecorded
-1000checkpoint/RAMfailure. ActualCPUstage+concreteevalwrapper/freshadjacentfullproof/
-ownerGO then unchangedoriginalQ4_0eval; no optimizerrestart/source/math/memorygate
-waiver. Goal incomplete; Q4report/actualeval+finalcontextreturn remain.
+**Current state — October 3, 13:05 UTC:** actual1000pairedcheckpoint62f88/b48c
+intact; originalautomaticdevelopment RAMfailure/exit1 preserved. FULL terminal
+release passed12:54:25, contexts/groupsnone/host20.29GB/GPU13533MiB. SAME soleLuna
+244/273/keeper71024 retained. Reviewedserializedeval02 fd5439 ACTUAL CPUstage
+PASSED13:03:41.684; bothoriginals265285B/SHA/length verified. Stagec1e3 truthfully
+binds specificfailedterminal/sourceb1/runtime/API41f/frozen1002dev/actualcheckpoint;
+realrun/latest98e7/step1000/resume62f88 captured. Root acceptance/registration saved.
+NEXT concreteevalwrapper/argv/guardian finalreview +freshadjacentphysical/ownerGO
+then unchangedoriginalQ4_0eval. No optionalpayload replay/optimizerrestart/source/
+math/memorygate change. Actual Q4report/evaluation/finalcontextreturn remain.
 
 **Historical state — October 3, 09:44 UTC:** preparation ACTUALLY completed at
 08:57:52, observed by healthy/terminal checker09:39:55. Supervisor exit0,
@@ -57,6 +56,31 @@ conditional released-mode copied-fixture GO requires actual final release and
 fresh source/context/resource/control facts; no readiness from the CPU pass.
 Then complete current native/actual-model/backward/memory/timing/save-resume
 gates and launch the previously authorized NEW training run without confirmation.
+
+## Actual serialized evaluation CPUstage passed — October 3, 13:05 UTC
+
+SAME soleoperator244/273/keeper71024 executed reviewedparent CPUstage once, no
+models/GPU/optimizer. Actual13:03:41.684184 UTC stage and correctrun/latest.json
+returned265285B; rootverified bothraworiginals by base64/SHA/length, saved under
+`actual-final-development-cpu-root-verified-20261003-02/` with exactpath index.
+Raw stdout SHA
+`8fc1fcbf2f3eed9c3835ed5ecb661286417ec4f9926eef30796efa01e3aa337a`;
+actualstage `c1e3b120ce6c53b6e1f10d223cdde754fea6b9da5fa4633a72233553c3a83a43`,
+actualrun/latest `98e7df1ce1006f445a72f77a2c9facbcbcb8736511b2fb902dae896dff5016dd`.
+Real latestmatches formerDERIVED testview, but this original is capturedremote
+truth and authenticstep1000/resume62f88. Originalsourceb1/API41f/runtime/full1002dev
+limits/manifestb48/status80507/supervisoraf7/configfea alljoin, truthfulterminal
+failed_original_automatic_development_host_preflight/exit1 preserved. Root ran
+existingdevelopment_limits validator locally and records actualstage acceptance.
+
+Parent's ownexact14file packet packaging had alreadycompleted; optionallocal
+stage-payload6d7ad098 is preserved/explicitlyUNUSED and MUST NOTdispatch/repeat.
+No secondremoteoperator or completedgate/audit repeat. ConditionalCPUstage
+sourceapproval fulfilled; actualCPUstage accepted. Next shortestconcreteexisting
+ownerGO/launch/supervision/collection wrapper and argv/guardian/payload review,
+fresh adjacentwholephysical/pause/owner/source/memoryproof, then exact unchanged
+source6f/Q4primary evaluator underoriginal1200bound. ActualGPUevaluation/readout/
+finalnativecontexts return remain; no optimizerresume/newtrainingcap/source change.
 
 ## Actual full training release accepted — October 3, 12:56 UTC
 
