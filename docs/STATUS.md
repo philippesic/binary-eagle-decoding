@@ -12,23 +12,20 @@ supporting research remains stopped. The same QAT monitor is ACTIVE and bound to
 acknowledged owner `01a0ff1c-1007-75e3-a772-eaeb078179b3`; the same preparation
 owner/operator retain sole remote control. No duplicate schedule or operator.
 
-Fresh read-only checks verified unchanged source/data, old09 stopped and no new
-run. RTX5080 has no listed compute apps and 13,143 MiB free. WSL boot changed; a
-new bounded CPU disconnect/system-identity proof passed with complete teardown.
-The terminal continuation passed46 local tests under root and independent review,
-and its specific launch GO was sent to the same sole operator. Static metadata
-passed26 tests separately and does not delay preparation. All local workers are
-finished. The unique new preparation-only job actually launched at06:43UTC,
-supervisor806/child807; source/configuration and fresh launch guards passed.
-Preparation supervision is acknowledged by `01a10084-101e-7311-94e9-9658f9dc648f`
-with the SAME active heartbeat and job. First post-launch CPU check passed at
-06:51UTC: same live processes, all353 retained manifests/10,000TRAIN/1,002development,
-phase teacher_shard_complete, active CPU/I/O, no models built yet and zero updates.
-Model smoke/checkpoint-zero and full gate results remain pending;
-original failed/paused evidence is preserved. Old09 remains terminal, no recovery
-or old-live actions are allowed. Launch is verified; actual model smoke,
-checkpoint-zero and final readiness remain pending.
-Optimizer updates remain zero; the existing goal is incomplete. See the
+The unique current-source preparation-only job launched at06:43UTC, supervisor806/
+child807, after verified current-boot durability and fresh launch guards. Prep
+owner `01a10084-101e-7311-94e9-9658f9dc648f` acknowledged the same job and active
+heartbeat. Checks at06:51 and06:55 verified live kernel identities, retained353
+manifests/10,000TRAIN/1,002development, active CPU/I/O, models{} and zero optimizer
+updates. Model smoke/checkpoint-zero and full readiness remain pending.
+
+The terminal continuation passed46 root/independent local tests. CPU static04
+runtime inventory is running under fresh guards while preparation retains GPU
+ownership. A local source audit found repeated common GGUF hashing per shard;
+a small cache fix for FUTURE starts passed80 independent CPU tests and31 root
+checks. Current source6f/live preparation is unchanged. Old09 remains terminal,
+its recovery budget is exhausted, and original evidence is preserved. RTX2080Ti
+and research stay paused. The existing goal is incomplete; see the
 [resume checkpoint](goals/qat-optimization-readiness.md#human-resume-rtx5080-qat-pipeline--october-3-0611-utc).
 
 ## Human stop: local Mac only — October 3, 00:10 UTC

@@ -95,6 +95,37 @@ Root verified both hashes locally; sole operator/transport are closed and the
 SAME15minute monitors remain ACTIVE. Continue current model/coverage gates and
 coordinate actual native/runtime/recipe validation at a verified GPU handoff.
 
+**Necessary support and startup fix:** static04 is a mechanical owner/unique-path
+rebind of reviewed static03; unchanged runner/helper/receipts, final SHA
+`9032795b8c4634001c506299707032c3b7716c0597ddbd09f3926e4f95972647`,26 root guards.
+Sole prep operator staged all27 regular-file hashes and created only the verified
+canonical creator link. Fresh phase proof/source/old09 terminal/currentboot3abb,
+original fixture d884/actual STORED CPU98 receipt bd43, RAM19,092,729,856B/disk
+391,509,925,888B passed adjacent admission1469eafb. The bounded240s outer/180s
+inner CPU-only metadata job is active; actual outcome/complete owned return are
+pending. It cannot copy/rebuild/modify original runtime/source or run GPU/models.
+Preparation806/807 continues and retains GPU ownership. The initial stale MCP pane
+and rejected Windows bridge wrapper failed before SSH; new transport verified
+LOCAL229/keeper55462, with all original failure evidence preserved.
+
+Read-only source note SHA
+`2769b8a81607dd749451e437007c17f44877de7b40264dc893b49cc2d85fafed` identifies a
+concrete future-start cost: provider_manifest rehashes the same three shared GGUF
+files for each353 shard, bypassing the existing checked-record cache. That code
+path is definite; the observed high cached-read/CPU counters fit it but do not
+prove the live call site or an ETA. Small future-source fix `30ddbd3` (worker
+`14b711d`) changes only stage provider hash reuse and focused tests. It reuses
+actual SHA verification keyed by path/expectedSHA/device/inode/size/mtime/ctime;
+changed files rehash/refuse, initial mid-hash changes refuse, and symlink
+replacement refuses. Per-capture hashing and legacy calls remain unchanged;
+synthetic cached/uncached manifest bytes match. Independent Luna passed80 CPU
+checks; root passed12 focused plus19 existing stage checks. No CUDA/performance
+or real model claim. The isolated worker worktree
+`/private/tmp/eagle-provider-common-hashes-20261003` remains until public integration
+audits. Current live6f source/job807 is NEVER hot-edited or restarted for this fix;
+future source-bound model/native/training gates must reflect any adopted revision.
+
+
 **Local work:** `/root/terminal_continuation` owns NEW ignored
 `runs/qat-optimization-readiness/retained-capture-adoption-20261002-01/postconfig-gpu-prep-transfer-20261002-03/`;
 `/root/static_runtime_packet` owns NEW ignored
