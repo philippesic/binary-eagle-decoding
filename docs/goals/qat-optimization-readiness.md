@@ -26,7 +26,19 @@ successor uses one pinned operator only when no other is active. Root creates
 no second remote operator. Protected QAT/preparation
 supervision continues; no credit purchase or reset redemption.
 
-**Actual state and next execution:** old09 is terminal; no replacement launch was
+**Current state — October 3, 08:06 UTC:** the sole preparation supervisor has
+reserved its same Luna operator for Static05 after verified stack-diagnostic
+return. No Static05 dispatch is yet reported. The last actual preparation check
+is07:49:40: exact806/807 are active with positive CPU/I/O progress, zero optimizer
+updates and only a stale-heartbeat checker failure. All353 provider manifests
+are complete. Paired model smoke/checkpoint-zero/full readiness and GPU release
+remain unverified. The08:01 existing-only profiler check found py-spy unavailable
+and took no sample; it did not inspect current process identities. Continue the
+existing detached preparation, serialized CPU metadata retry and same monitors.
+Do not run a second operator/query, hot-edit or restart this job. The latest
+milestone sections below carry exact evidence and remaining gates.
+
+**Historical resume admission and launch:** old09 is terminal; no replacement launch was
 verified before the pause. Human resume is authority, not fresh resource proof.
 The sole prep operator is requested to collect one bounded fresh source/config/
 process/groups/context/GPU/RAM/disk/ownership/pause/durability admission. Old09
@@ -103,15 +115,17 @@ Root verified both hashes locally; sole operator/transport are closed and the
 SAME15minute monitors remain ACTIVE. Continue current model/coverage gates and
 coordinate actual native/runtime/recipe validation at a verified GPU handoff.
 
-**Necessary support and startup fix:** static04 is a mechanical owner/unique-path
+**Historical support and startup fix:** static04 was a mechanical owner/unique-path
 rebind of reviewed static03; unchanged runner/helper/receipts, final SHA
 `9032795b8c4634001c506299707032c3b7716c0597ddbd09f3926e4f95972647`,26 root guards.
 Sole prep operator staged all27 regular-file hashes and created only the verified
 canonical creator link. Fresh phase proof/source/old09 terminal/currentboot3abb,
 original fixture d884/actual STORED CPU98 receipt bd43, RAM19,092,729,856B/disk
 391,509,925,888B passed adjacent admission1469eafb. The bounded240s outer/180s
-inner CPU-only metadata job is active; actual outcome/complete owned return are
-pending. It cannot copy/rebuild/modify original runtime/source or run GPU/models.
+inner CPU-only metadata job returned exit1, with complete owned return and
+protected-byte equality. Its descriptor named three files under never-staged
+static02; accepted Static05 corrects only those references and is pending actual
+execution. Neither job can copy/rebuild/modify original runtime/source or run GPU/models.
 Preparation806/807 continues and retains GPU ownership. The initial stale MCP pane
 and rejected Windows bridge wrapper failed before SSH; new transport verified
 LOCAL229/keeper55462, with all original failure evidence preserved.
@@ -129,24 +143,25 @@ replacement refuses. Per-capture hashing and legacy calls remain unchanged;
 synthetic cached/uncached manifest bytes match. Independent Luna passed80 CPU
 checks; root passed12 focused plus19 existing stage checks. No CUDA/performance
 or real model claim. The isolated worker worktree
-`/private/tmp/eagle-provider-common-hashes-20261003` remains until public integration
-audits. Current live6f source/job807 is NEVER hot-edited or restarted for this fix;
+`/private/tmp/eagle-provider-common-hashes-20261003` was removed after public
+integration, clean-file and equality audits. Current live6f source/job807 is NEVER hot-edited or restarted for this fix;
 future source-bound model/native/training gates must reflect any adopted revision.
 
 
-**Local work:** `/root/terminal_continuation` owns NEW ignored
+**Completed local packet ancestry:** `/root/terminal_continuation` owns NEW ignored
 `runs/qat-optimization-readiness/retained-capture-adoption-20261002-01/postconfig-gpu-prep-transfer-20261002-03/`;
 `/root/static_runtime_packet` owns NEW ignored
 `runs/qat-optimization-readiness/current-clean-runtime-static-20261003-03/`.
 Both completed bounded independent local testing/review with no remote authority.
 Original c899, paused-v2, static02 and all raw evidence remain unchanged. Root owns
-STATUS/goal and training registration. Existing checkpoint worktree
-`/private/tmp/eagle-qat-stop-closure-20261003` carries these documentation updates.
-The supervisor's independent lessons worker owns only USER_LESSONS.
+STATUS/goal and training registration. The merged checkpoint worktrees
+`/private/tmp/eagle-qat-stop-closure-20261003` and
+`/private/tmp/eagle-qat-runtime-result-20261003` and their branches were removed
+after push and clean/unpublished-file audits. Root owns current documentary updates.
 
-**Priority:** complete/test/review the terminal-only continuation packet, combine
-it with fresh admission and launch the unique current-source preparation-only
-run through the sole operator. Static metadata retry runs serially as needed and
+**Priority:** let the already-launched current-source preparation complete its
+full provider/coverage and paired model smoke/checkpoint-zero gates. The launch
+packet and admission are consumed; never launch it again. Static metadata retry runs serially as needed and
 does not block PyTorch preparation. Then require actual native actor/model,
 forward/backward, memory/timing, save/resume, full corpus readiness and Q4_0
 development gates before previously-authorized source-bound training. Frozen
