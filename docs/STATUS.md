@@ -4,6 +4,21 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
+## Human stop: local Mac only — October 3, 00:10 UTC
+
+The human ordered: **“Stop gpu work. Only local Mac work allowed until I say so.
+Tell all agents.”** This supersedes every earlier remote permission and approval.
+Both host pause flags are true; QAT and preparation heartbeats are PAUSED.
+All root agents were notified, and the main supervisor relayed the stop to its
+teams. The sole existing preparation operator is restricted to shutdown and
+verification, then disconnect. No new remote CPU/GPU job, transfer, polling,
+recovery or SSH is permitted. Actual final shutdown proof is pending.
+
+Optimizer updates remain zero. Old09 was already stopped; the proposed new
+preparation continuation was never approved and is cancelled. Local unfinished
+work and all original evidence are preserved. The goal remains incomplete;
+only local Mac work may continue. See the [local-only handoff](goals/qat-optimization-readiness.md#local-only-stop-and-successor-handoff--october-3-0010-utc).
+
 ## Old preparation stopped; continuation repair — October 2, 23:59 UTC
 
 The authorized transfer stopped old09 cleanly at 23:51 UTC. Read-only

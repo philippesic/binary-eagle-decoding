@@ -1,5 +1,81 @@
 # QAT optimization readiness
 
+## Local-only stop and successor handoff — October 3, 00:10 UTC
+
+**Current controlling instruction:** “Stop gpu work. Only local Mac work allowed
+until I say so. Tell all agents.” All earlier remote permissions, admissions and
+GO statements are revoked. Both GPU pause flags are true. The existing QAT and
+preparation heartbeats are PAUSED with explicit local-only overrides; the
+research heartbeat was already PAUSED. Do not resume any monitor, host or remote
+work without an explicit newer instruction from the human. No Git push during
+this local-only checkpoint; preserve unpublished local commits.
+
+**Objective:** complete the existing QAT computation/cache/binary optimizer/
+learned quantizer/curriculum implementation and all real current-source model,
+backward, memory/timing, save/resume and Q4_0 development gates, followed by the
+previously authorized source-bound training only after the human lifts the pause
+and all gates pass. The goal is incomplete. Real optimizer updates remain zero;
+sealed final data and frozen target/verifier precision remain protected.
+
+**Completed:** native9e2 synthetic CUDA repair passed on RTX5080; all 353 retained
+capture manifests (10,000 TRAIN / 1,002 development) joined the authentic previous
+full semantic pass; actual current-source CPU payload/configuration validation
+passed (source `6f1444b`, configuration SHA `ccc43a104a3a09e1a910746c319f55df33761bec5616378254a90e9339dbdafe`).
+The immutable ten-file copied runtime was created successfully; static inspection
+then hit non-UTF-8 metadata. Lossless decoding is integrated as `3bf0ca8`, tested
+by root and independent review (43 checks). Earlier reviewed source commits
+include `c0f3d85`, `01015ac`, `6f1444b`, `a345f87`, `973d10c`; latest pre-stop main
+is `b2fe1bf`. Source/runtime tests are not model readiness or optimizer progress.
+
+**Remote jobs:** old09 supervisor2713 / child2714 was cleanly stopped; actual
+classification at 23:54 UTC proved both absent, both process groups empty and
+old STOP present. The original transfer then refused the producer's brief
+terminal status (missing optimizer fields), before any new launch. The exact
+producer and pre-stop zero state explain that schema failure; no optimization
+was observed. The new-v2 terminal continuation was NOT approved or dispatched.
+Existing sole prep operator `/root/atomic05_owner_rebind`, controlled by chat
+`01a0fdd6-8e11-7393-9aed-5c99bd08e428`, owns only bounded final shutdown/verification
+and closure of existing local MCP223 / keeper55194. Final proof pending here;
+root must not open a second connection. RTX2080Ti remains paused. Recovery budget
+2/2 remains exhausted; no new recovery charge or old09 restart.
+
+**Live work and ownership:** root's active local worker
+`/root/retained_capture_import` acknowledged the stop and notified its child;
+no remote commands or in-flight tool processes exist for it. Its incomplete
+NEW-v2 prototype is preserved under ignored
+`runs/qat-optimization-readiness/retained-capture-adoption-20261002-01/postconfig-gpu-prep-transfer-20261002-02/`.
+The old-live/stop APIs were removed and the intended CLI is resume-transfer/collect,
+but the final tests and manifest were NOT completed; existing b139 manifest is
+stale and the packet is NOT dispatchable. Its earlier wrapper-only 24 local tests
+passed. All other root workers/validators are completed and notified of the stop.
+Main supervisor chat `01a0fddd-d4fd-7e70-8720-528a4e23006e` propagated the stop to all
+its teams; no supporting research restart is authorized. Root does not transfer
+live workers implicitly: finish/checkpoint their local output before retirement.
+
+**Preserved artifacts:** original transfer packet c899, original failure and
+classification raw SHA `22844a0cb376b81d3e5aba4ca7e4f7fcb3d65456e6f4329241e5b2b2e5807fcd`,
+CPU acceptance SHA `494d0233a992d5d02d7dd3ba1c0951a698f8d54370c7fcb2b6efdad7c9c57998`,
+package manifest SHA `9dbdd4050c1a9df5efc061b5088c568592b8f7f5b29dd69e6e9173f9b29ad4bc`,
+and static retry manifest cca346 are unchanged. Retry packet
+`runs/qat-optimization-readiness/current-clean-runtime-static-20261002-02/` has
+six local guards but no root execution approval. No remote static run permitted.
+Preserve clean-runtime worker worktree and continuity worktree pending their
+owners' cleanup audits. Preserve peer untracked overnight reports. Never drop
+unmerged work or raw evidence.
+
+**Exact next local actions:** record sole operator's shutdown proof, checkpoint
+all work, and rotate root at this safe boundary after two compactions. Successor
+must first read this section and latest STATUS; carry the same incomplete goal
+under LOCAL MAC ONLY, without reopening SSH or launching/rebinding automations.
+Local review and implementation may repair the unfinished v2 schema/test/manifest
+and static metadata packet, but no new remote permission follows from those tests.
+Actual GPU model/backward/memory/timing/checkpoint/Q4_0 gates and training remain
+pending. After a future explicit human resume, establish fresh source/resource/
+ownership checks and a reviewed new continuation rather than reusing old GO.
+
+**Unresolved user decision:** only the human can lift the local-only pause. No
+other decision is needed to obey the stop; do not repeatedly ask for resumption.
+
 ## Audit reuse integration — October 2
 
 Root reviewed and integrated required QAT feature `0988b1c` as `c0f3d85`.
