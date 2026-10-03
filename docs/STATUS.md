@@ -6,19 +6,14 @@ The target/verifier model precision remains as frozen for each experiment.
 
 ## Active: A8 QAT recovery and comparison — October 3, 2026
 
-**Latest ownership direction:** the human requested a separate Codex chat with
-no involvement from this chat. The four inline workers are interrupted and this
-chat's recovery heartbeat is PAUSED. A standalone project chat is being created
-to claim sole ownership, review preserved partial work and activate its own
-monitor. See the [handoff](goals/a8-qat-recovery-and-comparison.md#standalone-chat-handoff--october-3-2026).
-The old coordinator will stop after dispatch; no actual QAT launch is claimed.
-
-The human authorized a team to fix integration, run the proposed matched
-comparison under a recovering monitor, and defer A1. The only active goal is
+**Standalone owner:** chat `01a103da-0980-7332-a041-3f95aca6a3f5` has claimed
+exclusive ownership. The originating chat and its interrupted workers are
+uninvolved. The SAME `a8-qat-recovery-monitor` is retargeted here and ACTIVE.
+Three new bounded workers own trainer/evaluator/resume, recipe/movement audits,
+and independent checks plus sole GPU operation; root reviews readiness and
+integrates. See the [ownership checkpoint](goals/a8-qat-recovery-and-comparison.md#standalone-ownership-claimed--october-3-2026).
+No new actual QAT launch is claimed. The only active goal is
 [A8 QAT recovery and comparison](goals/a8-qat-recovery-and-comparison.md).
-Coordinator is this chat `01a103c6-9cbd-7e70-ab05-7de1c49acf79`; four workers own
-trainer/evaluator integration, effective recipe/movement audits, selected-lane
-readiness/native tools, and independent checks plus sole GPU operation.
 
 RTX5080 is resumed for this work; RTX2080Ti and unrelated research remain paused.
 Reuse completed data and preserve the historical paired checkpoint. Initial

@@ -1,5 +1,29 @@
 # A8 QAT recovery and comparison
 
+## Standalone ownership claimed — October 3, 2026
+
+Coordinator `01a103da-0980-7332-a041-3f95aca6a3f5` owns this goal exclusively.
+The originating chat and interrupted workers are uninvolved. Existing heartbeat
+`a8-qat-recovery-monitor` is retargeted here and ACTIVE at the same 15-minute
+cadence. No duplicate monitor. RTX2080Ti, A1 and unrelated research stay paused.
+
+New bounded team:
+
+| Worker | Ownership | Preserved checkout |
+|---|---|---|
+| `/root/trainer_recovery`, Sol high | Trainer, prepared adapter, standalone evaluation, exact resume and cumulative budget | `/private/tmp/eagle-qat-a8-integration` |
+| `/root/recipe_recovery`, Sol high | Matched recipes, effective configuration and parameter-family movement | `/private/tmp/eagle-qat-a8-recipe` |
+| `/root/gpu_supervisor`, Luna high | Independent validation, sole tmux MCP/RTX5080 deployment and supervised runs | `/private/tmp/eagle-qat-a8-operator` |
+| Root | Readiness review, integration, durable records and existing monitor | `/private/tmp/eagle-a8-standalone` |
+
+Selected-lane readiness commit99a53ee is reviewed and adopted as a8c9986;
+integrated CPU checks are pending the trainer API. Partial trainer implementation
+is preserved by worker commita4a66fa. No actual model/training launch is claimed.
+The sole new operator is collecting fresh read-only resource and retained-input
+state, preserving remote preexisting dirty source. Next: complete/test integrated
+recipe+trainer, then one decisive actual-model/native/resume validation and the
+fixed-budget matched comparison. Failed post-checkpoint work must remain charged.
+
 ## Standalone chat handoff — October 3, 2026
 
 The human corrected the execution structure: “just launch it as a seperate codex
@@ -58,7 +82,7 @@ targeted tests, RTX5080 validation/training and bounded recovery are authorized
 without another confirmation. This is the only active goal; the previous goal
 remains historical and complete for its fixed reference recipe only.
 
-Coordinator: chat `01a103c6-9cbd-7e70-ab05-7de1c49acf79`. No A1 model/optimizer/
+Coordinator: chat `01a103da-0980-7332-a041-3f95aca6a3f5`. Historical ownership below is superseded by the standalone claim. No A1 model/optimizer/
 training/evaluation; RTX2080Ti and unrelated architecture research remain paused.
 Demonstrate the effective A8 recipe through actual updates, save/resume/export/
 reload and native development comparison against Q4_0, including complete-request
