@@ -17,11 +17,13 @@ from benchmark_native_eagle import (
 
 ARMS = ("target_only", "eagle_q4_0", "dspark_3", "dspark_7", "dflash_3", "dflash_7")
 ROOT = Path(__file__).resolve().parents[1]
+_launching = False
+_pending_signal = None
 
 
 def stop_owned_server(proc: subprocess.Popen, grace_s: float = 3) -> None:
-    # Finish below remote_job.py's default 10s grace so its SIGKILL cannot strand
-    # this separately recorded server process group.
+    # Default throughput cleanup fits remote_job.py's 10s grace. Admission can
+    # use 15s to finish device hashes with a corresponding 30s supervisor grace.
     try:
         os.killpg(proc.pid, signal.SIGTERM)
     except ProcessLookupError:
@@ -108,6 +110,7 @@ def command(config: dict, protocol: dict, arm: str, port: int) -> list[str]:
 
 
 def run(config_path: Path, destination: Path, diagnostic: bool = False) -> None:
+    global _launching, _pending_signal
     config = json.loads(config_path.read_text())
     protocol_path = ROOT / "configs/dspark-screen/protocol.json"
     protocol = json.loads(protocol_path.read_text())
@@ -158,8 +161,15 @@ def run(config_path: Path, destination: Path, diagnostic: bool = False) -> None:
             start = time.monotonic()
             with (cell / "server.log").open("wb") as log:
                 try:
-                    proc = subprocess.Popen(cmd, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
-                    json_write(cell / "owned_process.json", {"pid": proc.pid, "pgid": proc.pid, "command": cmd})
+                    _launching = True
+                    try:
+                        proc = subprocess.Popen(cmd, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+                        json_write(cell / "owned_process.json", {"pid": proc.pid, "pgid": proc.pid, "command": cmd})
+                    finally:
+                        _launching = False
+                    if _pending_signal is not None:
+                        signum, _pending_signal = _pending_signal, None
+                        interrupted(signum, None)
                     wait_ready(proc, f"http://127.0.0.1:{port}", 300)
                     json_write(cell / "startup.json", {"load_admission_s": time.monotonic()-start, "pid": proc.pid})
                     cases = [(True, i, prompts[i]) for i in range(protocol["warmups_per_cell"])]
@@ -196,6 +206,12 @@ def run(config_path: Path, destination: Path, diagnostic: bool = False) -> None:
 
 
 def interrupted(signum: int, _frame) -> None:
+    global _pending_signal
+    if _launching:
+        _pending_signal = signum
+        return
+    signal.signal(signal.SIGTERM, signal.SIG_IGN)
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
     raise SystemExit(128 + signum)
 
 
