@@ -32,16 +32,14 @@ successor uses one pinned operator only when no other is active. Root creates
 no second remote operator. Protected QAT/preparation
 supervision continues; no credit purchase or reset redemption.
 
-**Current state — October 3, 12:23 UTC:** actual CPUstage02 PASSED, all5originals
-joined by root to source/config/zero/ready/sidecar/binding/currentbootdurability.
-Root entire concrete trainingwrapper/argv/guardian plus decodedpayload/pins and
-localguard drycheck PASS; FINAL TRAINING GO issued to SAME prepowner/sole Luna242.
-One claimed commandbe89 starts unique detached supervised referenceA8/A1 run only
-on fresh fullphysical/owner/pause/resources/interop/currentboot proof and <=300s
-admission. Adapter still requires actual fullzero copy/resume/currentpaired smoke
-before optimizer. No gate repeat/source/math/newoperator/userconfirmation. Actual
-launch/kernel/firstupdates/checkpoint/disconnect survival/Q4development remain
-unverified; optimizer updates ZERO in latest verified evidence.
+**Current state — October 3, 12:26 UTC:** actual supervised training job launched
+12:26:17.468579; supervisor7101/group7101/birth2224637, child7102/group7102/
+birth2224643, UID1000/boot3abb/nsverified, exact reviewed command/source/caps.
+OwnerGO3cc11/admissionf5a2/launch0bbc; SAME soleLuna242 remains pending in reviewed
+wrapper observing actual restore/currentpairedsmoke then firstupdate. Startup is
+live; optimizer progress remains UNVERIFIED. No additional query/replay/source
+change. First pairedstep1/originalrestore/checkpoint/disconnect survival/Q4dev
+remain. SAME active15min monitors and paused2080/research unchanged.
 
 **Historical state — October 3, 09:44 UTC:** preparation ACTUALLY completed at
 08:57:52, observed by healthy/terminal checker09:39:55. Supervisor exit0,
@@ -56,6 +54,26 @@ conditional released-mode copied-fixture GO requires actual final release and
 fresh source/context/resource/control facts; no readiness from the CPU pass.
 Then complete current native/actual-model/backward/memory/timing/save-resume
 gates and launch the previously authorized NEW training run without confirmation.
+
+## Actual supervised training startup — October 3, 12:26 UTC
+
+Reviewed one-shot command launched the unique detached Linux runtime job at
+12:26:17.468579 UTC. Wrapper observed actual supervisor7101 UID1000/group7101/
+birth2224637/parent7100 and trainer7102 UID1000/group7102/birth2224643/parent7101,
+exact command/cwd, current boot3abb/namespacepid:[4026532221]. Actual ownerGO SHA
+`3cc11c81494e37a781d47c010cb098245e8f02ffd1748d19fe4730436b7a1bbb`,
+admission `f5a2dc67cb32a89ab19ecb141c3af0b10d9276c41480d2047796589cf44e363a`,
+launch `0bbc737d58b6f0ade2eebd22aedd02b6a97d1cd67a8fa9d1ef513cbed054a771`.
+First snapshot proves same live actors and phase
+restore_or_current_smoke_not_yet_published; actual updates FALSE. Root saved this
+bounded startup observation in
+`runs/qat-optimization-readiness/actual-training-startup-root-observation-20261003-01.json`
+and existing registration; raw operator training-start.stdout.jsonl is LIVE,
+not terminal hash evidence. SAME Luna242/271/keeper72822 owns the pending wrapper
+and job; no second remote query/dispatcher. Continue original actualfullzero
+restore/currentpairedsmoke to firstcomplete A8/A1 update, preserve producer
+originals. Then actualtraining disconnect/reconnect/checkpoint/signscale/Q4dev
+supervision. Goal remains incomplete; startup alone is not optimizer progress.
 
 ## Training final GO after actual CPUstage — October 3, 12:23 UTC
 

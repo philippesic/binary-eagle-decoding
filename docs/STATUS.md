@@ -111,8 +111,9 @@ TRAIN/readiness evidence, not heldoutacceptance or convergence. Corrected traini
 rootall5originals/source/zero/ready/sidecar/durability joins pass. FINAL TRAINING
 GO12:23 issued for reviewed wholewrapper/argv/guardian commandbe89 to SAME Luna242,
 with freshfullphysical/soleowner/pause and unchanged<=300s admission, actualzero
-copy/resume/currentpairedsmoke before optimizer. Actual launch/firstupdates are
-pending; latestverified optimizer updates remainZERO. Q4development is existing training supervision;
+copy/resume/currentpairedsmoke before optimizer. Actual supervised job launched12:26:17,
+supervisor7101/trainer7102 exactbirths/command verified; current phase restore/
+currentpairedsmoke before optimizer. Firstupdates remainUNVERIFIED. Q4development is existing training supervision;
 no invented prelaunchheldoutreport. Optimizer updates remain ZERO.
 No repeat corpus audit or unit fixture, source changes or new user confirmation.
 See the [native milestone](goals/qat-optimization-readiness.md#actual-copied-native-cuda-fixture-passed--october-3-1110-utc).
