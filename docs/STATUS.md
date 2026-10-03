@@ -4,6 +4,21 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
+## Old preparation stopped; continuation repair — October 2, 23:59 UTC
+
+The authorized transfer stopped old09 cleanly at 23:51 UTC. Read-only
+classification verifies its supervisor and child absent, both groups empty,
+intentional STOP status, unchanged source/runtime/configuration and no new run.
+The stopped-status producer omits optimizer fields; the transfer guard rejected
+that brief status as progress. Root verified the exact producer branch and the
+pre-stop zero state. There is no evidence of optimizer activity.
+
+A terminal-specific continuation packet is being prepared. It will not signal,
+restart or resume old09; it will require the preserved stop evidence, source/data
+checks, fresh GPU/context/resource checks and the unique new preparation-only
+launch. The exact timeout/decoder ancestry fix is tested. GPU release and new
+model start remain unverified. [Transfer checkpoint](goals/qat-optimization-readiness.md#controlled-stop-classified--october-2-2359-utc).
+
 ## Runtime copy passed; GPU transfer cleared — October 2, 23:48 UTC
 
 The isolated ten-file runtime copy passed. Static inspection failed only while
