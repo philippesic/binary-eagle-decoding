@@ -48,15 +48,31 @@ session `currentboot-disconnect-20261002-01`, job
 child569/PGID569/start52928, UID1000. Same sole prep operator owns it; no root
 transport. Start raw SHA `7a1762b58f593529d403b578eacb54408aa6a851d9f5124bc93aac3554e179ab`
 under `runs/luna-continuous-a8-a1-20260929/currentboot-disconnect-proof-20261002-01/`.
-Baseline advanced without Torch; actual survival/teardown receipts remain pending.
+Survival and terminal cleanup are accepted: same boot/PID1/namespace/kernel
+births, no Torch, heartbeat44→206/163.512s advance. The probe naturally finished
+its240s bound with honest exit2/time_limit. The old cleanup template assumed a
+live supervisor and failed before signalling; final read-only raw
+`a671b3d27d511ac2cc5a9f8bcf74669571dd169b1fc5beb6dc0b547a65f39ea5` proves both
+567/569 absent, groups empty and session absent. No new fixture or old09 action.
+Parent aggregate SHA `a7fe517420273627d5e41e196d6856deae03706198ab4e4837316e346e2dd5d7`
+and original failure/raw outputs remain preserved.
 Boot-aware static03 final packet SHA
 `6b820b2b7cc6b79e87c540e139d0b3972a07c5c496f096378e38efedc9a2c23b` passed26 local
 guards under author, independent Luna and root, with all27 regular-file pins.
 Original stored CPU98 receipt expected SHA is derived from its pinned producer's
 exact encoder, not claimed as remotely measured; actual readback must match.
 Static outcome remains pending and independent of model preparation. Terminal03
-has44 local tests and actual new daemon bindings; final durability receipt pins
-and independent/root admission are still required before any model launch.
+final manifest `bc2176fd410308a78ff7f371c9768a62a4745f5c6f475b033350ccf94a98b4e6`
+passed46 local tests under author, independent Luna and root; all37 file pins
+match. Controller SHA `d589706ac27e25b34c75544eed323adceea2dcc5b2ae4bf5a2ec88aef0695d7f`,
+transport SHA `46887fd4596e96a0eba0fbc8cff898e6974ea31458ccf4d2a175c7d5706ea009`.
+Actual source-bound current durability and daemon receipts are pinned. Root sent
+specific GO at06:37:55UTC to the SAME sole preparation owner/operator: mint a
+NEW<=300s admission adjacent to execution, then run only the emitted transport.
+Current source/runtime/terminal-zero/GPU/context/process/RAM/disk/unique paths
+and late-expiry/CANCEL checks still deny any failed guard. Old09 cannot be
+signalled/restarted; no optimizer or recovery charge. Actual new launch remains
+pending and static metadata does not delay it.
 
 **Local work:** `/root/terminal_continuation` owns NEW ignored
 `runs/qat-optimization-readiness/retained-capture-adoption-20261002-01/postconfig-gpu-prep-transfer-20261002-03/`;

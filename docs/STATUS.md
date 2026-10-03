@@ -14,8 +14,11 @@ owner/operator retain sole remote control. No duplicate schedule or operator.
 
 Fresh read-only checks verified unchanged source/data, old09 stopped and no new
 run. RTX5080 has no listed compute apps and 13,143 MiB free. WSL boot changed; a
-new bounded CPU disconnect/system-identity proof is authorized before launch. Local
-workers are adapting the terminal-only continuation and static metadata packets;
+new bounded CPU disconnect/system-identity proof passed with complete teardown.
+The terminal continuation passed46 local tests under root and independent review,
+and its specific launch GO was sent to the same sole operator. Static metadata
+passed26 tests separately and does not delay preparation. All local workers are
+finished; actual new-job launch remains pending;
 original failed/paused evidence is preserved. Old09 remains terminal, no recovery
 or old-live actions are allowed, and actual new-model start remains pending.
 Optimizer updates remain zero; the existing goal is incomplete. See the
