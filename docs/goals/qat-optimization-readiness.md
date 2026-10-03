@@ -4082,3 +4082,33 @@ No new remote operator or broad testing slate. After CPU collection returns,
 the same prep supervisor/operator handles due normal health. Current-package
 native/actor/model/backward/memory/timing/save-resume/full preparation gates still
 precede previously-authorized training. Full goal remains incomplete.
+
+## Next package-specific CUDA plan prepared — October 3, 08:24 UTC
+
+The existing local packet worker completed the bounded next-step command plan
+under `runs/qat-optimization-readiness/current-clean-runtime-cuda-20261003-01/`.
+Seven-file manifest SHA0cc142a50bb44a1bca585aaf23f2a489f6da0ca8a8e11b5540346f56c2deb0b8;
+CPU printer d39d8566eb96d86896786c758b8c15aae555a3bc8bc9fa3c4a72d4d352a7df7a.
+Root reviewed commands, source/package/report joins, all7 file pins and syntax.
+Producer-shaped record checking now accepts exact extra artifact fields while
+verifying required path/SHA and optional byte size; author checked the actual
+packager record and wrong-size refusal. No broad tests or remote/GPU action.
+
+Proposed copied fixture `qat-clean-runtime9e2-20261002-01/test-eagle3-learned`,
+SHA50b5e0882b59842558e07ba250549df8eea2f189ed8e91ad9ec96bc88c5b4d6f,
+runs with explicit CUDA/unique JSON under existing remote_job, timeout30s/kill5s/
+stop-grace10s. The60s allowance is native work/teardown only; a separately verified
+physical lease must cover real transport/collection/cleanup/handback deadlines.
+This is a command printer/report validator, not an executable GPU admission
+controller or GO. Actual Static05 inventory/operation bytes and a fresh
+prep-owner exclusive grant/final release remain mandatory. Expected synthetic
+coverage57 pack/114 loader/59 graph/218 arithmetic/36 projection uses the exact
+existing6f validator contract, with training/readiness false and zero optimizer.
+No actual fixture result or GPU release follows from local plan completion.
+
+Same preparation supervisor/operator completes due ordinary health FIRST and
+owned metadata on the same connection, then physical closure. Determine later
+exclusive-slot eligibility from actual current phase/context/resources, never
+stale model fields. Actual eligible-TRAIN actor, model/backward/memory/timing/
+save-resume/full readiness/Q4_0 gates remain. The local worker is completed;
+no new research team, operator, source hot-edit, preparation restart or schedule.
