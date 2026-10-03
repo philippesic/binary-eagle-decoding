@@ -168,6 +168,25 @@ to the established bounded proof; prior same-boot163.512s proof remains retained
 No new GPU model/optimizer is claimed. Local ignored registration carries these
 identities and active sole ownership; heartbeat is unchanged and ACTIVE.
 
+### Fresh CPU durability proof returned
+
+Operator reconnected at23:03:53UTC after more than165seconds disconnected:
+same boot517c4a36, supervisor1676 and child/group1682 remained live with the same
+state. Exact tmux-session SIGINT then produced interrupted/exit-15 at23:04:00UTC;
+both identities and runtime socket were absent, no GPU compute process, zero GPU
+utilization. Raw proof remains under the immutable checkout's
+`runs/a8-cpu-disconnect-proof-20261003-01`. This is durability/return evidence,
+not model/GPU training success. The sole operator is materializing current arms
+and native/model inputs under the existing GO.
+
+Operational evidence retention: before later pruning, archive each completed raw
+step-zero/scheduled/final evaluation and each step-zero/100-update proof checkpoint
+under the arm's evidence-archive (same-filesystem hardlinks allowed), keeping
+original bytes/hashes and an original-prefix-to-archive-prefix locator mapping.
+This preserves matched initial controls and actual resume evidence without a new
+source/config/budget change. Failed raw evaluation attempts remain protected by
+source; large tensor JSONL is never treated as compact metadata collection.
+
 ## Standalone chat handoff — October 3, 2026
 
 The human corrected the execution structure: “just launch it as a seperate codex
