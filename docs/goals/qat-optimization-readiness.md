@@ -26,14 +26,16 @@ successor uses one pinned operator only when no other is active. Root creates
 no second remote operator. Protected QAT/preparation
 supervision continues; no credit purchase or reset redemption.
 
-**Current state — October 3, 08:30 UTC:** Static05 actually launched and finished
+**Current state — October 3, 08:48 UTC:** Static05 actually launched and finished
 exit0; its collector verifies passed CPU inventory, unchanged protected bytes
 and complete owned helper-group return. Local transport/keeper closure is
 verified. Exact inventory metadata is collected and joined to the operation.
 The last preparation check is08:24:04: exact806/807 are active with positive CPU/I/O progress, zero optimizer
 updates and only a stale-heartbeat checker failure. All353 provider manifests
 are complete. Paired model smoke/checkpoint-zero/full readiness and GPU release
-remain unverified. The08:01 existing-only profiler check found py-spy unavailable
+remain unverified. At08:42 all four completion markers are absent; child807 has
+two /dev/dxg descriptors despite0% utilization/empty compute-app list. No native
+GO or context-absence claim. The08:01 existing-only profiler check found py-spy unavailable
 and took no sample; it did not inspect current process identities. Continue the
 existing detached preparation, serialized CPU metadata retry and same monitors.
 Do not run a second operator/query, hot-edit or restart this job. The latest
@@ -4149,3 +4151,61 @@ No signal, hold, lease grant, native/test launch, model/tensor read, source chan
 new operator or schedule is authorized by this request. It determines whether
 the next exclusive test is possible now or must wait for final preparation.
 Actual result remains pending; no availability inference from CPU health.
+
+## CUDA eligibility remains ungranted — October 3, 08:48 UTC
+
+Actual one-shot snapshot08:42:28.878831 took0.17s, returned0, with source28/configccc/
+package10/aliases14/fixture50b5/static-inventory source/native joins intact.
+Same boot3abb/namespace/UID1000, supervisor806birth166197 and child807birth166204,
+groups exactly806 and807, unchanged before/after; childR. All four exact marker
+files are absent before/after. NVIDIA RTX5080 reports utilization0%, used2445 /
+total16303MiB, power41.22W; compute-app query exits0 with empty output. Child807
+retains /dev/dxg FD6 and12 before/after. WSL context visibility is UNCERTAIN;
+do not label this context-free, GPU released or exclusive GO. Host available
+19,208,744,960B before/19,203,506,176B after; disk391,507,345,408B.
+
+Parsed SHA ccbf21d85f44a28cf01f63ae3ccb6b75d28fc387f6ca22ff30b21afbc8e78d8e;
+closure f3c78c2a22eeb9e8a34ab9395e6dfa82be20eb2a87743246bff95f4b3a782992,
+under `runs/luna-continuous-a8-a1-20260929/current-package-cuda-eligibility-20261003-01/`.
+Root verified all15 artifact pins, LOCAL238 absent and keeper78180 exited130.
+No signal/hold/lease/native/test launch/source change occurred. Snapshot admission
+is consumed; native command printer and GPU GO remain inactive. Same preparation
+owner/operator and monitors retain sole control; no repeat eligibility loop.
+
+Bounded exact6f source review confirms coverage684–693 is synchronously published
+before build_lanes694, GPU transfer continuous_qat333 and smoke714–715. This
+ordering locates the known authenticated retained-import run before paired model
+load; it is not universal no-GPU proof. Nonretained paths can run gates/capture
+before coverage, but retained import skips those paths. Earlier CUDA capability/
+property/runtime probes may initialize driver/context state. Provider/round
+audit is CPU NumPy/mmap/torch.from_numpy; no GPU producer thread is launched.
+Source alone cannot prove live census/queued runtime work or snapshot-to-hold
+race; no context-free claim follows.
+
+Current recommendation is WAIT without interrupting preparation. The existing
+human early-overlap policy separately permits a reversible CPU-boundary
+reservation, provided actual stopped identities/whole-producer census/resources/
+deadline/teardown are verified. A focused <=5-minute same-team Astra advisor
+`/root/held_slot_advice` is assessing that ownership-proof interpretation only;
+no remote authority or numerical/source change. Actual native/training gates
+remain pending and optimizer updates stay zero.
+
+Advisor completed: existing human policy permits retained initialized CUDA
+contexts during a verified exclusive ACTIVE-computation lease. It does not
+require every held preparation handle/context to disappear. Required actual
+proof is whole-producer/thread CPU hold with exact stopped identities/census,
+no escaped/new submitter, post-hold phase/markers, device-work quiescence beyond
+0% utilization, unchanged resource floors and owner-issued deadline/teardown/
+one-time resume. Source inspection alone cannot supply that proof. The current
+read-only snapshot remains NOT GO; no field is relabeled context-free.
+
+Root is preparing only LOCAL concrete execution/ownership artifacts before any
+timed reservation: existing packet worker owns NEW ignored
+`current-clean-runtime-cuda-held-slot-20261003-01/`, a <=10-minute minimal
+fixture launch/collect controller using existing remote_job/report contracts;
+it cannot signal preparation. Existing prep supervisor/sole Luna prepares its
+local hold/grant/handback proposal from exact current identities and existing
+audited protocol. No remote hold/lease/test is authorized yet. Preserve the
+old printer and every failed/original record. If quiescence or whole-producer
+proof cannot be established, withhold GO and report that precise gap. Actual
+preparation continues unchanged while this routine ownership plan is reviewed.

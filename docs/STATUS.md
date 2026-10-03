@@ -40,7 +40,10 @@ are verified. All three exact inventory records are now read back and hash-joine
 to the successful operation. This is CPU static proof; current-package CUDA and actual-model
 gates remain pending. A bounded copied-fixture CUDA command plan is locally
 reviewed and its actual inventory inputs are verified; fresh exclusive GPU
-ownership is still required before dispatch. Preparation retains GPU ownership.
+ownership is still required before dispatch. The08:42 eligibility snapshot found
+all four completion markers absent and child807 holding two /dev/dxg handles.
+Zero utilization and an empty WSL compute-app list do not prove context absence;
+the native test remains inactive. Preparation retains GPU ownership.
 A local source audit found repeated common GGUF hashing per shard;
 a small cache fix for FUTURE starts passed80 independent CPU tests and31 root
 checks. Current source6f/live preparation is unchanged. Old09 remains terminal,
