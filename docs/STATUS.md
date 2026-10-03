@@ -113,8 +113,10 @@ GO12:23 issued for reviewed wholewrapper/argv/guardian commandbe89 to SAME Luna2
 with freshfullphysical/soleowner/pause and unchanged<=300s admission, actualzero
 copy/resume/currentpairedsmoke before optimizer. Actual supervised job launched12:26:17,
 supervisor7101/trainer7102 exactbirths/command verified; current phase restore/
-currentpairedsmoke before optimizer. Firstupdates remainUNVERIFIED. Q4development is existing training supervision;
-no invented prelaunchheldoutreport. Optimizer updates remain ZERO.
+currentpairedsmoke before optimizer. ACTUAL firstpaired optimizerstep1 verified12:27:51,
+collectedstatusstep3/all11originals/restore/currentSmoke/finite18gradtensors and
+9layer scale movement pass. Checkpoint>0/disconnect survival/Q4dev remain. Q4development is existing training supervision;
+no invented prelaunchheldoutreport. Optimizer progress is now verified; development quality remains unmeasured.
 No repeat corpus audit or unit fixture, source changes or new user confirmation.
 See the [native milestone](goals/qat-optimization-readiness.md#actual-copied-native-cuda-fixture-passed--october-3-1110-utc).
 

@@ -32,14 +32,14 @@ successor uses one pinned operator only when no other is active. Root creates
 no second remote operator. Protected QAT/preparation
 supervision continues; no credit purchase or reset redemption.
 
-**Current state — October 3, 12:26 UTC:** actual supervised training job launched
-12:26:17.468579; supervisor7101/group7101/birth2224637, child7102/group7102/
-birth2224643, UID1000/boot3abb/nsverified, exact reviewed command/source/caps.
-OwnerGO3cc11/admissionf5a2/launch0bbc; SAME soleLuna242 remains pending in reviewed
-wrapper observing actual restore/currentpairedsmoke then firstupdate. Startup is
-live; optimizer progress remains UNVERIFIED. No additional query/replay/source
-change. First pairedstep1/originalrestore/checkpoint/disconnect survival/Q4dev
-remain. SAME active15min monitors and paused2080/research unchanged.
+**Current state — October 3, 12:29 UTC:** ACTUAL QAT OPTIMIZER UPDATES VERIFIED.
+First complete pairedstep1 at12:27:51.373, collectedstatusstep3/bothlanes. Root
+verified all11originals, unchanged actualresume/currentpairedsmoke/state/runtime
+and existing pairedmetrics validator. Finite18gradtensors/9layers, positive scale
+movement, zero signflips under originalwarmup, no convergence/heldoutqualityclaim.
+SAME supervisor7101/trainer7102/soleLuna242 continue unchanged. Actual >zero paired
+checkpoint/disconnect survival/Q4dev supervision next; SAME15minmonitors and
+paused2080/research unchanged. Goal incomplete.
 
 **Historical state — October 3, 09:44 UTC:** preparation ACTUALLY completed at
 08:57:52, observed by healthy/terminal checker09:39:55. Supervisor exit0,
@@ -54,6 +54,38 @@ conditional released-mode copied-fixture GO requires actual final release and
 fresh source/context/resource/control facts; no readiness from the CPU pass.
 Then complete current native/actual-model/backward/memory/timing/save-resume
 gates and launch the previously authorized NEW training run without confirmation.
+
+## Actual paired optimizer updates verified — October 3, 12:29 UTC
+
+Original firstpairedstep1 completed12:27:51.373069 UTC; status alreadystep3/both
+lanes at12:27:52.403. Root verified11raw producer originals by base64/SHA/length,
+saved under `runs/qat-optimization-readiness/actual-training-root-verified-20261003-01/`
+with exactremote/local index. Existing pairedmetrics validator PASSED:
+`first-paired-update.raw.jsonl` SHA
+`f3998171bbed71350db5fde836d300540afde34034f1852ee8b3a4aac98f70b5`.
+A8loss6.1430826/A1loss7.84899998, finite gradients18tensors/all9binarylayers,
+preclipnorm170.174/122.860, clipped at originalnorm1; latentoutsideclip0.
+Firststep scaleL1movementA8.00648540/A1.00653447; signsflipped0 under100stepwarmup
+is a measured value, not failure. Perlane stepseconds.457/.208 are initial TRAIN
+observations, not sustained/endtoend/SM75 serving throughput.
+
+Actual unchanged fullzero resume SHA2680236b binds originale9/currentcopiede9,
+step/epoch/cursor/tokens0 and pairedlatent5e3a49a; currentdualSmoke70702ed5 has
+positive laterstate/K/V bothlanes and measured reserved8.62GB/free6.97GB. Actual
+launchgatesf9bb0a3e matches originalruntime/admission/deployment A8 7e27/A1 4091;
+zero-origin37f61785 verifies atomic pairedpublication. Existing registration now
+sets optimizer_progress_verified=true. Root actual acceptance
+`actual-training-first-updates-root-acceptance-20261003-01.json` is evidence of
+real optimizer progress, not model acceptance/convergence or goal completion.
+
+Same owner/operator continue exacttrainingjob7101/7102; next serialize actual
+allownedSSHWSL disconnect/reconnect and samekernelbirths/progress proof, then
+positive pairedcheckpoint/export/quantizer diagnostics and originalQ4_0development.
+No extra GPUexperiment/source/caps/restart or duplicate operator. SAME monitors
+must bind exacttrainingjob; originalpreparation/modelterminalqueries are historical.
+Local future finaldevelopment helper draft reuses unchanged source6f evaluator
+ONLY if training caps stop before originalstep1000 evaluation. No prelaunchgate,
+sealeddata or newmath; actualfinalcheckpoint/terminal/contextrelease required.
 
 ## Actual supervised training startup — October 3, 12:26 UTC
 
