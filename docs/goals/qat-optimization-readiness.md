@@ -3946,3 +3946,55 @@ metadata-runtime failure, not evidence of CUDA/model failure or GPU access loss.
 Current preparation806/807 retains GPU ownership. Cache worker worktree was
 removed only after public-file equality and clean/untracked/ignored-artifact
 audit; public30dd source remains a FUTURE revision, live6f unchanged.
+
+## Remaining coverage boundary and targeted runtime fix — October 3, 07:41 UTC
+
+Exact markers07:31 show teacher_coverage.json/dual_smoke.json/latest.json/
+preparation-ready.json absent; stages/readiness.json exists. This establishes
+coverage boundary not passed at that time, unlike empty model status alone.
+Fresh07:40 CPU check preserves checkerexit2/healthyfalse with ONLY stale heartbeat;
+same806/807 kernel births remain live, childR, positive+110500user/+723systemticks,
++2,223,617,927rchar/+14,647,635,968readbytes since07:21. Do not treat it as healthy
+without qualification, dead training, numerical failure, GPU release or recovery
+permission. No optimizer or final receipt. Active gated reports07:41 are BOTH
+legacy w1ax_continuous_precision_gate_v1, exact A1SHA240581b2/A8f7aa4d3. The
+conditional modern NPZ repeated-validation branch is inactive; do not implement
+or redeploy that optimization as a fix for this current run. No additional
+whole-GGUF provider hash loop exists after completed stage publication. Current
+necessary provider/coverage work and its exact live hot path remain unresolved.
+
+Static04 innerstderr SHAe73efceb identifies FileNotFoundError in
+_existing_build_proof loading three references to never-staged static02. The
+same4eca/b38/0bc metadata contents were staged04; runtime/helper/math files never
+changed. NEW05 corrects ONLY those three descriptorpaths to real staged05 copies,
+pins an exact descriptor-relocation relation, preserves original descriptor and
+all content/source/runtime checks, and embeds bounded hash/size-joined inner
+failure logs in the collector to avoid further serial classification roundtrips.
+Final packet SHA8c0e34ebc44c362b01a7ef971562298f4ebe65811622fb188304ebd31328beef,
+runnerd40694729efa55856c97440963f7edc51a2eab04e120b01f6ae1ab2027e58834;
+35 guards/31 regular files passed author, independent Luna and root. Fresh
+execution/result remain pending, secondary to current model/coverage progress.
+
+## Fresh health and bounded bottleneck sample — October 3, 07:54 UTC
+
+Actual health05 at07:49:40 preserves checkerexit2/healthyfalse with only
+"training heartbeat missing, stale or invalid". Exact supervisor806/child807
+births remain unchanged, childR, and CPU/I/O advanced since07:40 by55865 user
+ticks/366 system ticks,1,160,428,268 logical read bytes and7,545,823,232 physical
+read bytes. Phase readiness_complete, optimizer_started=false, models/steps
+empty, no ready receipt. These status fields do not prove the exact current
+constructor position. Host available19,781,173,248B; no fresh GPU release claim.
+Sole operator closure proof at
+`runs/luna-continuous-a8-a1-20260929/current-source-monitor-20261003-01/health-20261003-successor-05.closure-proof.json`
+SHA63f2e581 records LOCAL234/keeper46324 closed. No recovery or new preparation.
+
+The same preparation supervisor01a10084 and sole pinned Luna are authorized for
+one existing-only py-spy availability/help check and, if supported/permitted,
+one nonblocking10s/rate5 raw-stack sample of exact807. Guard boot/UID/birth/argv
+before and after; functions/lines/sample counts only, no locals/native/subprocess
+profiling, installation, privilege changes, fallback/retry, signals, source
+changes or GPU query. If unavailable or denied, record the concrete reason and
+stop this diagnostic. The purpose is an operational critical-path decision,
+not a numerical parity investigation. Static05 remains lower priority until
+this slot returns. All live6f source/config/data/runtime remain unchanged;
+public common-hash cache30dd applies only to future starts. Goal incomplete.

@@ -23,11 +23,19 @@ updates. At07:21 the data-stage marker advanced to readiness_complete; metadata
 at07:26 confirms all353 provider manifests and indexes exist. The repeated shared
 GGUF manifest hash loop is finished. Model/coverage markers are being checked;
 empty model records alone do not establish whether model loading has begun.
-Model smoke/checkpoint-zero and full readiness remain pending.
+Model smoke/checkpoint-zero and full readiness remain pending. At07:49 the
+checker reports only a stale-heartbeat failure; exact child807 remains active
+with positive CPU/I/O progress. This warning is preserved, not waived. Both
+active precision gates are legacy v1, so the modern NPZ validation branch is
+inactive. One bounded stack sample using an already-installed profiler is
+pending to locate the remaining startup work.
 
 The terminal continuation passed46 root/independent local tests. CPU static04
-runtime inventory is running under fresh guards while preparation retains GPU
-ownership. A local source audit found repeated common GGUF hashing per shard;
+returned exit1 with all owned groups gone: its descriptor referenced three
+metadata files under a never-staged directory. Static05 fixes only those paths
+and passed35 local guards; actual execution is pending behind the startup
+diagnostic. Preparation retains GPU ownership. A local source audit found
+repeated common GGUF hashing per shard;
 a small cache fix for FUTURE starts passed80 independent CPU tests and31 root
 checks. Current source6f/live preparation is unchanged. Old09 remains terminal,
 its recovery budget is exhausted, and original evidence is preserved. RTX2080Ti
