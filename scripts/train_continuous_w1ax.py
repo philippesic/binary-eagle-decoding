@@ -38,6 +38,26 @@ def load_config(path: Path) -> tuple[dict, ContinuousConfig]:
     if "activation_bits" in kwargs:
         kwargs["activation_bits"] = tuple(kwargs["activation_bits"])
     config = ContinuousConfig(**kwargs)
+    if "comparison" in spec:
+        from w1a1_eagle.qat_recipe_audit import (
+            comparison_joint_recipe,
+            load_comparison_manifest,
+        )
+
+        comparison = spec["comparison"]
+        manifest = load_comparison_manifest(ROOT / "configs/qat_a8_comparison.json")
+        expected = comparison_joint_recipe(manifest, comparison.get("arm"))
+        if (
+            comparison.get("expected_recipe") != expected
+            or config.activation_bits != (8,)
+            or config.max_seconds != 7200
+            or any(
+                getattr(config, cap) is not None
+                for cap in ("max_steps", "max_tokens", "max_epochs")
+            )
+            or config.development_lifecycle != "standalone"
+        ):
+            raise ValueError("selected comparison recipe/lane/cumulative budget differs")
     if config.device != "cuda:0":
         raise ValueError(
             "production experiment is frozen to explicit cuda:0; CPU uses unit fixtures"

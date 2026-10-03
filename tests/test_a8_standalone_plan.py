@@ -108,6 +108,11 @@ class StandalonePlanTests(unittest.TestCase):
                 self.assertEqual(config.a1_computation, "reference")
                 self.assertEqual(config.max_seconds, 7200)
             invalid = resolve_comparison_config(base, manifest, "candidate")
+            invalid["training"]["max_seconds"] = 7300
+            launcher.atomic_json(path, invalid)
+            with self.assertRaisesRegex(ValueError, "cumulative budget differs"):
+                launcher.load_config(path)
+            invalid["training"]["max_seconds"] = 7200
             invalid["training"]["objective"] = "different"
             launcher.atomic_json(path, invalid)
             with self.assertRaises(ValueError):
