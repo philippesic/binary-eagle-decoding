@@ -342,8 +342,9 @@ class QATUpdateProbe:
     is bounded sampled movement evidence; it is not the full sign-family L1.
     Hooks run after gradient transformation/clipping and before gradient clear.
     Set ``enabled`` only at admitted diagnostic updates to limit runtime cost.
-    ``require_all`` is a decisive prelaunch finite/nonzero/movement gate; later
-    trajectory observations can retain zero-gradient tensors without failing.
+    ``require_all`` is an optional strict per-tensor synthetic/debug gate.
+    Production admission uses ``admission_report`` over bounded early updates:
+    small warmup LRs may round a legitimate individual F32 update to zero.
     """
 
     def __init__(self, linears: Mapping, optimizer, *, require_all: bool = False):
@@ -355,6 +356,11 @@ class QATUpdateProbe:
         if len(owned) != len(expected) or {id(p) for p in owned} != {id(p) for p in expected}:
             raise ValueError("update probe optimizer ownership differs")
         self.require_all = require_all
+        self.observed_updates = 0
+        self._admission = {
+            name: {"nonzero": [False] * len(values), "moved": [False] * len(values)}
+            for name, values in self.families.items()
+        }
         self.enabled = True
         self.last_report = None
         self._pending = None
@@ -411,7 +417,19 @@ class QATUpdateProbe:
             moved = int((delta > 0).sum())
             if self.require_all and moved != len(parameters):
                 raise ValueError("measured parameter movement required for every tensor: " + name)
+            for i in range(len(parameters)):
+                self._admission[name]["nonzero"][i] |= bool(before[i, 1])
+                self._admission[name]["moved"][i] |= bool(delta[i] > 0)
             result[name] = {
+                "per_tensor": [
+                    {
+                        "finite_gradient": True,
+                        "nonzero_gradient": bool(before[i, 1]),
+                        "clipped_gradient_l2": float(before[i, 2]),
+                        "sampled_parameter_displacement": float(delta[i]),
+                    }
+                    for i in range(len(parameters))
+                ],
                 "parameter_tensors": len(parameters),
                 "finite_gradient_tensors": len(parameters),
                 "nonzero_gradient_tensors": int(before[:, 1].sum()),
@@ -419,6 +437,7 @@ class QATUpdateProbe:
                 "sampled_moved_tensors": moved,
                 "sampled_parameter_displacement_l1": float(delta.double().sum()),
             }
+        self.observed_updates += 1
         self.last_report = {
             "schema": "qat_a8_actual_update_v1",
             "passed": True,
@@ -427,6 +446,81 @@ class QATUpdateProbe:
             "gradients_scope": "after_transform_and_clip_before_optimizer_step",
             "families": result,
         }
+        self._pending = None
+
+    def admission_report(self, *, require_passed: bool = False) -> dict:
+        """Require nonzero gradients and actual movement in every enabled family.
+
+        Every observed tensor has already passed the finite gradient gate. The
+        caller bounds early observations to <=100 updates and checkpoints this
+        aggregate. Counts preserve unobserved/unchanged tensors explicitly.
+        """
+        if type(require_passed) is not bool:
+            raise ValueError("require_passed must be boolean")
+        families = {
+            name: {
+                "parameter_tensors": len(values),
+                "nonzero_gradient_tensors_ever": sum(self._admission[name]["nonzero"]),
+                "sampled_moved_tensors_ever": sum(self._admission[name]["moved"]),
+                "per_tensor_nonzero_gradient_ever": list(self._admission[name]["nonzero"]),
+                "per_tensor_sampled_movement_ever": list(self._admission[name]["moved"]),
+            }
+            for name, values in self.families.items()
+        }
+        passed = self.observed_updates > 0 and all(
+            row["nonzero_gradient_tensors_ever"] > 0 and row["sampled_moved_tensors_ever"] > 0
+            for row in families.values()
+        )
+        report = {
+            "schema": "qat_a8_parameter_family_admission_v1",
+            "passed": passed,
+            "observed_updates": self.observed_updates,
+            "families": families,
+            "movement_scope": "one_actual_max_gradient_element_per_parameter_tensor_per_update",
+        }
+        if require_passed and not passed:
+            raise ValueError("enabled parameter family lacks observed nonzero gradient/movement")
+        return report
+
+    def state_dict(self) -> dict:
+        return copy.deepcopy(
+            {
+                "schema": "qat_a8_update_probe_state_v1",
+                "layout": {
+                    name: [list(p.shape) for p in values] for name, values in self.families.items()
+                },
+                "observed_updates": self.observed_updates,
+                "admission": self._admission,
+            }
+        )
+
+    def load_state_dict(self, saved: Mapping) -> None:
+        if (
+            saved.get("schema") != "qat_a8_update_probe_state_v1"
+            or saved.get("layout") != self.state_dict()["layout"]
+            or type(saved.get("observed_updates")) is not int
+            or saved["observed_updates"] < 0
+        ):
+            raise ValueError("update probe saved layout/counter differs")
+        admission = saved.get("admission")
+        if not isinstance(admission, Mapping) or set(admission) != set(self.families):
+            raise ValueError("update probe saved family inventory differs")
+        for name, values in self.families.items():
+            row = admission[name]
+            if not isinstance(row, Mapping) or set(row) != {"nonzero", "moved"}:
+                raise ValueError("update probe saved tensor fields differ")
+            if any(
+                not isinstance(row[key], list)
+                or len(row[key]) != len(values)
+                or any(type(x) is not bool for x in row[key])
+                for key in row
+            ):
+                raise ValueError("update probe saved tensor coverage differs")
+            if saved["observed_updates"] == 0 and any(any(bits) for bits in row.values()):
+                raise ValueError("update probe zero observations contradict movement")
+        self._admission = copy.deepcopy(admission)
+        self.observed_updates = saved["observed_updates"]
+        self.last_report = None
         self._pending = None
 
     def close(self):
