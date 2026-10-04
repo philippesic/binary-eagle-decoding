@@ -14,6 +14,7 @@ import os
 import re
 import signal
 import subprocess
+import sys
 import time
 import uuid
 from contextlib import contextmanager
@@ -87,7 +88,7 @@ class Files:
     def __init__(self):
         self.cache = set()
 
-    def check(self, record):
+    def opaque(self, record):
         require(
             isinstance(record, dict) and set(record) == {"path", "sha256"},
             "exact path/SHA256 locator required",
@@ -98,6 +99,10 @@ class Files:
             "canonical regular artifact required",
         )
         require(re.fullmatch(r"[0-9a-f]{64}", record["sha256"]) is not None, "invalid SHA256")
+        return path
+
+    def check(self, record):
+        path = self.opaque(record)
         stat = path.stat()
         key = (
             str(path),
@@ -158,7 +163,16 @@ def validate_bundle(path):
         bundle.get("target_policy") == {"immutable": True, "weights": "f16", "kv": "f16"},
         "immutable common target/F16 KV policy required",
     )
-    for record in bundle.get("inputs", {}).values():
+    require(
+        {"protocol", "prompts"} <= set(bundle.get("inputs", {})),
+        "protocol and opaque prompt locator missing",
+    )
+    protocol = json.loads(files.check(bundle["inputs"]["protocol"]).read_text())
+    require(protocol.get("split") in {"development", "final"}, "explicit evaluation split required")
+    for name, record in bundle.get("inputs", {}).items():
+        if name == "prompts" and protocol["split"] == "final":
+            files.opaque(record)
+            continue  # Sealed bytes first accessed in fresh evaluator after freeze.
         files.check(record)
     require(
         {"target", "binary", "protocol", "prompts", "budget"} <= set(bundle.get("inputs", {})),
@@ -387,6 +401,17 @@ def stop_owned(proc, *, grace=3):
 
 
 @contextmanager
+def deferred_termination():
+    """Complete a bounded cleanup/receipt write before delivering termination."""
+    mask = {signal.SIGINT, signal.SIGTERM, signal.SIGHUP}
+    previous = signal.pthread_sigmask(signal.SIG_BLOCK, mask)
+    try:
+        yield
+    finally:
+        signal.pthread_sigmask(signal.SIG_SETMASK, previous)
+
+
+@contextmanager
 def stop_signals():
     previous = {}
     requested = False
@@ -475,24 +500,39 @@ class SubprocessRunner:
                 require(proc.returncode == 0, f"stage exit code {proc.returncode}; see {directory}")
             finally:
                 if proc is not None:
-                    stop_owned(proc, grace=30)
-                    if Path("/proc").is_dir():
-                        cleanup_descendants(self.process_identities)
-                    atomic_json(
-                        directory / "process-exit.json",
-                        {
-                            "pid": proc.pid,
-                            "exit_code": proc.returncode,
-                            "owned_group_cleaned": Path("/proc").is_dir(),
-                        },
-                    )
+                    original = sys.exception()
+                    errors = []
+                    with deferred_termination():
+                        try:
+                            stop_owned(proc, grace=30)
+                        except BaseException as error:
+                            errors.append(str(error))
+                        finally:
+                            if Path("/proc").is_dir():
+                                try:
+                                    cleanup_descendants(self.process_identities)
+                                except BaseException as error:
+                                    errors.append(str(error))
+                        atomic_json(
+                            directory / "process-exit.json",
+                            {
+                                "pid": proc.pid,
+                                "exit_code": proc.returncode,
+                                "owned_group_cleaned": Path("/proc").is_dir() and not errors,
+                                "cleanup_status": "FAILED" if errors else "PASS",
+                                "cleanup_errors": errors,
+                            },
+                        )
+                    if errors and original is None:
+                        raise RuntimeError("owned cleanup failed: " + "; ".join(errors))
 
 
 class LinuxResources:
     """Whole-device free memory and process checks, not compute-app emptiness alone."""
 
-    def __init__(self, gpu_uuid):
-        self.gpu_uuid = gpu_uuid
+    def __init__(self, gpu_uuid, *, hardware="rtx5080"):
+        require(hardware in {"rtx5080", "rtx2080ti"}, "unsupported resource observer hardware")
+        self.gpu_uuid, self.hardware = gpu_uuid, hardware
 
     def require_released(self, pgids, identities=()):
         for identity in identities:
@@ -503,8 +543,22 @@ class LinuxResources:
                 )
             except FileNotFoundError:
                 pass
+        active_owned = [identity for identity in identities if identity_active(identity)]
+        require(not active_owned, "owned kernel process remains active")
+        # A exited leader can leave its original process group alive. A group
+        # with a new leader identity belongs to another owner and is ignored.
+        boot = Path("/proc/sys/kernel/random/boot_id").read_text().strip()
         for pgid in pgids:
-            require(not group_members(pgid), f"owned process group still active: {pgid}")
+            origin = next((i for i in identities if i["pid"] == pgid), None)
+            if origin is None or origin["boot_id"] != boot:
+                continue
+            try:
+                current = process_identity(pgid)
+            except FileNotFoundError:
+                current = None
+            if current is not None and current != origin:
+                continue
+            require(not group_members(pgid), "original owned process group remains active")
         utility = "/usr/lib/wsl/lib/nvidia-smi"
         if not Path(utility).is_file():
             utility = "nvidia-smi"
@@ -528,7 +582,7 @@ class LinuxResources:
         )
         active = {int(line) for line in lines}
         require(
-            not active.intersection({*pgids, *(i["pid"] for i in identities)}),
+            not active.intersection({i["pid"] for i in active_owned}),
             "owned CUDA context still active",
         )
         return {
@@ -563,13 +617,20 @@ class LinuxResources:
             .split(",")
         )
         require(len(data) == 4 and data[0].strip() == self.gpu_uuid, "GPU UUID differs")
-        require(data[2].strip() == "12.0" and "5080" in data[1], "actual SM120 RTX5080 required")
+        expected = (
+            ("12.0", "5080", [12, 0]) if self.hardware == "rtx5080" else ("7.5", "2080", [7, 5])
+        )
+        require(
+            data[2].strip() == expected[0] and expected[1] in data[1],
+            "actual declared CUDA hardware required",
+        )
         return {
             "host_available_bytes": int(matches[0]) * 1024,
             "gpu_free_bytes": int(data[3].strip()) * 1024**2,
             "gpu_uuid": self.gpu_uuid,
             "hardware": data[1].strip(),
-            "compute_capability": [12, 0],
+            "compute_capability": expected[2],
+            "boot_id": Path("/proc/sys/kernel/random/boot_id").read_text().strip(),
             "dxg_holders": dxg_holders() if Path("/dev/dxg").exists() else [],
         }
 
@@ -623,7 +684,15 @@ class Campaign:
             self.authorization()
         for record in self.bundle["source"].values():
             self.files.check(record)
-        for record in self.bundle["inputs"].values():
+        protocol = (
+            json.loads(self.files.check(self.bundle["inputs"]["protocol"]).read_text())
+            if "protocol" in self.bundle["inputs"]
+            else {"split": "development"}
+        )
+        for name, record in self.bundle["inputs"].items():
+            if name == "prompts" and protocol["split"] == "final":
+                self.files.opaque(record)
+                continue
             self.files.check(record)
         for control in self.bundle["controls"].values():
             self.files.check(control["model"])
@@ -672,6 +741,36 @@ class Campaign:
         self.publish(status="stage_complete")
         return receipt
 
+    def recover_training_receipt(self, name, config):
+        recovered = []
+        for path in (self.run / name / "attempts").glob("*/receipt.json"):
+            receipt = json.loads(path.read_text())
+            if (
+                receipt.get("schema") == "nine_model_stage_receipt_v1"
+                and receipt.get("bundle_sha256") == self.bundle_hash
+                and receipt.get("stage") == name
+                and receipt.get("status") == "PASS"
+                and receipt.get("artifact_kind") == self.state["artifact_kind"]
+                and receipt.get("committed") is True
+                and receipt.get("completion_reason") == "approved_budget_complete"
+            ):
+                if not self.fixture:
+                    require(
+                        receipt.get("config_sha256") == config["sha256"],
+                        "orphan completion config differs",
+                    )
+                self.files.check(receipt["checkpoint"])
+                recovered.append((path, receipt))
+        if not recovered:
+            return
+        require(
+            len({r["checkpoint"]["sha256"] for _, r in recovered}) == 1,
+            "multiple conflicting committed training endpoints require reconciliation",
+        )
+        path, _ = recovered[-1]
+        self.state["completed"][name] = {"path": str(path), "sha256": sha256(path)}
+        self.publish(recovered_committed_training_receipt=name)
+
     def returned(self, baseline):
         ownership = self.resources.require_released(
             self.runner.process_groups, self.runner.process_identities
@@ -703,7 +802,9 @@ class Campaign:
                 with stop_signals():
                     observed = self.resources.snapshot()
                     baseline = self.state.get("resource_baseline", observed)
-                    resource_gate(observed, baseline, self.bundle["resource_policy"])
+                    reboot = observed.get("boot_id") != baseline.get("boot_id")
+                    if not reboot:
+                        resource_gate(observed, baseline, self.bundle["resource_policy"])
                     self.publish(resource_baseline=baseline)
                     if resume:
                         for process_path in self.run.glob("**/process.json"):
@@ -716,6 +817,13 @@ class Campaign:
                             self.runner.process_identities.extend(
                                 json.loads(lineage_path.read_text())["kernel_identities"]
                             )
+                        if reboot:
+                            self.resources.require_released(
+                                self.runner.process_groups, self.runner.process_identities
+                            )
+                            resource_gate(observed, observed, self.bundle["resource_policy"])
+                            self.publish(prior_boot_baseline=baseline, resource_baseline=observed)
+                            baseline = observed
                         self.returned(baseline)
                     admission = self.stage("admission", self.bundle["admission"])
                     require(
@@ -729,6 +837,8 @@ class Campaign:
                     for candidate in CANDIDATES:
                         spec = self.bundle["candidates"][candidate]
                         train_name = candidate + "/train"
+                        if resume and train_name not in self.state["completed"]:
+                            self.recover_training_receipt(train_name, spec.get("config"))
                         if train_name in self.state["completed"]:
                             train = json.loads(
                                 self.files.check(self.state["completed"][train_name]).read_text()
@@ -761,6 +871,7 @@ class Campaign:
                             "training did not reach successful committed budget endpoint",
                         )
                         checkpoint = self.files.check(train["checkpoint"])
+                        self.returned(baseline)
                         export = self.stage(
                             candidate + "/export",
                             spec["stages"]["export"],
@@ -811,18 +922,19 @@ class Campaign:
                     self.returned(baseline)
                     self.publish(status="complete", report=evaluation["report"])
             except BaseException as error:
-                release = {"status": "PENDING"}
-                if "resource_baseline" in self.state:
-                    try:
-                        self.returned(self.state["resource_baseline"])
-                        release = {"status": "PASS"}
-                    except BaseException as cleanup_error:
-                        release = {"status": "FAILED", "reason": str(cleanup_error)}
-                self.publish(
-                    release_after_failure=release,
-                    status="stopped" if isinstance(error, InterruptedError) else "failed",
-                    failure={"type": type(error).__name__, "reason": str(error)},
-                    checkpoints_deleted=False,
-                )
+                with deferred_termination():
+                    release = {"status": "PENDING"}
+                    if "resource_baseline" in self.state:
+                        try:
+                            self.returned(self.state["resource_baseline"])
+                            release = {"status": "PASS"}
+                        except BaseException as cleanup_error:
+                            release = {"status": "FAILED", "reason": str(cleanup_error)}
+                    self.publish(
+                        release_after_failure=release,
+                        status="stopped" if isinstance(error, InterruptedError) else "failed",
+                        failure={"type": type(error).__name__, "reason": str(error)},
+                        checkpoints_deleted=False,
+                    )
                 raise
         return self.state

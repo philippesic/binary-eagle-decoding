@@ -75,10 +75,29 @@ def aggregate(measurements, *, fixture=False):
                 native_counts=sums,
                 accepted_per_round=sums["accepted"] / sums["rounds"],
                 emitted_tokens_per_round=tables[cell]["output_tokens"] / sums["rounds"],
+                emitted_tokens_per_round_scope="whole-request output / native draft-round counter",
                 proposal_acceptance=sums["accepted"] / sums["proposed"]
                 if sums["proposed"]
                 else None,
             )
+    diagnostic_by_cell = defaultdict(list)
+    for row in measurements.get("diagnostic_records", []):
+        if "round_summary" in row:
+            diagnostic_by_cell[row["cell"]].append(row["round_summary"])
+    for cell, summaries in diagnostic_by_cell.items():
+        positions = sorted({pos for summary in summaries for pos in summary["position"]}, key=int)
+        totals = {}
+        for position in positions:
+            counts = {
+                name: sum(s["position"][position][name] for s in summaries)
+                for name in ("eligible", "reached", "survived")
+            }
+            counts["conditional_survival"] = (
+                counts["survived"] / counts["reached"] if counts["reached"] else None
+            )
+            totals[position] = counts
+        tables[cell]["diagnostic_position_survival"] = totals
+        tables[cell]["diagnostic_outside_clean_timing"] = True
     for cell in CELLS:
         family = cell.split("_")[0]
         rate = tables[cell]["request_tokens_per_second"]
@@ -95,6 +114,7 @@ def aggregate(measurements, *, fixture=False):
         "protocol": measurements["protocol"],
         "target": measurements["target"],
         "model_ancestry": measurements["model_ancestry"],
+        "deployment_coverage": measurements.get("deployment_coverage"),
         "cells": tables,
         "timing_repetitions": len(repeats),
         "matched_requests_per_cell": len(next(iter(pairs.values()))),

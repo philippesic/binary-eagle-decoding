@@ -113,6 +113,15 @@ def run(args):
             and exported.get("model") == inputs["models"][candidate],
             "evaluation requires successful committed endpoint/export ancestry",
         )
+    coverage = {}
+    for candidate in CANDIDATES:
+        coverage[candidate] = bundle["candidates"][candidate].get("deployment_coverage")
+    for family, control in inputs["controls"].items():
+        coverage[family + "_q4"] = control.get("deployment_coverage")
+    require(
+        all(isinstance(value, dict) and value for value in coverage.values()),
+        "explicit tensor coverage/normal precision exception inventory missing",
+    )
     models = dict(inputs["models"])
     for family, control in inputs["controls"].items():
         models[family + "_q4"] = control["model"]
@@ -276,6 +285,7 @@ def run(args):
         "protocol": bundle["inputs"]["protocol"],
         "target": inputs["target"],
         "model_ancestry": models,
+        "deployment_coverage": coverage,
         "records": records,
         "diagnostic_records": diagnostics,
     }

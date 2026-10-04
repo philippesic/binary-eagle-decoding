@@ -200,6 +200,13 @@ class LifecycleTests(unittest.TestCase):
             self.campaign().execute()
         self.assertEqual(self.runner.calls, [])
 
+    def test_training_release_is_verified_before_export_process(self):
+        self.resources.fail_after = 3
+        with self.assertRaisesRegex(ValueError, "host resource return"):
+            self.campaign().execute()
+        self.assertEqual(self.runner.calls[-1], CANDIDATES[0] + "/train")
+        self.assertNotIn(CANDIDATES[0] + "/export", self.runner.calls)
+
     def test_owned_context_blocks_eval_even_after_memory_return(self):
         self.resources.owned_active = True
         with self.assertRaisesRegex(ValueError, "owned CUDA context"):
@@ -230,6 +237,29 @@ class LifecycleTests(unittest.TestCase):
         self.campaign().execute(resume=True)
         self.assertNotIn(CANDIDATES[0] + "/train", self.runner.calls)
         self.assertIn(CANDIDATES[0] + "/export", self.runner.calls)
+
+    def test_resume_recovers_completion_published_before_state_crash(self):
+        self.runner.fail_stage = CANDIDATES[0] + "/export"
+        with self.assertRaises(RuntimeError):
+            self.campaign().execute()
+        state_path = self.root / "run/state.json"
+        state = json.loads(state_path.read_text())
+        del state["completed"][CANDIDATES[0] + "/train"]
+        atomic_json(state_path, state)
+        self.runner.fail_stage = None
+        self.runner.calls.clear()
+        self.campaign().execute(resume=True)
+        self.assertNotIn(CANDIDATES[0] + "/train", self.runner.calls)
+
+    def test_failed_attempt_receipts_remain_immutable_on_resume(self):
+        self.runner.fail_stage = CANDIDATES[0] + "/export"
+        with self.assertRaises(RuntimeError):
+            self.campaign().execute()
+        receipts = {str(p): p.read_bytes() for p in (self.root / "run").glob("**/receipt.json")}
+        self.runner.fail_stage = None
+        self.campaign().execute(resume=True)
+        for path, content in receipts.items():
+            self.assertEqual(Path(path).read_bytes(), content)
 
     def test_resume_changed_checkpoint_is_not_reinitialized(self):
         self.runner.fail_stage = CANDIDATES[0] + "/export"
@@ -262,6 +292,21 @@ class LifecycleTests(unittest.TestCase):
             )
         )
         self.assertEqual([r["id"] for r in load_opaque_prompts(path)], identifiers)
+
+    def test_guard_preserves_sealed_final_bytes_without_hashing(self):
+        protocol = self.root / "protocol.json"
+        atomic_json(protocol, {"split": "final"})
+        sealed = self.root / "sealed-final.jsonl"
+        sealed.write_text("sealed fixture bytes must not be opened by guard")
+        self.bundle["inputs"].update(
+            protocol={"path": str(protocol), "sha256": sha256(protocol)},
+            prompts={"path": str(sealed), "sha256": "f" * 64},
+        )
+        # Wrong SHA deliberately proves guard performs no content hash/read.
+        self.campaign().guard()
+        sealed.unlink()
+        with self.assertRaisesRegex(ValueError, "canonical regular artifact"):
+            self.campaign().guard()
 
     def test_ambient_flags_cleared(self):
         with patch.dict(

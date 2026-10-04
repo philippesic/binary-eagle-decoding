@@ -69,7 +69,7 @@ def smoke(config_path, receipt_path):
         prompts and all(p.get("split") == "train" for p in prompts),
         "TRAIN role required; no prompt ID prefix assumptions",
     )
-    observer = LinuxResources(config["gpu_uuid"])
+    observer = LinuxResources(config["gpu_uuid"], hardware=config.get("hardware", "rtx5080"))
     baseline = observer.snapshot()
     directory = receipt_path.parent / ("smoke-" + str(time.time_ns()))
     directory.mkdir(parents=True, exist_ok=False)
