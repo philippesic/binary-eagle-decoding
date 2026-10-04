@@ -207,6 +207,10 @@ def run(config_path: Path, destination: Path, diagnostic: bool = False) -> None:
                                                      min(180, remaining), request_dir)
                         finally:
                             inference_s += time.monotonic()-started
+                            # Failed requests still consumed the shared inference allowance.
+                            json_write(destination / "progress.json", {"diagnostic": diagnostic, "inference_s": inference_s,
+                                       "prior_timing_s": prior_s, "combined_timing_s": prior_s + inference_s,
+                                       "records": records, "last_request_artifact": str(request_dir.relative_to(destination))})
                         native = rows(trace)[before:]
                         json_write(request_dir / "rounds.json", native)
                         result.update(arm=arm, repetition=rep, prompt_id=prompt["id"], warmup=warmup,
