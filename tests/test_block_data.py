@@ -12,9 +12,11 @@ from w1a1_eagle.block_data import (  # noqa: E402
     TAPS,
     BlockCursor,
     BlockDataset,
+    crop_decode_history,
     file_sha256,
     import_capture_plan,
     token_sha256,
+    validate_decode_history,
 )
 
 
@@ -253,6 +255,30 @@ class DataTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "changed after"):
             dataset.load_block("chain0", 0)
 
+    def test_decode_history_preserves_prefill_and_greedy_kv_partitions(self):
+        history = [
+            {"offset": 0, "count": 3, "phase": "prefill", "kv_reused_from_same_chain": False},
+            {
+                "offset": 3,
+                "count": 1,
+                "phase": "target_only_greedy",
+                "kv_reused_from_same_chain": True,
+            },
+            {
+                "offset": 4,
+                "count": 1,
+                "phase": "target_only_greedy",
+                "kv_reused_from_same_chain": True,
+            },
+        ]
+        self.assertEqual(validate_decode_history(history, 5), history)
+        self.assertEqual(crop_decode_history(history, 4), history[:2])
+        self.assertEqual(crop_decode_history(history, 2)[0]["count"], 2)
+        with self.assertRaisesRegex(ValueError, "KV"):
+            validate_decode_history(
+                history[:1] + [history[1] | {"kv_reused_from_same_chain": False}], 4
+            )
+
 
 class NativeRawImportTests(unittest.TestCase):
     """Synthetic native-producer format; these tests never certify real capture."""
@@ -284,6 +310,14 @@ class NativeRawImportTests(unittest.TestCase):
                 "schema": "block_native_teacher_request_v1",
                 "complete": True,
                 "optimizer_updates": 0,
+                "decode_history": [
+                    {
+                        "offset": 0,
+                        "count": 18,
+                        "phase": "prefill",
+                        "kv_reused_from_same_chain": False,
+                    }
+                ],
                 "teacher_context_reset_between_requests": True,
                 "prefix_contract": "teacher_forced_exact_caller_token_ids",
                 "kv_type": "F16",

@@ -74,7 +74,9 @@ class PortabilityTests(unittest.TestCase):
                 self.closed = False
                 owner.instances.append(self)
 
-            def capture_prefix(self, tokens, taps, *, logits_mode, chain_ancestry):
+            def capture_prefix(
+                self, tokens, taps, *, logits_mode, chain_ancestry, decode_history=None
+            ):
                 if stop:
                     raise InterruptedError("synthetic STOP")
                 cid = chain_ancestry["prompt_id"]
@@ -101,6 +103,7 @@ class PortabilityTests(unittest.TestCase):
                     "schema": "block_native_teacher_request_v1",
                     "complete": True,
                     "optimizer_updates": 0,
+                    "decode_history": decode_history,
                     "target_sha256": file_sha256(owner.target),
                     "target_precision": "F16",
                     "kv_type": "F16",
@@ -205,6 +208,14 @@ class PortabilityTests(unittest.TestCase):
                     "dtype": "float32",
                 }
             receipt.update(
+                decode_history=[
+                    {
+                        "offset": 0,
+                        "count": 3,
+                        "phase": "prefill",
+                        "kv_reused_from_same_chain": False,
+                    }
+                ],
                 tokens=tokens[:3].tolist(),
                 tap_ids=list(gate.EAGLE_TAPS),
                 features_shape=[3, 3, 2],
