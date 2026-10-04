@@ -4,6 +4,16 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
+## Human pause: RTX5080 A8 work — October 3, 18:34 PDT
+
+The human requested “pause5080gpuusage”. NewRTX5080runs are locally blocked;
+existing recovery heartbeat and native Goal are PAUSED. Sole operator is stopping
+candidate training, preserving exact checkpoint/budget and verifying owned groups/
+GPU contexts before disconnect. Release is pending verification. No new GPU work
+or remote action beyond shutdown verification; RTX2080Ti controls untouched.
+Reference5000/764.725s and candidate latest1717/348.00s remain preserved; the matched
+comparison is incomplete and paused. See active goal for final shutdown proof.
+
 ## Active: A8 QAT recovery and comparison — October 3, 2026
 
 **Standalone owner:** chat `01a103da-0980-7332-a041-3f95aca6a3f5` has claimed
