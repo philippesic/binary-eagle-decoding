@@ -314,6 +314,99 @@ SM120 and SM75 results separate; one device cannot establish the other's speed.
 If a model does not fit a common device under fixed settings, mark that cell
 unavailable rather than reducing target precision for only that model.
 
+## Additional findings from the eight agent research slate
+
+The human requested four literature-first and four reasoning-first agents to
+find easy additions, then peer review every report. All eight completed; five
+successful Opus 5.5 calls audited the reports and reconciliation. See the
+[additional research synthesis](nine-model-research-slate-2026-10-04/synthesis.md)
+for sources, costs, all dispositions and qualifications. The nine final models
+and original selection allowance remain unchanged. These are implementation
+recommendations and experimental options, not changes already made or gains
+already measured.
+
+**Add to the engineering preparation:** remove only the unnecessary F32
+latent clone before each Boolean sign snapshot; optionally consolidate typed
+metric reads while retaining finite-before-update checks and exact I64 counts.
+This revives an existing CPU prototype. Share an immutable raw-feature upload
+only where paired lanes consume the same data/device. Measure live status/fsync
+time before changing publication cadence; recipe-audit output is probe-gated,
+not every update. Checkpoint, budget, failure-event and watchdog durability stay
+intact. Training-only work has no counterpart in the three frozen Q4 models.
+
+**Add to the existing fusion screen:** census zero-scale rows, propose whole-row
+sign reversal and refit nonnegative scale for negative TRAIN correlation, then
+accept only finite exported-F32 objective improvement. A read-only census of
+the authenticated existing A8 report confirms all 383 scale-zero rows have
+negative correlation. This is a fitting opportunity, not proof of dead QAT
+channels: the current trainable scale offset has derivative one at zero and can
+revive. The rescue initializes fresh QAT; it does not edit a resumed optimizer.
+Count global row reversals separately, fit A1 using its own arithmetic, and
+confirm the whole candidate on prompt-disjoint native evaluation. Do not choose
+per-row signs on the same set later advertised as independent validation.
+
+Also score existing fusion candidates after the actual following normalization
+and retain raw residual-amplitude error. If these metrics explain native
+failures, screen one per-example-energy-weighted SSE control. Constant positive
+weights on independent output rows do not change their LS minimizers; example
+weighting is not equivalent to the coupled post-RMSNorm objective. Keep these
+changes as singletons before selecting any combination.
+
+**Prepare a bounded execution probe:** fused FP32 AdamW with explicit backend
+identity, correct CPU/device step-state initialization and exact resume layout.
+Keep formula, masters, moments, clipping and projection order; examine hard sign
+changes and targeted native consequences of floating reassociation. Use actual
+optimizer-stage and whole-step measurements. Grouped F32 attention avoiding
+physical K/V repetition is another probe if memory or its stage cost matters;
+retain group layout, cache casts, masks and later gradients. Bounded prefetch
+waits for real provider/upload stalls.
+
+**Add cheap native options while working on block graphs:** suppress DSpark's
+unused confidence output at p_min zero with an explicit request/reuse key and
+positive-p_min/diagnostic fallback. Test actual node/copy removal, semantics and
+clean timing on DSpark Q4 and its binary candidates. A balanced logit concat
+tree and the one-block identity-layout fast path are lower-priority options
+only if assembly cost is material. Keep sequential Markov conditioning; defer
+aliased preallocation. These are small possible savings, not replacements for
+acceptance improvement or the binary deployment prerequisite.
+
+**Learning probes that fit existing allowances:** one localized existing
+drafter norm gain on A8 if channel errors justify it, and one short attached
+accepted-context K/V tail if new context-attention gradients are material.
+Norm ownership/export must stop sharing that parameter across lanes. Positive
+channel rescaling before a zero-threshold A1 sign quantizer preserves bits,
+though meanabs amplitude changes; crossing zero or learned thresholds is a
+different interaction. The context-tail probe starts on EAGLE; do not port the
+one-layer gradient/cache shortcut blindly to the block models.
+
+**Refine refresh and batch admission:** retain original and recaptured complete
+rounds as separately identified replay sources; report unique and repeated
+exposure. Declare round-mean/token-mean/weighted valid-loss denominators,
+especially with accumulation or loss masks. Declare DSpark's predecessor-token
+conditioning and why teacher labels remain valid. Root-label support, signed
+margins and conditional survival by depth are diagnostic prerequisites. A
+bounded update-resolution sign sample can test actual chatter before any late
+dampening; the existing return-to-initial-sign counter is not that statistic.
+
+**Keep later research conditional:** SFDD flatness ordering/subsets require
+exact teacher statistics and a balanced matched control; their published greedy
+results show a quality/compute tradeoff rather than a binary-QAT win. AdaSPEC
+CE-regret needs a well-covered matched reference and is not worth a new long
+reference job. Censored rejection-anchored weighting may refine the existing
+depth-loss probe only where current/captured prefix identity and teacher labels
+are proven; never label an unknown continuation as observed rejection. Full
+VAT heads/soft labels wait for valid current-prefix capture.
+
+EWGS is a lower-priority sign-gradient adaptation requiring coordinate and
+round-aggregation identity; measure its effect under Adam before a training
+arm and do not escalate the factor blindly. Late oscillation dampening waits
+for harmful reversal evidence. SM75 BF16-to-F16 floating-exception dispatch
+stays outside frozen baseline policies until value and reduction-path checks;
+head Q4 is the more direct byte-reduction control when bandwidth dominates.
+Reject a global cuBLAS-F16 override, unsupported feature noise, broad low-bit
+moments/compile/checkpoint changes and the previously failed representation
+branches as automatic additions.
+
 ## Peer review and decision status
 
 Two focused peer-review MCP calls completed with requested model

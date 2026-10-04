@@ -421,3 +421,25 @@ additional proof protocols or redoing completed audit work.
   versus DSpark W1A1, label exact shared quantized layers, and explicitly mark
   missing cells. Preserve existing EAGLE anchors as secondary context and
   historical frozen results; do not silently substitute them for requested cells.
+
+### 2026-10-04: Check guards and gradient families in research performance claims
+
+- Context: The eight-agent planning slate examined durable training publications
+  and zero-scale fusion rows; Opus review exposed source-premise disagreements.
+- Evidence: continuous_qat.py guards recipe-audit.json publication with
+  update_probes[lane].enabled (first 100 updates and diagnostic intervals).
+  status.json remains per update. recurrent_binary.py gives the trainable
+  additive scale a surrogate derivative of one at exactly zero, even though
+  the corresponding sign gradient is zero.
+- Status: Confirmed research-agent overcount of audit fsync cadence, and
+  unsupported reviewer inference of permanently dead QAT channels. No user
+  error, implementation mutation, experiment failure or changed result.
+- Agent contribution: One report inspected the publication call without its
+  enclosing gate. Reviewers generalized absent sign gradients without checking
+  the separate scale family, and supplied timing forecasts without measurements.
+- Resolution: Root checked the enclosing source, retained original reports, and
+  recorded corrections in the synthesis. Saved metadata census confirms negative
+  calibration correlation but does not establish QAT-loss gradient direction.
+- Practical lesson: Reuse the earlier lesson about caller/write conditions.
+  Inspect each parameter family's backward/constraint before claiming a state
+  cannot recover; separate source arithmetic, saved measurements and forecasts.

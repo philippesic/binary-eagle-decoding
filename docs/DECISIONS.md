@@ -995,3 +995,40 @@ The human owns final quantized tensor coverage, floating exceptions and total
 compute allocation. No new active goal, schedule, model implementation, GPU/remote
 action or training budget was started by this recommendation. The completed
 A8 goal and original experiment reports are unchanged.
+
+## Additional nine model research reviewed — October 4, 2026
+
+The human requested exactly eight agents: four primary-literature researchers
+and four reasoning-first advisors using intermittent primary-source validation.
+All eight completed, with reporting-only writes to uniquely assigned files.
+Five successful peer-review MCP calls requested claude-opus-5-5-high (Opus 5.5):
+four audits covered all complete reports, then one reviewed root reconciliation.
+[Reports and synthesis](../experiments/nine-model-research-slate-2026-10-04/synthesis.md)
+and the [updated plan](../experiments/nine-model-qat-research-plan-2026-10-04.md)
+record exact evidence, applicability, costs and every disposition.
+
+Recommend small training bookkeeping work, paired-only immutable upload reuse,
+profile-gated status cadence/fused FP32 AdamW/grouped attention, static DSpark
+confidence suppression with Q4 controls, and cheap output assembly only if
+measured. Add zero-scale row orientation rescue and post-norm/raw scoring to
+the existing fusion screen. Saved authenticated A8 metadata confirms all 383
+zero-scale control rows have negative fitting correlation; this is not proof
+of permanently dead QAT rows or improved native acceptance. Fresh initializer
+rescue needs no existing optimizer moment migration.
+
+Additional gated learning options are localized A8 norm gains and a short
+attached EAGLE context tail. Refine existing refresh with separately identified
+old/fresh whole-round replay, loss denominator and Markov predecessor/censoring
+contracts. Data filtering, EWGS/dampening, full VAT and floating-format dispatch
+remain conditional/deferred rather than new default long runs. Preserve the
+existing bounded exploration allowance and nine final artifacts.
+
+Peer qualifications are explicit: recipe-audit writes are probe-gated; live
+status is per update. Scale offsets can receive gradient at zero. Small EWGS
+multipliers are not mathematically inert. Reviewer timing estimates are not
+measurements. Per-row validation selection requires separate confirmation.
+Training-only optimizations have no frozen-Q4 training counterpart; eligible
+native runtime changes need matching Q4 evaluation.
+
+No model implementation, training, GPU/remote action, monitoring or new goal
+was started. Final tensor scope and compute allocation remain human decisions.

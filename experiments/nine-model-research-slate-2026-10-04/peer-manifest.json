@@ -1,0 +1,44 @@
+{
+  "model_requested": "claude-opus-5-5-high",
+  "model": "Opus 5.5",
+  "successful_calls": 5,
+  "scope": "Scientific review only; no implementation or experiments",
+  "pair_reviews": [
+    {
+      "reports": [
+        "01-literature-quantizers.md",
+        "05-reason-root-acceptance.md"
+      ],
+      "raw_path": "/Users/pippo/github/binary-eagle-decoding/runs/nine-model-research-slate-20261004/opus-pair-1.txt",
+      "sha256": "40cbb2ff671c4e3570d3082f98894aceb209bb81b3e6c0016268a08aafe6c459"
+    },
+    {
+      "reports": [
+        "02-literature-training-data.md",
+        "06-reason-trajectory.md"
+      ],
+      "raw_path": "/Users/pippo/github/binary-eagle-decoding/runs/nine-model-research-slate-20261004/opus-pair-2.txt",
+      "sha256": "c8caae1a3c002dd35baca968ee4f1daeb6aff9485db7d873a98af6c3cff94f6b"
+    },
+    {
+      "reports": [
+        "03-literature-train-systems.md",
+        "07-reason-latency.md"
+      ],
+      "raw_path": "/Users/pippo/github/binary-eagle-decoding/runs/nine-model-research-slate-20261004/opus-pair-3.txt",
+      "sha256": "a005df051ac8fb9e1909c6ed77a0f9894a0d8768589f9552265d5adaeb2f8f85"
+    },
+    {
+      "reports": [
+        "04-literature-inference.md",
+        "08-reason-cost-quality.md"
+      ],
+      "raw_path": "/Users/pippo/github/binary-eagle-decoding/runs/nine-model-research-slate-20261004/opus-pair-4.txt",
+      "sha256": "e7db8e05d279b0eee076ce7ad5ab4bfb4c8131e73e1f8cfdc9c7854acaa4020e"
+    }
+  ],
+  "final_review": {
+    "raw_path": "/Users/pippo/github/binary-eagle-decoding/runs/nine-model-research-slate-20261004/opus-final-synthesis.txt",
+    "sha256": "ce87456dc124ee910ec2b4b01f2eaa9b97c1cdf78a2902ff00bf74085b3de29f"
+  }
+}

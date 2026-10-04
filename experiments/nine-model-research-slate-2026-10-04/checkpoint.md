@@ -36,14 +36,13 @@ a falsifier/minimal experiment, and recommend incorporate, probe or defer.
 
 All eight scientific reports are complete and saved as 01 through 08 in this
 directory, with SHA256 and word counts in report-manifest.json. Four focused
-Opus 5.5 pair audits are running and cover all eight complete texts. Root will
-deduplicate related mechanisms, verify
-material evidence/precision distinctions, and send every report to Opus 5.5
-through peer-review MCP in bounded prompts. Use exact supported model identifier
-claude-opus-5-5-high; no Fable fallback. Earlier broad max-reasoning prompt timed
-out at 180 seconds, so use focused report-pair audits and a final synthesis.
-Reviewer advice is not evidence of model performance. Record accepted changes,
-qualifications and rejected suggestions in the report and existing plan.
+Opus 5.5 pair audits completed and cover all eight complete texts. A fifth
+Opus audit reviewed root reconciliation. Root deduplicated mechanisms, verified
+material source premises and recorded every disposition in the synthesis. All
+five reviews used claude-opus-5-5-high with no Fable fallback. A broad max-effort
+call in the earlier planning turn timed out, so this slate used bounded pair
+audits and a final synthesis. Reviewer advice is not performance evidence;
+accepted changes, qualifications and rejections are explicit in the records.
 
 Preserve exact target/verifier/capture ancestry, frozen Q4 baselines and final
 split. Training and inference benefits need distinct tests. Shared runtime
@@ -51,7 +50,26 @@ changes must apply to applicable Q4 controls. A1 positive normalization gains
 do not automatically change sign codes; adaptive stopping changes trajectories;
 source-reported operation counts do not establish latency savings.
 
-Raw peer output will stay under ignored runs/nine-model-research-slate-20261004
-in the primary workspace. Compact eight-agent reports, peer audit summaries and
-root decisions will be committed in this directory, with the updated plan and
-DECISIONS. No implementation is selected merely because a report recommends it.
+Raw peer output stays under ignored runs/nine-model-research-slate-20261004
+in the primary workspace. Complete eight-agent reports, audit manifests and
+root synthesis are retained here, with the updated plan and DECISIONS. No implementation is selected merely because a report recommends it.
+
+## Completion
+
+All eight agents completed their assigned scientific work and reporting-only
+writes. All five Opus 5.5 audits returned useful feedback; the peer manifest
+records coverage/model/raw hashes. Root source checks qualified reviewer
+claims about publication guards, zero-scale gradients, EWGS coordinates,
+initialization versus mid-run moments, prefix validity and Q4 applicability.
+
+The source-pinned existing fit metadata census found 383 zero-scale rows with
+negative correlation; no fitting/gradient/model/acceptance experiment was run.
+All findings and dispositions are in [synthesis.md](synthesis.md), with the
+updated main recommendation and DECISIONS. USER_LESSONS records the factual
+guard/gradient review correction without attributing an error to the user.
+
+This requested research slate is complete. Implementation and GPU training
+remain future work; no new goal/budget/schedule/host-control change occurred.
+All original experiments, weights/captures and other untracked research are
+preserved. Root is validating documentation and publishing the final batch
+of records before retiring the merged temporary worktree.

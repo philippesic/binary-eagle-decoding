@@ -1,0 +1,14 @@
+{
+  "scope": "Read-only census of previously saved scale-only solver metadata; no new fitting or model execution",
+  "source_path": "/Users/pippo/github/binary-eagle-decoding/results/fusion-binary-real-a8-20261003/fit-real-02/fit_report.json",
+  "source_sha256": "55ff66daddb62ee6b9cc0491396425939425a1ec2e330f613dbde8543b38a701",
+  "source_bytes": 17342381,
+  "bound_bytes": 33554432,
+  "solver_records": 2560,
+  "zero_continuous_and_exported_scale_rows": 383,
+  "negative_correlation_rows": 383,
+  "zero_correlation_rows": 0,
+  "interpretation": "At clamped optimum zero, derivative=-2(z dot y), so positive derivative means negative correlation. Candidate rescue must still pass exported F32 objective and independent native quality gates. This does not prove permanently dead QAT rows; current additive-scale surrogate derivative at zero is one.",
+  "committed_source_pin": "experiments/fusion-binary-real-a8-2026-10-03/summary.json:fit-real-02/fit_report.json",
+  "committed_source_pin_matched": true
+}
