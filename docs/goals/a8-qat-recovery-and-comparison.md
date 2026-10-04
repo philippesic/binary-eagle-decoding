@@ -1,5 +1,36 @@
 # A8 QAT recovery and comparison
 
+## Candidate 30,000 checkpoint; evaluation running — October 4, 12:40 UTC
+
+Candidate trainer actualstart12:19:41.206829Z/end12:38:42.001290Z,exit0; natural
+boundary observed12:38:45Z,step30000/cursor30054. Checkpoint SHA
+`f68255ace54f4803ba8f856f72b65b1ae86fbf9c06ee805ab5cc54bea4dc9c8f`
+hardlink archived,locator `evidence-archive/checkpoints/candidate-step-30000-locator.json`,
+manifest31d1be18...,exactfullhash/path in operator record. Settledbudget
+6219.892866990007/7200,active_attempt null,remaining980.107133009993. Exact
+28217/5093848 and28222/5093857 groups/session/server absent,baseline2766MiB/0%
+at12:39:15Z.
+
+Scheduled native evaluation launched12:40:27.846879Z under same immutable3bd/
+current9e2,frozen24dev/F16 target/verifier/KV/1200s cap,diagnostic faulthandler only.
+Host session `a8-candidate-step30000-eval-20261004-01`,run
+`a8-candidate-step30000-eval-supervisor-20261004-01`; supervisor28640/birth5218514,
+evaluator28645/birth5218521,sameboot517c4a36. Manifestfc18f400. Initial12:40:40
+resource snapshot startup2766MiB/0%; result pending.
+
+Reference remains evaluated30000/5097.991297502003,0.623711drafts/round/
+95.036requestTPS,belowQ4_0. After candidate terminal archive/release,resume
+reference30000→35000 under2102.008702497997remaining,normal evaluation. Candidate
+NEXT resumed training has only980.107133009993seconds remaining and must naturally
+stop at ORIGINAL7200 cap,possibly before35000; retain final_training_complete
+request/checkpoint,settled-nullbudget,matching finalnative report/ack/release.
+No extra5000 block,topup or partial-endpoint completion claim.
+
+Both7200 endpoints/final evaluations incomplete; Goal/heartbeat ACTIVE,allsource/
+recipe/math/data/precision/budgets invariant,no repeatedgates. SIGSEGV retry1max2/
+charges retained,A1 heldout,no2080controls. Currentcanonicalobservations/exactIDs
+govern,actualstart/end versus observations separate,no stale-snapshot restarts.
+
 ## Reference 30,000 evaluated; candidate resumed — October 4, 12:23 UTC
 
 Reference30000 eval exited0: supervisor actualstart12:05:57.446184Z/end
