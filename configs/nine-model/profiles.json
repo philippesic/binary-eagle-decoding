@@ -1,0 +1,16 @@
+{
+  "schema": "nine_model_preparation_profiles_v1",
+  "artifact_kind": "source_profile_declarations",
+  "preparation_complete": false,
+  "profiles": {
+    "fixed_reference": {"activation_bits": 8, "optimizer": "adamw", "activation_quantization": "fixed", "default": true},
+    "direct_a1": {"activation_bits": 1, "optimizer": "adamw", "activation_quantization": "fixed", "default": false},
+    "a8_to_a1_reset": {"activation_bits": [8, 1], "optimizer_transition": "explicit_reset", "source_cost_charged": true, "default": false}
+  },
+  "coverage_requires_human_selection": true,
+  "block_coverage_options": ["ffn15", "ffn15_fc16"],
+  "normal_precision_exceptions": ["private_embedding", "private_full_vocabulary_head", "attention", "DSpark_Markov", "norms"],
+  "off_by_default_probes": ["learned_a1_threshold", "early_position_weighting", "fused_adamw", "grouped_attention", "own_prefix_refresh", "fusion_bias", "fusion_rank_one", "static_confidence"],
+  "excluded_initial_campaign": ["bop", "learned_q1_0", "a4_ladder", "ternary", "head_factorization", "broad_mixed_precision_search"],
+  "pending_dependencies": ["materialized_full_five_tap_block_train_data", "selected_recipe_budget_coverage", "actual_model_cpu_SM75_contract_evidence", "production_fresh_SM120_admission_producer", "frozen_source_and_artifact_bundle"]
+}
