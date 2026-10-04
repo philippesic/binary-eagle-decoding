@@ -48,6 +48,7 @@ Evaluation wall time is separate overhead and is never a serving-rate denominato
 | Candidate step 0 | 7.5463 | 0.122376 | 2.5012% | 63.524 | 0.4703 |
 | Reference step 5,000 | 5.1176 | 0.377184 | 7.7106% | 81.477 | 0.6013 |
 | Candidate step 5,000 | 5.5689 | 0.217877 | 4.4587% | 68.342 | 0.5056 |
+| Reference step 10,000 | 4.2628 | 0.500529 | 10.2403% | 88.069 | 0.6519 |
 | Q4_0 at reference step 5,000 | n/a | 1.306255 | 26.5917% | 135.491 | 1.0000 |
 
 Accepted drafts per round is the primary acceptance metric. Acceptance rate uses
@@ -60,6 +61,7 @@ capture counts are:
 | Candidate step 0 | 309 | 12,354 | 2,525 | 2,834 |
 | Reference step 5,000 | 777 | 10,077 | 2,060 | 2,834 |
 | Candidate step 5,000 | 507 | 11,371 | 2,327 | 2,834 |
+| Reference step 10,000 | 946 | 9,238 | 1,890 | 2,834 |
 | Q4_0, each capture | 1,608 | 6,047 | 1,231 | 2,834 |
 
 Both zero checkpoints have identical native acceptance counts. Each A8 report
@@ -81,6 +83,15 @@ ratio uses the Q4_0 measurement from the same evaluation. The candidate evaluati
 completed exit 0, with 24/24 native response matches and 120/120 timing matches
 for both A8 and target-only. Its supervised runtime was 761.223 seconds; raw
 reports and captures are archived with verified hardlinks.
+
+At reference step 10,000, request rate is 88.069 versus Q4_0 at 135.098 and
+target-only at 88.782 tokens/s. Decode rate is 91.444 versus 142.974 tokens/s
+(Q4_0 ratio 0.6396). Median/p95 full-request latency is 1.427/1.675 seconds versus
+Q4_0 at 0.914/1.096 seconds. Each timing variant generated exactly 14,290 returned
+token IDs over 120 measured requests, with 105 length finishes and 15 stop finishes.
+All 24 native response sequences and all 120 timing sequences match Q4_0.
+The evaluation completed exit 0 in 692.183 supervised seconds; raw evidence is
+hardlink archived. Acceptance and throughput improved, but remain below Q4_0.
 
 Candidate's 1,047.285 trainer seconds differ from the reference's 764.725 seconds
 at the same update count; these checkpoint measurements are intermediate observations. The final comparison
@@ -120,7 +131,8 @@ exactly two hours of productive optimizer work after such recovery. Uncommitted
 updates 9,001–9,681 were rolled back and replayed from the checkpoint; their first
 attempt remains charged. Retry 1 passed the failure point and reached step 10,000/
 cursor10,017, exit 0, with budget settled at 2,005.419 seconds. Its scheduled native
-evaluation is running; both final endpoints remain pending. Fault cause is
+evaluation passed and is archived; candidate resume has advanced from step 5,000
+to 5,133 with all 33 gradient tensors finite. Both final endpoints remain pending. Fault cause is
 unexplained; equivalent recurrence retains the same retry limit (one of two used).
 
 ## Endpoint reporting method
@@ -145,6 +157,13 @@ in-flight update or serialization finishes. Endpoint timing is trainer-accounted
 time; startup, evaluation and physical process-release evidence remain separate.
 
 ## Artifact locations and pending completion
+
+Reference step 10,000 identities: checkpoint
+`281546e75c0d1d010a32b5477890788ad77077e1ec6819ceae745a2ac5f24f78`, report
+`3481aeda0ac35e28a6579c3fee9b25ef8e554e459504c5a3212abaa039de2d7c`, result
+`0d2d7fcfe05f658b5573c13b4ac03bd92f910458cdbf88aaa24acd84dfc57599`, timing
+`b21cf1b3ce16c83e934eacd14fc964bc8876610018744e8dd82f3b052bf6a278`.
+Archive locator: `evidence-archive/development/reference-step10000-locator-map.json`.
 
 Candidate step 5,000 identities: checkpoint
 `893e205d4e64fa04457c3281980570bb5ad13b3fb803cc1fe5f30d2d8b51ad10`, report
