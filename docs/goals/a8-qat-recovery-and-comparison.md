@@ -11,8 +11,10 @@ This is a continuation of the existing goal, not a new experiment.
 
 The second-compaction hook requires a fresh successor at this safe checkpoint.
 Prior owner `01a103da-0980-7332-a041-3f95aca6a3f5` is transferring live work, not
-pausing the GPU or claiming completion. Successor ID/acknowledgment will be
-recorded below. Read this section plus latest STATUS and comparison report first;
+pausing the GPU or claiming completion. Successor `01a10704-f186-7991-97c7-6f4b3df51ae9` was created13:05UTC;
+acknowledgment/live-job visibility is pending. Published handoff9b5d003
+(root14b69b7), documentation diffcheck passed; other teams' USER_LESSONS additions
+were preserved in conflict resolution. Read this section plus latest STATUS and comparison report first;
 older sections are historical. Do not contact origin chat
 `01a103c6-9cbd-7e70-ab05-7de1c49acf79` or its interrupted workers.
 
@@ -57,8 +59,7 @@ run `a8-reference-step30000-resume-supervisor-20261004-01`. Supervisor29672,
 birth ticks5311113; trainer29677,birth5311121; boot
 `517c4a36-e475-4a5f-9fa6-65de57edc6fe`. Latest verified12:59:15Z: step30563/
 cursor30618,training5202.857739/7200,optimization true,finite18 gradients,
-GPU9601MiB/77%. Initial preparing snapshot12:56:33Z is historical. Actualstart
-will be read from operator handoff/state.json. Reconnect via fresh host registry,
+GPU9601MiB/77%. Initial preparing snapshot12:56:33Z is historical. Actualstart12:55:53.847358Z was verified from the prior state.json observation. Reconnect via fresh host registry,
 inspect these exact handles/births and state.json; silence is not failure.
 
 Prior sole operator `/root/gpu_supervisor` (Luna high) closed only MCP transport
@@ -80,7 +81,11 @@ Compact14-report evidence: `runs/qat-a8-recovery/comparison-interim-summary.json
 Read latest `latest_operator_observation` plus current run records; legacy
 `training.status`/`last_remote_status_observation` can be stale. Compare actual
 observation timestamps, not delivery order. Keep UTC explicit. Operator handoff
-will include tmux MCP reconnect identity and graceful stop instructions.
+contains tmux MCP reconnect identity; local-only correction13:05UTC joined
+active step30000 session/run/state/start to exact29672/29677 births and fixed
+the next candidate final-budget sequence. No post-close remote query occurred.
+For human pause, signal the supervisor gracefully, inspect its state and exact
+child process group, then terminate recorded groups only if graceful stop fails.
 
 ### Frozen execution and exact next actions
 
