@@ -4,20 +4,20 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Reference recovered to 10,000; evaluation running — October 4, 07:35 UTC
+## Reference 10,000 evaluated; candidate training — October 4, 07:53 UTC
 
-First bounded retry passed the prior step 9,681 failure point and reached the
-scheduled 10,000-update boundary/cursor10017, exit 0. Checkpoint281546e7 archived;
-reference budget settled 2,005.419/7,200 seconds, no active training attempt.
-Training groups/contexts released. Scheduled native evaluation launched07:35:58UTC,
-supervisor16090/evaluator16096, immutable3bd/current9e2,1200s cap; result pending.
+Reference native evaluation passed and is archived: 0.501 accepted drafts/round,
+88.07 request tokens/s, below Q4_0 at 1.306/135.10 and close to target-only at88.78.
+All24 native and120 timing sequences match Q4_0; no sealed access. Reference
+budget stays2,005.419/7,200seconds, inactive. Failure and conservative charges
+remain preserved; one of two retries used, unexplained equivalent recurrence
+retains that limit. Evaluation resources returned before candidate launch.
 
-Unexplained segmentation fault and exact step 9,000 resume are preserved. Recovery
-retained all failed work and about379.457s conservative post-crash downtime;
-no refund, budget expansion or recipe/source change. Retry count1/max2;
-equivalent recurrence does not reset the limit. Diagnostic fault handler enabled.
-Candidate stays evaluated at 5,000/1,047.285 seconds, below reference and Q4_0.
-The SAME Goal/heartbeat are ACTIVE; A1 held out, no RTX2080Ti controls.
+Candidate resumed exactly from evaluated5,000 and advanced to5,133/cursor5142,
+all33 gradients finite. Supervisor16980/birth3485495, trainer16986/birth3485506,
+same immutable3bd/config, diagnostic fault handler. Budget prior1,047.285/7,200,
+remaining6,152.715 reserved; next natural boundary10,000. SAME Goal/heartbeat
+ACTIVE; A1 held out, no RTX2080Ti controls or recipe/data/precision/budget change.
 
 ## Active: A8 QAT recovery and comparison — October 3, 2026
 
@@ -29,12 +29,12 @@ The sole GPU operator continues the scheduled comparison; root maintains the
 report and durable state. See the [ownership checkpoint](goals/a8-qat-recovery-and-comparison.md#standalone-ownership-claimed--october-3-2026).
 Integrated fixes are published (frozen execution source583480c; main8583b68).
 BOTH actual A8 arms have optimizer updates and exact positive-step resume proof.
-Reference is at10000updates/2005.419seconds with evaluation running; candidate learned A8/all-nine
+Reference is evaluated at10000/2005.419seconds; candidate learned A8/all-nine
 midpoints/latent0.1 AdamW is evaluated at5000/1047.285seconds. All33candidate
 tensors show finite/nonzero gradients and actualmovement; cache/head execution
 and learned-head serial exception are observed. Arms alternate at scheduled
-5000boundaries toward independent7200second caps. Reference interim acceptance is 0.377 accepted drafts/round versus Q4_0 at
-1.306; request throughput is 60% of Q4_0. Both remain below the primary baseline.
+5000boundaries toward independent7200second caps. Reference interim acceptance is 0.501 accepted drafts/round versus Q4_0 at
+1.306; request throughput is 65% of Q4_0. Both remain below the primary baseline.
  The only active goal is
 [A8 QAT recovery and comparison](goals/a8-qat-recovery-and-comparison.md).
 

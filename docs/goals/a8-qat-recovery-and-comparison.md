@@ -1,5 +1,32 @@
 # A8 QAT recovery and comparison
 
+## Reference 10,000 evaluated; candidate resumed — October 4, 07:53 UTC
+
+Reference10000 evaluation completed exit0 at07:47:30.913917Z, 692.18257 supervised
+seconds. Report3481aeda0ac35e28a6579c3fee9b25ef8e554e459504c5a3212abaa039de2d7c;
+checkpoint281546e7. CE4.262763084 on229labels/48loss rounds/all24prompts. A8 accepted
+946/9238 proposals over1890rounds, 0.500529drafts/round versus Q4_0 at1.306255;
+both emitted2834tokens. Request TPS88.06884 versus135.09797 (ratio0.65189) and
+target-only88.78173; decode91.44398 versus142.97351 (ratio0.63959). Five×24=120
+measured requests per variant,14,290returned tokenIDs each; all24 native and120
+request sequences match Q4_0. No sealed access. Reference improves but is below Q4.
+Raw report/result/timing/attempt archived under `evidence-archive/development/reference-step10000-eval-attempt-0000`;
+locator `reference-step10000-locator-map.json`. All exact evaluation/native groups
+and contexts returned; baseline2766MiB/0%. Reference budget remains2005.419445274,
+active_attempt null; SIGSEGV retry1/max2 remains operationally recovered/unexplained.
+
+Candidate resumed from archived5000/cursor5009/SHA893e205d under same immutable3bd,
+config5bba2e/source/recipe, diagnostic faulthandler only. Supervisor run
+`a8-candidate-train-after-reference10000-supervisor-20261004-01`, session
+`a8-candidate-train-after-reference10000-20261004-01`, start07:51:37.693156Z.
+Supervisor16980/birth3485495, trainer16986/birth3485506, same boot517c4a36.
+Positive optimizer resume verified at07:53:48Z: step5133/cursor5142,133updates,
+finite33gradients, cumulative sign flips80762347, scale L1 movement0.16244.
+Budget prior1047.284754942/7200 and active reservation6152.715245058 preserved.
+Continue SAME handles to natural10000 scheduled evaluation, then reference10000→15000.
+No new gates, recipe/data/precision/budget changes or third retry; Goal/monitor ACTIVE.
+Both cumulative endpoints and final reports remain incomplete.
+
 ## Reference retry 1 reached 10,000; evaluation running — October 4, 07:35 UTC
 
 Reference supervisor15464/trainer15470 exited −11 at 07:24:59.912725Z. Last status
@@ -36,8 +63,8 @@ budget snapshot hardlink preserved (SHA5dea423c...14d43).
 
 Reference10000 scheduled evaluation launched07:35:58.731347Z, same3bd/native9e2,
 run `a8-ref-step10000-eval-supervisor-20261004-01`, session
-`a8-ref-step10000-eval-20261004-01`; supervisor16090/evaluator16096, births pending
-operator record. Checkpoint hardlink archive `evidence-archive/checkpoints/reference-step-10000`
+`a8-ref-step10000-eval-20261004-01`; supervisor16090/birth3391596 and evaluator16096/birth3391610.
+Operator ledger preserves exact identities. Checkpoint hardlink archive `evidence-archive/checkpoints/reference-step-10000`
 verified, manifest05703693...204ca. Evaluation cap1200 unchanged; result pending.
 Then candidate resumes from evaluated5000/1047.285s toward10000.
 
