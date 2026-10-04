@@ -80,7 +80,9 @@ class PortabilityTests(unittest.TestCase):
                 cid = chain_ancestry["prompt_id"]
                 _, features, logits = owner.dataset._arrays[cid]
                 fresh_features = np.asarray(features[: len(tokens)]).copy()
-                fresh_logits = np.asarray(logits[len(tokens) - 1 : len(tokens)]).copy()
+                fresh_logits = np.asarray(
+                    logits[:1] if len(logits) == 1 else logits[len(tokens) - 1 : len(tokens)]
+                ).copy()
                 if mutation:
                     mutation(fresh_features, fresh_logits)
                 root = owner.root / f"fresh-{cid}"
@@ -183,3 +185,99 @@ class PortabilityTests(unittest.TestCase):
         self.assertEqual(gate.compare_matrix(gold, current, atol=0.1, rtol=0.1)["status"], "FAIL")
         with self.assertRaises(ValueError):
             gate.compare_matrix(gold, current[:, :2], atol=0.1, rtol=0.1)
+
+    def eagle_goldens(self):
+        cases = []
+        for cid, chain in self.dataset.chains.items():
+            receipt = json.loads(Path(chain["native_receipt"]["path"]).read_text())
+            tokens, features, logits = self.dataset._arrays[cid]
+            files = {}
+            for name, array in (
+                ("features", np.asarray(features[:3, :3])),
+                ("logits", np.asarray(logits[2:3])),
+            ):
+                path = self.root / f"eagle-{cid}-{name}.f32"
+                np.ascontiguousarray(array).tofile(path)
+                files[name] = {
+                    "path": str(path),
+                    "sha256": file_sha256(path),
+                    "shape": list(array.shape),
+                    "dtype": "float32",
+                }
+            receipt.update(
+                tokens=tokens[:3].tolist(),
+                tap_ids=list(gate.EAGLE_TAPS),
+                features_shape=[3, 3, 2],
+                logits_shape=[1, 32],
+                logits_mode="last",
+                files=files,
+                executed_result_buffers=["CUDA0"],
+                hardware=[self.device["name"]],
+            )
+            receipt_path = self.root / f"eagle-{cid}-receipt.json"
+            receipt_path.write_text(json.dumps(receipt))
+            cases.append(
+                {
+                    "chain_id": cid,
+                    "native_receipt": {
+                        "path": str(receipt_path),
+                        "sha256": file_sha256(receipt_path),
+                    },
+                }
+            )
+        manifest = {
+            "schema": "nine_model_train_capture_goldens_v1",
+            "family": "eagle",
+            "tap_ids": list(gate.EAGLE_TAPS),
+            "vocab_size": 32,
+            "target_width": 2,
+            "target_sha256": file_sha256(self.target),
+            "train_inventory": self.plan["train_inventory"],
+            "cases": cases,
+        }
+        path = self.root / "eagle-goldens.json"
+        path.write_text(json.dumps(manifest))
+        return path
+
+    def test_new_eagle_three_tap_goldens_exact_api_and_cleanup(self):
+        path = self.eagle_goldens()
+        self.dataset = gate.NativeCaptureGoldens(path, expected_sha256=file_sha256(path))
+        self.args.manifest, self.args.manifest_sha256 = path, file_sha256(path)
+        self.args.admission = self.args.admission_sha256 = None
+        report = gate.run_gate(
+            self.args,
+            teacher_factory=self.teacher(),
+            device_query=lambda: self.device,
+            dataset_factory=gate.NativeCaptureGoldens,
+            expected_family="eagle",
+        )
+        self.assertEqual(report["status"], "PASS")
+        self.assertEqual(report["family"], "eagle")
+        self.assertEqual(report["artifact_kind"], "synthetic_fixture")
+        self.assertEqual(report["numeric_checks"][0]["features"]["shape"], [3, 3, 2])
+
+    def test_speculative_tree_capture_cannot_be_relabelled_golden(self):
+        path = self.eagle_goldens()
+        manifest = json.loads(path.read_text())
+        record = manifest["cases"][0]["native_receipt"]
+        receipt_path = Path(record["path"])
+        receipt = json.loads(receipt_path.read_text())
+        receipt["prefix_contract"] = "speculative_tree_captured_prefix"
+        receipt_path.write_text(json.dumps(receipt))
+        record["sha256"] = file_sha256(receipt_path)
+        path.write_text(json.dumps(manifest))
+        with self.assertRaisesRegex(ValueError, "provenance"):
+            gate.NativeCaptureGoldens(path, expected_sha256=file_sha256(path))
+
+    def test_new_golden_storage_budget_refuses(self):
+        path = self.eagle_goldens()
+        with self.assertRaisesRegex(MemoryError, "storage"):
+            gate.NativeCaptureGoldens(path, expected_sha256=file_sha256(path), max_capture_bytes=10)
+
+    def test_eagle_three_tap_pin_cannot_accept_five_tap(self):
+        path = self.eagle_goldens()
+        manifest = json.loads(path.read_text())
+        manifest["tap_ids"] = [2, 10, 18, 26, 34]
+        path.write_text(json.dumps(manifest))
+        with self.assertRaisesRegex(ValueError, "taps"):
+            gate.NativeCaptureGoldens(path, expected_sha256=file_sha256(path))
