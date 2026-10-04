@@ -30,8 +30,8 @@ Reference is evaluated at5000updates/764.725seconds; candidate learned A8/all-ni
 midpoints/latent0.1 AdamW reached its scheduled5000boundary/1047.285seconds. All33candidate
 tensors show finite/nonzero gradients and actualmovement; cache/head execution
 and learned-head serial exception are observed. Arms alternate at scheduled
-5000boundaries toward independent7200second caps. Reference interim acceptance
-7.7% and requestTPS60%ofQ4_0 remain below the primary baseline.
+5000boundaries toward independent7200second caps. Reference interim acceptance is 0.377 accepted drafts/round versus Q4_0 at
+1.306; request throughput is 60% of Q4_0. Both remain below the primary baseline.
  The only active goal is
 [A8 QAT recovery and comparison](goals/a8-qat-recovery-and-comparison.md).
 

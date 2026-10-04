@@ -36,20 +36,45 @@ All measurements use the same24 unsealed development prompts
 Timing has5 measured repetitions /120 requests per variant, with warmups excluded,
 A8/Q4_0/target-only order alternated. Request rate counts actual output tokens /
 complete HTTP wall time including prefill; decode uses server predicted_ms.
-TTFT is unavailable for this nonstreaming endpoint. Evaluation wall time is
+Native acceptance is one instrumented pass per checkpoint; timing uses five
+separate repetitions. TTFT is unavailable for this nonstreaming endpoint. Evaluation wall time is
 separate overhead and is never a serving-rate denominator.
 
-| Checkpoint | Development CE | Native acceptance rate | Request tokens/s | Relative to Q4_0 |
-|---|---:|---:|---:|---:|
-| Candidate step0 | 7.5463 | 2.5012% | 63.524 | 0.4703 |
-| Reference step5000 | 5.1176 | 7.7106% | 81.477 | 0.6013 |
-| Q4_0 at reference5000 | n/a | 26.5917% | 135.491 | 1.0000 |
+| Checkpoint | Development CE | Accepted drafts/round | Acceptance rate | Request tokens/s | Relative to Q4_0 |
+|---|---:|---:|---:|---:|---:|
+| Reference step 0 | 7.5459 | 0.122376 | 2.5012% | 66.991 | 0.4949 |
+| Candidate step 0 | 7.5463 | 0.122376 | 2.5012% | 63.524 | 0.4703 |
+| Reference step 5,000 | 5.1176 | 0.377184 | 7.7106% | 81.477 | 0.6013 |
+| Q4_0 at reference step 5,000 | n/a | 1.306255 | 26.5917% | 135.491 | 1.0000 |
 
-Raw accepted/proposed/round counts and accepted drafts/round will be transcribed
-from the archived original reports, not inferred from rounded rates. Candidate
-step0 is an untrained control; do not present it as a trained-candidate result.
-Final trained-candidate results and matched cumulative-budget endpoints remain
-unverified. No quality, latency or total-throughput win is claimed.
+Accepted drafts per round is the primary acceptance metric. Acceptance rate uses
+proposed drafts as its denominator and is reported separately. Original native
+capture counts are:
+
+| Capture | Accepted | Proposed | Rounds | Emitted tokens |
+|---|---:|---:|---:|---:|
+| Reference step 0 | 309 | 12,354 | 2,525 | 2,834 |
+| Candidate step 0 | 309 | 12,354 | 2,525 | 2,834 |
+| Reference step 5,000 | 777 | 10,077 | 2,060 | 2,834 |
+| Q4_0, each capture | 1,608 | 6,047 | 1,231 | 2,834 |
+
+Both zero checkpoints have identical native acceptance counts. Each A8 report
+uses 24 development prompts, 48 loss rounds and 229 loss labels; all 24 native
+response sequences match Q4_0. Each timing report has 120 matched request token-ID
+sequences per comparison. Native capture counts and the separately measured
+request-timing workload have distinct ledgers.
+
+For reference step 5,000, median/p95 full-request latency is 1.543/1.811 seconds
+for A8 versus 0.909/1.092 seconds for Q4_0. These are pooled request distributions
+across different prompt lengths, not confidence intervals. Decode rate is
+84.305 versus 143.511 tokens/s (ratio 0.5874). Target-only request rate is
+89.439 tokens/s, also above the current A8 result.
+
+The trained candidate step 5,000 result is pending. Its 1,047.285 trainer seconds
+differ from the reference's 764.725 seconds at the same update count; these
+checkpoint measurements are intermediate observations. The final comparison
+requires both independent 7,200-second cumulative endpoints. No quality, latency
+or total-throughput win is claimed.
 
 ## Resume and recovery evidence
 
@@ -75,11 +100,12 @@ hardlinks before pruning. Original historical paired step1000 remains untouched.
 
 Raw runs/archives live outsideGit beneath
 `/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01`.
-Evaluator/supervisor source is the separate immutable3bd checkout. Exact commands,
-birth ticks, hashes, budget ledgers, archive locator maps and incidents are in
+Evaluator/supervisor source is the separate immutable3bd checkout. Exact original report/result/timing/checkpoint hashes and aggregate counts are
+also transcribed in ignored `runs/qat-a8-recovery/comparison-interim-summary.json`.
+Exact commands, birth ticks, hashes, budget ledgers, archive locator maps and incidents are in
 ignored local `runs/qat-a8-recovery/operator-ledger.json`. Durable current state:
 [goal](../../docs/goals/a8-qat-recovery-and-comparison.md).
 
 Pending: trained candidate scheduled/final reports, both cumulative cap endpoints,
-complete counts/coverage/variance and final resource-release proof. Monitor stays
+final training coverage and telemetry, complete timing distributions and final resource-release proof. Monitor stays
 active until completion or a human pause. No sealed-final prompts are accessed.

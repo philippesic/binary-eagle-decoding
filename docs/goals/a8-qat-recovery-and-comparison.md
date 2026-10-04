@@ -1,5 +1,19 @@
 # A8 QAT recovery and comparison
 
+## Archived primary acceptance counts transcribed — October 4, 07:04 UTC
+
+The sole operator saved compact original report summaries locally at ignored
+`runs/qat-a8-recovery/comparison-interim-summary.json`, with joined report/result/
+timing/checkpoint hashes and immutable native runtime identities. Reference and
+candidate step-zero both accepted309of12354proposals across2525rounds:
+0.122376accepted drafts/round. Reference5000 accepted777of10077 across2060rounds:
+0.377184drafts/round. Q4_0 accepted1608of6047 across1231rounds:1.306255drafts/round.
+All native captures emitted2834tokens; A8/Q4 response IDs match all24prompts.
+Each loss pass used24prompts/48rounds/229labels. Timing is a separate five-repeat,
+120-request-per-variant workload. Report now distinguishes both denominators and
+pooled latency distributions. Reference remains below Q4_0 and target-only speed;
+trained candidate result and cumulative cap endpoints remain pending.
+
 ## Scheduled candidate evaluation running — October 4, 06:54 UTC
 
 The sole operator dispatched candidate5000 evaluation under detached host tmux
