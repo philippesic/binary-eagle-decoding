@@ -98,6 +98,7 @@ def round_summary(records: list[dict], maximum: int) -> dict:
 def command(config: dict, protocol: dict, arm: str, port: int) -> list[str]:
     cmd = [config["binary"]["path"], "-m", config["target"]["path"],
            "--n-gpu-layers", "all", "--ctx-size", str(protocol["context_tokens"]),
+           "--batch-size", str(protocol.get("batch_tokens", 32)), "--ubatch-size", str(protocol.get("microbatch_tokens", 32)),
            "--parallel", "1", "--fit", "off", "--cache-type-k", "f16", "--cache-type-v", "f16",
            "--jinja", "--metrics", "--perf", "-lv", "4", "--host", "127.0.0.1", "--port", str(port)]
     if arm == "target_only":
