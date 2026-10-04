@@ -110,6 +110,40 @@ No dataset recapture, recipe/precision/budget change or discarded optimizer work
 Checkpoint and successful raw evaluation archives use verified same-filesystem
 hardlinks before pruning. Original historical paired step 1,000 remains untouched.
 
+Reference training subsequently segfaulted at step 9,681. The exact step 9,000
+checkpoint and raw failure were preserved; the first same-recipe retry restored
+that checkpoint and has positive updates. Built-in recovery retained 1,085.811
+seconds for the failed attempt, making the settled reference budget 1,850.536
+seconds. About 379.457 seconds of that charge is conservative post-crash downtime.
+The original cap remains 7,200 trainer-accounted seconds; it is not a claim of
+exactly two hours of productive optimizer work after such recovery. Uncommitted
+updates 9,001–9,681 were rolled back and replayed from the checkpoint; their first
+attempt remains charged. Retry 1 passed the failure point and reached step 10,000/
+cursor10,017, exit 0, with budget settled at 2,005.419 seconds. Its scheduled native
+evaluation is running; both final endpoints remain pending. Fault cause is
+unexplained; equivalent recurrence retains the same retry limit (one of two used).
+
+## Endpoint reporting method
+
+Final coverage will use the authenticated checkpoint's committed `unique_prompts`
+and `unique_rows` sets, with the counts exposed as `unique_prompts` and
+`unique_supervised_rows` in status. `presented_supervised_tokens` includes replay;
+epoch replay does not inflate distinct counts. Abandoned work rolled back after a
+crash can remain charged without appearing in committed coverage.
+
+Exact cumulative per-update sign flips are separate from sampled diagnostic sign
+flips and flip-backs. Final telemetry will state its observation step/gap; the
+latest sample can precede the endpoint by up to 99 updates. Aggregate near-zero
+telemetry uses threshold 0.01, while layer diagnostics use 0.05. Per-family
+movement admission samples one maximum-gradient element per tensor and proves
+observed movement; it does not measure full-tensor displacement.
+
+Each endpoint must have a settled 7,200-second budget with no active attempt,
+authenticated final checkpoint and matching final development request/result.
+Accounting can conservatively retain failed work and clamp at the cap while an
+in-flight update or serialization finishes. Endpoint timing is trainer-accounted
+time; startup, evaluation and physical process-release evidence remain separate.
+
 ## Artifact locations and pending completion
 
 Candidate step 5,000 identities: checkpoint

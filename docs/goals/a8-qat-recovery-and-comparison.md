@@ -1,5 +1,52 @@
 # A8 QAT recovery and comparison
 
+## Reference retry 1 reached 10,000; evaluation running — October 4, 07:35 UTC
+
+Reference supervisor15464/trainer15470 exited −11 at 07:24:59.912725Z. Last status
+step9681/cursor9697, cumulative observed trainer time1470.676493 seconds. Latest
+durable checkpoint is step9000/cursor9016, resume SHA
+`4aba3effdf2d9bae5bd80b5dd1f7ae027356c4b4c9bbc63b11fc2c56e0714e0d`, manifest
+`3927be237de75978134f13564ce0c14de8caa3ac2d092355cea1b316add426bc`, joint NPZ
+`7f1860d5a9b0959bb4e78e4dd92f67d4737f5129b2dd0ea4b32acb1551529bb5`.
+Failure state/stdout/status/budget/latest snapshots are preserved under
+`evidence-archive/failures/reference-training-segfault-attempt-001`; checkpoint
+hardlink archive `evidence-archive/checkpoints/reference-crash-step-9000` verified.
+No Python traceback or core appeared. All exact failed groups/children/native
+contexts/session returned; no compute apps, baseline RTX5080 2766 MiB/0%.
+
+Same-boot built-in TrainingBudget reconciliation charged1085.811027178 seconds to
+the failed attempt, retaining all failed post-checkpoint work. Settled budget now
+1850.536234645/7200 seconds; remaining5349.463765355. This includes approximately
+379.457 seconds of conservative downtime beyond known terminal time (derived from
+recorded start/terminal clocks); no refund or budget extension. Committed coverage
+rolls back to checkpoint9000, while failed elapsed time remains charged.
+
+Retry1 launched 07:29:55.913250Z under SAME immutable3bd/configcf320476/boot517c4a36.
+Supervisor15845/birth3355318 and trainer15851/birth3355328; diagnostic environment
+`PYTHONFAULTHANDLER=1` only. Actual positive resume reached step9241/cursor9257 at
+07:32:14Z, 241 updates, finite18 gradients. New active reservation5349.463765355,
+start07:31:32.012Z; optimizer/RNG/cursor/recipe checkpoint restored. Retry1 then
+passed failed9681/cursor9697 and reached step10000/cursor10017 at
+07:34:09.987710Z, exit0/status awaiting_development. Checkpoint SHA
+`281546e75c0d1d010a32b5477890788ad77077e1ec6819ceae745a2ac5f24f78`.
+Budget settled2005.419445274/7200, active_attempt null, remaining5194.580554726;
+retry itself charged154.883210629seconds. Last update finite18 tensors, cumulative
+sign flips8914695. Groups/context released, baseline2766MiB/0%. Post-recovery
+budget snapshot hardlink preserved (SHA5dea423c...14d43).
+
+Reference10000 scheduled evaluation launched07:35:58.731347Z, same3bd/native9e2,
+run `a8-ref-step10000-eval-supervisor-20261004-01`, session
+`a8-ref-step10000-eval-20261004-01`; supervisor16090/evaluator16096, births pending
+operator record. Checkpoint hardlink archive `evidence-archive/checkpoints/reference-step-10000`
+verified, manifest05703693...204ca. Evaluation cap1200 unchanged; result pending.
+Then candidate resumes from evaluated5000/1047.285s toward10000.
+
+Incident is operationally recovered, cause unexplained. Equivalent future training
+SIGSEGV remains the same incident unless a distinct cause is proved;
+retry_count1/max2 AUTOMATIC RETRIES after original failure. No retry3, new
+science/recipe/precision/data, feature disabling or repeated admission. Goal and
+heartbeat ACTIVE; sole operator ledger owns fresh state. Both endpoints incomplete.
+
 ## Candidate 5,000 evaluated; reference positive resume — October 4, 07:14 UTC
 
 Candidate evaluation completed exit 0 at 07:06:52.661423Z; supervised runtime
@@ -11,7 +58,8 @@ and target-only at 88.64152 tokens/s; Q4 ratio 0.50565. Decode rate 70.43144 ver
 143.25322, ratio 0.49166. All 24 native output sequences and 120 timing sequences
 match Q4_0, including target-only timing. Five repetitions × 24 prompts = 120
 measured requests per variant. No sealed access. Candidate trails reference at
-this update count; final equal-time endpoints and feature attribution remain open.
+this update count; final equal-time endpoints remain pending. The combined
+candidate does not isolate individual feature effects.
 
 Raw attempt/report/result/manifest/timing and checkpoint archives are hardlink
 verified. Locator `evidence-archive/development/candidate-step5000-locator-map.json`.
@@ -35,6 +83,31 @@ The clean, fully merged helper-only repair worktree and branch were retired;
 only disposable caches were ignored. Immutable remote 3bd execution and all raw
 runs remain preserved. Current counts and exact identities are in the ignored
 operator ledger and compact comparison summary.
+
+## Endpoint evidence audit — October 4, 07:20 UTC
+
+Trainer owner inspected current source66b0ea1 only: no edits, tests, remote actions
+or new gate. Final committed coverage is in authenticated `resume.pt` sets
+`unique_prompts`/`unique_rows`, plus tokens/epoch/cursor; status exposes counts as
+`unique_prompts`, `unique_supervised_rows`, `presented_supervised_tokens`. Restores
+preserve sets/cursor; replay increases presented tokens without inflating distinct
+coverage. Failed rolled-back work can remain budget-charged outside committed sets.
+
+`status.models.A8.sign_flips` is ONE optimizer update; `cumulative_sign_flips` is
+exact per-update history. `recipe-audit.json.telemetry` sign-flip/flip-back totals
+are sampled diagnostic history: record observation step/gap and avoid conflation.
+It also holds near-zero distances/fraction and per-family L1 movement. Aggregate
+near-zero threshold0.01 differs from layer threshold0.05. Last sample can precede
+endpoint by99steps; movement admission samples one maximum-gradient element per
+tensor. Root report now documents these limits; sole operator has extraction paths.
+
+Endpoint evidence must join settled `budget-used.json` training_seconds7200 and
+active_attempt null to latest final checkpoint, `development-request.json`
+final_training_complete, completed `development-result.json`, matching report
+checkpoint/split/runtime/complete timing and terminal status. In-flight work can
+finish after the capped deadline; null budget does not prove physical release.
+Both cumulative endpoints and final evaluations remain INCOMPLETE. Continue the
+same admitted comparison without repeated proof runs or added science.
 
 ## Archived primary acceptance counts transcribed — October 4, 07:04 UTC
 

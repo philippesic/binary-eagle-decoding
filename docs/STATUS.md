@@ -4,20 +4,20 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Candidate 5,000 evaluated; reference training — October 4, 07:14 UTC
+## Reference recovered to 10,000; evaluation running — October 4, 07:35 UTC
 
-Candidate native evaluation passed and raw evidence is archived: 0.218 accepted
-drafts/round, 68.34 request tokens/s, below reference at 0.377/81.48 and Q4_0
-at 1.306/~135. Its budget is 1,047.285/7,200 trainer seconds; 24 native and 120
-timing response sequences match Q4_0, no sealed access. Evaluation resources
-returned. These are intermediate checkpoints, not final equal-time endpoints.
+First bounded retry passed the prior step 9,681 failure point and reached the
+scheduled 10,000-update boundary/cursor10017, exit 0. Checkpoint281546e7 archived;
+reference budget settled 2,005.419/7,200 seconds, no active training attempt.
+Training groups/contexts released. Scheduled native evaluation launched07:35:58UTC,
+supervisor16090/evaluator16096, immutable3bd/current9e2,1200s cap; result pending.
 
-Reference resumed exactly from evaluated step 5,000/cursor5009 and advanced
-to step 5,411/cursor5421: 411 real updates, cumulative budget 829.816/7,200 seconds.
-Supervisor15464/birth3245398 and trainer15470/birth3245407 are live under the
-same immutable source3bd; all18 gradient tensors finite. Next natural boundary
-is 10,000. The SAME Goal and recovery heartbeat are ACTIVE. Recipes,
-data, precision and budgets are preserved; A1 held out, no RTX2080Ti controls.
+Unexplained segmentation fault and exact step 9,000 resume are preserved. Recovery
+retained all failed work and about379.457s conservative post-crash downtime;
+no refund, budget expansion or recipe/source change. Retry count1/max2;
+equivalent recurrence does not reset the limit. Diagnostic fault handler enabled.
+Candidate stays evaluated at 5,000/1,047.285 seconds, below reference and Q4_0.
+The SAME Goal/heartbeat are ACTIVE; A1 held out, no RTX2080Ti controls.
 
 ## Active: A8 QAT recovery and comparison — October 3, 2026
 
@@ -29,7 +29,7 @@ The sole GPU operator continues the scheduled comparison; root maintains the
 report and durable state. See the [ownership checkpoint](goals/a8-qat-recovery-and-comparison.md#standalone-ownership-claimed--october-3-2026).
 Integrated fixes are published (frozen execution source583480c; main8583b68).
 BOTH actual A8 arms have optimizer updates and exact positive-step resume proof.
-Reference is evaluated at5000updates/764.725seconds; candidate learned A8/all-nine
+Reference is at10000updates/2005.419seconds with evaluation running; candidate learned A8/all-nine
 midpoints/latent0.1 AdamW is evaluated at5000/1047.285seconds. All33candidate
 tensors show finite/nonzero gradients and actualmovement; cache/head execution
 and learned-head serial exception are observed. Arms alternate at scheduled
