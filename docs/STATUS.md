@@ -13,8 +13,9 @@ Reference resumed30k→35k: supervisor29672/birth5311113,trainer29677/birth53111
 Linux session `a8-reference-step30000-resume-20261004-01`. At12:59:15UTC it reached
 30563/cursor30618,5202.857739trainer seconds. Keep the detached job running.
 
-Second-compaction hook requires successor coordination. Prior operator closed transport13:02:41UTC and ceased remote control; successor acknowledgment
-and heartbeat retarget will be recorded before prior coordinator retires.
+Second-compaction hook requires successor coordination. Prior operator closed transport13:02:41UTC and ceased remote control; successor `01a10704-f186-7991-97c7-6f4b3df51ae9` is reading the handoff.
+Its acknowledgment/live-job visibility and SAMEheartbeat retarget will be
+recorded before prior coordinator retires.
 See [full rotation handoff](goals/a8-qat-recovery-and-comparison.md#coordinator-rotation-handoff--october-4-1300-utc)
 for exact next actions, source/config/checkpoints, budgets, tests, workers and
 endpoint/release audit. BOTH7200 endpoints/finalreports incomplete. SAMEheartbeat
