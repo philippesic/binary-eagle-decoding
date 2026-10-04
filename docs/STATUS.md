@@ -4,33 +4,41 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Final comparison verified; publication and cleanup — October 4, 16:31 UTC
+## A8 comparison COMPLETE — October 4, 16:36 UTC
 
-BOTH7200/max7200/null budgets and matching completed final checkpoints/results.
-Reference43203:0.638568native accepted drafts/round,95.689requesttokens/s (70.47%
-Q4_0); candidate34731:0.247581,69.623 (51.68%). Q4_01.306255native drafts/round.
-Both latency/throughput trailprimarybaseline; allnative24 andtiming120 response
-sequences match. Actual committedcoverage reference531prompts/206163rows/tokens,
-candidate426/165733; exact versus sampledtelemetry/gaps are audited. All18reports
-andcharged reference SIGSEGV/retry preserved, no topup or recapture.
+Bothoriginal7200trainer-accounted seconds perarm settled, nullactiveattempts,
+matching completedfinalcheckpoints/results; all18native reports archived. RTX5080/
+SM120,F16target/verifier/KV unchanged. NeitherA8arm beatprimaryQ4_0:
 
-Final report and scalar evidence passroot andindependent QA (429reportchecks,
-472timingarithmetic). All34finalnative groups andownedjob groups absent,/dev/dxg
-noholders, RTX5080 idlebaseline; bothtransportpanes285and286 closed (last16:17:24UTC).
-Root is publishing/merging/retiring onlyowned fullymergedworktrees andpausing SAME
-heartbeat. Goal remains active through those final steps; no new research decision
-or2080controls. See [verified final checkpoint](goals/a8-qat-recovery-and-comparison.md#final-comparison-verified-publication-and-cleanup--october-4-1631-utc)
-and [final comparison](../experiments/a8-qat-recovery/comparison.md).
+| Final arm | Accepted drafts/round | Request tokens/s | Paired Q4_0 rate |
+|---|---:|---:|---:|
+| Reference (43,203 updates) | 0.638568 | 95.689 | 70.47% |
+| Candidate (34,731 updates) | 0.247581 | 69.623 | 51.68% |
 
-## Active: A8 QAT recovery and comparison — October 3, 2026
+Q4_0nativeaccepted/round1.306255. Allfive pairedtiming repetitions remainbelowQ4_0;
+bothrequestlatency worse, allnative24/timing120response sequences match. Actual
+committedcoverage531/426prompts and206163/165733rows/tokens; exactversussampled
+telemetry audited. Chargedreference SIGSEGV/retry preserved, no topup/recapture.
+[Final report](../experiments/a8-qat-recovery/comparison.md) published `bbfec13`,
+lineage integrated/pushed `a0c2bfc`; independent429report and472timingchecks pass.
+
+Allownedjob and34finalnative groups/contexts released,/dev/dxg noholders,
+RTX5080idlebaseline. Lastread-only transport closed16:17:24UTC. Soleoperator/QA
+workers finished; bothowned mergedworktrees/branches retired withneededpreflight
+preserved. Otherteams' worktrees/changes/untrackedresearch untouched. SAMEheartbeat
+PAUSED/readback verified16:35UTC; humanchat staysopen. No new goal/budget/decision
+selected, no2080query/control/flagwrite. See
+[full completion audit](goals/a8-qat-recovery-and-comparison.md#complete--october-4-1636-utc).
+
+## Historical execution: A8 QAT recovery and comparison — October 3, 2026
 
 **Standalone owner:** successor chat `01a10704-f186-7991-97c7-6f4b3df51ae9`
 now has exclusive ownership after documented context rotation. Prior coordinator
 `01a103da-0980-7332-a041-3f95aca6a3f5` and its operator are retired. The originating chat and its interrupted workers are
 uninvolved. The SAME `a8-qat-recovery-monitor` is retargeted here and ACTIVE.
 Trainer, recipe and native timing workers have finished their bounded work.
-The sole GPU operator continues the scheduled comparison; root maintains the
-report and durable state. See the [ownership checkpoint](goals/a8-qat-recovery-and-comparison.md#standalone-ownership-claimed--october-3-2026).
+The sole GPU operator finished the scheduled comparison; root published the
+final report and completion audit above. See the [ownership checkpoint](goals/a8-qat-recovery-and-comparison.md#standalone-ownership-claimed--october-3-2026).
 Integrated fixes are published (frozen execution source583480c; main8583b68).
 BOTH actual A8 arms have optimizer updates and exact positive-step resume proof.
 Reference is at40000/6680.600seconds with scheduled evaluation running; candidate
@@ -39,8 +47,8 @@ tensors show finite/nonzero gradients and actualmovement; cache/head execution
 and learned-head serial exception are observed. Arms alternate at scheduled
 5000boundaries toward independent7200second caps. Reference interim acceptance is 0.624 accepted drafts/round versus Q4_0 at
 1.306; request throughput is 70% of Q4_0. Both remain below the primary baseline.
- The only active goal is
-[A8 QAT recovery and comparison](goals/a8-qat-recovery-and-comparison.md).
+ The A8 goal is now complete; this dated section preserves execution history.
+See [completion](goals/a8-qat-recovery-and-comparison.md).
 
 RTX5080 is resumed for this A8 work; A1 is held out. The human separately resumed
 RTX2080Ti for DSpark/DFlash; this team stays off that host and changes no shared

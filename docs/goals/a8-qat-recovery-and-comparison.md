@@ -1,5 +1,58 @@
 # A8 QAT recovery and comparison
 
+## COMPLETE — October 4, 16:36 UTC
+
+Existing authorized A8 QAT recovery and matched7200trainer-accounted seconds per
+arm objective is COMPLETE. Both budgets7200/max7200/null; final status completed/
+final_training_complete; latest/finalrequest/completedresult/checkpoint/report
+joins pass. Reference43203/cursor43287,aebb8032 andcandidate34731/cursor34797,
+bda021d3; originalmath583/helper3bd/native9e2/fixed24F16/Q4_0 policy preserved.
+Final reports exit0 under1200caps, all18reports/failures/proofs archived, no sealed
+finals accessed or data recapture/topup/newregressionexperiment.
+
+**Negative primary result:** native accepted drafts/round reference0.638568,
+candidate0.247581 versusQ4_01.306255. Request95.689/69.623tokens/s,70.47%/51.68%
+ofpairedQ4_0; allfive matched repetitions belowbaseline. Both pooledlatency worse.
+Referenceoutperformsthe combinedcandidate, withoutisolatedfeature attribution.
+Actualcommitted TRAIN coverage reference531prompts/206163rows/tokens andcandidate
+426/165733/165733 fromavailable10000/3899930. Exact flips137097380/1119471657;
+sampled history/gaps2/30 andfamily/nearzero telemetry separated. Reference charged
+SIGSEGV/downtime/9000rollback/retry1 ofmax2 preserved; no budgetrefund.
+
+[Final published comparison](../../experiments/a8-qat-recovery/comparison.md) and
+scalar evidence are public onmain, report publication `bbfec13`; reviewed report
+SHA26499028... and full SHA/pointers incompanion files. Root all18row/endpoint/rate
+joins andindependent Sol429reportchecks/472timingchecks pass; actual CPUoriginal
+checkpoint counts/counter joins pass underCUDA_VISIBLE_DEVICES empty. Lastbounded
+metadata read addedremaining3reports andlatency, hashesunchanged. No rawweights/
+datasets/captures/runs committed.
+
+**Physical and transport completion:** final16:03–16:04UTC inventory provesall34
+finalnative PID/groups returned, allownedjob groupsabsent, no project/native
+matches,/dev/dxg noholders, runtime tmuxempty, RTX5080/SM1202766MiB/0%/no computeapps.
+AllCPU audit commands returned. Sole pane285/session254 closed16:05:50UTC; final
+read-only pane286/session255 closed16:17:24UTC andverifiedabsent. No2080query/
+control orsharedflagwrite. Operator andCPU QA workers finished; no A8job remains.
+
+**Git and cleanup:** coherent report/evidence pushed, then lineage-only merge
+`a0c2bfc` retains reviewed privatebranch ancestry with unchanged main tree. Two
+historical docpatch IDs differ dueother-team additions duringoriginalintegration;
+406e128→bdd6fd4 and14b69b7→9b5d003 mappings were reviewed, not discarded work.
+Bothowned worktrees removed afterclean/fullymerged/origin-main checks:
+`/private/tmp/eagle-a8-standalone` and`/private/tmp/eagle-qat-a8-operator`.
+Localbranches retired; oldroot remote branch also verifiedmerged andremoved.
+Onlydisposable88Python/Ruff caches dropped. Operatorignoredpreflight preservedat
+`runs/qat-a8-recovery/worktree-preservation/operator-preflight.md`, SHA
+`d69447dbec74171ced65de6a88ad8ff486f834314887f8f93caf108abc07da74`.
+Otherteams' unmergedworktrees, mainchanges andthreeuntrackedovernightpaths preserved.
+
+SAME `a8-qat-recovery-monitor` updatedPAUSED andreadback verified16:35UTC; same
+ID/name/prompt/15minuteRRULE/targetsuccessor preserved, noduplicateautomation.
+Root registration recordscomplete phase and terminalproof. Native Goal may now
+be markedcomplete after thisfinaldurablecheckpoint is committed/pushed. Human
+chat staysopen. No new goal, experiment, budget orresearchdecision selected.
+Final audit checkpoint written 2026-10-04T16:37:40.580303+00:00.
+
 ## Final comparison verified; publication and cleanup — October 4, 16:31 UTC
 
 BOTH original7200/max7200/null budgets and completed/final_training_complete status,
