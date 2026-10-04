@@ -405,6 +405,9 @@ def load_block_gguf(path, expected_sha256, config: BlockQATConfig):
         "dflash.attention.layer_norm_rms_epsilon": config.norm_eps,
         "tokenizer.ggml.mask_token_id": config.mask_token_id,
     }.items():
-        if field(key) != value:
+        # GGUF arithmetic metadata is stored as F32; canonicalize the
+        # declared Python scalar to that deployed representation before compare.
+        expected = float(np.float32(value)) if isinstance(value, float) else value
+        if field(key) != expected:
             raise ValueError("source GGUF model geometry differs: " + key)
     return tensors
