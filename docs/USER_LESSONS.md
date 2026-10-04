@@ -200,6 +200,13 @@ additional proof protocols or redoing completed audit work.
 - Practical lesson: Collect an explicit list of small status, report, identity and manifest files. Keep tensor/logit dumps remote, record their producer hashes where required, and label log tails as partial. A collector failure does not establish producer failure.
 - Resolution: Original failed bytes and claim are preserved. The same operator is authorized to retrieve bounded explicit metadata and fresh resource-return evidence without rerunning the GPU evaluation.
 
+- During the final A8 CPU release audit on October4, a whole native-cell manifest
+  also exposed token-ID arrays while the operator was locating server_pid. It was
+  a read-only spill, with no artifact mutation or new run. Root had requested a
+  complete server inventory without supplying that cell's exact field schema;
+  operator stopped broad reads and restricted extraction to PID/PGID/stop fields.
+  Select keys before printing a JSON object, even when its filename says manifest.
+
 ### 2026-10-03: Separate implemented QAT features from the executed recipe
 
 - Context: In the retrospective, the human asked whether the 1,000-step run used sign flipping instead of gradient descent, midpoint adjustment, and all implemented optimizations.
@@ -373,3 +380,22 @@ additional proof protocols or redoing completed audit work.
   A8 is1,119/8,398/1,718 (24prompts), Q4_0 is1,608/6,047/1,231; the timing counts
   remain5,595/41,990/8,535 and8,040/30,235/6,140 (120requests). Original report
   SHAfff25faa... is unchanged; no experiment rerun was needed.
+
+### 2026-10-04: Use the saved diagnostic observation step
+
+- Context: Final A8 endpoint telemetry joins must distinguish exact optimizer
+  history from diagnostics sampled every100updates.
+- Evidence: The CPU audit initially set sample_step from recipe-audit.json.step,
+  which is updated each optimizer step. Root source review found the actual
+  observation position is saved recipe_telemetry.signs.last_step in resume.pt;
+  the small telemetry dict has counts/gaps but no step field.
+- Agent contribution: Operator used the outer audit step; root had earlier
+  incorrectly suggested the step was inside the telemetry dict. Root corrected
+  that guidance from SignFlipDiagnostics.observe/state_dict before accepting
+  audit results. This is an agent schema mistake, not a user or training error.
+- Practical lesson: Join the saved diagnostic last_step/observations/cumulative
+  counters to the small telemetry fields; record the outer update step separately.
+  Compute endpoint minus saved last_step for the sample lag. Do not infer the
+  observation timestamp from a file's current update timestamp.
+- Resolution: Read-only CPU audit correction requested; no model/optimizer/data/
+  budget change or GPU request. Actual gap verification remains pending.

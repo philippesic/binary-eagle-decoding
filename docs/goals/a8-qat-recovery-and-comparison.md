@@ -1,5 +1,41 @@
 # A8 QAT recovery and comparison
 
+## Both final native evaluations passed; timing arithmetic audited — October 4, 15:45 UTC
+
+Reference final eval exit0/end15:26:08.712057UTC (start15:14:52.535458), supervisor
+wall676.176599s within original1200cap. Operator reports final status completed/
+final_training_complete, latest/request/completed result all join aebb8032,
+budget7200/null,531/206163/206163coverage. Raw attempt/report/result/manifest/
+state/stdout hardlink archived and locator verified; observed supervisor/evaluator
+PIDs/runtime tmux absent, RTX5080 baseline2766MiB/0%, no compute apps. Full final
+server-group/context inventory and CPU endpoint audit remain pending, transport
+pane285 open. Candidate final pass/bda021d3/7200/null remains unchanged.
+
+One two-manifest CPU timing aggregation succeeded using b742published script;
+no native requests or recapture. Derived artifact
+`experiments/a8-qat-recovery/final-timing-repetitions.json` SHA256
+`e204b574cd64f934bfcbbe94d2ee9fd09ce8fc309340fbf92410a560e7821280` binds candidate
+01fbc50b... and referencef45e3191... original timing manifests. Each final arm has
+360records,5repetitions×24prompts×3variants,120requests/14290returned tokens per
+variant. Original pooled cross-checks pass. Independent Sol CPU review472checks/
+zero failures verifies counts/rates/ratios/distributions from compact totals;
+receipt `experiments/a8-qat-recovery/final-timing-qa.json` (no new measurement).
+Candidate request69.623051 vsQ4_0134.728018 (ratio0.516767); reference95.689424
+vsQ4_0135.786987 (0.704702). All five matched ratios below1: candidate
+0.510793–0.519661,reference0.695472–0.708651. Ratios use count/time sums, not a mean
+of rates. Per-request latency quantiles require original pooled metadata separately.
+
+CPU audit script transfer exceeded tmux line capacity; partial ignored b64 was
+left unused, never decoded/executed. Use published Git blob e155ae2 to stage only
+analysis script with verifiedb742SHA, changing refs/ignored files, not frozen3bd
+HEAD/source. Root review also caught diagnostic step-scope bug and corrected its
+own earlier schema guidance: recipe-audit outer step is current update; observation
+step is checkpoint recipe_telemetry.signs.last_step, not the small telemetry dict.
+Use that saved last_step and join counts/gaps; actual verification pending.
+No experiment, model, budget or source math changed. Both native runs are finished,
+but final CPU coverage/telemetry/latency/report/physical inventory/transport closure/
+worktree cleanup/heartbeat pause audit remains INCOMPLETE. Native Goal active.
+
 ## Reference final native evaluation running — October 4, 15:15 UTC
 
 Reference final43203/cursor43287/aebb8032 checkpoint and final request/status/
