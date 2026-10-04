@@ -11,6 +11,7 @@ no optimizer or drafter is present. GPU use belongs to the sole operator.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import signal
@@ -77,6 +78,22 @@ class NativeTeacher:
             if matrix_types == {Type.F32}
             else "mixed"
         )
+        tokenizer_metadata = {
+            key: field.contents()
+            for key, field in target_reader.fields.items()
+            if key.startswith("tokenizer.")
+        }
+        tokenizer_hash = hashlib.sha256(
+            json.dumps(
+                tokenizer_metadata, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+            ).encode()
+        ).hexdigest()
+        template = tokenizer_metadata.get("tokenizer.chat_template", "")
+        template_hash = hashlib.sha256(
+            (
+                template if isinstance(template, str) else json.dumps(template, sort_keys=True)
+            ).encode()
+        ).hexdigest()
         del target_reader
         self.max_tokens = max_tokens
         self.timeout = timeout_seconds
@@ -90,6 +107,8 @@ class NativeTeacher:
             "target_kv_type": "F16",
             "target_precision": target_precision,
             "target_tensor_type_inventory": target_inventory,
+            "tokenizer_metadata_sha256": tokenizer_hash,
+            "target_chat_template_sha256": template_hash,
             "producer_host": os.uname().sysname + " " + os.uname().machine,
         }
         self.log = open(self.root / f"producer-{uuid.uuid4().hex}.log", "w")
@@ -112,7 +131,9 @@ class NativeTeacher:
         )
         self.closed = False
 
-    def capture_prefix(self, tokens, tap_ids, *, logits_mode="last", chain_ancestry=None):
+    def capture_prefix(
+        self, tokens, tap_ids, *, logits_mode="last", chain_ancestry=None, decode_history=None
+    ):
         if self.closed or self.process.poll() is not None:
             raise RuntimeError("native teacher process is not live")
         if (
@@ -122,14 +143,8 @@ class NativeTeacher:
             or any(type(n) is not int or n < 0 for n in tokens)
         ):
             raise ValueError("exact nonempty bounded integer token prefix required")
-        if (
-            not isinstance(tap_ids, (list, tuple))
-            or len(tap_ids) != 5
-            or len(set(tap_ids)) != 5
-            or any(type(n) is not int or n < 0 for n in tap_ids)
-        ):
-            raise ValueError("exact ordered five distinct native input taps required")
-        if logits_mode not in ("all", "last"):
+        self._validate_taps(tap_ids)
+        if logits_mode not in ("all", "last", "none"):
             raise ValueError("unsupported logits mode")
         request = {
             "id": uuid.uuid4().hex,
@@ -137,6 +152,123 @@ class NativeTeacher:
             "tap_ids": list(tap_ids),
             "logits_mode": logits_mode,
         }
+        if decode_history is not None:
+            if not isinstance(decode_history, list) or not decode_history:
+                raise ValueError("nonempty source decode history required")
+            offset = 0
+            for chunk in decode_history:
+                if (
+                    not isinstance(chunk, dict)
+                    or set(chunk) != {"offset", "count", "phase", "kv_reused_from_same_chain"}
+                    or type(chunk["offset"]) is not int
+                    or chunk["offset"] != offset
+                    or type(chunk["count"]) is not int
+                    or not 0 < chunk["count"] <= 256
+                    or chunk["phase"] not in ("prefill", "target_only_greedy")
+                    or (chunk["phase"] == "target_only_greedy" and chunk["count"] != 1)
+                    or type(chunk["kv_reused_from_same_chain"]) is not bool
+                    or chunk["kv_reused_from_same_chain"] != (offset > 0)
+                ):
+                    raise ValueError("invalid exact source decode partition")
+                offset += chunk["count"]
+            if offset != len(tokens):
+                raise ValueError("source decode partitions do not cover exact prefix")
+            request["decode_history"] = decode_history
+        return self._capture_request(request, chain_ancestry)
+
+    @staticmethod
+    def _validate_taps(tap_ids):
+        if (
+            not isinstance(tap_ids, (list, tuple))
+            or len(tap_ids) not in (3, 5)
+            or len(set(tap_ids)) != len(tap_ids)
+            or any(type(n) is not int or n < 0 for n in tap_ids)
+        ):
+            raise ValueError("exact ordered three or five distinct native input taps required")
+
+    def generate_capture(
+        self,
+        *,
+        messages=None,
+        prompt_text=None,
+        template_mode,
+        max_new_tokens,
+        tap_ids,
+        logits_mode="all",
+        chain_ancestry=None,
+    ):
+        self._validate_taps(tap_ids)
+        if logits_mode not in ("all", "last", "none"):
+            raise ValueError("unsupported logits mode")
+        if type(max_new_tokens) is not int or not 0 <= max_new_tokens <= self.max_tokens:
+            raise ValueError("invalid bounded native continuation")
+        prompt = {"template_mode": template_mode, "max_new_tokens": max_new_tokens}
+        if template_mode == "native_chat" and prompt_text is None:
+            if (
+                not isinstance(messages, list)
+                or not messages
+                or any(
+                    not isinstance(item, dict)
+                    or set(item) != {"role", "content"}
+                    or any(not isinstance(value, str) for value in item.values())
+                    for item in messages
+                )
+            ):
+                raise ValueError("original role/content messages required")
+            prompt["messages"] = messages
+            source_text = json.dumps(
+                messages, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+            )
+        elif template_mode == "raw_text" and messages is None and isinstance(prompt_text, str):
+            if not prompt_text:
+                raise ValueError("empty raw native prompt")
+            prompt["text"] = prompt_text
+            source_text = prompt_text
+        else:
+            raise ValueError("explicit native_chat or raw_text source required")
+        request = {
+            "id": uuid.uuid4().hex,
+            "prompt": prompt,
+            "tap_ids": list(tap_ids),
+            "logits_mode": logits_mode,
+        }
+        receipt = self._capture_request(request, chain_ancestry)
+        receipt["prompt_source_sha256"] = hashlib.sha256(source_text.encode()).hexdigest()
+        receipt["rendered_prompt_sha256"] = hashlib.sha256(
+            receipt["rendered_prompt"].encode()
+        ).hexdigest()
+        receipt["chat_template_sha256"] = hashlib.sha256(
+            receipt["chat_template"].encode()
+        ).hexdigest()
+        if (
+            template_mode == "native_chat"
+            and receipt["chat_template_sha256"] != self.ancestry["target_chat_template_sha256"]
+        ):
+            raise ValueError("native selected template differs from frozen GGUF template")
+        if chain_ancestry is not None:
+            if (
+                "prompt_length" in chain_ancestry
+                and chain_ancestry["prompt_length"] != receipt["prompt_length"]
+            ):
+                raise ValueError("caller prompt boundary differs from native tokenization")
+            receipt["chain_ancestry"] = {
+                **chain_ancestry,
+                "prompt_length": receipt["prompt_length"],
+            }
+        self._save_receipt(receipt)
+        return receipt
+
+    def _save_receipt(self, receipt):
+        directory = self.root / receipt["id"]
+        (directory / "receipt.json").write_text(
+            json.dumps(receipt, indent=2, sort_keys=True) + "\n"
+        )
+
+    def _capture_request(self, request, chain_ancestry):
+        if self.closed or self.process.poll() is not None:
+            raise RuntimeError("native teacher process is not live")
+        tokens = request.get("tokens")
+        logits_mode = request["logits_mode"]
         self.process.stdin.write(json.dumps(request) + "\n")
         self.process.stdin.flush()
         import selectors
@@ -159,18 +291,43 @@ class NativeTeacher:
             or any(receipt.get(k) != v for k, v in request.items())
         ):
             raise ValueError("native teacher response differs from exact caller prefix")
+        tokens = receipt["tokens"]
+        if (
+            not tokens
+            or len(tokens) > self.max_tokens
+            or any(type(n) is not int or n < 0 for n in tokens)
+        ):
+            raise ValueError("invalid native generated token chain")
+        if "prompt" in request:
+            generation = receipt.get("generation", {})
+            boundary = receipt.get("prompt_length")
+            if (
+                type(boundary) is not int
+                or not 0 < boundary <= len(tokens)
+                or generation.get("mode") != "native_target_greedy"
+                or generation.get("max_new_tokens") != request["prompt"]["max_new_tokens"]
+                or generation.get("generated_tokens") != len(tokens) - boundary
+                or generation.get("stop_eog") is not True
+                or receipt.get("tokenizer")
+                != {"add_special": True, "parse_special": True, "implementation": "llama_tokenize"}
+            ):
+                raise ValueError("invalid native generation/tokenizer contract")
         directory = self.root / request["id"]
         features_shape, logits_shape = receipt["features_shape"], receipt["logits_shape"]
         if (
             len(features_shape) != 3
-            or features_shape[:2] != [len(tokens), 5]
+            or features_shape[:2] != [len(tokens), len(request["tap_ids"])]
             or features_shape[2] <= 0
-            or logits_shape[0] != (len(tokens) if logits_mode == "all" else 1)
+            or logits_shape[0]
+            != (len(tokens) if logits_mode == "all" else 1 if logits_mode == "last" else 0)
             or logits_shape[1] <= 0
         ):
             raise ValueError("native teacher response shape mismatch")
         files = {}
-        for name, shape in [("features", features_shape), ("logits", logits_shape)]:
+        descriptors = [("features", features_shape)]
+        if logits_mode != "none":
+            descriptors.append(("logits", logits_shape))
+        for name, shape in descriptors:
             path = directory / (name + ".f32")
             if path.stat().st_size != 4 * int(np.prod(shape)):
                 raise ValueError("native teacher file byte count mismatch")
@@ -186,11 +343,11 @@ class NativeTeacher:
             "files": files,
             "chain_ancestry": chain_ancestry,
             "teacher_context_reset_between_requests": True,
-            "prefix_freshness": "caller_current_student_prefix",
+            "prefix_freshness": "native_generated_chain"
+            if "prompt" in request
+            else "caller_current_student_prefix",
         }
-        (directory / "receipt.json").write_text(
-            json.dumps(receipt, indent=2, sort_keys=True) + "\n"
-        )
+        self._save_receipt(receipt)
         return receipt
 
     @staticmethod
@@ -254,12 +411,24 @@ def main():
         with args.requests.open() as stream:
             for line in stream:
                 request = json.loads(line)
-                receipt = teacher.capture_prefix(
-                    request["tokens"],
-                    request["tap_ids"],
-                    logits_mode=request.get("logits_mode", "all"),
-                    chain_ancestry=request.get("chain_ancestry"),
-                )
+                if "template_mode" in request:
+                    receipt = teacher.generate_capture(
+                        messages=request.get("messages"),
+                        prompt_text=request.get("prompt_text"),
+                        template_mode=request["template_mode"],
+                        max_new_tokens=request["max_new_tokens"],
+                        tap_ids=request["tap_ids"],
+                        logits_mode=request.get("logits_mode", "all"),
+                        chain_ancestry=request.get("chain_ancestry"),
+                    )
+                else:
+                    receipt = teacher.capture_prefix(
+                        request["tokens"],
+                        request["tap_ids"],
+                        logits_mode=request.get("logits_mode", "all"),
+                        chain_ancestry=request.get("chain_ancestry"),
+                        decode_history=request.get("decode_history"),
+                    )
                 print(json.dumps(receipt), flush=True)
 
 

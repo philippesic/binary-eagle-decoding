@@ -16,10 +16,11 @@ from gguf import GGUFWriter
 
 
 class NativeTeacherTests(unittest.TestCase):
-    def target_fixture(self, root, layers=6):
+    def target_fixture(self, root, layers=6, full_tokenizer=False):
         target = root / "target.gguf"
         w = GGUFWriter(target, "qwen3")
         w.add_name("synthetic CPU target teacher fixture")
+        w.add_chat_template("chatml")
         w.add_block_count(layers)
         w.add_embedding_length(32)
         w.add_feed_forward_length(64)
@@ -29,10 +30,16 @@ class NativeTeacherTests(unittest.TestCase):
         w.add_rope_dimension_count(8)
         w.add_layer_norm_rms_eps(1e-6)
         w.add_tokenizer_model("llama")
-        w.add_token_list([f"token{i}" for i in range(32)])
+        tokens = [f"token{i}" for i in range(32)]
+        if full_tokenizer:
+            tokens[:3] = ["<unk>", "<s>", "</s>"]
+            tokens += [f"<0x{i:02X}>" for i in range(256)]
+            w.add_token_types([2, 3, 3] + [1] * 29 + [6] * 256)
+            w.add_token_scores([0.0] * len(tokens))
+        w.add_token_list(tokens)
         rng = np.random.default_rng(714)
         for name in ("token_embd.weight", "output.weight"):
-            w.add_tensor(name, rng.normal(0, 0.03, size=(32, 32)).astype(np.float32))
+            w.add_tensor(name, rng.normal(0, 0.03, size=(len(tokens), 32)).astype(np.float32))
         w.add_tensor("output_norm.weight", np.ones(32, np.float32))
         for i in range(layers):
             for name in ("attn_norm", "ffn_norm"):
@@ -174,6 +181,86 @@ with NativeTeacher(Path(sys.argv[2]),Path(sys.argv[3]),Path(sys.argv[4]),
                     wrapper.wait(timeout=10)
                 wrapper.stdout.close()
                 wrapper.stderr.close()
+
+    @unittest.skipUnless(
+        os.environ.get("BLOCK_TEACHER_NATIVE"), "actual native target helper not selected"
+    )
+    def test_native_prompt_generation_and_three_tap_replay(self):
+        import hashlib
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            target = self.target_fixture(root, full_tokenizer=True)
+            messages = [{"role": "user", "content": "token3 token4"}]
+            canonical = json.dumps(
+                messages, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+            )
+            with NativeTeacher(
+                Path(os.environ["BLOCK_TEACHER_NATIVE"]),
+                target,
+                root / "raw",
+                target_sha256=sha256(target),
+                max_tokens=128,
+                gpu_layers=0,
+                producer_source_revision="0" * 40,
+                timeout_seconds=30,
+            ) as teacher:
+                generated = teacher.generate_capture(
+                    messages=messages,
+                    template_mode="native_chat",
+                    max_new_tokens=4,
+                    tap_ids=[0, 1, 2, 3, 4],
+                    logits_mode="all",
+                    chain_ancestry={
+                        "prompt_id": "synthetic",
+                        "prompt_sha256": hashlib.sha256(canonical.encode()).hexdigest(),
+                        "domain": "code",
+                        "source_split": "TRAIN",
+                    },
+                )
+                boundary = generated["prompt_length"]
+                self.assertGreater(boundary, 0)
+                self.assertEqual(generated["chain_ancestry"]["prompt_length"], boundary)
+                self.assertEqual(
+                    generated["prompt_source_sha256"],
+                    hashlib.sha256(canonical.encode()).hexdigest(),
+                )
+                self.assertEqual(generated["generation"]["mode"], "native_target_greedy")
+                rows = teacher.array(generated, "logits")
+                for i in range(boundary, len(generated["tokens"])):
+                    self.assertEqual(generated["tokens"][i], int(rows[i - 1].argmax()))
+                repeated = teacher.generate_capture(
+                    messages=messages,
+                    template_mode="native_chat",
+                    max_new_tokens=4,
+                    tap_ids=[0, 1, 2, 3, 4],
+                    logits_mode="none",
+                )
+                self.assertEqual(repeated["tokens"], generated["tokens"])
+                self.assertEqual(set(repeated["files"]), {"features"})
+                self.assertEqual(repeated["logits_shape"], [0, 288])
+                replay = teacher.capture_prefix(
+                    generated["tokens"],
+                    [0, 2, 4],
+                    logits_mode="last",
+                    decode_history=generated["decode_history"],
+                )
+                self.assertEqual(replay["features_shape"], [len(generated["tokens"]), 3, 32])
+                np.testing.assert_array_equal(
+                    teacher.array(generated, "features")[:, [0, 2, 4]],
+                    teacher.array(replay, "features"),
+                )
+                np.testing.assert_array_equal(rows[-1:], teacher.array(replay, "logits"))
+                raw = teacher.generate_capture(
+                    prompt_text="token3",
+                    template_mode="raw_text",
+                    max_new_tokens=0,
+                    tap_ids=[0, 2, 4],
+                    logits_mode="none",
+                )
+                self.assertEqual(raw["rendered_prompt"], "token3")
+                self.assertEqual(raw["prompt_source_sha256"], hashlib.sha256(b"token3").hexdigest())
+                self.assertEqual(len(raw["tokens"]), raw["prompt_length"])
 
     @unittest.skipUnless(
         os.environ.get("BLOCK_TEACHER_NATIVE"), "actual native target helper not selected"
