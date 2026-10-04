@@ -4,15 +4,15 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## RTX5080 A8 resume requested — October 3, 23:21 PDT
+## RTX5080 A8 usage resumed — October 3, 23:28 PDT
 
-Human requested “resume gpu usage”. RTX5080 new runs are unblocked and the SAME
-recovery heartbeat is ACTIVE; native Goal resumed. Sole operator is verifying
-fresh availability and exact candidate2081/cursor2084 checkpoint before launching
-unchanged source3bd/config/state. Candidate budget441.282of7200 seconds;
-reference preserved/evaluated5000/764.725seconds. Pause downtime is excluded.
-No repeated preparation/gates or unscheduled evaluation;2080 controls untouched.
-Actual resumed updates remain pending observation. See latest goal checkpoint.
+Actual candidate optimizer work resumed from2081 and advanced to2221updates,
+33finite gradient tensors and intact learned/midpoint/cache execution. Same source3bd,
+config/state and6758.718s active budget reservation; prior441.282s remains charged,
+pause downtime excluded. Sole operator owns supervisor13685/birth2974143 and
+trainer13691/birth2974154, fresh same-boot availability verified. The SAME recovery
+heartbeat and Goal are ACTIVE. Continue natural5000boundary arm alternation;
+reference remains evaluated5000/764.725s. No2080host-control writes or new gates.
 
 ## Active: A8 QAT recovery and comparison — October 3, 2026
 
