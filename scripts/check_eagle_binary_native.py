@@ -35,6 +35,7 @@ from w1a1_eagle.nine_model_pipeline import (  # noqa: E402
     resource_gate,
     sha256,
     stop_signals,
+    validate_cuda_dispatch,
 )
 from w1a1_eagle.nine_model_pipeline import require as require_value  # noqa: E402
 
@@ -74,6 +75,8 @@ def smoke(config_path, receipt_path):
     directory = receipt_path.parent / ("smoke-" + str(time.time_ns()))
     directory.mkdir(parents=True, exist_ok=False)
     env = native_environment("eagle", bits, config.get("environment"))
+    env["GGML_W1AX_ADMISSION_TRACE"] = "1"
+    env["CUDA_VISIBLE_DEVICES"] = config["gpu_uuid"]
     port = config["port"]
     require_value(available_port("127.0.0.1", port), "native smoke port occupied")
     command = [
@@ -164,6 +167,11 @@ def smoke(config_path, receipt_path):
         loader in text and dispatch in text, "actual all-nine W1 CUDA graph dispatch absent"
     )
     require_value("dense fallback" not in text.lower(), "native dense fallback observed")
+    observed_dispatch = validate_cuda_dispatch(text, audit, activation_bits=bits)
+    require_value(
+        observed_dispatch["selected_projection_count"] == 9,
+        "actual all-nine EAGLE selected CUDA operations required",
+    )
     atomic_json(
         receipt_path,
         {
@@ -174,7 +182,8 @@ def smoke(config_path, receipt_path):
             "target_sha256": config["inputs"]["target"]["sha256"],
             "binary_sha256": config["inputs"]["binary"]["sha256"],
             "cuda_dispatch_observed": True,
-            "selected_projection_count": 9,
+            "selected_projection_count": observed_dispatch["selected_projection_count"],
+            "observed_dispatch": observed_dispatch,
             "activation_bits": bits,
             "device": baseline,
             "config": {"path": str(config_path), "sha256": sha256(config_path)},

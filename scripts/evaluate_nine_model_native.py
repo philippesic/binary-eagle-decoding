@@ -31,6 +31,7 @@ from w1a1_eagle.nine_model_pipeline import (  # noqa: E402
     sha256,
     stop_signals,
     validate_bundle,
+    validate_cuda_dispatch,
 )
 from w1a1_eagle.nine_model_report import aggregate  # noqa: E402
 
@@ -184,6 +185,9 @@ def run(args):
                         and audit.get("output", {}).get("sha256") == models[cell]["sha256"],
                         "EAGLE activation arithmetic differs from frozen GGUF audit",
                     )
+                env["CUDA_VISIBLE_DEVICES"] = bundle["gpu_uuid"]
+                if diagnostic and bits is not None:
+                    env["GGML_W1AX_ADMISSION_TRACE"] = "1"
                 if cell.startswith(("dspark", "dflash")):
                     env["DSPARK_REQUIRE_AUTHOR_LAYOUT"] = "1"
                 trace = directory / "rounds.jsonl"
@@ -281,6 +285,13 @@ def run(args):
                     require(
                         "dense fallback" not in text.lower(), "native dense fallback prohibited"
                     )
+                    if diagnostic:
+                        exported = json.loads(
+                            files.check(inputs["export_endpoints"][cell]).read_text()
+                        )
+                        audit = json.loads(files.check(exported["audit"]).read_text())
+                        observed = validate_cuda_dispatch(text, audit, activation_bits=bits)
+                        atomic_json(directory / "actual-dispatch.json", observed)
     # Greedy verifier semantics: all nine must reproduce the target-only token prefix.
     target = {(r["repetition"], r["prompt_id"]): r for r in records if r["cell"] == "target_only"}
     for row in records:

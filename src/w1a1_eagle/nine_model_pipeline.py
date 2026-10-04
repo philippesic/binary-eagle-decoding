@@ -163,6 +163,51 @@ def native_environment(family, activation_bits, declared=None):
     return env
 
 
+def validate_cuda_dispatch(text, audit, *, activation_bits):
+    """Exact named integer/XOR kernel launches, parsed only outside clean timing."""
+    records = []
+    marker = "W1AX_ADMISSION_TRACE "
+    for line in text.splitlines():
+        if marker in line:
+            records.append(json.loads(line.split(marker, 1)[1]))
+    expected = {
+        base + ".w1a1_packed": entry["shape"] for base, entry in audit["projections"].items()
+    }
+    matched = set()
+    for record in records:
+        packed = record.get("packed")
+        if packed not in expected:
+            continue
+        rows, logical_k = expected[packed]
+        require(
+            record.get("schema") == "w1ax_cuda_dispatch_v1"
+            and record.get("backend") == "CUDA"
+            and record.get("device") == 0
+            and record.get("activation_bits") == activation_bits
+            and record.get("logical_k") == logical_k
+            and record.get("rows") == rows
+            and record.get("packed_type") == "i32"
+            and record.get("packed_words") == (logical_k + 31) // 32
+            and type(record.get("tokens")) is int
+            and record["tokens"] > 0,
+            "observed named W1 CUDA operation/shape/arithmetic differs",
+        )
+        matched.add(packed)
+    require(matched == set(expected), "complete per-projection W1 CUDA execution evidence absent")
+    require(
+        "CUDA error" not in text and "dense fallback" not in text.lower(),
+        "native CUDA error/dense fallback observed",
+    )
+    return {
+        "schema": "nine_model_observed_w1_dispatch_v1",
+        "status": "PASS",
+        "activation_bits": activation_bits,
+        "packed_names": sorted(matched),
+        "selected_projection_count": len(matched),
+        "actual_cuda_operations": True,
+    }
+
+
 def validate_bundle(path):
     files = Files()
     bundle = json.loads(Path(path).read_text())

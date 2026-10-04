@@ -24,6 +24,7 @@ from w1a1_eagle.nine_model_pipeline import (
     resource_gate,
     sha256,
     validate_bundle,
+    validate_cuda_dispatch,
 )
 from w1a1_eagle.nine_model_report import aggregate
 
@@ -365,6 +366,44 @@ class LifecycleTests(unittest.TestCase):
                 self.resources.snapshot(),
                 self.bundle["resource_policy"],
             )
+
+
+class DispatchEvidenceTests(unittest.TestCase):
+    def trace(self, names):
+        return "\n".join(
+            "W1AX_ADMISSION_TRACE "
+            + json.dumps(
+                {
+                    "schema": "w1ax_cuda_dispatch_v1",
+                    "packed": name + ".w1a1_packed",
+                    "backend": "CUDA",
+                    "device": 0,
+                    "activation_bits": 8,
+                    "logical_k": 65,
+                    "rows": 16,
+                    "tokens": 1,
+                    "packed_type": "i32",
+                    "packed_words": 3,
+                }
+            )
+            for name in names
+        )
+
+    def test_generic_single_marker_cannot_prove_selected_set(self):
+        audit = {"projections": {name: {"shape": [16, 65]} for name in ("fc", "output")}}
+        with self.assertRaisesRegex(ValueError, "per-projection"):
+            validate_cuda_dispatch("CUDA packed W1A8 INT8 dispatch", audit, activation_bits=8)
+        with self.assertRaisesRegex(ValueError, "per-projection"):
+            validate_cuda_dispatch(self.trace(["fc"]), audit, activation_bits=8)
+
+    def test_exact_named_shape_and_cuda_execution_required(self):
+        audit = {"projections": {name: {"shape": [16, 65]} for name in ("fc", "output")}}
+        text = self.trace(["fc", "output"])
+        evidence = validate_cuda_dispatch(text, audit, activation_bits=8)
+        self.assertEqual(evidence["selected_projection_count"], 2)
+        for wrong in (text.replace('"CUDA"', '"CPU"'), text.replace('"rows": 16', '"rows": 15')):
+            with self.assertRaisesRegex(ValueError, "operation/shape/arithmetic"):
+                validate_cuda_dispatch(wrong, audit, activation_bits=8)
 
 
 class PortableProcessTests(unittest.TestCase):

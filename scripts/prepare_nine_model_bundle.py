@@ -8,6 +8,7 @@ source-bound data admissions are required; the builder never launches a capture.
 from __future__ import annotations
 
 import argparse
+import copy
 import importlib
 import json
 import sys
@@ -112,6 +113,121 @@ def inspect_descriptor(descriptor, files):
         pending.extend(ledger_pending(ledger))
         pending.extend(source_pending(ledger))
     return sorted(set(pending))
+
+
+def materialize_configs(descriptor, directory, *, source_validate=True):
+    """Six actual source configs from selected artifact references and budget.
+
+    This is source configuration preparation, never production data/readiness.
+    No model or GPU is loaded. Unsupported recipe options fail source parsing.
+    """
+    files = Files()
+    budget = json.loads(files.check(descriptor["budget"]).read_text())
+    require(
+        budget.get("human_selected") is True
+        and set(budget.get("candidates", {})) == set(CANDIDATES),
+        "human-selected six-candidate allocation required for source configs",
+    )
+    directory = Path(directory).resolve()
+    require(not directory.exists(), "config publication already exists")
+    directory.mkdir(parents=True)
+    resolved = copy.deepcopy(descriptor)
+    trainer = importlib.import_module("train_nine_model_qat") if source_validate else None
+    configs = {}
+    for name in CANDIDATES:
+        selected = resolved["candidates"][name]
+        family, precision = name.split("_")
+        bits = 8 if precision == "a8" else 1
+        initializer = selected["initialization"]
+        init_bits = 8 if selected["profile"] == "a8_to_a1_reset" else bits
+        require(
+            initializer.get("activation_bits") == init_bits,
+            "initializer arithmetic must match first QAT stage",
+        )
+        policy = initializer["latent_initialization"]["policy"]
+        require(
+            policy in {"preserve_reference_magnitudes", "unit_probe"},
+            "unsupported explicit latent magnitude policy",
+        )
+        require(
+            policy != "unit_probe" or selected.get("unit_probe_selected") is True,
+            "unit latent policy is an off-default recipe probe",
+        )
+        spec = {
+            "schema": "nine_model_qat_training_v1",
+            "family": family,
+            "candidate": name,
+            "device": "cuda:0",
+            "initialization": initializer,
+            "resource_floors": selected.get("resource_floors", {}),
+        }
+        limits = budget["candidates"][name]["training_limits"]
+        if family == "eagle":
+            require(
+                selected["profile"] != "a8_to_a1_reset",
+                "EAGLE curriculum configuration source integration PENDING",
+            )
+            base_config = files.check(selected["eagle_config_template"])
+            eagle = json.loads(base_config.read_text())
+            eagle["training"].update(limits)
+            eagle["training"].update(
+                activation_bits=[bits],
+                development_lifecycle="standalone",
+                activation_quantization="fixed",
+                initialization_sha256=initializer["sha256"],
+                initialization_policy=policy,
+            )
+            lane_config = directory / (name + "-continuous.json")
+            atomic_json(lane_config, eagle)
+            if source_validate:
+                importlib.import_module("train_continuous_w1ax").load_config(lane_config)
+            spec.update(eagle_config=pin(lane_config), prepared=selected["prepared"])
+        else:
+            require(
+                selected["deployment_coverage"]["profile"] in {"ffn15", "ffn15_fusion"},
+                "canonical native block coverage required",
+            )
+            qat = dict(selected.get("qat_overrides", {}))
+            qat.update(
+                family=family,
+                activation_bits=bits,
+                profile=selected["deployment_coverage"]["profile"],
+                latent_initialization=policy,
+            )
+            # Defaults come from the real source dataclass. Only explicitly
+            # selected shape/objective/optimizer/probe overrides are supplied.
+            spec.update(
+                qat=qat,
+                model=selected["base_model"],
+                data=selected["data"],
+                limits=limits,
+                checkpoint_every=selected["checkpoint_every"],
+                precision_stage="a8_to_a1" if selected["profile"] == "a8_to_a1_reset" else "direct",
+            )
+            if spec["precision_stage"] == "a8_to_a1":
+                spec["a8_warmup_steps"] = selected["a8_warmup_steps"]
+            if selected.get("teacher") is not None:
+                spec["teacher"] = selected["teacher"]
+        path = directory / (name + ".json")
+        atomic_json(path, spec)
+        if source_validate:
+            trainer.load_spec(path)
+        locator = pin(path)
+        configs[name] = locator
+        selected["config"] = locator
+        selected["fusion_calibration"] = {key: initializer[key] for key in ("path", "sha256")}
+    atomic_json(directory / "resolved-inputs.json", resolved)
+    receipt = {
+        "schema": "nine_model_source_configs_v1",
+        "configs": configs,
+        "source_validation": "PASS" if source_validate else "PENDING",
+        "production_preparation_ready": False,
+        "model_loaded": False,
+        "gpu_queried": False,
+        "optimizer_updates": 0,
+    }
+    atomic_json(directory / "source-configs.json", receipt)
+    return receipt
 
 
 def build(descriptor, output, *, inspect_draft=False):
@@ -295,6 +411,12 @@ def build(descriptor, output, *, inspect_draft=False):
             continue  # Keep final prompt bytes sealed until the final evaluator.
         files.check(record)
     plan = files.check(inputs["admission_plan"])
+    environment = dict(descriptor.get("environment", {}))
+    require(
+        environment.get("CUDA_VISIBLE_DEVICES", descriptor["gpu_uuid"]) == descriptor["gpu_uuid"],
+        "CUDA visibility differs from selected physical GPU UUID",
+    )
+    environment["CUDA_VISIBLE_DEVICES"] = descriptor["gpu_uuid"]
     bundle = {
         "schema": "nine_model_campaign_bundle_v1",
         "artifact_kind": "production",
@@ -307,7 +429,7 @@ def build(descriptor, output, *, inspect_draft=False):
         "target_policy": {"immutable": True, "weights": "f16", "kv": "f16"},
         "resource_policy": descriptor["resource_policy"],
         "fresh_gates": sorted(GATES),
-        "environment": descriptor.get("environment", {}),
+        "environment": environment,
         "final_set_authorized": descriptor.get("final_set_authorized", False),
         "admission": {
             "producer": pin(ROOT / "scripts/admit_nine_model_sm120.py"),
@@ -375,7 +497,12 @@ if __name__ == "__main__":
     cli.add_argument("--inputs", type=Path, required=True)
     cli.add_argument("--output", type=Path)
     cli.add_argument("--inspect-draft", action="store_true")
+    cli.add_argument("--materialize-configs", type=Path)
     args = cli.parse_args()
+    if args.materialize_configs is not None:
+        result = materialize_configs(json.loads(args.inputs.read_text()), args.materialize_configs)
+        print(json.dumps(result, sort_keys=True))
+        raise SystemExit(0)
     require(args.inspect_draft or args.output is not None, "production output required")
     result = build(
         json.loads(args.inputs.read_text()),
