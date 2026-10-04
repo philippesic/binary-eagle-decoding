@@ -4,6 +4,22 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
+## Active preparation: nine model QAT pipeline — October 4, 2026
+
+The human requested an independent Codex task and implementation/test team to
+prepare the nine-model campaign and automatic QAT-to-evaluation pipeline.
+RTX2080Ti is for development/CUDA preflight once opened; real training and
+quality/performance evaluation stay on RTX5080, currently unavailable. Parent
+blocked new RTX5080 runs locally; no remote action or availability claim.
+The new independent task will claim sole coordination from the
+[preparation goal](goals/nine-model-qat-preparation.md). Parent is a launcher only.
+
+Required output is a tested, frozen source/data/config/launch bundle with
+independent QA and truthful profile/hardware evidence, plus minimal fresh
+SM120 checks and automatic evaluation after committed training and cleanup.
+No real training/evaluation budget or unavailable-host run is started now.
+Completed A8/research goals below remain historical and intact.
+
 ## Nine model research slate COMPLETE — October 4, 2026
 
 All eight requested agents completed: four literature-first and four

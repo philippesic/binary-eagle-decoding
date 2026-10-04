@@ -1032,3 +1032,19 @@ native runtime changes need matching Q4 evaluation.
 
 No model implementation, training, GPU/remote action, monitoring or new goal
 was started. Final tensor scope and compute allocation remain human decisions.
+
+## Selected: independent nine model preparation team — October 4, 2026
+
+The human requested a separate independent Codex task/agent team to prepare and
+test the reviewed nine-model program, ready for prompt QAT launch and automatic
+post-training evaluation. RTX2080Ti is permitted for development/CUDA preflight
+when opened; RTX5080 is unavailable and reserved for training/evaluation later.
+Parent locally paused new RTX5080 runs without contacting the host.
+
+The [preparation objective](goals/nine-model-qat-preparation.md) defines ownership,
+work packages, captures/fusion/trainer/native pipeline integration, independent
+QA, hardware-specific evidence and the launch boundary. Native target/teacher
+ancestry, frozen Q4 controls and sealed finals remain protected. Software and
+SM75 readiness must be distinguished from fresh SM120 admission; no claim of
+literal 100% or bypass of source/resource checks is authorized. Major final
+coverage/recipe/budget choices remain human-owned while preparation proceeds.
