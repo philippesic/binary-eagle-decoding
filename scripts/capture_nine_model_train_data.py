@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import inspect
 import json
 import math
 import os
@@ -73,6 +74,27 @@ def content_hash(value):
     ).hexdigest()
 
 
+def selected_jsonl_rows(path, positions, max_row_bytes):
+    """Stream only selected original ordinals; never expand a complete JSON shard."""
+    selected = {}
+    ordinal = 0
+    with Path(path).open("rb") as stream:
+        while len(selected) < len(positions):
+            raw = stream.readline(max_row_bytes + 1)
+            if not raw:
+                break
+            if len(raw) > max_row_bytes:
+                raise MemoryError("original TRAIN source row exceeds explicit row storage cap")
+            if not raw.strip():
+                continue
+            if ordinal in positions:
+                selected[ordinal] = json.loads(raw)
+            ordinal += 1
+    if set(selected) != positions:
+        raise ValueError("original TRAIN row ordinal invalid or prompt/index selection incomplete")
+    return selected
+
+
 def prepare_plan(plan_path, expected_sha256):
     """Authenticate explicit TRAIN source selection and report conservative costs."""
     path = pinned({"path": str(Path(plan_path).resolve()), "sha256": expected_sha256}, Path.cwd())
@@ -115,7 +137,9 @@ def prepare_plan(plan_path, expected_sha256):
         "max_shard_bytes",
         "max_total_bytes",
         "max_source_bytes",
+        "max_source_row_bytes",
         "max_host_rss_bytes",
+        "min_host_available_bytes",
         "min_free_disk_bytes",
         "request_timeout_seconds",
         "total_timeout_seconds",
@@ -133,6 +157,7 @@ def prepare_plan(plan_path, expected_sha256):
         "binary",
         "target",
         "source_revision",
+        "client_source",
         "tokenizer_metadata_sha256",
         "chat_template_sha256",
         "gpu_layers",
@@ -158,12 +183,31 @@ def prepare_plan(plan_path, expected_sha256):
         raise ValueError("explicit supported CUDA device required")
     corpus_path = pinned(plan["corpus"], path.parent, max_bytes=caps["max_source_bytes"])
     runtime_path = pinned(plan["runtime"], path.parent, max_bytes=caps["max_source_bytes"])
+    client_path = pinned(native["client_source"], path.parent, max_bytes=caps["max_source_bytes"])
+    runtime = json.loads(runtime_path.read_text())
+    expected_runtime = {
+        "schema": "nine_model_train_capture_runtime_v1",
+        "binary_sha256": native["binary"]["sha256"],
+        "target_sha256": native["target"]["sha256"],
+        "native_source_revision": native["source_revision"],
+        "teacher_client_sha256": native["client_source"]["sha256"],
+        "tokenizer_metadata_sha256": native["tokenizer_metadata_sha256"],
+        "chat_template_sha256": native["chat_template_sha256"],
+    }
+    if runtime != expected_runtime:
+        raise ValueError(
+            "runtime schema/native/client/target/tokenizer/template source inventory differs"
+        )
     corpus = json.loads(corpus_path.read_text())
     shards = corpus["files"]["train"]["shards"]
     selected = plan["selection"]
     if not isinstance(selected, list) or not selected or len(selected) + 6 > caps["max_requests"]:
         raise ValueError("selected capture/golden requests exceed explicit count cap")
-    records, loaded, source_bytes = [], {}, corpus_path.stat().st_size + runtime_path.stat().st_size
+    records, loaded, source_bytes = (
+        [],
+        {},
+        corpus_path.stat().st_size + runtime_path.stat().st_size + client_path.stat().st_size,
+    )
     seen_ids, seen_content, seen_groups = set(), set(), set()
     counts = {s: {d: 0 for d in DOMAINS} for s in SPLITS}
     for choice in selected:
@@ -189,15 +233,16 @@ def prepare_plan(plan_path, expected_sha256):
             source_bytes += sum(p.stat().st_size for p in paths.values())
             if source_bytes > caps["max_source_bytes"]:
                 raise MemoryError("original source inventory exceeds source cap")
+            positions = {c["row"] for c in selected if c["shard"] == shard_id}
+            if any(type(i) is not int or i < 0 for i in positions):
+                raise ValueError("original TRAIN row ordinal invalid")
             rows = {
-                name: [json.loads(line) for line in p.read_text().splitlines() if line.strip()]
+                name: selected_jsonl_rows(p, positions, caps["max_source_row_bytes"])
                 for name, p in paths.items()
             }
-            if len(rows["prompts"]) != len(rows["index"]):
-                raise ValueError("original TRAIN prompt/index cardinality differs")
             loaded[shard_id] = (paths, rows)
         paths, rows = loaded[shard_id]
-        if type(row_id) is not int or not 0 <= row_id < len(rows["prompts"]):
+        if type(row_id) is not int or row_id not in rows["prompts"]:
             raise ValueError("original TRAIN row ordinal invalid")
         prompt, index = rows["prompts"][row_id], rows["index"][row_id]
         source_input = prompt.get(
@@ -317,6 +362,20 @@ def rss_bytes():
     return int(Path("/proc/self/statm").read_text().split()[1]) * os.sysconf("SC_PAGE_SIZE")
 
 
+def host_available_bytes():
+    """Read the actual Linux host availability; missing evidence refuses capture."""
+    fields = {}
+    for line in Path("/proc/meminfo").read_text().splitlines():
+        key, *values = line.split()
+        if key == "MemAvailable:":
+            if len(values) != 2 or values[1] != "kB" or not values[0].isdigit():
+                raise ValueError("Linux MemAvailable must be typed integer kB")
+            fields[key] = int(values[0]) * 1024
+    if set(fields) != {"MemAvailable:"}:
+        raise ValueError("Linux MemAvailable evidence missing")
+    return fields["MemAvailable:"]
+
+
 def tree_bytes(root):
     return sum(p.stat().st_size for p in Path(root).rglob("*") if p.is_file())
 
@@ -330,6 +389,7 @@ def run_capture(
     teacher_factory=None,
     device_query=cuda_device,
     rss_query=rss_bytes,
+    available_query=host_available_bytes,
     clock=time.monotonic,
 ):
     plan, records, cost = prepare_plan(plan_path, expected_sha256)
@@ -364,9 +424,21 @@ def run_capture(
     start = clock()
     caps, native = plan["caps"], plan["native"]
 
+    report["host_available_floor_bytes"] = caps["min_host_available_bytes"]
+    report["host_available_scope"] = "actual Linux MemAvailable; separate from GPU resource release"
+
     def budget():
         if clock() - start >= caps["total_timeout_seconds"]:
             raise TimeoutError("capture total wall cap reached")
+        available = available_query()
+        if type(available) is not int or available < 0:
+            raise ValueError("Linux MemAvailable evidence must be typed nonnegative bytes")
+        report["last_host_available_bytes"] = available
+        report["min_observed_host_available_bytes"] = min(
+            report.get("min_observed_host_available_bytes", available), available
+        )
+        if available < caps["min_host_available_bytes"]:
+            raise MemoryError("capture Linux MemAvailable below explicit host floor")
         measured_rss = rss_query()
         if teacher is not None and hasattr(teacher, "process") and teacher.process.poll() is None:
             child_stat = Path(f"/proc/{teacher.process.pid}/statm")
@@ -395,6 +467,15 @@ def run_capture(
             from capture_block_qat_teacher import NativeTeacher
 
             teacher_factory = NativeTeacher
+            actual_client_path = Path(inspect.getfile(NativeTeacher)).resolve()
+            if file_sha256(actual_client_path) != native["client_source"]["sha256"]:
+                raise ValueError(
+                    "current production NativeTeacher client source differs from plan pin"
+                )
+            report["actual_teacher_client_source"] = {
+                "path": str(actual_client_path),
+                "sha256": file_sha256(actual_client_path),
+            }
         teacher = teacher_factory(
             binary,
             target,
@@ -624,6 +705,7 @@ def validate_replay(receipt, tokens, taps, native, device):
         or receipt.get("target_sha256") != native["target"]["sha256"]
         or receipt.get("producer_binary_sha256") != native["binary"]["sha256"]
         or receipt.get("producer_source_revision") != native["source_revision"]
+        or receipt.get("client_source_sha256") != native["client_source"]["sha256"]
         or not any(device["name"] in str(x) for x in receipt.get("hardware", []))
         or not receipt.get("executed_result_buffers")
         or not all(

@@ -61,7 +61,7 @@ class SyntheticNativeTeacher:
             "target_sha256": self.target_sha,
             "producer_binary_sha256": self.binary_sha,
             "producer_source_revision": self.source,
-            "client_source_sha256": "e" * 64,
+            "client_source_sha256": file_sha256(self.root.parent.parent / "client.py"),
             "producer_host": "synthetic-source-api-fixture",
             "hardware": ["fixture CUDA"],
             "executed_result_buffers": ["CUDA0"],
@@ -116,6 +116,8 @@ class SyntheticNativeTeacher:
                 "termination": "max_new_tokens",
             },
         )
+        if self.fault == "client":
+            result["client_source_sha256"] = "e" * 64
         if self.fault == "tokenizer":
             result["tokenizer_metadata_sha256"] = "a" * 64
         if self.fault == "hardware":
@@ -186,6 +188,8 @@ class CaptureTests(unittest.TestCase):
         binary, target = self.root / "binary", self.root / "target"
         binary.write_bytes(b"synthetic native binary pin")
         target.write_bytes(b"synthetic target pin")
+        client = self.root / "client.py"
+        client.write_bytes(b"synthetic injected client source fixture")
         self.plan = {
             "schema": "nine_model_train_capture_plan_v1",
             "corpus": corpus,
@@ -199,6 +203,7 @@ class CaptureTests(unittest.TestCase):
                 "binary": {"path": str(binary), "sha256": file_sha256(binary)},
                 "target": {"path": str(target), "sha256": file_sha256(target)},
                 "source_revision": "a" * 40,
+                "client_source": {"path": str(client), "sha256": file_sha256(client)},
                 "tokenizer_metadata_sha256": "c" * 64,
                 "chat_template_sha256": "d" * 64,
                 "gpu_layers": 999,
@@ -212,7 +217,9 @@ class CaptureTests(unittest.TestCase):
                 "max_shard_bytes": 10000,
                 "max_total_bytes": 2000000,
                 "max_source_bytes": 100000,
+                "max_source_row_bytes": 4096,
                 "max_host_rss_bytes": 1000000,
+                "min_host_available_bytes": 1000000,
                 "min_free_disk_bytes": 1,
                 "request_timeout_seconds": 10,
                 "total_timeout_seconds": 100,
@@ -220,6 +227,22 @@ class CaptureTests(unittest.TestCase):
             },
             "selection": selection,
         }
+        runtime_path = self.root / "runtime.json"
+        native = self.plan["native"]
+        runtime_path.write_text(
+            json.dumps(
+                {
+                    "schema": "nine_model_train_capture_runtime_v1",
+                    "binary_sha256": native["binary"]["sha256"],
+                    "target_sha256": native["target"]["sha256"],
+                    "native_source_revision": native["source_revision"],
+                    "teacher_client_sha256": native["client_source"]["sha256"],
+                    "tokenizer_metadata_sha256": native["tokenizer_metadata_sha256"],
+                    "chat_template_sha256": native["chat_template_sha256"],
+                }
+            )
+        )
+        self.plan["runtime"]["sha256"] = file_sha256(runtime_path)
         self.path = self.root / "plan.json"
         self.persist()
 
@@ -240,6 +263,7 @@ class CaptureTests(unittest.TestCase):
                 "uuid": "fixture",
             },
             rss_query=lambda: 0,
+            available_query=lambda: 10**9,
             **kwargs,
         )
 
@@ -259,6 +283,7 @@ class CaptureTests(unittest.TestCase):
         self.assertEqual(result["artifact_kind"], "synthetic_fixture")
         self.assertEqual(result["production_data_status"], "SYNTHETIC_ONLY")
         self.assertTrue(result["producer_closed"])
+        self.assertEqual(result["min_observed_host_available_bytes"], 10**9)
         datasets = [
             BlockDataset(p["path"], expected_sha256=p["sha256"])
             for p in result["manifests"].values()
@@ -351,6 +376,7 @@ class CaptureTests(unittest.TestCase):
                     teacher_factory=SyntheticNativeTeacher,
                     device_query=lambda: {"name": "fixture CUDA", "compute_capability": [7, 5]},
                     rss_query=lambda: 10**9 if reason == "RSS" else 0,
+                    available_query=lambda: 10**9,
                 )
             self.assertEqual(result["status"], "FAIL")
             self.assertIn(reason, result["failure"]["message"])
@@ -363,6 +389,93 @@ class CaptureTests(unittest.TestCase):
         self.assertEqual(result["status"], "FAIL")
         self.assertIn("original prompt and continuation", result["failure"]["message"])
         self.assertTrue(SyntheticNativeTeacher.instances[-1].closed)
+
+    def test_runtime_inventory_rejects_stale_source_client_and_arbitrary_json(self):
+        path = self.root / "runtime.json"
+        original = json.loads(path.read_text())
+        for key in ("schema", "teacher_client_sha256", "native_source_revision", "target_sha256"):
+            current = original | {key: "stale"}
+            path.write_text(json.dumps(current))
+            self.plan["runtime"]["sha256"] = file_sha256(path)
+            self.persist()
+            with self.assertRaisesRegex(ValueError, "runtime schema/native/client"):
+                capture.prepare_plan(self.path, self.pin)
+        path.write_text(json.dumps({"artifact_kind": "production"}))
+        self.plan["runtime"]["sha256"] = file_sha256(path)
+        self.persist()
+        with self.assertRaisesRegex(ValueError, "runtime schema/native/client"):
+            capture.prepare_plan(self.path, self.pin)
+
+    def test_production_current_client_source_must_match_plan_before_start(self):
+        import types
+        from unittest.mock import patch
+
+        with patch.dict(
+            sys.modules,
+            {
+                "capture_block_qat_teacher": types.SimpleNamespace(
+                    NativeTeacher=SyntheticNativeTeacher
+                )
+            },
+        ):
+            result = capture.run_capture(
+                self.path,
+                self.pin,
+                self.root / "source-drift",
+                execute=True,
+                device_query=lambda: {"name": "fixture CUDA", "compute_capability": [7, 5]},
+                rss_query=lambda: 0,
+                available_query=lambda: 10**9,
+            )
+        self.assertEqual(result["status"], "FAIL")
+        self.assertIn(
+            "current production NativeTeacher client source", result["failure"]["message"]
+        )
+        self.assertEqual(SyntheticNativeTeacher.instances, [])
+
+    def test_memavailable_floor_missing_untyped_or_low_refuses_capture(self):
+        for name, query in (
+            ("low", lambda: 1),
+            ("untyped", lambda: "1000000000"),
+            ("missing", lambda: (_ for _ in ()).throw(FileNotFoundError("no MemAvailable"))),
+        ):
+            result = capture.run_capture(
+                self.path,
+                self.pin,
+                self.root / f"available-{name}",
+                execute=True,
+                teacher_factory=SyntheticNativeTeacher,
+                device_query=lambda: {"name": "fixture CUDA", "compute_capability": [7, 5]},
+                rss_query=lambda: 0,
+                available_query=query,
+            )
+            self.assertEqual(result["status"], "FAIL")
+            self.assertIn("MemAvailable", result["failure"]["message"])
+            self.assertEqual(SyntheticNativeTeacher.instances, [])
+
+    def test_linux_memavailable_parser_requires_explicit_kb_field(self):
+        from unittest.mock import patch
+
+        with patch.object(Path, "read_text", return_value="MemTotal: 8 kB\nMemAvailable: 4 kB\n"):
+            self.assertEqual(capture.host_available_bytes(), 4096)
+        for contents in ("MemTotal: 8 kB", "MemAvailable: 4 MB", "MemAvailable: nan kB"):
+            with patch.object(Path, "read_text", return_value=contents):
+                with self.assertRaisesRegex(ValueError, "MemAvailable"):
+                    capture.host_available_bytes()
+
+    def test_streaming_source_skips_unselected_json_and_bounds_each_row(self):
+        path = self.root / "stream-source.jsonl"
+        path.write_bytes(
+            b"not JSON unselected\n" + b'{"id":"selected"}\n' + b"invalid unread tail\n"
+        )
+        self.assertEqual(capture.selected_jsonl_rows(path, {1}, 64), {1: {"id": "selected"}})
+        path.write_bytes(b"x" * 65 + b"\n" + b'{"id":"selected"}\n')
+        with self.assertRaisesRegex(MemoryError, "row storage cap"):
+            capture.selected_jsonl_rows(path, {1}, 64)
+        self.plan["caps"]["max_source_row_bytes"] = 1
+        self.persist()
+        with self.assertRaisesRegex(MemoryError, "row storage cap"):
+            capture.prepare_plan(self.path, self.pin)
 
     def test_decode_history_preserves_native_partition_and_refuses_gaps(self):
         history = [
@@ -406,6 +519,7 @@ class CaptureTests(unittest.TestCase):
 
     def test_generation_bad_tokenizer_actual_hardware_stop_and_cleanup(self):
         for fault, error in (
+            ("client", "producer proof"),
             ("tokenizer", "history"),
             ("hardware", "CUDA"),
             ("stop", "STOP"),
@@ -421,6 +535,7 @@ class CaptureTests(unittest.TestCase):
                 teacher_factory=SyntheticNativeTeacher,
                 device_query=lambda: {"name": "fixture CUDA", "compute_capability": [7, 5]},
                 rss_query=lambda: 0,
+                available_query=lambda: 10**9,
             )
             self.assertEqual(result["status"], "FAIL")
             self.assertIn(error, result["failure"]["message"])
