@@ -919,3 +919,25 @@ The standalone owner and executed state are in
 [A8 QAT recovery and comparison](goals/a8-qat-recovery-and-comparison.md).
 Target/verifier precision and sealed finals remain frozen. This selection
 supersedes the preceding pending-budget statement for this bounded comparison.
+
+## Pending: genuine W1A8/W1A1 DSpark/DFlash coverage — October 4, 2026
+
+The human resumed the independent RTX2080Ti study and requested Q4, A8 and A1.
+A8/A1 mean binary weights with real native activation packing. Existing DSpark/
+DFlash has no W1 exporter, loader or FFN graph path; setting an activation flag
+alone leaves its weights floating-point. The released-reference and supported
+FFN-only Q4 measurements proceed within the shared7200s timing allowance.
+
+The concrete proposed extension covers all15 FFN gate/up/down matrices across
+five layers, with I32 packed signs and F32 row scales, existing CUDA W1A8 INT8
+or W1A1 XOR/POPCOUNT operations. Embedding, private full head, attention, feature
+fusion, Markov factors, confidence/norms and FP16 target remain at their admitted
+precision. It needs exporter metadata, loader and graph integration, but no new
+kernel or training project. Fresh sign/mean-absolute-scale conversion may lose
+acceptance; actual native dispatch and frozen development measurements must
+establish behavior. No speed or quality claim follows from source support.
+
+The user owns the choice between this bounded FFN extension and completing only
+released-reference/Q4 for now. The question is pending in the study chat; no
+response or implementation authorization is inferred from elapsed time.
+Details: [precision admission](../experiments/dspark-sm75-20261003/precision-admission.md).
