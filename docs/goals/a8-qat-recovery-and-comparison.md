@@ -1,5 +1,29 @@
 # A8 QAT recovery and comparison
 
+## Reference final native evaluation running — October 4, 15:15 UTC
+
+Reference final43203/cursor43287/aebb8032 checkpoint and final request/status/
+budget/state are hardlink archived; budget7200/max7200/null, final=true and
+request==latest. Committed531prompts/206163unique supervised rows/206163presented
+tokens from the retained10000/3899930corpus. Fresh final guard/release/source/
+manifest checks passed. Final eval actualstart15:14:52.535458UTC, original1200cap,
+session `a8-reference-final7200-eval-20261004-01`, run
+`a8-reference-final7200-eval-supervisor-20261004-01`, supervisor35475/birth6144982,
+evaluator35476/birth6144990, same boot517c4a36. Same source3bd/583 math,
+fc18/fixed24manifest, native9e2/F16/Q4_0. No further training budget remains.
+
+After this final report/result/archive and physical return, sole operator performs
+one bounded CPU batch: both final checkpoint committed-set count joins, exact
+versus sampled recipe telemetry with observation gap, original native metrics/
+loss/emitted counts and pooled latency metadata, and two existing final timing
+manifests through published b742analysis script. No new requests or GPU tests.
+Join every final capture/timing server PID/PGID/returned flag to fresh group and
+/dev/dxg/context-holder census, then audit CPU process return and close ONLYpane285.
+Root independently recomputes compact numbers, publishes final comparison/coverage/
+telemetry and preserves exact archived identities, integrates/pushes, retires only
+fully merged owned worktrees, pauses SAME heartbeat and completes native Goal.
+Until all those steps succeed, goal remains INCOMPLETE; heartbeat ACTIVE.
+
 ## Both original training budgets settled — October 4, 15:13 UTC
 
 Reference reached its original7200.0second cap at43203/cursor43287, supervisor35006
