@@ -1,7 +1,7 @@
 # Matched A8 QAT comparison — interim
 
 The matched comparison is still running on RTX5080/SM120. Both arms have real
-optimizer updates and exact positive-step restore evidence. At 5,000 updates,
+optimizer updates and exact positive-step restore evidence. At 5,000 and 10,000 updates,
 the combined candidate trails the fixed A8 reference; both
 remain below Q4_0. The matched cumulative-budget endpoints are still pending.
 This report will be replaced with final measured results after both 7,200-second
@@ -49,6 +49,7 @@ Evaluation wall time is separate overhead and is never a serving-rate denominato
 | Reference step 5,000 | 5.1176 | 0.377184 | 7.7106% | 81.477 | 0.6013 |
 | Candidate step 5,000 | 5.5689 | 0.217877 | 4.4587% | 68.342 | 0.5056 |
 | Reference step 10,000 | 4.2628 | 0.500529 | 10.2403% | 88.069 | 0.6519 |
+| Candidate step 10,000 | 6.0285 | 0.180342 | 3.6933% | 66.145 | 0.4898 |
 | Q4_0 at reference step 5,000 | n/a | 1.306255 | 26.5917% | 135.491 | 1.0000 |
 
 Accepted drafts per round is the primary acceptance metric. Acceptance rate uses
@@ -62,6 +63,7 @@ capture counts are:
 | Reference step 5,000 | 777 | 10,077 | 2,060 | 2,834 |
 | Candidate step 5,000 | 507 | 11,371 | 2,327 | 2,834 |
 | Reference step 10,000 | 946 | 9,238 | 1,890 | 2,834 |
+| Candidate step 10,000 | 433 | 11,724 | 2,401 | 2,834 |
 | Q4_0, each capture | 1,608 | 6,047 | 1,231 | 2,834 |
 
 Both zero checkpoints have identical native acceptance counts. Each A8 report
@@ -92,6 +94,16 @@ token IDs over 120 measured requests, with 105 length finishes and 15 stop finis
 All 24 native response sequences and all 120 timing sequences match Q4_0.
 The evaluation completed exit 0 in 692.183 supervised seconds; raw evidence is
 hardlink archived. Acceptance and throughput improved, but remain below Q4_0.
+
+At candidate step 10,000, acceptance fell from 0.217877 at step 5,000 to
+0.180342 accepted drafts/round, while CE rose from 5.5689 to 6.0285. Request rate
+is 66.145 versus Q4_0 at 135.031 and target-only at 88.594 tokens/s; decode rate
+is 68.043 versus 142.875 tokens/s. Median/p95 request latency is 1.965/2.189 seconds
+versus Q4_0 at 0.911/1.098 seconds. The complete evaluation passed in 783.216
+supervised seconds, with 24/24 native and 120/120 timing matches. Each timing
+variant generated 14,290 returned token IDs (105 length finishes, 15 stop finishes).
+These results show a regression on this fixed development set; they do not identify
+which combined candidate feature caused it. The frozen experiment continues.
 
 Candidate's 1,047.285 trainer seconds differ from the reference's 764.725 seconds
 at the same update count; these checkpoint measurements are intermediate observations. The final comparison
@@ -132,8 +144,9 @@ updates 9,001–9,681 were rolled back and replayed from the checkpoint; their f
 attempt remains charged. Retry 1 passed the failure point and reached step 10,000/
 cursor10,017, exit 0, with budget settled at 2,005.419 seconds. Its scheduled native
 evaluation passed and is archived; candidate resume reached step 10,000/cursor10,017, checkpoint6898e9b1,
-with settled budget2,064.260seconds. Its scheduled native evaluation is running.
-Both final endpoints remain pending. Fault cause is
+with settled budget2,064.260seconds. Its scheduled native evaluation passed and is archived.
+Reference has resumed from step 10,000 and advanced to step 10,058 toward its
+next scheduled 15,000 boundary. Both final endpoints remain pending. Fault cause is
 unexplained; equivalent recurrence retains the same retry limit (one of two used).
 
 ## Endpoint reporting method
@@ -158,6 +171,13 @@ in-flight update or serialization finishes. Endpoint timing is trainer-accounted
 time; startup, evaluation and physical process-release evidence remain separate.
 
 ## Artifact locations and pending completion
+
+Candidate step 10,000 identities: checkpoint
+`6898e9b1cb6cb0303e1a38340a23decb3eeabf14d215afd761d7e0c8aa7496ae`, report
+`e561e03ce99c049458d815239f7c0d8ea3433abcaf5be63cbc31ad032fa5acbd`, result
+`3bbbb913eac5c0bb3880815a0da3bf8221f320a835696dadd78cb479dbafbb74`, timing
+`fc12102cd0637c36848e05954a0b7f84879d16a01b7e7fd0d4887a2340f6a8d9`.
+Archive locator: `evidence-archive/development/candidate-step10000-locator-map.json`.
 
 Reference step 10,000 identities: checkpoint
 `281546e75c0d1d010a32b5477890788ad77077e1ec6819ceae745a2ac5f24f78`, report

@@ -1,5 +1,38 @@
 # A8 QAT recovery and comparison
 
+## Candidate 10,000 evaluated; reference resumed — October 4, 08:30 UTC
+
+Candidate10000 evaluation completed exit0 at08:24:42.063721Z,783.215612 supervised
+seconds. Reporte561e03ce99c049458d815239f7c0d8ea3433abcaf5be63cbc31ad032fa5acbd;
+checkpoint6898e9b1. CE6.028492996/229labels/48loss rounds/all24prompts. A8 accepted
+433/11724 proposals over2401rounds,0.1803415drafts/round,0.0369328acceptance;
+Q4_0 remains1608/6047/1231,1.306255drafts/round. Both emitted2834tokens.
+RequestTPS66.14480 versus135.03076 (ratio0.48985), target-only88.59359;
+decode68.04333 versus142.87483 (ratio0.47624). Five×24=120requests per variant,
+14,290returned IDs and105length/15stop finishes each;24native/120timing sequences
+matchQ4_0, sealed=false. Candidate regressed versus5000; both10k arms trailQ4.
+
+Raw attempt/report/result/timing hardlink archived at
+`evidence-archive/development/candidate-step10000-eval-attempt-0000`, locator
+`candidate-step10000-locator-map.json`. Result3bbbb913...,timingfc12102...;
+compact summary contains six complete original reports. Exact eval groups/native
+contexts returned, baseline2766MiB/0%. Candidate budget unchanged2064.260114244,
+active_attempt null; reference stays2005.419445274, inactive. Continue unchanged
+science: next reference10000→15000 under remaining5194.580554726, then its1200s
+eval/archive/release and candidate10000→15000 (remaining5135.739885756).
+
+Reference resumed exactly from10000/SHA281546e7/configcf320476/source3bd,
+run `a8-ref-train-after-candidate10000-supervisor-20261004-01`, host tmux session
+`a8-ref-train-after-candidate10000-20261004-01`, started08:28:58.538173Z.
+Supervisor18551/birth3709579, trainer18557/birth3709590, sameboot517c4a36,
+faulthandler diagnostic only. Positive resume at08:30:52Z: step10058/cursor10075,
+58updates, finite18gradients, cumulative sign flips8973372. Active reservation
+5194.580554726 from settled base2005.419445274 retained. Continue SAME handles
+toward scheduled15000 evaluation; no new admission or science changes.
+No recipe/data/precision/budget changes or added diagnostics solely from the
+negative candidate result. Goal/heartbeat ACTIVE, both7200 endpoints/finals still
+incomplete; unexplained SIGSEGV retry1/max2 retained, A1 held out, no2080controls.
+
 ## Candidate 10,000 checkpoint; scheduled evaluation running — October 4, 08:11 UTC
 
 Candidate reached natural step10000/cursor10017 and status awaiting_development
