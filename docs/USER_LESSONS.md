@@ -200,3 +200,29 @@ additional proof protocols or redoing completed audit work.
 - Practical lesson: Use the actual declared manifest/content identity when
   integrating an evaluator. Exercise its real ID styles in a contract fixture;
   naming conventions must not replace dataset-role and provenance checks.
+
+## October 4: token ancestry does not establish identical numerical draft inputs
+
+- Context: The independent RTX2080Ti study required seven computed noise rows
+  for both three- and seven-token proposals. Its native checker also required
+  equal first-three proposals at every matching token prefix.
+- Evidence: Released BF16 passed. FFN-Q4 completed all25 native probe requests,
+  with valid masks/cache/immutable target and complete outputs matching admitted
+  paths, but four cross-length proposal joins differed. The recorded injection
+  batches had different spans/counts (for example55..58 versus55..62) and only
+  aggregate feature hashes. Token equality does not establish identical native
+  features or fused draft KV across those different numerical histories.
+- Agent contribution: Root approved the token-only key without separating this
+  input assumption from the seven-row layout requirement. The implementation
+  followed that rule. Luna preserved the failure and held timing; Astra advised
+  a bounded numerical-history comparison before diagnosing a layout bug.
+- Status: Confirmed insufficient comparison key, not a user mistake. The cause
+  and size of later draft decision changes are not established as harmless
+  rounding. Corrected admission still needs matched first-block histories and
+  first-three agreement; equal-history disagreement requires a focused same-cache
+  diagnostic. All original guards and raw failures remain preserved.
+- Practical lesson: Compare recorded numerical input/cache ancestry when testing
+  deterministic draft invariance. Check the actual seven-row graph and read slots
+  independently. Count unequal-history decision changes explicitly; do not turn
+  symbolic-prefix agreement into a bit-parity requirement or waive a genuine
+  equal-input discrepancy. Use native acceptance/throughput to judge the variant.
