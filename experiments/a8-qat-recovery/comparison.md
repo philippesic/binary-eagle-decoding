@@ -56,7 +56,9 @@ unverified. No quality, latency or total-throughput win is claimed.
 Reference exact restore859→912 and candidate105→1200 passed with optimizer/RNG/
 cursor/recipe/probe/telemetry preserved. Human pause saved candidate2081/cursor2084
 (checkpointac8af0f058b7d1d...), budget441.281998629seconds, no active attempt;
-human resume restored it and advanced2221+. Pause downtime is excluded.
+human resume restored it and reached5000/cursor5009. Cumulative candidate trainer
+budget is1047.284754942seconds, settled with no active attempt; its scheduled
+5000evaluation is pending. Pause downtime is excluded.
 Reference5000 budget settled764.725seconds. Each arm retains its own7,200-second
 cap; standalone evaluations are bounded1,200seconds and arms alternate at natural
 5,000-update development boundaries. Intermediate snapshots save every1,000.
