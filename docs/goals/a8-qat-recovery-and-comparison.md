@@ -1,5 +1,43 @@
 # A8 QAT recovery and comparison
 
+## Reference 20,000 evaluated; candidate resumed — October 4, 10:10 UTC
+
+Reference20000 native evaluation completed exit0: supervisor actualstart
+09:54:36.659778Z/end10:06:03.350638Z,wall686.690860s; reportphase681.765045s,
+terminalabsence observed10:06:45Z. Report
+3e4d03de6864109075dfb356dfa66e78ec9f326fb461e69ae53f3b8524c20721,
+checkpoint1fab73c3. CE3.699926959/229labels/48loss rounds/all24prompts. A8 accepted
+1078/8590proposals over1757rounds,0.613546drafts/round,0.125495acceptance;
+Q4_0 remains1608/6047/1231/1.306255. Native emitted2834tokens each.
+RequestTPS93.84966 versusQ4_0134.04624 (ratio0.70013), target-only88.44147;
+decode97.89851 versus142.26941 (ratio0.68812). Five×24=120requests per variant,
+14,290returnedIDs/105length/15stop finishes each;24native/120timing matchesQ4_0,
+sealed=false. Reference improves but remains below primaryQ4_0.
+
+Raw attempt/report/result/timing hardlink archived at
+`evidence-archive/development/reference-step20000-eval-attempt-0000`, locator
+`reference-step20000-locator-map.json`; result57a60fb7...,timingd9291b99...,
+checkpointmanifest35bbe4b8...,jointjson2190be07...,jointnpzc115430c....
+Nine original complete reports in compact summary; exact session/groups/native
+contexts returned, baseline2766MiB/0%. Reference budget unchanged3541.357949,
+active_attempt null,remaining3658.642051.
+
+Candidate resumed exact15000/cursor15024/checkpoint50e0764c/config5bba/source3bd,
+run `a8-candidate-step15000-resume-supervisor-20261004-01`, host session
+`a8-candidate-step15000-resume-20261004-01`, actualstart10:08:25.718304Z.
+Supervisor22738/birth4306301,trainer22743/birth4306308,sameboot517c4a36,
+faulthandler diagnostic only. Positive resume observed10:10:34Z: step15091/
+cursor15115,training3124.298694s,finite33gradients,cumulative sign flips443023080,
+expected serial learned-activation head path. Active reservation4106.879955265
+from base3093.120044735 retained. Continue SAME handles to natural20000,
+normal1200s evaluation/archive/release, then reference20000→25000.
+
+Both7200 cumulative endpoints/finals remain incomplete; Goal/heartbeat ACTIVE.
+No repeated admissions or source/recipe/math/data/precision/budget changes,
+SIGSEGV retry1/max2/charges retained, A1 held out, no2080host controls.
+Use canonical latest_operator_observation/currentest observed_at and actual
+start/end versus later observation time; no restart from stale legacy fields.
+
 ## Reference 20,000 checkpoint; evaluation running — October 4, 09:54 UTC
 
 Reference training supervisor started09:37:30.071130Z and exited0 at
