@@ -1,5 +1,41 @@
 # A8 QAT recovery and comparison
 
+## Reference 30,000 evaluated; candidate resumed — October 4, 12:23 UTC
+
+Reference30000 eval exited0: supervisor actualstart12:05:57.446184Z/end
+12:17:12.135507Z,wall674.689323s; reportphase669.613193s,terminalabsence observed
+12:17:56Z. Reportfaf585b9e9f35c15ff0b2fdba68158cfa06a9157a9aaddeecefb00c2494cc6b5;
+checkpoint10896808. CE3.549470507/229labels/48loss rounds/all24prompts. A8 accepted
+1089/8547proposals over1746rounds,0.623711drafts/round,0.127413acceptance;
+Q4_0 remains1608/6047/1231/1.306255. Native emitted2834tokens each.
+RequestTPS95.03626 versusQ4_0135.22919 (ratio0.70278),target-only88.71087;
+decode98.99537 versus143.19066 (ratio0.69135). Five×24=120requests per variant,
+14,290returnedIDs/105length/15stop finishes each;24native/120timing matchesQ4_0,
+sealed=false. Reference close to25k throughput/slightlylower acceptance,belowQ4.
+
+Raw attempt/report/result/timing hardlink archived at
+`evidence-archive/development/reference-step30000-eval-attempt-0000`,locator
+`reference-step30000-locator-map.json`; resultcb038ef2...,timing8e580a5b...,
+checkpointmanifestf8896902...,jointjson999e7ac6...,jointnpzfc665873.... Thirteen
+originalreports in compact summary. Exactgroups/session/native contexts returned,
+baseline2766MiB/0%. Reference budget unchanged5097.991297502003/7200,
+active_attempt null,remaining2102.008702497997.
+
+Candidate resumed exact25000/cursor25044/checkpointb9936e38/config5bba/source3bd,
+run `a8-candidate-step25000-resume-supervisor-20261004-01`,host session
+`a8-candidate-step25000-resume-20261004-01`,actualstart12:19:41.206829Z.
+Supervisor28217/birth5093848,trainer28222/birth5093857,sameboot517c4a36,
+faulthandler diagnostic only. Actualpositive resume12:23:08Z: step25451/cursor25497,
+training5289.783979s,finite33gradients,cumulative sign flips819003067,expectedserial
+learned-head path. Activeoriginalreservation2018.516596271997 from prior
+5181.483403728003 retained. Continue SAME handles to natural30000,normal1200s
+native eval/archive/release,then nextreference budgetedsegment. No repeated gates.
+
+Both7200 endpoints/finals incomplete; Goal/heartbeat ACTIVE,allsource/recipe/math/
+data/precision/budgets invariant,SIGSEGV retry1max2/charges retained,A1 heldout,
+no2080host controls. Currentcanonicalobservations/exactIDs govern; actualstart/end
+versus observations separate,no restart from stale snapshots or deliveryorder.
+
 ## Reference 30,000 checkpoint; evaluation running — October 4, 12:05 UTC
 
 Reference trainer actualstart11:49:27.412201Z/end12:04:02.640474Z,exit0; natural
