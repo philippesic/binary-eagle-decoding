@@ -1620,3 +1620,14 @@ SAME ACTIVE15minute heartbeat. Predecessor and its sole operator are retired;
 no active transport or duplicate schedule. Exact transfer proof and remaining
 gates are in the linked rotation checkpoint. Full preparation readiness,
 GPU release and optimizer training remain pending.
+
+## Independent RTX2080Ti study checkpoint — October 4, 02:15 UTC
+
+The human separately resumed DSpark/DFlash on RTX2080Ti. The study owns only
+that device; the paused A8 goal, RTX5080 and fusion work remain untouched.
+All five released-reference native cells completed actual model/cache/mask/
+immutable-target proof. Two scoped raw-logit checks passed for observed near-tie
+output differences; full throughput timing is next, with0/7200s measured inference
+used. FFN-only Q4 exports passed; W1A8/W1A1 need a human implementation scope
+choice. See the [independent study checkpoint](../experiments/dspark-sm75-20261003/checkpoint.md).
+This adds no active project goal and makes no A8 progress or resource claim.

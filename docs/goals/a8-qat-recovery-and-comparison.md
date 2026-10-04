@@ -460,3 +460,13 @@ performance result. Remaining integration: trainer calls the helper after export
 using derived current evaluation sources (explicit commit/env/runtime inventory),
 rejects incomplete timing, binds its manifest and attaches actual hardware evidence;
 sole Luna executes within the existing evaluation deadline.
+
+## Independent study boundary note — October 4, 02:15 UTC
+
+After its first context compaction, the independent DSpark/DFlash coordinator
+re-read STATUS and this goal. A8 ownership, pause, checkpoints, training budget,
+RTX5080 controls and jobs are unchanged. Human-authorized RTX2080Ti work is
+recorded separately in [its checkpoint](../../experiments/dspark-sm75-20261003/checkpoint.md):
+actual released-model native proof completed; two bounded near-tie checks passed;
+reference/Q4 throughput timing remains pending with0/7200s used. No cross-task
+contact, new A8 action or new active project goal is implied by this note.
