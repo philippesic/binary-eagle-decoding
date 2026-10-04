@@ -9,10 +9,17 @@ development evaluations, final coverage/telemetry/report and complete release.
 User resumed GPU usage; no new recipe, budget or research decision is pending.
 This is a continuation of the existing goal, not a new experiment.
 
-The second-compaction hook requires a fresh successor at this safe checkpoint.
-Prior owner `01a103da-0980-7332-a041-3f95aca6a3f5` is transferring live work, not
+The second-compaction hook required a fresh successor at this safe checkpoint.
+Retirement checkpoint written 2026-10-04T13:09:27.046911+00:00.
+Prior owner `01a103da-0980-7332-a041-3f95aca6a3f5` transferred live work, without
 pausing the GPU or claiming completion. Successor `01a10704-f186-7991-97c7-6f4b3df51ae9` was created13:05UTC;
-acknowledgment/live-job visibility is pending. Published handoff9b5d003
+accepted the objective and exact current job handles at13:06:45UTC. It appointed
+sole replacement `/root/gpu_operator` (Luna high) to acquire fresh read-only
+job proof. Prior operator remains retired and transport closed. SAME heartbeat
+was retargeted and read back ACTIVE on successor; no duplicate automation.
+Prior coordinator retires after this published checkpoint; its docs worktree is
+transferred and no further GPU polling/launch or docs edits belong to it.
+The comparison is INCOMPLETE; retirement must never be interpreted as completion. Published handoff9b5d003
 (root14b69b7), documentation diffcheck passed; other teams' USER_LESSONS additions
 were preserved in conflict resolution. Read this section plus latest STATUS and comparison report first;
 older sections are historical. Do not contact origin chat
