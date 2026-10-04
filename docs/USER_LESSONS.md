@@ -443,3 +443,21 @@ additional proof protocols or redoing completed audit work.
 - Practical lesson: Reuse the earlier lesson about caller/write conditions.
   Inspect each parameter family's backward/constraint before claiming a state
   cannot recover; separate source arithmetic, saved measurements and forecasts.
+
+### 2026-10-04: Bind block slots to the frozen driver
+
+- Context: Independent training/data/native owners prepared DSpark and DFlash
+  QAT after the completed released-model screen.
+- Evidence: An initial family-based contract suggested DFlash prediction slot1.
+  `experiments/dspark-sm75-20261003/reference-results.md` records both released
+  families using author slot0 and seven bidirectional noise rows;
+  `scripts/benchmark_dspark_screen.py` explicitly selects `draft-dspark`.
+  The training owner and architecture adviser independently resolved the mismatch
+  before their feature commits or any capture/GPU operation.
+- Status: Corrected agent contract disagreement; no human error, corrupted data
+  or execution failure occurred.
+- Agent contribution: Generic DFlash defaults were initially applied by family
+  name without joining the frozen native driver/layout.
+- Practical lesson: Carry explicit driver, first prediction slot, compute block
+  length and returned proposal length in model/data/evaluator schemas. Tests
+  must use the released driver contract rather than infer it from family.
