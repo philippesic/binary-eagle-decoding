@@ -22,6 +22,15 @@ def run(config_path: Path, output: Path):
     allowed = {"target_only", "eagle_q4_0", "dspark_3", "dspark_7", "dflash_3", "dflash_7"}
     if not isinstance(arms, list) or len(arms) != 2 or len(set(arms)) != 2 or not set(arms) <= allowed:
         raise ValueError("bounded diagnostic requires two distinct supported arms")
+    profile = cfg.get("profile_cuda_events", False)
+    if not isinstance(profile, bool):
+        raise ValueError("profile_cuda_events must be a boolean")
+    if profile:
+        if cfg.get("verify_positions") or not all(a.startswith(("dspark_", "dflash_")) for a in arms):
+            raise ValueError("CUDA profile requires two candidate arms without raw-logit tracing")
+        if common.sha256(Path(cfg["admission"]["path"])) != cfg["admission"]["sha256"]:
+            raise ValueError("profile admission changed")
+        screen.check_admission(cfg, json.loads(Path(cfg["admission"]["path"]).read_text()))
     assets = {"binary", "target"} | {a.rsplit("_", 1)[0] if a.startswith(("dspark_", "dflash_")) else a for a in arms if a != "target_only"}
     for name in assets:
         if common.sha256(Path(cfg[name]["path"])) != cfg[name]["sha256"]:
@@ -59,6 +68,9 @@ def run(config_path: Path, output: Path):
         env.update(CUDA_VISIBLE_DEVICES="0", W1AX_ROUND_TRACE_JSONL=str(cell / "rounds.jsonl"))
         if arm.startswith(("dspark_", "dflash_")):
             env["DSPARK_REQUIRE_AUTHOR_LAYOUT"] = "1"
+        if profile:
+            env.update(GGML_CUDA_EAGLE_EVENTS="1", GGML_CUDA_EAGLE_EVENT_LIMIT="100000",
+                       GGML_CUDA_DISABLE_GRAPHS="1")
         if cfg.get("verify_positions"):
             positions = cfg["verify_positions"]
             if not isinstance(positions, list) or any(not isinstance(p, int) or p < 0 for p in positions):
@@ -67,7 +79,7 @@ def run(config_path: Path, output: Path):
             env["W1AX_VERIFY_TRACE_POSITIONS"] = ",".join(map(str, positions))
         command = screen.command(cfg, protocol, arm, port)
         common.json_write(cell / "launch.json", {"command": command,
-                          "trace_env": {k: v for k, v in env.items() if k.startswith(("W1AX_", "GGML_", "CUDA_"))}})
+                          "trace_env": {k: v for k, v in env.items() if k.startswith(("W1AX_", "GGML_", "CUDA_", "DSPARK_"))}})
         proc = None
         with (cell / "server.log").open("wb") as log:
             try:
@@ -100,7 +112,7 @@ def run(config_path: Path, output: Path):
         if arm != "target_only" and not any(r.get("n_proposed", 0) > 0 for r in screen.rows(cell / "rounds.jsonl")):
             raise ValueError("diagnostic drafter made no actual proposals")
     paired = {name: results[arms[0]][name]["generated_token_ids"] == results[arms[1]][name]["generated_token_ids"] for name, _ in cases}
-    common.json_write(output / "readiness.json", {"scope": "two-arm native diagnostic; not five-repeat throughput", "arms": arms,
+    common.json_write(output / "readiness.json", {"scope": "perturbed CUDA-event diagnostic; not throughput" if profile else "two-arm native diagnostic; not five-repeat throughput", "arms": arms,
                        "candidate_admission": None, "results": results, "paired_output_ids": paired})
 
 
