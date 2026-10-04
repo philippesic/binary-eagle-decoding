@@ -70,7 +70,10 @@ def produce(inputs):
                  "numeric sampler/request contract changed")
             prompt = response.get("__verbose", {}).get("prompt")
             need(prompt is not None, "missing actual rendered prompt for full-prefix join")
-            result[name] = {"ids": ids, "request": request, "prompt": prompt,
+            termination = {"finish_reason": measurement.get("finish_reason"),
+                           "stop": response.get("__verbose", {}).get("stop"),
+                           "stop_type": response.get("__verbose", {}).get("stop_type")}
+            result[name] = {"ids": ids, "request": request, "prompt": prompt, "termination": termination,
                             "measurement": str((folder / "measurement.json").resolve())}
         for a, b in (("warmup-00", "prompt-00"), ("warmup-01", "prompt-01")):
             need(result[a]["request"] == result[b]["request"] and result[a]["ids"] == result[b]["ids"],
@@ -78,7 +81,25 @@ def produce(inputs):
         return result
     nodes = {"target_only": cases(primary, "target_only")}
     primary_q4 = cases(primary, "eagle_q4_0")
-    edges = []
+    edges, q4_reference_ancestry = [], {}
+    reference_assets = {}
+    for key in ("dspark", "dflash"):
+        model = probe_cfg[key]
+        reference_assets[key] = model
+        if "reference" not in model or "precision" not in model:
+            continue
+        from validate_native import check_q4_precision
+        precision = json_file(model["precision"]["path"])
+        export = json_file(model["export"]["path"])
+        need(evidence[str(Path(model["precision"]["path"]).resolve())] == model["precision"]["sha256"] and
+             evidence[str(Path(model["export"]["path"]).resolve())] == model["export"]["sha256"],
+             "numeric Q4 precision/export receipt changed")
+        check_q4_precision(export, precision, model["sha256"], model["export"]["sha256"])
+        need(model["reference"]["sha256"] == export["draft_sha256"], "numeric Q4 reference pin changed")
+        reference_assets[key] = model["reference"]
+        q4_reference_ancestry[key] = {"candidate_sha256": model["sha256"],
+            "reference_sha256": model["reference"]["sha256"], "precision_sha256": model["precision"]["sha256"],
+            "scope": "exact observed output+termination path only; no candidate Q4 raw-logit margin claim"}
     reached = {name: {"target_only"} for name in CASES}
 
     def raw_point(trace, task, position, ids):
@@ -130,7 +151,7 @@ def produce(inputs):
         for arm in (left, right):
             if arm != "target_only":
                 key = "eagle_q4_0" if arm == "eagle_q4_0" else arm.rsplit("_", 1)[0]
-                expected = primary_cfg[key] if key == "eagle_q4_0" else probe_cfg[key]
+                expected = primary_cfg[key] if key == "eagle_q4_0" else reference_assets[key]
                 need(cfg[key]["sha256"] == expected["sha256"], "numeric model source pin changed")
             launch = json_file(root / arm / "launch.json")
             cmd = launch["command"]
@@ -159,6 +180,7 @@ def produce(inputs):
                  a["ids"] == nodes[left][name]["ids"], "numeric diagnostic changed actual input/known output path")
             if right == "eagle_q4_0":
                 need(b["ids"] == primary_q4[name]["ids"], "diagnostic Q4 differs from PRIMARY Q4 complete IDs")
+                need(b["termination"] == primary_q4[name]["termination"], "diagnostic PRIMARY Q4 termination changed")
             if a["ids"] == b["ids"]:
                 edge_cases[name] = {"exact": True}
                 if left in reached[name]: reached[name].add(right)
@@ -196,27 +218,40 @@ def produce(inputs):
             name = path.parent.name
             need(name in CASES, "numeric receipt contains an unfrozen case")
             actual, reference = json_file(path), json_file(output["reference"])
+            response = json_file(path.parent / "response.json") if q4_reference_ancestry else None
             request = json_file(path.parent / "request.json")
             need(request == nodes["target_only"][name]["request"] and reference["generated_token_ids"] == nodes["target_only"][name]["ids"],
                  "original probe no longer reproduces numeric target/request")
-            compatible = [arm for arm in reached[name] if actual["generated_token_ids"] == nodes[arm][name]["ids"]]
+            termination = {"finish_reason": actual.get("finish_reason"),
+                           "stop": response.get("__verbose", {}).get("stop"),
+                           "stop_type": response.get("__verbose", {}).get("stop_type")} if response else None
+            if q4_reference_ancestry:
+                need(termination["finish_reason"] in ("length", "stop") and termination["stop"] is True and
+                     termination["stop_type"] in ("limit", "eos", "word"), "numeric Q4 termination evidence missing")
+            compatible = [arm for arm in reached[name] if actual["generated_token_ids"] == nodes[arm][name]["ids"] and
+                          (not q4_reference_ancestry or termination == nodes[arm][name]["termination"])]
             row = {"actual_measurement": str(path.resolve()), "actual_sha256": evidence[str(path.resolve())],
                    "reference_measurement": str(Path(output["reference"]).resolve()),
                    "reference_sha256": evidence[str(Path(output["reference"]).resolve())], "request_sha256": digest(request),
                    "actual_ids_sha256": digest(actual["generated_token_ids"]),
                    "reference_ids_sha256": digest(reference["generated_token_ids"]),
                    "kind": cell["kind"], "maximum": cell["maximum"], "case": name}
+            if q4_reference_ancestry:
+                row["termination"] = termination
             if compatible:
                 covered.append({**row, "validated_native_paths": sorted(compatible)})
             else:
                 uncovered.append(row)
-    return {"schema": "dspark_scoped_numeric_receipt_v1", "passed": True,
+    result = {"schema": "dspark_scoped_numeric_receipt_v1", "passed": True,
             "scope": "bounded numeric edges only; structural/native admission remains separate",
             "producer_inputs": inputs, "binary_sha256": runtime["binary"], "target_sha256": runtime["target"],
             "model_sha256": {"eagle_q4_0": primary_cfg["eagle_q4_0"]["sha256"]},
             "protocol_sha256": protocol_sha, "manifest_semantic_sha256": digest({k: v for k, v in manifest.items() if k != "numeric_gate"}),
             "edges": edges, "covered_outputs": covered, "uncovered_outputs": uncovered,
             "evidence_sha256": evidence, "correctness_status": "native near-tie sensitivity; not exact greedy parity or confirmed batch cause"}
+    if q4_reference_ancestry:
+        result["q4_reference_ancestry"] = q4_reference_ancestry
+    return result
 
 
 def consume(asset, manifest, binary_sha, target_sha):
