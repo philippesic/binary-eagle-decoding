@@ -307,3 +307,33 @@ root40 admission checks pass. Profiling and analysis changes are separate from
 frozena9 timing. Astra permits Q4 reuse of admitted reference output paths only
 with exact complete IDs+termination and independent candidate-native proof;
 novel outputs remain rejected, no Q4 raw-logit claim is inferred.
+
+## Full reference timing actually running — October 4, 02:49 UTC
+
+The sole operator launched dspark-reference-sixrep-fcdf-20261004 at02:43UTC
+under detached Linux tmux session dspark-ref-6x6-20261004. Parent execution source
+is immutable a9dded1bb2e554d7394472f93d6160db24f333a9. Config is under
+runs/reference-sixrep-fcdf-20261004/config.json in that checkout, bound to native
+admission305a56... and protocol367431...; prior measured inference is0.
+Remote_job supervisorPID/PGID25961 owns benchmarkPID/PGID25963. PATH includes
+/usr/lib/wsl/lib. No profiler, logit or admission environment is enabled;
+regular round trace remains enabled and its measured overhead is included.
+All864 measured requests plus72 warmups share7200s cumulative request wall.
+
+First target-only server26020 loaded and generated actual outputs. The first
+six-arm repeat is complete. Latest operator snapshot:200 total records,
+268.692s inferred request wall, rep01/DSpark3 server26799, GPU10679MiB.
+At earlier rep00/DSpark7 snapshot the physical RTX2080Ti was88%, P2,58C;
+no competing compute context was observed. These are progress facts, not a
+six-repeat throughput result. Keep the existing run uninterrupted and preserve
+per-request IDs, counts, rounds and failed-request budget charges.
+
+Q4 config is prepared from actual persisted quantization plans and passed15-FFN
+precision receipts without hashing/conversion/build alongside measured requests.
+Next, after reference completion: deploy reviewed0c2f292 for actualQ4 probe,
+compose separate source-bound output admission from unchanged reference edges
+only for complete matching IDs+termination, and run the same paired timing with
+hashed reference timing receipt carried into the same7200s allowance. Root42
+admission checks pass; later profile/analysis changes never alter frozena9 timing.
+All native-admission worker history is integrated/published parentmaine1bcc0f.
+No W1 implementation decision arrived; no such code, QAT orRTX5080 work started.
