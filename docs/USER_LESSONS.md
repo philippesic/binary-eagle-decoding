@@ -59,6 +59,11 @@ evidence changes the lesson.
   order does not establish freshness. Re-read the ledger before patching it and
   reject older snapshots as current state. On conflicting status, inspect the same
   kernel handles and authoritative supervisor/checkpoint/budget files before acting.
+  On October4, the operator also briefly computed a 40-minute deadline for a
+  1,200-second evaluation. Root corrected the arithmetic to20minutes; the frozen
+  manifest/source timeout remained1,200 throughout and the job exited within it.
+  Derive deadline from actual start plus the recorded cap, rather than mental
+  clock arithmetic, and distinguish whole-job wall from the evaluator phase.
 
 ### 2026-10-04: Compare actual SSH key fingerprints
 

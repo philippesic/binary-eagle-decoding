@@ -1,5 +1,43 @@
 # A8 QAT recovery and comparison
 
+## Candidate 20,000 evaluated; reference resumed — October 4, 10:47 UTC
+
+Candidate20000 eval exited0: supervisor actualstart10:28:34.371620Z/end
+10:41:31.094831Z,wall776.723211s; reportphase771.596616s,terminalabsence observed
+10:42:14Z. Report624c8e3397bd5c5c6a6deb6e88431e268ba9af80bcdaaa5f4412767b220a3d64;
+checkpoint21f5278f. CE5.781816153/229labels/48loss rounds/all24prompts. A8 accepted
+483/11522proposals over2354rounds,0.205183drafts/round,0.041920acceptance;
+Q4_0 remains1608/6047/1231/1.306255. Native emitted2834tokens each.
+RequestTPS67.75124 versusQ4_0135.81222 (ratio0.49886),target-only88.85102;
+decode69.61893 versus143.27966 (ratio0.48590). Five×24=120requests per variant,
+14,290returnedIDs/105length/15stop finishes each;24native/120timing matchesQ4_0,
+sealed=false. Candidate still well below ref20000 andQ4_0.
+
+Raw attempt/report/result/timing hardlink archived under
+`evidence-archive/development/candidate-step20000-eval-attempt-0000`, locator
+`candidate-step20000-locator-map.json`; resultc2c9280a...,timinga505b986...,
+checkpointmanifest0521d072...,jointjsonb5820510...,jointnpz2d714500.... Ten original
+reports in compact summary. Exact groups/session/native contexts returned,
+baseline2766MiB/0%. Candidate budget unchanged4132.196864/7200,active_attempt null,
+remaining3067.803136. An operator deadline note incorrectly added40minutes;
+corrected nominal10:48:33 (not11:08:33), actual source/manifest cap stayed1200s.
+No timeout expansion occurred.
+
+Reference resumed exact20000/cursor20028/checkpoint1fab73c3/configcf320/source3bd,
+run `a8-reference-step20000-resume-supervisor-20261004-01`, host session
+`a8-reference-step20000-resume-20261004-01`, launch10:44:40Z.
+Supervisor24320/birth4523893,trainer24325/birth4523900,sameboot517c4a36,
+faulthandler diagnostic only. Actual positive resume observed10:47:21Z: step20302/
+cursor20331,training3603.327545s,finite18gradients,cumulative sign flips32505352,
+effective batched cache/chunk64. Active original reservation3658.642051 from base
+3541.357949 retained. Continue SAME handles to natural25000, then1200s normal
+native eval/archive/release and candidate20000→25000. No repeated gates or science.
+
+Both7200 endpoints/finals still incomplete; Goal/heartbeat ACTIVE, all admitted
+source/recipe/math/data/precision/budget invariant. SIGSEGV retry1/max2/charges
+retained, A1 held out, no2080host controls. Current canonical operator observations
+and exactbirths govern, no restart from stalelegacy fields or delivery order.
+
 ## Candidate 20,000 checkpoint; evaluation running — October 4, 10:28 UTC
 
 Candidate training supervisor started10:08:25.718304Z and exited0 at
