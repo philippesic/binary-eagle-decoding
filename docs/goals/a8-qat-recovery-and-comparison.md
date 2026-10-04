@@ -1,5 +1,38 @@
 # A8 QAT recovery and comparison
 
+## Reference 15,000 evaluated; candidate resumed — October 4, 09:02 UTC
+
+Reference15000 native evaluation completed exit0 at08:58:33.815436Z,683.691812
+supervised seconds. Reportcc5341b12d5733465f5b4ceecc10b9b8c0671ab33a39435703c1cfe23057af74;
+checkpoint73429bd0. CE3.994632131/229labels/48loss rounds/all24prompts. A8 accepted
+1043/8769proposals over1794rounds,0.581382drafts/round,0.118942acceptance;
+Q4_0 remains1608/6047/1231/1.306255. Native emitted2834tokens each.
+RequestTPS92.34039 versusQ4_0134.68578 (ratio0.68560), target-only88.55608;
+decode96.16208 versus142.76261 (ratio0.67358). Five×24=120requests per variant,
+14,290returnedIDs/105length/15stop finishes each;24native/120timing sequences
+matchQ4_0, sealed=false. Reference improves and exceeds target-only pooled request
+rate in this measurement, but remains belowQ4_0. No significance/global-win claim.
+
+Raw attempt/report/result/timing hardlink archived at
+`evidence-archive/development/reference-step15000-eval-attempt-0000`; locator
+`reference-step15000-locator-map.json`. Result8490312b...,timing0c1ade69...;
+compact summary now contains seven original complete reports. Exact evaluation/
+native groups and contexts returned, baseline2766MiB/0%. Reference budget remains
+2767.994800899/7200,active_attempt null,remaining4432.005199101.
+
+Candidate resumed exact10000/cursor10017/checkpoint6898e9b1/config5bba2e/source3bd,
+run `a8-candidate-train-after-reference15000-supervisor-20261004-01`, host session
+`a8-candidate-train-after-reference15000-20261004-01`,start09:00:37.290456Z.
+Supervisor19753/birth3899454,trainer19759/birth3899465,sameboot517c4a36;
+faulthandler diagnostic only. Actual positive resume at09:02:25Z: step10015/
+cursor10032,15updates,finite33gradients,cumulative sign flips254073145. Active
+reservation5135.739885756 from prior2064.260114244 retained. Continue SAME handles
+to natural15000, scheduled1200s eval/archive/release, then reference15000→20000.
+
+Both7200 endpoints/final evaluations remain incomplete; Goal/heartbeat ACTIVE.
+No repeated gates or new science/recipe/data/precision/budget change. Equivalent
+unexplained SIGSEGV retry1/max2 retained; A1 held out, no2080host controls.
+
 ## Reference 15,000 checkpoint; scheduled evaluation running — October 4, 08:47 UTC
 
 Reference training exited0 at08:43:32Z, natural step15000/cursor15024. Checkpoint

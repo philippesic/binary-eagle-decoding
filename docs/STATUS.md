@@ -4,16 +4,17 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Reference 15,000 checkpoint; evaluation running — October 4, 08:47 UTC
+## Reference 15,000 evaluated; candidate training — October 4, 09:02 UTC
 
-Reference exited0 at the scheduled15,000-update boundary, checkpoint73429bd0
-archived. Budget settled2,767.995/7,200seconds, active attempt null. Training
-resources returned, then native evaluation launched08:47:10UTC: supervisor18949/
-birth3818741, evaluator18955/birth3818749, same immutable3bd/current9e2/1200s cap.
-Result pending. Fresh terminal/launch packet supersedes older status messages.
+Reference native evaluation passed/archived: 0.581accepted drafts/round and
+92.34request TPS, versus Q4_0 at1.306/134.69 and target-only at88.56. All24native/
+120timing sequences matchQ4_0, no sealed access. Reference still trails primaryQ4;
+budget2,767.995/7,200seconds settled/inactive. Evaluation resources returned.
 
-Candidate remains evaluated10,000/2,064.260seconds,0.180drafts/round/66.14requestTPS;
-next candidate training boundary15,000 follows evaluation/archive/release.
+Candidate resumed exactly from10,000 and advanced to10,015/cursor10032 with
+33finite gradients. Supervisor19753/birth3899454,trainer19759/birth3899465,
+same immutable3bd/config, diagnostic fault handler. Prior budget2,064.260 and
+active reservation5,135.740 retained; next scheduled boundary15,000.
 Both final accounted-time endpoints remain incomplete. SAME Goal/heartbeat ACTIVE;
 recipes/data/precision/budgets unchanged, SIGSEGV retry1/max2 and charges preserved.
 A1 held out; no RTX2080Ti host controls or unrelated research.
@@ -28,12 +29,12 @@ The sole GPU operator continues the scheduled comparison; root maintains the
 report and durable state. See the [ownership checkpoint](goals/a8-qat-recovery-and-comparison.md#standalone-ownership-claimed--october-3-2026).
 Integrated fixes are published (frozen execution source583480c; main8583b68).
 BOTH actual A8 arms have optimizer updates and exact positive-step resume proof.
-Reference is at15000/2767.995seconds with evaluation running; candidate learned A8/all-nine
+Reference is evaluated at15000/2767.995seconds; candidate learned A8/all-nine
 midpoints/latent0.1 AdamW is evaluated at10000/2064.260seconds. All33candidate
 tensors show finite/nonzero gradients and actualmovement; cache/head execution
 and learned-head serial exception are observed. Arms alternate at scheduled
-5000boundaries toward independent7200second caps. Reference interim acceptance is 0.501 accepted drafts/round versus Q4_0 at
-1.306; request throughput is 65% of Q4_0. Both remain below the primary baseline.
+5000boundaries toward independent7200second caps. Reference interim acceptance is 0.581 accepted drafts/round versus Q4_0 at
+1.306; request throughput is 69% of Q4_0. Both remain below the primary baseline.
  The only active goal is
 [A8 QAT recovery and comparison](goals/a8-qat-recovery-and-comparison.md).
 
