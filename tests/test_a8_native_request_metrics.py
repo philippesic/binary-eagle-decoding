@@ -206,12 +206,12 @@ class FullContractTests(unittest.TestCase):
         }
         for name in ("binary", "target", "q4", "student"):
             (folder / name).write_text(name)
-        prompts = folder / "development.jsonl"
+        prompts = folder / "fixed-development.jsonl"
         prompts.write_text(
             "".join(
                 json.dumps(
                     {
-                        "id": f"qat-revisit-development-{i:02d}",
+                        "id": f"{('magicoder', 'dolly', 'gsm8k')[i % 3]}:line-{i:06d}-index-{i}",
                         "messages": [{"role": "user", "content": "x"}],
                     }
                 )
@@ -252,6 +252,7 @@ class FullContractTests(unittest.TestCase):
 
         deadline = time.monotonic() + 30
         with (
+            patch.object(metrics, "DEVELOPMENT_PROMPTS_SHA256", metrics.benchmark.sha256(prompts)),
             patch.object(stages, "verify_sources"),
             patch.object(metrics.benchmark, "available_port", return_value=True),
             patch.object(metrics.subprocess, "Popen", side_effect=spawn),
@@ -303,6 +304,53 @@ class FullContractTests(unittest.TestCase):
             self.assertEqual(len(calls), 1)
             self.assertTrue(result["servers"][0]["server_stop"]["process_group_gone"])
             self.assertTrue((Path(temp) / "timing/rep-00/Q4_0/server.log").exists())
+
+    def test_fixed_prepared24_hash_and_original_dataset_ids_are_accepted(self):
+        self.assertEqual(
+            metrics.DEVELOPMENT_PROMPTS_SHA256,
+            "131a3db7958ff6aa818b23019297654507d5b80bed3c298349417b7e3b2ba081",
+        )
+        with tempfile.TemporaryDirectory() as temp:
+            sources, prompts, _ = self.fixture(Path(temp))
+            # Local synthetic bytes model the original dataset IDs, never change production pin.
+            with patch.object(
+                metrics, "DEVELOPMENT_PROMPTS_SHA256", metrics.benchmark.sha256(prompts)
+            ):
+                rows = metrics.development_prompt_rows(sources, prompts)
+            self.assertEqual(len(rows), 24)
+            self.assertEqual(
+                {row["id"].split(":")[0] for row in rows}, {"magicoder", "dolly", "gsm8k"}
+            )
+
+    def test_changed_fixed_development_content_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            sources, prompts, _ = self.fixture(Path(temp))
+            digest = metrics.benchmark.sha256(prompts)
+            prompts.write_text(prompts.read_text() + "\n")
+            with patch.object(metrics, "DEVELOPMENT_PROMPTS_SHA256", digest):
+                with self.assertRaisesRegex(ValueError, "content hash changed"):
+                    metrics.development_prompt_rows(sources, prompts)
+
+    def test_duplicates_and_final_ids_are_rejected_even_with_matching_hash(self):
+        for invalid in ("duplicate", "final", "sealed"):
+            with self.subTest(invalid=invalid), tempfile.TemporaryDirectory() as temp:
+                sources, prompts, _ = self.fixture(Path(temp))
+                rows = [json.loads(line) for line in prompts.read_text().splitlines()]
+                rows[-1]["id"] = (
+                    rows[0]["id"] if invalid == "duplicate" else f"{invalid}:line-00001"
+                )
+                prompts.write_text("".join(json.dumps(row) + "\n" for row in rows))
+                with patch.object(
+                    metrics, "DEVELOPMENT_PROMPTS_SHA256", metrics.benchmark.sha256(prompts)
+                ):
+                    with self.assertRaisesRegex(ValueError, "unique unsealed"):
+                        metrics.development_prompt_rows(sources, prompts)
+
+    def test_final_path_rejected_before_reading_content(self):
+        with patch.object(metrics.benchmark, "sha256") as digest:
+            with self.assertRaisesRegex(ValueError, "sealed/final"):
+                metrics.development_prompt_rows({}, Path("sealed-final.jsonl"))
+            digest.assert_not_called()
 
     def test_historical_native_binary_refused_before_launch(self):
         with tempfile.TemporaryDirectory() as temp:
