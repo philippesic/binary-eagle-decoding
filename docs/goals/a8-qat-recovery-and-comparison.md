@@ -1,5 +1,41 @@
 # A8 QAT recovery and comparison
 
+## Candidate 5,000 evaluated; reference positive resume — October 4, 07:14 UTC
+
+Candidate evaluation completed exit 0 at 07:06:52.661423Z; supervised runtime
+761.22327 seconds. Report SHA b5845c6340d8a70fb5f3661d48ee469ad54a7ba69d1039b563dab81882ce54f9;
+checkpoint 893e205d. Accepted 507/11,371 proposals over 2,327 rounds:
+0.217877 accepted drafts/round, versus Q4_0 at 1.306255. CE 5.568934 on 229 labels,
+48 loss rounds and all 24 prompts. Request rate 68.34155 versus Q4_0 at 135.15673
+and target-only at 88.64152 tokens/s; Q4 ratio 0.50565. Decode rate 70.43144 versus
+143.25322, ratio 0.49166. All 24 native output sequences and 120 timing sequences
+match Q4_0, including target-only timing. Five repetitions × 24 prompts = 120
+measured requests per variant. No sealed access. Candidate trails reference at
+this update count; final equal-time endpoints and feature attribution remain open.
+
+Raw attempt/report/result/manifest/timing and checkpoint archives are hardlink
+verified. Locator `evidence-archive/development/candidate-step5000-locator-map.json`.
+All evaluation/native leaders and groups are absent; remote session terminal,
+no compute apps, baseline RTX5080 2,766 MiB/0%. Candidate budget unchanged at
+1,047.284754942/7,200 seconds with no active training attempt.
+
+Reference resumed from its evaluated checkpoint 884dd8c5/cursor5009 under the
+same immutable 3bd source/config. Supervisor run
+`a8-ref-train-after-candidate5000-supervisor-20261004-01`, host tmux session
+`a8-ref-train-after-candidate5000-20261004-01`, started 07:11:36.703841Z.
+Supervisor15464/birth3245398 and trainer15470/birth3245407 on boot517c4a36.
+Positive resumed optimizer work is verified: step5411/cursor5421 at 07:14:18Z,
+411 updates past the exact checkpoint. Cumulative budget829.815687817/7200 seconds;
+active attempt retains prior764.725207467 and reservation6435.274792533,
+PID15470/birth3245407. All18 gradient tensors finite, sign flips1795 and scale
+L1 movement0.135362. Continue the same handles toward scheduled10,000 evaluation.
+SAME Goal/heartbeat active, no recipe/data/precision/budget change.
+
+The clean, fully merged helper-only repair worktree and branch were retired;
+only disposable caches were ignored. Immutable remote 3bd execution and all raw
+runs remain preserved. Current counts and exact identities are in the ignored
+operator ledger and compact comparison summary.
+
 ## Archived primary acceptance counts transcribed — October 4, 07:04 UTC
 
 The sole operator saved compact original report summaries locally at ignored

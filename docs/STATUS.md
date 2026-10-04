@@ -4,17 +4,20 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Candidate at scheduled 5,000 boundary — October 4, 06:52 UTC
+## Candidate 5,000 evaluated; reference training — October 4, 07:14 UTC
 
-Resumed candidate reached5000updates/cursor5009 and saved checkpoint893e205d.
-Trainer and supervisor are terminal; cumulative trainer budget1047.285of7200s,
-active attempt null. The sole operator launched its scheduled native
-5000development evaluation at06:54UTC under the existing1200s cap; result pending.
-Detached supervisor14249/evaluator14255, immutable source3bd, checkpoint archived.
-Then reference resumes from evaluated5000/764.725s toward10000. The SAME Goal
-and recovery heartbeat are ACTIVE. Exact source/recipes/data/precision preserved;
-A1 held out, no2080host-control writes. SSH observation recovered using the
-existing trusted Mac key; no host change or training failure occurred.
+Candidate native evaluation passed and raw evidence is archived: 0.218 accepted
+drafts/round, 68.34 request tokens/s, below reference at 0.377/81.48 and Q4_0
+at 1.306/~135. Its budget is 1,047.285/7,200 trainer seconds; 24 native and 120
+timing response sequences match Q4_0, no sealed access. Evaluation resources
+returned. These are intermediate checkpoints, not final equal-time endpoints.
+
+Reference resumed exactly from evaluated step 5,000/cursor5009 and advanced
+to step 5,411/cursor5421: 411 real updates, cumulative budget 829.816/7,200 seconds.
+Supervisor15464/birth3245398 and trainer15470/birth3245407 are live under the
+same immutable source3bd; all18 gradient tensors finite. Next natural boundary
+is 10,000. The SAME Goal and recovery heartbeat are ACTIVE. Recipes,
+data, precision and budgets are preserved; A1 held out, no RTX2080Ti controls.
 
 ## Active: A8 QAT recovery and comparison — October 3, 2026
 
@@ -27,7 +30,7 @@ report and durable state. See the [ownership checkpoint](goals/a8-qat-recovery-a
 Integrated fixes are published (frozen execution source583480c; main8583b68).
 BOTH actual A8 arms have optimizer updates and exact positive-step resume proof.
 Reference is evaluated at5000updates/764.725seconds; candidate learned A8/all-nine
-midpoints/latent0.1 AdamW reached its scheduled5000boundary/1047.285seconds. All33candidate
+midpoints/latent0.1 AdamW is evaluated at5000/1047.285seconds. All33candidate
 tensors show finite/nonzero gradients and actualmovement; cache/head execution
 and learned-head serial exception are observed. Arms alternate at scheduled
 5000boundaries toward independent7200second caps. Reference interim acceptance is 0.377 accepted drafts/round versus Q4_0 at
