@@ -337,3 +337,50 @@ hashed reference timing receipt carried into the same7200s allowance. Root42
 admission checks pass; later profile/analysis changes never alter frozena9 timing.
 All native-admission worker history is integrated/published parentmaine1bcc0f.
 No W1 implementation decision arrived; no such code, QAT orRTX5080 work started.
+
+## Reference comparison complete; Q4 history join under correction
+
+All 864 measured requests and 72 warmups finished, exit0. Request inference
+used1246.091775789s of the shared7200s budget; raw measurements SHA
+74b9c9dfc4f16bf549502efe0fe779f22ac7e1a8db5839e008a9ee655aa31381.
+Native source/binary/protocol and all assets remain frozen. Summary from CPU
+analysis5c8fac3 has SHA07c85d24f846c06fd9eea4a1b9188d28dd9d5548efb008fa8620d87472b78f99.
+DFlash7 request throughput132.365 versus primaryQ4 EAGLE90.8013 (+45.8%);
+DSpark7 is129.4871 (+42.6%). Both win in all six repeats and match primary raw
+IDs on all144 measured requests each. Within-arm outputs repeat exactly.
+Full report: reference-results.md. Target-only near-tie89 remains disclosed;
+short arms additionally show new prose-06 divergence90, outside old five-case
+admission. One bounded original-order raw check is prepared with prefix helper
+7b6ae9c and standalone CPUaudit9fde28f, four focused audit tests passed. That
+check follows Q4 timing, not a new broad parity campaign.
+
+Reference supervisor state: started2026-10-04T02:43:24.061417Z,
+ended2026-10-04T03:10:43.771869Z, childPID/PGID25963, exit0. Supervisor25961,
+child and all native groups are absent; runtime tmux is gone and port18384 free.
+GPU returned to366MiB desktop baseline and empty compute-app query. Earlier
+operator progress timestamps were inconsistent with this exact state; use raw
+supervisor/date timestamps, not inferred polling times, for final accounting.
+
+Q4 native probe ran all25 actual requests under0c2f292 with no allocation
+failure; peak DS9977MiB, DF9827MiB. All20 candidate outputs+terminations match
+admitted complete reference paths. Initial strict output failure is preserved,
+then source-bound numeric receipt passed. CPU structural revalidation stopped
+on first-three proposal differences at token-equal prefixes. Inspection shows
+unequal injection history: for DS anchor57/seed323, proposals
+[1081,545,315] versus[1081,1362,315], following injection spans55..58 versus55..62.
+DF has three analogous later mismatches. All masks/cache/target-role checks
+pass independently; no Q4 timing has started and no new GPU probe is authorized
+merely to fix the checker.
+
+Astra finds token ancestry alone insufficient for equal numerical draft inputs.
+Sol owns a narrow validator correction: every first noise block must qualify
+under matching complete prefill/injection history and first-three agreement;
+later agreement is required only for matching complete ordered numerical
+histories. Unequal-history proposal changes remain counted and disclosed,
+not called proven harmless rounding. An equal-history disagreement or absent
+qualifying first blocks requires one same-cache/seven-row read-limit diagnostic.
+No target0.05 threshold is transferred to quantized draft logits. Luna extracts
+exact joins CPU-only; once computed corrected admission passes, proceed with
+Q4 six-repeat timing carrying hashed reference budget receipt. No changes to
+precision/verifier/prompt policy or other-team sources/jobs. W1 scope remains
+pending a direct human choice.
