@@ -205,6 +205,10 @@ Candidate subsequently reached step 20,000/cursor20,028 and exited cleanly,
 with budget settled at 4,132.197 seconds. Its scheduled native evaluation passed
 and is archived. Both final 7,200-second endpoints remain pending.
 
+Reference subsequently reached step 25,000/cursor25,044 and saved checkpoint
+e3948dbd, with budget 4,324.038 seconds. Its scheduled native evaluation is
+running. Both final 7,200-second endpoints remain pending.
+
 ## Endpoint reporting method
 
 Final coverage will use the authenticated checkpoint's committed `unique_prompts`

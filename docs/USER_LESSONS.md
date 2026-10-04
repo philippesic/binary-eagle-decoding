@@ -64,6 +64,10 @@ evidence changes the lesson.
   manifest/source timeout remained1,200 throughout and the job exited within it.
   Derive deadline from actual start plus the recorded cap, rather than mental
   clock arithmetic, and distinguish whole-job wall from the evaluator phase.
+  A later reference25k release timestamp came from nvidia-smi's timezone-less
+  Windows/WSL local clock:04:00:16 PDT corresponded to11:00:16 UTC, rather than
+  the initially reported10:00:16. The operator corrected it from the raw record.
+  Record the timezone or use an explicit UTC timestamp for resource observations.
 
 ### 2026-10-04: Compare actual SSH key fingerprints
 
