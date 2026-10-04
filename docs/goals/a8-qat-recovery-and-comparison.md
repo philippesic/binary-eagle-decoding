@@ -1,5 +1,30 @@
 # A8 QAT recovery and comparison
 
+## Reference 35,000 boundary; scheduled evaluation authorized — October 4, 13:18 UTC
+
+Original reference30k resume exited0 at13:10:34.068720UTC and reached35000/
+cursor35066. Settled budget5878.722016307007/7200,active_attempt null;
+1321.277983692993training seconds remain. Latest/request checkpoint agree,
+request completed=false and status awaiting_development. Resume SHA256
+`a64fe4dac94fa0620e95f1011df38719deb5a3b8d2de2b8d90603a392fb31548`;
+checkpoint-wide manifest SHA256
+`a3822ade8a3f0ce802624562389d1b5728aa001ae4789bbcb8f0dc086a508745`.
+Hardlink archive `arms/reference/evidence-archive/checkpoints/reference-step-35000`
+and matching `reference-step-35000-record` preserve resume/manifest and status/
+budget/latest/request/supervisor state; operator proved inode equality for resume,
+manifest and status. Current transport remains sole pane285.
+
+At13:15:14UTC operator observed both expected PIDs absent, supervisor finished0,
+Linux session/socket gone and RTX5080 baseline2766MiB/0%. Root issued conditional
+GO for the single scheduled reference35k evaluation: before dispatch prove complete
+owned groups/native-context release, fresh resource floors, unchanged frozen3bd
+source/runtime/config and exact pinned24development manifest; join request to
+latest a64fe4da. Preserve PYTHONFAULTHANDLER=1, original1200s cap and new unique
+remote_job/Linux session. No repeat admissions, training topup or new requests.
+Evaluation launch/results remain pending. After evaluation/release, candidate
+has only its original980.107133009993training seconds before final evaluation.
+Both final7200endpoints remain incomplete.
+
 ## Successor live-job proof — October 4, 13:10 UTC
 
 Successor `01a10704-f186-7991-97c7-6f4b3df51ae9` owns the same incomplete native
