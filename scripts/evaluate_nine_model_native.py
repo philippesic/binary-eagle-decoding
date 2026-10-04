@@ -25,8 +25,8 @@ from w1a1_eagle.nine_model_pipeline import (  # noqa: E402
     CELLS,
     LinuxResources,
     atomic_json,
-    clean_environment,
     load_opaque_prompts,
+    native_environment,
     require,
     sha256,
     stop_signals,
@@ -169,7 +169,21 @@ def run(args):
                 label = "diagnostic" if diagnostic else f"rep-{rep:02d}"
                 directory = destination / label / cell
                 directory.mkdir(parents=True)
-                env = clean_environment(bundle.get("environment"))
+                bits = (8 if cell.endswith("a8") else 1) if cell.endswith(("a8", "a1")) else None
+                env = native_environment(
+                    cell.split("_")[0] if cell != "target_only" else cell,
+                    bits,
+                    bundle.get("environment"),
+                )
+                if cell in {"eagle_a8", "eagle_a1"}:
+                    bits = 8 if cell.endswith("a8") else 1
+                    exported = json.loads(files.check(inputs["export_endpoints"][cell]).read_text())
+                    audit = json.loads(files.check(exported["audit"]).read_text())
+                    require(
+                        audit.get("activation_bits") == bits
+                        and audit.get("output", {}).get("sha256") == models[cell]["sha256"],
+                        "EAGLE activation arithmetic differs from frozen GGUF audit",
+                    )
                 if cell.startswith(("dspark", "dflash")):
                     env["DSPARK_REQUIRE_AUTHOR_LAYOUT"] = "1"
                 trace = directory / "rounds.jsonl"

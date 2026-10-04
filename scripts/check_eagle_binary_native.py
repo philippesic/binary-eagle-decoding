@@ -29,8 +29,8 @@ from w1a1_eagle.nine_model_pipeline import (  # noqa: E402
     Files,
     LinuxResources,
     atomic_json,
-    clean_environment,
     load_opaque_prompts,
+    native_environment,
     process_identity,
     resource_gate,
     sha256,
@@ -73,7 +73,7 @@ def smoke(config_path, receipt_path):
     baseline = observer.snapshot()
     directory = receipt_path.parent / ("smoke-" + str(time.time_ns()))
     directory.mkdir(parents=True, exist_ok=False)
-    env = clean_environment(config.get("environment"))
+    env = native_environment("eagle", bits, config.get("environment"))
     port = config["port"]
     require_value(available_port("127.0.0.1", port), "native smoke port occupied")
     command = [

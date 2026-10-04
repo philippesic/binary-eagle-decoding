@@ -151,6 +151,18 @@ def clean_environment(declared=None):
     return env
 
 
+def native_environment(family, activation_bits, declared=None):
+    env = clean_environment(declared)
+    require(family in FAMILIES or family == "target_only", "unknown native family")
+    require(
+        activation_bits is None or (type(activation_bits) is int and activation_bits in {1, 8}),
+        "unsupported deployed activation arithmetic",
+    )
+    if family == "eagle" and activation_bits is not None:
+        env["GGML_W1AX_ACT_BITS"] = str(activation_bits)
+    return env
+
+
 def validate_bundle(path):
     files = Files()
     bundle = json.loads(Path(path).read_text())

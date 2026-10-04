@@ -19,6 +19,7 @@ from w1a1_eagle.nine_model_pipeline import (
     atomic_json,
     clean_environment,
     load_opaque_prompts,
+    native_environment,
     require_available,
     resource_gate,
     sha256,
@@ -307,6 +308,13 @@ class LifecycleTests(unittest.TestCase):
         sealed.unlink()
         with self.assertRaisesRegex(ValueError, "canonical regular artifact"):
             self.campaign().guard()
+
+    def test_eagle_native_bits_derive_from_audit_and_controls_stay_clean(self):
+        with patch.dict(os.environ, {"GGML_W1AX_ACT_BITS": "1", "GGML_FORCE_DENSE": "1"}):
+            self.assertEqual(native_environment("eagle", 8)["GGML_W1AX_ACT_BITS"], "8")
+            self.assertNotIn("GGML_W1AX_ACT_BITS", native_environment("eagle", None))
+            self.assertNotIn("GGML_W1AX_ACT_BITS", native_environment("dspark", 8))
+            self.assertNotIn("GGML_FORCE_DENSE", native_environment("eagle", 1))
 
     def test_ambient_flags_cleared(self):
         with patch.dict(
