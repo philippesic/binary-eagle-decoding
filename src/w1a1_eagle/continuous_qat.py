@@ -92,6 +92,7 @@ class ContinuousConfig:
     development_lifecycle: str = "in_process"
     initialization_sha256: str | None = None
     initialization_policy: str = "preserve_reference_magnitudes"
+    initialization_encoding: str = "policy_latents"
 
     def __post_init__(self):
         if torch.device(self.device).type not in {"cpu", "cuda"}:
@@ -149,6 +150,8 @@ class ContinuousConfig:
         object.__setattr__(self, "activation_bits", tuple(self.activation_bits))
         if self.activation_bits not in {(1,), (8,), (8, 1)}:
             raise ValueError("continuous lanes must be direct A1, A8, or paired A8/A1")
+        if self.initialization_encoding not in {"policy_latents", "hard_signs"}:
+            raise ValueError("initialization encoding unsupported")
         if self.initialization_policy not in {"preserve_reference_magnitudes", "unit_probe"}:
             raise ValueError("explicit calibrated initialization policy required")
         if self.initialization_sha256 is not None and (
@@ -235,6 +238,8 @@ def immutable_config(config: dict) -> dict:
         result.pop("development_lifecycle")
     if result.get("initialization_sha256") is None:
         result.pop("initialization_sha256", None)
+    if result.get("initialization_encoding") == "policy_latents":
+        result.pop("initialization_encoding", None)
     if result.get("initialization_policy") == "preserve_reference_magnitudes":
         result.pop("initialization_policy", None)
     return result
@@ -334,7 +339,10 @@ def build_lanes(
     if initialization is not None and config.initialization_sha256 is None:
         raise ValueError("calibrated initializer requires immutable config SHA256")
     drafter.qat_initialization_report = apply_binary_initialization(
-        linears, initialization, policy=config.initialization_policy
+        linears,
+        initialization,
+        policy=config.initialization_policy,
+        encoding=config.initialization_encoding,
     )
     models = [(first_bits, drafter, linears)]
     if config.activation_bits == (8, 1):

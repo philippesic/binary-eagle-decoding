@@ -564,3 +564,198 @@ class CalibratedInitializationTests(unittest.TestCase):
             apply_binary_initialization(
                 {"fc": module}, {"fc": (torch.tensor([[-0.0]]), torch.ones(1))}
             )
+
+
+class ExplicitHardSignAdapterTests(unittest.TestCase):
+    def test_declared_hard_sign_conversion_preserves_scaled_forward_and_reference_magnitude(self):
+        from w1a1_eagle.qat_initialization import apply_binary_initialization
+        from w1a1_eagle.recurrent_qat import RowBinaryLinear, W1AxContract
+
+        for bits in (1, 8):
+            reference = RowBinaryLinear(
+                torch.tensor([[0.2, -0.3]]), torch.tensor([0.5]), W1AxContract(bits)
+            )
+            fit = (torch.tensor([[-1.0, 1.0]]), torch.tensor([0.7]))
+            with self.assertRaisesRegex(ValueError, "magnitudes"):
+                apply_binary_initialization(
+                    {"fc": reference}, {"fc": fit}, policy="preserve_reference_magnitudes"
+                )
+            report = apply_binary_initialization(
+                {"fc": reference},
+                {"fc": fit},
+                policy="preserve_reference_magnitudes",
+                encoding="hard_signs",
+            )
+            self.assertTrue(torch.equal(reference.latent_sign, torch.tensor([[-0.2, 0.3]])))
+            self.assertTrue(torch.equal(reference.initial_scale, fit[1]))
+            self.assertEqual(report["fc"]["policy"], "preserve_reference_magnitudes")
+            with self.assertRaisesRegex(ValueError, "negative-zero"):
+                apply_binary_initialization(
+                    {"fc": reference},
+                    {"fc": (torch.tensor([[-0.0, 1.0]]), fit[1])},
+                    policy="preserve_reference_magnitudes",
+                    encoding="hard_signs",
+                )
+
+    def test_actual_saved_eagle_fit_npzs_install_without_changing_recipe_magnitudes(self):
+        import json
+
+        import numpy as np
+        import train_nine_model_qat as launcher
+
+        from w1a1_eagle.qat_initialization import apply_binary_initialization
+        from w1a1_eagle.recurrent_qat import RowBinaryLinear, W1AxContract
+
+        directory = Path(
+            "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/eagle-fusion-fixed-half-20261004"
+        )
+        if not directory.is_dir():
+            self.skipTest("external real calibration artifact not materialized on this host")
+        contract = json.loads((directory / "initialization-contract.json").read_text())
+        for bits in (1, 8):
+            record = contract["artifacts"][f"fusion-a{bits}"]
+            locator = {key: record[key] for key in ("path", "sha256", "activation_bits")}
+            locator["latent_initialization"] = {
+                key: record["latent_initialization"][key]
+                for key in ("policy", "reference_kind", "reference_sha256")
+            }
+            initializer = launcher.calibration(locator, W1AxContract(bits))
+            latent, scale = initializer["fc"]
+            module = RowBinaryLinear(
+                torch.full_like(latent, 0.5), torch.ones_like(scale), W1AxContract(bits)
+            )
+            report = apply_binary_initialization(
+                {"fc": module}, initializer, policy="preserve_reference_magnitudes"
+            )
+            launcher.validate_initializer_reference(report, locator, "eagle")
+            self.assertTrue(torch.equal(module.latent_sign, latent))
+            self.assertTrue(torch.equal(module.initial_scale, scale))
+            self.assertTrue(bool((module.latent_sign.abs() == 0.5).all()))
+            legacy = directory.parent / "eagle-fusion-20261004" / f"fusion-a{bits}.npz"
+            with np.load(legacy, allow_pickle=False) as old:
+                raw = (torch.from_numpy(old["fc.latent"]), torch.from_numpy(old["fc.scale"]))
+                converter = RowBinaryLinear(
+                    torch.full_like(latent, 0.5), torch.ones_like(scale), W1AxContract(bits)
+                )
+                apply_binary_initialization(
+                    {"fc": converter},
+                    {"fc": raw},
+                    policy="preserve_reference_magnitudes",
+                    encoding="hard_signs",
+                )
+                self.assertTrue(torch.equal(converter.latent_sign, module.latent_sign))
+                self.assertTrue(torch.equal(converter.initial_scale, module.initial_scale))
+
+
+class EagleCurriculumIntegrationTests(unittest.TestCase):
+    def test_existing_runner_adapter_smokes_both_stages_zero_updates(
+        self,
+    ):
+        from unittest.mock import patch
+
+        import train_nine_model_qat as launcher
+        from test_qat_curriculum_runner import TrainProvider
+
+        from w1a1_eagle.continuous_qat import ContinuousConfig
+
+        provider = TrainProvider()
+        provider.bounded_rounds = provider.rounds
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            config = root / "config.json"
+            config.write_text("{}")
+            continuous = ContinuousConfig(
+                activation_bits=(8,),
+                checkpoint_every=1,
+                min_free_disk_bytes=0,
+                development_lifecycle="standalone",
+                warmup_steps=0,
+            )
+            spec = {
+                "family": "eagle",
+                "candidate": "eagle_a1",
+                "eagle_config": {"path": str(config), "sha256": launcher.sha256(config)},
+                "prepared": {"run_dir": str(root / "original"), "ready_sha256": "a" * 64},
+                "curriculum": {
+                    "stages": [
+                        {"activation_bits": 8, "gpu_seconds": 1000, "max_updates": 1},
+                        {"activation_bits": 1, "gpu_seconds": 1000, "max_updates": 1},
+                    ],
+                    "optimizer_transition": "fresh",
+                },
+                "curriculum_runner": {
+                    "checkpoint_every": 1,
+                    "min_free_disk_bytes": 0,
+                    "warmup_updates": 0,
+                    "update_upper_bound_seconds": 0.01,
+                },
+            }
+            args = SimpleNamespace(
+                config=config,
+                run_dir=root / "smoke",
+                bundle_sha256="c" * 64,
+                stage_name="eagle_a1/train",
+                resume=False,
+                smoke_zero_updates=True,
+                prepare_only=False,
+            )
+            args.run_dir.mkdir()
+            authenticated = {"binding": {"artifacts": {}}, "files": SimpleNamespace()}
+            # Real tiny graph and existing runner; external source authentication
+            # and hardware are isolated fixture boundaries, never production proof.
+            with (
+                patch("train_continuous_w1ax.load_config", return_value=({}, continuous)),
+                patch("prepared_continuous_provider.authenticate", return_value=authenticated),
+                patch(
+                    "prepared_continuous_provider.PreparedProvider", side_effect=lambda *_: provider
+                ),
+                patch.object(launcher, "resources", return_value={"hardware": "CPU synthetic"}),
+            ):
+                result = launcher.run_eagle_curriculum(args, spec, {"compute_capability": [7, 5]})
+            self.assertEqual([phase["activation_bits"] for phase in result["smoke"]], [8, 1])
+            self.assertEqual(result["optimizer_updates"], 0)
+            self.assertEqual(result["training_memory"]["status"], "PENDING")
+            self.assertTrue(Path(result["checkpoint"]["path"]).is_file())
+
+    def test_existing_runner_exact_resume_before_after_reset_with_crash_budget(self):
+        import json
+
+        from test_qat_curriculum_runner import compare_models, stages
+        from test_qat_curriculum_runner import make as curriculum_make
+
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            full = curriculum_make(root / "full", stages((8, 1), updates=2), crash_safe_budget=True)
+            full.run(require_smoke=False)
+            partial = curriculum_make(
+                root / "partial", stages((8, 1), updates=2), crash_safe_budget=True
+            )
+            partial.run(require_smoke=False, max_new_updates=2)
+            resumed = curriculum_make(
+                root / "partial", stages((8, 1), updates=2), crash_safe_budget=True
+            )
+            resumed.resume()
+            resumed.run(require_smoke=False)
+            compare_models(full, resumed)
+            ledger = json.loads((root / "partial" / "budget-used.json").read_text())
+            self.assertIsNone(ledger["active_attempt"])
+            self.assertGreater(ledger["training_seconds"], 0)
+            self.assertEqual(resumed.state.global_updates, 4)
+
+
+class FinalPrecisionExposureTests(unittest.TestCase):
+    transaction = LauncherLifecycleTests.transaction
+
+    def test_zero_a1_updates_cannot_grant_completed_training(self):
+        with tempfile.TemporaryDirectory() as folder:
+            with self.assertRaisesRegex(ValueError, "required final A1 exposure"):
+                self.transaction(folder, precision_stage="a8_to_a1", max_steps=1)
+            self.assertFalse((Path(folder) / "final-export").exists())
+
+    def test_stage_counts_expose_charged_warm_source_and_final_precision(self):
+        with tempfile.TemporaryDirectory() as folder:
+            result = self.transaction(folder, precision_stage="a8_to_a1", max_steps=3)
+            self.assertEqual(result["counters"]["stage_updates"], 2)
+            self.assertEqual(result["counters"]["stage_supervised_tokens"], 14)
+            self.assertEqual(result["counters"]["step"], 3)
+            self.assertEqual(result["counters"]["supervised_tokens"], 21)

@@ -99,6 +99,21 @@ def load_spec(path):
             or spec["a8_warmup_steps"] < 1
         ):
             raise ValueError("A8→A1 requires final A1 and positive charged warmup steps")
+        for quota in ("min_a1_updates", "min_a1_supervised_tokens"):
+            if quota in spec and (type(spec[quota]) is not int or spec[quota] < 1):
+                raise ValueError("final A1 exposure quota must be a positive integer")
+        if spec.get("precision_stage") == "a8_to_a1" and (
+            limits.get("max_steps") is not None and limits["max_steps"] <= spec["a8_warmup_steps"]
+        ):
+            raise ValueError("A8→A1 budget must include committed final A1 updates")
+    final = declared_qat_configs(spec)[-1]
+    final_bits = (
+        final.activation_bits
+        if isinstance(final, BlockQATConfig)
+        else final.contract.activation_bits
+    )
+    if spec["candidate"] != f"{spec['family']}_a{final_bits}":
+        raise ValueError("candidate cell name differs from final family/activation precision")
     return spec
 
 
@@ -235,6 +250,8 @@ def resources(spec, stage):
 def calibration(locator, config):
     if locator is None:
         return None
+    if locator.get("encoding", "policy_latents") not in {"policy_latents", "hard_signs"}:
+        raise ValueError("calibration encoding unsupported")
     metadata = locator.get("latent_initialization")
     if not isinstance(metadata, dict) or set(metadata) != {
         "policy",
@@ -292,7 +309,18 @@ def block_inputs(spec, bundle_sha):
     if spec.get("precision_stage") == "a8_to_a1":
         config = replace(config, activation_bits=8)
     data = spec["data"]
-    dataset = BlockDataset(data["path"], expected_sha256=data["sha256"], allow_synthetic=False)
+    admission = data.get("admission")
+    if admission is not None and (
+        not isinstance(admission, dict) or set(admission) != {"path", "sha256"}
+    ):
+        raise ValueError("completed block data admission must pin path and SHA together")
+    dataset = BlockDataset(
+        data["path"],
+        expected_sha256=data["sha256"],
+        allow_synthetic=False,
+        admission_path=None if admission is None else admission["path"],
+        admission_sha256=None if admission is None else admission["sha256"],
+    )
     if (
         dataset.manifest["family"] != config.family
         or dataset.vocab_size != config.vocab_size
@@ -315,6 +343,12 @@ def block_inputs(spec, bundle_sha):
         != config.latent_initialization
     ):
         raise ValueError("block initializer magnitude policy differs from QAT contract")
+    if (
+        spec.get("initialization")
+        and spec["initialization"].get("encoding", "policy_latents")
+        != config.initialization_encoding
+    ):
+        raise ValueError("block initializer encoding differs from QAT contract")
     model = BlockDrafter(tensors, config, binary_initializer=initializer)
     validate_initializer_reference(
         getattr(model.fc, "initialization_report", {}), spec.get("initialization"), config.family
@@ -354,7 +388,7 @@ def native_teacher(spec, source, run_dir):
         yield capture
 
 
-def smoke_with_training_memory(parameters, spec, hardware, callback):
+def smoke_with_training_memory(parameters, spec, hardware, callback, *, optimizer=None):
     """Reserve actual F32 Adam moment shapes through forward/backward on SM120.
 
     The scratch allocations never attach to the optimizer and never update a
@@ -366,8 +400,10 @@ def smoke_with_training_memory(parameters, spec, hardware, callback):
     reservation = []
     status = "PENDING"
     try:
-        if hardware.get("compute_capability") == [12, 0]:
+        if hardware.get("compute_capability") == [12, 0] and not (optimizer and optimizer.state):
             reservation = [torch.zeros_like(p) for p in parameters for _ in range(2)]
+            status = "PASS"
+        elif hardware.get("compute_capability") == [12, 0] and optimizer and optimizer.state:
             status = "PASS"
         result = callback()
         measured = resources(spec, "actual backward with training moment reservation")
@@ -383,6 +419,17 @@ def smoke_with_training_memory(parameters, spec, hardware, callback):
         if torch.cuda.is_available():
             torch.cuda.synchronize("cuda:0")
             torch.cuda.empty_cache()
+
+
+def completed_zero_update_smoke_contract(bits, optimizers):
+    if any(optimizer.state for optimizer in optimizers):
+        raise ValueError("zero-update admission requires empty real optimizer state")
+    return {
+        "hard_forward": True,
+        "optimizer_updates": 0,
+        "optimizer_moment_tensors": 0,
+        "activation_bits_exercised": list(bits),
+    }
 
 
 def smoke_block(
@@ -465,6 +512,7 @@ def run_block(args, spec, hardware):
                 require_empty_optimizer=not args.resume,
                 resource_observer=lambda: resources(spec, "actual block gradients resident"),
             ),
+            optimizer=optimizer,
         )
         if args.smoke_zero_updates and spec.get("precision_stage") == "a8_to_a1":
             model, optimizer, _ = transition_a8_to_a1(
@@ -489,7 +537,7 @@ def run_block(args, spec, hardware):
             return {
                 "schema": "nine_model_model_smoke_v1",
                 "status": "PASS",
-                "artifact_kind": "production",
+                "artifact_kind": "synthetic" if source["synthetic"] else "production",
                 "bundle_sha256": args.bundle_sha256,
                 "config_sha256": sha256(args.config),
                 "source": source,
@@ -497,6 +545,12 @@ def run_block(args, spec, hardware):
                 "optimizer_updates": 0,
                 "checks": {"model": "PASS", "backward": "PASS", "memory": "PASS"},
                 "smoke": smoke,
+                "smoke_contract": completed_zero_update_smoke_contract(
+                    [8, 1]
+                    if spec.get("precision_stage") == "a8_to_a1"
+                    else [model.config.activation_bits],
+                    [optimizer],
+                ),
                 "training_memory": training_memory,
                 "resources": footprint,
             }
@@ -510,6 +564,12 @@ def run_block(args, spec, hardware):
                 "optimizer_updates": 0,
                 "checkpoint": committed,
                 "smoke": smoke,
+                "smoke_contract": completed_zero_update_smoke_contract(
+                    [8, 1]
+                    if spec.get("precision_stage") == "a8_to_a1"
+                    else [model.config.activation_bits],
+                    [optimizer],
+                ),
                 "training_memory": training_memory,
                 "resources": footprint,
             }
@@ -576,6 +636,9 @@ def run_block(args, spec, hardware):
                     block_index=cursor.block_index + 1,
                     supervised_tokens=cursor.supervised_tokens + metrics["supervised_tokens"],
                     presented_tokens=cursor.presented_tokens + metrics["presented_tokens"],
+                    stage_updates=cursor.stage_updates + 1,
+                    stage_supervised_tokens=cursor.stage_supervised_tokens
+                    + metrics["supervised_tokens"],
                     elapsed_seconds=budget.elapsed(),
                     unique_blocks=tuple(sorted(unique)),
                     data_cursor=next_data.payload(),
@@ -588,7 +651,9 @@ def run_block(args, spec, hardware):
                     model, optimizer, transition = transition_a8_to_a1(
                         model, source_checkpoint_sha256=latest["sha256"], in_place=True
                     )
-                    cursor = replace(cursor, stage="a1_final")
+                    cursor = replace(
+                        cursor, stage="a1_final", stage_updates=0, stage_supervised_tokens=0
+                    )
                     atomic_json(args.run_dir / "precision-transition.json", transition)
                     # Transition retains training source cost/cursor; its own exact
                     # checkpoints bind A1 and fresh moments from this point onward.
@@ -622,14 +687,24 @@ def run_block(args, spec, hardware):
                     },
                 )
                 raise InterruptedError("STOP: checkpoint retained; evaluation forbidden")
-            if spec.get("precision_stage") == "a8_to_a1" and cursor.stage != "a1_final":
-                raise ValueError("budget ended before final A1 stage; checkpoint retained")
+            if cursor.step <= 0:
+                raise ValueError(
+                    "training budget completed with zero optimizer updates; checkpoint retained"
+                )
+            if spec.get("precision_stage") == "a8_to_a1" and (
+                cursor.stage != "a1_final"
+                or cursor.stage_updates < spec.get("min_a1_updates", 1)
+                or cursor.stage_supervised_tokens < spec.get("min_a1_supervised_tokens", 1)
+            ):
+                raise ValueError(
+                    "budget ended before required final A1 exposure; checkpoint retained"
+                )
             exported = export_block_checkpoint(model, source, args.run_dir / "final-export")
             return {
                 "schema": "nine_model_stage_receipt_v1",
                 "stage": args.stage_name,
                 "status": "PASS",
-                "artifact_kind": "production",
+                "artifact_kind": "synthetic" if source["synthetic"] else "production",
                 "bundle_sha256": args.bundle_sha256,
                 "config_sha256": sha256(args.config),
                 "committed": True,
@@ -687,6 +762,12 @@ def eagle_inputs(spec, args):
         != config.initialization_policy
     ):
         raise ValueError("EAGLE initialization policy differs from immutable config")
+    if (
+        spec.get("initialization")
+        and spec["initialization"].get("encoding", "policy_latents")
+        != config.initialization_encoding
+    ):
+        raise ValueError("EAGLE initialization encoding differs from immutable config")
     if config.initialization_sha256 != expected_initializer:
         raise ValueError("EAGLE immutable config initialization hash differs")
     lanes = build_lanes(provider, config, args.run_dir, initialization=initializer)
@@ -700,7 +781,7 @@ def eagle_inputs(spec, args):
 
 def run_eagle(args, spec, hardware):
     if spec.get("precision_stage") == "a8_to_a1":
-        raise ValueError("EAGLE curriculum adapter not yet integrated; profile remains PENDING")
+        return run_eagle_curriculum(args, spec, hardware)
     provider, lanes, config = eagle_inputs(spec, args)
     from w1a1_eagle.qat_admission import VerifiedTrainingAdmission
 
@@ -733,6 +814,7 @@ def run_eagle(args, spec, hardware):
         spec,
         hardware,
         lambda selected=selected: trainer.smoke(selected, allocate_optimizer_state=False),
+        optimizer=lanes[0].optimizer,
     )
     del selected
     if any(lane.optimizer.state for lane in lanes) and not args.resume:
@@ -751,6 +833,9 @@ def run_eagle(args, spec, hardware):
             "optimizer_updates": 0,
             "checks": {"model": "PASS", "backward": "PASS", "memory": "PASS"},
             "smoke": smoke,
+            "smoke_contract": completed_zero_update_smoke_contract(
+                config.activation_bits, [lane.optimizer for lane in lanes]
+            ),
             "training_memory": training_memory,
             "resources": resources(spec, "EAGLE actual forward/backward"),
         }
@@ -769,6 +854,10 @@ def run_eagle(args, spec, hardware):
     if trainer.stop_requested or not trainer.capped():
         raise InterruptedError(
             "STOP/intermediate development boundary retains checkpoint; no final receipt"
+        )
+    if trainer.step <= 0:
+        raise ValueError(
+            "training budget completed with zero optimizer updates; checkpoint retained"
         )
     directory = Path(trainer.checkpoint["path"]).parent
     lane = lanes[0]
@@ -801,6 +890,182 @@ def run_eagle(args, spec, hardware):
             "elapsed_seconds": trainer.elapsed_seconds,
             "epoch": trainer.epoch,
             "cursor": trainer.cursor,
+        },
+        "hardware": hardware,
+    }
+
+
+def run_eagle_curriculum(args, spec, hardware):
+    """Use the tested existing reset-only runner, with authenticated lazy data."""
+    from prepared_continuous_provider import PreparedProvider, authenticate
+    from train_prepared_continuous_w1ax import create_current_native_child
+
+    from w1a1_eagle.qat_admission import VerifiedTrainingAdmission
+    from w1a1_eagle.qat_curriculum import CurriculumConfig, PrecisionStage
+    from w1a1_eagle.qat_curriculum_runner import CurriculumRunner, RunnerConfig
+    from w1a1_eagle.recurrent_provider import audit_provider_round
+    from w1a1_eagle.recurrent_qat import save_joint_checkpoint
+
+    api = importlib.import_module("train_continuous_w1ax")
+    locator = spec["eagle_config"]
+    if sha256(Path(locator["path"])) != locator["sha256"]:
+        raise ValueError("EAGLE curriculum configuration SHA differs")
+    original, continuous = api.load_config(Path(locator["path"]))
+    if continuous.activation_bits != (8,) or continuous.activation_quantization != "fixed":
+        raise ValueError("EAGLE warm profile starts fixed-reference A8 single lane")
+    curriculum = CurriculumConfig(
+        tuple(PrecisionStage(**stage) for stage in spec["curriculum"]["stages"]),
+        spec["curriculum"].get("optimizer_transition", "fresh"),
+    )
+    if tuple(stage.activation_bits for stage in curriculum.stages) != (8, 1):
+        raise ValueError("only selected A8→A1 reset transition supported")
+    prepared = spec["prepared"]
+    auth = authenticate(api, original, args.run_dir, prepared["run_dir"], prepared["ready_sha256"])
+    provider = PreparedProvider(auth, continuous.qat(8), create_current_native_child)
+
+    def revalidate(qat):
+        # Byte hashes from this process may reuse only unchanged inode/stat
+        # identities. New actor eligibility remains separately bound to admission.
+        for path, digest in auth["binding"]["artifacts"].items():
+            auth["files"].check(Path(path), digest)
+        return PreparedProvider(auth, qat, create_current_native_child)
+
+    initializer = calibration(spec.get("initialization"), continuous.qat(8).contract)
+    initializer_sha = (spec.get("initialization") or {}).get("sha256")
+    if continuous.initialization_sha256 != initializer_sha:
+        raise ValueError("curriculum initializer differs from immutable EAGLE config")
+    admission = (
+        None
+        if args.smoke_zero_updates or args.prepare_only
+        else VerifiedTrainingAdmission.from_locator(
+            args.admission,
+            config_path=args.config,
+            bundle_sha256=args.bundle_sha256,
+            candidate=spec["candidate"],
+        )
+    )
+    runner = CurriculumRunner(
+        provider,
+        curriculum,
+        continuous.qat(8),
+        args.run_dir,
+        start=True,
+        allow_cuda=True,
+        config=RunnerConfig(**spec.get("curriculum_runner", {})),
+        source_revalidator=revalidate,
+        initialization=initializer,
+        initialization_sha256=initializer_sha,
+        initialization_policy=continuous.initialization_policy,
+        initialization_encoding=continuous.initialization_encoding,
+        reserve_optimizer_memory=hardware.get("compute_capability") == [12, 0],
+        training_admission=admission,
+        crash_safe_budget=not (args.smoke_zero_updates or args.prepare_only),
+    )
+    validate_initializer_reference(
+        getattr(runner.drafter, "qat_initialization_report", {}),
+        spec.get("initialization"),
+        "eagle",
+    )
+    if args.resume:
+        runner.resume()
+    selected = None
+    for batch in runner.provider.bounded_rounds():
+        audit = audit_provider_round(batch, runner.provider)
+        if any(audit.ce_mask[1:]) and (
+            selected is None or len(batch.prefix_token_ids) > len(selected.prefix_token_ids)
+        ):
+            selected = batch
+    if selected is None:
+        raise ValueError("eligible EAGLE curriculum shard lacks later supervision")
+    if runner.state.global_updates == 0:
+        stages = runner.prepare(selected)
+    else:
+        # Exact resume uses current stage/backward; no new preparation or reset.
+        stages = [runner._smoke_round(selected)]
+        runner.smoke_passed = True
+    del selected
+    if args.smoke_zero_updates or args.prepare_only:
+        if runner.state.global_updates or runner.optimizer.state:
+            raise ValueError("zero-update curriculum admission requires empty optimizer state")
+        pointer = runner.last_checkpoint
+        return {
+            "schema": "nine_model_model_smoke_v1"
+            if args.smoke_zero_updates
+            else "nine_model_preparation_v1",
+            "status": "PASS",
+            "artifact_kind": "production",
+            "optimizer_updates": 0,
+            "bundle_sha256": args.bundle_sha256,
+            "config_sha256": sha256(args.config),
+            "source": runner.source,
+            "hardware": hardware,
+            "smoke": stages,
+            "smoke_contract": completed_zero_update_smoke_contract([8, 1], [runner.optimizer]),
+            "training_memory": {
+                "stages": {
+                    str(stage["activation_bits"]): stage["training_memory"] for stage in stages
+                },
+                "status": "PASS" if hardware.get("compute_capability") == [12, 0] else "PENDING",
+                "reservation": "two F32 copies per trainable held through each backward",
+                "optimizer_moments_attached": 0,
+                "optimizer_updates": 0,
+            },
+            "checks": {"model": "PASS", "backward": "PASS", "memory": "PASS"},
+            "resources": resources(spec, "EAGLE all-stage actual smoke"),
+            "checkpoint": {
+                "path": str(args.run_dir / "checkpoints" / pointer["file"]),
+                "sha256": pointer["sha256"],
+            },
+        }
+    runner.run()
+    if runner.stop_requested or not runner.state.complete or runner.budget_failed:
+        raise InterruptedError(
+            "curriculum STOP/failed cap retains checkpoint; evaluation forbidden"
+        )
+    directory = args.run_dir / "final-export"
+    directory.mkdir(exist_ok=False)
+    save_joint_checkpoint(
+        runner.linears,
+        runner.qat,
+        runner.provider.base_gguf_sha256,
+        directory / "joint.npz",
+        directory / "joint.json",
+    )
+    pointer = runner.last_checkpoint
+    return {
+        "schema": "nine_model_stage_receipt_v1",
+        "stage": args.stage_name,
+        "status": "PASS",
+        "artifact_kind": "production",
+        "bundle_sha256": args.bundle_sha256,
+        "config_sha256": sha256(args.config),
+        "committed": True,
+        "completion_reason": "approved_budget_complete",
+        "checkpoint": {
+            "path": str(args.run_dir / "checkpoints" / pointer["file"]),
+            "sha256": pointer["sha256"],
+        },
+        "exports": {
+            spec["candidate"]: {
+                "checkpoint": {
+                    "path": str(directory / "joint.npz"),
+                    "sha256": sha256(directory / "joint.npz"),
+                },
+                "manifest": {
+                    "path": str(directory / "joint.json"),
+                    "sha256": sha256(directory / "joint.json"),
+                },
+                "base_gguf_sha256": runner.provider.base_gguf_sha256,
+            }
+        },
+        "counters": {
+            "step": runner.state.global_updates,
+            "supervised_tokens": sum(stage["supported_rows"] for stage in runner.state.phases),
+            "elapsed_seconds": runner.occupancy_seconds,
+            "phases": runner.state.phases,
+            "transitions": runner.state.transitions,
+            "cursor": runner.cursor,
+            "epoch": runner.epoch,
         },
         "hardware": hardware,
     }

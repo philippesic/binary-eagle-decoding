@@ -25,6 +25,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
+from .continuous_budget import TrainingBudget
 from .continuous_qat import (
     ObservedAdapter,
     atomic_json,
@@ -192,8 +193,10 @@ class CurriculumRunner:
         initialization=None,
         initialization_sha256=None,
         initialization_policy="preserve_reference_magnitudes",
+        initialization_encoding="policy_latents",
         reserve_optimizer_memory=True,
         training_admission=None,
+        crash_safe_budget=False,
     ):
         if not start:
             raise ValueError("model construction requires explicit start")
@@ -219,6 +222,7 @@ class CurriculumRunner:
             if not isinstance(training_admission, VerifiedTrainingAdmission):
                 raise ValueError("typed current-package production admission required")
         self.training_admission = training_admission
+        self.budget = None
         self.budget_failed = False
         self.run_dir = Path(run_dir).resolve()
         self.run_dir.mkdir(parents=True, exist_ok=True)
@@ -235,6 +239,8 @@ class CurriculumRunner:
             "runtime": self.runtime,
             "initialization_sha256": initialization_sha256,
             "initialization_policy": initialization_policy,
+            "initialization_encoding": initialization_encoding,
+            "crash_safe_budget": crash_safe_budget,
         }
         self.state = CurriculumState(
             curriculum, data_contract=self.source, model_contract=self.contract
@@ -248,6 +254,14 @@ class CurriculumRunner:
         self.last_checkpoint = None
         self._accounted_at = None
         self._revalidate(qat)
+        if crash_safe_budget:
+            self.budget = TrainingBudget(
+                self.run_dir / "budget-used.json",
+                _digest(self.contract),
+                sum(stage.gpu_seconds for stage in curriculum.stages),
+                atomic_json,
+            )
+            self.budget.begin(0.0)
         self._accounted_at = self.clock()
         self.resources(load=True)
         loader = getattr(self.provider, "load_models_cpu", None)
@@ -271,7 +285,12 @@ class CurriculumRunner:
             or any(c not in "0123456789abcdef" for c in initialization_sha256)
         ):
             raise ValueError("calibrated initializer requires immutable SHA256")
-        apply_binary_initialization(self.linears, initialization, policy=initialization_policy)
+        self.drafter.qat_initialization_report = apply_binary_initialization(
+            self.linears,
+            initialization,
+            policy=initialization_policy,
+            encoding=initialization_encoding,
+        )
         self.drafter.to(self.device).eval()
         self.bank = self._activation_bank()
         self.adapter = self._adapter()
@@ -337,6 +356,8 @@ class CurriculumRunner:
             if not math.isfinite(seconds) or seconds < 0:
                 raise RuntimeError("invalid synchronized occupancy clock")
             self.occupancy_seconds += seconds
+        if self.budget is not None:
+            self.occupancy_seconds = max(self.occupancy_seconds, self.budget.elapsed())
         self._accounted_at = now
         if self.occupancy_seconds > sum(s.gpu_seconds for s in self.curriculum.stages):
             self.budget_failed = True
@@ -714,7 +735,11 @@ class CurriculumRunner:
             raise ValueError("smoke optimizer ownership differs from declared parameters")
         self.optimizer.zero_grad(set_to_none=True)
         moment_probe = []
-        if torch.device(self.device).type == "cuda" and self.reserve_optimizer_memory:
+        if (
+            torch.device(self.device).type == "cuda"
+            and self.reserve_optimizer_memory
+            and not self.optimizer.state
+        ):
             moment_probe = [
                 torch.zeros_like(p)
                 for group in self.optimizer.param_groups
@@ -788,6 +813,17 @@ class CurriculumRunner:
                 "binary_gradients": binary_report,
                 "optional_gradients": extra_report,
                 "resources": resources,
+                "training_memory": {
+                    "status": "PASS" if moment_probe or self.optimizer.state else "PENDING",
+                    "reserved_moment_bytes": sum(
+                        t.numel() * t.element_size() for t in moment_probe
+                    ),
+                    "optimizer_moment_tensors": sum(
+                        sum(isinstance(v, torch.Tensor) and k != "step" for k, v in state.items())
+                        for state in self.optimizer.state.values()
+                    ),
+                    "resources_gradients_resident": resources,
+                },
                 **diagnostics,
             }
         finally:
@@ -1006,5 +1042,7 @@ class CurriculumRunner:
             )
             raise
         finally:
+            if self.budget is not None:
+                self.occupancy_seconds = max(self.occupancy_seconds, self.budget.finish())
             for sig, handler in handlers.items():
                 signal.signal(sig, handler)

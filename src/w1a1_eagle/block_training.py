@@ -33,6 +33,8 @@ class BlockCursor:
     stage: str = "direct"
     unique_blocks: tuple[str, ...] = ()
     data_cursor: dict | None = None
+    stage_updates: int | None = None
+    stage_supervised_tokens: int | None = None
 
     def __post_init__(self):
         for name in ("step", "epoch", "block_index", "supervised_tokens", "presented_tokens"):
@@ -42,6 +44,15 @@ class BlockCursor:
             raise ValueError("checkpoint elapsed time invalid")
         if self.stage not in {"direct", "a8_warm_start", "a1_final"}:
             raise ValueError("checkpoint precision stage invalid")
+        if self.stage_updates is None:
+            object.__setattr__(self, "stage_updates", self.step)
+        if self.stage_supervised_tokens is None:
+            object.__setattr__(self, "stage_supervised_tokens", self.supervised_tokens)
+        for name in ("stage_updates", "stage_supervised_tokens"):
+            if type(getattr(self, name)) is not int or not 0 <= getattr(self, name) <= getattr(
+                self, "step" if name == "stage_updates" else "supervised_tokens"
+            ):
+                raise ValueError("precision stage exposure counters invalid")
         if self.data_cursor is not None and not isinstance(self.data_cursor, dict):
             raise ValueError("data cursor must be an exact provider payload")
         object.__setattr__(self, "unique_blocks", tuple(self.unique_blocks))
@@ -218,6 +229,9 @@ def load_block_checkpoint(model, optimizer, source, receipt):
             elif value != tensor:
                 raise ValueError("binary checkpoint parameter contract differs")
     _validate_optimizer(model, optimizer, saved["optimizer"])
+    from .qat_state import validate_optimizer_resume
+
+    validate_optimizer_resume(optimizer, saved["optimizer"], expected_updates=cursor.stage_updates)
     # Validate RNG in isolation and restore the caller's RNG before any mutation.
     original = rng_state(str(model.token_embd.device))
     try:

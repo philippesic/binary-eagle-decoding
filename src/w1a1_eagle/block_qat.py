@@ -50,6 +50,7 @@ class BlockQATConfig:
     max_grad_norm: float = 1.0
     seed: int = 8101
     latent_initialization: str = "preserve_reference_magnitudes"
+    initialization_encoding: str = "policy_latents"
 
     def __post_init__(self):
         if (
@@ -58,6 +59,8 @@ class BlockQATConfig:
             or self.activation_bits not in {1, 8}
         ):
             raise ValueError("block family/activation width unsupported")
+        if self.initialization_encoding not in {"policy_latents", "hard_signs"}:
+            raise ValueError("initializer encoding unsupported")
         if self.latent_initialization not in {"preserve_reference_magnitudes", "unit_probe"}:
             raise ValueError("explicit calibrated latent policy required")
         if self.profile not in {"ffn15", "ffn15_fusion"}:
@@ -207,7 +210,10 @@ def _binary(weight, config, initialization, name):
         from .qat_initialization import apply_binary_initialization
 
         module.initialization_report = apply_binary_initialization(
-            {name: module}, {name: initialization[name]}, policy=config.latent_initialization
+            {name: module},
+            {name: initialization[name]},
+            policy=config.latent_initialization,
+            encoding=config.initialization_encoding,
         )
     return module
 
@@ -224,7 +230,11 @@ class BlockBinaryLinear(RowBinaryLinear):
             absmax = raw.abs().amax(-1, keepdim=True)
             scale = absmax / 127
             codes = torch.round(raw * torch.where(absmax > 0, 127 / absmax, 0)).clamp(-127, 127)
-            signs = torch.where(self.latent_sign < 0, -1.0, 1.0)
+            signs = (
+                torch.where(self.latent_sign < 0, -1.0, 1.0)
+                if self._round_hard_signs is None
+                else self._round_hard_signs.detach()
+            )
             native = (F.linear(codes, signs) * self.effective_scales()) * scale
         return native.detach() + (surrogate - surrogate.detach())
 
@@ -354,12 +364,12 @@ class BlockDrafter(nn.Module):
         features = batch.context_features.to(device)
         positions = batch.positions.to(device)
         context_positions = torch.arange(features.shape[0], device=device)
-        encoded = _rms(
-            self.fc(features.reshape(features.shape[0], -1)), self.output_norm_enc, cfg.norm_eps
-        )
         state = F.embedding(batch.input_tokens.to(device), self.token_embd)
         contexts, states, noise_kv = [], [], []
         with shared_round_hard_signs(self.binary_linears()):
+            encoded = _rms(
+                self.fc(features.reshape(features.shape[0], -1)), self.output_norm_enc, cfg.norm_eps
+            )
             for layer in self.layers:
                 context_kv = layer.project_context(encoded, context_positions)
                 contexts.append(context_kv)
