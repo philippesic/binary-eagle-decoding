@@ -143,3 +143,20 @@ phase2 repetitions on the fixed24 development prompts/settings within the
 combined7200-second cap. W1Ax integration remains conditional on the human
 decision. All actual raw evidence stays outside Git; root links this report
 and coherent worker commit into the independent study checkpoint.
+
+## Selective Q4 native-admission ancestry
+
+The native validator now accepts an explicit `cell.precision` path for this
+supported FFN-only variant. `cell.export` remains the original passed BF16
+export proof, and all original checkpoint/config/canonical/frozen-target and
+binding/scaffolding checks remain active. The Q4 receipt must have schema
+`dspark_precision_q4_ffn_v1`, passed/source-export-bound/non-FFN-immutable flags,
+candidate SHA matching the actual loaded GGUF, source GGUF matching the original
+export's draft SHA, source-export receipt SHA, original checkpoint SHA, frozen
+target SHA and exactly15 unique selected FFN names with typeQ4_0. Wrong type,
+duplicate/extra coverage, changed ancestry or protected tensors reject.
+
+Four focused ancestry tests pass in addition to the structural suite. This is
+CPU checker support only: actual Q4 model/native proof follows completion of
+the reference timing phase under root/sole-operator control. No numeric-policy
+scope, probe/core code, native kernel or W1 representation changed here.
