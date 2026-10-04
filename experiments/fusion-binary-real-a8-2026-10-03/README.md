@@ -74,3 +74,37 @@ disabled. The original full F16 draft passed native load and tensor validation
 with zero GPU layers, no context or inference. Candidate loading/replay remains
 pending. Initial all-target build hit unrelated disabled app include paths;
 building the intended `llama` library target succeeded without source changes.
+
+## First actual fit and resource correction
+
+`fit-real-01` completed exit0 in 11.67 seconds. Matched validation relative squared
+error is original initializer 2.137201, converged scale-only 0.074499,
+sign-and-scale 0.054397: signs improve the matched scale-only result by 26.98%.
+All 2,560 control rows met continuous KKT and finite neighboring-scale gates;
+69,663 sequential finite-objective improving flips were accepted. Candidate
+checkpoint SHA `96ac80053802ae01ad6c7b9a8c328adbe4386da9d5807ebdca215c483373320b`
+and matched control SHA
+`15a64f5b6b093246eeeea2834791a1ba91e1ba1fbb62077b4fd46e5bb0302aeb`
+are immutable. Full GGUF SHA
+`b9eae46c19b95ca904855c403c67b2b0d0d8134040b97c9c089e96ab50a68574`.
+
+Direction diagnostics are mixed: candidate versus scale-only improves cosine
+0.57850→0.66560, coordinate signs 71.11%→73.61%, and largest-coordinate agreement
+3.91%→10.16%. However, the original initializer is slightly better than candidate
+on these validation direction/ranking diagnostics (cosine 0.66788, signs 74.25%,
+largest-coordinate agreement 15.63%). Reconstruction improvement does not
+establish a native acceptance improvement.
+
+First full-process maximum RSS was **2,796,650,496 bytes (2.60 GiB)**, above the
+configured 1 GiB workspace estimate. The estimate did not bound total Python
+serialization heap/mapped metadata. Source and output GGUF readers plus writer
+were retained concurrently. This run is preserved with its actual memory
+overshoot; no cap-compliance claim is made. A narrowly scoped streaming exporter
+and phase memory accounting are being implemented without changing the fit
+objective, signs, scales, data or optimization settings. No extra search sweep.
+
+The first candidate passed actual full-model native CPU loading/tensor validation
+with zero GPU layers and no inference. Eight authenticated held-out rows also
+passed actual native A8 operator replay: **20,480 outputs, exactly zero error**,
+maximum process RSS 63,979,520 bytes. All 13 nonfusion tensors were preserved.
+Candidate acceptance/throughput and GPU evaluation remain deferred.
