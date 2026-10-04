@@ -4,7 +4,7 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Coordinator rotation; reference training live — October 4, 13:00 UTC
+## Successor owns comparison; reference training live — October 4, 13:09 UTC
 
 Candidate30k evaluation passed and is archived: 0.268456 accepted drafts/round,
 70.905request tokens/s,52.47% of Q4_0. Candidate budget is6219.892867/7200;
@@ -13,9 +13,10 @@ Reference resumed30k→35k: supervisor29672/birth5311113,trainer29677/birth53111
 Linux session `a8-reference-step30000-resume-20261004-01`. At12:59:15UTC it reached
 30563/cursor30618,5202.857739trainer seconds. Keep the detached job running.
 
-Second-compaction hook requires successor coordination. Prior operator closed transport13:02:41UTC and ceased remote control; successor `01a10704-f186-7991-97c7-6f4b3df51ae9` is reading the handoff.
-Its acknowledgment/live-job visibility and SAMEheartbeat retarget will be
-recorded before prior coordinator retires.
+Second-compaction hook requires successor coordination. Prior operator closed transport13:02:41UTC and ceased remote control; successor `01a10704-f186-7991-97c7-6f4b3df51ae9` acknowledged the objective
+and exact current job at13:06:45UTC, appointed sole Luna operator `/root/gpu_operator`,
+and has the SAME heartbeat ACTIVE/retargeted. Prior root/operator retire after
+this checkpoint; successor owns further work, including fresh remote proof.
 See [full rotation handoff](goals/a8-qat-recovery-and-comparison.md#coordinator-rotation-handoff--october-4-1300-utc)
 for exact next actions, source/config/checkpoints, budgets, tests, workers and
 endpoint/release audit. BOTH7200 endpoints/finalreports incomplete. SAMEheartbeat
@@ -23,8 +24,9 @@ ACTIVE; no new experiment, budget or pending human decision. No2080controls.
 
 ## Active: A8 QAT recovery and comparison — October 3, 2026
 
-**Standalone owner:** chat `01a103da-0980-7332-a041-3f95aca6a3f5` has claimed
-exclusive ownership. The originating chat and its interrupted workers are
+**Standalone owner:** successor chat `01a10704-f186-7991-97c7-6f4b3df51ae9`
+now has exclusive ownership after documented context rotation. Prior coordinator
+`01a103da-0980-7332-a041-3f95aca6a3f5` and its operator are retired. The originating chat and its interrupted workers are
 uninvolved. The SAME `a8-qat-recovery-monitor` is retargeted here and ACTIVE.
 Trainer, recipe and native timing workers have finished their bounded work.
 The sole GPU operator continues the scheduled comparison; root maintains the
