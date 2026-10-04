@@ -158,15 +158,23 @@ def validate(manifest):
     capability = env["gpu_capability_query"]
     require(capability.get("exit_code") == 0 and "RTX 2080 Ti" in capability["stdout"] and
             "7.5" in capability["stdout"], "actual RTX2080Ti/SM75 evidence missing")
-    maps, details = {}, []
+    numeric_receipt = None
+    if "numeric_gate" in manifest:
+        from numeric_gate import consume
+        numeric_receipt = consume(manifest["numeric_gate"], manifest, manifest["binary_sha256"], target_sha)
+    maps, details, model_hashes = {}, [], {}
     pins = {"target": target_sha, "binary": manifest["binary_sha256"],
             "environment": sha256(Path(manifest["environment"]))}
     for cell in manifest["cells"]:
         kind, maximum = cell["kind"], cell["maximum"]
         require(kind in ("dspark", "dflash") and maximum in (3, 7), "unfrozen admission arm")
         export = read(cell["export"])
+        draft_sha = sha256(Path(cell["draft"]))
+        require(kind not in model_hashes or model_hashes[kind] == draft_sha,
+                "proposal lengths use different model artifacts")
+        model_hashes[kind] = draft_sha
         require(export["passed"] and export["target_sha256"] == target_sha and
-                export["draft_sha256"] == sha256(Path(cell["draft"])) and
+                export["draft_sha256"] == draft_sha and
                 export["source_sha256"] == sha256(Path(cell["source"])) and
                 export["config_sha256"] == sha256(Path(cell["conversion_config"])) and
                 export["canonical_comparison_sha256"] == sha256(Path(export["canonical_comparison_path"])), "export ancestry changed")
@@ -210,8 +218,6 @@ def validate(manifest):
                 start["borrows_head"] == export["borrows_head"], "native/private tensor ownership differs from export")
         for pair in cell["outputs"]:
             actual, reference = read(pair["actual"]), read(pair["reference"])
-            require(actual["generated_token_ids"] is not None and
-                    actual["generated_token_ids"] == reference["generated_token_ids"], "target-only token mismatch")
             actual_request_path = Path(pair["actual"]).parent / "request.json"
             reference_request_path = Path(pair["reference"]).parent / "request.json"
             actual_request, reference_request = read(actual_request_path), read(reference_request_path)
@@ -222,6 +228,12 @@ def validate(manifest):
                     actual_request.get("cache_prompt") is False and
                     actual_request.get("max_tokens") == 128, "request greedy/nonthinking/cap contract changed")
             require(pair["prompt_sha256"] == sha256(Path(pair["prompt"])), "prompt changed")
+            exact = actual["generated_token_ids"] == reference["generated_token_ids"]
+            if not exact and numeric_receipt:
+                from numeric_gate import covered_output
+                exact = covered_output(numeric_receipt, pair["actual"], pair["reference"], actual_request,
+                                       actual["generated_token_ids"], reference["generated_token_ids"])
+            require(actual["generated_token_ids"] is not None and exact, "uncovered target-only token mismatch")
             pins[f"{kind}_{maximum}_request_{len(pins)}"] = {"actual": sha256(actual_request_path),
                     "reference": sha256(reference_request_path), "actual_measurement": sha256(Path(pair["actual"])),
                     "reference_measurement": sha256(Path(pair["reference"]))}
@@ -236,9 +248,26 @@ def validate(manifest):
         require(common, "no same-prefix short/max native join")
         for key in common:
             require(maps[kind, 3][key][:3] == maps[kind, 7][key][:3], "short proposal changes author first-three logits/decisions")
+    protocol_sha = numeric_receipt["protocol_sha256"] if numeric_receipt else manifest.get("protocol_sha256")
+    if protocol_sha is None:
+        config_path = Path(manifest["environment"]).parent / "config.json"
+        cfg = read(config_path)
+        protocol_sha = cfg.get("protocol_sha256", cfg.get("protocol", {}).get("sha256"))
+    require(protocol_sha is not None, "admission has no frozen protocol pin")
+    if numeric_receipt:
+        model_hashes["eagle_q4_0"] = numeric_receipt["model_sha256"]["eagle_q4_0"]
+    else:
+        config_path = Path(manifest["environment"]).parent / "config.json"
+        cfg = read(config_path)
+        if "eagle_q4_0" in cfg:
+            model_hashes["eagle_q4_0"] = cfg["eagle_q4_0"]["sha256"]
     return {"schema": "dspark_native_admission_v1", "passed": True, "target_sha256": target_sha,
+            "binary_sha256": manifest["binary_sha256"], "protocol_sha256": protocol_sha,
+            "model_sha256": model_hashes,
             "memory": True, "anchor_first": True, "target_immutable": True,
             "cache_contract": True, "greedy_semantics": True, "evidence_sha256": pins,
+            "output_correctness": "scoped accepted native near-tie paths; no bit parity" if numeric_receipt else "exact target-only ID matches",
+            "numeric_gate_sha256": manifest.get("numeric_gate", {}).get("sha256"),
             "cells": details, "limitations": "bounded actual trajectories; no bit-exact HF parity or serving-capacity claim"}
 
 
