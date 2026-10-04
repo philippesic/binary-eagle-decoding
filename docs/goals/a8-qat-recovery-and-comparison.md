@@ -1,5 +1,22 @@
 # A8 QAT recovery and comparison
 
+## Actual human-pause resume verified — October 3, 23:28 PDT
+
+Candidate has restored step2081/cursor2084 and advanced to2221/cursor2224 with
+REAL optimizer updates. Same clean immutable source3bd/config/optimizer/RNG/
+cursor/recipe; fresh boot517c4a36 availability and archived checkpoint SHA matched.
+Supervisor13685/birth2974143 and trainer13691/birth2974154 are live. All33gradient
+tensors finite; learned-head serial path, cache1/chunk64, requested features intact.
+Durable budget retains prior441.281998629seconds plus this active attempt, reserved
+6758.718001371seconds; pause downtime is excluded. Active PID/birth13691/2974154,
+start_monotonic29834.652367498/start_unix1791095277.2836585. GPU observed9.9GiB/73%.
+
+The SAME heartbeat/Goal are ACTIVE. Continue candidate to natural5000evaluation,
+then alternate reference/candidate at scheduled boundaries until each7200s cap;
+reference remains evaluated5000/764.725s. No new checks/recipe/budget change or
+2080host-control writes. The latest operator ledger is authoritative for live
+commands/births/budget/next checkpoint; historical pause records below are superseded.
+
 ## Human RTX5080 resume — October 3, 23:21 PDT
 
 The human requested “resume gpu usage”. Only RTX5080 is resumed for the existing
