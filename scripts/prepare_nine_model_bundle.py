@@ -206,6 +206,11 @@ def materialize_configs(descriptor, directory, *, source_validate=True):
             )
             if spec["precision_stage"] == "a8_to_a1":
                 spec["a8_warmup_steps"] = selected["a8_warmup_steps"]
+                max_steps = limits.get("max_steps")
+                require(
+                    max_steps is None or max_steps > selected["a8_warmup_steps"],
+                    "A8-to-A1 budget must permit final A1 optimizer exposure",
+                )
             if selected.get("teacher") is not None:
                 spec["teacher"] = selected["teacher"]
         path = directory / (name + ".json")
