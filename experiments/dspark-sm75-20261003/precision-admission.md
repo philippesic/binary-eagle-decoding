@@ -63,7 +63,7 @@ reference file separately; never quantize or overwrite the frozen target.
 [precision_q4.py](../../scripts/dspark_screen/precision_q4.py) emits an exact
 argv/source/binary hash plan and checks output against the passed reference
 export receipt. It requires exactly15 BF16-to-Q4_0 tensors, identical tensor
-names/shapes, and exact raw bytes/types for every other tensor. It also preserves
+names/native extents (only trailing singleton collapse allowed), and exact raw bytes/types for every other tensor. It also preserves
 all metadata except quantization version/file type. A CPU toy file can test the
 format policy, but cannot issue a passed released-source receipt.
 
@@ -128,10 +128,11 @@ scope answer is pending; no dependent native implementation is started.
 
 ## Checks and remaining work
 
-Actual local CPU policy test passes4/4 on Darwin arm64, AppleClang21 native
+Actual local CPU policy test passes5/5 on Darwin arm64, AppleClang21 native
 `llama-quantize`, Python3.12/numpy2.3.5/PyYAML6.0.3. A tiny synthetic five-layer
-BF16 GGUF becomes exactly15 Q4_0 FFN matrices; seven protected tensors retain
-exact bytes/types. This is converter-policy proof, not released model quality,
+BF16 GGUF becomes exactly15 Q4_0 FFN matrices; eight protected tensors retain
+exact bytes/types, including confidence projection singleton normalization.
+A tampered private head rejects. This is converter-policy proof, not released model quality,
 SM75 performance, GPU memory or architecture acceptance. The source tree is
 unchanged. The initial bundled-Python test lacked PyYAML; an isolated test venv
 resolved that dependency without changing workspace packages.

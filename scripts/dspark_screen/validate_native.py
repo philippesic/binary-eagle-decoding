@@ -31,10 +31,15 @@ def check_state(state, rounds, maximum):
     require(len(starts) == len(ends) == 1, "missing complete tensor binding lifetime")
     for key in ("target_embedding_identity", "target_head_identity", "embedding_hash_fnv1a64",
                 "head_hash_fnv1a64", "target_embedding_bytes", "target_head_bytes",
-                "target_embedding_dtype", "target_head_dtype", "borrows_embedding", "borrows_head"):
+                "target_embedding_dtype", "target_head_dtype", "borrows_embedding", "borrows_head",
+                "draft_n_batch", "draft_n_ubatch", "draft_n_outputs_max", "draft_n_outputs_max_per_seq", "draft_backend_sampling"):
         require(starts[0][key] == ends[0][key], f"target binding changed: {key}")
     require(starts[0]["target_embedding_dtype"] == starts[0]["target_head_dtype"] == "f16",
             "fixed target precision changed")
+    require(starts[0]["draft_n_batch"] >= 7 and starts[0]["draft_n_ubatch"] >= 7 and
+            starts[0]["draft_n_outputs_max"] >= 7 and
+            (not starts[0]["draft_backend_sampling"] or starts[0]["draft_n_outputs_max_per_seq"] >= 7),
+            "draft batch/output capacity cannot cover seven computed noise rows")
     noise = [r for r in state if r["event"] == "noise"]
     injections = [r for r in state if r["event"] == "inject"]
     require(noise and injections, "no actual noise/injection evidence")
@@ -73,14 +78,20 @@ def check_state(state, rounds, maximum):
         prior_noise = r
         pending_injections = []
     complete = [r for r in rounds if r["status"] == "complete" and not r.get("replay")]
+    no_noise_boundary = [r for r in complete if r.get("n_draft_max") == 0 and r["n_proposed"] == 0]
+    for r in no_noise_boundary:
+        require(r["n_accepted"] == 0 and r["proposed_token_ids"] == [] and
+                r["n_emitted"] == len(r["emitted_token_ids"]), "invalid no-noise output-cap boundary")
+    complete = [r for r in complete if r not in no_noise_boundary]
     require(len(complete) == len(noise), "missing complete noise/verification round join")
+    require(any(r["n_proposed"] == maximum for r in complete), "no native proposal reached configured maximum")
     proposal_map = {}
     for n, r in zip(noise, complete):
         proposed = r["proposed_token_ids"]
         verified = r["verified_token_ids"]
         emitted = r["emitted_token_ids"]
         accepted = r["n_accepted"]
-        require(0 <= accepted <= len(proposed) <= maximum and len(proposed) == r["n_proposed"], "bad counts")
+        require(0 <= accepted <= len(proposed) and 0 < len(proposed) <= maximum and len(proposed) == r["n_proposed"], "bad or empty proposal counts")
         require(proposed[:accepted] == verified[:accepted] and len(verified) == accepted + 1,
                 "not a greedy matched-prefix plus correction/bonus round")
         require(emitted == verified[:len(emitted)] and len(emitted) == r["n_emitted"], "bad emitted prefix")
@@ -90,6 +101,7 @@ def check_state(state, rounds, maximum):
         key = (tuple(n["prefix_token_ids"]), n["anchor_token_id"])
         proposal_map[key] = proposed
     return proposal_map, {"rounds": len(complete), "injections": len(injections),
+                          "no_noise_output_cap_boundaries": len(no_noise_boundary),
                           "zero_acceptance": sum(r["n_accepted"] == 0 for r in complete),
                           "partial_acceptance": sum(0 < r["n_accepted"] < r["n_proposed"] for r in complete),
                           "full_acceptance": sum(r["n_accepted"] == r["n_proposed"] for r in complete),
@@ -121,7 +133,8 @@ def validate(manifest):
         require(Path(command[0]).resolve() == Path(manifest["binary"]).resolve() and
                 Path(command[command.index("-m") + 1]).resolve() == Path(manifest["target"]).resolve() and
                 Path(command[command.index("-md") + 1]).resolve() == Path(cell["draft"]).resolve(), "launch/model path changed")
-        for flag, value in (("--spec-draft-n-max", str(maximum)), ("--n-gpu-layers", "all"),
+        for flag, value in (("--spec-draft-n-max", str(maximum)), ("--batch-size", "32"), ("--ubatch-size", "32"),
+                            ("--n-gpu-layers", "all"),
                             ("--spec-draft-ngl", "all"), ("--fit", "off"), ("--parallel", "1"),
                             ("--cache-type-k", "f16"), ("--cache-type-v", "f16"),
                             ("--spec-draft-type-k", "f16"), ("--spec-draft-type-v", "f16")):
@@ -136,6 +149,9 @@ def validate(manifest):
         # Successful model load plus actual native requests is the residency gate.
         # Keep peak/free memory numbers and actual dispatch in the operator report.
         require("failed to load" not in log and "out of memory" not in log.lower(), "model admission failed")
+        require(not any(error in log for error in ("backend sampling supports at most", "llama_decode returned",
+                                                   "llama_decode(ctx_dft) failed", "CUDA error:")),
+                "native draft decode/sampler did not complete successfully")
         state = rows(cell["state"])
         proposal_map, summary = check_state(state, rows(cell["rounds"]), maximum)
         start = next(r for r in state if r["event"] == "binding_begin")

@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from precision_q4 import EXPECTED, command, inspect, policy_type
+from precision_q4 import EXPECTED, command, inspect, policy_type, shape_preserved
 
 
 class PrecisionPolicyTests(unittest.TestCase):
@@ -29,6 +29,12 @@ class PrecisionPolicyTests(unittest.TestCase):
     def test_source_overwrite_rejects(self):
         with self.assertRaises(ValueError):
             command(Path("q"), Path("same"), Path("same"))
+
+    def test_only_trailing_singleton_collapse_is_allowed(self):
+        self.assertTrue(shape_preserved([2816, 1], [2816]))
+        self.assertFalse(shape_preserved([1, 2816], [2816]))
+        self.assertFalse(shape_preserved([32, 64], [64, 32]))
+        self.assertFalse(shape_preserved([2816], [2816, 1]))
 
     @unittest.skipUnless(os.environ.get("DSPARK_TEST_QUANTIZER") and os.environ.get("DSPARK_TEST_LLAMA"), "optional actual CPU quantizer fixture")
     def test_actual_cpu_quantizer_preserves_all_scaffolding(self):
@@ -63,6 +69,8 @@ class PrecisionPolicyTests(unittest.TestCase):
                 raw = (rng.normal(size=(32, 32)).astype(np.float32).view(np.uint32) >> 16).astype(np.uint16)
                 writer.add_tensor(name, raw, raw_dtype=GGMLQuantizationType.BF16)
             writer.add_tensor("blk.0.ffn_norm.weight", np.ones(32, dtype=np.float32))
+            confidence = (rng.normal(size=(1, 64)).astype(np.float32).view(np.uint32) >> 16).astype(np.uint16)
+            writer.add_tensor("conf_proj.weight", confidence, raw_dtype=GGMLQuantizationType.BF16)
             writer.write_header_to_file()
             writer.write_kv_data_to_file()
             writer.write_tensors_to_file()
@@ -72,7 +80,11 @@ class PrecisionPolicyTests(unittest.TestCase):
             self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
             report = inspect(source, output, llama)
             self.assertEqual(len(report["selected"]), 15)
-            self.assertEqual(len(report["preserved"]), 7)
+            self.assertEqual(len(report["preserved"]), 8)
+            confidence = next(row for row in report["preserved"] if row["name"] == "conf_proj.weight")
+            self.assertEqual(confidence["source_shape"], [64, 1])
+            self.assertEqual(confidence["candidate_shape"], [64])
+            self.assertEqual(confidence["native_extents"], [64, 1, 1, 1])
             self.assertTrue(report["non_ffn_immutable"])
             self.assertFalse(report["passed"], "toy fixture must not issue a released-source admission")
             head = next(t for t in GGUFReader(str(output)).tensors if t.name == "output.weight")
