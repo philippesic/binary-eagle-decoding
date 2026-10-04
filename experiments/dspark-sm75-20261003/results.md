@@ -93,8 +93,11 @@ prose-06/index90. The94 gate passed with opposing margins 0.001274/0.005501 and
 centered difference 0.004618. The one original-order BF16 p90 diagnostic
 reproduced all 16 complete warmup/prompt requests; its reported opposing margins
 are 0.002527/0.002306 and centered difference 0.005583, with both competing IDs
-finite and in both top-five rows. Final source-bound CPU receipt is pending
-readback; no universal output-equivalence claim is made for short arms.
+finite and in both top-five rows. The final CPU audit against the original timing artifacts passed:
+95685d8d6034204161d2c6e7a49e78b4e684b66e86f1385e36f4525b2a4167cb.
+It pins the frozen protocol bytes and checks the saved JSON values separately;
+the original failed audit and staged intermediate pass remain preserved. No
+universal output-equivalence claim is made for short arms.
 
 The Q4 admission preserved its initial strict output/checker failures. A scoped
 receipt binds all 20 probe candidate outputs and terminations to complete
@@ -107,6 +110,41 @@ still reject. These records do not prove full fused-KV byte equality or harmless
 rounding; target-feature batch histories differ before the changed decisions.
 Masks, cache ancestry, target immutability and native greedy verification pass
 independently. No target near-tie threshold is transferred to draft logits.
+
+## Separate bounded CUDA cost and dispatch profile
+
+Four profile jobs completed exit0, each two candidate arms with one 16-token
+warmup and one 16-token request per arm. CUDA graphs were disabled and every
+node used synchronized events; these perturb execution and include stream idle.
+The totals include startup/setup, warmup and request stages. They are not full
+128-token request costs, uninstrumented kernel timings or throughput predictors.
+No profile hit 180s or 100,000 events, and no graph-inventory-only data was used.
+
+The same DSpark/DFlash-specific parser attributes candidate contexts in both
+architectures. It unions node intervals per context/stream/frame/category and
+excludes graph-parent and transfer-grandchild intervals from these sums.
+Representative D7 totals (ms):
+
+| Draft format | Architecture | Graph frames | Draft body | Full head | Markov / output assembly | Feature fusion | Other injection | Confidence |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| BF16 | DSpark |25|57.090|31.096|55.460|21.264|8.926|1.088|
+| FFN Q4_0 | DSpark |25|44.586|30.606|55.573|20.955|10.176|0.832|
+| BF16 | DFlash |29|63.347|36.140|20.720|15.910|9.115|—|
+| FFN Q4_0 | DFlash |29|53.282|37.714|22.581|19.478|10.371|—|
+
+DFlash has no Markov factor: its column is output assembly only. FFN-Q4 reduced
+body totals in these short profiles, while the full head and DSpark Markov/output
+work remain material. These perturbed component observations do not resolve the
+cross-phase end-to-end speed attribution. The unrelated general Eagle parser's
+unassigned/target sums were replaced with the correct candidate attribution.
+
+Sparse native MATMUL audit positively joins the Q4 candidate event contexts.
+For first-layer gate/up/down it records n2 setup and n7 noise, Q4_0 weights,
+MMVQ, Q8_1 packed activations and I32-dot/F32-scaled-sum execution. This is real
+representative dispatch evidence; the existing audit is sparse, excludes BF16,
+and supplies no all 15-tensor execution counts. Exact 15-tensor storage coverage
+comes from the independent export/loader ancestry checks. Raw logs, component
+summary hashes and context joins are listed in operator.md.
 
 ## Evidence and measured budget
 
@@ -132,6 +170,11 @@ requests would remain charged; both phases finished exit0. Hashing, model load,
 conversion/builds, admission and separate diagnostic profiles are overhead
 outside this measured-request allowance. Q4 supervisor started 03:59:17.479593Z,
 ended 04:25:43.704522Z; all owned groups/contexts stopped before profiling.
+
+Final cleanup at 2026-10-04T05:08:42Z verified every profile/diagnostic supervisor,
+child and ten native server groups absent, all ports 18386–18390 free, no runtime
+tmux sessions or compute-app rows, and RTX 2080 Ti 366/11264MiB at 0%, P8, 31C.
+The sole operator closed its owned SSH/MCP transport after collecting evidence.
 
 No W1A8/W1A1 inference, training/QAT, RTX5080 action, other-chat contact or
 baseline change is implied. The remaining human decision is the concrete

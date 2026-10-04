@@ -45,10 +45,11 @@ not bit-exact. Both D7 arms nevertheless match the primary Q4 output on all 24
 prompts and all six repeats.
 
 Both D3 arms additionally differ from Q4 on prose-01 at 94 (scoped near-tie gate
-passed) and prose-06 at 90 (16062 versus 28071). The latter is newly observed and
-not covered by the five-case admission receipt; one bounded original-order
-raw-logit check is being prepared. Their measured rates remain preserved, but
-no lossless-output claim is made for short arms. No threshold or native verifier
+passed) and prose-06 at 90 (16062 versus 28071). The original-order raw check for the latter passed: opposing margins0.002527/
+0.002306 and centered top-five difference0.005583, with exact reproduction of
+all16 original complete requests. Final source-bound audit95685d8d... is listed
+in results.md. Their measured rates remain preserved; no universal lossless-
+output claim is made for short arms. No threshold or native verifier
 behavior is changed to obtain the reported rates.
 
 ## Pins and budget
@@ -76,6 +77,7 @@ desktop baseline with empty compute-app query before Q4 admission. Request
 inference 1246.09s is charged to the shared 7200s budget. Source/config/model
 hashing, downloads, builds, admissions and later profiles are separate overhead;
 the supervised reference transaction took 1639.71s total wall, including 393.62s
-of non-request overhead. FFN-Q4 admission and timing are still incomplete.
+of non-request overhead. FFN-Q4 admission and six-repeat timing are now complete; see results.md for
+the final paired data, precision-attribution limits and GPU closure.
 W1A8/W1A1 need the pending human implementation scope choice; no training or
 RTX5080/QAT/fusion work is part of this study.
