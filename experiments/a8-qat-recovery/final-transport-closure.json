@@ -1,0 +1,26 @@
+{
+  "schema": "a8_final_transport_closure_v1",
+  "experiment_transport": {
+    "close_action": "killed only owned MCP pane %285 after all GPU, checkpoint, archive, CPU audit, and process/context release work completed",
+    "closed_at_utc": "2026-10-04T16:05:50Z",
+    "kind": "tmux MCP WSL direct shell",
+    "other_sessions_untouched": true,
+    "owned_session_absent_from_session_list": true,
+    "pane_id": "%285",
+    "post_close_list_sessions_observed_at_utc": "2026-10-04T16:05:50Z",
+    "remote_tmux_socket_sessions_at_final_release": "",
+    "session_id": "$254"
+  },
+  "read_only_metadata_transport": {
+    "close_action": "killed only owned tmux MCP pane after metadata review; other MCP sessions untouched",
+    "closed_at_utc": "2026-10-04T16:17:24Z",
+    "host_key_fingerprint": "SHA256:CFMXul7DWzihyD1Qr3ENOSZ7CUGJHzRh1tFjN0j4ZFI",
+    "pane_id": "%286",
+    "post_close_list_sessions_missing_owned_session": true,
+    "session_id": "$255",
+    "strict_host_key_checking": "yes",
+    "window_id": "@284"
+  },
+  "final_report_metadata_sha256": "134d8ad459e8dcad4fc5c0543dc51832f4308be19c8fdb8c06e516cae63c8e3a",
+  "no_gpu_or_request_activity_in_metadata_read": true
+}

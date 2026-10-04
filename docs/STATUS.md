@@ -4,23 +4,23 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Both final native evaluations passed; CPU audit ongoing — October 4, 15:45 UTC
+## Final comparison verified; publication and cleanup — October 4, 16:31 UTC
 
-BOTH7200/max7200/null budgets; candidate34731/bda021d3 and reference43203/aebb8032,
-matching completed final results/status reported. Reference final eval exit0 at
-15:26:08UTC,676.177supervisor-wall seconds; all raw final archives preserved.
-Committed candidate426prompts/165733rows/tokens, reference531/206163; CPU joins
-and exact versus sampled telemetry/latency metadata remain pending.
+BOTH7200/max7200/null budgets and matching completed final checkpoints/results.
+Reference43203:0.638568native accepted drafts/round,95.689requesttokens/s (70.47%
+Q4_0); candidate34731:0.247581,69.623 (51.68%). Q4_01.306255native drafts/round.
+Both latency/throughput trailprimarybaseline; allnative24 andtiming120 response
+sequences match. Actual committedcoverage reference531prompts/206163rows/tokens,
+candidate426/165733; exact versus sampledtelemetry/gaps are audited. All18reports
+andcharged reference SIGSEGV/retry preserved, no topup or recapture.
 
-Existing-record aggregation and independent472check arithmetic QA pass:
-reference95.689requesttokens/s (70.47% ofpairedQ4_0),candidate69.623 (51.68%);
-all five matched repetitions belowQ4_0. Derived timing/QA artifacts are preserved
-under experiments/a8-qat-recovery. No new requests/experiment or topup.
-Goal remains INCOMPLETE until endpoint CPU audit, final comparison publication,
-full owned-group/native-context/transport return and merged-worktree cleanup.
-SAME heartbeat ACTIVE on successor `01a10704-f186-7991-97c7-6f4b3df51ae9`, sole
-`/root/gpu_operator` pane285. No2080controls. See
-[current checkpoint](goals/a8-qat-recovery-and-comparison.md#both-final-native-evaluations-passed-timing-arithmetic-audited--october-4-1545-utc).
+Final report and scalar evidence passroot andindependent QA (429reportchecks,
+472timingarithmetic). All34finalnative groups andownedjob groups absent,/dev/dxg
+noholders, RTX5080 idlebaseline; bothtransportpanes285and286 closed (last16:17:24UTC).
+Root is publishing/merging/retiring onlyowned fullymergedworktrees andpausing SAME
+heartbeat. Goal remains active through those final steps; no new research decision
+or2080controls. See [verified final checkpoint](goals/a8-qat-recovery-and-comparison.md#final-comparison-verified-publication-and-cleanup--october-4-1631-utc)
+and [final comparison](../experiments/a8-qat-recovery/comparison.md).
 
 ## Active: A8 QAT recovery and comparison — October 3, 2026
 

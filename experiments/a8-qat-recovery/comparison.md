@@ -1,410 +1,231 @@
-# Matched A8 QAT comparison — interim
+# Matched A8 QAT comparison — final
 
-The matched comparison is still running on RTX5080/SM120. Both arms have real
-optimizer updates and exact positive-step restore evidence. At 5,000 and 10,000 updates,
-the combined candidate trails the fixed A8 reference; both
-remain below Q4_0. The matched cumulative-budget endpoints are still pending.
-This report will be replaced with final measured results after both 7,200-second
-cumulative training caps and final native development evaluations finish.
+Both arms completed the original **7,200 cumulative trainer-accounted seconds**
+on **RTX5080/SM120** and passed matching final native development evaluations.
+**Neither arm beat the primary Q4_0 EAGLE baseline** on acceptance, request latency
+or complete-request throughput. Reference reached **0.638568 accepted drafts/round**
+and **95.689 request tokens/s (70.47% of paired Q4_0)**; the combined candidate reached
+**0.247581** and **69.623 tokens/s (51.68%)**. The candidate also trails reference on
+this fixed development set. The combined recipe does not isolate feature effects.
 
-## Frozen comparison
+## Equal-budget endpoints and actual training coverage
 
-Both arms read from the same authenticated corpus of 10,000 TRAIN prompts and
-3,899,930 supervised rows. Actual unique training coverage will be reported at
-the endpoints. Both use seed 8101, hard CE, captured native target features/labels,
-fixed cache/mask/vocabulary ancestry and the same data order. No A1, Bop, curriculum, refresh,
-fusion correction or architecture change. Reference: fixed A8/symmetric binary
-weights, latent magnitude 0.5. Candidate: learned A8, all-nine affine midpoints,
-latent magnitude 0.1. Both use existing AdamW, sign LR 0.001, scale/activation/
-midpoint LR 0.00001 where present, warmup 100, norm clip 1.
+| Arm | Accounted seconds | Committed updates | Cursor | Unique TRAIN prompts | Unique supervised rows | Presented supervised tokens |
+|---|---:|---:|---:|---:|---:|---:|
+| Reference | 7,200.0 | 43,203 | 43,287 | 531 | 206,163 | 206,163 |
+| Candidate | 7,200.0 | 34,731 | 34,797 | 426 | 165,733 | 165,733 |
 
-Both request cache/head optimization. Actual cache size 1/chunk size 64 and reference
-batched head are observed. Candidate training intentionally uses serial head
-execution to preserve invocation-local learned-quantizer gradients; inference
-uses batched/native execution. Every candidate tensor had finite/nonzero gradients
-and measured sampled movement: sign 9/9, scale 9/9, quantizer 6/6, midpoint 9/9.
+Both budget ledgers are `7200/max7200/active_attempt=null`. Final status is
+`completed/final_training_complete=true`; latest checkpoint, final development
+request and completed result agree. CPU-only reads of the original checkpoints
+join step/cursor/coverage/token/sign-flip counters to final status. Both epochs are
+zero. Available corpus is 10,000 TRAIN prompts / 3,899,930 supervised rows;
+reference consumed 5.31% of available prompts and 5.2863% of rows,
+candidate 4.26% and 4.2496%. These are committed checkpoint counts.
+Abandoned work after a crash can remain charged outside committed coverage.
 
-Execution source 3bd4837850915cb7d308290e573e8d8a08eee1a2 is a helper-only fix atop
-583480c79f3ca090de0952deca8278dcb7f15c2d. Training runtime hashes are unchanged.
-Native runtime 9e2c7a90051e738751aab7d7bd7c2d8201fb76e3, CUDA RTX5080/SM120,
-Torch 2.14.0+cu130. Target weights and target/draft KV are F16; A8 uses native packed
-INT8 dispatch. Q4_0 EAGLE is the primary baseline with native Q8_1 activation
-conversion. These results do not establish SM75 performance.
+Reference's unexplained SIGSEGV at step 9,681 restored step 9,000 on retry 1 of max 2.
+The failed attempt retained 1,085.811 seconds, including about 379.457 seconds of
+conservative post-crash downtime. Uncommitted updates 9,001–9,681 were rolled back
+and replayed; their first attempt remains charged. No refund/topup, new incident
+label or extra training block. This comparison uses the agreed cumulative
+accounting policy. The original historical paired A8/A1 step 1,000 remains intact.
 
-## Available interim measurements
+## Frozen recipe and effective execution
 
-All measurements use the same 24 unsealed development prompts
-(SHA 131a3db7958ff6aa818b23019297654507d5b80bed3c298349417b7e3b2ba081).
-Timing has five measured repetitions /120 requests per variant, with warmups excluded,
-A8/Q4_0/target-only order alternated. Request rate counts actual output tokens /
-complete HTTP wall time including prefill; decode uses server predicted_ms.
-Native acceptance is one instrumented pass per checkpoint; timing uses five
-separate repetitions. TTFT is unavailable for this nonstreaming endpoint.
-Evaluation wall time is separate overhead and is never a serving-rate denominator.
+Same seed 8101, data order, hard CE, captured native target features/labels,
+cache/mask/vocabulary ancestry and update cadence. Reference uses fixed A8,
+symmetric binary weights and latent initialization 0.5. Candidate combines learned
+A8 quantizers, all-nine affine midpoints and latent initialization 0.1. Both use
+AdamW, sign LR 0.001, small-family LR 0.00001, warmup 100 and norm clip 1. A1/Bop/
+fusion/curriculum/refresh and additional training were excluded.
 
-| Checkpoint | Development CE | Accepted drafts/round | Acceptance rate | Request tokens/s | Relative to Q4_0 |
-|---|---:|---:|---:|---:|---:|
-| Reference step 0 | 7.5459 | 0.122376 | 2.5012% | 66.991 | 0.4949 |
-| Candidate step 0 | 7.5463 | 0.122376 | 2.5012% | 63.524 | 0.4703 |
-| Reference step 5,000 | 5.1176 | 0.377184 | 7.7106% | 81.477 | 0.6013 |
-| Candidate step 5,000 | 5.5689 | 0.217877 | 4.4587% | 68.342 | 0.5056 |
-| Reference step 10,000 | 4.2628 | 0.500529 | 10.2403% | 88.069 | 0.6519 |
-| Candidate step 10,000 | 6.0285 | 0.180342 | 3.6933% | 66.145 | 0.4898 |
-| Reference step 15,000 | 3.9946 | 0.581382 | 11.8942% | 92.340 | 0.6856 |
-| Candidate step 15,000 | 5.9516 | 0.209471 | 4.2856% | 68.261 | 0.5003 |
-| Reference step 20,000 | 3.6999 | 0.613546 | 12.5495% | 93.850 | 0.7001 |
-| Candidate step 20,000 | 5.7818 | 0.205183 | 4.1920% | 67.751 | 0.4989 |
-| Reference step 25,000 | 3.5502 | 0.637782 | 13.0419% | 95.171 | 0.7092 |
-| Candidate step 25,000 | 5.8161 | 0.230803 | 4.7259% | 68.954 | 0.5111 |
-| Reference step 30,000 | 3.5495 | 0.623711 | 12.7413% | 95.036 | 0.7028 |
-| Candidate step 30,000 | 5.5156 | 0.268456 | 5.4950% | 70.905 | 0.5247 |
-| Reference step 35,000 | 3.5963 | 0.651339 | 13.3246% | 96.585 | 0.7170 |
-| Q4_0 at reference step 5,000 | n/a | 1.306255 | 26.5917% | 135.491 | 1.0000 |
+Both requested cache/head optimization: cache size 1/chunk 64 is observed. Reference
+training uses the batched head; learned-quantizer candidate training intentionally
+uses serial head calls to retain invocation-local gradients. Candidate inference
+uses the native/batched path. Actual admission established finite/nonzero gradients
+and sampled maximum-gradient-element movement for every tensor: sign 9/9,
+scale 9/9, learned A8 activation 6/6, midpoint 9/9. That admission demonstrates observed
+movement, not full-tensor displacement. Both arms have exact positive-step
+optimizer/RNG/cursor/recipe/probe/telemetry restore evidence.
 
-Accepted drafts per round is the primary acceptance metric. Acceptance rate uses
-proposed drafts as its denominator and is reported separately. Original native
-capture counts are:
+Training math is frozen at `583480c79f3ca090de0952deca8278dcb7f15c2d`; executed helper
+source `3bd4837850915cb7d308290e573e8d8a08eee1a2` only repairs evaluator integration.
+Native runtime `9e2c7a90051e738751aab7d7bd7c2d8201fb76e3` uses shared pack and unused-head
+pruning. CUDA RTX5080/SM120, Torch 2.14.0+cu130; target/verifier weights and both KV
+caches are F16. Drafter is native row W1A8 with packed INT8 dispatch. Q4_0 draft uses
+native Q8_1 activation conversion. These results do not establish SM75 performance.
+FP16 EAGLE was not measured in this frozen comparison; Q4_0 is the primary baseline.
 
-| Capture | Accepted | Proposed | Rounds | Emitted tokens |
+## Final native acceptance and development loss
+
+| Arm | Development CE | Accepted drafts | Proposed drafts | Speculative rounds | Accepted/round | Acceptance rate | Emitted/round |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Reference | 3.696147 | 1,106 | 8,463 | 1,732 | 0.638568 | 13.0687% | 1.636259 |
+| Candidate | 5.534134 | 563 | 11,113 | 2,274 | 0.247581 | 5.0661% | 1.246262 |
+| Q4_0 (both final captures) | unavailable | 1,608 | 6,047 | 1,231 | 1.306255 | 26.5917% | 2.302193 |
+
+One instrumented native pass per checkpoint uses 24 unsealed development prompts;
+all 24 A8 response sequences match Q4_0 and each variant emits 2,834 tokens. CE uses
+229 supported labels / 48 rounds / 24 prompts. Accepted drafts/round uses reported
+native accepted-draft counters; acceptance rate divides by proposed drafts and
+excludes the extra target token. Reported accepted versus actually emitted accepted
+tokens are distinct at the output cap: reference 1106/1105, candidate 563/563 and
+Q4_0 1608/1606. Both are preserved in the compact evidence. Native acceptance is
+separate from speculative counters in the five-repeat request-timing workload.
+The verifier is the frozen greedy target-sample-and-match path; no stochastic
+sampling-distribution claim is made.
+
+## Final complete-request throughput and latency
+
+| Final arm | A8 request tokens/s | Paired Q4_0 request tokens/s | A8/Q4_0 | A8 decode tokens/s | Q4_0 decode tokens/s | Target-only request tokens/s |
+|---|---:|---:|---:|---:|---:|---:|
+| Reference | 95.689 | 135.787 | 70.47% | 99.509 | 143.311 | 88.898 |
+| Candidate | 69.623 | 134.728 | 51.68% | 71.873 | 143.113 | 88.468 |
+
+Each final evaluation has five alternating measured repetitions, 24 prompts per
+variant: 120 A8, 120 Q4_0 and 120 target-only requests. One warmup per server is
+excluded (15 warmups total). Each variant returns exactly 14,290 token IDs with
+105 length finishes /15 stop finishes; A8 and target-only match all 120 Q4_0
+sequences. Fixed greedy seed 42, thinking disabled, max 128 outputs, draft max 5/
+p-min 0, concurrency 1/context 2048 and frozen F16 KV/cache policy.
+
+Request throughput is summed actual returned token IDs / summed full HTTP wall,
+including prefill. Decode is the same numerator / summed server `predicted_ms`;
+server `prompt_ms` is excluded. Evaluation/startup wall is separate overhead.
+These are concurrency-one request rates; maximum online serving capacity is
+unmeasured. TTFT is unavailable at the nonstreaming endpoint. Per-round draft/
+verification/component profile was not added to this bounded comparison.
+
+| Final arm | A8 median request s | A8 p95 s | A8 max s | Q4_0 median s | Q4_0 p95 s | Q4_0 max s |
+|---|---:|---:|---:|---:|---:|---:|
+| Reference | 1.297 | 1.593 | 1.653 | 0.906 | 1.094 | 1.190 |
+| Candidate | 1.827 | 2.042 | 2.142 | 0.912 | 1.108 | 1.212 |
+
+These are pooled distributions across differing prompt lengths, not confidence
+intervals. Complete min/median/p95/max request/decode values for all three variants
+are in [final-report-metadata.json](final-report-metadata.json).
+
+One CPU-only aggregation of the **existing two final timing manifests** recomputed
+all five 24-request aggregates, verified token-ID parity and cross-checked original
+pooled totals. No extra native requests. Independent arithmetic review passed 472
+checks with zero failures; ratios use counts/time sums, not mean request/repetition
+rates. All five paired request ratios remain below 1:
+
+| Repetition | Reference request/Q4_0 | Reference decode/Q4_0 | Candidate request/Q4_0 | Candidate decode/Q4_0 |
 |---|---:|---:|---:|---:|
-| Reference step 0 | 309 | 12,354 | 2,525 | 2,834 |
-| Candidate step 0 | 309 | 12,354 | 2,525 | 2,834 |
-| Reference step 5,000 | 777 | 10,077 | 2,060 | 2,834 |
-| Candidate step 5,000 | 507 | 11,371 | 2,327 | 2,834 |
-| Reference step 10,000 | 946 | 9,238 | 1,890 | 2,834 |
-| Candidate step 10,000 | 433 | 11,724 | 2,401 | 2,834 |
-| Reference step 15,000 | 1,043 | 8,769 | 1,794 | 2,834 |
-| Candidate step 15,000 | 491 | 11,457 | 2,344 | 2,834 |
-| Reference step 20,000 | 1,078 | 8,590 | 1,757 | 2,834 |
-| Candidate step 20,000 | 483 | 11,522 | 2,354 | 2,834 |
-| Reference step 25,000 | 1,104 | 8,465 | 1,731 | 2,834 |
-| Candidate step 25,000 | 532 | 11,257 | 2,305 | 2,834 |
-| Reference step 30,000 | 1,089 | 8,547 | 1,746 | 2,834 |
-| Candidate step 30,000 | 600 | 10,919 | 2,235 | 2,834 |
-| Reference step 35,000 | 1,119 | 8,398 | 1,718 | 2,834 |
-| Q4_0, each capture | 1,608 | 6,047 | 1,231 | 2,834 |
+| 1 | 0.695472 | 0.685988 | 0.519661 | 0.507172 |
+| 2 | 0.708651 | 0.698368 | 0.516911 | 0.502851 |
+| 3 | 0.706385 | 0.696506 | 0.510793 | 0.496717 |
+| 4 | 0.708136 | 0.697396 | 0.517122 | 0.501405 |
+| 5 | 0.705039 | 0.693656 | 0.519387 | 0.502955 |
 
-Both zero checkpoints have identical native acceptance counts. Each A8 report
-uses 24 development prompts, 48 loss rounds and 229 loss labels; all 24 native
-response sequences match Q4_0. Each timing report has 120 matched request token-ID
-sequences per comparison. Native capture counts and the separately measured
-request-timing workload have distinct ledgers.
+Reference request ratio range 0.695472–0.708651; candidate 0.510793–0.519661.
+Pooled ratios are 0.704702 and0.516767. Descriptive ranges carry no significance claim.
+Reference request rate is 1.076393× target-only; candidate is 0.786987×.
+[Per-repetition totals](final-timing-repetitions.json) and
+[independent QA](final-timing-qa.json) preserve exact sums, ratios and source hashes.
 
-For reference step 5,000, median/p95 full-request latency is 1.543/1.811 seconds
-for A8 versus 0.909/1.092 seconds for Q4_0. These are pooled request distributions
-across different prompt lengths, not confidence intervals. Decode rate is
-84.305 versus 143.511 tokens/s (ratio 0.5874). Target-only request rate is
-89.439 tokens/s, also above the current A8 result.
+## Exact versus sampled movement telemetry
 
-Candidate step 5,000 has median/p95 full-request latency 1.868/2.070 seconds
-versus Q4_0 at 0.913/1.102 seconds. Decode rate is 70.431 versus 143.253 tokens/s
-(ratio 0.4917). Target-only request rate is 88.642 tokens/s. Each A8 throughput
-ratio uses the Q4_0 measurement from the same evaluation. The candidate evaluation
-completed exit 0, with 24/24 native response matches and 120/120 timing matches
-for both A8 and target-only. Its supervised runtime was 761.223 seconds; raw
-reports and captures are archived with verified hardlinks.
+| Arm | Exact committed cumulative sign flips | Diagnostic sample step / lag | Sampled cumulative flips | Sampled cumulative flip-backs | Sampled net disagreement | Near-zero fraction |
+|---|---:|---:|---:|---:|---:|---:|
+| Reference | 137,097,380 | 43,201 / 2 | 83,568,564 | 35,514,241 | 12,540,082 | 0.8535% |
+| Candidate | 1,119,471,657 | 34,701 / 30 | 570,747,555 | 267,824,891 | 35,097,773 | 5.3715% |
 
-At reference step 10,000, request rate is 88.069 versus Q4_0 at 135.098 and
-target-only at 88.782 tokens/s. Decode rate is 91.444 versus 142.974 tokens/s
-(Q4_0 ratio 0.6396). Median/p95 full-request latency is 1.427/1.675 seconds versus
-Q4_0 at 0.914/1.096 seconds. Each timing variant generated exactly 14,290 returned
-token IDs over 120 measured requests, with 105 length finishes and 15 stop finishes.
-All 24 native response sequences and all 120 timing sequences match Q4_0.
-The evaluation completed exit 0 in 692.183 supervised seconds; raw evidence is
-hardlink archived. Acceptance and throughput improved, but remain below Q4_0.
+| Arm | Mean latent magnitude | Minimum distance to zero | Scale L1 since initialization | Activation L1 | Midpoint L1 |
+|---|---:|---:|---:|---:|---:|
+| Reference | 0.494697 | 1.057e-08 | 854.692429 | 0.000000 | 0.000000 |
+| Candidate | 0.119146 | 5.956e-10 | 4159.718524 | 0.080039 | 899.166947 |
 
-At candidate step 10,000, acceptance fell from 0.217877 at step 5,000 to
-0.180342 accepted drafts/round, while CE rose from 5.5689 to 6.0285. Request rate
-is 66.145 versus Q4_0 at 135.031 and target-only at 88.594 tokens/s; decode rate
-is 68.043 versus 142.875 tokens/s. Median/p95 request latency is 1.965/2.189 seconds
-versus Q4_0 at 0.911/1.098 seconds. The complete evaluation passed in 783.216
-supervised seconds, with 24/24 native and 120/120 timing matches. Each timing
-variant generated 14,290 returned token IDs (105 length finishes, 15 stop finishes).
-These results show a regression on this fixed development set; they do not identify
-which combined candidate feature caused it. The frozen experiment continues.
+Exact sign flips come from each committed optimizer update. Sampled history observes
+intervals of 100 updates and can miss changes between observations; a flip-back means
+return to the initial sign. Saved diagnostic `last_step`, observation count and
+cumulative counters join the small telemetry fields. Candidate has 348 observations,
+reference 433. Aggregate near-zero threshold is 0.01; per-layer diagnostic threshold
+is 0.05. Small-family L1 norms cover those family parameters at the sample. These
+statistics demonstrate movement, and do not attribute acceptance or useful decisions
+to any particular sign change. Full scalar diagnostics and exact checkpoint/status
+joins are in [final-endpoint-audit.json](final-endpoint-audit.json).
 
-Reference step 15,000 reached 0.581382 accepted drafts/round and 92.340 request
-tokens/s versus Q4_0 at 134.686 and target-only at 88.556. Decode rate is 96.162
-versus Q4_0 at 142.763 tokens/s. The complete evaluation passed in 683.692
-supervised seconds, with 24/24 native and 120/120 timing matches. Each timing
-variant generated 14,290 returned IDs with 105 length and 15 stop finishes.
-Reference exceeds target-only throughput in this measurement, while remaining
-below the primary Q4_0 baseline; no significance claim is made from pooled rates.
+## Scheduled evidence and recovery lineage
 
-Candidate step 15,000 recovered slightly to 0.209471 accepted drafts/round,
-with CE 5.9516 and 68.261 request tokens/s. Q4_0 measured 136.437 and target-only
-89.328 tokens/s. Decode rate is 69.893 versus Q4_0 at 143.172 tokens/s. Median/p95
-full-request latency is 1.863/2.090 seconds versus Q4_0 at 0.899/1.085 seconds.
-All 24 native and 120 timing sequences match Q4_0. Every timing variant generated
-14,290 returned IDs (105 length, 15 stop finishes). Supervisor wall time was
-773.704 seconds; the reported evaluation phase was 769.607 seconds. Terminal
-absence was observed later at 09:35:23 UTC. The result remains below reference
-step 15,000 and Q4_0; no individual feature effect is inferred.
+All 18 original step-zero/scheduled/final reports are archived; final endpoints lead
+this comparison. Equal-update checkpoints are intermediate observations:
 
-Reference step 20,000 reached 0.613546 accepted drafts/round, CE 3.6999 and
-93.850 request tokens/s. Q4_0 measured 134.046 and target-only 88.441 tokens/s.
-Decode rate is 97.899 versus Q4_0 at 142.269; median/p95 full-request latency is
-1.347/1.599 seconds versus 0.921/1.112 seconds. Every timing variant generated
-14,290 returned IDs with 105 length and 15 stop finishes, and all 24 native/
-120 timing sequences match Q4_0. The evaluation passed in 686.691 supervisor-wall
-seconds (681.765 reported evaluation-phase seconds). Raw evidence is archived.
-Reference remains below Q4_0 on acceptance and full-request throughput.
+| Capture | Development CE | Native accepted | Proposed | Rounds | Accepted/round |
+|---|---:|---:|---:|---:|---:|
+| Reference step 0 | 7.5459 | 309 | 12,354 | 2,525 | 0.122376 |
+| Candidate step 0 | 7.5463 | 309 | 12,354 | 2,525 | 0.122376 |
+| Reference step 5,000 | 5.1176 | 777 | 10,077 | 2,060 | 0.377184 |
+| Candidate step 5,000 | 5.5689 | 507 | 11,371 | 2,327 | 0.217877 |
+| Reference step 10,000 | 4.2628 | 946 | 9,238 | 1,890 | 0.500529 |
+| Candidate step 10,000 | 6.0285 | 433 | 11,724 | 2,401 | 0.180342 |
+| Reference step 15,000 | 3.9946 | 1,043 | 8,769 | 1,794 | 0.581382 |
+| Candidate step 15,000 | 5.9516 | 491 | 11,457 | 2,344 | 0.209471 |
+| Reference step 20,000 | 3.6999 | 1,078 | 8,590 | 1,757 | 0.613546 |
+| Candidate step 20,000 | 5.7818 | 483 | 11,522 | 2,354 | 0.205183 |
+| Reference step 25,000 | 3.5502 | 1,104 | 8,465 | 1,731 | 0.637782 |
+| Candidate step 25,000 | 5.8161 | 532 | 11,257 | 2,305 | 0.230803 |
+| Reference step 30,000 | 3.5495 | 1,089 | 8,547 | 1,746 | 0.623711 |
+| Candidate step 30,000 | 5.5156 | 600 | 10,919 | 2,235 | 0.268456 |
+| Reference step 35,000 | 3.5963 | 1,119 | 8,398 | 1,718 | 0.651339 |
+| Candidate final | 5.5341 | 563 | 11,113 | 2,274 | 0.247581 |
+| Reference step 40,000 | 3.6013 | 1,107 | 8,467 | 1,730 | 0.639884 |
+| Reference final | 3.6961 | 1,106 | 8,463 | 1,732 | 0.638568 |
 
-Candidate step 20,000 measured 0.205183 accepted drafts/round, CE 5.7818 and
-67.751 request tokens/s versus Q4_0 at 135.812 and target-only at 88.851.
-Decode rate is 69.619 versus 143.280 tokens/s. Median/p95 full-request latency is
-1.859/2.126 seconds versus Q4_0 at 0.906/1.087 seconds. The complete evaluation
-passed in 776.723 supervisor-wall seconds (771.597 evaluation-phase seconds),
-with 24/24 native and 120/120 timing matches. Each timing variant generated
-14,290 returned IDs with 105 length and 15 stop finishes. The candidate remains
-well below reference step 20,000 and the primary Q4_0 baseline.
+Two pretraining execution incidents were retained: an unbalanced TRAIN gate selection
+was replaced with already-declared balanced authenticated TRAIN gate prompts; the
+timing helper's invented ID-prefix check was repaired to accept exact frozen prepared
+24 prompt bytes. Neither recaptured data nor changed math/precision/budget. Subsequent
+reference SIGSEGV and charged retry remain preserved. Raw failures, step-zero,
+positive-resume proofs and scheduled/final captures remain outside Git. Metadata
+scope corrections and CPU script transport retries changed no experiment artifacts.
 
-Reference step 25,000 reached 0.637782 accepted drafts/round, CE 3.5502 and
-95.171 request tokens/s versus Q4_0 at 134.190 and target-only at 88.418.
-Decode rate is 99.411 versus Q4_0 at 142.781 tokens/s. The complete evaluation
-passed in 683.708 supervisor-wall seconds (678.563 evaluation-phase seconds),
-with 24/24 native and 120/120 timing matches. Each timing variant generated
-14,290 returned IDs with 105 length and 15 stop finishes. Reference continues
-improving but remains below the primary Q4_0 acceptance and throughput baseline.
+## Artifact identity and completion audit
 
-Candidate step 25,000 measured 0.230803 accepted drafts/round, CE 5.8161 and
-68.954 request tokens/s. Q4_0 measured 134.899 and target-only 88.712 tokens/s;
-decode rate was 70.994 versus Q4_0 at 142.655. The complete evaluation passed in
-767.206 supervisor-wall seconds (762.473 evaluation-phase seconds), with 24/24
-native and 120/120 timing matches. Each timing variant generated 14,290 returned
-IDs with 105 length and 15 stop finishes. Candidate acceptance improved slightly
-from 20,000, while remaining well below reference step 25,000 and Q4_0.
+Reference final:
 
-Reference step 30,000 measured 0.623711 accepted drafts/round, CE 3.5495 and
-95.036 request tokens/s versus Q4_0 at 135.229 and target-only at 88.711.
-Decode rate was 98.995 versus Q4_0 at 143.191 tokens/s. The complete evaluation
-passed in 674.689 supervisor-wall seconds (669.613 evaluation-phase seconds),
-with 24/24 native and 120/120 timing matches. Each timing variant generated
-14,290 returned IDs with 105 length and 15 stop finishes. Acceptance is slightly
-lower than at reference 25,000, while throughput is close; both remain below Q4_0.
+- Checkpoint: `aebb8032c03f2d5263f608d67a65849b3239c85d6ccd372e09a7d9efa507579d`
+- Checkpoint manifest: `a0f92778d094f352fb86e65275a99c328e592d27539319fb9b3c8d7675464b58`
+- Report: `2cc27b3f0286f92cb40d642f2733179f5fd539dfc046ea7827a891e0e2296a4b`
+- Result: `18c3c406fb0daa5d6217823eb25266de754a681bfb2d90b18a50060cd4b1f303`
+- Timing manifest: `f45e31915137104d8441b9b03bbe7b23e034396a26d959b954066d6ab9043902`
 
-Candidate step 30,000 measured 0.268456 accepted drafts/round, CE 5.5156 and
-70.905 request tokens/s versus Q4_0 at 135.129 and target-only at 88.534.
-Decode rate was 73.055 versus Q4_0 at 142.891 tokens/s. The evaluation passed
-in 769.214 supervisor-wall seconds (764.960 evaluation-phase seconds), with
-24/24 native and 120/120 timing matches. Every timing variant generated 14,290
-returned IDs with 105 length and 15 stop finishes. This is the candidate's best
-scheduled acceptance so far, but remains below reference and Q4_0. Candidate
-training has used 6,219.893 of 7,200 seconds; its final endpoint is pending.
+Candidate final:
 
-Candidate's 1,047.285 trainer seconds differ from the reference's 764.725 seconds
-at the same update count; these checkpoint measurements are intermediate observations. The final comparison
-requires both independent 7,200-second cumulative endpoints. No quality, latency
-or total-throughput win against Q4_0 is claimed. This combined candidate does not isolate
-individual learned-quantizer, midpoint or latent-inertia effects.
+- Checkpoint: `bda021d3f09e2db6f9261a1d5d1b7a680aaa826b68874639696de2a4e2cfcd43`
+- Checkpoint manifest: `04b23e0e808c473676853cba06db11e3d84acc4c20f28a592cf7372e5b721bfa`
+- Report: `fcd0c0100d07d23aeff14f7cad7a715677b8852f1389bf16b4f7025120692c28`
+- Result: `0a5ae30b2be6872f33b9efa4874e4622d3a34f30e6ccf6dd4b33e7bc3bc992f9`
+- Timing manifest: `01fbc50b9fb73d5dd0391fd78cd0952c200c61d04a820009254174640a54454d`
 
-## Resume and recovery evidence
+Frozen prompt bytes: `131a3db7958ff6aa818b23019297654507d5b80bed3c298349417b7e3b2ba081`;
+derived development manifest: `fc18f400a776161fd0ff40b30d58d69233be723e9e26b858a60160a2b802d091`.
+Native server SHA: `1ca0c1d9ea62d15ec52e8f32bb50b8a7d31427ab009f4a00ce388f4cf9cef072`;
+runtime inventory: `c472e36da5d441cae76a813f076cac13f5eff45f7d0e5ec03d75d9deaadc8ba0`.
+Teacher/capture binary ancestry stays separately pinned to
+`b5093749d67888bc2cafdb6a65c479f4c182f0a904820f1dae4870b6ae66d41c`.
 
-Reference exact restore 859→912 and candidate 105→1200 passed with optimizer/RNG/
-cursor/recipe/probe/telemetry preserved. Human pause saved candidate step 2081/cursor 2084
-(checkpoint ac8af0f058b7d1d...), budget 441.281998629 seconds, no active attempt;
-human resume restored it and reached step 5000/cursor 5009. Cumulative candidate trainer
-budget is 1047.284754942 seconds, settled with no active attempt; its scheduled
-5,000 evaluation passed and is archived. Pause downtime is excluded.
-Reference step 5,000 budget settled at 764.725 seconds; after candidate evaluation,
-exact resume advanced the reference to step 5,411 and 829.816 cumulative seconds.
-Each arm retains its own 7,200-second
-cap; standalone evaluations are bounded at 1,200 seconds and arms alternate at natural
-5,000-update development boundaries. Intermediate snapshots save every 1,000 updates.
+All report/result/timing/checkpoint hashes and exact archive locators are in
+[final-comparison-evidence.json](final-comparison-evidence.json). Raw runs are beneath
+`/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01`;
+frozen supervisor/evaluator cwd is the separate `a8-eval-recovery-3bd4837` checkout.
+Model weights, datasets, captures and raw runs remain outside Git. Native split is
+unsealed development; sealed finals were not accessed. No recapture, topup or
+regression-driven experiment occurred.
 
-Two preserved pretraining execution incidents recovered within the two-retry
-limit: unbalanced TRAIN gate selection was replaced with already-declared balanced
-TRAIN gate prompts using the authenticated existing bootstrap; a timing-helper
-ID-prefix mistake was fixed to accept exact frozen prepared development bytes.
-No dataset recapture, recipe/precision/budget change or discarded optimizer work.
-Checkpoint and successful raw evaluation archives use verified same-filesystem
-hardlinks before pruning. Original historical paired step 1,000 remains untouched.
+Endpoint CPU audit loaded original checkpoints only with map_location CPU and
+CUDA_VISIBLE_DEVICES empty; all joins passed, peak RSS 3.572 GB. Analysis utilities
+[aggregate_existing_timing.py](aggregate_existing_timing.py) (SHA b7421232...) and
+[audit_final_endpoints.py](audit_final_endpoints.py) (SHA c7a70733...) reproduce the
+bounded metadata checks on the preserved raw artifacts.
 
-Reference training subsequently segfaulted at step 9,681. The exact step 9,000
-checkpoint and raw failure were preserved; the first same-recipe retry restored
-that checkpoint and has positive updates. Built-in recovery retained 1,085.811
-seconds for the failed attempt, making the settled reference budget 1,850.536
-seconds. About 379.457 seconds of that charge is conservative post-crash downtime.
-The original cap remains 7,200 trainer-accounted seconds; it is not a claim of
-exactly two hours of productive optimizer work after such recovery. Uncommitted
-updates 9,001–9,681 were rolled back and replayed from the checkpoint; their first
-attempt remains charged. Retry 1 passed the failure point and reached step 10,000/
-cursor10,017, exit 0, with budget settled at 2,005.419 seconds. Its scheduled native
-evaluation passed and is archived; candidate resume reached step 10,000/cursor10,017, checkpoint6898e9b1,
-with settled budget2,064.260seconds. Its scheduled native evaluation passed and is archived.
-Reference resumed from step 10,000 and reached the scheduled step 15,000 boundary
-with budget settled at 2,767.995 seconds; its native evaluation passed and is
-archived. Candidate resumed from 10,000 and reached 15,000/cursor15,024 with budget settled
-at 3,093.120 seconds; its scheduled native evaluation passed and is archived. Both final endpoints remain pending. Fault cause is
-unexplained; equivalent recurrence retains the same retry limit (one of two used).
-
-Reference subsequently reached step 20,000/cursor20,028 and exited cleanly,
-with budget settled at 3,541.358 seconds; its scheduled native evaluation passed
-and is archived. Candidate resumed from 15,000 and has positive optimizer updates
-toward 20,000. Candidate remains evaluated at 15,000 and 3,093.120 seconds. Both final
-7,200-second endpoints remain pending.
-
-Candidate subsequently reached step 20,000/cursor20,028 and exited cleanly,
-with budget settled at 4,132.197 seconds. Its scheduled native evaluation passed
-and is archived. Both final 7,200-second endpoints remain pending.
-
-Reference subsequently reached step 25,000/cursor25,044 and saved checkpoint
-e3948dbd, with budget 4,324.038 seconds. Its scheduled native evaluation passed
-and is archived. Candidate resumed from 20,000 and has positive optimizer updates
-toward 25,000. Both final 7,200-second endpoints remain pending.
-
-Candidate subsequently reached step 25,000/cursor25,044 and exited cleanly,
-with budget settled at 5,181.483 seconds. Its scheduled native evaluation passed
-and is archived. Reference resumed from 25,000 and has positive optimizer updates
-toward 30,000. Both final 7,200-second endpoints remain pending.
-
-Reference subsequently reached step 30,000/cursor30,054 and exited cleanly,
-with budget settled at 5,097.991 seconds. Its scheduled native evaluation passed
-and is archived. Candidate resumed from 25,000 with positive optimizer updates
-toward 30,000. Both final 7,200-second endpoints remain pending.
-
-Candidate subsequently reached step 30,000/cursor30,054 and exited cleanly,
-with budget settled at 6,219.893 seconds and 980.107 seconds remaining. Its
-scheduled native evaluation passed and is archived. The next candidate training segment must
-stop at the original cap and receive a final native evaluation, even if the
-endpoint precedes step 35,000. Both final 7,200-second endpoints remain pending.
-
-Reference subsequently reached step35,000/cursor35,066 and exited0 at
-13:10:34.068720UTC, budget settled5,878.722016seconds,1321.277984remaining.
-Its checkpoint a64fe4da and pending scheduled development request are archived.
-Its scheduled evaluation passed exit0 at13:33:16UTC in659.179supervisor-wall
-seconds (652.613evaluation-phase seconds), with full return verified13:35:11UTC.
-Request rate was96.585 vsQ4_0134.705tokens/s (ratio0.717013), decode100.824 vs
-142.836. Raw report/result/timing hashes are respectivelyfff25faa...,34bc088e...
-and5b953c77... in the current goal checkpoint. Primary24prompt native acceptance is1,119/8,398/1,718 =0.651339drafts/round,
-CE3.596321, with24/24native response matches. Timing counters across120requests
-are5,595/41,990/8,535; their rounds and token workload are kept separate. Candidate's next segment remains restricted to its
-original980.107133seconds and final evaluation.
-
-Candidate reached its original7,200.0second cap at34,731updates/cursor34,797,
-training exit0 at14:03:56.696195UTC, checkpointbda021d3. Budget is settled with
-no active attempt; final request matches latest and final_training_complete=true.
-Final archive and full release passed; matching final evaluation exited0 at
-14:21:01.295326UTC in767.210supervisor-wall seconds. Final primary native/timing
-metadata transcription and CPU checkpoint/telemetry joins are pending. Reference
-resumed35k at14:25:36UTC with1,321.277984original training seconds; the equal-budget
-comparison is not complete yet.
-
-Reference reached its natural40,000/cursor40,082 boundary and exited0 at
-14:40:40.248774UTC, checkpointd5ddbd3d; budget6680.599681/null,519.400319original
-training seconds remain. The scheduled evaluation started14:44:49UTC after
-checkpoint/archive/full-release checks. No new budget or final-endpoint claim.
-
-## Endpoint reporting method
-
-Final coverage will use the authenticated checkpoint's committed `unique_prompts`
-and `unique_rows` sets, with the counts exposed as `unique_prompts` and
-`unique_supervised_rows` in status. `presented_supervised_tokens` includes replay;
-epoch replay does not inflate distinct counts. Abandoned work rolled back after a
-crash can remain charged without appearing in committed coverage.
-
-Exact cumulative per-update sign flips are separate from sampled diagnostic sign
-flips and flip-backs. Final telemetry will state its observation step/gap; the
-latest sample can precede the endpoint by up to 99 updates. Aggregate near-zero
-telemetry uses threshold 0.01, while layer diagnostics use 0.05. Per-family
-movement admission samples one maximum-gradient element per tensor and proves
-observed movement; it does not measure full-tensor displacement.
-
-Each endpoint must have a settled 7,200-second budget with no active attempt,
-authenticated final checkpoint and matching final development request/result.
-Accounting can conservatively retain failed work and clamp at the cap while an
-in-flight update or serialization finishes. Endpoint timing is trainer-accounted
-time; startup, evaluation and physical process-release evidence remain separate.
-
-## Artifact locations and pending completion
-
-Candidate step 30,000 identities: checkpoint
-`f68255ace54f4803ba8f856f72b65b1ae86fbf9c06ee805ab5cc54bea4dc9c8f`, report
-`a1325ecd864e1ea0253af5a280b0a855ebc1528d6057cfb98cd929dc46852424`, result
-`c36cebb927d39de8ec05241d1bf112f14d8875dc350db1c6964a0af5c520bc03`, timing
-`b1a35a60a09e2831009d21305c2600c0f1a524c4b557478a3954ae0c63e5811a`.
-Archive locator: `evidence-archive/development/candidate-step30000-locator-map.json`.
-
-Reference step 30,000 identities: checkpoint
-`108968085f4b99ad3ae3fd600b14bee702aa821885c742120d41d988d351940c`, report
-`faf585b9e9f35c15ff0b2fdba68158cfa06a9157a9aaddeecefb00c2494cc6b5`, result
-`cb038ef2254cd8131a500db8b2a93c70fe138598612963d63af05530e2678043`, timing
-`8e580a5bf94d8935c570975d619c4b0a81d9738ff34487fb397a2cc11f428d75`.
-Archive locator: `evidence-archive/development/reference-step30000-locator-map.json`.
-
-Candidate step 25,000 identities: checkpoint
-`b9936e38bee428cbfb8999fe8bb153fa0b014347561543b5d76c09dc87900cdb`, report
-`4220d6295c2b72919c8822a528511b15f91eab8fbfb1d7d1de83cf7e4a3fb5a3`, result
-`e581a54ed357a6e9cee52482f9b5738a15811c914922725cddb64889c75dc8b1`, timing
-`3f17c3204220b1a06328e2105a338d037c1d68c59cb8040f89f69ad0f742760b`.
-Archive locator: `evidence-archive/development/candidate-step25000-locator-map.json`.
-
-Reference step 25,000 identities: checkpoint
-`e3948dbd55be4b443d1d0ff8bb2c6e4b5c08b3e8308e69c435b8692b5c3088a8`, report
-`d80978e41eb18231f59eb1be1ddb9aa0554e609624802d7d9b4d84c5182ebc60`, result
-`d99f100e0a2359af26477dcf82b5cc510bbe2bf7bd55855ee6e70e1944b3aba7`, timing
-`d44833b524a2dfb47593ecb8a9c71d6c86cf1751a251d1e8281d2a0ee81de8a9`.
-Archive locator: `evidence-archive/development/reference-step25000-locator-map.json`.
-
-Candidate step 20,000 identities: checkpoint
-`21f5278f9489b166067a59d83f22f454cacca975e419b0a010a15cdf7df75865`, report
-`624c8e3397bd5c5c6a6deb6e88431e268ba9af80bcdaaa5f4412767b220a3d64`, result
-`c2c9280adf5f3f91c717e05a1b6c1fda6534229bb7ca08bf6002c9f0a1c3a954`, timing
-`a505b9868f1338097fe5ad14ff2f6d4914b6166f2bd8a87b55296408fe6ef36c`.
-Archive locator: `evidence-archive/development/candidate-step20000-locator-map.json`.
-
-Reference step 20,000 identities: checkpoint
-`1fab73c38bab8992fb0c92a0a56691472674ec56a0d465f1fe7b6efa5169ab8d`, report
-`3e4d03de6864109075dfb356dfa66e78ec9f326fb461e69ae53f3b8524c20721`, result
-`57a60fb72032eb8c49ac2643f333f22e3d4fb82eb3cad2faf7bd5705a7c26d8a`, timing
-`d9291b9980466ccf7c989051ce4739c5397e875a0f827633c5081b6807a9a5b4`.
-Archive locator: `evidence-archive/development/reference-step20000-locator-map.json`.
-
-Candidate step 15,000 identities: checkpoint
-`50e0764ce0a7c343366c04827605b6c12b5fc82f87dec5063ccea316bf12f102`, report
-`445e3af8925102393dc4ac0cd86d93463d69010a5f2d2e76eb2ee9a53e9a19b9`, result
-`276352166478317be789dee4bb5683b00a3a1588419df8c49d8a8e626ef7cda9`, timing
-`1667c7dc07b174ae9eb7915594b84fd7422980b6d8c083bd1652f228bc28fe23`.
-Archive locator: `evidence-archive/development/candidate-step15000-locator-map.json`.
-
-Reference step 15,000 identities: checkpoint
-`73429bd0ca2302147a2ee7cf883664a63323da5e229f0e3611a6f5e044a940eb`, report
-`cc5341b12d5733465f5b4ceecc10b9b8c0671ab33a39435703c1cfe23057af74`, result
-`8490312be6eafca3c0c7233271eb140a4089c6115019eeaf28c5af1f0f9cde33`, timing
-`0c1ade69a26b2d4cec65c096ea97231aae1e6fbd6dc3b9954b5589f3fa59d317`.
-Archive locator: `evidence-archive/development/reference-step15000-locator-map.json`.
-
-Candidate step 10,000 identities: checkpoint
-`6898e9b1cb6cb0303e1a38340a23decb3eeabf14d215afd761d7e0c8aa7496ae`, report
-`e561e03ce99c049458d815239f7c0d8ea3433abcaf5be63cbc31ad032fa5acbd`, result
-`3bbbb913eac5c0bb3880815a0da3bf8221f320a835696dadd78cb479dbafbb74`, timing
-`fc12102cd0637c36848e05954a0b7f84879d16a01b7e7fd0d4887a2340f6a8d9`.
-Archive locator: `evidence-archive/development/candidate-step10000-locator-map.json`.
-
-Reference step 10,000 identities: checkpoint
-`281546e75c0d1d010a32b5477890788ad77077e1ec6819ceae745a2ac5f24f78`, report
-`3481aeda0ac35e28a6579c3fee9b25ef8e554e459504c5a3212abaa039de2d7c`, result
-`0d2d7fcfe05f658b5573c13b4ac03bd92f910458cdbf88aaa24acd84dfc57599`, timing
-`b21cf1b3ce16c83e934eacd14fc964bc8876610018744e8dd82f3b052bf6a278`.
-Archive locator: `evidence-archive/development/reference-step10000-locator-map.json`.
-
-Candidate step 5,000 identities: checkpoint
-`893e205d4e64fa04457c3281980570bb5ad13b3fb803cc1fe5f30d2d8b51ad10`, report
-`b5845c6340d8a70fb5f3661d48ee469ad54a7ba69d1039b563dab81882ce54f9`, result
-`be7072ca05466a7bf850fce4a99580e20d96b09651448679064b7cdbbdfc1e2b`, timing
-`c8876de6f06b703a8d0d1d7c3ffe20f0b95f71d60a9c0fc8cb425bdfc62da779`.
-Original archive locator: `evidence-archive/development/candidate-step5000-locator-map.json`.
-
-Raw runs/archives live outside Git beneath
-`/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01`.
-Evaluator/supervisor source is the separate immutable 3bd checkout. Exact
-original report/result/timing/checkpoint hashes and aggregate counts are
-also transcribed in ignored `runs/qat-a8-recovery/comparison-interim-summary.json`.
-Exact commands, birth ticks, hashes, budget ledgers, archive locator maps and
-incidents are in
-ignored local `runs/qat-a8-recovery/operator-ledger.json`. Durable current state:
-[goal](../../docs/goals/a8-qat-recovery-and-comparison.md).
-
-Pending: later scheduled and both final reports, both cumulative cap endpoints,
-final training coverage and telemetry, complete timing distributions and final
-resource-release proof. Monitor stays active until completion or a human pause. No sealed-final prompts are accessed.
+Physical inventory at 16:03–16:04UTC verified all 34 final native server PIDs/groups
+and all owned supervisor/trainer/evaluator groups absent, every final server stop/
+process_group_gone flag true, runtime socket empty, no `/dev/dxg` holders and
+RTX5080 idle baseline 2766 MiB/0%. See [final-physical-release.json](final-physical-release.json).
+The first transport closed 16:05:50UTC; the bounded remaining three-report metadata
+read changed no hashes or GPU state, and its transport closed 16:17:24UTC. No owned
+experiment remains. Final publication, worktree cleanup and SAME heartbeat pause
+are recorded in the [goal completion checkpoint](../../docs/goals/a8-qat-recovery-and-comparison.md).
