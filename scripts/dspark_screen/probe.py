@@ -40,6 +40,23 @@ def require(condition, message):
         raise ValueError(message)
 
 
+def one_word_eos_satisfied(response: dict, measurement: dict) -> bool:
+    """Check raw generated content and token-level EOS, not chat-template markup."""
+    verbose = response.get("__verbose")
+    if not isinstance(verbose, dict):
+        return False
+    content = verbose.get("content")
+    raw_tokens = verbose.get("tokens")
+    generated = measurement.get("generated_token_ids")
+    return (
+        isinstance(content, str) and content.strip() == "YES" and
+        verbose.get("stop") is True and verbose.get("stop_type") == "eos" and
+        measurement.get("finish_reason") == "stop" and
+        isinstance(raw_tokens, list) and raw_tokens == generated and
+        len(raw_tokens) > 0 and raw_tokens[-1] == 151645
+    )
+
+
 def load_helpers(project: Path):
     sys.path.insert(0, str(project / "scripts"))
     return importlib.import_module("benchmark_dspark_screen"), importlib.import_module("benchmark_native_eagle")
@@ -197,8 +214,8 @@ def run(config_path: Path, destination: Path, project: Path = ROOT):
                         write(directory / "rounds.json", round_rows)
                         if name == "eos":
                             response = read(directory / "response.json")
-                            text = response["choices"][0]["message"].get("content", "")
-                            require(text.strip() == "YES" and result["finish_reason"] == "stop", "one-word EOS fixture did not stop")
+                            require(one_word_eos_satisfied(response, result),
+                                    "one-word EOS fixture lacked exact raw YES plus target EOS")
                             if arm != "target_only":
                                 require(any(151645 in r.get("emitted_token_ids", []) for r in round_rows),
                                         "EOS fixture lacks actual native EOS emission")

@@ -9,6 +9,24 @@ import probe
 
 
 class ProbeTests(unittest.TestCase):
+    def test_eos_uses_raw_generated_content_and_target_eos_id(self):
+        measurement = {"finish_reason": "stop", "generated_token_ids": [14004, 151645]}
+        response = {
+            "choices": [{"message": {"content": "<think>\n\n</think>\n\nYES"}}],
+            "__verbose": {"content": "YES", "tokens": [14004, 151645],
+                          "stop": True, "stop_type": "eos"},
+        }
+        self.assertTrue(probe.one_word_eos_satisfied(response, measurement))
+
+        # Visible chat content may include template markup even when raw completion is exact.
+        response["__verbose"]["content"] = "YES!"
+        self.assertFalse(probe.one_word_eos_satisfied(response, measurement))
+        response["__verbose"]["content"] = "YES"
+        measurement["generated_token_ids"] = [14004]
+        self.assertFalse(probe.one_word_eos_satisfied(response, measurement))
+        response.pop("__verbose")
+        self.assertFalse(probe.one_word_eos_satisfied(response, measurement))
+
     def inputs(self, root):
         def asset(name, value):
             path = root / name
@@ -138,8 +156,14 @@ class ProbeTests(unittest.TestCase):
             def request(url, body, timeout, directory):
                 directory.mkdir()
                 probe.write(directory / "request.json", body)
-                probe.write(directory / "response.json", {"choices": [{"message": {"content": "YES"}}]})
-                measurement = {"generated_token_ids": [42], "prompt_tokens": 20, "finish_reason": "stop"}
+                is_eos = directory.name == "eos"
+                ids = [42, 151645] if is_eos else [42]
+                response = {"choices": [{"message": {"content": "YES"}}]}
+                if is_eos:
+                    response["__verbose"] = {"content": "YES", "tokens": ids,
+                                              "stop": True, "stop_type": "eos"}
+                probe.write(directory / "response.json", response)
+                measurement = {"generated_token_ids": ids, "prompt_tokens": 20, "finish_reason": "stop"}
                 probe.write(directory / "measurement.json", measurement)
                 with (directory.parent / "rounds.jsonl").open("a") as file:
                     file.write(json.dumps({"emitted_token_ids": [42, 151645]}) + "\n")
