@@ -587,13 +587,80 @@ PATH="/usr/lib/wsl/lib:$PATH" tmux -L binary-eagle-runtime new-session -d \
   $PWD/runs/reference-sixrep-fcdf-20261004/results"
 ```
 
-At the latest checkpoint, the six-arm, six-repeat run had completed 353 of 936
-total records: 325 measured requests and 28 warmups. Inference time was
-466.532/7200 seconds. It was in repetition 2/DSpark7, with server PGID 27165,
-10,679 MiB allocated and 75% GPU utilization. It is still running, so no cleanup
-or GPU-free claim applies yet. Candidate FFN-Q4 source config is staged for later
-use at `runs/q4-native-admission-fcdf-20261004/config.json`; it references the
+The six-arm, six-repeat run completed all 936 records: 864 measured requests
+and72 warmups, with1246.091775789 seconds of phase inference. The finished raw
+receipt is `runs/reference-sixrep-fcdf-20261004/results/measurements.json`,
+SHA256 `74b9c9dfc4f16bf549502efe0fe779f22ac7e1a8db5839e008a9ee655aa31381`.
+Its source-bound CPU summary is `summary.json`, SHA256
+`07c85d24f846c06fd9eea4a1b9188d28dd9d5548efb008fa8620d87472b78f99`. The
+supervisor ended03:10:43.771869Z with exit0. At03:11:33Z, exact-owned process
+and compute-app queries were empty, the runtime tmux server was gone, port18384
+was free, and the RTX2080Ti returned to366MiB/0%/P8.
+
+Candidate FFN-Q4 source config is staged for later
+use at `runs/q4-native-admission-fcdf-20261004/config.json` in the a9 checkout;
+its config SHA is `ae224dde8f3ecac093266218b6416457edc52b0bec91a5e7ce8f884b73f1fc32`.
+The same file is staged in checkout `0c2f2923ebe34eac1fba3398f26678593c05c360`;
+it references the
 persisted plan-selected candidate files and passed exact 15-matrix receipts
-without hashing either large candidate during the timed reference run. Use the
-later root-pinned validator checkout for the Q4 admission phase after this
-reference finishes.
+without hashing either large candidate during the timed reference run.
+
+## Q4 native admission and timing — 2026-10-04
+
+The sole Q4 native probe used immutable source checkout
+`0c2f2923ebe34eac1fba3398f26678593c05c360`, config
+`runs/q4-native-admission-fcdf-20261004/config.json`, and output directory
+`runs/q4-native-admission-fcdf-20261004/results`. Its one supervised Linux tmux
+session was `dspark-q4-probe-20261004`, remote job ID
+`dspark-q4-probe-supervisor-20261004`, with30-second supervisor grace. All25
+requests completed across target-only plus DSpark/DFlash short and maximum
+cells, including warmups and EOS; the target and all four Q4 candidates loaded
+on the RTX2080Ti, with no OOM. The probe's first validator run exited1 after
+preserving `manifest.json` and all raw traces: `failure.json` says
+`uncovered target-only token mismatch`, records_completed25. This was the
+expected unscoped position89 target-versus-Q4 sensitivity that its first
+exact-ID validator could not yet consume; there was no GPU rerun.
+
+The scoped Q4 numeric receipt was composed CPU-only from the original baseline,
+position89 and position94 diagnostics, and the retained Q4 BF16 references,
+precision receipts and complete outputs. It passes20/20 output bindings, with0
+uncovered; Q4 ancestry covers only exact full-ID and termination paths, not raw
+candidate-Q4 logits. Receipt
+`runs/q4-native-admission-fcdf-20261004/results/numeric-receipt.json` has SHA256
+`d9e75322b43b79ea147fe5fb2a1eb72847f169671eaeb3172c0b4a422112cb79`. CPU
+revalidation on immutable helper source
+`a7c3f502a0bab7d4874c31b1bb45cea3ddc6a94d` produced a passed actual native
+admission at
+`runs/q4-native-admission-fcdf-20261004/results/admission-history-aware.json`,
+SHA256 `b3055c5ee2c76d20aff23b425027530ba81ff36ad91bc9a70b79372d0f29704e`.
+The fixed fcdf582 binary, target, protocol and Q4 EAGLE hashes match the
+reference receipt. Admission reports memory, anchor-first, target-immutable,
+cache-contract and greedy-semantics checks true.
+
+The history-aware comparison qualifies all five first-noise blocks for both
+architectures and finds no disagreement at identical input history. DSpark
+has5 matched-history joins and122 token-matched/different-history joins, with2
+later decision changes; DFlash has5 matched-history joins and146
+token-matched/different-history joins, with6 later decision changes. The initial
+ordered prefill/injection signatures and first three proposals match at all five
+requests, including EOS. Subsequent target injections differ in span and
+aggregate feature hash as n_max changes, before the later proposal-decision
+differences; state traces contain no rollback events and the corresponding
+rounds are nonreplay. `state.jsonl` records per-injection FNV64 hashes, feature
+spans, cache maxima, taps and rc; raw target-feature tensor values are not
+captured. The original failed validator manifest and error remain preserved
+alongside the history-aware admission.
+
+The six-arm Q4 timing uses immutable checkout `a7c3f502a0bab7d4874c31b1bb45cea3ddc6a94d`,
+the same frozen protocol, and `prior_timing_receipts` bound to the complete BF16
+reference measurements SHA256 `74b9c9dfc4f16bf549502efe0fe779f22ac7e1a8db5839e008a9ee655aa31381`.
+Its config is
+`runs/q4-timing-sixrep-fcdf-20261004/config.json`, SHA256
+`59218dc3306a6e8015e620359f05ce804b505aab20ad25714fd01bd056502bb3`. The
+prior phase charged1246.091775789 seconds, leaving5953.908224211 seconds in the
+shared7200-second inference allowance. At the latest checkpoint it had190/936
+total records (174 measured,16 warmups),269.566 phase-local inference seconds,
+and1515.657 combined seconds. Repetition1/DSpark3 server PID/PGID31398 was
+using10,167MiB at90%/P2/58C. The supervisor PID/PGID is30875, its child is30877,
+and its Linux tmux session is `dspark-q4-time-6x6-20261004`; no profiler or
+diagnostic flags are set. The run remains active, so no GPU-free claim applies.
