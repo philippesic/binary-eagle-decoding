@@ -53,10 +53,15 @@ def run(config_path: Path, output: Path):
     if gpu.get("exit_code") != 0 or "RTX 2080 Ti" not in gpu.get("stdout", "") or "7.5" not in gpu.get("stdout", ""):
         raise ValueError("requires actual RTX2080Ti/SM75")
     common.json_write(output / "gpu-before.json", common.gpu_snapshot())
-    request_config = {"evaluation": {"max_output_tokens": 128, "temperature": 0.0,
+    # CUDA events instrument target nodes too. Keep this separate cost probe
+    # short enough to avoid an enormous, truncated per-node inventory.
+    output_cap = 16 if profile else 128
+    request_config = {"evaluation": {"max_output_tokens": output_cap, "temperature": 0.0,
                                      "seed": 42, "enable_thinking": False}}
     cases = [("warmup-00", prompts[0]), ("warmup-01", prompts[1]),
              ("prompt-00", prompts[0]), ("prompt-01", prompts[1]), ("eos", EOS_FIXTURE)]
+    if profile:
+        cases = [("warmup-00", prompts[0]), ("prompt-00", prompts[0])]
     results = {}
     for arm in arms:
         cell = output / arm
@@ -113,6 +118,7 @@ def run(config_path: Path, output: Path):
             raise ValueError("diagnostic drafter made no actual proposals")
     paired = {name: results[arms[0]][name]["generated_token_ids"] == results[arms[1]][name]["generated_token_ids"] for name, _ in cases}
     common.json_write(output / "readiness.json", {"scope": "perturbed CUDA-event diagnostic; not throughput" if profile else "two-arm native diagnostic; not five-repeat throughput", "arms": arms,
+                       "output_cap": output_cap, "cases": [name for name, _ in cases],
                        "candidate_admission": None, "results": results, "paired_output_ids": paired})
 
 
