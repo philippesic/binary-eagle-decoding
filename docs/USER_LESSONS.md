@@ -21,6 +21,23 @@ evidence changes the lesson.
 
 ## Lessons
 
+### 2026-10-04: Compare actual SSH key fingerprints
+
+- Context: The sole RTX5080 operator reconnected to observe resumed A8 training.
+- Evidence: SSH presented ED25519 fingerprint `SHA256:CFMXul7DWzihyD1Qr3ENOSZ7CUGJHzRh1tFjN0j4ZFI`.
+  The Mac's existing trusted `known_hosts` entry has that exact fingerprint,
+  verified by `ssh-keygen -F` followed by `ssh-keygen -lf`. The operator had
+  compared it with a hashed host-label salt from the WSL client's old file.
+- Agent contribution: The operator misread the host-label field and reported an
+  identity mismatch. Root authenticated the existing public key locally; the
+  operator acknowledged the error. No user mistake or host-key rotation is shown.
+- Resolution: The same trusted public key is authorized for the actual tmux MCP
+  client's known-host file, retaining strict host-key checking. Last observed
+  training state stays stale until a fresh remote observation succeeds.
+- Practical lesson: Identify the SSH client environment and compare fingerprints
+  computed from key bytes. A hashed host-label field is not a key fingerprint;
+  check existing trusted local anchors before requesting human clarification.
+
 ### 2026-10-02: Report execution phases and test producer contracts
 
 - Observation and evidence: The user twice asked whether QAT was running. Optimizer updates remained zero while agents completed data validation and runtime work. An authorized handoff then stopped preparation09, but the controller rejected its brief intentional-stop status as “Recorded optimizer progress.” Actual classification showed an interrupted supervisor with exit_code=0, empty models, absent process groups and no new run.

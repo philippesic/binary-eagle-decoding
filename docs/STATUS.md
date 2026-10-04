@@ -4,28 +4,29 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## RTX5080 A8 usage resumed — October 3, 23:28 PDT
+## Candidate at scheduled 5,000 boundary — October 4, 06:52 UTC
 
-Actual candidate optimizer work resumed from2081 and advanced to2221updates,
-33finite gradient tensors and intact learned/midpoint/cache execution. Same source3bd,
-config/state and6758.718s active budget reservation; prior441.282s remains charged,
-pause downtime excluded. Sole operator owns supervisor13685/birth2974143 and
-trainer13691/birth2974154, fresh same-boot availability verified. The SAME recovery
-heartbeat and Goal are ACTIVE. Continue natural5000boundary arm alternation;
-reference remains evaluated5000/764.725s. No2080host-control writes or new gates.
+Resumed candidate reached5000updates/cursor5009 and saved checkpoint893e205d.
+Trainer and supervisor are terminal; cumulative trainer budget1047.285of7200s,
+active attempt null. The sole operator is preparing its scheduled native
+5000development evaluation under the existing1200s cap; result pending.
+Then reference resumes from evaluated5000/764.725s toward10000. The SAME Goal
+and recovery heartbeat are ACTIVE. Exact source/recipes/data/precision preserved;
+A1 held out, no2080host-control writes. SSH observation recovered using the
+existing trusted Mac key; no host change or training failure occurred.
 
 ## Active: A8 QAT recovery and comparison — October 3, 2026
 
 **Standalone owner:** chat `01a103da-0980-7332-a041-3f95aca6a3f5` has claimed
 exclusive ownership. The originating chat and its interrupted workers are
 uninvolved. The SAME `a8-qat-recovery-monitor` is retargeted here and ACTIVE.
-Three new bounded workers own trainer/evaluator/resume, recipe/movement audits,
-and independent checks plus sole GPU operation; root reviews readiness and
-integrates. See the [ownership checkpoint](goals/a8-qat-recovery-and-comparison.md#standalone-ownership-claimed--october-3-2026).
+Trainer, recipe and native timing workers have finished their bounded work.
+The sole GPU operator continues the scheduled comparison; root maintains the
+report and durable state. See the [ownership checkpoint](goals/a8-qat-recovery-and-comparison.md#standalone-ownership-claimed--october-3-2026).
 Integrated fixes are published (frozen execution source583480c; main8583b68).
 BOTH actual A8 arms have optimizer updates and exact positive-step resume proof.
 Reference is evaluated at5000updates/764.725seconds; candidate learned A8/all-nine
-midpoints/latent0.1 AdamW is running at1200updates/245.81seconds. All33candidate
+midpoints/latent0.1 AdamW reached its scheduled5000boundary/1047.285seconds. All33candidate
 tensors show finite/nonzero gradients and actualmovement; cache/head execution
 and learned-head serial exception are observed. Arms alternate at scheduled
 5000boundaries toward independent7200second caps. Reference interim acceptance
@@ -44,8 +45,8 @@ arms request validated cache/head optimizations, with the deliberate learned-hea
 serial-training exception disclosed. A1/Bop/fusion/curriculum/refresh are deferred.
 
 One 15-minute heartbeat supervises bounded recovery from committed checkpoints
-without silent recipe/budget changes. Sole operator verified fresh idle RTX5080
-and located retained preparation; no new actual model or training start yet.
+without recipe or budget changes. Actual training and native evaluations have
+started; both arms have positive-step exact resume evidence.
 Historical complete/stopped sections below describe the previous goal.
 
 ## All project agents stopped and archived — October 3, 18:18 UTC

@@ -1,5 +1,35 @@
 # A8 QAT recovery and comparison
 
+## Candidate reached scheduled 5,000 boundary — October 4, 06:52 UTC
+
+Fresh sole-operator observation confirms candidate step5000/cursor5009,
+status awaiting_development. Checkpoint SHA
+`893e205d4e64fa04457c3281980570bb5ad13b3fb803cc1fe5f30d2d8b51ad10`;
+settled cumulative trainer budget1047.284754942of7200seconds, active_attempt null.
+The resumed trainer13691/birth2974154 and supervisor13685/birth2974143 are absent.
+RTX5080 observed2766MiB/0%; this residual host memory is not an active A8 trainer.
+The existing scheduled candidate5000 native development evaluation is next under
+the same1200s cap/current9e2 runtime; its result is pending. Then resume reference
+from evaluated5000/764.725s toward its next natural10000 boundary. Recipes, data,
+precision and independent budgets remain unchanged; A1 held out, no2080controls.
+
+The tmux MCP client's WSL known-host key is now pinned from the exact existing
+Mac trusted public key with strict checking; same WSLboot517c4a36 authenticated.
+No host-key rotation or job failure occurred. Last stale3071 evidence is superseded.
+SAME Goal/heartbeat ACTIVE; sole operator owns launch/terminal/archive evidence.
+
+## SSH observation recovery — October 4, 06:51 UTC
+
+The presented RTX5080 ED25519 fingerprint matches the Mac's existing trusted
+known-host key exactly. The operator's prior alleged mismatch was a hashed
+host-label salt mistaken for a key fingerprint; the operator acknowledged it.
+The same authenticated public key can be pinned in the actual tmux MCP client's
+known-host file with strict checking. No human confirmation or host change is
+needed. Sole operator is reconnecting to observe the original process handles;
+last confirmed candidate step3071/cursor3076 remains stale. Do not infer failure
+or restart from transport silence. Continue the existing candidate5000 scheduled
+evaluation and natural-boundary alternation after fresh evidence.
+
 ## Actual human-pause resume verified — October 3, 23:28 PDT
 
 Candidate has restored step2081/cursor2084 and advanced to2221/cursor2224 with
