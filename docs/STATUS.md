@@ -4,22 +4,23 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Both caps settled; reference final evaluation running — October 4, 15:15 UTC
+## Both final native evaluations passed; CPU audit ongoing — October 4, 15:45 UTC
 
-Reference43203/cursor43287,aebb8032, exit0 at15:11:59UTC; final request/latest
-match, final_training_complete=true, budget7200/max7200/null. Candidate34731/
-cursor34797,bda021d3,7200/null, matching final native result passed/archived/released.
-Reference final archive/release/guard passed; single1200s final evaluation started
-15:14:52UTC,35475/35476,births6144982/6144990. Reference committed531prompts/
-206163rows/tokens; candidate426prompts/165733rows/tokens. Final result/audit pending.
-No45000block, topup or new experiment; original charged SIGSEGV incident preserved.
+BOTH7200/max7200/null budgets; candidate34731/bda021d3 and reference43203/aebb8032,
+matching completed final results/status reported. Reference final eval exit0 at
+15:26:08UTC,676.177supervisor-wall seconds; all raw final archives preserved.
+Committed candidate426prompts/165733rows/tokens, reference531/206163; CPU joins
+and exact versus sampled telemetry/latency metadata remain pending.
 
-Successor `01a10704-f186-7991-97c7-6f4b3df51ae9` owns SAME ACTIVE heartbeat;
-sole `/root/gpu_operator` pane285. Goal remains INCOMPLETE until reference final
-result, both CPU coverage/telemetry/latency/five-repeat analysis, published comparison,
-all groups/native contexts/transport return and merged-worktree cleanup. No new
-research decision or2080controls. See
-[current checkpoint](goals/a8-qat-recovery-and-comparison.md#reference-final-native-evaluation-running--october-4-1515-utc).
+Existing-record aggregation and independent472check arithmetic QA pass:
+reference95.689requesttokens/s (70.47% ofpairedQ4_0),candidate69.623 (51.68%);
+all five matched repetitions belowQ4_0. Derived timing/QA artifacts are preserved
+under experiments/a8-qat-recovery. No new requests/experiment or topup.
+Goal remains INCOMPLETE until endpoint CPU audit, final comparison publication,
+full owned-group/native-context/transport return and merged-worktree cleanup.
+SAME heartbeat ACTIVE on successor `01a10704-f186-7991-97c7-6f4b3df51ae9`, sole
+`/root/gpu_operator` pane285. No2080controls. See
+[current checkpoint](goals/a8-qat-recovery-and-comparison.md#both-final-native-evaluations-passed-timing-arithmetic-audited--october-4-1545-utc).
 
 ## Active: A8 QAT recovery and comparison — October 3, 2026
 
