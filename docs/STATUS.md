@@ -4,6 +4,15 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
+## Supporting nine model research slate — October 4, 2026
+
+The human requested eight read-only researchers: four literature-first and
+four reasoning-first, followed by Opus 5.5 peer audit and an updated nine-model
+training recommendation. All eight are launched; root owns only documentation
+changes. No model implementation, training budget, GPU/remote operation or new
+active goal is started. Existing completed experiment records remain below.
+See the [slate checkpoint](../experiments/nine-model-research-slate-2026-10-04/checkpoint.md).
+
 ## A8 comparison COMPLETE — October 4, 16:36 UTC
 
 Bothoriginal7200trainer-accounted seconds perarm settled, nullactiveattempts,
