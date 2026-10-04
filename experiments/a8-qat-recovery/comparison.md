@@ -131,8 +131,9 @@ exactly two hours of productive optimizer work after such recovery. Uncommitted
 updates 9,001–9,681 were rolled back and replayed from the checkpoint; their first
 attempt remains charged. Retry 1 passed the failure point and reached step 10,000/
 cursor10,017, exit 0, with budget settled at 2,005.419 seconds. Its scheduled native
-evaluation passed and is archived; candidate resume has advanced from step 5,000
-to 5,133 with all 33 gradient tensors finite. Both final endpoints remain pending. Fault cause is
+evaluation passed and is archived; candidate resume reached step 10,000/cursor10,017, checkpoint6898e9b1,
+with settled budget2,064.260seconds. Its scheduled native evaluation is running.
+Both final endpoints remain pending. Fault cause is
 unexplained; equivalent recurrence retains the same retry limit (one of two used).
 
 ## Endpoint reporting method
