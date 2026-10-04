@@ -21,6 +21,21 @@ evidence changes the lesson.
 
 ## Lessons
 
+### 2026-10-04: Name exact manifest artifacts
+
+- Context: Candidate A8 checkpoint15,000 was archived and natively evaluated.
+- Evidence: The verified checkpoint-wide `manifest.json` hash is bdef1786..., while
+  `A8/joint.json` is5f1f5c8a... and the resume checkpoint is50e0764c.... The operator
+  briefly called an unlocated1e8c9381... value the manifest. Direct file checks
+  found no matching step15,000 manifest, and the operator retracted that label.
+- Agent contribution: The operator used an abbreviated artifact name without an
+  exact path. Root initially considered different manifest scopes plausible, then
+  kept that interpretation unproven and requested exact path/hash joins. Actual
+  checkpoint/archive identity remained stable; no model corruption is shown.
+- Practical lesson: Pair every integrity hash with its exact artifact path/type.
+  Different hashes need an identified file or a correction, rather than an assumed
+  serialization/scope explanation. Keep unlocated values out of evidence claims.
+
 ### 2026-10-04: Keep live observations monotonic
 
 - Context: The sole A8 GPU operator supervised a reference boundary and evaluation.
@@ -34,6 +49,12 @@ evidence changes the lesson.
   established. Root compared timestamps and exact process/checkpoint identities,
   requested a fresh packet and retained the existing pipeline. No duplicate
   training launch, source change or user mistake is shown.
+- Later clarification at09:45: The operator now stores current state in top-level
+  `latest_operator_observation`; legacy `training.status` and `last_remote_status_observation`
+  may retain old snapshots. Root selected those legacy fields and had not yet
+  advanced its own monitor registration, contributing to another stale-state
+  report. Fresh process observations and the newer canonical field were current.
+  Schema ambiguity, not a demonstrated concurrent GPU job, explains this episode.
 - Practical lesson: Use observed_at and actual start/end times separately; delivery
   order does not establish freshness. Re-read the ledger before patching it and
   reject older snapshots as current state. On conflicting status, inspect the same
