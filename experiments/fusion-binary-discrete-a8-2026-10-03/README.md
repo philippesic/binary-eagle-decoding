@@ -1,5 +1,9 @@
 # CPU fusion sign-and-scale fitting — October 3, 2026
 
+Follow-up: [real TRAIN fitting](../fusion-binary-real-a8-2026-10-03/README.md)
+completed with an authenticated importer. The synthetic results and importer
+limitations below describe the earlier checkpoint and remain historical.
+
 **Synthetic fallback completed; no real TRAIN fit or EAGLE quality result.**
 The local archive has no provenance-checked, prompt-disjoint raw pre-A8 fusion
 inputs. The authorized fallback implemented and executed the bounded algorithm,
