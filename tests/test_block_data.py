@@ -3,6 +3,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 
@@ -12,6 +13,7 @@ from w1a1_eagle.block_data import (  # noqa: E402
     BlockCursor,
     BlockDataset,
     file_sha256,
+    import_capture_plan,
     token_sha256,
 )
 
@@ -58,6 +60,7 @@ def fixture(root, family="dspark", with_logits=True):
             "features": features,
             "logits": logits,
             "anchors": [2, 9],
+            "native_receipt": None,
         }
         chains.append(chain)
         prompts[cid] = {"sha256": prompt_hash, "domain": domain, "split": "TRAIN"}
@@ -68,6 +71,7 @@ def fixture(root, family="dspark", with_logits=True):
             "prompt_id": cid,
             "prompt_sha256": prompt_hash,
             "prompt_length": 3,
+            "native_receipt_sha256": None,
         }
     inventory = save("inventory.json", {"schema": "block_train_inventory_v1", "prompts": prompts})
     receipt = save(
@@ -201,6 +205,179 @@ class DataTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(ValueError, "disjoint"):
             self.load()
+
+    def test_completed_admission_reuses_finite_hash_audit(self):
+        dataset = self.load()
+        audit_path = self.root / "admission.json"
+        pin = dataset.write_admission(audit_path)
+        original_hash = file_sha256
+
+        def reject_raw_rehash(path):
+            if str(path).endswith(".npy"):
+                raise AssertionError("completed array audit was repeated")
+            return original_hash(path)
+
+        with patch("w1a1_eagle.block_data.file_sha256", side_effect=reject_raw_rehash):
+            restored = BlockDataset(
+                self.path,
+                expected_sha256=file_sha256(self.path),
+                allow_synthetic=True,
+                admission_path=audit_path,
+                admission_sha256=pin,
+            )
+            restored.load_block("chain0", 0)
+
+    def test_completed_admission_refuses_stat_change(self):
+        dataset = self.load()
+        audit = self.root / "admission.json"
+        pin = dataset.write_admission(audit)
+        with (self.root / "logits0.npy").open("ab") as stream:
+            stream.write(b"changed")
+        with self.assertRaisesRegex(ValueError, "identity"):
+            BlockDataset(
+                self.path,
+                expected_sha256=file_sha256(self.path),
+                allow_synthetic=True,
+                admission_path=audit,
+                admission_sha256=pin,
+            )
+
+    def test_no_untrusted_audit_bypass(self):
+        with self.assertRaisesRegex(ValueError, "unchecked"):
+            self.load(verify_artifacts=False)
+
+    def test_consume_refuses_post_constructor_artifact_mutation(self):
+        dataset = self.load()
+        with (self.root / "features0.npy").open("ab") as stream:
+            stream.write(b"changed")
+        with self.assertRaisesRegex(ValueError, "changed after"):
+            dataset.load_block("chain0", 0)
+
+
+class NativeRawImportTests(unittest.TestCase):
+    """Synthetic native-producer format; these tests never certify real capture."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        path = fixture(self.root)
+        original = json.loads(path.read_text())
+        plan_chains = []
+        for chain in original["chains"]:
+            records = {}
+            for name in ("features", "logits"):
+                array = np.load(self.root / chain[name]["path"])
+                raw = self.root / f"{chain['chain_id']}-{name}.f32"
+                array.tofile(raw)
+                records[name] = {
+                    "path": str(raw),
+                    "sha256": file_sha256(raw),
+                    "shape": list(array.shape),
+                    "dtype": "float32",
+                }
+            ancestry = {
+                k: chain[k] for k in ("prompt_id", "prompt_sha256", "domain", "prompt_length")
+            }
+            ancestry["source_split"] = "TRAIN"
+            native = {
+                "schema": "block_native_teacher_request_v1",
+                "complete": True,
+                "optimizer_updates": 0,
+                "teacher_context_reset_between_requests": True,
+                "prefix_contract": "teacher_forced_exact_caller_token_ids",
+                "kv_type": "F16",
+                "target_precision": "F16",
+                "tap_ids": list(TAPS),
+                "tokens": np.load(self.root / chain["tokens"]["path"]).tolist(),
+                "target_sha256": "c" * 64,
+                "producer_binary_sha256": "b" * 64,
+                "producer_source_revision": "a" * 40,
+                "client_source_sha256": "e" * 64,
+                "producer_host": "synthetic-unit-fixture",
+                "hardware": ["CPU fixture"],
+                "chain_ancestry": ancestry,
+                "features_shape": [18, 5, 2],
+                "logits_mode": "all",
+                "logits_shape": [18, 32],
+                "files": records,
+            }
+            receipt = self.root / f"{chain['chain_id']}-native.json"
+            receipt.write_text(json.dumps(native))
+            plan_chains.append(
+                {
+                    k: chain[k]
+                    for k in (
+                        "chain_id",
+                        "prompt_id",
+                        "prompt_sha256",
+                        "domain",
+                        "split",
+                        "prompt_length",
+                        "anchors",
+                    )
+                }
+                | {
+                    "include_logits": True,
+                    "native_receipt": {"path": str(receipt), "sha256": file_sha256(receipt)},
+                }
+            )
+        runtime = self.root / "runtime.json"
+        runtime.write_text(json.dumps({"scope": "synthetic unit fixture"}))
+        self.plan = {
+            "schema": "block_capture_plan_v1",
+            "family": "dspark",
+            "vocab_size": 32,
+            "target_width": 2,
+            "mask_token_id": 31,
+            "train_inventory": original["train_inventory"],
+            "runtime": {"path": str(runtime), "sha256": file_sha256(runtime)},
+            "chains": plan_chains,
+        }
+        self.plan_path = self.root / "plan.json"
+        self.plan_path.write_text(json.dumps(self.plan))
+
+    def import_(self, **kwargs):
+        return import_capture_plan(
+            self.plan_path,
+            expected_sha256=file_sha256(self.plan_path),
+            output_dir=self.root / "materialized",
+            **kwargs,
+        )
+
+    def test_raw_producer_complete_prefix_full_vocab_memmap(self):
+        path = self.import_()
+        dataset = BlockDataset(path, expected_sha256=file_sha256(path))
+        batch = dataset.load_block("chain0", 1, require_teacher=True)
+        np.testing.assert_array_equal(batch.labels, np.arange(10, 17))
+        self.assertEqual(batch.context_features.shape, (9, 5, 2))
+        self.assertIsInstance(dataset._arrays["chain0"][1], np.memmap)
+
+    def test_raw_capture_import_bound_refuses(self):
+        with self.assertRaisesRegex(MemoryError, "bound"):
+            self.import_(max_capture_bytes=20)
+
+    def test_changed_native_prefix_refuses(self):
+        record = self.plan["chains"][0]["native_receipt"]
+        path = Path(record["path"])
+        native = json.loads(path.read_text())
+        native["chain_ancestry"]["source_split"] = "FINAL"
+        path.write_text(json.dumps(native))
+        record["sha256"] = file_sha256(path)
+        self.plan_path.write_text(json.dumps(self.plan))
+        with self.assertRaisesRegex(ValueError, "ancestry"):
+            self.import_()
+
+    def test_last_only_logit_receipt_refuses_soft_chain(self):
+        record = self.plan["chains"][0]["native_receipt"]
+        path = Path(record["path"])
+        native = json.loads(path.read_text())
+        native["logits_mode"] = "last"
+        path.write_text(json.dumps(native))
+        record["sha256"] = file_sha256(path)
+        self.plan_path.write_text(json.dumps(self.plan))
+        with self.assertRaisesRegex(ValueError, "last-only"):
+            self.import_()
 
 
 if __name__ == "__main__":
