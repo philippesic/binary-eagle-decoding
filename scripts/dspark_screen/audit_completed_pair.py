@@ -69,7 +69,8 @@ def reached_prefix(row, rounds, ids):
             "retained_draft_prefix": row["verifier_prefix_draft_ids"], "untraced_prefill_tokens": offset}
 
 
-def audit(diagnostic: Path, reference: Path, gate_path: Path, case="prompt-05", position=90):
+def audit(diagnostic: Path, reference: Path, gate_path: Path, case="prompt-05", position=90,
+          protocol_path: Path | None = None):
     evidence = {}
     report = {"schema": "completed_native_pair_audit_v1", "passed": False, "case": case,
               "generated_position": position, "arms": list(ARMS), "evidence_sha256": evidence,
@@ -82,9 +83,17 @@ def audit(diagnostic: Path, reference: Path, gate_path: Path, case="prompt-05", 
     try:
         need(case in CASES and position >= 0, "unfrozen selected diagnostic case")
         cfg, full_cfg = load(diagnostic / "config.json"), load(reference / "config.json")
-        protocol = load(reference / "protocol.json")
-        protocol_sha = evidence[str((reference / "protocol.json").resolve())]
+        source_path = (protocol_path if protocol_path is not None else
+                       Path(__file__).resolve().parents[2] / "configs/dspark-screen/protocol.json")
+        protocol = load(source_path)
+        saved_protocol = load(reference / "protocol.json")
+        protocol_sha = evidence[str(Path(source_path).resolve())]
+        report["protocol_files"] = {
+            "frozen_source": {"path": str(Path(source_path).resolve()), "sha256": protocol_sha},
+            "saved_reference": {"path": str((reference / "protocol.json").resolve()),
+                                "sha256": evidence[str((reference / "protocol.json").resolve())]}}
         need(cfg["protocol_sha256"] == full_cfg["protocol_sha256"] == protocol_sha, "protocol pin changed")
+        need(saved_protocol == protocol, "saved protocol semantic values changed")
         need(all(protocol.get(k) == v for k, v in {"context_tokens": 2048, "batch_tokens": 32,
              "microbatch_tokens": 32, "max_output_tokens": 128, "temperature": 0.0,
              "seed": 42, "enable_thinking": False, "cache_prompt": False}.items()), "frozen settings changed")
@@ -175,7 +184,8 @@ if __name__ == "__main__":
     parser.add_argument("output", type=Path)
     parser.add_argument("--case", default="prompt-05")
     parser.add_argument("--position", type=int, default=90)
+    parser.add_argument("--protocol", type=Path, help="frozen source protocol pinned by both configurations")
     args = parser.parse_args()
-    result = audit(args.diagnostic, args.reference, args.gate, args.case, args.position)
+    result = audit(args.diagnostic, args.reference, args.gate, args.case, args.position, args.protocol)
     args.output.write_text(json.dumps(result, indent=2) + "\n")
     raise SystemExit(0 if result["passed"] else 1)
