@@ -4,21 +4,20 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Both 25,000 checkpoints evaluated; reference training — October 4, 11:52 UTC
+## Reference 30,000 checkpoint; evaluation running — October 4, 12:05 UTC
 
-Candidate evaluation passed/archived:0.231accepted drafts/round,68.95requestTPS,
-below reference25,000 at0.638/95.17 andQ4_0 at1.306/~135. All24native/120timing
-sequences matchQ4_0,no sealed access. Candidate budget5,181.483/7,200seconds
-settled/inactive; evaluation resources returned.
+Reference exited0 at natural30,000/cursor30054,checkpoint10896808 hardlink archived;
+budget settled5,097.991/7,200seconds,active attempt null. Exacttraining resources
+returned,then native evaluation launched12:05:57UTC: supervisor27383/birth5011473,
+evaluator27388/birth5011481,same3bd/current9e2/fixed24/F16/1200s cap. Result
+pending. Candidate stays evaluated25,000/5,181.483seconds,0.231drafts/round/
+68.95requestTPS,below ref25,000 andprimaryQ4_0.
 
-Reference resumed exactly from25,000 and advanced to25,594/cursor25640,
-4,428.700/7,200trainer seconds,18finite gradients,batchedcache/chunk64.
-Supervisor27015/birth4912472,trainer27020/birth4912478,same immutable3bd/config,
-diagnostic fault handler only. Activeoriginalreservation2,875.962 retained;
-next natural boundary30,000. Both final endpoints incomplete. SAME Goal/heartbeat
-ACTIVE,recipes/data/precision/budgets unchanged,SIGSEGV retry1max2/charges
-preserved,A1 heldout,no RTX2080Ti controls. Currentcanonicalobservations/exactIDs
-govern; actualstart/end separate from later observations.
+Both final endpoints incomplete. Next candidate training boundary30,000 follows
+reference evaluation/archive/release. SAME Goal/heartbeat ACTIVE,recipes/data/
+precision/budgets unchanged,SIGSEGV retry1max2/charges preserved,A1 heldout,no
+RTX2080Ti controls. Currentcanonicalobservations/exactIDs govern; actualstart/end
+versus later observation separate.
 
 ## Active: A8 QAT recovery and comparison — October 3, 2026
 
@@ -30,7 +29,7 @@ The sole GPU operator continues the scheduled comparison; root maintains the
 report and durable state. See the [ownership checkpoint](goals/a8-qat-recovery-and-comparison.md#standalone-ownership-claimed--october-3-2026).
 Integrated fixes are published (frozen execution source583480c; main8583b68).
 BOTH actual A8 arms have optimizer updates and exact positive-step resume proof.
-Reference is evaluated at25000/4324.038seconds; candidate learned A8/all-nine
+Reference is at30000/5097.991seconds with evaluation running; candidate learned A8/all-nine
 midpoints/latent0.1 AdamW is evaluated at25000/5181.483seconds. All33candidate
 tensors show finite/nonzero gradients and actualmovement; cache/head execution
 and learned-head serial exception are observed. Arms alternate at scheduled

@@ -235,6 +235,10 @@ with budget settled at 5,181.483 seconds. Its scheduled native evaluation passed
 and is archived. Reference resumed from 25,000 and has positive optimizer updates
 toward 30,000. Both final 7,200-second endpoints remain pending.
 
+Reference subsequently reached step 30,000/cursor30,054 and exited cleanly,
+with budget settled at 5,097.991 seconds. Its scheduled native evaluation is
+running. Both final 7,200-second endpoints remain pending.
+
 ## Endpoint reporting method
 
 Final coverage will use the authenticated checkpoint's committed `unique_prompts`

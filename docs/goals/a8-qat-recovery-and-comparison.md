@@ -1,5 +1,32 @@
 # A8 QAT recovery and comparison
 
+## Reference 30,000 checkpoint; evaluation running — October 4, 12:05 UTC
+
+Reference trainer actualstart11:49:27.412201Z/end12:04:02.640474Z,exit0; natural
+boundary observed12:04:22Z,step30000/cursor30054. Checkpoint SHA
+`108968085f4b99ad3ae3fd600b14bee702aa821885c742120d41d988d351940c`
+hardlink archived,locator `evidence-archive/checkpoints/reference-step-30000-locator.json`,
+manifestf8896902...,exactfullhash/path in operator record. Settledbudget
+5097.991297502003/7200,active_attempt null,remaining2102.008702497997. Exact
+27015/4912472 and27020/4912478 groups/session/server absent,baseline2766MiB/0%
+at12:04:49Z.
+
+Scheduled native evaluation launched12:05:57.446184Z under same immutable3bd/
+current9e2,frozen24dev/F16 target/verifier/KV/1200s cap,diagnostic faulthandler only.
+Host session `a8-reference-step30000-eval-20261004-01`,run
+`a8-reference-step30000-eval-supervisor-20261004-01`; supervisor27383/birth5011473,
+evaluator27388/birth5011481,sameboot517c4a36. Manifestfc18f400. Initial12:06:09
+resource snapshot startup2766MiB/0%; result pending.
+
+Candidate remains evaluated25000/5181.483403728003,0.230803drafts/round/
+68.954requestTPS,below ref25000/Q4_0. After ref terminal archive/release,resume
+candidate25000→30000 under2018.516596271997remaining,normal evaluation,then next
+reference budgeted segment. Both7200 endpoints/finals remain incomplete;
+Goal/heartbeat ACTIVE,allsource/recipe/math/data/precision/budgets invariant,
+no repeatedgates. SIGSEGV retry1max2/charges retained,A1 heldout,no2080controls.
+Canonicalobservations/exactidentities govern,actualstart/end versus observation
+separate,no restart from stale legacy fields or delivery order.
+
 ## Candidate 25,000 evaluated; reference resumed — October 4, 11:52 UTC
 
 Candidate25000 eval exited0: supervisor actualstart11:34:32.784482Z/end
