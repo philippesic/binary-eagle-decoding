@@ -157,8 +157,8 @@ evaluation passed and is archived; candidate resume reached step 10,000/cursor10
 with settled budget2,064.260seconds. Its scheduled native evaluation passed and is archived.
 Reference resumed from step 10,000 and reached the scheduled step 15,000 boundary
 with budget settled at 2,767.995 seconds; its native evaluation passed and is
-archived. Candidate resumed from 10,000 and has positive optimizer updates toward
-15,000. Both final endpoints remain pending. Fault cause is
+archived. Candidate resumed from 10,000 and reached 15,000/cursor15,024 with budget settled
+at 3,093.120 seconds; its scheduled native evaluation is running. Both final endpoints remain pending. Fault cause is
 unexplained; equivalent recurrence retains the same retry limit (one of two used).
 
 ## Endpoint reporting method
