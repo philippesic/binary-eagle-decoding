@@ -651,16 +651,171 @@ spans, cache maxima, taps and rc; raw target-feature tensor values are not
 captured. The original failed validator manifest and error remain preserved
 alongside the history-aware admission.
 
-The six-arm Q4 timing uses immutable checkout `a7c3f502a0bab7d4874c31b1bb45cea3ddc6a94d`,
-the same frozen protocol, and `prior_timing_receipts` bound to the complete BF16
-reference measurements SHA256 `74b9c9dfc4f16bf549502efe0fe779f22ac7e1a8db5839e008a9ee655aa31381`.
-Its config is
-`runs/q4-timing-sixrep-fcdf-20261004/config.json`, SHA256
-`59218dc3306a6e8015e620359f05ce804b505aab20ad25714fd01bd056502bb3`. The
-prior phase charged1246.091775789 seconds, leaving5953.908224211 seconds in the
-shared7200-second inference allowance. At the latest checkpoint it had190/936
-total records (174 measured,16 warmups),269.566 phase-local inference seconds,
-and1515.657 combined seconds. Repetition1/DSpark3 server PID/PGID31398 was
-using10,167MiB at90%/P2/58C. The supervisor PID/PGID is30875, its child is30877,
-and its Linux tmux session is `dspark-q4-time-6x6-20261004`; no profiler or
-diagnostic flags are set. The run remains active, so no GPU-free claim applies.
+The six-arm Q4 timing used immutable checkout
+`a7c3f502a0bab7d4874c31b1bb45cea3ddc6a94d`, the frozen protocol, and
+`prior_timing_receipts` bound to the completed BF16 reference measurements SHA256
+`74b9c9dfc4f16bf549502efe0fe779f22ac7e1a8db5839e008a9ee655aa31381`. Its config
+`runs/q4-timing-sixrep-fcdf-20261004/config.json` has SHA256
+`59218dc3306a6e8015e620359f05ce804b505aab20ad25714fd01bd056502bb3`. The two
+phases charged1246.0917757890202 and1306.1840105780866 inference seconds,
+2552.275786367107 combined from the shared7200-second limit. The Q4 phase
+completed936 records (864 measured,72 warmups) and exited0. Its raw
+`measurements.json` SHA256 is
+`92c4d132df8ce330bfbc0a1dfab13e849fd5b9ce5a8752c3910ada75e457433b`; CPU summary
+`summary.json` SHA256 is
+`138be59ba135f5e421afc49ed8afc1dedc219cec7e17d263fbb513db7380c91e`.
+
+| Arm | Decode / request TPS | Mean / p95 latency (ms) | Proposed / usable accepted | Q4-primary mismatches |
+| --- | ---: | ---: | ---: | ---: |
+| Target only | 58.340 / 60.570 | 2179.76 / 2218.31 | — | — |
+| Q4 EAGLE | 82.752 / 87.587 | 1536.71 / 1863.88 | 41,850 / 9,630 | primary |
+| DSpark3 | 99.141 / 106.261 | 1282.69 / 1627.67 | 17,454 / 12,246 | 12 |
+| DSpark7 | 128.774 / 141.125 | 987.52 / 1541.73 | 29,292 / 13,872 | 0 |
+| DFlash3 | 105.227 / 113.447 | 1208.50 / 1569.37 | 18,048 / 12,066 | 12 |
+| DFlash7 | 128.989 / 141.276 | 985.87 / 1612.67 | 32,094 / 13,464 | 0 |
+
+The Q4 supervisor (`dspark-q4-time-6x6-20261004`, run ID
+`dspark-q4-timing-supervisor-20261004`, supervisor PID/PGID30875, child
+PID/PGID30877) started03:59:17.479593Z and exited0 at04:25:43.704522Z. At
+04:26:56Z the owned process groups and compute-app list were empty, the runtime
+tmux server was gone, port18384 was free, and the card was at366MiB/0%/P8/44C.
+The measured phase2 target and Q4 EAGLE rates were about8–9% slower than phase1,
+while candidate absolute rates were roughly flat. The already-recorded startup
+snapshots show the same device, driver and idle P8 clocks in both phases; no
+per-request clock telemetry was recorded, so the relative-ratio increase is not
+attributed to FFN quantization.
+
+## CUDA event / sparse MATMUL profiles and p90 check — 2026-10-04
+
+The four short event runs used immutable source checkout
+`8165b0f43add6f0312cf703bb42f9ba7422595bd` and the existing admitted BF16 and Q4
+assets. Each ran two arms with one 16-token warmup and one 16-token measured
+request per arm. The exact command form was:
+
+```sh
+tmux -L binary-eagle-runtime new-session -d -s SESSION -c "$PWD" \
+  "exec python3 scripts/remote_job.py RUN_ID --stop-grace-seconds 10 -- env \
+  PATH=/usr/lib/wsl/lib:\$PATH PYTHONUNBUFFERED=1 \
+  python3 scripts/dspark_screen/baseline_probe.py CONFIG RESULTS"
+```
+
+The four sessions, run IDs and config hashes were:
+
+| Session / run ID | Config | Config SHA256 | Start–end UTC | Result |
+| --- | --- | --- | --- | --- |
+| `dspark-profile-bf16-dspark-20261004` | `runs/profile-diagnostics-20261004/configs/bf16-dspark.json` | `a2887d2ea6ad376347b4692cd38ec7a97f6da08878c893b2ba5ab15d1c6757aa` | 04:39:02.139734–04:39:39.661551 | exit0 |
+| `dspark-profile-bf16-dflash-20261004` | `runs/profile-diagnostics-20261004/configs/bf16-dflash.json` | `cca9a75088983e3dcf1418e4a8325591154d85e2e042cd5ab44c013645ecd56f` | 04:40:28.683654–04:41:08.705907 | exit0 |
+| `dspark-profile-q4-dspark-20261004` | `runs/profile-diagnostics-20261004/configs/q4-dspark.json` | `d7db91c2af1a7378cd015de473478196762ac782cc640d0d113ab606b26b1063` | 04:42:13.542910–04:42:50.066634 | exit0 |
+| `dspark-profile-q4-dflash-20261004` | `runs/profile-diagnostics-20261004/configs/q4-dflash.json` | `f913b30d0f45122d658d3c093c61d93f50fd21e73a6f9a20380b313efec6536f` | 04:43:31.859477–04:44:10.881391 | exit0 |
+
+All four runs returned the card to366MiB/0%/P8 before the next launch. The
+DSpark event analyzer accepted25 graph frames for each arm without truncation;
+each pair reproduced its output IDs. Aggregated component CUDA-event union time
+in milliseconds (confidence, context injection, draft body, feature fusion,
+full head, Markov/output assembly) was:
+
+| Profile | DSpark3 | DSpark7 |
+| --- | --- | --- |
+| BF16 | 1.010 / 7.209 / 59.231 / 23.380 / 31.071 / 54.455 | 1.088 / 8.926 / 57.090 / 21.264 / 31.096 / 55.460 |
+| FFN Q4 | 0.927 / 7.540 / 49.464 / 25.307 / 30.773 / 56.903 | 0.832 / 10.176 / 44.586 / 20.955 / 30.606 / 55.573 |
+
+The DFlash general event analyzer read27,502 CUDA event records across2,086
+frames for each precision phase; `trace_truncated=false`, with zero graph
+inventory-only or orphan inventory records. The DFlash-specific DSpark event
+analyzer then attributed candidate nodes by model context. Component CUDA-event
+union milliseconds (context injection, draft body, feature fusion, full head,
+Markov/output assembly) were:
+
+| Profile | DFlash3 | DFlash7 |
+| --- | --- | --- |
+| BF16 | 7.617 / 74.459 / 26.807 / 41.413 / 24.872 | 9.115 / 63.347 / 15.910 / 36.140 / 20.720 |
+| FFN Q4 | 7.484 / 58.981 / 27.405 / 43.771 / 29.953 | 10.371 / 53.282 / 19.478 / 37.714 / 22.581 |
+
+These synchronized event spans include dispatch and stream idle; they are
+perturbed diagnostics, not throughput estimates. The sparse audit found34
+MATMUL inventory rows per Q4 candidate, including six Q4_0 records for
+`blk.0.ffn_gate.weight`, `ffn_up.weight` and `ffn_down.weight`, at n=2 and7 via
+MMVQ with Q8_1 activation. Gate/up shapes were [9728,2560] and down
+[2560,9728], with I32-dot/F32-scaled accumulation. Candidate-context event joins
+were DSpark3 `0x5b02d7b2d320` (2,022 event nodes), DSpark7
+`0x58fd83533ce0` (2,022), DFlash3 `0x6006087b8440` (1,839), and DFlash7
+`0x5efca6dd9d20` (1,601); the DFlash candidate `dspark_feature_fusion` and
+`result_output` rows use the same candidate contexts as the Q4 MATMUL records.
+This is sparse dispatch inventory, not kernel execution counts or full
+15-matrix coverage. Raw Q4 log SHAs and canonical event/context join hashes:
+
+| Arm | Raw server log SHA256 | Canonical join SHA256 |
+| --- | --- | --- |
+| DSpark3 | `82310c1ac740c3d5665a24969dc1260655cc5606f344d3dd95d4d5757a5bf66f` | `91d0d9478547bd1eb009020266ff951d043e7eb76d986e9f55aff7f75f5efb4c` |
+| DSpark7 | `51db96ae929ba6d6a497b5e8715d2e3bf73acbddc5e8e8f78a874b64ae66f54a` | `302265d69e2325ac80d88d349216dfb2e8474c62cf8217fa90ad72c21cfbec64` |
+| DFlash3 | `71735b4a26dbbeea6e143046b2266bd09fee62f675c3163dae8d80b78d86e9c8` | `9e8e30c645547b081797e016db191bda0d3ce17ac2e609d1952842f6868a2857` |
+| DFlash7 | `b25f73ccef20e6e15761d1876692b465afd7fdec9aa1c19e21d94c20d65bbd74` | `4b9ee96faf30df9748b8e30e8373b87531e8317abfa07e2c6d76486303a7b1e1` |
+
+The four source-bound event component summaries are preserved as
+`dspark_3/events.json`, `dspark_7/events.json`, or
+`dflash_3/dspark-event-analysis.json` and `dflash_7/dspark-event-analysis.json`
+in each profile result directory. Their hashes in the same order as the tables
+above are BF16 DSpark `a2aa2aef227c432dd021b02dbb25132175c406fb17a6b4980a13f3bfc399226d`,
+`cf8fce14593d813aa96e2855ead846f826adb018bbb6c9f67881a331a26d94c2`; Q4 DSpark
+`8caffa78ab995fe01ae992e06d8710e5237e96968334e5fb1be773b89023e9d5`,
+`ea8a09b753b6ea9c2a7d8bc7c8fa892b641cf3abe6eef67823d3310c352b3172`; BF16
+DFlash `99ab7d3176f313fd7fc87abeb8a1cf06ca037d78bc38277bf0c6305b3aeaf451`,
+`0181a374160a45db52e7c671e49da821ef67703961290212968cb326a2ee5758`; and Q4
+DFlash `e5c343f52d3fbd8e9d45f00ca9b0207d16523e7605d4b5816bb00636c31d56f9`,
+`2a2e19efd45f8004563937c8bdc13f3fddf490f082567a14ba46fa6ce857a49b`.
+
+The single raw-logit diagnostic used immutable runner checkout
+`7b6ae9c` and run directory
+`runs/p90-shortarm-fcdf-20261004/results`. Input config SHA256 was
+`f6351ebd3b7e60d7e1fcd5b1853ed77ff42c9832b826271f118bdc0c56f51c9d`; the
+runner-preserved config SHA256 was
+`94fa23aff6668434dcd7467a7e1e9d1a46ebb329f51490c6ce9d095cc9154f14`. It compared
+`eagle_q4_0` with `dspark_3` using the frozen F16 target and BF16 DSpark draft, six frozen prompts, two
+warmups per arm, output cap128 and verify positions88–95. Its detached Linux
+tmux session was `dspark-p90-shortarm-20261004`, run ID the same, supervisor
+PID/PGID34989 and child PID/PGID34991, 04:46:30.461023–04:47:27.999559Z, exit0;
+each arm completed all8 requests. The paired full outputs differ on warmup00,
+prompt00 and prompt05; prompt05's first differing ID is at position90.
+
+The CPU audit was run from final source commit
+`4d15874ab49b7f5850c46dbce2ddfa0296431e5a` against the original BF16 reference
+results and predeclared `configs/dspark-screen/numeric-gate.json`, with explicit
+`--protocol` pointing to the immutable frozen source protocol
+`367431663597d312bf4cc75544d3e8c1994260a0d3cd266558cdd388b48ceca7`. The command
+was:
+
+```sh
+python3 scripts/dspark_screen/audit_completed_pair.py \
+  /home/philip/binary-eagle-decoding/runs/checkouts/dspark-screen-7b6ae9c/runs/p90-shortarm-fcdf-20261004/results \
+  /home/philip/binary-eagle-decoding/runs/checkouts/dspark-screen-a9dded1/runs/reference-sixrep-fcdf-20261004/results \
+  configs/dspark-screen/numeric-gate.json \
+  /home/philip/binary-eagle-decoding/runs/checkouts/dspark-screen-7b6ae9c/runs/p90-shortarm-fcdf-20261004/results/audit-prompt05-position90-final.json \
+  --protocol /home/philip/binary-eagle-decoding/runs/checkouts/dspark-screen-7b6ae9c/configs/dspark-screen/protocol.json \
+  --case prompt-05 --position 90
+```
+
+The final audit passed; SHA256
+`95685d8d6034204161d2c6e7a49e78b4e684b66e86f1385e36f4525b2a4167cb`. Competing
+IDs were16062 and28071; signed raw-logit gaps were+0.002527237 and−0.002305985,
+with centered common-top5 maximum0.005583191. Both raw top-5 lists were finite,
+contained both IDs, and selected the actual emitted token. This accepts only the
+scoped near-tie sensitivity. The first audit failure and a staged-protocol
+intermediate pass remain preserved; the benchmark's sorted protocol JSON has a
+different byte hash from the source, so the final audit checks both source bytes
+and parsed saved semantics.
+
+The already-recorded `environment.json` files have SHA256
+`e62bcc318593b9535f591445573e8b3dad5e659119bb3f92d5411b887d0a4656` (BF16) and
+`096ad521eb0f553c6cb197d785e7336780c84f28fbee90cae44fa48fec7f5cfc` (Q4).
+Both report the same RTX 2080 Ti UUID, driver610.74,11264MiB, compute capability
+7.5, CUDA driver-reported version13.3 and linked `libcudart.so.12`. Their
+saved `nvidia-smi -q` snapshots were idle P8 at31C, graphics/SM300MHz and memory
+405MHz, with instantaneous draw24.28W and24.63W respectively (max graphics/SM
+2190MHz, memory7000MHz). No per-request clocks were captured during either
+timing run. This supports recording the phase difference, but does not explain
+it or justify assigning the candidate ratio change to Q4 quantization.
+
+At the final post-run check, all profile and p90 supervisor/server groups were
+stopped, their ports18386–18390 were free, and GPU memory returned to366MiB. The
+card was still the registry-selected RTX 2080 Ti UUID
+`GPU-35b7b96c-d577-95f0-0050-40699c9faef7`, driver610.74, 11264MiB, SM75.
