@@ -190,6 +190,10 @@ and is archived. Candidate resumed from 15,000 and has positive optimizer update
 toward 20,000. Candidate remains evaluated at 15,000 and 3,093.120 seconds. Both final
 7,200-second endpoints remain pending.
 
+Candidate subsequently reached step 20,000/cursor20,028 and exited cleanly,
+with budget settled at 4,132.197 seconds. Its scheduled native evaluation is
+running. Both final 7,200-second endpoints remain pending.
+
 ## Endpoint reporting method
 
 Final coverage will use the authenticated checkpoint's committed `unique_prompts`
