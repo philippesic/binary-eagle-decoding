@@ -27,6 +27,8 @@ def check(
     gpu_layers: int,
     require_cuda: bool,
     timeout_seconds=180,
+    target: Path | None = None,
+    target_sha256: str | None = None,
 ) -> dict:
     binary, model, export = map(Path, (binary, model, export))
     receipt = json.loads(export.read_text())
@@ -46,6 +48,12 @@ def check(
         and gpu_layers <= 0
     ):
         raise ValueError("invalid CUDA placement requirement")
+    if (target is None) != (target_sha256 is None):
+        raise ValueError("paired target requires both path and immutable hash")
+    if target is not None:
+        target = Path(target)
+        if sha256(target) != target_sha256:
+            raise ValueError("paired immutable target hash mismatch")
     with tempfile.TemporaryDirectory(prefix="block-native-proof-") as tmp:
         proof = Path(tmp) / "proof.json"
         env = {
@@ -53,8 +61,11 @@ def check(
             for key, value in os.environ.items()
             if not key.startswith(("GGML_W1", "GGML_EAGLE", "LLAMA_EAGLE"))
         }
+        command = [str(binary), str(model), str(gpu_layers), str(proof)]
+        if target is not None:
+            command.append(str(target))
         result = subprocess.run(
-            [str(binary), str(model), str(gpu_layers), str(proof)],
+            command,
             capture_output=True,
             text=True,
             timeout=timeout_seconds,
@@ -90,6 +101,7 @@ def check(
         "profile": receipt["profile"],
         "activation_bits": receipt["activation_bits"],
         "cuda_required": require_cuda,
+        "target_sha256": target_sha256,
         "scope": "instrumented_model_operator_smoke_only",
         "throughput_or_quality_claim": False,
     }
@@ -101,6 +113,8 @@ def main():
         p.add_argument("--" + name, type=Path, required=True)
     p.add_argument("--gpu-layers", type=int, required=True)
     p.add_argument("--require-cuda", action="store_true")
+    p.add_argument("--target", type=Path)
+    p.add_argument("--target-sha256")
     args = p.parse_args()
     if args.receipt.exists() or args.receipt.resolve() in {
         item.resolve() for item in (args.binary, args.model, args.export)
@@ -112,6 +126,8 @@ def main():
         args.export,
         gpu_layers=args.gpu_layers,
         require_cuda=args.require_cuda,
+        target=args.target,
+        target_sha256=args.target_sha256,
     )
     args.receipt.parent.mkdir(parents=True, exist_ok=True)
     args.receipt.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
