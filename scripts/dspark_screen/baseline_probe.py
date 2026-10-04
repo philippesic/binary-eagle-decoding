@@ -52,8 +52,15 @@ def run(config_path: Path, output: Path):
             raise RuntimeError("baseline port occupied")
         env = {k: v for k, v in os.environ.items() if not k.startswith(("GGML_", "W1AX_", "DSPARK_", "EAGLE_"))}
         env.update(CUDA_VISIBLE_DEVICES="0", W1AX_ROUND_TRACE_JSONL=str(cell / "rounds.jsonl"))
+        if cfg.get("verify_positions"):
+            positions = cfg["verify_positions"]
+            if not isinstance(positions, list) or any(not isinstance(p, int) or p < 0 for p in positions):
+                raise ValueError("invalid raw-logit diagnostic positions")
+            env["W1AX_VERIFY_TRACE_JSONL"] = str(cell / "verify.jsonl")
+            env["W1AX_VERIFY_TRACE_POSITIONS"] = ",".join(map(str, positions))
         command = screen.command(cfg, protocol, arm, port)
-        common.json_write(cell / "launch.json", {"command": command})
+        common.json_write(cell / "launch.json", {"command": command,
+                          "trace_env": {k: v for k, v in env.items() if k.startswith(("W1AX_", "GGML_", "CUDA_"))}})
         proc = None
         with (cell / "server.log").open("wb") as log:
             try:

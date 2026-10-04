@@ -1,0 +1,21 @@
+{
+  "schema": "native_near_tie_gate_v1",
+  "scope": "bounded diagnostic at first output divergence; not universal bit parity",
+  "positions": [87, 88, 89, 90],
+  "first_divergence": 89,
+  "competing_token_ids": [72499, 9920],
+  "max_abs_competing_logit_gap": 0.05,
+  "max_centered_common_top5_difference": 0.05,
+  "requirements": [
+    "original full request/cap/cache/warmup/seed/greedy settings retained",
+    "original target backend sampling disabled and diagnostic reproduces original IDs",
+    "same actual reached prefix and positions through the first divergence",
+    "finite selected/top-five logits; no NaNs",
+    "both competing IDs present in both raw top-five lists",
+    "opposing close margins; eligible raw argmax equals each actual sampled/emitted token",
+    "valid causal verification and retained-cache ancestry",
+    "within-arm repeatability"
+  ],
+  "on_pass": "Proceed with native comparison and explicit near-tie sensitivity/output-ID caveat; no proof that batch arithmetic is the cause.",
+  "on_fail": "Hold affected arm for a focused correctness fix; do not change model precision/verifier or call fallback a scientific result."
+}
