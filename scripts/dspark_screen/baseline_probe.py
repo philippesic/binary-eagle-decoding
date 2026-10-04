@@ -70,7 +70,7 @@ def run(config_path: Path, output: Path):
             env["DSPARK_REQUIRE_AUTHOR_LAYOUT"] = "1"
         if profile:
             env.update(GGML_CUDA_EAGLE_EVENTS="1", GGML_CUDA_EAGLE_EVENT_LIMIT="100000",
-                       GGML_CUDA_DISABLE_GRAPHS="1")
+                       GGML_CUDA_DISABLE_GRAPHS="1", GGML_CUDA_MATMUL_AUDIT="1")
         if cfg.get("verify_positions"):
             positions = cfg["verify_positions"]
             if not isinstance(positions, list) or any(not isinstance(p, int) or p < 0 for p in positions):

@@ -20,10 +20,12 @@ def union(intervals):
 
 
 def analyze(path: Path):
-    events = []
+    events, dispatch = [], []
     truncation = False
     with path.open(errors="replace") as log:
         for line in log:
+            if "CUDA_MATMUL_AUDIT " in line:
+                dispatch.append(json.loads(line.split("CUDA_MATMUL_AUDIT ", 1)[1]))
             if "CUDA_EAGLE_EVENT " not in line:
                 continue
             event = json.loads(line.split("CUDA_EAGLE_EVENT ", 1)[1])
@@ -64,6 +66,8 @@ def analyze(path: Path):
     return {"schema": "dspark_cuda_components_v1", "source": str(path.resolve()),
             "source_sha256": sha256(path), "draft_contexts": sorted({e["llama_context"] for e in events}),
             "graph_frames": len(frames), "costs": dict(costs),
+            "dispatch_inventory": [row for row in dispatch if row["context"] in {e["context"] for e in events}],
+            "dispatch_inventory_scope": "existing sparse audit records first-block/head paths and selected storage types only; not all tensors or execution counts; BF16 is excluded by its native filter",
             "scope": "separate synchronized CUDA-event node intervals, including stream idle; load/warmup/request stages all retained in raw log",
             "aggregation": "union within each context/stream/frame/category; graph parents and transfer grandchildren excluded",
             "limitations": "perturbed diagnostic execution; not throughput or uninstrumented kernel latency; frame scopes must be joined to request windows before per-request claims"}
