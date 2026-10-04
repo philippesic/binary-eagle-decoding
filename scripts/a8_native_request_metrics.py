@@ -24,6 +24,7 @@ from types import SimpleNamespace
 import benchmark_native_eagle as benchmark
 
 VARIANTS = ("Q4_0", "A8", "target_only")
+DEVELOPMENT_PROMPTS_SHA256 = "131a3db7958ff6aa818b23019297654507d5b80bed3c298349417b7e3b2ba081"
 NATIVE_COMMIT = "9e2c7a90051e738751aab7d7bd7c2d8201fb76e3"
 EVALUATION_ENV = {"GGML_EAGLE_SHARED_PACK": "1", "GGML_EAGLE_PRUNE_UNUSED_HEAD": "1"}
 HISTORICAL_CAPTURE_BINARY = "b5093749d67888bc2cafdb6a65c479f4c182f0a904820f1dae4870b6ae66d41c"
@@ -53,6 +54,28 @@ def clean_environment(sources: dict, variant: str) -> dict[str, str]:
     if variant == "A8":
         env["GGML_W1AX_ACT_BITS"] = "8"
     return env
+
+
+def development_prompt_rows(sources: dict, prompts: Path) -> list[dict]:
+    """Bind the agreed prepared24 bytes; dataset IDs are opaque, not a naming policy."""
+    from w1ax_continuous_stages import require_unsealed_prompts
+
+    require_unsealed_prompts(prompts, sources=sources, expected_sha256=DEVELOPMENT_PROMPTS_SHA256)
+    if benchmark.sha256(prompts) != DEVELOPMENT_PROMPTS_SHA256:
+        raise ValueError("native timing frozen prepared development content hash changed")
+    rows = [json.loads(line) for line in prompts.read_text().splitlines() if line.strip()]
+    ids = [row.get("id") for row in rows]
+    if (
+        len(ids) != 24
+        or any(not isinstance(name, str) or not name for name in ids)
+        or len(set(ids)) != 24
+        or any(
+            "final" in name.lower() or "sealed" in name.lower() or Path(name).name != name
+            for name in ids
+        )
+    ):
+        raise ValueError("timing requires the same24 unique unsealed development prompt IDs")
+    return rows
 
 
 def request_orders(repetitions: int) -> list[list[str]]:
@@ -316,19 +339,8 @@ def measure_a8_requests(
     clean_environment(sources, "A8")
     if sources.get("sha256", {}).get("q4_0_draft") != Q4_0_GGUF_SHA256:
         raise ValueError("frozen Q4_0 SHA256 required")
-    prompt_rows = [json.loads(line) for line in prompts.read_text().splitlines() if line.strip()]
+    prompt_rows = development_prompt_rows(sources, prompts)
     ids = [prompt["id"] for prompt in prompt_rows]
-    if (
-        len(ids) != 24
-        or len(set(ids)) != 24
-        or any(
-            not name.startswith("qat-revisit-development-")
-            or "final" in name.lower()
-            or Path(name).name != name
-            for name in ids
-        )
-    ):
-        raise ValueError("timing requires the same24 unsealed development prompts")
     remaining(deadline, stop_file)
     port = sources.get("port", 18092)
     if not benchmark.available_port("127.0.0.1", port):
