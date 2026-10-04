@@ -1,5 +1,76 @@
 # A8 QAT recovery and comparison
 
+## Reference 20,000 checkpoint; evaluation running — October 4, 09:54 UTC
+
+Reference training supervisor started09:37:30.071130Z and exited0 at
+09:52:02.807364Z; boundary observed09:52:11Z. Natural step20000/cursor20028,
+checkpoint SHA
+`1fab73c38bab8992fb0c92a0a56691472674ec56a0d465f1fe7b6efa5169ab8d`
+hardlink archived, locator `evidence-archive/checkpoints/reference-step-20000-locator.json`.
+Checkpoint manifest35bbe4b8...,A8/joint.json2190be07...,A8/joint.npzc115430c...;
+exact full hashes in operator evidence. Settled budget3541.357949/7200, active
+attempt null,remaining3658.642051. Exact21309/21314 groups/session/contexts
+returned, baseline2766MiB/0%. Actual end/observation timestamps remain separate.
+
+The existing scheduled-manifest procedure materialized the missing20k manifest
+with the SAME frozen fc18f400 hash; no new gate or data. Native evaluation
+launched09:54:35Z under same immutable3bd/current9e2, fixed24dev/F16 target/verifier/
+KV/1200s cap, diagnostic faulthandler only. Run
+`a8-reference-step20000-eval-supervisor-20261004-01`, host tmux session
+`a8-reference-step20000-eval-20261004-01`; supervisor21840/birth4223396 and
+child21845/birth4223402 on boot517c4a36. Initial09:54:51 resource snapshot was
+startup at2766MiB/0%; result pending. Current operator state is canonical
+`latest_operator_observation`, not stale legacy training phase fields.
+
+Candidate remains evaluated15000/3093.120044735,0.209471drafts/round/68.261requestTPS,
+below ref15000 andQ4_0. After reference terminal archive/release, resume candidate
+15000→20000 under4106.879955265 remaining. Both7200 endpoints/finals remain
+incomplete; Goal/heartbeat ACTIVE, recipes/math/data/precision/budgets unchanged,
+no repeated admissions. SIGSEGV retry1/max2/charges retained, A1 held out,
+no2080host controls or unrelated research.
+
+## Candidate 15,000 evaluated; reference resumed — October 4, 09:49 UTC
+
+Candidate15000 evaluation completed exit0: supervisor started09:22:04.135414Z,
+ended09:34:57.839048Z, wall773.703634seconds. Report evaluation phase769.606530s;
+terminal absence/GPU observed09:35:23Z. Preserve these distinct clocks.
+Report445e3af8925102393dc4ac0cd86d93463d69010a5f2d2e76eb2ee9a53e9a19b9;
+checkpoint50e0764c. CE5.951622479/229labels/48loss rounds/all24prompts. A8 accepted
+491/11457proposals over2344rounds,0.209471drafts/round,0.042856acceptance.
+RequestTPS68.26114 versusQ4_0136.43652 (ratio0.50031), target-only89.32846;
+decode69.89315 versus143.17237 (ratio0.48817). Five×24=120requests per variant,
+14,290returned IDs/105length/15stop finishes each;24native/120timing matchesQ4_0,
+sealed=false. Slight recovery from10000 but still below reference15000 andQ4_0.
+
+Raw attempt/report/result/timing hardlink archived at
+`evidence-archive/development/candidate-step15000-eval-attempt-0000`, locator
+`candidate-step15000-locator-map.json`. Result27635216...,timing1667c7dc...;
+eight original complete reports in compact summary. Exact eval/session/groups/
+contexts returned, baseline2766MiB/0%. Candidate budget remains3093.120044735,
+active_attempt null,remaining4106.879955265. Verified checkpoint `manifest.json`
+SHA bdef1786b0f869542588c02d55105746afde3a2efb7c82c394367afaabb4e7b8;
+A8/joint.json5f1f5c8aa58f2250807e7cdcce732046b6b544f279e1e32ba48401665d062964,
+A8/joint.npz994c0e1fdf76d1da5ec1f131a83da9472330dcb82cc3f96153b092910ac238c0.
+Earlier1e8c9381 abbreviated 'manifest' is retracted as unlocated/mislabel, not
+an identified alternate artifact. Actual matching resume/archive hashes are stable.
+
+Reference resumed exact15000/checkpoint73429bd0/configcf320476/source3bd,
+run `a8-reference-step15000-resume-supervisor-20261004-01`, host session
+`a8-reference-step15000-resume-20261004-01`, started09:37:29Z.
+Supervisor21309/birth4120738,trainer21314/birth4120744,sameboot517c4a36,
+faulthandler diagnostic only. Positive resume15081/cursor15105 at09:39:30Z;
+latest09:48:40 step18687/cursor18714,training3342.323s,finite18gradients,
+cumulative sign flips27780465, effective batched cache/chunk64. Active original
+reservation4432.005199101 from base2767.994800899 preserved. Continue SAME handles
+to natural20000 evaluation, then candidate15000→20000. No repeated gates or science.
+
+Canonical current operator state is top-level `latest_operator_observation`;
+legacy `training.status`/`last_remote_status_observation` can be historical. Root
+had read the legacy fields and left its own registration older; current packet/
+births/checkpoint resolve that. Re-read and choose newest authoritative observed_at.
+Goal/heartbeat ACTIVE; both7200 endpoints/finals incomplete. SIGSEGV retry1/max2
+and charges preserved, A1 held out, no2080host control or unrelated research.
+
 ## Candidate 15,000 checkpoint; evaluation running — October 4, 09:22 UTC
 
 Candidate training exited0 at09:19:26.091523Z, natural step15000/cursor15024.

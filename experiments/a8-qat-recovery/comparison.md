@@ -51,6 +51,7 @@ Evaluation wall time is separate overhead and is never a serving-rate denominato
 | Reference step 10,000 | 4.2628 | 0.500529 | 10.2403% | 88.069 | 0.6519 |
 | Candidate step 10,000 | 6.0285 | 0.180342 | 3.6933% | 66.145 | 0.4898 |
 | Reference step 15,000 | 3.9946 | 0.581382 | 11.8942% | 92.340 | 0.6856 |
+| Candidate step 15,000 | 5.9516 | 0.209471 | 4.2856% | 68.261 | 0.5003 |
 | Q4_0 at reference step 5,000 | n/a | 1.306255 | 26.5917% | 135.491 | 1.0000 |
 
 Accepted drafts per round is the primary acceptance metric. Acceptance rate uses
@@ -66,6 +67,7 @@ capture counts are:
 | Reference step 10,000 | 946 | 9,238 | 1,890 | 2,834 |
 | Candidate step 10,000 | 433 | 11,724 | 2,401 | 2,834 |
 | Reference step 15,000 | 1,043 | 8,769 | 1,794 | 2,834 |
+| Candidate step 15,000 | 491 | 11,457 | 2,344 | 2,834 |
 | Q4_0, each capture | 1,608 | 6,047 | 1,231 | 2,834 |
 
 Both zero checkpoints have identical native acceptance counts. Each A8 report
@@ -115,6 +117,16 @@ variant generated 14,290 returned IDs with 105 length and 15 stop finishes.
 Reference exceeds target-only throughput in this measurement, while remaining
 below the primary Q4_0 baseline; no significance claim is made from pooled rates.
 
+Candidate step 15,000 recovered slightly to 0.209471 accepted drafts/round,
+with CE 5.9516 and 68.261 request tokens/s. Q4_0 measured 136.437 and target-only
+89.328 tokens/s. Decode rate is 69.893 versus Q4_0 at 143.172 tokens/s. Median/p95
+full-request latency is 1.863/2.090 seconds versus Q4_0 at 0.899/1.085 seconds.
+All 24 native and 120 timing sequences match Q4_0. Every timing variant generated
+14,290 returned IDs (105 length, 15 stop finishes). Supervisor wall time was
+773.704 seconds; the reported evaluation phase was 769.607 seconds. Terminal
+absence was observed later at 09:35:23 UTC. The result remains below reference
+step 15,000 and Q4_0; no individual feature effect is inferred.
+
 Candidate's 1,047.285 trainer seconds differ from the reference's 764.725 seconds
 at the same update count; these checkpoint measurements are intermediate observations. The final comparison
 requires both independent 7,200-second cumulative endpoints. No quality, latency
@@ -158,8 +170,13 @@ with settled budget2,064.260seconds. Its scheduled native evaluation passed and 
 Reference resumed from step 10,000 and reached the scheduled step 15,000 boundary
 with budget settled at 2,767.995 seconds; its native evaluation passed and is
 archived. Candidate resumed from 10,000 and reached 15,000/cursor15,024 with budget settled
-at 3,093.120 seconds; its scheduled native evaluation is running. Both final endpoints remain pending. Fault cause is
+at 3,093.120 seconds; its scheduled native evaluation passed and is archived. Both final endpoints remain pending. Fault cause is
 unexplained; equivalent recurrence retains the same retry limit (one of two used).
+
+Reference subsequently reached step 20,000/cursor20,028 and exited cleanly,
+with budget settled at 3,541.358 seconds; its scheduled native evaluation is
+running. Candidate remains evaluated at 15,000 and 3,093.120 seconds. Both final
+7,200-second endpoints remain pending.
 
 ## Endpoint reporting method
 
@@ -183,6 +200,13 @@ in-flight update or serialization finishes. Endpoint timing is trainer-accounted
 time; startup, evaluation and physical process-release evidence remain separate.
 
 ## Artifact locations and pending completion
+
+Candidate step 15,000 identities: checkpoint
+`50e0764ce0a7c343366c04827605b6c12b5fc82f87dec5063ccea316bf12f102`, report
+`445e3af8925102393dc4ac0cd86d93463d69010a5f2d2e76eb2ee9a53e9a19b9`, result
+`276352166478317be789dee4bb5683b00a3a1588419df8c49d8a8e626ef7cda9`, timing
+`1667c7dc07b174ae9eb7915594b84fd7422980b6d8c083bd1652f228bc28fe23`.
+Archive locator: `evidence-archive/development/candidate-step15000-locator-map.json`.
 
 Reference step 15,000 identities: checkpoint
 `73429bd0ca2302147a2ee7cf883664a63323da5e229f0e3611a6f5e044a940eb`, report
