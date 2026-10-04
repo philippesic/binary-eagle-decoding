@@ -1,5 +1,29 @@
 # A8 QAT recovery and comparison
 
+## Reference final original-budget segment positive — October 4, 15:05 UTC
+
+Scheduled40k evaluation exit0/end14:56:13.146507UTC, supervisor wall683.688482s
+within original1200cap; latest/request/result join d5ddbd3d/40000 passed. Raw
+attempt/report/result/manifest/state/stdout and locator are hardlink archived.
+Report SHA256 `d4c23838df4db3a8f32210902a410de5bae07a4c4e33117edd0fa706c7625c98`;
+result `6441d022e19ecd137aa280a97f69a616281b9e826da3a69947df3cc26a242d87`;
+timing `dcb5fa8d9c42d0a65b32d8198b28e2626cc300a873d4d700b93dd98fd02f53c4`.
+Full groups/native/runtime-tmux return14:59:46UTC, RTX5080 baseline2766MiB/0%,
+no compute apps. Numerical report metadata waits the final CPU audit.
+
+Final reference resume actualstart15:01:29.994138UTC, session
+`a8-reference-post40000-finalbudget-resume-20261004-01`, run
+`a8-reference-post40000-finalbudget-resume-supervisor-20261004-01`, supervisor35006/
+birth6064726, trainer35007/birth6064736, same boot517c4a36. Exact40k checkpoint,
+optimizer/RNG/cursor/recipe/config and original519.400319131995remaining reserve
+preserved; no new gate, topup or science change. Initial preparing snapshot is
+historical. Fresh15:04:41UTC positive40363/cursor40445,6765.165316236007/7200,
+434.834683763993seconds left,495committed prompts/192527rows/presented tokens.
+One active budget owner35007. Continue to original7200cap, final checkpoint/request/
+archive/full release and original1200s final evaluation. Candidate final evaluation
+already complete7200/null; both endpoint CPU joins/telemetry/latency/repeat analysis/
+report/full transport closure remain pending. Goal incomplete; SAME heartbeat ACTIVE.
+
 ## Reference 40,000 scheduled evaluation running — October 4, 14:46 UTC
 
 Reference remaining-budget resume made positive updates and reached natural40000/
