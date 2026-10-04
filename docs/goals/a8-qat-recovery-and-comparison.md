@@ -1,5 +1,24 @@
 # A8 QAT recovery and comparison
 
+## Candidate final evaluation running — October 4, 14:09 UTC
+
+Candidate final checkpoint34731/cursor34797/bda021d3 and status/budget/latest/
+final request are hardlink archived and inode verified. Settled budget7200/max7200/
+null attempt, final_training_complete=true and latest==request; committed coverage
+426unique prompts/165733unique supervised rows/165733presented supervised tokens.
+Full owned PID/group/native resource return verified14:06:18UTC: runtime tmux
+absent, RTX5080/SM120 baseline2766MiB/0%, no compute apps.
+
+Final evaluation actualstart14:08:14.085711UTC, session
+`a8-candidate-final7200-eval-20261004-01`, run
+`a8-candidate-final7200-eval-supervisor-20261004-01`, supervisor32214/birth5745136,
+evaluator32215/birth5745145, same boot517c4a36; sole transport pane285.
+Same frozen3bd/source/native9e2/F16/Q4_0/fixed24manifest fc18, original1200cap.
+Final evaluation/report/status/result and sampled/exact telemetry audit remain
+pending. Reference1321.277983692993original training seconds and its scheduled/
+final evaluations follow only after complete candidate result/archive/release.
+BOTH full endpoint audit and final comparison incomplete; SAME heartbeat ACTIVE.
+
 ## Candidate original 7,200-second endpoint — October 4, 14:04 UTC
 
 Candidate's original cumulative cap reached exactly7200.0seconds at34731/

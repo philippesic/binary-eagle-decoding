@@ -4,12 +4,14 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Candidate reached original 7,200-second cap — October 4, 14:04 UTC
+## Candidate final evaluation running — October 4, 14:09 UTC
 
 Candidate34731/cursor34797, checkpoint bda021d3, training exit0 at14:03:56UTC.
 Budget exactly7200.0/max7200/null active attempt; final request/checkpoint agree
-and final_training_complete=true. No topup or35000block. Final archive/full
-release verification and matching final1200s native evaluation remain pending.
+and final_training_complete=true. No topup or35000block. Final archive and full
+release passed14:06:18UTC. Final1200s evaluation started14:08:14UTC,32214/32215
+with births5745136/5745145. Committed coverage426prompts/165733rows/tokens;
+matching final result/report and telemetry audit remain pending.
 Reference35k evaluated:0.651339native drafts/round,96.585requesttokens/s,
 71.70% ofQ4_0; budget5878.722016/null,1321.277984training seconds remain.
 
@@ -18,7 +20,7 @@ heartbeat; sole `/root/gpu_operator` owns pane285. Prior coordinator/operator
 retired. Both final results, reference endpoint, coverage/telemetry/repetition
 aggregation/report and full release incomplete; no new experiment/budget or
 research decision, no2080controls. See
-[current checkpoint](goals/a8-qat-recovery-and-comparison.md#candidate-original-7200-second-endpoint--october-4-1404-utc).
+[current checkpoint](goals/a8-qat-recovery-and-comparison.md#candidate-final-evaluation-running--october-4-1409-utc).
 
 ## Active: A8 QAT recovery and comparison — October 3, 2026
 
