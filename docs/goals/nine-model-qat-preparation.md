@@ -261,3 +261,78 @@ No human2080Ti availability reply yet; no host operation or real-model update.
 Next: land tested author APIs, independent contract/failure reviews, actual
 producer integration and storage/resource cost plan; then serialized allowed
 SM75 checks once direct availability is supplied.
+
+## Tested integration milestone — October 4, 2026
+
+Main integrated/pushed through `fa0ce7d`, nativefork `874cd2b04` (pushedbefore
+parentgitlinks). Worker ownbranches retained for activefollowups; no sourcework
+or olduntrackedresearch dropped. Main includes:
+
+- Block data/fusion `aada40c,cc87403`: TRAIN inventory/native receipt/prefix/
+  five-tap/full-vocabulary joins; prompt/content-disjoint calibration; whole-chain
+  balanced domain cursor; bounded mmap teachers; source-bound initialauditreuse
+  with current file identity and per-consumed-block finite checks.
+- Native `1702368,51f831d,bf054bf`: selected15FFN/optionalFC packed exporter,
+  strict loader and bothgraph routes; private head/embedding retained; source
+  hardware/precision-bound persistent native teacher; exact paired geometry;
+  same-PGID teacher and actual SIGTERM/reap fixture.
+- Training foundation `dc5d694`: block own-state hard-forward graph, prefix
+  conditioning/masks/fullprivatehead, exact optimizer/RNG/data-cursor checkpoints
+  and reset-only stage transition; direct EAGLEA1, sign-clone removal and charged
+  paired feature-transfer reuse. Full adapters/transitions/initializers pending.
+- Pipeline `b4a1031,87707ce,e8e7b45,67040f0,fa0ce7d`: supervised detached
+  stages; exact source/config/artifact pins; source-aware retry/resume and
+  process/kernel identities; context/DXG/resource return before export/eval;
+  fresh native evaluator/report builder; sealed-final prompt reads deferred;
+  explicit90second cleanup allowance; EAGLEactivation env derives from audit
+  after ambient flag clearing. Actualbundle cannot grantready withmissingdata.
+
+Independent QA ran current native export/loader/graph/teacher10methods PASS,
+including malformed/dense-shadow/paired-geometry and realCPU STOP/reap. Expanded
+backend source oracle260/260 AppleM3Max CPU cases PASS, including actual
+K2560/4096/7680/9728/12800, bits1/8, one/seven-token forms. Correctfilter is
+`-o W1A1_MUL_MAT`; symbolic lower-case filter returnedexit0/zero cases and is
+rejected. Source-based filter inference was corrected before anyGPU use.
+Root integrated61focused tests PASS(twoLinux-only skips), then30pipeline/EAGLE
+preflight tests PASS(twoLinux skips). Author39data/fusion/portability tests and
+20existing fusion regressions PASS; independent18contracts/failure fixtures PASS
+(oneLinuxcheck skipped). Final integrated/full applicability sweep is pending.
+CPU/synthetic evidence does not certify realblocktrajectories, CUDA or quality.
+
+Actual saved TRAIN EAGLE CPU fusion artifacts were fit/hashed independently:
+256fit/128validation rows, previous nativeRTX5080capture ancestry; newM3CPU
+calibration. AllfourNPZ/source/receipt/report SHAjoins passed independent QA.
+A8 row-orientation rescue rawvalidationRSE.07450→.05027, butpostnorm
+.9582→1.0766; A1 raw.74985→.64237, butpostnorm1.2852→1.6850. Rescue remains
+off by default, no nativequality/throughput claim. Historicalvalidation lacks
+code, so all-domain final calibration remains PENDING.
+
+Astra found unit±1 fitlatents preserve hardforward butchange AdamW sign inertia.
+Actual EAGLEreference init is±.5 (not source magnitudes); block newbaseline
+sourceweight magnitudes. Training/data owners bind explicit calibrated hard
+signs+scales to reference magnitude policy, with unit as a named off-default
+recipe. Negative-zero sign preservation must be rejected or explicitly floored.
+HistoricalfourNPZ artifacts preserved with original unitpolicy; no silent
+recipe promotion or post-resume reinitialization.
+
+Fresh SM120 orchestration owned by root in new `nine_model_admission.py` and
+`admit_nine_model_sm120.py`; source-only implementation/failure fixtures in
+coordination worktree pending final API join. It serializes actualkernel/native
+model/zero-updatebackward+memory/boundedcaptureportability producers, and emits
+source/config/bundle/GPU-bound per-candidate admissions. Fixture receipts cannot
+grant production readiness. Block/EAGLE capture-portability producers are
+implemented in dataowner followups, actual three-domain goldens missing.
+
+New subagent `/root/data_fusion/capture_orchestration` (Solhigh) owns only
+`scripts/capture_nine_model_train_data.py` and focused tests in its ownworktree.
+Native owns original prompt native-tokenizer/greedychain generation; data
+owner owns materialization/selector/storage ancestry. Existing token-only
+producer was insufficient to make production chains from originalTRAIN text.
+This is an explicit remaining artifact/source integration dependency.
+
+No human2080Ti availability reply yet, no remote tmux/job/context exists, no
+GPUoperation or real-modeloptimizer update. RTX5080 remains paused/unqueried.
+Next: land completed training/data/native proof fixes, join root freshgate and
+resolved six-config generator, independent Opus/QA reviews; once2080opened,
+serial actualmodel CUDA/zero-update checks, nativeTRAIN captures and goldens.
+Human still owns coverage/recipe/exposure/wall/eval budget. No readyclaim yet.

@@ -19,6 +19,11 @@ partitions, missing block capture artifacts and readiness evidence.
 Required output is a tested, frozen source/data/config/launch bundle with
 independent QA and truthful profile/hardware evidence, plus minimal fresh
 SM120 checks and automatic evaluation after committed training and cleanup.
+Native block export/load/graphs and persistent teacher producer, block data/fusion
+contracts, QAT foundation and resource-safe launcher/evaluator are integrated
+through `fa0ce7d` (native `874cd2b04`), with CPU/independent QA evidence.
+Portable preparation is still PENDING: production block captures, balanced
+calibration, exact resolved configs, Linux/SM75 checks and final integration.
 No real training/evaluation budget or unavailable-host run is started now.
 Completed A8/research goals below remain historical and intact.
 
