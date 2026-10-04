@@ -129,6 +129,7 @@ class NativeTeacher:
             producer_pgid=os.getpgid(self.process.pid),
             producer_parent_pid=os.getpid(),
         )
+        self.native_runtime_binding = None
         self.closed = False
 
     def capture_prefix(
@@ -258,6 +259,42 @@ class NativeTeacher:
         self._save_receipt(receipt)
         return receipt
 
+    def _bind_native_runtime(self):
+        """Hash actual mapped project runtime libraries once, on Linux only."""
+        if self.native_runtime_binding is not None:
+            return self.native_runtime_binding
+        maps = Path(f"/proc/{self.process.pid}/maps")
+        if not maps.is_file():
+            self.native_runtime_binding = {
+                "scope": "unavailable_on_non_linux",
+                "libraries": [],
+                "actual_mapping_checked": False,
+            }
+            return self.native_runtime_binding
+        libraries = {}
+        for line in maps.read_text().splitlines():
+            fields = line.split(maxsplit=5)
+            if len(fields) != 6 or not fields[5].startswith("/"):
+                continue
+            name = fields[5]
+            basename = Path(name).name
+            if not basename.startswith(("libllama", "libggml")) or ".so" not in basename:
+                continue
+            if name.endswith(" (deleted)"):
+                raise ValueError("native mapped runtime library was replaced/deleted")
+            path = Path(name)
+            if path.stat().st_ino != int(fields[4]):
+                raise ValueError("native mapped runtime library inode differs from disk")
+            if name not in libraries:
+                libraries[name] = {"path": name, "sha256": sha256(path)}
+        self.native_runtime_binding = {
+            "scope": "actual_linux_mapped_project_libraries",
+            "actual_mapping_checked": True,
+            "libraries": [libraries[name] for name in sorted(libraries)],
+            "binary_sha256": self.ancestry["producer_binary_sha256"],
+        }
+        return self.native_runtime_binding
+
     def _save_receipt(self, receipt):
         directory = self.root / receipt["id"]
         (directory / "receipt.json").write_text(
@@ -341,6 +378,7 @@ class NativeTeacher:
             **receipt,
             **self.ancestry,
             "files": files,
+            "native_runtime_binding": self._bind_native_runtime(),
             "chain_ancestry": chain_ancestry,
             "teacher_context_reset_between_requests": True,
             "prefix_freshness": "native_generated_chain"
