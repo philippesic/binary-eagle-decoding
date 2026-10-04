@@ -112,6 +112,8 @@ def run(args):
             and training.get("committed") is True
             and training.get("completion_reason") == "approved_budget_complete"
             and training.get("artifact_kind") == "production"
+            and type(training.get("counters", {}).get("step")) is int
+            and training["counters"]["step"] > 0
             and exported.get("bundle_sha256") == args.bundle_sha256
             and exported.get("model") == inputs["models"][candidate],
             "evaluation requires successful committed endpoint/export ancestry",

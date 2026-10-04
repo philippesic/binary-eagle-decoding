@@ -34,6 +34,10 @@ def export(args):
         and train.get("completion_reason") == "approved_budget_complete",
         "committed production training endpoint absent",
     )
+    require(
+        type(train.get("counters", {}).get("step")) is int and train["counters"]["step"] > 0,
+        "zero-update endpoint cannot be frozen as a trained candidate",
+    )
     family, precision = args.candidate.split("_")
     record = train["exports"][args.candidate]
     checkpoint, manifest = files.check(record["checkpoint"]), files.check(record["manifest"])

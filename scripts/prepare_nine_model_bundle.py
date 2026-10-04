@@ -94,7 +94,16 @@ def inspect_descriptor(descriptor, files):
         "resolved descriptor schema differs",
     )
     pending = list(descriptor.get("pending_dependencies", []))
-    for key in ("inputs", "controls", "candidates", "qa_ledger", "budget", "gpu_uuid"):
+    for key in (
+        "inputs",
+        "controls",
+        "candidates",
+        "qa_ledger",
+        "budget",
+        "gpu_uuid",
+        "resource_policy",
+        "gpu_control_path",
+    ):
         if key not in descriptor:
             pending.append("missing " + key)
     if "candidates" in descriptor:

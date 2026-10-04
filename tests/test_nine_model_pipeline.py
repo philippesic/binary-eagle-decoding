@@ -88,6 +88,7 @@ class StageFixture:
         elif stage.endswith("train"):
             receipt.update(
                 committed=True,
+                counters={"step": 1},
                 completion_reason="STOP" if self.partial else "approved_budget_complete",
                 checkpoint={"path": str(checkpoint), "sha256": sha256(checkpoint)},
             )
@@ -168,6 +169,22 @@ class LifecycleTests(unittest.TestCase):
         )
         self.assertEqual(state["artifact_kind"], "fixture")
         self.assertGreaterEqual(self.resources.calls, 9)
+
+    def test_zero_update_endpoint_cannot_grant_trained_evaluation(self):
+        original = self.runner.run
+
+        def zero_update(argv, **kwargs):
+            original(argv, **kwargs)
+            if argv[1].endswith("train"):
+                path = kwargs["directory"] / "receipt.json"
+                receipt = json.loads(path.read_text())
+                receipt["counters"]["step"] = 0
+                atomic_json(path, receipt)
+
+        self.runner.run = zero_update
+        with self.assertRaisesRegex(ValueError, "zero-update endpoint"):
+            self.campaign().execute()
+        self.assertNotIn("evaluation", self.runner.calls)
 
     def test_failed_export_retains_checkpoint_and_no_eval(self):
         self.runner.export_bad = True
@@ -426,7 +443,10 @@ class DiagnosticTelemetryTests(unittest.TestCase):
         self.assertEqual(report["system_host_memavailable_min_bytes"], 800)
         self.assertIn("lower bounds", report["scope"])
         self.assertFalse(report["clean_timing_instrumented"])
-        self.assertEqual(report["per_kernel_process_rss_maxima"], [])
+        self.assertTrue(report["sample_limit_reached"])
+        self.assertEqual(report["observed_start_gap_seconds"]["count"], 1)
+        self.assertGreaterEqual(report["longest_observer_duration_seconds"], 0)
+        self.assertEqual(report["evaluator_and_descendant_process_rss_maxima"], [])
 
     def test_sampler_failure_or_unbounded_request_refuses(self):
         with self.assertRaisesRegex(ValueError, "bounded telemetry"):

@@ -718,8 +718,11 @@ class DiagnosticMemorySampler:
         self.gpu_used_max = 0
         self.host_available_min = None
         self.per_process = {}
+        self.sample_start_times = []
+        self.sample_durations = []
 
     def sample(self):
+        started = time.monotonic()
         snapshot = self.resources.snapshot()
         self.gpu_used_max = max(
             self.gpu_used_max, snapshot["gpu_total_bytes"] - snapshot["gpu_free_bytes"]
@@ -742,6 +745,8 @@ class DiagnosticMemorySampler:
             previous = self.per_process.get(key, {"kernel_identity": identity, "rss_max_bytes": 0})
             previous["rss_max_bytes"] = max(previous["rss_max_bytes"], int(matches[0]) * 1024)
             self.per_process[key] = previous
+        self.sample_start_times.append(started)
+        self.sample_durations.append(time.monotonic() - started)
         self.samples += 1
 
     def _loop(self):
@@ -764,6 +769,10 @@ class DiagnosticMemorySampler:
             require(not self.thread.is_alive(), "diagnostic telemetry context did not stop")
         require(self.error is None, "diagnostic telemetry failed: " + str(self.error))
         require(self.samples > 0, "diagnostic telemetry samples absent")
+        gaps = [
+            later - earlier
+            for earlier, later in zip(self.sample_start_times, self.sample_start_times[1:])
+        ]
         return {
             "schema": "nine_model_sampled_memory_v1",
             "diagnostic_only": True,
@@ -771,11 +780,20 @@ class DiagnosticMemorySampler:
             "samples": self.samples,
             "requested_interval_seconds": self.interval_seconds,
             "max_samples": self.max_samples,
+            "sample_limit_reached": self.samples >= self.max_samples,
+            "observed_start_gap_seconds": {
+                "count": len(gaps),
+                "mean": sum(gaps) / len(gaps) if gaps else None,
+                "min": min(gaps) if gaps else None,
+                "max": max(gaps) if gaps else None,
+            },
+            "longest_observer_duration_seconds": max(self.sample_durations),
             "whole_device_used_max_bytes": self.gpu_used_max,
             "system_host_memavailable_min_bytes": self.host_available_min,
-            "per_kernel_process_rss_maxima": list(self.per_process.values()),
+            "evaluator_and_descendant_process_rss_maxima": list(self.per_process.values()),
             "scope": "sampled maxima are lower bounds, not true allocator peaks; whole-device "
-            "memory includes baseline/external use; per-process RSS may overlap and is "
+            "memory includes baseline/external use; RSS includes evaluator, native server and "
+            "transient utility descendants, may overlap and is "
             "not summed; Torch training allocated/reserved peaks reported separately",
         }
 
@@ -1014,6 +1032,11 @@ class Campaign:
                             train.get("committed") is True
                             and train.get("completion_reason") == "approved_budget_complete",
                             "training did not reach successful committed budget endpoint",
+                        )
+                        require(
+                            type(train.get("counters", {}).get("step")) is int
+                            and train["counters"]["step"] > 0,
+                            "zero-update endpoint cannot grant trained-candidate evaluation",
                         )
                         checkpoint = self.files.check(train["checkpoint"])
                         self.returned(baseline)
