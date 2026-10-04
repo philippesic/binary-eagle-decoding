@@ -290,6 +290,11 @@ metadata transcription and CPU checkpoint/telemetry joins are pending. Reference
 resumed35k at14:25:36UTC with1,321.277984original training seconds; the equal-budget
 comparison is not complete yet.
 
+Reference reached its natural40,000/cursor40,082 boundary and exited0 at
+14:40:40.248774UTC, checkpointd5ddbd3d; budget6680.599681/null,519.400319original
+training seconds remain. The scheduled evaluation started14:44:49UTC after
+checkpoint/archive/full-release checks. No new budget or final-endpoint claim.
+
 ## Endpoint reporting method
 
 Final coverage will use the authenticated checkpoint's committed `unique_prompts`

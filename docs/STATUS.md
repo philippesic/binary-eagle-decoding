@@ -4,22 +4,21 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Candidate final passed; reference remaining budget resumed — October 4, 14:27 UTC
+## Reference 40,000 evaluation running — October 4, 14:46 UTC
 
-Candidate34731/cursor34797,bda021d3, budget7200/max7200/null. Final native
-evaluation exit0 at14:21:01UTC,767.210supervisor-wall seconds; matching final
-checkpoint/result/status and archive verified, full return14:23:24UTC. Committed
-coverage426prompts/165733rows/tokens. Final numerical metadata/telemetry still pending.
+Reference40000/cursor40082,d5ddbd3d, training exit0 at14:40:40UTC. Budget settled
+6680.599681/7200/null attempt;519.400319original seconds remain. Checkpoint/request/
+hardlink archive and full return verified14:43:17UTC; committed491prompts/190769rows.
+Scheduled1200s evaluation started14:44:49UTC,33982/33983 with births5964673/
+5964682. After result/release, final original-cap training/evaluation remains.
+Candidate34731/cursor34797,bda021d3,7200/null, final evaluation exit0 archived and
+released; final primary numerical/coverage/telemetry metadata audit pending.
 
-Reference resumed35k with ONLY1321.277984original training seconds left,
-start14:25:36UTC, supervisor33444/birth5849330,trainer33445/birth5849338,
-Linux session `a8-reference-final-budget-resume-20261004-01`. First state preparing;
-next natural40k schedule then7200endpoint/final evaluation. No new budget/experiment.
 Successor `01a10704-f186-7991-97c7-6f4b3df51ae9` owns SAME ACTIVE heartbeat;
-sole `/root/gpu_operator` pane285, prior coordinator/operator retired. Reference
-endpoint/results and final combined coverage/telemetry/repetition/report/release
-audit remain incomplete; no research decision or2080controls. See
-[current checkpoint](goals/a8-qat-recovery-and-comparison.md#candidate-final-evaluation-passed-reference-remaining-budget-resumed--october-4-1427-utc).
+sole `/root/gpu_operator` pane285, prior coordinator/operator retired. Final
+reference endpoint/result plus combined CPU repetition/report/release audit
+remain incomplete; no new experiment/budget/research decision or2080controls. See
+[current checkpoint](goals/a8-qat-recovery-and-comparison.md#reference-40000-scheduled-evaluation-running--october-4-1446-utc).
 
 ## Active: A8 QAT recovery and comparison — October 3, 2026
 
@@ -32,8 +31,8 @@ The sole GPU operator continues the scheduled comparison; root maintains the
 report and durable state. See the [ownership checkpoint](goals/a8-qat-recovery-and-comparison.md#standalone-ownership-claimed--october-3-2026).
 Integrated fixes are published (frozen execution source583480c; main8583b68).
 BOTH actual A8 arms have optimizer updates and exact positive-step resume proof.
-Reference is evaluated at35000/5878.722seconds; candidate learned A8/all-nine
-midpoints/latent0.1 AdamW has resumed30000toward its original7200endpoint. All33candidate
+Reference is at40000/6680.600seconds with scheduled evaluation running; candidate
+learned A8/all-nine midpoints/latent0.1 AdamW completed34731/7200and final evaluation. All33candidate
 tensors show finite/nonzero gradients and actualmovement; cache/head execution
 and learned-head serial exception are observed. Arms alternate at scheduled
 5000boundaries toward independent7200second caps. Reference interim acceptance is 0.624 accepted drafts/round versus Q4_0 at
