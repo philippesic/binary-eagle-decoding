@@ -17,7 +17,6 @@ import json
 import os
 import platform
 import sys
-import tempfile
 import time
 from pathlib import Path
 
@@ -49,7 +48,37 @@ def sha256(path):
 
 
 def array_hash(value):
-    return hashlib.sha256(np.ascontiguousarray(value).tobytes()).hexdigest()
+    return hashlib.sha256(memoryview(np.ascontiguousarray(value)).cast("B")).hexdigest()
+
+
+def process_memory_checkpoint(phase, records, started):
+    """Observe whole-process RSS; this is not an array-workspace estimate."""
+    import resource
+    import subprocess
+
+    usage = resource.getrusage(resource.RUSAGE_SELF)
+    peak = int(usage.ru_maxrss) * (1 if sys.platform == "darwin" else 1024)
+    try:
+        current = (
+            int(
+                subprocess.check_output(
+                    ["ps", "-o", "rss=", "-p", str(os.getpid())],
+                    text=True,
+                ).strip()
+            )
+            * 1024
+        )
+    except (OSError, subprocess.SubprocessError, ValueError):
+        current = None
+    records.append(
+        {
+            "phase": phase,
+            "elapsed_seconds": time.monotonic() - started,
+            "rss_bytes": current,
+            "process_peak_rss_bytes": peak,
+            "pid": os.getpid(),
+        }
+    )
 
 
 def is_hash(value):
@@ -487,6 +516,7 @@ def load_operands(
     base_gguf_path=None,
     provenance_receipt_path=None,
     provenance_receipt_sha256=None,
+    memory_checkpoint=None,
 ):
     path = Path(path)
     m = json.loads(path.read_text())
@@ -540,6 +570,8 @@ def load_operands(
             raise ValueError("archive requires raw input, original weights and join IDs")
         arrays = {key: z[key].copy() for key in z.files}
     x, w, ids = (arrays[k] for k in ("raw_input", "reference_weight", "raw_join_ids"))
+    if memory_checkpoint:
+        memory_checkpoint("operand_archive_loaded")
     for name, a in (("raw_input", x), ("reference_weight", w)):
         if a.ndim != 2 or min(a.shape) < 1 or a.dtype != np.float32 or not np.isfinite(a).all():
             raise ValueError(f"{name} must be a finite nonempty F32 matrix")
@@ -603,6 +635,8 @@ def load_operands(
             source_weights_path=source_weights_path,
             base_gguf_path=base_gguf_path,
         )
+    if memory_checkpoint:
+        memory_checkpoint("operand_ancestry_verified")
     return (
         x,
         w,
@@ -710,7 +744,7 @@ def solve_scale(dots, beta, teacher, previous, config):
     }
 
 
-def fit(codes, beta, teacher, weight, config):
+def fit(codes, beta, teacher, weight, config, *, memory_checkpoint=None):
     """Train-only row-independent finite-objective descent, at most four scans."""
     started = time.monotonic()
     if (
@@ -744,11 +778,15 @@ def fit(codes, beta, teacher, weight, config):
     initial_signs = signs.copy()
     scales, controls = initializer_scales.copy(), []
     dots = integer_dots(codes, signs)
+    if memory_checkpoint:
+        memory_checkpoint("fit_initial_integer_dots")
     for row in range(len(weight)):
         check_budget()
         scales[row], detail = solve_scale(dots[:, row], beta, teacher[:, row], scales[row], config)
         controls.append(detail)
     control_scales = scales.copy()
+    if memory_checkpoint:
+        memory_checkpoint("fit_scale_control_converged")
     flip_counts = np.zeros(len(weight), dtype=np.int32)
     events, scan_summary, scale_updates = [], [], []
     x = codes.astype(np.float64) * beta[:, None].astype(np.float64)
@@ -804,6 +842,8 @@ def fit(codes, beta, teacher, weight, config):
                             flip_counts[row] += 1
                             accepted += 1
                             loss = trial_loss
+            if memory_checkpoint:
+                memory_checkpoint(f"fit_pass_{pass_id}_scan_{scan_id}")
             scan_summary.append(
                 {"pass": pass_id, "scan": scan_id, "proposals": proposals, "accepted": accepted}
             )
@@ -881,20 +921,20 @@ def unpack_signs(packed, width):
     bits = np.unpackbits(np.ascontiguousarray(packed).view(np.uint8), axis=1, bitorder="little")
     if np.any(bits[:, width:]):
         raise ValueError("nonzero packed tail bits")
-    return np.where(bits[:, :width], 1, -1).astype(np.int8)
+    return bits[:, :width].astype(np.int8) * np.int8(2) - np.int8(1)
 
 
-def export_candidate(base_path, output_path, signs, scales, *, expected_base_sha256):
-    """Existing native v2 fusion-only binary representation; preserve other operands."""
-    candidates = [ROOT / "third_party/llama.cpp/gguf-py"]
-    if os.environ.get("EAGLE_GGUF_PY"):
-        candidates.insert(0, Path(os.environ["EAGLE_GGUF_PY"]))
-    for candidate in candidates:
-        if candidate.is_dir():
-            sys.path.insert(0, str(candidate))
-            break
-    from gguf import GGMLQuantizationType as Type
-    from gguf import GGUFReader, GGUFWriter
+def export_candidate(
+    base_path,
+    output_path,
+    signs,
+    scales,
+    *,
+    expected_base_sha256,
+    memory_checkpoint=None,
+):
+    """Stream existing native v2 fusion representation; preserve other operands."""
+    from fusion_binary_gguf_stream import stream_export
 
     base_path, output_path = Path(base_path), Path(output_path)
     if output_path.exists():
@@ -909,100 +949,35 @@ def export_candidate(base_path, output_path, signs, scales, *, expected_base_sha
         or np.any(np.signbit(scales) & (scales == 0))
     ):
         raise ValueError("export requires finite nonnegative row F32 scales")
-    reader = GGUFReader(base_path)
-    prefix = "eagle3.w1a1."
-    if reader.byte_order != "I" or reader.fields["general.architecture"].contents() != "eagle3":
-        raise ValueError("base must be little-endian eagle3 GGUF")
-    if any(
-        k.startswith((prefix, "eagle3.fusion_correction.", "eagle3.affine_weights."))
-        for k in reader.fields
-    ):
-        raise ValueError("export requires original base without learned/binary metadata")
-    tensors = {t.name: t for t in reader.tensors}
-    if len(tensors) != len(reader.tensors) or "fc.weight" not in tensors:
-        raise ValueError("duplicate tensors or missing fusion source")
-    if (
-        tensors["fc.weight"].data.shape != signs.shape
-        or tensors["fc.weight"].tensor_type != Type.F16
-    ):
-        raise ValueError("fusion source must have original F16 shape")
     packed = pack_signs(signs)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(
-        prefix=".fusion-discrete-export-", dir=output_path.parent
-    ) as tmp:
-        temp = Path(tmp) / "candidate.gguf"
-        writer = GGUFWriter(temp, "eagle3")
-        for key, field in reader.fields.items():
-            if not key.startswith("GGUF.") and key != "general.architecture":
-                writer.add_key_value(
-                    key,
-                    field.contents(),
-                    field.types[0],
-                    field.types[-1] if len(field.types) > 1 else None,
-                )
-        writer.add_uint32(prefix + "version", 2)
-        writer.add_uint32(prefix + "scale_group_size", 0)
-        writer.add_uint32(prefix + "activation_bits", 8)
-        writer.add_array(prefix + "groups", ["fusion"])
-        writer.add_array(prefix + "tensors", ["fc.weight"])
-        writer.add_string(prefix + "bit_order", "little")
-        writer.add_string(prefix + "sign_rule", "nonnegative_is_one")
-        writer.add_string(prefix + "scale_rule", "f32_nonnegative_least_squares")
-        writer.add_string(prefix + "arithmetic", "f32")
-        writer.add_uint32(prefix + "tensor.fc_weight.logical_k", signs.shape[1])
-        writer.add_string(prefix + "tensor.fc_weight.packed", "fc.w1a1_packed")
-        writer.add_string(prefix + "tensor.fc_weight.scale", "fc.w1a1_scale")
-        for tensor in reader.tensors:
-            if tensor.name != "fc.weight":
-                writer.add_tensor(tensor.name, tensor.data, raw_dtype=tensor.tensor_type)
-        writer.add_tensor("fc.w1a1_packed", packed, raw_dtype=Type.I32)
-        writer.add_tensor("fc.w1a1_scale", scales, raw_dtype=Type.F32)
-        writer.write_header_to_file()
-        writer.write_kv_data_to_file()
-        writer.write_tensors_to_file()
-        writer.close()
-        reread = GGUFReader(temp)
-        actual = {t.name: t for t in reread.tensors}
-        if set(actual) != (set(tensors) - {"fc.weight"}) | {"fc.w1a1_packed", "fc.w1a1_scale"}:
-            raise ValueError("export tensor inventory mismatch")
-        for name, source in tensors.items():
-            if name != "fc.weight":
-                copy = actual[name]
-                if (
-                    source.tensor_type != copy.tensor_type
-                    or not np.array_equal(source.shape, copy.shape)
-                    or array_hash(source.data) != array_hash(copy.data)
-                ):
-                    raise ValueError(f"nonfusion operand changed: {name}")
-        for name, source in reader.fields.items():
-            if not name.startswith("GGUF.") and name != "general.architecture":
-                if source.contents() != reread.fields[name].contents():
-                    raise ValueError(f"original metadata changed: {name}")
-        if (
-            actual["fc.w1a1_packed"].tensor_type != Type.I32
-            or actual["fc.w1a1_scale"].tensor_type != Type.F32
-        ):
-            raise ValueError("export signs/scales storage precision mismatch")
-        if not np.array_equal(actual["fc.w1a1_packed"].data, packed) or not np.array_equal(
-            actual["fc.w1a1_scale"].data, scales
-        ):
-            raise ValueError("export/reload changes signs or row scales")
-        if not np.array_equal(unpack_signs(actual["fc.w1a1_packed"].data, signs.shape[1]), signs):
-            raise ValueError("packed sign reconstruction mismatch")
-        os.replace(temp, output_path)
+    if not np.array_equal(unpack_signs(packed, signs.shape[1]), signs):
+        raise ValueError("packed sign reconstruction mismatch")
+    streamed = stream_export(
+        base_path,
+        output_path,
+        packed,
+        scales,
+        signs.shape[1],
+        checkpoint=memory_checkpoint,
+    )
     return {
         "sha256": sha256(output_path),
         "base_gguf_sha256": expected_base_sha256,
-        "unchanged_nonfusion_tensors": len(tensors) - 1,
         "packed_sha256": array_hash(packed),
         "scale_sha256": array_hash(scales),
         "fusion_only": True,
         "native_validation": "deferred",
+        **streamed,
     }
 
 
 def run(args):
+    memory_phases, memory_started = [], time.monotonic()
+
+    def checkpoint(phase):
+        process_memory_checkpoint(phase, memory_phases, memory_started)
+
+    checkpoint("run_start")
     if args.output_dir.exists():
         raise FileExistsError("fit output directory already exists; preserve previous artifacts")
     config = load_config(args.config)
@@ -1013,11 +988,14 @@ def run(args):
         base_gguf_path=args.base_gguf,
         provenance_receipt_path=getattr(args, "provenance_receipt", None),
         provenance_receipt_sha256=getattr(args, "provenance_receipt_sha256", None),
+        memory_checkpoint=checkpoint,
     )
     # Only training operands enter fit; validation is quantized/evaluated after freeze.
     codes, beta = quantize_a8(x[train])
     teacher = x[train] @ w.T  # Frozen F32 BLAS reconstruction teacher, no model execution.
-    signs, scales, detail = fit(codes, beta, teacher, w, config)
+    checkpoint("fit_start")
+    signs, scales, detail = fit(codes, beta, teacher, w, config, memory_checkpoint=checkpoint)
+    checkpoint("fit_frozen")
     args.output_dir.mkdir(parents=True, exist_ok=False)
     candidate = args.output_dir / "fusion_candidate.npz"
     np.savez(
@@ -1049,6 +1027,7 @@ def run(args):
             or not np.array_equal(unpack_signs(z["fc.w1a1_packed"], w.shape[1]), signs)
         ):
             raise ValueError("candidate checkpoint operands changed on reload")
+    checkpoint("candidate_and_controls_persisted")
     metrics, operand_hashes = {}, {}
     for split, selection in (("train", train), ("validation", ~train)):
         q, b = quantize_a8(x[selection])
@@ -1074,6 +1053,17 @@ def run(args):
         }
     if sha256(candidate) != frozen_hash or sha256(control_path) != frozen_control_hash:
         raise ValueError("frozen checkpoint/control scales changed during validation")
+    checkpoint("validation_complete")
+    raw_input_hash, reference_weight_hash = array_hash(x), array_hash(w)
+    train_rows, validation_rows = int(train.sum()), int((~train).sum())
+    detail.pop("initializer_signs")
+    detail.pop("initializer_scales")
+    detail.pop("scale_only_scales")
+    del x, w, codes, beta, teacher, q, b, y
+    import gc
+
+    gc.collect()
+    checkpoint("workspace_released_before_export")
     export = None
     if args.base_gguf:
         export = export_candidate(
@@ -1082,10 +1072,10 @@ def run(args):
             signs,
             scales,
             expected_base_sha256=manifest["source"]["base_gguf_sha256"],
+            memory_checkpoint=checkpoint,
         )
-    detail.pop("initializer_signs")
-    detail.pop("initializer_scales")
-    detail.pop("scale_only_scales")
+    checkpoint("export_complete")
+    checkpoint("report_write_start")
     report = {
         "schema_version": 1,
         "synthetic": manifest["synthetic"],
@@ -1094,10 +1084,10 @@ def run(args):
         "script_sha256": sha256(__file__),
         "config_sha256": sha256(args.config),
         "config": config,
-        "raw_input_sha256": array_hash(x),
-        "reference_weight_sha256": array_hash(w),
-        "train_rows": int(train.sum()),
-        "validation_rows": int((~train).sum()),
+        "raw_input_sha256": raw_input_hash,
+        "reference_weight_sha256": reference_weight_hash,
+        "train_rows": train_rows,
+        "validation_rows": validation_rows,
         "train_prompt_hashes": sorted(
             {r["prompt_sha256"] for r in manifest["rows"] if r["split"] == "train"}
         ),
@@ -1110,6 +1100,12 @@ def run(args):
         "metrics": metrics,
         "operand_hashes": operand_hashes,
         "fit": detail,
+        "process_memory_phases": memory_phases,
+        "memory_scope": (
+            "whole-process RSS includes Python/library/metadata overhead; "
+            "workspace estimate is separate"
+        ),
+        "exporter_source_sha256": sha256(Path(__file__).with_name("fusion_binary_gguf_stream.py")),
         "hardware": {
             "platform": platform.platform(),
             "machine": platform.machine(),
@@ -1123,7 +1119,9 @@ def run(args):
             "No native acceptance or GPU throughput evaluated."
         ),
     }
-    (args.output_dir / "fit_report.json").write_text(json.dumps(report, indent=2) + "\n")
+    with (args.output_dir / "fit_report.json").open("w") as report_stream:
+        json.dump(report, report_stream, indent=2)
+        report_stream.write("\n")
     return report
 
 
