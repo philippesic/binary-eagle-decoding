@@ -160,3 +160,14 @@ Four focused ancestry tests pass in addition to the structural suite. This is
 CPU checker support only: actual Q4 model/native proof follows completion of
 the reference timing phase under root/sole-operator control. No numeric-policy
 scope, probe/core code, native kernel or W1 representation changed here.
+
+For a selective-Q4 probe, the numeric receipt may bind its explicit original
+BF16 `reference` asset and pinned `precision`/`export` chain to the existing
+diagnostic edge. Candidate complete IDs **and** finish reason/native stop flag/
+stop type must exactly match a connected observed native path. Candidate cache,
+mask, verifier, ownership and actual Q4 provenance still pass independently.
+This is bounded output-path reuse, not a Q4 raw-logit-margin claim or a waiver
+for novel paths. Any new sequence or termination remains uncovered. The
+reference numeric receipt shape is preserved; Q4 ancestry/termination fields
+are added only for explicit selective-Q4 config rows. Six numeric tests pass,
+including changed-termination rejection and reference-format compatibility.
