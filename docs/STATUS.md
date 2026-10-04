@@ -8,8 +8,9 @@ The target/verifier model precision remains as frozen for each experiment.
 
 Resumed candidate reached5000updates/cursor5009 and saved checkpoint893e205d.
 Trainer and supervisor are terminal; cumulative trainer budget1047.285of7200s,
-active attempt null. The sole operator is preparing its scheduled native
-5000development evaluation under the existing1200s cap; result pending.
+active attempt null. The sole operator launched its scheduled native
+5000development evaluation at06:54UTC under the existing1200s cap; result pending.
+Detached supervisor14249/evaluator14255, immutable source3bd, checkpoint archived.
 Then reference resumes from evaluated5000/764.725s toward10000. The SAME Goal
 and recovery heartbeat are ACTIVE. Exact source/recipes/data/precision preserved;
 A1 held out, no2080host-control writes. SSH observation recovered using the
