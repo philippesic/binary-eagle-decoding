@@ -14,6 +14,7 @@ from w1a1_eagle.nine_model_pipeline import (
     CELLS,
     GATES,
     Campaign,
+    DiagnosticMemorySampler,
     Files,
     SubprocessRunner,
     atomic_json,
@@ -404,6 +405,36 @@ class DispatchEvidenceTests(unittest.TestCase):
         for wrong in (text.replace('"CUDA"', '"CPU"'), text.replace('"rows": 16', '"rows": 15')):
             with self.assertRaisesRegex(ValueError, "operation/shape/arithmetic"):
                 validate_cuda_dispatch(wrong, audit, activation_bits=8)
+
+
+class DiagnosticTelemetryTests(unittest.TestCase):
+    def test_sampled_gpu_max_and_host_floor_are_separate_lower_bounds(self):
+        resources = ResourceFixture()
+        samples = [
+            {"gpu_total_bytes": 1000, "gpu_free_bytes": 700, "host_available_bytes": 900},
+            {"gpu_total_bytes": 1000, "gpu_free_bytes": 600, "host_available_bytes": 800},
+        ]
+        with (
+            patch.object(resources, "snapshot", side_effect=samples),
+            patch("w1a1_eagle.nine_model_pipeline.descendant_identities", return_value=[]),
+        ):
+            sampler = DiagnosticMemorySampler(resources, 123, interval_seconds=1, max_samples=2)
+            sampler.sample()
+            sampler.sample()
+            report = sampler.stop()
+        self.assertEqual(report["whole_device_used_max_bytes"], 400)
+        self.assertEqual(report["system_host_memavailable_min_bytes"], 800)
+        self.assertIn("lower bounds", report["scope"])
+        self.assertFalse(report["clean_timing_instrumented"])
+        self.assertEqual(report["per_kernel_process_rss_maxima"], [])
+
+    def test_sampler_failure_or_unbounded_request_refuses(self):
+        with self.assertRaisesRegex(ValueError, "bounded telemetry"):
+            DiagnosticMemorySampler(ResourceFixture(), 123, interval_seconds=0)
+        sampler = DiagnosticMemorySampler(ResourceFixture(), 123)
+        sampler.error = "observer unavailable"
+        with self.assertRaisesRegex(ValueError, "observer unavailable"):
+            sampler.stop()
 
 
 class PortableProcessTests(unittest.TestCase):

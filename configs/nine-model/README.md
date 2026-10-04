@@ -23,8 +23,9 @@ and `sha256`. Required fields are:
 model or touching a GPU. It cannot publish a production bundle:
 
 ```sh
-python3 scripts/prepare_nine_model_bundle.py --inputs resolved-inputs.json --inspect-draft
-python3 scripts/prepare_nine_model_bundle.py --inputs resolved-inputs.json --output frozen-bundle.json
+python3 scripts/prepare_nine_model_bundle.py --inputs resolved-inputs.json --materialize-configs selected-configs
+python3 scripts/prepare_nine_model_bundle.py --inputs selected-configs/resolved-inputs.json --inspect-draft
+python3 scripts/prepare_nine_model_bundle.py --inputs selected-configs/resolved-inputs.json --output frozen-bundle.json
 ```
 
 The production builder calls the actual training config parser and completed
@@ -57,7 +58,11 @@ checkpoint and resource/context return, exports through the family serializer,
 checks resource return, then evaluates all nine models plus target-only in a
 fresh process. Runtime graph admission is separate from serialization proof.
 Primary report ratios use each family's original Q4; EAGLE Q4 is an additional
-same-device anchor. Detailed native round traces run outside clean timing.
+same-device anchor. Detailed native round/dispatch traces and bounded memory sampling run outside
+clean timing. Memory reports give whole-device sampled maxima and separate
+per-process RSS maxima with cadence/lower-bound scope; they do not sum shared
+RSS mappings or claim true allocator peaks. Actual Torch training allocated/
+reserved peak measurements are separate.
 
 STOP, pause, source/artifact mismatch, failed gates, wall caps and resource
 failure preserve existing checkpoints and per-attempt receipts. Evaluation

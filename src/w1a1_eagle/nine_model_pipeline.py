@@ -15,6 +15,7 @@ import re
 import signal
 import subprocess
 import sys
+import threading
 import time
 import uuid
 from contextlib import contextmanager
@@ -662,7 +663,7 @@ class LinuxResources:
                     utility,
                     "-i",
                     self.gpu_uuid,
-                    "--query-gpu=uuid,name,compute_cap,memory.free",
+                    "--query-gpu=uuid,name,compute_cap,memory.free,memory.total",
                     "--format=csv,noheader,nounits",
                 ],
                 check=True,
@@ -673,7 +674,7 @@ class LinuxResources:
             .stdout.strip()
             .split(",")
         )
-        require(len(data) == 4 and data[0].strip() == self.gpu_uuid, "GPU UUID differs")
+        require(len(data) == 5 and data[0].strip() == self.gpu_uuid, "GPU UUID differs")
         expected = (
             ("12.0", "5080", [12, 0]) if self.hardware == "rtx5080" else ("7.5", "2080", [7, 5])
         )
@@ -684,11 +685,98 @@ class LinuxResources:
         return {
             "host_available_bytes": int(matches[0]) * 1024,
             "gpu_free_bytes": int(data[3].strip()) * 1024**2,
+            "gpu_total_bytes": int(data[4].strip()) * 1024**2,
             "gpu_uuid": self.gpu_uuid,
             "hardware": data[1].strip(),
             "compute_capability": expected[2],
             "boot_id": Path("/proc/sys/kernel/random/boot_id").read_text().strip(),
             "dxg_holders": dxg_holders() if Path("/dev/dxg").exists() else [],
+        }
+
+
+class DiagnosticMemorySampler:
+    """Diagnostic-only sampled maxima; never an allocator high-water claim.
+
+    Per-process RSS is retained separately because shared mappings can overlap.
+    This object must be stopped before the next native process launch.
+    """
+
+    def __init__(self, resources, root_pid, *, interval_seconds=1.0, max_samples=3600):
+        require(
+            math.isfinite(interval_seconds)
+            and interval_seconds > 0
+            and type(max_samples) is int
+            and max_samples > 0,
+            "bounded telemetry required",
+        )
+        self.resources, self.root_pid = resources, root_pid
+        self.interval_seconds, self.max_samples = interval_seconds, max_samples
+        self.done = threading.Event()
+        self.thread = None
+        self.samples = 0
+        self.error = None
+        self.gpu_used_max = 0
+        self.host_available_min = None
+        self.per_process = {}
+
+    def sample(self):
+        snapshot = self.resources.snapshot()
+        self.gpu_used_max = max(
+            self.gpu_used_max, snapshot["gpu_total_bytes"] - snapshot["gpu_free_bytes"]
+        )
+        available = snapshot["host_available_bytes"]
+        self.host_available_min = (
+            available
+            if self.host_available_min is None
+            else min(self.host_available_min, available)
+        )
+        for identity in descendant_identities(self.root_pid):
+            try:
+                text = (Path("/proc") / str(identity["pid"]) / "status").read_text()
+            except FileNotFoundError:
+                continue
+            matches = re.findall(r"^VmRSS:\s+(\d+) kB$", text, re.MULTILINE)
+            if not matches:
+                continue
+            key = json.dumps(identity, sort_keys=True)
+            previous = self.per_process.get(key, {"kernel_identity": identity, "rss_max_bytes": 0})
+            previous["rss_max_bytes"] = max(previous["rss_max_bytes"], int(matches[0]) * 1024)
+            self.per_process[key] = previous
+        self.samples += 1
+
+    def _loop(self):
+        try:
+            while not self.done.is_set() and self.samples < self.max_samples:
+                self.sample()
+                self.done.wait(self.interval_seconds)
+        except BaseException as error:
+            self.error = str(error)
+
+    def start(self):
+        self.thread = threading.Thread(target=self._loop, name="diagnostic-memory", daemon=True)
+        self.thread.start()
+        return self
+
+    def stop(self):
+        self.done.set()
+        if self.thread is not None:
+            self.thread.join(timeout=20)
+            require(not self.thread.is_alive(), "diagnostic telemetry context did not stop")
+        require(self.error is None, "diagnostic telemetry failed: " + str(self.error))
+        require(self.samples > 0, "diagnostic telemetry samples absent")
+        return {
+            "schema": "nine_model_sampled_memory_v1",
+            "diagnostic_only": True,
+            "clean_timing_instrumented": False,
+            "samples": self.samples,
+            "requested_interval_seconds": self.interval_seconds,
+            "max_samples": self.max_samples,
+            "whole_device_used_max_bytes": self.gpu_used_max,
+            "system_host_memavailable_min_bytes": self.host_available_min,
+            "per_kernel_process_rss_maxima": list(self.per_process.values()),
+            "scope": "sampled maxima are lower bounds, not true allocator peaks; whole-device "
+            "memory includes baseline/external use; per-process RSS may overlap and is "
+            "not summed; Torch training allocated/reserved peaks reported separately",
         }
 
 

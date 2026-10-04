@@ -8,11 +8,17 @@
   "microbatch_tokens": 32,
   "max_output_tokens": 128,
   "seed": 42,
-  "draft_lengths": {"eagle": 5, "dspark": 7, "dflash": 7},
+  "draft_lengths": {
+    "eagle": 5,
+    "dspark": 7,
+    "dflash": 7
+  },
   "port": 18290,
   "startup_wall_seconds": 300,
   "evaluation_wall_seconds": 14400,
   "diagnostic_pass_separate_from_timing": true,
   "final_set_sealed": true,
-  "selection_status": "PROPOSED_not_budget_authorization"
+  "selection_status": "PROPOSED_not_budget_authorization",
+  "memory_sample_seconds": 1.0,
+  "memory_max_samples_per_cell": 3600
 }

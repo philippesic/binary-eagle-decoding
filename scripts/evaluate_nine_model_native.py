@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import signal
 import sys
 import time
@@ -23,6 +24,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from w1a1_eagle.nine_model_pipeline import (  # noqa: E402
     CANDIDATES,
     CELLS,
+    DiagnosticMemorySampler,
     LinuxResources,
     atomic_json,
     load_opaque_prompts,
@@ -149,7 +151,7 @@ def run(args):
     destination.mkdir(parents=True, exist_ok=False)
     observer = LinuxResources(bundle["gpu_uuid"])
     hardware = observer.snapshot()
-    records, diagnostics = [], []
+    records, diagnostics, memory = [], [], []
     started = time.monotonic()
     request_config = {
         "evaluation": {
@@ -196,7 +198,7 @@ def run(args):
                 port = protocol["port"]
                 require(available_port("127.0.0.1", port), "native evaluator port occupied")
                 cmd = native_command(bundle, protocol, cell, models.get(cell), port)
-                proc = None
+                proc, telemetry = None, None
                 with (directory / "server.log").open("wb") as log:
                     try:
                         # Block cancellation while installing owned process identity.
@@ -220,6 +222,13 @@ def run(args):
                             )
                         finally:
                             signal.pthread_sigmask(signal.SIG_SETMASK, old_mask)
+                        if diagnostic:
+                            telemetry = DiagnosticMemorySampler(
+                                observer,
+                                os.getpid(),
+                                interval_seconds=protocol.get("memory_sample_seconds", 1.0),
+                                max_samples=protocol.get("memory_max_samples_per_cell", 3600),
+                            ).start()
                         wait_ready(
                             proc, f"http://127.0.0.1:{port}", protocol["startup_wall_seconds"]
                         )
@@ -273,8 +282,15 @@ def run(args):
                                 {"clean_records": records, "diagnostic_records": diagnostics},
                             )
                     finally:
-                        if proc is not None:
-                            stop_owned_server(proc)
+                        try:
+                            if telemetry is not None:
+                                sample = telemetry.stop()
+                                sample.update(cell=cell, repetition=rep)
+                                atomic_json(directory / "sampled-memory.json", sample)
+                                memory.append(sample)
+                        finally:
+                            if proc is not None:
+                                stop_owned_server(proc)
                 if cell.endswith(("a8", "a1")):
                     text = (directory / "server.log").read_text(errors="replace")
                     markers = bundle["candidates"][cell]["native_markers"]
@@ -313,6 +329,7 @@ def run(args):
         "deployment_coverage": coverage,
         "records": records,
         "diagnostic_records": diagnostics,
+        "diagnostic_sampled_memory": memory,
     }
     atomic_json(destination / "measurements.json", measurements)
     report = destination / "report.json"

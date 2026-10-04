@@ -98,6 +98,13 @@ def aggregate(measurements, *, fixture=False):
             totals[position] = counts
         tables[cell]["diagnostic_position_survival"] = totals
         tables[cell]["diagnostic_outside_clean_timing"] = True
+    for sample in measurements.get("diagnostic_sampled_memory", []):
+        require(
+            sample.get("diagnostic_only") is True
+            and sample.get("clean_timing_instrumented") is False,
+            "memory telemetry must remain outside clean timing",
+        )
+        tables[sample["cell"]]["diagnostic_sampled_memory"] = sample
     for cell in CELLS:
         family = cell.split("_")[0]
         rate = tables[cell]["request_tokens_per_second"]
@@ -115,6 +122,7 @@ def aggregate(measurements, *, fixture=False):
         "target": measurements["target"],
         "model_ancestry": measurements["model_ancestry"],
         "deployment_coverage": measurements.get("deployment_coverage"),
+        "diagnostic_sampled_memory": measurements.get("diagnostic_sampled_memory"),
         "cells": tables,
         "timing_repetitions": len(repeats),
         "matched_requests_per_cell": len(next(iter(pairs.values()))),
