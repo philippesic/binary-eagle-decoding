@@ -281,4 +281,7 @@ additional proof protocols or redoing completed audit work.
 - Resolution: Root requested a bounded read of original report metadata and a
   corrected compact summary; candidate training may proceed independently. No
   new native requests, recapture or regression experiment are authorized by this
-  correction. Correction verification remains pending.
+  correction. Bounded archived metadata read verified the correction: native
+  A8 is1,119/8,398/1,718 (24prompts), Q4_0 is1,608/6,047/1,231; the timing counts
+  remain5,595/41,990/8,535 and8,040/30,235/6,140 (120requests). Original report
+  SHAfff25faa... is unchanged; no experiment rerun was needed.

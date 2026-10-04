@@ -58,6 +58,7 @@ Evaluation wall time is separate overhead and is never a serving-rate denominato
 | Candidate step 25,000 | 5.8161 | 0.230803 | 4.7259% | 68.954 | 0.5111 |
 | Reference step 30,000 | 3.5495 | 0.623711 | 12.7413% | 95.036 | 0.7028 |
 | Candidate step 30,000 | 5.5156 | 0.268456 | 5.4950% | 70.905 | 0.5247 |
+| Reference step 35,000 | 3.5963 | 0.651339 | 13.3246% | 96.585 | 0.7170 |
 | Q4_0 at reference step 5,000 | n/a | 1.306255 | 26.5917% | 135.491 | 1.0000 |
 
 Accepted drafts per round is the primary acceptance metric. Acceptance rate uses
@@ -80,6 +81,7 @@ capture counts are:
 | Candidate step 25,000 | 532 | 11,257 | 2,305 | 2,834 |
 | Reference step 30,000 | 1,089 | 8,547 | 1,746 | 2,834 |
 | Candidate step 30,000 | 600 | 10,919 | 2,235 | 2,834 |
+| Reference step 35,000 | 1,119 | 8,398 | 1,718 | 2,834 |
 | Q4_0, each capture | 1,608 | 6,047 | 1,231 | 2,834 |
 
 Both zero checkpoints have identical native acceptance counts. Each A8 report
@@ -274,9 +276,9 @@ Its scheduled evaluation passed exit0 at13:33:16UTC in659.179supervisor-wall
 seconds (652.613evaluation-phase seconds), with full return verified13:35:11UTC.
 Request rate was96.585 vsQ4_0134.705tokens/s (ratio0.717013), decode100.824 vs
 142.836. Raw report/result/timing hashes are respectivelyfff25faa...,34bc088e...
-and5b953c77... in the current goal checkpoint. Primary24prompt native acceptance
-and CE metadata extraction is pending; five-repeat timing counters are kept
-separate. Candidate's next segment remains restricted to its
+and5b953c77... in the current goal checkpoint. Primary24prompt native acceptance is1,119/8,398/1,718 =0.651339drafts/round,
+CE3.596321, with24/24native response matches. Timing counters across120requests
+are5,595/41,990/8,535; their rounds and token workload are kept separate. Candidate's next segment remains restricted to its
 original980.107133seconds and final evaluation.
 
 ## Endpoint reporting method
