@@ -1,5 +1,33 @@
 # A8 QAT recovery and comparison
 
+## Candidate 15,000 checkpoint; evaluation running — October 4, 09:22 UTC
+
+Candidate training exited0 at09:19:26.091523Z, natural step15000/cursor15024.
+Checkpoint SHA
+`50e0764ce0a7c343366c04827605b6c12b5fc82f87dec5063ccea316bf12f102`
+hardlink archived at `evidence-archive/checkpoints/candidate-step-15000`, with
+status/budget/trainer evidence. Settled budget3093.120044735/7200 seconds,
+active_attempt null,remaining4106.879955265. Exact trainer19759/supervisor19753
+are absent; resource baseline2766MiB/0%. Actual end differs from later observation
+09:19:45; retain both timestamps separately.
+
+Scheduled evaluation launched09:22:04.135414Z under same immutable3bd/current9e2,
+exact frozen24dev requests/F16 target/verifier/KV/1200s cap, diagnostic faulthandler
+only. Run `a8-candidate-step15000-eval-supervisor-20261004-01`, host tmux session
+`a8-candidate-step15000-eval-20261004-01`; supervisor20208/birth4028141 and
+evaluator20214/birth4028150, sameboot517c4a36. Result pending. Operator will record
+manifest hashes with exact paths to disambiguate two abbreviated 'manifest' values;
+that metadata clarification is pending. Resume50e0764c is consistent.
+
+Reference remains evaluated15000/2767.994800899,0.581382drafts/round/92.340requestTPS,
+belowQ4_0 and above target-only pooled request rate in this measurement. After
+candidate terminal archive/resource release, resume reference15000→20000 under
+remaining4432.005199101, then its normal1200s evaluation and candidate15000→20000.
+
+Both7200 cumulative endpoints/finals remain incomplete; Goal/heartbeat ACTIVE.
+No repeated admissions, source/recipe/math/data/precision/budget changes or research
+pivot; SIGSEGV retry1/max2 and charges retained, A1 held out, no2080host controls.
+
 ## Reference 15,000 evaluated; candidate resumed — October 4, 09:02 UTC
 
 Reference15000 native evaluation completed exit0 at08:58:33.815436Z,683.691812
