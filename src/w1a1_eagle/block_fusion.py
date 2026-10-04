@@ -8,6 +8,7 @@ This is a calibration initializer, not a model-quality or native admission.
 
 from __future__ import annotations
 
+import hashlib
 import time
 from dataclasses import dataclass
 
@@ -105,6 +106,8 @@ class FusionFitConfig:
     zero_scale_orientation_rescue: bool = False
     max_coordinate_flips_per_row: int = 0
     max_seconds: float = 60.0
+    latent_initialization: str = "preserve_reference_magnitudes"
+    reference_kind: str = "block_source_weight_magnitudes"
 
     def __post_init__(self):
         if type(self.activation_bits) is not int or self.activation_bits not in ARITHMETIC:
@@ -123,6 +126,56 @@ class FusionFitConfig:
             or self.max_seconds <= 0
         ):
             raise ValueError("finite positive calibration time bound required")
+        if self.latent_initialization not in ("preserve_reference_magnitudes", "unit_probe"):
+            raise ValueError("explicit supported fusion latent initialization required")
+        if self.reference_kind not in (
+            "block_source_weight_magnitudes",
+            "eagle_fixed_reference_0.5",
+        ):
+            raise ValueError("fusion reference initializer kind required")
+
+
+def make_fusion_latents(hard_signs, reference_initializer, *, policy, reference_kind):
+    """Keep deployed fitted bits separate from the QAT zero-crossing recipe.
+
+    A calibrated sign plane does not choose optimizer inertia. Source-magnitude
+    preservation is the default; unit latents are an explicitly named probe.
+    Negative signs on exact source-zero magnitudes cannot be encoded by x<0 and
+    refuse rather than quietly installing a recipe-changing magnitude floor.
+    """
+    signs, reference = np.asarray(hard_signs), np.asarray(reference_initializer)
+    if (
+        signs.shape != reference.shape
+        or signs.ndim != 2
+        or reference.dtype != np.float32
+        or not np.isfinite(reference).all()
+        or not np.all((signs == -1) | (signs == 1))
+        or policy not in ("preserve_reference_magnitudes", "unit_probe")
+        or reference_kind not in ("block_source_weight_magnitudes", "eagle_fixed_reference_0.5")
+    ):
+        raise ValueError("invalid fitted signs/reference/latent policy")
+    magnitude = np.abs(reference).astype("<f4", copy=False)
+    if reference_kind == "eagle_fixed_reference_0.5" and not np.all(magnitude == np.float32(0.5)):
+        raise ValueError("EAGLE fixed reference initializer magnitude must be exactly 0.5")
+    reference_sha = hashlib.sha256(
+        memoryview(np.ascontiguousarray(magnitude)).cast("B")
+    ).hexdigest()
+    latent = (
+        signs.astype(np.float32)
+        if policy == "unit_probe"
+        else np.multiply(signs, magnitude, dtype=np.float32)
+    )
+    if not np.array_equal(np.where(latent < 0, -1, 1), signs):
+        raise ValueError("negative calibrated sign cannot preserve an exact zero source magnitude")
+    return latent, {
+        "policy": policy,
+        "reference_kind": reference_kind,
+        "reference_sha256": reference_sha,
+        "reference_shape": list(reference.shape),
+        "reference_sha256_rule": "contiguous_little_endian_f32_absolute_initializer_bytes",
+        "source_zero_magnitudes": int(np.count_nonzero(magnitude == 0)),
+        "source_magnitudes_above_ste_one": int(np.count_nonzero(magnitude > 1)),
+    }
 
 
 def fit_fusion(raw, teacher, reference_weight, config: FusionFitConfig):
@@ -213,16 +266,37 @@ def fit_fusion(raw, teacher, reference_weight, config: FusionFitConfig):
     control_prediction = project(codes, beta, original_signs, control)
     if _sse(prediction, y) > _sse(control_prediction, y):
         raise ValueError("frozen calibration candidate worsens scale-only exported objective")
+    initializer = (
+        np.full_like(weight, np.float32(0.5))
+        if config.reference_kind == "eagle_fixed_reference_0.5"
+        else weight
+    )
+    latent, latent_contract = make_fusion_latents(
+        signs,
+        initializer,
+        policy=config.latent_initialization,
+        reference_kind=config.reference_kind,
+    )
+    control_latent, _ = make_fusion_latents(
+        original_signs,
+        initializer,
+        policy=config.latent_initialization,
+        reference_kind=config.reference_kind,
+    )
     return {
-        "latent": signs.astype(np.float32),
+        "hard_signs": signs,
+        "control_hard_signs": original_signs,
+        "latent": latent,
         "scale": scales,
-        "control_latent": original_signs.astype(np.float32),
+        "control_latent": control_latent,
         "control_scale": control,
+        "latent_initialization": latent_contract,
         "report": {
             "arithmetic": ARITHMETIC[config.activation_bits],
             "negative_correlation_zero_scale_rows": negative_zero,
             "events": events,
             "fit_seconds": time.monotonic() - started,
+            "latent_initialization": latent_contract,
             "candidate": diagnostics(prediction, y),
             "scale_only": diagnostics(control_prediction, y),
             "admission": "requires_independent_native_trajectory_and_quality_gates",

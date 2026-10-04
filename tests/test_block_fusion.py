@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from w1a1_eagle.block_fusion import (  # noqa: E402
     FusionFitConfig,
     fit_fusion,
+    make_fusion_latents,
     project,
     quantize,
     rms_norm_reference,
@@ -103,6 +104,53 @@ class FusionTests(unittest.TestCase):
         norm = rms_norm_reference(raw, np.ones(2, dtype=np.float32), 1e-6)
         self.assertFalse(np.array_equal(raw, norm))
         np.testing.assert_allclose(np.mean(norm**2), 1, rtol=1e-6)
+
+    def test_latent_policy_preserves_reference_inertia_and_hard_bits(self):
+        reference = np.array([[0.001, -0.2, 1.5, -0.0]], dtype=np.float32)
+        signs = np.array([[-1, 1, -1, 1]], dtype=np.int8)
+        latent, contract = make_fusion_latents(
+            signs,
+            reference,
+            policy="preserve_reference_magnitudes",
+            reference_kind="block_source_weight_magnitudes",
+        )
+        np.testing.assert_array_equal(np.abs(latent), np.abs(reference))
+        np.testing.assert_array_equal(np.where(latent < 0, -1, 1), signs)
+        self.assertEqual(contract["source_magnitudes_above_ste_one"], 1)
+        self.assertEqual(contract["source_zero_magnitudes"], 1)
+        self.assertEqual(len(contract["reference_sha256"]), 64)
+
+    def test_negative_sign_on_exact_zero_refuses_unannounced_magnitude_floor(self):
+        with self.assertRaisesRegex(ValueError, "zero"):
+            make_fusion_latents(
+                np.array([[-1]]),
+                np.zeros((1, 1), dtype=np.float32),
+                policy="preserve_reference_magnitudes",
+                reference_kind="block_source_weight_magnitudes",
+            )
+        unit, contract = make_fusion_latents(
+            np.array([[-1]]),
+            np.zeros((1, 1), dtype=np.float32),
+            policy="unit_probe",
+            reference_kind="block_source_weight_magnitudes",
+        )
+        self.assertEqual(unit[0, 0], -1)
+        self.assertEqual(contract["policy"], "unit_probe")
+
+    def test_eagle_fixed_half_magnitude_is_explicit(self):
+        raw = np.array([[1, 2, 3, -4], [2, 3, 4, -5]], dtype=np.float32)
+        weight = np.ones((1, 4), dtype=np.float32)
+        codes, beta = quantize(raw, 8)
+        teacher = -project(codes, beta, weight, np.array([2], dtype=np.float32))
+        fitted = fit_fusion(
+            raw,
+            teacher,
+            weight,
+            FusionFitConfig(8, True, reference_kind="eagle_fixed_reference_0.5"),
+        )
+        np.testing.assert_array_equal(fitted["latent"], np.full_like(weight, -0.5))
+        np.testing.assert_array_equal(fitted["hard_signs"], -weight)
+        np.testing.assert_array_equal(fitted["control_latent"], np.full_like(weight, 0.5))
 
 
 if __name__ == "__main__":
