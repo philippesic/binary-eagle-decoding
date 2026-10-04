@@ -13,12 +13,13 @@ Three new bounded workers own trainer/evaluator/resume, recipe/movement audits,
 and independent checks plus sole GPU operation; root reviews readiness and
 integrates. See the [ownership checkpoint](goals/a8-qat-recovery-and-comparison.md#standalone-ownership-claimed--october-3-2026).
 Integrated fixes are published (frozen execution source583480c; main8583b68).
-CPU checks, BOTH current native/model admissions and both step-zero development
-evaluations pass. REAL reference A8 training reached859updates,129.8578budget
-seconds and a preserved positive-step checkpoint; exact same-config resume is
-next. Actual sign/scale movement,18finite gradient tensors, cached batched head
-and100cumulative sign flips are observed. Candidate learned/midpoint/inertia
-recipe is qualified/zero-evaluated and queued. No extra prelaunch gates.
+BOTH actual A8 arms have optimizer updates and exact positive-step resume proof.
+Reference is evaluated at5000updates/764.725seconds; candidate learned A8/all-nine
+midpoints/latent0.1 AdamW is running at1200updates/245.81seconds. All33candidate
+tensors show finite/nonzero gradients and actualmovement; cache/head execution
+and learned-head serial exception are observed. Arms alternate at scheduled
+5000boundaries toward independent7200second caps. Reference interim acceptance
+7.7% and requestTPS60%ofQ4_0 remain below the primary baseline.
  The only active goal is
 [A8 QAT recovery and comparison](goals/a8-qat-recovery-and-comparison.md).
 

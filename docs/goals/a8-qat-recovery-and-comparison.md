@@ -1,28 +1,31 @@
 # A8 QAT recovery and comparison
 
-## Current execution checkpoint — October 3, 18:03 PDT
+## Current execution checkpoint — October 3, 18:28 PDT
 
-Reference REAL A8 training reached5000updates/cursor5009, then naturally exited0
-at its scheduled development boundary. Checkpoint SHA `884dd8c5...`, manifest
-`29027d08...`, optimizer/RNG/cursor exact; hardlink-archived before later pruning.
-Durable budget settled764.725seconds of7200 (6435.275remains), active_attempt null.
-All owned trainer groups returned, GPU idle baseline. Its scheduled1200s native
-24prompt development evaluation is starting; acknowledgment remains pending.
+**Candidate REAL learned A8/all-nine midpoint training is running.** First proof
+stopped gracefully at105/cursor105, checkpoint `ba2a6634...`, manifest `25121d47...`,
+optimizer/RNG/cursor exact, hardlink-archived. Every enabled tensor had finite/
+nonzero gradients and measured sampled movement: sign9/9, scale9/9, quantizer6/6,
+midpoint9/9. Exact same-source/config resume advanced beyond105 to1200/cursor1201;
+budget245.81s of7200, remaining6954.19s. New supervisor11472/birth1172206,
+trainer11478/birth1172210 on boot517c4a36/source3bd; active reservation7171.1995s.
+Actual33gradient tensors finite; cache1/chunk64, serial learned-head gradient path.
+AdamW beta(.9,.999)/epsilon1e-8/clip1, latent0.1, signLR1e-3 and otherLR1e-5.
 
-Actual positive-step restore was verified859→912 on identical source3bd/config/
-optimizer/RNG/cursor/probe/telemetry. All18reference gradient tensors finite,
-actual sign/scale movement observed, cached batched execution effective. Both
-native/model admissions and both zero evaluations are complete; no prep repeat.
-Candidate is qualified/zero-evaluated with learned A8/all-nine midpoints/latent0.1
-AdamW and reference VJP, but its actual optimizer updates remain0.
+Reference is preserved at evaluated5000/cursor5009, budget764.725s (6435.275left),
+exact checkpoint `884dd8c5...` archived. Scheduled eval PASSED/archived in705s;
+report `cbd1bfe8...`, development loss5.1176, native acceptance0.0771 vsQ4_00.2659,
+requestTPS81.48 vs135.49 (ratio0.6013), decoderatio0.5874. Five native timing
+repetitions, fixed24development prompts, actual RTX5080/SM120/current9e2; no
+sealed access. This is an interim below-Q4_0 result, not final acceptance/speed win.
 
-After reference5000eval/archive/release, start candidate actual early updates,
-graceful checkpoint/exact resume proof, then candidate5000scheduled evaluation.
-Alternate arms at natural boundaries until each independent7200s cap/final
-comparison finishes. Source/data/seed/config/budget and1000save/100diagnostic/
-5000development cadence unchanged. No unscheduled859evaluation or extra gate.
-A1 held out; no2080shared flags/queries/experiments and no unrelated fusion input.
-Operator-ledger.json carries exact active commands/births/artifacts; monitor ACTIVE.
+Both zero evals and both native/model admissions passed. Reference exact resume
+859→912 and candidate105→1200 are actual positive-step proofs; all budget/update
+progress retained. Continue candidate to5000scheduled evaluation, then alternate
+natural5000boundaries until both independent7200s caps/final native comparisons.
+No extra105/859evals, no newgates/repeatedpreparation/science changes. A1 held out;
+no2080control/query/experiment or unrelated fusion input. Sole operator-ledger
+owns exact active artifacts/births/commands; root monitor remains ACTIVE.
 
 ## Standalone ownership claimed — October 3, 2026
 
