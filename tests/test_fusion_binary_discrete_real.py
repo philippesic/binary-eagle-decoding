@@ -8,6 +8,7 @@ import copy
 import hashlib
 import json
 import os
+import struct
 import sys
 import tempfile
 import unittest
@@ -221,6 +222,46 @@ class RealReceiptTests(unittest.TestCase):
         } | extra
         return fitter.load_operands(self.manifest_path, self.config, **kwargs)
 
+    def test_stream_parser_rejects_unsupported_tensor_and_array_counts(self):
+        from fusion_binary_gguf_stream import parse_gguf
+
+        description = parse_gguf(self.base)
+        original = self.base.read_bytes()
+        bad = self.directory / "unsupported-dense.gguf"
+        data = bytearray(original)
+        first_kind = description["kv_end"] + 8 + len("fc.weight") + 4 + 16
+        struct.pack_into("<I", data, first_kind, 2)  # Q4_0 requires another export contract.
+        bad.write_bytes(data)
+        with self.assertRaisesRegex(ValueError, "unsupported GGUF dense tensor"):
+            parse_gguf(bad)
+        data = bytearray(original)
+        field = description["fields"]["tokenizer.ggml.tokens"]
+        count_offset = field["start"] + 8 + len("tokenizer.ggml.tokens") + 4 + 4
+        struct.pack_into("<Q", data, count_offset, 2_000_001)
+        bad.write_bytes(data)
+        with self.assertRaisesRegex(ValueError, "bounded element count"):
+            parse_gguf(bad)
+
+    def test_stream_parser_rejects_truncated_payload_and_overlap(self):
+        from fusion_binary_gguf_stream import parse_gguf
+
+        description = parse_gguf(self.base)
+        data = self.base.read_bytes()
+        last = max(description["tensors"].values(), key=lambda t: t["start"])
+        bad = self.directory / "truncated-dense.gguf"
+        bad.write_bytes(data[: last["start"] + last["nbytes"] - 1])
+        with self.assertRaisesRegex(ValueError, "payload exceeds file bounds"):
+            parse_gguf(bad)
+        mutable = bytearray(data)
+        first_info_bytes = 8 + len("fc.weight") + 4 + 16 + 4 + 8
+        second_offset = (
+            description["kv_end"] + first_info_bytes + 8 + len("blk.0.attn_q.weight") + 4 + 16 + 4
+        )
+        struct.pack_into("<Q", mutable, second_offset, 0)
+        bad.write_bytes(mutable)
+        with self.assertRaisesRegex(ValueError, "overlap"):
+            parse_gguf(bad)
+
     def test_receipt_verified_run_freezes_actual_control_scales(self):
         import argparse
 
@@ -237,6 +278,10 @@ class RealReceiptTests(unittest.TestCase):
             )
         )
         self.assertFalse(report["synthetic"])
+        phases = {phase["phase"] for phase in report["process_memory_phases"]}
+        self.assertIn("workspace_released_before_export", phases)
+        self.assertIn("export_stream_reload_verified", phases)
+        self.assertIn("report_write_start", phases)
         self.assertEqual(
             report["control_scales_sha256"], fitter.sha256(output / "control_scales.npz")
         )
