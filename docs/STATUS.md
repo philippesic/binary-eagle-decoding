@@ -1628,6 +1628,7 @@ that device; the paused A8 goal, RTX5080 and fusion work remain untouched.
 All five released-reference native cells completed actual model/cache/mask/
 immutable-target proof. CPU revalidation now passes computed native admission
 with both source-bound numerical checks; public nativefcdf582 is integrated.
-Full throughput timing is cleared to start, with0/7200s observed inference used. FFN-only Q4 exports passed; W1A8/W1A1 need a human implementation scope
+Full six-arm/six-repeat reference timing actually started02:43UTC; first repeat
+complete, latest268.692/7200s request wall used. Q4 native probe follows. FFN-only Q4 exports passed; W1A8/W1A1 need a human implementation scope
 choice. See the [independent study checkpoint](../experiments/dspark-sm75-20261003/checkpoint.md).
 This adds no active project goal and makes no A8 progress or resource claim.

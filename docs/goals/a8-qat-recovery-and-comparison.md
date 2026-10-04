@@ -469,5 +469,6 @@ RTX5080 controls and jobs are unchanged. Human-authorized RTX2080Ti work is
 recorded separately in [its checkpoint](../../experiments/dspark-sm75-20261003/checkpoint.md):
 actual released-model native admission now passes CPU revalidation with two
 source-bound near-tie checks; public nativefcdf582 is integrated. Reference/Q4
-throughput timing is cleared to start, with0/7200s observed inference used. No cross-task
+throughput timing started02:43UTC; first repeat complete,268.692/7200s request
+wall used. The A8 pause and RTX5080 controls remain unchanged. No cross-task
 contact, new A8 action or new active project goal is implied by this note.
