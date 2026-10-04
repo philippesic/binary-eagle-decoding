@@ -4,22 +4,21 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Candidate final segment training; reference 35,000 evaluated — October 4, 13:50 UTC
+## Candidate reached original 7,200-second cap — October 4, 14:04 UTC
 
-Candidate exact resume started13:45:50UTC, supervisor31596/birth5610816,
-trainer31597/birth5610825, Linux session `a8-candidate-final-budget-resume-20261004-01`.
-Positive updates verified30444/cursor30498 at6329.132481/7200seconds. Original
-remaining reserve980.107133seconds; no topup. Reference35k evaluated and released:
-0.651339native accepted drafts/round vsQ4_01.306255, CE3.596321; request96.585
-vs134.705tokens/s (71.70%).24/24native responses match; five-repeat timing counters
-remain separate. Reference budget5878.722016/7200,null attempt,1321.277984left.
+Candidate34731/cursor34797, checkpoint bda021d3, training exit0 at14:03:56UTC.
+Budget exactly7200.0/max7200/null active attempt; final request/checkpoint agree
+and final_training_complete=true. No topup or35000block. Final archive/full
+release verification and matching final1200s native evaluation remain pending.
+Reference35k evaluated:0.651339native drafts/round,96.585requesttokens/s,
+71.70% ofQ4_0; budget5878.722016/null,1321.277984training seconds remain.
 
 Successor `01a10704-f186-7991-97c7-6f4b3df51ae9` owns existing goal/SAME ACTIVE
 heartbeat; sole `/root/gpu_operator` owns pane285. Prior coordinator/operator
-retired. CPU-only repetition audit published, final inputs pending. BOTH final
-endpoints/results/coverage/telemetry/release incomplete; no new experiment or
+retired. Both final results, reference endpoint, coverage/telemetry/repetition
+aggregation/report and full release incomplete; no new experiment/budget or
 research decision, no2080controls. See
-[current checkpoint](goals/a8-qat-recovery-and-comparison.md#candidate-final-budget-positive-resume-reference-native-metrics-corrected--october-4-1350-utc).
+[current checkpoint](goals/a8-qat-recovery-and-comparison.md#candidate-original-7200-second-endpoint--october-4-1404-utc).
 
 ## Active: A8 QAT recovery and comparison — October 3, 2026
 

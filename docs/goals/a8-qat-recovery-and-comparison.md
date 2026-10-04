@@ -1,5 +1,21 @@
 # A8 QAT recovery and comparison
 
+## Candidate original 7,200-second endpoint — October 4, 14:04 UTC
+
+Candidate's original cumulative cap reached exactly7200.0seconds at34731/
+cursor34797; supervisor31596 exited0 at14:03:56.696195UTC. Status
+awaiting_development/final_training_complete=true, budget-used7200.0/max7200/
+active_attempt null, final development request training_elapsed7200 and
+final_training_complete=true. Request matches latest checkpoint SHA256
+`bda021d3f09e2db6f9261a1d5d1b7a680aaa826b68874639696de2a4e2cfcd43`.
+No35000block or topup occurred. Initial GPU return snapshot2766MiB/0%; operator
+is archiving final checkpoint/request/status/budget and proving complete owned
+group/native-context release before the authorized final1200second evaluation.
+Matching final evaluation/result/report and full endpoint coverage/telemetry
+extraction are still pending. Reference remains5878.722016307007/7200 with
+1321.277983692993seconds left, then scheduled/final evaluation work. Goal remains
+incomplete and SAME heartbeat ACTIVE. Sole operator pane285 retains control.
+
 ## Candidate final-budget positive resume; reference native metrics corrected — October 4, 13:50 UTC
 
 Candidate final segment started13:45:50.882778UTC in detached Linux session
