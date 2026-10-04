@@ -1,5 +1,24 @@
 # A8 QAT recovery and comparison
 
+## Final human-pause shutdown checkpoint — October 3, 18:34 PDT
+
+Owned RTX5080 A8 usage is STOPPED. The sole operator issued the human-pause
+`--stop` under its supervisor; candidate training exited0 at01:34:37.876UTC
+(October3,18:34PDT), status stopped, step2081/cursor2084. Exact checkpoint
+`ac8af0f058b7d1d...`, manifest `931a0fcc...`, optimizer/RNG/cursor exact; checkpoint,
+budget, recipe and status hardlink-archived with verified inode. Settled candidate
+budget441.281998629of7200seconds, active_attempt null,6758.718seconds remains.
+Reference stays at evaluated5000/764.725seconds (6435.275remains). All progress
+and raw evaluation failures preserved; comparison INCOMPLETE, Goal/monitor PAUSED.
+
+Operator verified every recorded owned train/stop/monitor/native PID/group absent,
+empty native process scan, empty compute-app query and no remote tmux session.
+Host residual GPU usage was3537MiB/21% with no compute process; do not label that
+residual host usage as an A8 job or claim the entire physicalGPU unused. Sole
+operator is disconnecting its SSH/MCP transport; closure confirmation is next.
+No more remote activity after shutdown proof, no new GPU/training/eval/recovery
+until a direct human resume. RTX2080Ti controls are untouched.
+
 ## Human RTX5080 pause — October 3, 18:34 PDT
 
 Human requested “pause5080gpuusage”. Root set local rtx5080.pause_requested=true,
