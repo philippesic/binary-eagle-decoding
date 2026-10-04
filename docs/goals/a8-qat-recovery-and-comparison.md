@@ -1,5 +1,32 @@
 # A8 QAT recovery and comparison
 
+## Candidate final evaluation passed; reference remaining budget resumed — October 4, 14:27 UTC
+
+Candidate final evaluator exited0 at14:21:01.295326UTC, supervisor wall767.209615s
+within original1200s cap. Completed result matches final checkpoint bda021d3,
+status completed/final_training_complete=true; budget7200/max7200/null remains
+settled. Raw attempt/report/result/pinned manifest/state/stdout are hardlink
+archived with locator `arms/candidate/evidence-archive/development/candidate-final7200-locator-map.json`.
+Report SHA256 `fcd0c0100d07d23aeff14f7cad7a715677b8852f1389bf16b4f7025120692c28`;
+result `0a5ae30b2be6872f33b9efa4874e4622d3a34f30e6ccf6dd4b33e7bc3bc992f9`;
+timing `01fbc50b9fb73d5dd0391fd78cd0952c200c61d04a820009254174640a54454d`.
+Full process/native-context return verified14:23:24UTC: PID/group census empty,
+runtime tmux absent, RTX5080/SM1202766MiB/0%, no compute apps. Primary native/
+latency/timing metadata and endpoint CPU checkpoint/telemetry joins are preserved
+but not yet transcribed; final two-manifest aggregation waits reference final.
+
+Fresh reference guard joined35k/cursor35066/a64fe4da latest/request/completed35k
+result, budget5878.722016307007/7200/null, cf320config, clean3bd helper, frozenfc18
+manifest and unchanged runtime; no project/native processes or runtime tmux,
+GPU baseline2766MiB/0%, host20.26GB available. Remaining original1321.277983692993
+seconds only. Actual resume started14:25:36.015593UTC, Linux session
+`a8-reference-final-budget-resume-20261004-01`, run
+`a8-reference-final-budget-resume-supervisor-20261004-01`, supervisor33444/
+birth5849330, trainer33445/birth5849338, same boot517c4a36. First state preparing;
+no new optimizer update claim yet. Monitor to natural40k schedule if reached,
+then original7200endpoint/final evaluation, each separated by full release.
+Goal incomplete; SAME heartbeat ACTIVE, sole pane285 operator unchanged.
+
 ## Candidate final evaluation running — October 4, 14:09 UTC
 
 Candidate final checkpoint34731/cursor34797/bda021d3 and status/budget/latest/

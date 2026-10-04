@@ -4,23 +4,22 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Candidate final evaluation running — October 4, 14:09 UTC
+## Candidate final passed; reference remaining budget resumed — October 4, 14:27 UTC
 
-Candidate34731/cursor34797, checkpoint bda021d3, training exit0 at14:03:56UTC.
-Budget exactly7200.0/max7200/null active attempt; final request/checkpoint agree
-and final_training_complete=true. No topup or35000block. Final archive and full
-release passed14:06:18UTC. Final1200s evaluation started14:08:14UTC,32214/32215
-with births5745136/5745145. Committed coverage426prompts/165733rows/tokens;
-matching final result/report and telemetry audit remain pending.
-Reference35k evaluated:0.651339native drafts/round,96.585requesttokens/s,
-71.70% ofQ4_0; budget5878.722016/null,1321.277984training seconds remain.
+Candidate34731/cursor34797,bda021d3, budget7200/max7200/null. Final native
+evaluation exit0 at14:21:01UTC,767.210supervisor-wall seconds; matching final
+checkpoint/result/status and archive verified, full return14:23:24UTC. Committed
+coverage426prompts/165733rows/tokens. Final numerical metadata/telemetry still pending.
 
-Successor `01a10704-f186-7991-97c7-6f4b3df51ae9` owns existing goal/SAME ACTIVE
-heartbeat; sole `/root/gpu_operator` owns pane285. Prior coordinator/operator
-retired. Both final results, reference endpoint, coverage/telemetry/repetition
-aggregation/report and full release incomplete; no new experiment/budget or
-research decision, no2080controls. See
-[current checkpoint](goals/a8-qat-recovery-and-comparison.md#candidate-final-evaluation-running--october-4-1409-utc).
+Reference resumed35k with ONLY1321.277984original training seconds left,
+start14:25:36UTC, supervisor33444/birth5849330,trainer33445/birth5849338,
+Linux session `a8-reference-final-budget-resume-20261004-01`. First state preparing;
+next natural40k schedule then7200endpoint/final evaluation. No new budget/experiment.
+Successor `01a10704-f186-7991-97c7-6f4b3df51ae9` owns SAME ACTIVE heartbeat;
+sole `/root/gpu_operator` pane285, prior coordinator/operator retired. Reference
+endpoint/results and final combined coverage/telemetry/repetition/report/release
+audit remain incomplete; no research decision or2080controls. See
+[current checkpoint](goals/a8-qat-recovery-and-comparison.md#candidate-final-evaluation-passed-reference-remaining-budget-resumed--october-4-1427-utc).
 
 ## Active: A8 QAT recovery and comparison — October 3, 2026
 

@@ -284,9 +284,11 @@ original980.107133seconds and final evaluation.
 Candidate reached its original7,200.0second cap at34,731updates/cursor34,797,
 training exit0 at14:03:56.696195UTC, checkpointbda021d3. Budget is settled with
 no active attempt; final request matches latest and final_training_complete=true.
-Final archive/release and matching final evaluation remain pending. Reference
-still has1,321.277984training seconds left; the equal-budget comparison is not
-complete yet.
+Final archive and full release passed; matching final evaluation exited0 at
+14:21:01.295326UTC in767.210supervisor-wall seconds. Final primary native/timing
+metadata transcription and CPU checkpoint/telemetry joins are pending. Reference
+resumed35k at14:25:36UTC with1,321.277984original training seconds; the equal-budget
+comparison is not complete yet.
 
 ## Endpoint reporting method
 
