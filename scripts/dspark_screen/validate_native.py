@@ -40,6 +40,82 @@ def check_q4_precision(export, precision, candidate_sha, export_sha):
             all(row.get("type") == "Q4_0" for row in selected), "Q4 precision coverage is not exactly fifteen FFN matrices")
 
 
+def proposal_histories(state, rounds):
+    """Bind proposals to ordered observed numeric-injection/cache history.
+
+    Token equality alone is insufficient: target verification can inject four
+    versus eight feature rows with different FNV values on the same token path.
+    These signatures cover observed injections and KV boundaries, not a hash
+    of the entire numerical cache or a claim of harmless rounding.
+    """
+    state, _ = initial_setup_masks(state)
+    complete = [r for r in rounds if r["status"] == "complete" and not r.get("replay") and
+                not (r.get("n_draft_max") == 0 and r["n_proposed"] == 0)]
+    history, request_index, seen, entries = [], -1, set(), []
+    fields = ("seq_id", "first_position", "last_position", "n_tokens", "feature_hash_fnv1a64",
+              "target_taps", "rc", "kv_max_before", "kv_max_after")
+    for row in state:
+        if row["event"] == "inject":
+            require(all(key in row for key in fields), "incomplete numeric injection history")
+            if row["first_position"] == 0:
+                request_index += 1
+                history = [{"event": "request_prefix_reset"}]
+            history = [*history, {"event": "inject", **{key: row[key] for key in fields}}]
+        if row["event"] != "noise":
+            continue
+        require(request_index >= 0, "noise has no complete initial injection history")
+        boundary = {"event": "noise_cache_boundary", "anchor_position": row["anchor_position"],
+                    "anchor_token_id": row["anchor_token_id"], "kv_max_before": row["kv_max_before"],
+                    "n_noise_tokens": row["n_noise_tokens"]}
+        signature = [*history, boundary]
+        require(len(entries) < len(complete), "numeric-history noise/round join incomplete")
+        entries.append({"request_index": request_index, "first_block": request_index not in seen,
+                        "key": (request_index, tuple(row["prefix_token_ids"]), row["anchor_token_id"]),
+                        "history": signature, "proposed": complete[len(entries)]["proposed_token_ids"]})
+        seen.add(request_index)
+        history = signature
+    require(len(entries) == len(complete), "numeric-history complete-round join incomplete")
+    return entries
+
+
+def compare_proposal_histories(short, maximum, expected_requests=5):
+    def firsts(entries):
+        result = {e["request_index"]: e for e in entries if e["first_block"]}
+        require(set(result) == set(range(expected_requests)), "no qualifying first block for every original request")
+        return result
+    a, b = firsts(short), firsts(maximum)
+    for index in range(expected_requests):
+        require(a[index]["key"] == b[index]["key"] and a[index]["history"] == b[index]["history"],
+                "first blocks have different numeric input/cache history; same-cache diagnostic required")
+        require(a[index]["proposed"][:3] == b[index]["proposed"][:3],
+                "same-history first-three proposal disagreement; same-cache diagnostic required")
+    lookup = {entry["key"]: entry for entry in maximum}
+    require(len(lookup) == len(maximum) and len({e["key"] for e in short}) == len(short),
+            "ambiguous repeated proposal-history join")
+    stats = {"qualifying_first_blocks": expected_requests, "matched_history_joins": 0,
+             "token_matched_different_history_joins": 0, "different_history_decision_changes": 0, "details": [],
+             "history_scope": "ordered feature-injection hashes/spans/taps and observed KV boundaries; no full cache-byte equality or rounding claim"}
+    for left in short:
+        right = lookup.get(left["key"])
+        if right is None:
+            continue
+        changed = left["proposed"][:3] != right["proposed"][:3]
+        if left["history"] == right["history"]:
+            stats["matched_history_joins"] += 1
+            require(not changed, "same-history first-three proposal disagreement; same-cache diagnostic required")
+            continue
+        stats["token_matched_different_history_joins"] += 1
+        stats["different_history_decision_changes"] += int(changed)
+        lh, rh = left["history"], right["history"]
+        index = next((i for i in range(min(len(lh), len(rh))) if lh[i] != rh[i]), min(len(lh), len(rh)))
+        stats["details"].append({"request_index": left["request_index"], "anchor_position": len(left["key"][1]),
+            "seed_token_id": left["key"][2], "short_first3": left["proposed"][:3], "maximum_first3": right["proposed"][:3],
+            "decision_changed": changed, "earliest_history_difference_index": index,
+            "short_history_event": lh[index] if index < len(lh) else None,
+            "maximum_history_event": rh[index] if index < len(rh) else None})
+    return stats
+
+
 def initial_setup_masks(state):
     """Recognize only the exact observed pre-injection, unframed setup pair.
 
@@ -177,7 +253,7 @@ def validate(manifest):
     if "numeric_gate" in manifest:
         from numeric_gate import consume
         numeric_receipt = consume(manifest["numeric_gate"], manifest, manifest["binary_sha256"], target_sha)
-    maps, details, model_hashes = {}, [], {}
+    maps, histories, details, model_hashes = {}, {}, [], {}
     pins = {"target": target_sha, "binary": manifest["binary_sha256"],
             "environment": sha256(Path(manifest["environment"]))}
     for cell in manifest["cells"]:
@@ -223,7 +299,8 @@ def validate(manifest):
                                                    "llama_decode(ctx_dft) failed", "CUDA error:")),
                 "native draft decode/sampler did not complete successfully")
         state = rows(cell["state"])
-        proposal_map, summary = check_state(state, rows(cell["rounds"]), maximum)
+        native_rounds = rows(cell["rounds"])
+        proposal_map, summary = check_state(state, native_rounds, maximum)
         start = next(r for r in state if r["event"] == "binding_begin")
         if export.get("target_tied_head_fallback"):
             require(export["target_head_source_tensor"] == "token_embd.weight" and
@@ -259,15 +336,14 @@ def validate(manifest):
                     "reference_measurement": sha256(Path(pair["reference"]))}
         require(cell["outputs"], "no actual native output comparison")
         maps[kind, maximum] = proposal_map
+        histories[kind, maximum] = proposal_histories(state, native_rounds)
         details.append({"kind": kind, "maximum": maximum, **summary})
         for key in ("source", "conversion_config", "export", "state", "rounds", "launch", "server_log"):
             pins[f"{kind}_{maximum}_{key}"] = sha256(Path(cell[key]))
+    history_comparison = {}
     for kind in ("dspark", "dflash"):
         require((kind, 3) in maps and (kind, 7) in maps, "both valid proposal lengths required")
-        common = maps[kind, 3].keys() & maps[kind, 7].keys()
-        require(common, "no same-prefix short/max native join")
-        for key in common:
-            require(maps[kind, 3][key][:3] == maps[kind, 7][key][:3], "short proposal changes author first-three logits/decisions")
+        history_comparison[kind] = compare_proposal_histories(histories[kind, 3], histories[kind, 7])
     protocol_sha = numeric_receipt["protocol_sha256"] if numeric_receipt else manifest.get("protocol_sha256")
     if protocol_sha is None:
         config_path = Path(manifest["environment"]).parent / "config.json"
@@ -288,6 +364,7 @@ def validate(manifest):
             "cache_contract": True, "greedy_semantics": True, "evidence_sha256": pins,
             "output_correctness": "scoped accepted native near-tie paths; no bit parity" if numeric_receipt else "exact target-only ID matches",
             "numeric_gate_sha256": manifest.get("numeric_gate", {}).get("sha256"),
+            "proposal_history_comparison": history_comparison,
             "cells": details, "limitations": "bounded actual trajectories; no bit-exact HF parity or serving-capacity claim"}
 
 
