@@ -92,6 +92,7 @@ class SyntheticNativeTeacher:
         prompt_text=None,
         template_mode,
         max_new_tokens,
+        max_prompt_tokens,
         tap_ids,
         logits_mode,
         chain_ancestry,
@@ -102,7 +103,7 @@ class SyntheticNativeTeacher:
         result = self.make(tokens, tap_ids, logits_mode, chain_ancestry | {"prompt_length": 2})
         result.update(
             prompt_length=2,
-            prompt={"template_mode": template_mode},
+            prompt={"template_mode": template_mode, "max_prompt_tokens": max_prompt_tokens},
             prompt_source_sha256=capture.content_hash(
                 messages if messages is not None else prompt_text
             ),
@@ -116,6 +117,8 @@ class SyntheticNativeTeacher:
                 "termination": "max_new_tokens",
             },
         )
+        if self.fault == "prompt":
+            result["prompt_length"] = max_prompt_tokens + 1
         if self.fault == "client":
             result["client_source_sha256"] = "e" * 64
         if self.fault == "tokenizer":
@@ -213,6 +216,7 @@ class CaptureTests(unittest.TestCase):
             "caps": {
                 "max_requests": 15,
                 "max_tokens_per_chain": 24,
+                "max_prompt_tokens": 8,
                 "max_request_bytes": 10000,
                 "max_shard_bytes": 10000,
                 "max_total_bytes": 2000000,
@@ -477,6 +481,54 @@ class CaptureTests(unittest.TestCase):
         with self.assertRaisesRegex(MemoryError, "row storage cap"):
             capture.prepare_plan(self.path, self.pin)
 
+    def test_old_producer_without_prompt_cap_refuses_before_model_construct(self):
+        import types
+        from unittest.mock import patch
+
+        class MissingPromptTokenGuard:
+            def __init__(self, *args, **kwargs):
+                raise AssertionError("old producer model must never load")
+
+            def generate_capture(self, **kwargs):
+                raise AssertionError("old producer must never decode")
+
+        client = Path(__file__).resolve()
+        self.plan["native"]["client_source"] = {"path": str(client), "sha256": file_sha256(client)}
+        runtime_path = self.root / "runtime.json"
+        runtime = json.loads(runtime_path.read_text())
+        runtime["teacher_client_sha256"] = file_sha256(client)
+        runtime_path.write_text(json.dumps(runtime))
+        self.plan["runtime"]["sha256"] = file_sha256(runtime_path)
+        self.persist()
+        with patch.dict(
+            sys.modules,
+            {
+                "capture_block_qat_teacher": types.SimpleNamespace(
+                    NativeTeacher=MissingPromptTokenGuard
+                )
+            },
+        ):
+            result = capture.run_capture(
+                self.path,
+                self.pin,
+                self.root / "old-prompt-api",
+                execute=True,
+                device_query=lambda: {"name": "fixture CUDA", "compute_capability": [7, 5]},
+                rss_query=lambda: 0,
+                available_query=lambda: 10**9,
+            )
+        self.assertEqual(result["status"], "FAIL")
+        self.assertIn(
+            "native producer lacks prompt token cap before decoding", result["failure"]["message"]
+        )
+        self.assertIsNone(result["producer_closed"])
+
+    def test_prompt_and_generation_caps_fit_the_native_chain_bound(self):
+        self.plan["caps"]["max_prompt_tokens"] = 9
+        self.persist()
+        with self.assertRaisesRegex(ValueError, "prompt token cap plus generation cap"):
+            capture.prepare_plan(self.path, self.pin)
+
     def test_decode_history_preserves_native_partition_and_refuses_gaps(self):
         history = [
             {"offset": 0, "count": 2, "phase": "prefill", "kv_reused_from_same_chain": False},
@@ -519,6 +571,7 @@ class CaptureTests(unittest.TestCase):
 
     def test_generation_bad_tokenizer_actual_hardware_stop_and_cleanup(self):
         for fault, error in (
+            ("prompt", "history"),
             ("client", "producer proof"),
             ("tokenizer", "history"),
             ("hardware", "CUDA"),
