@@ -1,5 +1,30 @@
 # A8 QAT recovery and comparison
 
+## Reference 35,000 evaluation passed; candidate final segment next — October 4, 13:44 UTC
+
+Reference35k evaluation ended13:33:16.575678UTC exit0. Supervisor wall659.179423s;
+evaluation phase652.6126850799992s, with547.387315s slack to the original1200cap.
+At13:35:11UTC owned supervisor/evaluator/native census had no matches, runtime
+tmux absent, GPU2766MiB/0%, no compute apps. Raw attempt/report/result/manifest/
+supervisor state/stdout are hardlink archived under the reference arm's
+`evidence-archive/development/reference-step35000*`; locator map retained.
+Report SHA256 `fff25faab09247c903683ec9547ea246e0f7498b130d44c105cb09f9132806f5`;
+result `34bc088e6a8e88fa811e2410b44c3423e3e10839e1b5acfe58003289757c4144`;
+timing `5b953c77fb694cbdbce8216d8c4d071963f271c4f595d83ca76cfa623b4d4517`.
+Timing complete360records/five repeats: A8 request96.584945 vsQ4_0134.704648
+(0.717013), decode100.823999 vs142.836473 (0.705870); target-only request88.643246.
+All timing variants14290completion IDs,105length/15stop; timing token parity passes.
+Primary24prompt native acceptance/CE extraction is pending: first compact summary
+mixed five-repeat timing acceptance counters with native capture counts. Root
+caught it before publication and requested only existing metadata correction;
+USER_LESSONS records the scope distinction. No recapture or new requests.
+
+Reference budget remains5878.722016/7200,null attempt;1321.277984seconds left.
+Candidate fresh guards are positive and final-segment launch is pending under
+standing GO; ONLY980.107133009993training seconds remain from30000/f68255ac.
+Operator prioritizes launch independently of CPU summary correction. Both final
+endpoints/evaluations, coverage/telemetry/repetition audit/release remain incomplete.
+
 ## Reference 35,000 evaluation live — October 4, 13:23 UTC
 
 Scheduled evaluation actualstart13:22:17.396255UTC, original1200second cap,
