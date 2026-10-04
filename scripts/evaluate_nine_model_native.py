@@ -14,7 +14,6 @@ from benchmark_dspark_screen import round_summary, rows, stop_owned_server
 from benchmark_native_eagle import (
     available_port,
     execute_request,
-    load_prompts,
     request_body,
     wait_ready,
 )
@@ -22,10 +21,12 @@ from benchmark_native_eagle import (
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 from w1a1_eagle.nine_model_pipeline import (  # noqa: E402
+    CANDIDATES,
     CELLS,
     LinuxResources,
     atomic_json,
     clean_environment,
+    load_opaque_prompts,
     require,
     sha256,
     stop_signals,
@@ -100,6 +101,18 @@ def run(args):
         and inputs["target"] == bundle["inputs"]["target"],
         "evaluation ancestry differs",
     )
+    for candidate in CANDIDATES:
+        training = json.loads(files.check(inputs["training_endpoints"][candidate]).read_text())
+        exported = json.loads(files.check(inputs["export_endpoints"][candidate]).read_text())
+        require(
+            training.get("bundle_sha256") == args.bundle_sha256
+            and training.get("committed") is True
+            and training.get("completion_reason") == "approved_budget_complete"
+            and training.get("artifact_kind") == "production"
+            and exported.get("bundle_sha256") == args.bundle_sha256
+            and exported.get("model") == inputs["models"][candidate],
+            "evaluation requires successful committed endpoint/export ancestry",
+        )
     models = dict(inputs["models"])
     for family, control in inputs["controls"].items():
         models[family + "_q4"] = control["model"]
@@ -116,7 +129,7 @@ def run(args):
     # the pipeline never reads final prompts during preparation or selection.
     if protocol["split"] == "final":
         require(bundle.get("final_set_authorized") is True, "final set remains sealed")
-    prompts = load_prompts(files.check(bundle["inputs"]["prompts"]))
+    prompts = load_opaque_prompts(files.check(bundle["inputs"]["prompts"]))
     require(
         prompts and all(p.get("split") == protocol["split"] for p in prompts),
         "prompt role differs; no fabricated ID prefix rules",
@@ -255,6 +268,7 @@ def run(args):
         )
     measurements = {
         "schema": "nine_model_native_measurements_v1",
+        "artifact_kind": "production",
         "native": True,
         "instrumentation_in_clean_timing": False,
         "hardware": hardware["hardware"],

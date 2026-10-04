@@ -15,6 +15,7 @@ import re
 import signal
 import subprocess
 import time
+import uuid
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -36,6 +37,31 @@ def sha256(path):
         for block in iter(lambda: stream.read(8 * 1024**2), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def load_opaque_prompts(path):
+    prompts = [json.loads(line) for line in Path(path).read_text().splitlines() if line.strip()]
+    require(prompts, "prompt file empty")
+    identifiers = set()
+    for row in prompts:
+        identifier = row.get("id")
+        require(
+            isinstance(identifier, str) and identifier and identifier not in identifiers,
+            "opaque prompt ID missing or duplicate",
+        )
+        identifiers.add(identifier)
+        messages = row.get("messages")
+        require(isinstance(messages, list) and messages, "nonempty messages required")
+        require(
+            all(
+                isinstance(m, dict)
+                and m.get("role") in {"system", "user", "assistant"}
+                and isinstance(m.get("content"), str)
+                for m in messages
+            ),
+            "text message schema differs",
+        )
+    return prompts
 
 
 def atomic_json(path, value):
@@ -415,9 +441,21 @@ class SubprocessRunner:
                     signal.pthread_sigmask(signal.SIG_SETMASK, old_mask)
                 atomic_json(
                     directory / "process.json",
-                    {"pid": proc.pid, "pgid": proc.pid, "argv": argv, "started_unix": time.time()},
+                    {
+                        "pid": proc.pid,
+                        "pgid": proc.pid,
+                        "argv": argv,
+                        "started_unix": time.time(),
+                        "kernel_identity": self.process_identities[-1]
+                        if self.process_identities
+                        else None,
+                    },
                 )
                 while proc.poll() is None:
+                    require(
+                        (directory / "stdout.log").stat().st_size <= 128 * 1024**2,
+                        "stage stdout safety cap reached; existing checkpoints preserved",
+                    )
                     if Path("/proc").is_dir():
                         discovered = descendant_identities(proc.pid)
                         additions = [i for i in discovered if i not in self.process_identities]
@@ -599,7 +637,7 @@ class Campaign:
 
     def stage(self, name, spec, *, resume=False, values=None):
         self.guard()
-        output = self.run / name / "receipt.json"
+        output = self.run / name / "attempts" / uuid.uuid4().hex / "receipt.json"
         values = dict(
             values or {},
             bundle_sha256=self.bundle_hash,
@@ -610,7 +648,6 @@ class Campaign:
         argv = [a.format_map(values) for a in spec["argv"]]
         argv = [a for a in argv if a]
         self.files.check(spec["producer"])
-        output.unlink(missing_ok=True)  # Never accept the previous attempt's completion.
         self.publish(status="running", stage=name)
         self.runner.run(
             argv,
@@ -697,7 +734,27 @@ class Campaign:
                                 self.files.check(self.state["completed"][train_name]).read_text()
                             )
                         else:
-                            train = self.stage(train_name, spec["stages"]["train"], resume=resume)
+                            selected = admission.get("candidate_admissions", {}).get(candidate)
+                            if not self.fixture:
+                                path = self.files.check(selected)
+                                record = json.loads(path.read_text())
+                                require(
+                                    record.get("schema") == "nine_model_training_admission_v1"
+                                    and record.get("bundle_sha256") == self.bundle_hash
+                                    and record.get("config_sha256") == spec["config"]["sha256"]
+                                    and record.get("status") == "PASS",
+                                    "candidate training admission/config binding differs",
+                                )
+                            train = self.stage(
+                                train_name,
+                                spec["stages"]["train"],
+                                resume=resume,
+                                values={
+                                    "admission": selected["path"]
+                                    if selected
+                                    else "fixture-not-production-admission"
+                                },
+                            )
                         require(
                             train.get("committed") is True
                             and train.get("completion_reason") == "approved_budget_complete",
@@ -715,7 +772,7 @@ class Campaign:
                         )
                         require(
                             export.get("serialization_audit_passed") is True
-                            and export.get("no_dense_fallback") is True,
+                            and export.get("selected_weights_packed") is True,
                             "native export contract incomplete",
                         )
                         self.files.check(export["model"])
@@ -729,6 +786,12 @@ class Campaign:
                         {
                             "bundle_sha256": self.bundle_hash,
                             "models": exports,
+                            "training_endpoints": {
+                                c: self.state["completed"][c + "/train"] for c in CANDIDATES
+                            },
+                            "export_endpoints": {
+                                c: self.state["completed"][c + "/export"] for c in CANDIDATES
+                            },
                             "controls": self.bundle["controls"],
                             "target": self.bundle["inputs"]["target"],
                         },
@@ -759,7 +822,7 @@ class Campaign:
                     release_after_failure=release,
                     status="stopped" if isinstance(error, InterruptedError) else "failed",
                     failure={"type": type(error).__name__, "reason": str(error)},
-                    checkpoint_retained=True,
+                    checkpoints_deleted=False,
                 )
                 raise
         return self.state

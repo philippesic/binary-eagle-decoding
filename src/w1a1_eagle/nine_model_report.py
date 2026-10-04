@@ -8,7 +8,7 @@ from collections import defaultdict
 from .nine_model_pipeline import CELLS, require
 
 
-def aggregate(measurements):
+def aggregate(measurements, *, fixture=False):
     require(
         measurements.get("schema") == "nine_model_native_measurements_v1"
         and measurements.get("native") is True
@@ -16,6 +16,11 @@ def aggregate(measurements):
         "actual clean native measurements required",
     )
     require(measurements.get("compute_capability") == [12, 0], "SM120 campaign results required")
+    kind = "fixture" if fixture else "production"
+    require(
+        measurements.get("artifact_kind") == kind,
+        "fixture measurements cannot grant production result readiness",
+    )
     required_cells = {*CELLS, "target_only"}
     records = measurements["records"]
     require({r["cell"] for r in records} == required_cells, "nine cells and target-only required")
@@ -50,6 +55,30 @@ def aggregate(measurements):
             "mean_request_latency_s": duration / len(rows),
             "requests": len(rows),
         }
+    for cell, rows in groups.items():
+        if cell == "target_only":
+            continue
+        counters = [r.get("speculative") for r in rows]
+        valid = all(
+            isinstance(c, dict)
+            and all(type(c.get(k)) is int and c[k] >= 0 for k in ("proposed", "accepted", "rounds"))
+            and c["rounds"] > 0
+            and c["accepted"] <= c["proposed"]
+            for c in counters
+        )
+        require(fixture or valid, "actual native acceptance counters missing")
+        if valid:
+            sums = {
+                key: sum(c[key] for c in counters) for key in ("proposed", "accepted", "rounds")
+            }
+            tables[cell].update(
+                native_counts=sums,
+                accepted_per_round=sums["accepted"] / sums["rounds"],
+                emitted_tokens_per_round=tables[cell]["output_tokens"] / sums["rounds"],
+                proposal_acceptance=sums["accepted"] / sums["proposed"]
+                if sums["proposed"]
+                else None,
+            )
     for cell in CELLS:
         family = cell.split("_")[0]
         rate = tables[cell]["request_tokens_per_second"]
@@ -59,6 +88,7 @@ def aggregate(measurements):
         tables[cell]["speed_vs_eagle_q4"] = rate / tables["eagle_q4"]["request_tokens_per_second"]
     return {
         "schema": "nine_model_matched_report_v1",
+        "artifact_kind": kind,
         "native": True,
         "hardware": measurements["hardware"],
         "compute_capability": [12, 0],

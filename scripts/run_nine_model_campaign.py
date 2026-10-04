@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -29,6 +30,7 @@ def main(argv=None):
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--run-dir", type=Path)
     parser.add_argument("--availability", type=Path)
+    parser.add_argument("--supervisor-state", type=Path)
     parser.add_argument(
         "--gpu-control",
         type=Path,
@@ -50,7 +52,18 @@ def main(argv=None):
             )
         )
         return
-    require(args.run_dir and args.availability, "start needs run-dir and availability lease")
+    require(
+        args.run_dir and args.availability and args.supervisor_state,
+        "start needs run-dir, availability lease and detached supervisor state",
+    )
+    supervisor = json.loads(args.supervisor_state.read_text())
+    require(
+        supervisor.get("pid") == os.getpid()
+        and supervisor.get("supervisor_pid") == os.getppid()
+        and supervisor.get("status") == "running"
+        and os.environ.get("TMUX"),
+        "detached Linux tmux remote_job supervision absent",
+    )
     lease = require_available(args.availability, args.bundle_sha256)
 
     def authorization():

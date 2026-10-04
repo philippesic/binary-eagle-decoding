@@ -35,7 +35,7 @@ def export(args):
         "committed production training endpoint absent",
     )
     family, precision = args.candidate.split("_")
-    record = train["exports"][precision.upper()]
+    record = train["exports"][args.candidate]
     checkpoint, manifest = files.check(record["checkpoint"]), files.check(record["manifest"])
     model_record = bundle["candidates"][args.candidate]["base_model"]
     base = files.check(model_record)
@@ -48,7 +48,16 @@ def export(args):
     )
     audit = serializer.export_model(base, checkpoint, manifest, output)
     atomic_json(target / "export-audit.json", audit)
-    require(output.is_file(), "native serializer omitted GGUF")
+    require(
+        output.is_file() and audit.get("serialization_audit_passed") is True,
+        "native serializer audit did not PASS",
+    )
+    require(
+        audit.get("activation_bits") == int(precision[1:])
+        and audit.get("output", {}).get("sha256") == sha256(output)
+        and audit.get("projections"),
+        "export arithmetic/packed inventory differs",
+    )
     # This is serialization proof. Fresh native load/graph/backward admission and
     # actual evaluator loader/dispatch checks remain separate requirements.
     atomic_json(
@@ -60,7 +69,8 @@ def export(args):
             "status": "PASS",
             "artifact_kind": "production",
             "serialization_audit_passed": True,
-            "no_dense_fallback": True,
+            "selected_weights_packed": True,
+            "runtime_dense_fallback_checked": False,
             "model": {"path": str(output.resolve()), "sha256": sha256(output)},
             "training_receipt": {
                 "path": str(args.train_receipt),

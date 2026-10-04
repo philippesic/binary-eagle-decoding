@@ -18,6 +18,7 @@ from w1a1_eagle.nine_model_pipeline import (
     SubprocessRunner,
     atomic_json,
     clean_environment,
+    load_opaque_prompts,
     require_available,
     resource_gate,
     sha256,
@@ -90,7 +91,7 @@ class StageFixture:
         elif stage.endswith("export"):
             receipt.update(
                 serialization_audit_passed=not self.export_bad,
-                no_dense_fallback=True,
+                selected_weights_packed=True,
                 model={"path": str(checkpoint), "sha256": sha256(checkpoint)},
             )
         elif stage == "evaluation":
@@ -245,6 +246,23 @@ class LifecycleTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "fixture"):
             validate_bundle(path)
 
+    def test_source_opaque_ids_preserved_without_prefix_rules(self):
+        path = self.root / "prompts.jsonl"
+        identifiers = ["dolly:line-42", "magicoder:sample", "gsm8k:train-8"]
+        path.write_text(
+            "\n".join(
+                json.dumps(
+                    {
+                        "id": i,
+                        "split": "train",
+                        "messages": [{"role": "user", "content": "fixture"}],
+                    }
+                )
+                for i in identifiers
+            )
+        )
+        self.assertEqual([r["id"] for r in load_opaque_prompts(path)], identifiers)
+
     def test_ambient_flags_cleared(self):
         with patch.dict(
             os.environ,
@@ -379,6 +397,7 @@ class ReportTests(unittest.TestCase):
     def measurement(self):
         return {
             "schema": "nine_model_native_measurements_v1",
+            "artifact_kind": "fixture",
             "native": True,
             "instrumentation_in_clean_timing": False,
             "compute_capability": [12, 0],
@@ -400,9 +419,13 @@ class ReportTests(unittest.TestCase):
         }
 
     def test_family_q4_is_primary_denominator(self):
-        result = aggregate(self.measurement())
+        result = aggregate(self.measurement(), fixture=True)
         self.assertEqual(result["cells"]["dspark_a8"]["speed_vs_family_q4"], 2)
         self.assertEqual(result["cells"]["dspark_a8"]["speed_vs_eagle_q4"], 1)
+
+    def test_fixture_results_cannot_grant_production_readiness(self):
+        with self.assertRaisesRegex(ValueError, "fixture measurements"):
+            aggregate(self.measurement())
 
     def test_missing_pairs_repeats_or_instrumentation_rejected(self):
         for case in ("pair", "repeat", "instrumentation"):
@@ -414,7 +437,7 @@ class ReportTests(unittest.TestCase):
             else:
                 data["instrumentation_in_clean_timing"] = True
             with self.assertRaises(ValueError):
-                aggregate(data)
+                aggregate(data, fixture=True)
 
 
 if __name__ == "__main__":
