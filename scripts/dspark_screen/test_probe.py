@@ -100,6 +100,35 @@ class ProbeTests(unittest.TestCase):
         self.assertNotIn("EAGLE_CAPTURE_PREFIX", env)
         self.assertEqual(env["DSPARK_REQUIRE_AUTHOR_LAYOUT"], "1")
 
+    def test_q4_requires_exact_source_bound_ffn_coverage(self):
+        from precision_q4 import EXPECTED
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            config, _, _ = self.inputs(root)
+            row = config["dspark"]
+            row["reference"] = {"path": row["path"], "sha256": row["sha256"]}
+            candidate = root / "dspark-q4.gguf"
+            candidate.write_text("Q4 fixture")
+            row.update(path=str(candidate), sha256=probe.sha256(candidate))
+            receipt = {"schema": "dspark_precision_q4_ffn_v1", "passed": True,
+                       "source_export_bound": True, "non_ffn_immutable": True,
+                       "candidate_sha256": row["sha256"],
+                       "source_gguf_sha256": row["reference"]["sha256"],
+                       "source_export_sha256": row["export"]["sha256"],
+                       "original_checkpoint_sha256": row["source"]["sha256"],
+                       "target_sha256": config["target"]["sha256"],
+                       "selected": [{"name": name, "type": "Q4_0"} for name in sorted(EXPECTED)]}
+            path = root / "precision.json"
+            probe.write(path, receipt)
+            row["precision"] = {"path": str(path), "sha256": probe.sha256(path)}
+            probe.preflight(config, root)
+            for mutation in ({"candidate_sha256": "wrong"}, {"non_ffn_immutable": False},
+                             {"selected": receipt["selected"][:-1]}):
+                probe.write(path, {**receipt, **mutation})
+                row["precision"]["sha256"] = probe.sha256(path)
+                with self.assertRaisesRegex(ValueError, "Q4 precision ancestry"):
+                    probe.preflight(config, root)
+
     def test_supervisor_cleanup_grace_is_verified_before_launch(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

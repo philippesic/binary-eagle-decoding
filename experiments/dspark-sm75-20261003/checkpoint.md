@@ -255,3 +255,26 @@ DFreceipt880d696977fdea0f111615d5dd53fffc8c7488dae4cce35e572815688aa4bd44.
 Exactnon-FFNbytes/types retained;conf_proj trailing1 collapsenativeextentsunchanged.
 NoA8/A1lowbitclaims. Parentgitlink9e2 remainsuntilactualboundednativeadmission
 and reviewedintegration; allnativecommitsalreadypublic. NoactivemainSTATUS ownershipchange.
+
+## Both scoped numerical checks passed — October 4, 02:15 UTC
+
+The unchanged Q4 EAGLE versus DSpark N3 diagnostic reproduced the original
+position94 difference with identical actual prefixes through93. At native
+base92,row2 both consumed draft prefix [2348,279]. Q4 selected2331 with opposing
+margin0.00127410888671875; DS3 selected23035 with opposing margin0.00550079345703125.
+Both IDs occur in both finite top-five rows, NaN counts are zero, and the
+mean-centered common-top-five maximum difference is0.004618453979492188, below
+the predeclared0.05 gate. Root accepts this scoped near-tie evidence together
+with the earlier position89 check. Neither proves bit parity or a specific
+batch arithmetic cause; divergent suffixes remain disclosed.
+
+Source-bound short-N manifest SHA
+2a1165e28d1bd7aa10cc101a1ef3b60432fc7702676670f208e2792ff4f22741;
+remote path dspark-screen-114cc2f/runs/neartie-shortnmax-fcdf-20261004/results/
+neartie-shortnmax-evidence-manifest.json. Run47.4s/exit0; all owned groups are
+absent, GPU366MiB desktop baseline and no compute-app rows. Inference timing
+budget remains0/7200s. Sol finishes the CPU numerical receipt producer/consumer;
+Luna will revalidate the retained25-request native probe without new GPU requests,
+then start the full six-arm/six-repeat reference comparison. Root prepared a
+source-bound FFN Q4 probe branch; ten focused probe checks pass. W1 implementation
+scope remains pending human decision. RTX5080/QAT/fusion are untouched.
