@@ -1,5 +1,30 @@
 # A8 QAT recovery and comparison
 
+## Reference 40,000 scheduled evaluation running — October 4, 14:46 UTC
+
+Reference remaining-budget resume made positive updates and reached natural40000/
+cursor40082, supervisor33444 exit0 at14:40:40.248774UTC. Settled budget
+6680.599680868005/7200,null attempt; ONLY519.400319131995seconds remain for final
+training. Boundary request elapsed6674.161844542008precedes6.438s serialization/
+settlement; ledger governs budget. Request matches latest, final_training_complete
+false; committed491prompts/190769unique supervised rows/190769presented tokens.
+Checkpoint SHA256 `d5ddbd3d4932e8521b2f265dc3026dce01914a87c62084a31db101522ab14251`;
+manifest `2628f5d23568b4c99ac8076911a033a37ac978e0da03d84c76febb1c595369bb`.
+Verified hardlink archive under reference arm `evidence-archive/checkpoints/reference-step-40000`
+and its record directory; full PID/group/native-context/runtime-tmux return at
+14:43:17UTC, RTX5080/SM1202766MiB/0%, no compute apps.
+
+Scheduled40k eval actualstart14:44:49.458025UTC, original1200cap, Linux session
+`a8-reference-step40000-eval-20261004-01`, run
+`a8-reference-step40000-eval-supervisor-20261004-01`, supervisor33982/birth5964673,
+evaluator33983/birth5964682, same boot517c4a36. Same clean3bd source, fc18 fixed24
+manifest, native9e2/F16/Q4_0 policy. After matching result/archive/full release,
+resume exact40k state for ONLY519.400319131995seconds to original7200endpoint and
+matching final evaluation. Candidate final evaluation already passed and is
+inactive7200/null. Original SIGSEGV incident retry1/max2 preserved. CPU final
+coverage/telemetry/latency/repetition metadata audit remains deferred to all-final
+release; goal incomplete, SAME heartbeat ACTIVE, sole operator pane285.
+
 ## Candidate final evaluation passed; reference remaining budget resumed — October 4, 14:27 UTC
 
 Candidate final evaluator exited0 at14:21:01.295326UTC, supervisor wall767.209615s

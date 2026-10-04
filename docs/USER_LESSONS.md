@@ -55,6 +55,13 @@ evidence changes the lesson.
   advanced its own monitor registration, contributing to another stale-state
   report. Fresh process observations and the newer canonical field were current.
   Schema ambiguity, not a demonstrated concurrent GPU job, explains this episode.
+- Successor snapshot at14:38 incorrectly named candidate final exit0 as
+  `reference_final_eval_exit_code`, although reference was actively training at
+  step38,983 with no final evaluation. Root caught the label before acting; operator
+  removed it and recorded candidate_final_eval_exit_code plus current40k remaining
+  budget at14:43. Native jobs/results were intact. Match arm, actual phase, timestamp
+  and checkpoint, and require explicit final_training_complete plus a matching result;
+  a field containing the word final does not establish an endpoint.
 - Practical lesson: Use observed_at and actual start/end times separately; delivery
   order does not establish freshness. Re-read the ledger before patching it and
   reject older snapshots as current state. On conflicting status, inspect the same
