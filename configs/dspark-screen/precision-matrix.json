@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "shared_measurement_bound_s": 7200,
+  "settings": {
+    "models": [
+      "target_only",
+      "Q4_0 EAGLE D5"
+    ],
+    "candidate_lengths": [
+      3,
+      7
+    ],
+    "noise_block": 7,
+    "repetitions": 6,
+    "prompts": 24,
+    "output_cap": 128,
+    "context": 2048,
+    "batch": 32,
+    "microbatch": 32
+  },
+  "precision_groups": [
+    "all five FFN gate/up/down matrices:15 tensors"
+  ],
+  "protected_groups": [
+    "token embedding",
+    "private full head",
+    "feature fusion",
+    "attention",
+    "Markov factors",
+    "confidence and norms",
+    "target/verifier"
+  ],
+  "phases": [
+    {
+      "name": "released_reference",
+      "state": "native model proof complete; scoped numerical receipt pending",
+      "draft_storage": "original BF16 matrices; F32 norm widening",
+      "arms": [
+        "target_only",
+        "eagle_q4_0",
+        "dspark_3",
+        "dspark_7",
+        "dflash_3",
+        "dflash_7"
+      ]
+    },
+    {
+      "name": "ffn_q4_0",
+      "state": "CPU export passed; native admission pending",
+      "draft_storage": "15 FFN Q4_0 matrices; all other source types/bytes preserved",
+      "arms": [
+        "target_only",
+        "eagle_q4_0",
+        "dspark_ffn_q4_3",
+        "dspark_ffn_q4_7",
+        "dflash_ffn_q4_3",
+        "dflash_ffn_q4_7"
+      ]
+    },
+    {
+      "name": "ffn_w1a8",
+      "state": "unsupported export/loader/graph; human implementation decision pending",
+      "draft_storage": "proposed I32 packed sign bits + F32 row scales for15 FFN matrices",
+      "activations": "real native INT8 packing/integer dots; no floating fallback",
+      "arms": [
+        "target_only",
+        "eagle_q4_0",
+        "dspark_ffn_w1a8_3",
+        "dspark_ffn_w1a8_7",
+        "dflash_ffn_w1a8_3",
+        "dflash_ffn_w1a8_7"
+      ]
+    },
+    {
+      "name": "ffn_w1a1",
+      "state": "unsupported export/loader/graph; human implementation decision pending",
+      "draft_storage": "same proposed binary-weight FFN representation",
+      "activations": "real sign packing and XOR/POPCOUNT; existing kernels, no new kernel project",
+      "arms": [
+        "target_only",
+        "eagle_q4_0",
+        "dspark_ffn_w1a1_3",
+        "dspark_ffn_w1a1_7",
+        "dflash_ffn_w1a1_3",
+        "dflash_ffn_w1a1_7"
+      ]
+    }
+  ],
+  "budget_policy": "Phases share one cumulative7200s request-inference wall allowance. Hash and carry previous actual timing/progress receipts; failed timed requests count. Admission/build/conversion/profile overhead disclosed separately. Report only completed paired timing cells, never fabricate missing measurements."
+}
