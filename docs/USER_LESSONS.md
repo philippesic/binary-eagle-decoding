@@ -246,3 +246,21 @@ additional proof protocols or redoing completed audit work.
 - Practical lesson: Bind immutable source bytes and bind copied artifact bytes
   independently. When a workflow intentionally serializes data, compare the
   full parsed values too and exercise the real writer in a contract fixture.
+
+## October 3: separate CPU permission from another chat's GPU resume
+
+- Context: Following the RTX5080 CPU/GPU pause, the human requested CPU work to
+  resume in the independent fusion chat. The A8 owner separately recorded the
+  human's GPU-resume instruction at 23:21 PDT.
+- Evidence: Shared `gpu-control.json` was unpaused and the latest STATUS/goal
+  checkpoint explicitly attributed it to “resume gpu usage”; this chat's new
+  request said “resume cpu work”. Fusion calibration was already complete.
+- Agent contribution: The fusion agent initially said GPU work would remain
+  paused before checking the latest shared records, relying on its earlier
+  chat-local pause state. It corrected the statement before any flag mutation.
+- Resolution: CPU permission was recorded separately. Valid A8 GPU authorization,
+  GPU-control flags, monitor, goal and checkpoint were left unchanged. No new
+  experiment or GPU allocation was launched by the fusion team.
+- Practical lesson: Check current shared authorization before describing host
+  state. CPU-only permission does not grant this team GPU use or revoke a
+  separately authorized GPU resume. Preserve other owners' current permissions.
