@@ -15,13 +15,15 @@ integrates. See the [ownership checkpoint](goals/a8-qat-recovery-and-comparison.
 Integrated fixes are published (frozen execution source583480c; main8583b68).
 CPU checks and BOTH current native/model/backward/memory/five-repeat admissions
 pass on RTX5080/SM120. Reference fresh checkpoint-zero/smoke is published; its
-standalone native development evaluation preserved valid acceptance captures but
-failed an incorrect timing-helper ID-prefix check. Helper-only repair3bd4837 is
-published; bounded recovery preserves receipts/checkpoint/data/runtime/budgets.
-Both step-zero evaluations must pass before optimizer training; updates remain0. The only active goal is
+repaired standalone development evaluation PASSED (751seconds, all5timing reps
+and loss), with raw artifacts archived. Candidate freshzero/evaluation is next,
+then actualoptimizer updates immediately. CPU work/launch prep is complete.
+Updates remain0; no extra gates or repeatedpreparation are pending. The only active goal is
 [A8 QAT recovery and comparison](goals/a8-qat-recovery-and-comparison.md).
 
-RTX5080 is resumed for this work; RTX2080Ti and unrelated research remain paused.
+RTX5080 is resumed for this A8 work; A1 is held out. The human separately resumed
+RTX2080Ti for DSpark/DFlash; this team stays off that host and changes no shared
+pause flag. Separate fusion CPU work is excluded from this comparison.
 Reuse completed data and preserve the historical paired checkpoint. Initial
 training budget is two cumulative hours per A8 control/candidate arm, plus
 separately bounded step-zero/checkpoint/final evaluation. Candidate enables

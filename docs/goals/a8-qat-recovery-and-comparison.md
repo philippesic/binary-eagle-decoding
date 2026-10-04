@@ -1,34 +1,32 @@
 # A8 QAT recovery and comparison
 
-## Current execution checkpoint — October 3, 17:01 PDT
+## Current execution checkpoint — October 3, 17:19 PDT
 
-Both A8 native/current-model/backward/memory/five-repeat admissions PASSED on
-RTX5080/SM120, base source `583480c79f3ca090de0952deca8278dcb7f15c2d`, native9e2.
-Reference receipt `dfc0641e...a124073` (78 seconds); candidate receipt
-`8cd38c63...203996c` (93 seconds), with learned-quantizer/all-nine affine native
-evidence. Both bind identical full prepared source `b1a9f991...`, updates0.
+Reference repaired step-zero development PASSED (exit0, 750.7 seconds of1200),
+including all5native timing repetitions for A8/Q4_0/target-only and final loss.
+Report SHA `f889faf1...92dd7`; full successful raw output/report/result/request
+are hardlink-archived with locator map. Exact supervisor/evaluator/native groups
+returned; GPU at idle baseline. Source583 admissions and checkpoint-zero remain
+valid under helper-only3bd repair (training runtime hashes unchanged).
 
-Reference fresh checkpoint-zero is published and archived (SHA `647988c7...ad4aa`).
-Actual TRAIN smoke loss6.1445, positive later state/K/V gradients, one cache call
-and batched head. Its standalone evaluation generated correct frozen A8/Q4
-acceptance captures, then failed at the timing helper's invented ID-prefix rule;
-raw attempt0000 is preserved. Trainer and optimizer remain at step0. Sole
-operator verified all recorded groups/contexts returned and idle baseline GPU.
+Both reference and candidate current native/model/backward/memory/five-repeat
+admissions already PASSED on RTX5080/SM120, native9e2. Reference readiness
+`dfc0641e...a124073`; candidate `8cd38c63...203996c` with actual learned/all-nine
+native artifacts. No revalidation/preparation repeat is pending. Reference fresh
+checkpoint-zero SHA `647988c7...ad4aa` is preserved; optimizer updates remain0.
 
-Helper-only repair `3bd4837` is published/integrated (main456f3cf): the SAME exact
-prepared24 development bytes, SHA131a3db...ba081, now qualify acceptance/loss and
-timing. No dataset replacement, budget/precision/feature change or runtime-hash
-change. Root16patched CPU tests plus Ruff/diff pass. Existing native/model
-receipts and reference checkpoint remain valid. Recovery1/2 is authorized in a
-NEW immutable3bd checkout; preserve old583 source/raw artifacts and do not
-reinitialize the reference model or repeat admitted gates.
+Sole operator is proceeding directly to candidate freshzero publication and
+its matched development evaluation, then actual first optimizer updates without
+another confirmation. Both CPU workstreams/launch prep are complete. First100
+budgeted updates, graceful stop/exact resume and7200seconds per arm remain the
+fixed contract; timing-only tooling must not expand the prelaunch chain.
 
-Next: repaired reference step-zero evaluation and archival; candidate freshzero
-publication/evaluation; first100budgeted updates, graceful stop/exact resume and
-7200-second matched arms. Optimizer updates remain0 until both zero evals pass.
-A1 and RTX2080Ti stay paused. Originating chat/workers are uninvolved. Exact
-commands, births, groups, locators and incident counters live in ignored
-operator-ledger.json; root owns monitor-registration.json. Heartbeat ACTIVE.
+Latest direct human clarification: a separate DSpark/DFlash study owns resumed
+RTX2080Ti, and separate fusion work is bounded saved-TRAIN retrieval/CPU fitting.
+A8 uses ONLY RTX5080, makes no2080host-control writes/queries/experiments, and
+incorporates no unrelated study/fusion candidate. Originating chat is uninvolved;
+no reply is sent there. A1 stays held out. Operator-ledger.json carries exact
+commands, births/groups, hashes, observations and incidents; monitor ACTIVE.
 
 ## Standalone ownership claimed — October 3, 2026
 
