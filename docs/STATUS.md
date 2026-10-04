@@ -1624,15 +1624,15 @@ GPU release and optimizer training remain pending.
 ## Independent RTX2080Ti study checkpoint — October 4, 02:15 UTC
 
 Supported DSpark/DFlash measurements are complete: released-reference and
-FFN-only Q4 phases,1728 measured requests plus144 warmups, six balanced repeats,
+FFN-only Q4 phases, 1728 measured requests plus 144 warmups, six balanced repeats,
 2552.28/7200s request inference. Released DFlash7/DSpark7 beat primary Q4 EAGLE
-by45.8%/42.6%; FFN-Q4 variants beat their paired anchor by55.9%/55.6%. All four
-D7 conditions match primary raw IDs on all144 requests each. Cross-phase anchor
+by 45.8%/42.6%; FFN-Q4 variants beat their paired anchor by 55.9%/55.6%. All four
+D7 conditions match primary raw IDs on all 144 requests each. Cross-phase anchor
 variation limits causal precision-speed claims. Bounded profile/near-tie checks
 finished; GPU/groups/transport are closed and this study's merged local worktrees
 are removed. See the [full report](../experiments/dspark-sm75-20261003/results.md)
 and [final checkpoint](../experiments/dspark-sm75-20261003/checkpoint.md).
 
-Genuine W1A8/W1A1 remains unimplemented/unmeasured pending the human's15-FFN
+Genuine W1A8/W1A1 remains unimplemented/unmeasured pending the human's 15-FFN
 scope choice. No training, new goal, monitor or baseline change was selected.
 The A8 goal and RTX5080 pause/ownership remain untouched.

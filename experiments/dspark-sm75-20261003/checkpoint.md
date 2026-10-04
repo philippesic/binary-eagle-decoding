@@ -390,9 +390,9 @@ pending a direct human choice.
 Released-reference and FFN-Q4 phases are COMPLETE: 1728 measured requests,
 144 warmups, six balanced repeats per phase, both exit0. Used request inference
 2552.275786367/7200 seconds; no budget increase or reset. D7 in both formats
-matches the primary Q4 EAGLE outputs on all144 measured requests per condition.
-Released DFlash7/DSpark7 request rates132.365/129.487 versus paired90.8013;
-FFN-Q4 DFlash7/DSpark7 rates128.9891/128.7741 versus paired82.7523. The lower
+matches the primary Q4 EAGLE outputs on all 144 measured requests per condition.
+Released DFlash7/DSpark7 request rates 132.365/129.487 versus paired 90.8013;
+FFN-Q4 DFlash7/DSpark7 rates 128.9891/128.7741 versus paired 82.7523. The lower
 second-phase anchors prevent a causal precision-speed attribution; per-request
 hardware clocks were not recorded. Full results and exact limits: results.md.
 
@@ -400,36 +400,36 @@ Four tiny CUDA-event/MATMUL diagnostics finished exit0 with no truncation or
 inventory-only timing. The correct DFlash-specific parser attributes candidate
 body/head/fusion/output costs. Sparse first-block Q4 records show actual MMVQ,
 Q8_1 activation operands and I32-dot/F32-scaled-sum; storage coverage is exactly
-fifteen FFN matrices, not full-model quantization or W1. Profiles use16-token
+fifteen FFN matrices, not full-model quantization or W1. Profiles use 16-token
 requests and synchronized events/graphs disabled, so are not serving rates.
 
 The only additional original-order short-arm p90 diagnostic finished exit0.
-All16 complete original warmup/prompt outputs and terminations reproduced;
-signed opposing margins0.002527237/−0.002305985, centered difference0.005583191.
+All 16 complete original warmup/prompt outputs and terminations reproduced;
+signed opposing margins 0.002527237/−0.002305985, centered difference 0.005583191.
 Final source-bound CPU audit passed (SHA
 95685d8d6034204161d2c6e7a49e78b4e684b66e86f1385e36f4525b2a4167cb).
 Frozen source protocol bytes and sorted saved protocol JSON semantics are both
 checked after preserving the original audit failure/staged intermediate pass.
 No broader parity claim, verifier change or new GPU experiment followed.
 
-Final operator proof2026-10-04T05:08:42Z: all five diagnostic supervisors/children
-and ten model server groups stopped, ports18386–18390 free, no runtime tmux or
-compute contexts, GPU366/11264MiB at0%, P8/31C. Earlier timing/probe groups were
+Final operator proof 2026-10-04T05:08:42Z: all five diagnostic supervisors/children
+and ten model server groups stopped, ports 18386–18390 free, no runtime tmux or
+compute contexts, GPU 366/11264MiB at 0%, P8/31C. Earlier timing/probe groups were
 also terminal. Sole operator closed its owned SSH/MCP transport. RTX5080/QAT/
 fusion and originating chats were untouched; the active A8 goal stays paused.
 
-Final52 helper and13 harness/analysis tests pass on integrated main; native
+Final 52 helper and 13 harness/analysis tests pass on integrated main; native
 CPU/build/reservation and actual SM75 evidence remain distinct. All parent
 worker/EOS/study histories are integrated and pushed. Only this study's clean
 merged local worktrees and branches are removed. Native published branch
-feature/dspark-admission remains a reachable anchor for admitted gitlinkfcdf582.
-Local HF metadata and153MiB CPU build are preserved under ignored
+feature/dspark-admission remains a reachable anchor for admitted gitlink fcdf582.
+Local HF metadata and 153MiB CPU build are preserved under ignored
 /Users/pippo/github/binary-eagle-decoding/runs/dspark-sm75-local-preserved;
 remote immutable source/model/raw-run directories are retained for ancestry.
 Unrelated untracked overnight files and other owners' worktrees are unchanged.
 
 W1A8/W1A1 export/loader/graph support remains UNIMPLEMENTED and unmeasured.
-No human implementation scope answer arrived. The concrete15-FFN existing-kernel
+No human implementation scope answer arrived. The concrete 15-FFN existing-kernel
 proposal and decision are in precision-admission.md/DECISIONS; no dependent W1
 code, training, QAT or new goal was started. There is no further GPU work or
 monitor scheduled by this study. Future work requires that scope choice.

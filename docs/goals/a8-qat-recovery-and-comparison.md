@@ -468,9 +468,9 @@ first compaction. A8 ownership, pause, optimizer/data/checkpoint budgets and
 RTX5080 controls/jobs remain unchanged; no cross-chat contact occurred.
 
 Human-authorized RTX2080Ti supported measurements are now complete: two phases,
-1728 measured requests, six repeats,2552.28/7200s inference. Released DFlash7/
-DSpark7 request throughput improves45.8%/42.6% over primary Q4 EAGLE and matches
-all144 primary outputs per arm. FFN-Q4 similarly wins its paired comparison;
+1728 measured requests, six repeats, 2552.28/7200s inference. Released DFlash7/
+DSpark7 request throughput improves 45.8%/42.6% over primary Q4 EAGLE and matches
+all 144 primary outputs per arm. FFN-Q4 similarly wins its paired comparison;
 phase-anchor variation is disclosed. All bounded diagnostics pass within their
 scope, GPU and transport are closed, merged local worktrees removed. The
 [separate report](../../experiments/dspark-sm75-20261003/results.md) preserves
