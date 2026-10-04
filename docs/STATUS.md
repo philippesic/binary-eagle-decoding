@@ -15,8 +15,10 @@ integrates. See the [ownership checkpoint](goals/a8-qat-recovery-and-comparison.
 Integrated fixes are published (frozen execution source583480c; main8583b68).
 CPU checks and BOTH current native/model/backward/memory/five-repeat admissions
 pass on RTX5080/SM120. Reference fresh checkpoint-zero/smoke is published; its
-standalone native development evaluation is running. Both step-zero evaluations
-must finish before actual optimizer training; optimizer updates remain0. The only active goal is
+standalone native development evaluation preserved valid acceptance captures but
+failed an incorrect timing-helper ID-prefix check. Helper-only repair3bd4837 is
+published; bounded recovery preserves receipts/checkpoint/data/runtime/budgets.
+Both step-zero evaluations must pass before optimizer training; updates remain0. The only active goal is
 [A8 QAT recovery and comparison](goals/a8-qat-recovery-and-comparison.md).
 
 RTX5080 is resumed for this work; RTX2080Ti and unrelated research remain paused.

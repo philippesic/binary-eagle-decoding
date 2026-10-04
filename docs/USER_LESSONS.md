@@ -181,4 +181,22 @@ additional proof protocols or redoing completed audit work.
 - Evidence: Immediately before first model load, the flag was true with update time22:52:45UTC. The control schema stores only a boolean and timestamp, so the study cannot identify its writer or whether it reflects a newer human pause. No model or measurement was launched; completed CPU preparation is preserved and owned GPU contexts are absent.
 - Status: Confirmed shared-state conflict; pause provenance and human intent remain uncertain. No user mistake or agent fault for the pause is asserted.
 - Agent contribution: The team relied on initial resume during lengthy CPU preparation, then performed the required adjacent launch check. Root held the launch and asked the human for clarification without contacting the independent QAT/fusion owners.
+- Clarification from the standalone A8 owner: its operator restored the RTX2080Ti flag after observing it false, under this task’s instruction that RTX2080Ti and unrelated research remain paused. This was a standing A8 handoff instruction, not a new human pause request. The separate study’s resume authorization was unknown to the A8 operator. The A8 team will stay off RTX2080Ti and avoid further flag writes based solely on its deferral, while a later direct human host decision controls global state.
 - Practical lesson: Store host-control writer, reason and authorizing request when ownership changes. Recheck immediately before a GPU launch and honor an unexplained newer pause while clarifying its scope; preserve completed preparation so a resume does not repeat audits/builds.
+
+### 2026-10-03: Validate the actual frozen prompt contract
+
+- Context: The A8 comparison explicitly reuses prepared unsealed development data.
+- Evidence: The first step-zero evaluation used the correct 24 prepared prompts
+  (SHA131a3db...ba081), including original Magicoder/Dolly/GSM8K IDs, for acceptance.
+  The new timing helper then rejected them because it required an unrelated
+  `qat-revisit-development-*` prefix. No optimizer update occurred.
+- Agent contribution: The helper introduced an unsupported naming assumption.
+  Its synthetic fixtures shared that assumption; root reviewed timing/deadline/
+  precision behavior but missed the mismatch with the actual frozen manifest.
+- Resolution: Helper-only repair3bd4837 pins the exact prepared content hash and
+  validates unique unsealed opaque IDs. Root16regressions pass; failed raw data,
+  native receipts and checkpoint-zero are retained for bounded recovery.
+- Practical lesson: Use the actual declared manifest/content identity when
+  integrating an evaluator. Exercise its real ID styles in a contract fixture;
+  naming conventions must not replace dataset-role and provenance checks.
