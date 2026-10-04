@@ -13,7 +13,9 @@ class NativeEvidenceTests(unittest.TestCase):
                    "embedding_hash_fnv1a64": 100, "head_hash_fnv1a64": 200,
                    "target_embedding_bytes": 777912320, "target_head_bytes": 777912320,
                    "target_embedding_dtype": "f16", "target_head_dtype": "f16",
-                   "borrows_embedding": True, "borrows_head": True}
+                   "borrows_embedding": True, "borrows_head": True,
+                   "draft_n_batch": 32, "draft_n_ubatch": 32, "draft_n_outputs_max": 7,
+                   "draft_n_outputs_max_per_seq": 7, "draft_backend_sampling": True}
         state = [{"event": "binding_begin", **binding},
                  {"event": "inject", "rc": 0, "target_taps": [2, 10, 18, 26, 34],
                   "feature_hash_fnv1a64": 88, "first_position": 0, "last_position": 1, "n_tokens": 2},
@@ -65,6 +67,31 @@ class NativeEvidenceTests(unittest.TestCase):
         state[3]["visible_noise_positions"] = [2]
         with self.assertRaisesRegex(ValueError, "actual attention mask"):
             check_state(state, rounds, 3)
+
+    def test_reject_old_four_output_capacity(self):
+        state, rounds = self.fixture()
+        for binding in (state[0], state[-1]):
+            binding["draft_n_outputs_max_per_seq"] = 4
+        with self.assertRaisesRegex(ValueError, "capacity cannot cover"):
+            check_state(state, rounds, 3)
+
+    def test_reject_zero_drafts_and_permanently_truncated_drafts(self):
+        for proposed, verified in (([], [99]), ([31], [31, 99])):
+            state, rounds = self.fixture()
+            rounds[0].update(proposed_token_ids=proposed, verified_token_ids=verified,
+                             n_proposed=len(proposed), n_accepted=len(verified)-1,
+                             n_accepted_usable_prefix=min(len(verified)-1, len(rounds[0]["emitted_token_ids"])))
+            with self.assertRaisesRegex(ValueError, "configured maximum"):
+                check_state(state, rounds, 3)
+
+    def test_legitimate_no_noise_output_cap_boundary_is_separate(self):
+        state, rounds = self.fixture()
+        rounds.append({"status": "complete", "replay": False, "n_draft_max": 0,
+                       "n_proposed": 0, "n_accepted": 0, "proposed_token_ids": [],
+                       "n_emitted": 1, "emitted_token_ids": [151645]})
+        _, summary = check_state(state, rounds, 3)
+        self.assertEqual(summary["rounds"], 1)
+        self.assertEqual(summary["no_noise_output_cap_boundaries"], 1)
 
     def test_reject_stale_noise_cache(self):
         state, rounds = self.fixture()

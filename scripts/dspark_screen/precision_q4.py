@@ -33,6 +33,19 @@ def policy_type(name, original="BF16"):
     return "Q4_0" if re.fullmatch(FFN_PATTERN, name) else original
 
 
+def native_extents(shape):
+    if not 1 <= len(shape) <= 4 or any(int(value) < 1 for value in shape):
+        raise ValueError("invalid native tensor extents")
+    return list(shape) + [1] * (4 - len(shape))
+
+
+def shape_preserved(source, candidate):
+    collapsed = list(source)
+    while len(collapsed) > 1 and collapsed[-1] == 1:
+        collapsed.pop()
+    return candidate in (source, collapsed) and native_extents(source) == native_extents(candidate)
+
+
 def raw_hash(array):
     h = hashlib.sha256()
     raw = array.reshape(-1).view("uint8")
@@ -64,7 +77,8 @@ def inspect(source: Path, output: Path, llama: Path, export_report: Path | None 
     selected, preserved = [], []
     for name, tensor in left.items():
         candidate = right[name]
-        if tensor.shape.tolist() != candidate.shape.tolist():
+        source_shape, candidate_shape = tensor.shape.tolist(), candidate.shape.tolist()
+        if not shape_preserved(source_shape, candidate_shape):
             raise ValueError(f"tensor shape changed: {name}")
         if name in EXPECTED:
             if tensor.tensor_type.name != "BF16" or candidate.tensor_type.name != "Q4_0":
@@ -77,7 +91,10 @@ def inspect(source: Path, output: Path, llama: Path, export_report: Path | None 
             if tensor.tensor_type != candidate.tensor_type or tensor.n_bytes != candidate.n_bytes or source_raw != candidate_raw:
                 raise ValueError(f"non-FFN source bytes/type changed: {name}")
             preserved.append({"name": name, "type": tensor.tensor_type.name,
-                              "bytes": tensor.n_bytes, "raw_sha256": source_raw})
+                              "bytes": tensor.n_bytes, "raw_sha256": source_raw,
+                              "source_shape": source_shape, "candidate_shape": candidate_shape,
+                              "native_extents": native_extents(source_shape),
+                              "trailing_singleton_collapsed": source_shape != candidate_shape})
     source_sha = sha256(source)
     export = json.loads(export_report.read_text()) if export_report else None
     actual_source_bound = bool(export and export.get("passed") and export.get("draft_sha256") == source_sha)
