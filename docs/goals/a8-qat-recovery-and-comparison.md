@@ -1,32 +1,36 @@
 # A8 QAT recovery and comparison
 
-## Current execution checkpoint — October 3, 17:19 PDT
+## Current execution checkpoint — October 3, 17:48 PDT
 
-Reference repaired step-zero development PASSED (exit0, 750.7 seconds of1200),
-including all5native timing repetitions for A8/Q4_0/target-only and final loss.
-Report SHA `f889faf1...92dd7`; full successful raw output/report/result/request
-are hardlink-archived with locator map. Exact supervisor/evaluator/native groups
-returned; GPU at idle baseline. Source583 admissions and checkpoint-zero remain
-valid under helper-only3bd repair (training runtime hashes unchanged).
+**REAL A8 optimizer training observed.** Reference control first reported step383,
+then graceful stop preserved step859/cursor860 and129.8578 trainer seconds.
+All18gradient tensors finite, actual sign/scale movement admission passed,100
+cumulative sign flips; cache/head effective (one cache call/chunk64, batched head).
+This control intentionally has fixed A8/symmetric weights; candidate learned A8,
+all-nine midpoints and latent0.1 AdamW are qualified and queued, not yet trained.
 
-Both reference and candidate current native/model/backward/memory/five-repeat
-admissions already PASSED on RTX5080/SM120, native9e2. Reference readiness
-`dfc0641e...a124073`; candidate `8cd38c63...203996c` with actual learned/all-nine
-native artifacts. No revalidation/preparation repeat is pending. Reference fresh
-checkpoint-zero SHA `647988c7...ad4aa` is preserved; optimizer updates remain0.
+Positive checkpoint SHA `58c6fce4...`, manifest `a667006d...`,
+optimizer_rng_cursor_exact=true, source `b1a9f991...`; hardlink archive
+`evidence-archive/checkpoints/reference-positive-step-859`. Durable budget ledger
+max7200, used129.8578, active_attempt null after stop;7070.1422 remains. Every
+update is retained/charged. The proposed100boundary passed between observations;
+the actual proof is859. No unscheduled evaluation at859: archive/verify/release,
+then EXACT same-config/source resume directly and observe860+ before continuing.
 
-Sole operator is proceeding directly to candidate freshzero publication and
-its matched development evaluation, then actual first optimizer updates without
-another confirmation. Both CPU workstreams/launch prep are complete. First100
-budgeted updates, graceful stop/exact resume and7200seconds per arm remain the
-fixed contract; timing-only tooling must not expand the prelaunch chain.
+Both fresh step-zero evaluations PASSED: reference750.7s, candidate786.2s, each
+within1200; all5native request timing repetitions for A8/Q4/target-only plus loss,
+raw outputs archived. Both native/model/backward/memory/five-repeat receipts
+already passed on RTX5080/SM120/native9e2. Base583 admission/math hashes remain
+unchanged under helper-only repair3bd (current execution source), no revalidation.
 
-Latest direct human clarification: a separate DSpark/DFlash study owns resumed
-RTX2080Ti, and separate fusion work is bounded saved-TRAIN retrieval/CPU fitting.
-A8 uses ONLY RTX5080, makes no2080host-control writes/queries/experiments, and
-incorporates no unrelated study/fusion candidate. Originating chat is uninvolved;
-no reply is sent there. A1 stays held out. Operator-ledger.json carries exact
-commands, births/groups, hashes, observations and incidents; monitor ACTIVE.
+Next: confirm positive-step exact resume, train reference toward cumulative7200s
+with save1000/development5000/final cadence, then candidate same budget/proof.
+Latest human direction prioritizes real updates and no optional prelaunch chains;
+all independent CPU repair/validation/launch work is complete. Sole operator
+`/root/gpu_supervisor` owns exact commands, births/groups, locators and raw failures
+in operator-ledger.json; root owns monitor-registration.json. Monitor ACTIVE.
+A1 held out; no2080control/query/experiment and no unrelated fusion/architecture
+candidate. Originating chat is uninvolved; no reply is sent there.
 
 ## Standalone ownership claimed — October 3, 2026
 
