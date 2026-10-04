@@ -265,6 +265,38 @@ with NativeTeacher(Path(sys.argv[2]),Path(sys.argv[3]),Path(sys.argv[4]),
     @unittest.skipUnless(
         os.environ.get("BLOCK_TEACHER_NATIVE"), "actual native target helper not selected"
     )
+    def test_prompt_cap_refuses_before_decode_or_output(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            target = self.target_fixture(root, full_tokenizer=True)
+            teacher = NativeTeacher(
+                Path(os.environ["BLOCK_TEACHER_NATIVE"]),
+                target,
+                root / "raw",
+                target_sha256=sha256(target),
+                max_tokens=128,
+                gpu_layers=0,
+                producer_source_revision="0" * 40,
+                timeout_seconds=30,
+            )
+            with self.assertRaisesRegex(RuntimeError, "native teacher exited"):
+                teacher.generate_capture(
+                    messages=[{"role": "user", "content": "token3 token4"}],
+                    template_mode="native_chat",
+                    max_new_tokens=4,
+                    max_prompt_tokens=8,
+                    tap_ids=[0, 1, 2, 3, 4],
+                    logits_mode="none",
+                )
+            self.assertEqual(list((root / "raw").glob("*/features.f32")), [])
+            self.assertIn("before decode", Path(teacher.log.name).read_text())
+            with self.assertRaises(RuntimeError):
+                teacher.close()
+            self.assertEqual(teacher.process.returncode, 1)
+
+    @unittest.skipUnless(
+        os.environ.get("BLOCK_TEACHER_NATIVE"), "actual native target helper not selected"
+    )
     def test_native_out_of_vocab_failure_is_visible(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

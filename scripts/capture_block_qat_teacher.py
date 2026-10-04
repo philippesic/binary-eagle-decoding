@@ -194,6 +194,7 @@ class NativeTeacher:
         prompt_text=None,
         template_mode,
         max_new_tokens,
+        max_prompt_tokens=None,
         tap_ids,
         logits_mode="all",
         chain_ancestry=None,
@@ -203,7 +204,19 @@ class NativeTeacher:
             raise ValueError("unsupported logits mode")
         if type(max_new_tokens) is not int or not 0 <= max_new_tokens <= self.max_tokens:
             raise ValueError("invalid bounded native continuation")
-        prompt = {"template_mode": template_mode, "max_new_tokens": max_new_tokens}
+        if max_prompt_tokens is None:
+            max_prompt_tokens = self.max_tokens - max_new_tokens
+        if (
+            type(max_prompt_tokens) is not int
+            or max_prompt_tokens <= 0
+            or max_prompt_tokens + max_new_tokens > self.max_tokens
+        ):
+            raise ValueError("invalid bounded native prompt token cap")
+        prompt = {
+            "template_mode": template_mode,
+            "max_new_tokens": max_new_tokens,
+            "max_prompt_tokens": max_prompt_tokens,
+        }
         if template_mode == "native_chat" and prompt_text is None:
             if (
                 not isinstance(messages, list)
@@ -455,6 +468,7 @@ def main():
                         prompt_text=request.get("prompt_text"),
                         template_mode=request["template_mode"],
                         max_new_tokens=request["max_new_tokens"],
+                        max_prompt_tokens=request.get("max_prompt_tokens"),
                         tap_ids=request["tap_ids"],
                         logits_mode=request.get("logits_mode", "all"),
                         chain_ancestry=request.get("chain_ancestry"),
