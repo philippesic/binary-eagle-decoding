@@ -1,5 +1,35 @@
 # A8 QAT recovery and comparison
 
+## Reference 25,000 checkpoint; evaluation running — October 4, 11:01 UTC
+
+Reference reached natural25000/cursor25044, boundary observed10:59:58Z.
+Checkpoint SHA
+`e3948dbd55be4b443d1d0ff8bb2c6e4b5c08b3e8308e69c435b8692b5c3088a8`
+hardlink archived with manifestef8a346e...,status/budget/supervisor evidence;
+locator `evidence-archive/checkpoints/reference-step-25000-locator.json`.
+Supervisor actualstart10:44:41.639338Z/end10:59:26.369718Z,exit0. Settled
+budget4324.037866769007/7200,active_attempt null,remaining2875.962133230993.
+Exact24320/4523893 and24325/4523900 groups/session/server absent. Training resource baseline
+2766MiB/0% before scheduled evaluation.
+
+Native evaluation launched11:01:06Z, same immutable3bd/current9e2/F16 target/
+verifier/KV/frozen24dev/1200s cap, diagnostic faulthandler only. Host tmux session
+`a8-reference-step25000-eval-20261004-01`, run
+`a8-reference-step25000-eval-supervisor-20261004-01`; supervisor24696/birth4622464,
+evaluator24701/birth4622474 on sameboot517c4a36. Existing25k manifest SHAfc18f400.
+Initial11:01:17 resource snapshot startup2766MiB/0%; result pending. Earlier
+resource timestamp10:00:16 is retracted: raw04:00:16PDT corresponds to11:00:16UTC.
+Use explicit UTC timestamps; no resource/recipe/budget change resulted.
+
+Candidate remains evaluated20000/4132.196864,0.205183drafts/round/67.751requestTPS,
+below ref20000 andQ4_0. After ref terminal archive/release, resume candidate
+20000→25000 under3067.803136remaining, normal evaluation, then reference25000→30000.
+Both7200 cumulative endpoints/final evaluations remain incomplete; Goal/heartbeat
+ACTIVE, allsource/recipe/math/data/precision/budgets unchanged, no repeated gates.
+SIGSEGV retry1/max2/charges retained, A1 held out, no2080host controls. Current
+canonical operator observations/births/checkpoint IDs govern; separate actual
+start/end from later observations and do not restart from stale legacy fields.
+
 ## Candidate 20,000 evaluated; reference resumed — October 4, 10:47 UTC
 
 Candidate20000 eval exited0: supervisor actualstart10:28:34.371620Z/end
