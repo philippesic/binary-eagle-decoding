@@ -15,7 +15,8 @@ Operator verified every recorded owned train/stop/monitor/native PID/group absen
 empty native process scan, empty compute-app query and no remote tmux session.
 Host residual GPU usage was3537MiB/21% with no compute process; do not label that
 residual host usage as an A8 job or claim the entire physicalGPU unused. Sole
-operator is disconnecting its SSH/MCP transport; closure confirmation is next.
+operator confirmed SSH exited and only its local MCP session249 was killed;
+transport is closed. Operator ledger contains final shutdown evidence.
 No more remote activity after shutdown proof, no new GPU/training/eval/recovery
 until a direct human resume. RTX2080Ti controls are untouched.
 

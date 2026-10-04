@@ -11,7 +11,7 @@ exit0, at2081updates/cursor2084; exact optimizer/RNG/cursor checkpoint and budge
 are archived. Candidate used441.282of7200seconds; reference preserved/evaluated
 5000updates/764.725seconds. All owned train/native/monitor groups and remote tmux
 sessions are absent. Host residual3537MiB/21% is separate from the stopped A8 jobs.
-SSH transport closure is being finalized. LocalRTX5080newruns are blocked;
+SSH transport is CLOSED (owned MCP session249 removed). LocalRTX5080newruns are blocked;
 existingheartbeat and Goal PAUSED. No new GPU/eval/recovery or remotework beyond
 closure until explicithumanresume. Comparison remains incomplete;2080untouched.
 
