@@ -143,3 +143,66 @@ may require their own scoped gate evidence rather than inheriting a blanket
 waiver from this prompt. At this checkpoint no numeric receipt is active and
 the existing exact output-ID check has not changed. Root/Luna/Astra own the
 actual diagnostic and acceptance decision; W1 representation remains pending.
+
+## Accepted scoped numeric edges and executable CPU receipt
+
+Root accepted two unchanged-runtime diagnostic edges with the same predeclared
+0.05 bounds. At position89, target-only72499 versus primary-Q4 target
+correction9920 had signed gaps+0.0082206726/-0.0031223297 and centered common
+top5 maximum0.0086177826. The actual Q4 row was reached/nonreplay row0 with
+no accepted drafts and empty prior-draft prefix. At position94, primary-Q42331
+versus short-DS323035 had gaps+0.0012741089/-0.0055007935 and centered maximum
+0.004618454. Both paths reached base92 plus identical prior draft tokens
+`[2348,279]`; Q4 rejected the next proposal while DS3 accepted its target-matching
+proposal. All selected/emitted raw winners were finite and NaN counts zero.
+These are operator-provided actual diagnostic values, not this worker's GPU runs.
+
+Observed complete DS7/DF7 paths equal primaryQ4 for all five cases; observed
+DS3/DF3 paths equal each other for all five. A single89-edge receipt leaves the
+four short-mode prose outputs uncovered; the accepted94 edge connects their
+exact observed native paths. Downstream differences are admitted **only** as
+those exact complete sequences. No statement that all future prompts match,
+bit parity or confirmed batch-arithmetic causation follows.
+
+[numeric_gate.py](../../scripts/dspark_screen/numeric_gate.py) produces a receipt
+from existing files only and recomputes it on consumption. It hashes raw JSON
+requests/responses/measurements/traces/protocol, uses already verified model
+hashes from run configs, checks unchanged runtime/request/sampler settings,
+sequential task mapping, full rendered+generated shared prefixes, finite
+sampled raw argmax,0.05 gaps/centered-top5 bounds, and causal retained-prefix
+joins against complete emitted round streams. It composes only
+target-only→primary-Q4@89 and primary-Q4→short-DS3@94. Original candidate outputs
+must equal a connected complete observed path; uncovered cases remain reject.
+
+Minimal producer input JSON:
+
+```json
+{
+  "manifest": "/absolute/existing-probe/manifest.json",
+  "primary": "/absolute/baseline-readiness/results",
+  "protocol": "/absolute/frozen/configs/dspark-screen/protocol.json",
+  "edges": [
+    {"left": "target_only", "right": "eagle_q4_0",
+     "results": "/absolute/neartie-logit-diagnostic/results", "gate": "/absolute/numeric-gate.json"},
+    {"left": "eagle_q4_0", "right": "dspark_3",
+     "results": "/absolute/neartie-shortnmax/results", "gate": "/absolute/numeric-gate.json"}
+  ]
+}
+```
+
+```sh
+python3 scripts/dspark_screen/numeric_gate.py numeric-inputs.json numeric-receipt.json
+```
+
+Copy the immutable original probe manifest to a new filename and add
+`numeric_gate: {path,sha256}` pointing to the produced receipt, then run the
+existing CPU validator. Do not overwrite original raw manifests/artifacts.
+The receipt may be partially covered; it is a numeric-policy artifact rather
+than model admission. Final model admission requires all structural/ownership/
+output checks and exposes `binary_sha256`, `protocol_sha256`,
+`model_sha256: {dspark,dflash}` plus `target_sha256` for harness freshness checks.
+
+Four focused numeric tests pass: two-edge full coverage, one-edge uncovered
+short suffixes, large-margin/unreached-prefix rejection, and tampered receipt
+rejection. Eighteen existing structural tests still pass. No GPU re-probe,
+native edit, relaxed threshold or W1 implementation occurred in this worker.
