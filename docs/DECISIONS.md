@@ -964,3 +964,34 @@ drafter matrices, including fusion, attention and the full head. That scope
 answer is pending; no new goal, remote operation, training or budget started
 by this clarification. Current project-wide Q4 EAGLE comparison policy and
 previously frozen measurements are preserved.
+
+## Proposed research selection for nine trained and baseline drafters — October 4, 2026
+
+The human confirmed separate EAGLE and DSpark/DFlash training tracks, each with
+frozen Q4 and fusion-calibrated long-QAT W1A8/W1A1 candidates: nine final models.
+They requested a deep backlog selection reviewed through peer-review MCP with
+Opus 5.5 rather than Fable. Two focused calls with claude-opus-5-5-high completed.
+The first broad max-reasoning call timed out and contributes no feedback.
+
+[Reviewed recommendation](../experiments/nine-model-qat-research-plan-2026-10-04.md)
+records evidence, selected development probes, conditional optimizations, deferred
+branches and qualifications to reviewer suggestions. Recommend architecture-specific
+native binary deployment/captures, all-domain fusion initialization at actual
+A8/A1 arithmetic, meaningful balanced training coverage, direct-A1 versus A8-to-A1,
+learned A1 thresholds, depth weighting, one own-prefix refresh probe and isolated
+optimizer controls. Confirm the best combination against the best singleton and
+fixed control. Floating fusion residuals/affine centers and head quantization are
+conditional deployment experiments with explicit coverage and cost.
+
+Use common token-exposure learning curves plus total lineage/capture/search
+compute, expanded selection and independent confirmation prompts, seed-variance
+checks and native request timing. The previous fixed-A8 development curve flattened
+around 25k–35k updates; more hours alone are not demonstrated to recover Q4 quality.
+Original Q4 controls remain frozen. Additional matched-coverage/domain-adaptation
+controls are development diagnostics outside the final nine. No architecture or
+precision attribution follows solely from a best-model deployment table.
+
+The human owns final quantized tensor coverage, floating exceptions and total
+compute allocation. No new active goal, schedule, model implementation, GPU/remote
+action or training budget was started by this recommendation. The completed
+A8 goal and original experiment reports are unchanged.
