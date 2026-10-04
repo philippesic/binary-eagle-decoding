@@ -25,6 +25,21 @@ def require(condition, message):
         raise ValueError(message)
 
 
+def check_q4_precision(export, precision, candidate_sha, export_sha):
+    from precision_q4 import EXPECTED
+    require(precision.get("schema") == "dspark_precision_q4_ffn_v1" and precision.get("passed") and
+            precision.get("source_export_bound") and precision.get("non_ffn_immutable"),
+            "missing exact FFN Q4 precision proof")
+    require(precision.get("candidate_sha256") == candidate_sha and
+            precision.get("source_gguf_sha256") == export["draft_sha256"] and
+            precision.get("source_export_sha256") == export_sha and
+            precision.get("original_checkpoint_sha256") == export["source_sha256"] and
+            precision.get("target_sha256") == export["target_sha256"], "Q4 precision ancestry changed")
+    selected = precision.get("selected", [])
+    require(len(selected) == 15 and {row.get("name") for row in selected} == EXPECTED and
+            all(row.get("type") == "Q4_0" for row in selected), "Q4 precision coverage is not exactly fifteen FFN matrices")
+
+
 def initial_setup_masks(state):
     """Recognize only the exact observed pre-injection, unframed setup pair.
 
@@ -173,8 +188,13 @@ def validate(manifest):
         require(kind not in model_hashes or model_hashes[kind] == draft_sha,
                 "proposal lengths use different model artifacts")
         model_hashes[kind] = draft_sha
+        if "precision" in cell:
+            precision = read(cell["precision"])
+            check_q4_precision(export, precision, draft_sha, sha256(Path(cell["export"])))
+            pins[f"{kind}_{maximum}_precision"] = sha256(Path(cell["precision"]))
+        else:
+            require(export["draft_sha256"] == draft_sha, "released draft artifact changed")
         require(export["passed"] and export["target_sha256"] == target_sha and
-                export["draft_sha256"] == draft_sha and
                 export["source_sha256"] == sha256(Path(cell["source"])) and
                 export["config_sha256"] == sha256(Path(cell["conversion_config"])) and
                 export["canonical_comparison_sha256"] == sha256(Path(export["canonical_comparison_path"])), "export ancestry changed")

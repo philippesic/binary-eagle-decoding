@@ -13,6 +13,7 @@ def summarize(source: Path) -> dict:
     protocol = json.loads((source / "protocol.json").read_text())
     measured = [r for r in data["records"] if not r["warmup"]]
     target = {(r["repetition"], r["prompt_id"]): r for r in measured if r["arm"] == "target_only"}
+    primary = {(r["repetition"], r["prompt_id"]): r for r in measured if r["arm"] == "eagle_q4_0"}
     expected = protocol["prompt_count"] * protocol["repetitions"]
     summary = {"diagnostic": data["diagnostic"], "inference_s": data["inference_s"], "arms": {}}
     for arm in ARMS:
@@ -26,7 +27,7 @@ def summarize(source: Path) -> dict:
         tokens = sum(r["completion_tokens"] for r in items)
         decode_s = sum(r["server_predicted_ms"] for r in items) / 1000
         wall_s = sum(r["request_wall_s"] for r in items)
-        mismatches = []
+        mismatches, primary_mismatches = [], []
         for r in items:
             ref = target.get((r["repetition"], r["prompt_id"]))
             if ref is None or ref["generated_token_ids"] is None or r["generated_token_ids"] is None:
@@ -35,10 +36,20 @@ def summarize(source: Path) -> dict:
                 common = next((i for i, (a, b) in enumerate(zip(ref["generated_token_ids"], r["generated_token_ids"]))
                                if a != b), min(len(ref["generated_token_ids"]), len(r["generated_token_ids"])))
                 mismatches.append({"repetition": r["repetition"], "prompt_id": r["prompt_id"], "common_prefix": common})
+            q4 = primary.get((r["repetition"], r["prompt_id"]))
+            if q4 is None or q4["generated_token_ids"] is None:
+                raise ValueError("missing primary Q4 paired raw output IDs")
+            if r["generated_token_ids"] != q4["generated_token_ids"]:
+                common = next((i for i, (a, b) in enumerate(zip(q4["generated_token_ids"], r["generated_token_ids"]))
+                               if a != b), min(len(q4["generated_token_ids"]), len(r["generated_token_ids"])))
+                primary_mismatches.append({"repetition": r["repetition"], "prompt_id": r["prompt_id"], "common_prefix": common})
         entry = {"requests": len(items), "output_tokens": tokens, "decode_s": decode_s, "request_s": wall_s,
                  "pooled_decode_tps": tokens / decode_s if decode_s else None,
                  "pooled_request_tps": tokens / wall_s if wall_s else None,
-                 "output_id_mismatches": mismatches, "repetitions": {}}
+                 "output_id_mismatches": mismatches, "primary_q4_output_id_mismatches": primary_mismatches,
+                 "within_arm_variable_prompt_ids": sorted({r["prompt_id"] for r in items
+                     if len({tuple(p["generated_token_ids"]) for p in items if p["prompt_id"] == r["prompt_id"]}) > 1}),
+                 "repetitions": {}}
         for rep in sorted({r["repetition"] for r in items}):
             cell = [r for r in items if r["repetition"] == rep]
             entry["repetitions"][str(rep)] = {
@@ -64,6 +75,9 @@ def summarize(source: Path) -> dict:
     for entry in summary["arms"].values():
         entry["decode_ratio_to_q4_0"] = entry["pooled_decode_tps"] / baseline["pooled_decode_tps"]
         entry["request_ratio_to_q4_0"] = entry["pooled_request_tps"] / baseline["pooled_request_tps"]
+        for rep, cell in entry["repetitions"].items():
+            cell["decode_ratio_to_q4_0"] = cell["decode_tps"] / baseline["repetitions"][rep]["decode_tps"]
+            cell["request_ratio_to_q4_0"] = cell["request_tps"] / baseline["repetitions"][rep]["request_tps"]
     summary["timing_scope"] = "concurrency-one pooled output token rates; decode server predicted_ms; request client HTTP wall; no maximum serving-capacity claim"
     return summary
 
