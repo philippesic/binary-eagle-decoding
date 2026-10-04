@@ -4,7 +4,8 @@
 Input package: NPZ {raw_input:F32[N,K], reference_weight:F32[M,K],
 raw_join_ids:Unicode[N]}; a v1 manifest with source hashes and prompt-disjoint
 TRAIN/validation row joins. No capture, model execution or accelerator access.
-Real-data import fails closed until a capture/TRAIN ancestry adapter is available. Output
+Real data requires a separately SHA-pinned acquisition receipt proving TRAIN
+membership and raw-feature ancestry, plus exact frozen model files. Output
 reconstruction is a surrogate and makes no native acceptance/throughput claim.
 """
 
@@ -55,6 +56,396 @@ def is_hash(value):
     return type(value) is str and len(value) == 64 and all(c in "0123456789abcdef" for c in value)
 
 
+FROZEN_SOURCE_WEIGHTS_SHA256 = "58ac5bbfdd71047ebaa5d5535b895c2af37004eb820ca2dda55bd7666658853e"
+FROZEN_BASE_GGUF_SHA256 = "c1f895a130b64cd3d5a97fba7aa7605dc7fe3a389dd6d48e6751128614ee76d1"
+REAL_PRODUCER_CONTRACT = (
+    "native_target_block_inputs_concat_before_draft_fc_f32_taps_2_18_33_no_upstream_cast_or_norm"
+)
+REAL_FUSION_SHAPE = (2560, 7680)
+REAL_PROMPT_COUNTS = {"train": 8, "validation": 4}
+REAL_ROWS_PER_PROMPT = 32
+RECEIPT_CHECKS = {
+    "train_membership",
+    "prompt_disjoint",
+    "raw_boundary_verified",
+    "capture_eligible",
+    "source_hashes_verified",
+}
+
+
+def _receipt_file(record, directory, label, override=None):
+    if (
+        not isinstance(record, dict)
+        or set(record) != {"path", "sha256"}
+        or type(record["path"]) is not str
+        or not record["path"]
+        or not is_hash(record["sha256"])
+    ):
+        raise ValueError(f"{label}: exact path and SHA256 required")
+    recorded = (directory / record["path"]).resolve()
+    actual = Path(override).resolve() if override is not None else recorded
+    if not actual.is_file() or sha256(actual) != record["sha256"]:
+        raise ValueError(f"{label}: local source file hash mismatch")
+    return actual
+
+
+def verify_real_receipt(
+    receipt_path,
+    receipt_hash,
+    manifest_path,
+    manifest,
+    x,
+    w,
+    *,
+    source_weights_path=None,
+    base_gguf_path=None,
+):
+    """Recheck a trusted acquisition receipt; a manifest cannot self-authorize fitting.
+
+    The receipt SHA must be pinned separately by the CPU run owner after the data
+    owner authenticates the read-only transfer. Capture/producer hashes are remote
+    evidence bound by that receipt, not a claim that this CPU importer rereads them.
+    Local inventory, input package, original BF16 weights and F16 base are rehashed.
+    """
+    if receipt_path is None or not is_hash(receipt_hash):
+        raise ValueError("real fitting unavailable without independently pinned provenance receipt")
+    receipt_path = Path(receipt_path)
+    if not receipt_path.is_file() or sha256(receipt_path) != receipt_hash:
+        raise ValueError("provenance receipt SHA256 differs from external pin")
+    r = json.loads(receipt_path.read_text())
+    keys = {
+        "schema",
+        "manifest_sha256",
+        "operands_sha256",
+        "source_weights",
+        "base_gguf",
+        "producer",
+        "train_inventory",
+        "selected_prompts",
+        "rows",
+        "checks",
+    }
+    if (
+        not isinstance(r, dict)
+        or set(r) != keys
+        or r["schema"] != "fusion_binary_train_provenance_v1"
+    ):
+        raise ValueError("real provenance receipt schema differs from v1")
+    if (
+        r["manifest_sha256"] != sha256(manifest_path)
+        or r["operands_sha256"] != manifest["operands_sha256"]
+    ):
+        raise ValueError("receipt does not bind this manifest and operand archive")
+    if (
+        not isinstance(r["checks"], dict)
+        or set(r["checks"]) != RECEIPT_CHECKS
+        or any(v is not True for v in r["checks"].values())
+    ):
+        raise ValueError("receipt does not certify every required TRAIN/raw-boundary check")
+    source = _receipt_file(
+        r["source_weights"], receipt_path.parent, "frozen weights", source_weights_path
+    )
+    _receipt_file(r["base_gguf"], receipt_path.parent, "frozen base GGUF", base_gguf_path)
+    if (
+        r["source_weights"]["sha256"] != FROZEN_SOURCE_WEIGHTS_SHA256
+        or r["base_gguf"]["sha256"] != FROZEN_BASE_GGUF_SHA256
+        or manifest["source"]["frozen_weights_sha256"] != FROZEN_SOURCE_WEIGHTS_SHA256
+        or manifest["source"]["base_gguf_sha256"] != FROZEN_BASE_GGUF_SHA256
+    ):
+        raise ValueError("real source files differ from frozen original BF16/F16 models")
+    if w.shape != REAL_FUSION_SHAPE or x.shape[1] != REAL_FUSION_SHAPE[1]:
+        raise ValueError("real fusion operands differ from frozen projection shape")
+    import torch
+    from safetensors import safe_open
+
+    with safe_open(str(source), framework="pt", device="cpu") as original:
+        original_weight = original.get_tensor("fc.weight")
+        if (
+            original_weight.dtype != torch.bfloat16
+            or tuple(original_weight.shape) != REAL_FUSION_SHAPE
+            or not np.array_equal(original_weight.float().numpy(), w)
+        ):
+            raise ValueError("reference_weight differs from original frozen BF16 fc.weight")
+    del original_weight
+    producer = r["producer"]
+    producer_keys = {
+        "contract",
+        "source_files",
+        "native_revision",
+        "capture_manifest_sha256",
+        "readiness_sha256",
+    }
+    if not isinstance(producer, dict) or set(producer) != producer_keys:
+        raise ValueError("producer identity and capture/readiness hashes required")
+    if (
+        producer["contract"] != REAL_PRODUCER_CONTRACT
+        or type(producer["native_revision"]) is not str
+        or len(producer["native_revision"]) != 40
+        or any(c not in "0123456789abcdef" for c in producer["native_revision"])
+        or not is_hash(producer["capture_manifest_sha256"])
+        or not is_hash(producer["readiness_sha256"])
+        or producer["capture_manifest_sha256"] != manifest["source"]["capture_manifest_sha256"]
+        or not isinstance(producer["source_files"], dict)
+        or not producer["source_files"]
+        or any(
+            type(k) is not str or not k or not is_hash(v)
+            for k, v in producer["source_files"].items()
+        )
+    ):
+        raise ValueError("producer/capture identities differ from authenticated source evidence")
+    for source_path, digest in producer["source_files"].items():
+        local_source = (receipt_path.parent / source_path).resolve()
+        if not local_source.is_file() or sha256(local_source) != digest:
+            raise ValueError("producer source file missing locally or SHA256 differs")
+    runtime_sources = [
+        (receipt_path.parent / name).resolve()
+        for name in producer["source_files"]
+        if Path(name).name == "native-runtime-manifest.json"
+    ]
+    if len(runtime_sources) != 1:
+        raise ValueError("one captured native runtime manifest must bind producer revision")
+    runtime = json.loads(runtime_sources[0].read_text())
+    if not isinstance(runtime, dict) or runtime.get("native_commit") != producer["native_revision"]:
+        raise ValueError("producer native revision differs from captured runtime manifest")
+    inventory_path = _receipt_file(r["train_inventory"], receipt_path.parent, "TRAIN inventory")
+    inventory = json.loads(inventory_path.read_text())
+    inventory_keys = {
+        "schema",
+        "source_train_prompts_sha256",
+        "source_train_index_sha256",
+        "prompts",
+    }
+    if (
+        not isinstance(inventory, dict)
+        or set(inventory) != inventory_keys
+        or inventory["schema"] != "fusion_binary_train_inventory_v1"
+        or any(
+            not is_hash(inventory[k])
+            for k in ("source_train_prompts_sha256", "source_train_index_sha256")
+        )
+        or any(
+            inventory[k] not in producer["source_files"].values()
+            for k in ("source_train_prompts_sha256", "source_train_index_sha256")
+        )
+        or not isinstance(inventory["prompts"], list)
+        or not inventory["prompts"]
+    ):
+        raise ValueError("TRAIN inventory must bind original local prompt and index source hashes")
+    eligible = {}
+    for item in inventory["prompts"]:
+        if (
+            not isinstance(item, dict)
+            or set(item) != {"prompt_id", "prompt_sha256", "group_id", "source_split"}
+            or type(item["prompt_id"]) is not str
+            or not item["prompt_id"]
+            or not is_hash(item["prompt_sha256"])
+            or type(item["group_id"]) is not str
+            or not item["group_id"]
+            or item["source_split"] != "train"
+            or item["prompt_id"] in eligible
+        ):
+            raise ValueError(
+                "inventory contains duplicate, non-TRAIN or incomplete prompt identity"
+            )
+        eligible[item["prompt_id"]] = item
+    prompt_sources = [
+        (receipt_path.parent / name).resolve()
+        for name, digest in producer["source_files"].items()
+        if digest == inventory["source_train_prompts_sha256"]
+    ]
+    original_prompts = [
+        json.loads(line) for line in prompt_sources[0].read_text().splitlines() if line.strip()
+    ]
+    original_by_id = {item.get("id"): item for item in original_prompts if isinstance(item, dict)}
+    if len(original_by_id) != len(original_prompts) or None in original_by_id:
+        raise ValueError("original TRAIN prompt source has missing or duplicate identities")
+    for item in inventory["prompts"]:
+        original_prompt = original_by_id.get(item["prompt_id"])
+        if original_prompt is None or not isinstance(original_prompt.get("messages"), list):
+            raise ValueError("inventory prompt missing original TRAIN messages")
+        content = json.dumps(
+            original_prompt["messages"], ensure_ascii=False, sort_keys=True, separators=(",", ":")
+        ).encode()
+        if hashlib.sha256(content).hexdigest() != item["prompt_sha256"]:
+            raise ValueError("TRAIN prompt content differs from inventory identity")
+    index_sources = [
+        (receipt_path.parent / name).resolve()
+        for name, digest in producer["source_files"].items()
+        if digest == inventory["source_train_index_sha256"]
+    ]
+    index_rows = [
+        json.loads(line) for line in index_sources[0].read_text().splitlines() if line.strip()
+    ]
+    original_index = {item.get("id"): item for item in index_rows if isinstance(item, dict)}
+    if len(original_index) != len(index_rows) or None in original_index:
+        raise ValueError("original TRAIN index has missing or duplicate identities")
+    for item in inventory["prompts"]:
+        index_row = original_index.get(item["prompt_id"])
+        if (
+            index_row is None
+            or index_row.get("group") != item["group_id"]
+            or index_row.get("content_sha256") != item["prompt_sha256"]
+        ):
+            raise ValueError("inventory group/content/membership differs from original TRAIN index")
+    selected = r["selected_prompts"]
+    if not isinstance(selected, list) or not selected:
+        raise ValueError("selected TRAIN prompts required")
+    selected_map = {}
+    for prompt in selected:
+        if (
+            not isinstance(prompt, dict)
+            or set(prompt) != {"prompt_id", "prompt_sha256", "group_id", "split"}
+            or type(prompt["prompt_id"]) is not str
+            or not prompt["prompt_id"]
+            or not is_hash(prompt["prompt_sha256"])
+            or type(prompt["group_id"]) is not str
+            or not prompt["group_id"]
+            or prompt["split"] not in REAL_PROMPT_COUNTS
+            or prompt["prompt_id"] in selected_map
+        ):
+            raise ValueError("selected prompt identity/group/split is invalid")
+        allowed = eligible.get(prompt["prompt_id"])
+        if allowed is None or any(prompt[k] != allowed[k] for k in ("prompt_sha256", "group_id")):
+            raise ValueError("selected prompt absent from authenticated TRAIN inventory")
+        selected_map[prompt["prompt_id"]] = prompt
+    groups = [
+        {p["group_id"] for p in selected if p["split"] == split} for split in REAL_PROMPT_COUNTS
+    ]
+    if groups[0] & groups[1] or any(
+        sum(p["split"] == split for p in selected) != count
+        for split, count in REAL_PROMPT_COUNTS.items()
+    ):
+        raise ValueError("real fit/validation requires 8/4 distinct TRAIN prompt groups")
+    rows = manifest["rows"]
+    counts = {pid: 0 for pid in selected_map}
+    for row in rows:
+        selected_prompt = selected_map.get(row["prompt_id"])
+        if selected_prompt is None or any(
+            row[k] != selected_prompt[k] for k in ("prompt_sha256", "split")
+        ):
+            raise ValueError("manifest prompt split/content differs from trusted receipt")
+        counts[row["prompt_id"]] += 1
+    if any(count != REAL_ROWS_PER_PROMPT for count in counts.values()):
+        raise ValueError("real package requires exactly 32 raw rows per selected prompt")
+    if not isinstance(r["rows"], list) or len(r["rows"]) != len(rows):
+        raise ValueError("receipt must bind every selected raw feature row")
+    for row, evidence in zip(rows, r["rows"], strict=True):
+        if (
+            not isinstance(evidence, dict)
+            or set(evidence)
+            != {
+                "row_id",
+                "raw_input_sha256",
+                "feature_row",
+                "feature_metadata",
+                "prompt_token_ids",
+                "anchor",
+                "native_events",
+            }
+            or evidence["row_id"] != row["row_id"]
+            or evidence["raw_input_sha256"] != row["raw_input_sha256"]
+            or type(evidence["feature_row"]) is not int
+            or evidence["feature_row"] < 0
+            or not isinstance(evidence["feature_metadata"], dict)
+            or not evidence["feature_metadata"]
+            or not isinstance(evidence["anchor"], dict)
+            or not evidence["anchor"]
+            or not isinstance(evidence["prompt_token_ids"], list)
+            or not evidence["prompt_token_ids"]
+            or any(
+                type(token) is not int or not 0 <= token < 151936
+                for token in evidence["prompt_token_ids"]
+            )
+        ):
+            raise ValueError("raw feature row/anchor/token ancestry is incomplete or differs")
+        metadata, anchor, events = (
+            evidence[k] for k in ("feature_metadata", "anchor", "native_events")
+        )
+        prefix = metadata.get("prefix_token_ids")
+        anchor_prefix = anchor.get("prefix_token_ids")
+        if (
+            metadata.get("feature_row") != evidence["feature_row"]
+            or metadata.get("prompt_id") != row["prompt_id"]
+            or metadata.get("position") != row["position"]
+            or row["depth"] != 0
+            or metadata.get("tap_ids") != [2, 18, 33]
+            or metadata.get("boundary") != "native_target_block_inputs_concat_before_draft_fc"
+            or metadata.get("source") != "native_target_features_on_accepted_prefix"
+            or metadata.get("accepted_prefix") is not True
+            or evidence["prompt_token_ids"] != prefix
+            or not isinstance(prefix, list)
+            or len(prefix) != row["position"] + 1
+            or any(type(token) is not int or not 0 <= token < 151936 for token in prefix)
+            or not isinstance(anchor_prefix, list)
+            or anchor_prefix[: len(prefix)] != prefix
+            or any(type(token) is not int or not 0 <= token < 151936 for token in anchor_prefix)
+            or anchor.get("prompt_id") != row["prompt_id"]
+            or anchor.get("split") != "train"
+            or type(anchor.get("round_index")) is not int
+            or anchor["round_index"] < 0
+            or type(anchor.get("seed_token_id")) is not int
+            or not 0 <= anchor["seed_token_id"] < 151936
+            or anchor_prefix[: len(evidence["prompt_token_ids"])] != evidence["prompt_token_ids"]
+            or not isinstance(events, dict)
+            or set(events) != {"decoded_row", "disposition"}
+        ):
+            raise ValueError(
+                "raw feature prefix, tap ordering, TRAIN anchor or native event join differs"
+            )
+        decoded, disposition = events["decoded_row"], events["disposition"]
+        if (
+            not isinstance(decoded, dict)
+            or not isinstance(disposition, dict)
+            or decoded.get("schema") != "eagle_target_feature_v1"
+            or decoded.get("event") != "decoded_row"
+            or disposition.get("schema") != "eagle_target_feature_v1"
+            or disposition.get("event") != "disposition"
+            or type(metadata.get("native_feature_row")) is not int
+            or metadata["native_feature_row"] < 0
+            or decoded.get("feature_row") != metadata["native_feature_row"]
+            or disposition.get("feature_row") != metadata["native_feature_row"]
+            or decoded.get("decode_ordinal") != metadata.get("native_decode_ordinal")
+            or type(metadata.get("native_decode_ordinal")) is not int
+            or metadata["native_decode_ordinal"] < 0
+            or type(metadata.get("task_id")) is not int
+            or metadata["task_id"] < 0
+            or decoded.get("task_id") != metadata["task_id"]
+            or disposition.get("task_id") != metadata["task_id"]
+            or decoded.get("position") != row["position"]
+            or decoded.get("prefix_token_ids") != prefix
+            or decoded.get("target_layer_ids") != [2, 18, 33]
+            or decoded.get("feature_dim") != REAL_FUSION_SHAPE[1]
+            or decoded.get("feature_dtype") != "float32_native_endian"
+            or decoded.get("boundary") != "raw_target_layer_input_before_eagle_encoder"
+            or decoded.get("source") != "target_verifier"
+            or disposition.get("retained_input") is not True
+        ):
+            raise ValueError(
+                "decoded/disposition native row did not retain the joined target feature"
+            )
+        phase = decoded.get("phase")
+        if phase not in ("prefill", "target_only", "speculative"):
+            raise ValueError("unknown native target-feature decode phase")
+        if phase == "speculative":
+            accepted, proposal = disposition.get("accepted_drafts"), decoded.get("spec_input_row")
+            if (
+                type(accepted) is not int
+                or accepted < 0
+                or type(proposal) is not int
+                or proposal < 0
+                or proposal > accepted
+                or decoded.get("round_index") != disposition.get("round_index")
+            ):
+                raise ValueError("native speculative feature was not in the accepted prefix")
+    return {
+        "provenance_receipt_sha256": receipt_hash,
+        "provenance_schema": r["schema"],
+        "prompt_token_ids_contract": "exact_native_feature_prefix_including_prefill_rows",
+        "train_inventory_sha256": r["train_inventory"]["sha256"],
+        "producer": producer,
+    }
+
+
 def load_config(path):
     value = json.loads(Path(path).read_text())
     default = json.loads((ROOT / "configs/fusion_binary_discrete_a8.json").read_text())
@@ -88,7 +479,15 @@ def load_config(path):
     return value
 
 
-def load_operands(path, config, *, source_weights_path=None):
+def load_operands(
+    path,
+    config,
+    *,
+    source_weights_path=None,
+    base_gguf_path=None,
+    provenance_receipt_path=None,
+    provenance_receipt_sha256=None,
+):
     path = Path(path)
     m = json.loads(path.read_text())
     keys = {
@@ -192,11 +591,17 @@ def load_operands(path, config, *, source_weights_path=None):
     ]
     if not all(hashes) or hashes[0] & hashes[1]:
         raise ValueError("fit and validation require disjoint prompt contents")
+    provenance = {}
     if not m["synthetic"]:
-        raise ValueError(
-            "real fitting unavailable: requires verified native pre-A8 capture/TRAIN prompt "
-            "membership and exact raw-row ancestry adapter; arbitrary NPZ eligibility "
-            "labels are insufficient"
+        provenance = verify_real_receipt(
+            provenance_receipt_path,
+            provenance_receipt_sha256,
+            path,
+            m,
+            x,
+            w,
+            source_weights_path=source_weights_path,
+            base_gguf_path=base_gguf_path,
         )
     return (
         x,
@@ -207,6 +612,7 @@ def load_operands(path, config, *, source_weights_path=None):
             "manifest_sha256": sha256(path),
             "operands_sha256": sha256(p),
             "estimated_workspace_bytes": estimated,
+            **provenance,
         },
     )
 
@@ -290,6 +696,7 @@ def solve_scale(dots, beta, teacher, previous, config):
             raise ValueError("scale exported-neighbor gate did not converge within budget")
     return np.float32(best), {
         "continuous_optimum": optimum,
+        "exported_scale_f32": float(best),
         "continuous_derivative": float(2 * z @ (z * optimum - teacher)),
         "continuous_kkt_relative": float(
             abs(min(0.0, float(z @ (z * optimum - teacher))))
@@ -600,7 +1007,12 @@ def run(args):
         raise FileExistsError("fit output directory already exists; preserve previous artifacts")
     config = load_config(args.config)
     x, w, train, manifest, identities = load_operands(
-        args.manifest, config, source_weights_path=args.source_weights
+        args.manifest,
+        config,
+        source_weights_path=args.source_weights,
+        base_gguf_path=args.base_gguf,
+        provenance_receipt_path=getattr(args, "provenance_receipt", None),
+        provenance_receipt_sha256=getattr(args, "provenance_receipt_sha256", None),
     )
     # Only training operands enter fit; validation is quantized/evaluated after freeze.
     codes, beta = quantize_a8(x[train])
@@ -617,6 +1029,18 @@ def run(args):
         },
     )
     frozen_hash = sha256(candidate)
+    control_path = args.output_dir / "control_scales.npz"
+    np.savez(
+        control_path,
+        initializer_scale=detail["initializer_scales"],
+        scale_only_scale=detail["scale_only_scales"],
+    )
+    frozen_control_hash = sha256(control_path)
+    with np.load(control_path, allow_pickle=False) as control:
+        if not np.array_equal(
+            control["initializer_scale"], detail["initializer_scales"]
+        ) or not np.array_equal(control["scale_only_scale"], detail["scale_only_scales"]):
+            raise ValueError("matched control scales changed on reload")
     # Verify reload before any held-out result is visible.
     with np.load(candidate, allow_pickle=False) as z:
         if (
@@ -648,8 +1072,8 @@ def run(args):
                 ("sign_and_scale", signs, scales),
             )
         }
-    if sha256(candidate) != frozen_hash:
-        raise ValueError("frozen checkpoint changed during validation")
+    if sha256(candidate) != frozen_hash or sha256(control_path) != frozen_control_hash:
+        raise ValueError("frozen checkpoint/control scales changed during validation")
     export = None
     if args.base_gguf:
         export = export_candidate(
@@ -681,6 +1105,7 @@ def run(args):
             {r["prompt_sha256"] for r in manifest["rows"] if r["split"] == "validation"}
         ),
         "frozen_candidate_sha256": frozen_hash,
+        "control_scales_sha256": frozen_control_hash,
         "export": export,
         "metrics": metrics,
         "operand_hashes": operand_hashes,
@@ -709,10 +1134,13 @@ def main():
     p.add_argument(
         "--source-weights",
         type=Path,
-        help=(
-            "Reserved for a future verified real-data ancestry adapter; "
-            "real mode currently fails closed"
-        ),
+        help=("Exact original BF16 safetensors file for receipt-verified real data"),
+    )
+    p.add_argument(
+        "--provenance-receipt", type=Path, help="Authenticated real-data acquisition receipt"
+    )
+    p.add_argument(
+        "--provenance-receipt-sha256", help="Receipt hash independently pinned by run owner"
     )
     p.add_argument("--base-gguf", type=Path, help="Original F16 GGUF for fusion-only export")
     p.add_argument("--output-dir", type=Path, required=True)
