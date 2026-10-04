@@ -68,6 +68,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--manifest-sha256", required=True)
+    parser.add_argument("--admission", type=Path)
+    parser.add_argument("--admission-sha256")
     parser.add_argument("--weights", type=Path, required=True)
     parser.add_argument("--weights-sha256", required=True)
     parser.add_argument("--norm", type=Path, required=True)
@@ -91,7 +93,14 @@ def main():
         raise ValueError("refuse to overwrite historical fit")
     if min(args.rows_per_chain, args.max_total_rows, args.max_array_bytes) <= 0:
         raise ValueError("positive row/memory bounds required")
-    dataset = BlockDataset(args.manifest, expected_sha256=args.manifest_sha256)
+    if (args.admission is None) != (args.admission_sha256 is None):
+        raise ValueError("completed admission requires both path and external SHA256 pin")
+    dataset = BlockDataset(
+        args.manifest,
+        expected_sha256=args.manifest_sha256,
+        admission_path=args.admission,
+        admission_sha256=args.admission_sha256,
+    )
     for path, pin in ((args.weights, args.weights_sha256), (args.norm, args.norm_sha256)):
         if file_sha256(path) != pin:
             raise ValueError("original fusion/norm source differs from external pin")
