@@ -56,6 +56,7 @@ Evaluation wall time is separate overhead and is never a serving-rate denominato
 | Candidate step 20,000 | 5.7818 | 0.205183 | 4.1920% | 67.751 | 0.4989 |
 | Reference step 25,000 | 3.5502 | 0.637782 | 13.0419% | 95.171 | 0.7092 |
 | Candidate step 25,000 | 5.8161 | 0.230803 | 4.7259% | 68.954 | 0.5111 |
+| Reference step 30,000 | 3.5495 | 0.623711 | 12.7413% | 95.036 | 0.7028 |
 | Q4_0 at reference step 5,000 | n/a | 1.306255 | 26.5917% | 135.491 | 1.0000 |
 
 Accepted drafts per round is the primary acceptance metric. Acceptance rate uses
@@ -76,6 +77,7 @@ capture counts are:
 | Candidate step 20,000 | 483 | 11,522 | 2,354 | 2,834 |
 | Reference step 25,000 | 1,104 | 8,465 | 1,731 | 2,834 |
 | Candidate step 25,000 | 532 | 11,257 | 2,305 | 2,834 |
+| Reference step 30,000 | 1,089 | 8,547 | 1,746 | 2,834 |
 | Q4_0, each capture | 1,608 | 6,047 | 1,231 | 2,834 |
 
 Both zero checkpoints have identical native acceptance counts. Each A8 report
@@ -169,6 +171,14 @@ native and 120/120 timing matches. Each timing variant generated 14,290 returned
 IDs with 105 length and 15 stop finishes. Candidate acceptance improved slightly
 from 20,000, while remaining well below reference step 25,000 and Q4_0.
 
+Reference step 30,000 measured 0.623711 accepted drafts/round, CE 3.5495 and
+95.036 request tokens/s versus Q4_0 at 135.229 and target-only at 88.711.
+Decode rate was 98.995 versus Q4_0 at 143.191 tokens/s. The complete evaluation
+passed in 674.689 supervisor-wall seconds (669.613 evaluation-phase seconds),
+with 24/24 native and 120/120 timing matches. Each timing variant generated
+14,290 returned IDs with 105 length and 15 stop finishes. Acceptance is slightly
+lower than at reference 25,000, while throughput is close; both remain below Q4_0.
+
 Candidate's 1,047.285 trainer seconds differ from the reference's 764.725 seconds
 at the same update count; these checkpoint measurements are intermediate observations. The final comparison
 requires both independent 7,200-second cumulative endpoints. No quality, latency
@@ -236,8 +246,9 @@ and is archived. Reference resumed from 25,000 and has positive optimizer update
 toward 30,000. Both final 7,200-second endpoints remain pending.
 
 Reference subsequently reached step 30,000/cursor30,054 and exited cleanly,
-with budget settled at 5,097.991 seconds. Its scheduled native evaluation is
-running. Both final 7,200-second endpoints remain pending.
+with budget settled at 5,097.991 seconds. Its scheduled native evaluation passed
+and is archived. Candidate resumed from 25,000 with positive optimizer updates
+toward 30,000. Both final 7,200-second endpoints remain pending.
 
 ## Endpoint reporting method
 
@@ -261,6 +272,13 @@ in-flight update or serialization finishes. Endpoint timing is trainer-accounted
 time; startup, evaluation and physical process-release evidence remain separate.
 
 ## Artifact locations and pending completion
+
+Reference step 30,000 identities: checkpoint
+`108968085f4b99ad3ae3fd600b14bee702aa821885c742120d41d988d351940c`, report
+`faf585b9e9f35c15ff0b2fdba68158cfa06a9157a9aaddeecefb00c2494cc6b5`, result
+`cb038ef2254cd8131a500db8b2a93c70fe138598612963d63af05530e2678043`, timing
+`8e580a5bf94d8935c570975d619c4b0a81d9738ff34487fb397a2cc11f428d75`.
+Archive locator: `evidence-archive/development/reference-step30000-locator-map.json`.
 
 Candidate step 25,000 identities: checkpoint
 `b9936e38bee428cbfb8999fe8bb153fa0b014347561543b5d76c09dc87900cdb`, report
