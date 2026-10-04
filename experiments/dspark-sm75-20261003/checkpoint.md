@@ -278,3 +278,32 @@ Luna will revalidate the retained25-request native probe without new GPU request
 then start the full six-arm/six-repeat reference comparison. Root prepared a
 source-bound FFN Q4 probe branch; ten focused probe checks pass. W1 implementation
 scope remains pending human decision. RTX5080/QAT/fusion are untouched.
+
+## Actual native admission passed — October 4, 02:40 UTC
+
+Sole Luna composed the source-bound two-edge numerical receipt onCPU from
+unchanged original probe, primary-baseline and raw diagnostic artifacts.
+All20 candidate outputs are covered by exact complete validated native paths;
+none are uncovered. Receipt SHA
+ d9d1b1a62ae2038470579db9fdc3df2884eb24dcf84ac1e495caf074658f3c17
+under dspark-screen-a9dded1/runs/numeric-admission-fcdf-20261004/results.
+The retained25-request manifest was revalidated without GPU requests, exit0;
+computed native admission SHA
+305a56fdeeb112af076edf25da04d6cace7daf57a511c9d0a2000faaa7fe481b.
+Memory/layout/immutable-target/cache/greedy flags all pass. Exact binary pin is
+1bd67cdf74d6ced49454ca2546d9a462e71d4e695b8fb5e52d7359fa68473822,
+public nativefcdf582; an operator truncated-output description mistakenly quoted
+oldbinarya048 and was corrected by full receipt readback and actual binary hash.
+No receipt was edited to force a pin. Protocol367431...; DSdc5299..., DF92925...,
+primaryQ42db40... and target05a... remain unchanged.
+
+Frozen parent execution sourcea9dded1 includes the numerical producer/consumer,
+shared7200s budget and explicit admission/runtime/protocol/model hash checks.
+Root36 admission checks and12 harness checks pass. Operator is cleared to
+launch full reference timing immediately after adjacent process/control/resource
+proof; timing has not yet been observed, budget0. Parentgitlink may now point to
+published/admitted nativefcdf582. New Q4 ancestry helper integrated6f4772c;
+root40 admission checks pass. Profiling and analysis changes are separate from
+frozena9 timing. Astra permits Q4 reuse of admitted reference output paths only
+with exact complete IDs+termination and independent candidate-native proof;
+novel outputs remain rejected, no Q4 raw-logit claim is inferred.
