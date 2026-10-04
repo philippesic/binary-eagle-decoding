@@ -1,5 +1,18 @@
 # A8 QAT recovery and comparison
 
+## Scheduled candidate evaluation running — October 4, 06:54 UTC
+
+The sole operator dispatched candidate5000 evaluation under detached host tmux
+socket `binary-eagle-runtime`, session `a8-candidate-step5000-eval-20261004-02`.
+Supervisor run `a8-candidate-step5000-eval-supervisor-20261004-02` started
+06:54:11.438153Z, state running, supervisor PID/PGID14249 and child14255.
+The evaluator was in CUDA startup at first snapshot; no completed result yet.
+Immutable3bd checkout is clean. Candidate5000 checkpoint hardlink archive is
+verified at `evidence-archive/checkpoints/candidate-step-5000`, SHA893e205d.
+Actual boot/birth/command/runtime/derived manifest and archive locator are tracked
+by the sole operator ledger. Same1200s evaluation cap and frozen24 requests.
+After terminal evaluation/archive/resource release, reference resumes5000→10000.
+
 ## Candidate reached scheduled 5,000 boundary — October 4, 06:52 UTC
 
 Fresh sole-operator observation confirms candidate step5000/cursor5009,
