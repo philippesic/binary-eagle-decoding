@@ -757,7 +757,7 @@ def joint_train_step(
     owned = [p for group in optimizer.param_groups for p in group["params"]]
     if len(owned) != len(params) or {id(p) for p in owned} != {id(p) for p in params}:
         raise ValueError("optimizer must own exactly declared binary/activation/fusion parameters")
-    before_signs = [m.latent_sign.detach().clone() < 0 for m in linears.values()]
+    before_signs = [m.latent_sign.detach() < 0 for m in linears.values()]
     before_scales = [m.effective_scales().detach().clone() for m in linears.values()]
     optimizer.zero_grad(set_to_none=True)
     if config.objective == "hard_ce":

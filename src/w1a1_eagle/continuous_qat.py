@@ -145,8 +145,8 @@ class ContinuousConfig:
             ):
                 raise ValueError(f"{name} must be positive or null")
         object.__setattr__(self, "activation_bits", tuple(self.activation_bits))
-        if self.activation_bits not in {(8,), (8, 1)}:
-            raise ValueError("continuous lanes must be A8 only or paired A8/A1")
+        if self.activation_bits not in {(1,), (8,), (8, 1)}:
+            raise ValueError("continuous lanes must be direct A1, A8, or paired A8/A1")
         if self.development_lifecycle not in {"in_process", "standalone"}:
             raise ValueError("development lifecycle must be in_process or standalone")
         if len(self.seeds) != 2 or self.seeds[0] == self.seeds[1]:
@@ -310,9 +310,10 @@ def build_lanes(provider, config: ContinuousConfig, run_dir: Path | None = None)
         p.requires_grad_(False)
     for p in target.parameters():
         p.requires_grad_(False)
-    first_config = config.qat(8)
+    first_bits = config.activation_bits[0]
+    first_config = config.qat(first_bits)
     linears = install_joint_linears(drafter, target, replace(first_config, device="cpu"))
-    models = [(8, drafter, linears)]
+    models = [(first_bits, drafter, linears)]
     if config.activation_bits == (8, 1):
         if config.device != "cpu":
             admission["before_independent_model_copy"] = require_host_memory(
@@ -1123,9 +1124,22 @@ class ContinuousTrainer:
                         self.cursor = ordinal + 1
                         continue
                     resource_metrics = self.resources()
-                    for lane in self.lanes:
+                    # Immutable native features are shared only between paired lanes
+                    # consuming this same audited round on the same device. No cache
+                    # survives a provider round or optimizer transaction.
+                    shared_transfer_started = time.monotonic()
+                    device_batch = replace(
+                        batch,
+                        raw_target_features=batch.raw_target_features.to(self.config.device),
+                    )
+                    if torch.device(self.config.device).type == "cuda":
+                        torch.cuda.synchronize(self.config.device)
+                    shared_transfer_seconds = time.monotonic() - shared_transfer_started
+                    for lane_index, lane in enumerate(self.lanes):
                         restore_rng(lane.rng, self.config.device)
-                        begin = time.monotonic()
+                        # Charge the shared upload exactly once to the first lane;
+                        # whole-run wall/budget accounting also includes it.
+                        begin = shared_transfer_started if lane_index == 0 else time.monotonic()
                         factor = min(1.0, (self.step + 1) / max(1, self.config.warmup_steps))
                         recipe = lane.config.binary_optimization
                         rates = {
@@ -1139,10 +1153,6 @@ class ContinuousTrainer:
                         for group in lane.optimizer.param_groups:
                             group["lr"] = rates[group["family"]] * factor
                         observer = ObservedAdapter(lane.adapter)
-                        device_batch = replace(
-                            batch,
-                            raw_target_features=batch.raw_target_features.to(self.config.device),
-                        )
                         execution = {}
                         with shared_round_hard_signs(lane.linears):
                             logits = forward_torch_round(
@@ -1275,6 +1285,9 @@ class ContinuousTrainer:
                             heartbeat_unix=time.time(),
                             grad_finite=True,
                             step_seconds=time.monotonic() - begin,
+                            shared_input_transfer_seconds=(
+                                shared_transfer_seconds if lane_index == 0 else 0.0
+                            ),
                             sign_flip_rate=item["sign_flips"] / sign_count,
                             sign_lr=rates["sign"] * factor,
                             scale_lr=rates["scale"] * factor,
@@ -1282,7 +1295,8 @@ class ContinuousTrainer:
                         )
                         self.metrics[lane.name] = item
                         self.status("running", **resource_metrics)
-                        del logits, observer, device_batch
+                        del logits, observer
+                    del device_batch
                     self.step += 1
                     self.cursor = ordinal + 1
                     self.tokens += sum(audit.ce_mask)
