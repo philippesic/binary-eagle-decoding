@@ -165,3 +165,20 @@ additional proof protocols or redoing completed audit work.
 - Practical lesson: Audit the executed precision branch before calling a flag
   irrelevant. Preserve agreed gradient rules in matched comparisons and record
   deliberate effective-path exceptions explicitly.
+
+### 2026-10-03: Validate the actual frozen prompt contract
+
+- Context: The A8 comparison explicitly reuses prepared unsealed development data.
+- Evidence: The first step-zero evaluation used the correct 24 prepared prompts
+  (SHA131a3db...ba081), including original Magicoder/Dolly/GSM8K IDs, for acceptance.
+  The new timing helper then rejected them because it required an unrelated
+  `qat-revisit-development-*` prefix. No optimizer update occurred.
+- Agent contribution: The helper introduced an unsupported naming assumption.
+  Its synthetic fixtures shared that assumption; root reviewed timing/deadline/
+  precision behavior but missed the mismatch with the actual frozen manifest.
+- Resolution: Helper-only repair3bd4837 pins the exact prepared content hash and
+  validates unique unsealed opaque IDs. Root16regressions pass; failed raw data,
+  native receipts and checkpoint-zero are retained for bounded recovery.
+- Practical lesson: Use the actual declared manifest/content identity when
+  integrating an evaluator. Exercise its real ID styles in a contract fixture;
+  naming conventions must not replace dataset-role and provenance checks.
