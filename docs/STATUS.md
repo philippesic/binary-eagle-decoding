@@ -8,9 +8,11 @@ The target/verifier model precision remains as frozen for each experiment.
 
 The human requested an independent Codex task and implementation/test team to
 prepare the nine-model campaign and automatic QAT-to-evaluation pipeline.
-RTX2080Ti is for development/CUDA preflight once opened; real training and
-quality/performance evaluation stay on RTX5080, currently unavailable. Parent
-blocked new RTX5080 runs locally; no remote action or availability claim.
+The human now opened RTX5080 for development: “5080 is open use that for
+development work.” Root resumed its local flag. The same sole operator owns
+fresh identity/resource checks, CUDA development and TRAIN preparation there.
+Real long QAT and quality/performance evaluation still await recipe/budget
+selection. RTX2080Ti is not queried or controlled by this team.
 Sole preparation coordinator is `01a10903-1c7a-71b1-abb1-0de3ecc046b8`;
 ownership claimed from handoff `da097e5`. Parent is a launcher only.
 See the [preparation goal](goals/nine-model-qat-preparation.md) for live worker

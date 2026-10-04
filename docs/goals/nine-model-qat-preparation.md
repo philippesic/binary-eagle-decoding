@@ -1,6 +1,28 @@
 # Nine model QAT preparation
 
-## Objective and authorization
+## Current hardware authorization — October 4, 2026
+
+The human explicitly announced: **“5080 is open use that for development work.”**
+This supersedes the initial RTX5080 no-query/pause boundary below. Root resumed
+the machine-local RTX5080 flag; `/root/cuda_operator` remains the sole operator
+and is now dispatched to fresh RTX5080 identity, process/context and resource
+checks through tmux MCP using the shared registry.
+
+Authorized there: isolated source staging/builds, bounded synthetic optimizer
+fixtures, native conversion/operator/graph checks, actual model forward/backward
+with zero real-model optimizer updates, full training-memory reservations without
+updates, and necessary target-only TRAIN data/calibration/golden preparation.
+Long QAT, recipe-selection quality/performance runs, held-out and final evaluation
+still await the human's recipe/coverage/compute decision. No new goal/operator or
+RTX2080Ti operation is created. Preserve other teams' jobs.
+
+The native Goal's original pause phrase describes the initial boundary; this
+authorization and durable project record control current work. The operator
+records actual SM120 hardware, source/binary/model hashes and each owned detached
+supervisor/group/context/resource closeout. SM75 claims remain pending/excluded
+if only SM120 is exercised.
+
+## Initial objective and authorization
 
 October 4, 2026. The human requested a separate independent Codex task and
 agent team to implement and test preparation for the nine-model campaign:
@@ -336,3 +358,18 @@ Next: land completed training/data/native proof fixes, join root freshgate and
 resolved six-config generator, independent Opus/QA reviews; once2080opened,
 serial actualmodel CUDA/zero-update checks, nativeTRAIN captures and goldens.
 Human still owns coverage/recipe/exposure/wall/eval budget. No readyclaim yet.
+
+## RTX5080 development dispatch — direct human steering
+
+Same operator dispatched after the direct availability announcement. Local
+`agent_env.py resume rtx5080` succeeded; no root remote command was issued.
+Operator starts one-shot fresh resource/identity/artifact/toolchain inspection
+while source owners finish matched generation/trace/initializer/config commits.
+Development runs use reviewed published source; never execute mutable author
+worktrees. Real-model optimizer updates and quality/evaluation remain zero.
+
+All native/training/data/pipeline/QA owners were notified. Once fresh admission
+passes, prioritize actual source CUDA compilation, deployed-width binary operator
+oracles, Linux STOP/resource/resume fixtures, authentic bounded balanced TRAIN
+capture and zero-update model/memory checks. The prepared campaign remains
+PENDING until those artifacts and independently tested production contracts exist.
