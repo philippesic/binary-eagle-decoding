@@ -53,6 +53,44 @@ def _positive(value, name):
     return value
 
 
+def validate_decode_history(history, length):
+    """Preserve exact native prefill/greedy partitions and F16 KV reuse."""
+    if not isinstance(history, list) or not history:
+        raise ValueError("exact native decode history required")
+    offset = 0
+    greedy_started = False
+    for record in history:
+        if (
+            not isinstance(record, dict)
+            or set(record) != {"offset", "count", "phase", "kv_reused_from_same_chain"}
+            or type(record["offset"]) is not int
+            or record["offset"] != offset
+            or type(record["count"]) is not int
+            or not 1 <= record["count"] <= 256
+            or record["phase"] not in ("prefill", "target_only_greedy")
+            or type(record["kv_reused_from_same_chain"]) is not bool
+            or record["kv_reused_from_same_chain"] != (offset > 0)
+            or (record["phase"] == "target_only_greedy" and record["count"] != 1)
+            or (greedy_started and record["phase"] != "target_only_greedy")
+        ):
+            raise ValueError("native decode partition/phase/F16 KV ancestry differs")
+        greedy_started |= record["phase"] == "target_only_greedy"
+        offset += record["count"]
+    if offset != length:
+        raise ValueError("native decode history does not cover exact token chain")
+    return history
+
+
+def crop_decode_history(history, length):
+    """Keep all source partitions; truncate only the final intersecting chunk."""
+    result = []
+    for record in history:
+        if record["offset"] >= length:
+            break
+        result.append(record | {"count": min(record["count"], length - record["offset"])})
+    return validate_decode_history(result, length)
+
+
 def _fingerprint(path):
     path = Path(path).resolve()
     stat = path.stat()
@@ -95,6 +133,7 @@ def validate_native_receipt(native, chain, tokens, producer, vocab_size, target_
         raise ValueError("native producer receipt differs from exact target/prefix/TRAIN ancestry")
     if not _hash(native.get("client_source_sha256")) or not native.get("producer_host"):
         raise ValueError("native receipt missing client/host provenance")
+    validate_decode_history(native.get("decode_history"), len(tokens))
     files = native.get("files", {})
     for name in ("features", "logits"):
         array = chain[name]
@@ -446,6 +485,7 @@ class BlockDataset:
             raise ValueError("producer receipt does not join target/TRAIN/tap/vocabulary contract")
         self._arrays = {}
         self.chains = {}
+        self.native_receipts = {}
         prompt_splits = {}
         seen_prompt_hashes = {}
         for chain in m["chains"]:
@@ -538,6 +578,7 @@ class BlockDataset:
                 validate_native_receipt(
                     native, chain, tokens, producer, self.vocab_size, self.target_width
                 )
+                self.native_receipts[cid] = native
             self.chains[cid] = chain
             self._arrays[cid] = (tokens, features, logits)
         if not self.chains:

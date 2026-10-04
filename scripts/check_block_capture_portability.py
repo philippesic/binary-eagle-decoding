@@ -23,7 +23,14 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from w1a1_eagle.block_data import TAPS, BlockDataset, file_sha256, token_sha256  # noqa: E402
+from w1a1_eagle.block_data import (  # noqa: E402
+    TAPS,
+    BlockDataset,
+    crop_decode_history,
+    file_sha256,
+    token_sha256,
+    validate_decode_history,
+)
 
 EAGLE_TAPS = (2, 18, 33)
 
@@ -79,6 +86,7 @@ class NativeCaptureGoldens:
             raise ValueError("golden vocabulary/width/storage bound must be positive integers")
         self._fingerprints = {}
         self._arrays, self.chains = {}, {}
+        self.native_receipts = {}
 
         def file(record, directory):
             if not isinstance(record, dict) or set(record) != {"path", "sha256"}:
@@ -156,6 +164,7 @@ class NativeCaptureGoldens:
                     "client_source_sha256",
                 )
             )
+            validate_decode_history(native.get("decode_history"), len(tokens))
             if (
                 not isinstance(producer[0], str)
                 or len(producer[0]) != 40
@@ -199,6 +208,7 @@ class NativeCaptureGoldens:
                 arrays.append(value)
             self._arrays[cid] = (np.asarray(tokens, dtype=np.int64), *arrays)
             self.chains[cid] = ancestry | {"chain_id": cid, "anchors": [len(tokens) - 1]}
+            self.native_receipts[cid] = native
         if not self.chains or len(producers) != 1:
             raise ValueError("empty or mixed-source native golden capture")
         self.manifest = manifest | {
@@ -389,6 +399,8 @@ def run_gate(
         "native_binary_sha256": args.binary_sha256,
         "native_source_revision": args.producer_source_revision,
         "gate_source_sha256": file_sha256(Path(__file__)),
+        "tap_ids": list(getattr(dataset, "tap_ids", TAPS)),
+        "reference_profile": "native_target_only_exact_prefix_partitioned_train",
         "producer_hardware": dataset.manifest["producer"]["hardware"],
         "numeric_checks": [],
         "failure": None,
@@ -428,11 +440,16 @@ def run_gate(
                 k: chain[k] for k in ("prompt_id", "prompt_sha256", "domain", "prompt_length")
             }
             ancestry["source_split"] = "TRAIN"
+            native_source = dataset.native_receipts.get(cid)
+            if native_source is None:
+                raise ValueError("portability requires original native decode partitions")
+            decode_history = crop_decode_history(native_source["decode_history"], length)
             receipt = teacher.capture_prefix(
                 prefix,
                 getattr(dataset, "tap_ids", TAPS),
                 logits_mode="last",
                 chain_ancestry=ancestry,
+                decode_history=decode_history,
             )
             check_producer(
                 receipt,
@@ -448,6 +465,8 @@ def run_gate(
                 raise ValueError("actual teacher client source differs from pinned local module")
             if receipt.get("tokens") != prefix or receipt.get("chain_ancestry") != ancestry:
                 raise ValueError("fresh teacher prefix/chain ancestry changed")
+            if receipt.get("decode_history") != decode_history:
+                raise ValueError("fresh teacher changed source decode partitions or KV ancestry")
             fresh_features = teacher.array(receipt, "features")
             fresh_logits = teacher.array(receipt, "logits")
             feature_check = compare_matrix(
@@ -478,6 +497,7 @@ def run_gate(
                     "prompt_sha256": chain["prompt_sha256"],
                     "prefix_sha256": token_sha256(prefix),
                     "prefix_tokens": length,
+                    "decode_history": decode_history,
                     "features": feature_check,
                     "full_vocab_logits": logit_check,
                     "saved_target_argmax": original_decision,
@@ -527,11 +547,20 @@ def run_gate(
 
 
 def main(*, expected_family=None, golden_only=False):
-    parser = argparse.ArgumentParser(description=__doc__)
-    for name in ("manifest", "binary", "target", "output-root", "output"):
+    parser = argparse.ArgumentParser(
+        description=(
+            "Bounded native EAGLE three-tap TRAIN golden CUDA portability gate."
+            if expected_family == "eagle"
+            else __doc__
+        )
+    )
+    inputs = parser.add_mutually_exclusive_group(required=True)
+    inputs.add_argument("--manifest", type=Path)
+    inputs.add_argument("--golden-manifest", type=Path)
+    for name in ("binary", "target", "output-root", "output"):
         parser.add_argument("--" + name, type=Path, required=True)
-    parser.add_argument("--admission", type=Path, required=not golden_only)
-    parser.add_argument("--admission-sha256", required=not golden_only)
+    parser.add_argument("--admission", type=Path)
+    parser.add_argument("--admission-sha256")
     for name in (
         "manifest-sha256",
         "binary-sha256",
@@ -548,10 +577,15 @@ def main(*, expected_family=None, golden_only=False):
     parser.add_argument("--logit-atol", type=float, default=0.02)
     parser.add_argument("--logit-rtol", type=float, default=0.002)
     args = parser.parse_args()
+    use_goldens = golden_only or args.golden_manifest is not None
+    if args.golden_manifest is not None:
+        args.manifest = args.golden_manifest
     try:
+        if not use_goldens and (args.admission is None or args.admission_sha256 is None):
+            raise ValueError("block-corpus portability requires pinned completed admission")
         report = run_gate(
             args,
-            dataset_factory=NativeCaptureGoldens if golden_only else BlockDataset,
+            dataset_factory=NativeCaptureGoldens if use_goldens else BlockDataset,
             expected_family=expected_family,
         )
     except Exception as error:
