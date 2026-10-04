@@ -53,6 +53,227 @@ def _positive(value, name):
     return value
 
 
+def _fingerprint(path):
+    path = Path(path).resolve()
+    stat = path.stat()
+    return {
+        "path": str(path),
+        "bytes": stat.st_size,
+        "mtime_ns": stat.st_mtime_ns,
+        "ctime_ns": stat.st_ctime_ns,
+        "device": stat.st_dev,
+        "inode": stat.st_ino,
+    }
+
+
+def validate_native_receipt(native, chain, tokens, producer, vocab_size, target_width):
+    """Join original target-only producer bytes, exact tokens, and original TRAIN."""
+    ancestry = {
+        "prompt_id": chain["prompt_id"],
+        "prompt_sha256": chain["prompt_sha256"],
+        "domain": chain["domain"],
+        "source_split": "TRAIN",
+        "prompt_length": chain["prompt_length"],
+    }
+    if (
+        native.get("schema") != "block_native_teacher_request_v1"
+        or native.get("complete") is not True
+        or native.get("optimizer_updates") != 0
+        or native.get("teacher_context_reset_between_requests") is not True
+        or native.get("prefix_contract") != "teacher_forced_exact_caller_token_ids"
+        or native.get("kv_type") != "F16"
+        or native.get("target_precision") != "F16"
+        or native.get("tap_ids") != list(TAPS)
+        or native.get("tokens") != tokens.tolist()
+        or native.get("target_sha256") != producer["target_sha256"]
+        or native.get("producer_binary_sha256") != producer["binary_sha256"]
+        or native.get("producer_source_revision") != producer["native_revision"]
+        or native.get("chain_ancestry") != ancestry
+        or native.get("hardware") != json.loads(producer["hardware"])
+        or native.get("features_shape") != [len(tokens), 5, target_width]
+    ):
+        raise ValueError("native producer receipt differs from exact target/prefix/TRAIN ancestry")
+    if not _hash(native.get("client_source_sha256")) or not native.get("producer_host"):
+        raise ValueError("native receipt missing client/host provenance")
+    files = native.get("files", {})
+    for name in ("features", "logits"):
+        array = chain[name]
+        if array is None:
+            continue  # hard CE may deliberately omit an otherwise retained logit file
+        record = files.get(name, {})
+        shape = [len(tokens), 5, target_width] if name == "features" else [len(tokens), vocab_size]
+        if (
+            record.get("sha256") != array["sha256"]
+            or record.get("shape") != shape
+            or record.get("dtype") != "float32"
+        ):
+            raise ValueError("native producer feature/full-vocabulary logit artifact differs")
+        if name == "logits" and (
+            native.get("logits_mode") != "all" or native.get("logits_shape") != shape
+        ):
+            raise ValueError("last-only teacher cannot supply a whole chain soft objective")
+
+
+def import_capture_plan(
+    plan_path, *, expected_sha256, output_dir, max_capture_bytes=1024**3, admission_output=None
+):
+    """Materialize a manifest from pinned original native receipts, without tensor copies.
+
+    The plan is admitted by its external hash and contains an original TRAIN
+    inventory and runtime manifest. It selects prompt-disjoint roles explicitly;
+    it does not invent prompt membership or capture teachers. Raw producer files
+    are retained read-only and only the small token arrays are materialized.
+    """
+    plan_path = Path(plan_path).resolve()
+    output = Path(output_dir).resolve()
+    if not _hash(expected_sha256) or file_sha256(plan_path) != expected_sha256:
+        raise ValueError("capture plan differs from external admission pin")
+    if output.exists():
+        raise ValueError("refuse to overwrite capture preparation history")
+    _positive(max_capture_bytes, "max_capture_bytes")
+    plan = json.loads(plan_path.read_text())
+    keys = {
+        "schema",
+        "family",
+        "vocab_size",
+        "target_width",
+        "mask_token_id",
+        "train_inventory",
+        "runtime",
+        "chains",
+    }
+    if set(plan) != keys or plan["schema"] != "block_capture_plan_v1":
+        raise ValueError("unsupported native capture import plan")
+
+    def artifact(record, directory, *, check_hash=True):
+        if (
+            not isinstance(record, dict)
+            or set(record) != {"path", "sha256"}
+            or not _hash(record["sha256"])
+        ):
+            raise ValueError("externally admitted path/SHA256 required")
+        path = (directory / record["path"]).resolve()
+        if not path.is_file() or (check_hash and file_sha256(path) != record["sha256"]):
+            raise ValueError("capture plan artifact missing or SHA256 differs")
+        return path
+
+    inventory_path = artifact(plan["train_inventory"], plan_path.parent)
+    runtime_path = artifact(plan["runtime"], plan_path.parent)
+    inventory = json.loads(inventory_path.read_text())
+    chains, producer, receipt_chains, total_bytes = [], None, {}, 0
+    if not isinstance(plan["chains"], list) or not plan["chains"]:
+        raise ValueError("empty native capture import plan")
+    output.mkdir(parents=True)
+    for index, source in enumerate(plan["chains"]):
+        expected = {
+            "chain_id",
+            "prompt_id",
+            "prompt_sha256",
+            "domain",
+            "split",
+            "prompt_length",
+            "anchors",
+            "native_receipt",
+            "include_logits",
+        }
+        if set(source) != expected or type(source["include_logits"]) is not bool:
+            raise ValueError("capture chain plan fields differ")
+        if inventory.get("prompts", {}).get(source["prompt_id"]) != {
+            "sha256": source["prompt_sha256"],
+            "domain": source["domain"],
+            "split": "TRAIN",
+        }:
+            raise ValueError("capture chain not in original authenticated TRAIN inventory")
+        native_path = artifact(source["native_receipt"], plan_path.parent)
+        native = json.loads(native_path.read_text())
+        current = {
+            "kind": "native_target_only",
+            "native_revision": native.get("producer_source_revision"),
+            "binary_sha256": native.get("producer_binary_sha256"),
+            "target_sha256": native.get("target_sha256"),
+            "target_precision": "F16",
+            "runtime_sha256": file_sha256(runtime_path),
+            "hardware": json.dumps(native.get("hardware"), sort_keys=True),
+        }
+        if producer is not None and current != producer:
+            raise ValueError("mixed target/source/hardware/runtime producer chains")
+        producer = current
+        tokens = np.asarray(native.get("tokens"), dtype=np.int64)
+        if tokens.ndim != 1 or not len(tokens):
+            raise ValueError("native receipt missing exact prefix tokens")
+        chain = {k: v for k, v in source.items() if k != "include_logits"}
+        for name in ("features", "logits"):
+            if name == "logits" and not source["include_logits"]:
+                chain[name] = None
+                continue
+            record = native.get("files", {}).get(name)
+            if not isinstance(record, dict) or set(record) != {"path", "sha256", "shape", "dtype"}:
+                raise ValueError("native raw feature/logit artifact descriptor missing")
+            path = artifact(
+                {"path": record["path"], "sha256": record["sha256"]},
+                native_path.parent,
+                check_hash=False,
+            )
+            total_bytes += path.stat().st_size
+            if total_bytes > max_capture_bytes:
+                raise MemoryError("native retained capture bytes exceed import bound")
+            chain[name] = record | {"path": str(path)}
+        chain["native_receipt"] = {"path": str(native_path), "sha256": file_sha256(native_path)}
+        validate_native_receipt(
+            native, chain, tokens, producer, plan["vocab_size"], plan["target_width"]
+        )
+        token_path = output / f"tokens-{index:06d}.npy"
+        np.save(token_path, tokens)
+        chain["tokens"] = {"path": str(token_path), "sha256": file_sha256(token_path)}
+        chains.append(chain)
+        cid = chain["chain_id"]
+        if cid in receipt_chains:
+            raise ValueError("duplicate capture chain")
+        receipt_chains[cid] = {
+            "tokens_sha256": chain["tokens"]["sha256"],
+            "features_sha256": chain["features"]["sha256"],
+            "logits_sha256": None if chain["logits"] is None else chain["logits"]["sha256"],
+            "prompt_id": chain["prompt_id"],
+            "prompt_sha256": chain["prompt_sha256"],
+            "prompt_length": chain["prompt_length"],
+            "native_receipt_sha256": chain["native_receipt"]["sha256"],
+        }
+    receipt = {
+        "schema": "block_target_capture_receipt_v1",
+        "producer": producer,
+        "train_inventory_sha256": file_sha256(inventory_path),
+        "taps": list(TAPS),
+        "tap_semantics": "native_layer_input_f32",
+        "vocab_size": plan["vocab_size"],
+        "capture_mode": "target_only_autoregressive_train",
+        "chains": receipt_chains,
+        "capture_plan_sha256": expected_sha256,
+        "retained_capture_bytes": total_bytes,
+    }
+    receipt_path = output / "producer-receipt.json"
+    receipt_path.write_text(json.dumps(receipt, indent=2) + "\n")
+    manifest = {
+        "schema": SCHEMA,
+        "family": plan["family"],
+        "vocab_size": plan["vocab_size"],
+        "target_width": plan["target_width"],
+        "mask_token_id": plan["mask_token_id"],
+        "taps": list(TAPS),
+        "tap_semantics": "native_layer_input_f32",
+        "layout": "author_anchor_first",
+        "producer": producer
+        | {"receipt": {"path": str(receipt_path), "sha256": file_sha256(receipt_path)}},
+        "train_inventory": {"path": str(inventory_path), "sha256": file_sha256(inventory_path)},
+        "chains": chains,
+    }
+    manifest_path = output / "manifest.json"
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
+    # Re-read the exact completed bytes and reject all shape/split/prefix errors.
+    audited = BlockDataset(manifest_path, expected_sha256=file_sha256(manifest_path))
+    audited.write_admission(admission_output or output / "completed-admission.json")
+    return manifest_path
+
+
 @dataclass(frozen=True)
 class BlockBatch:
     family: str
@@ -102,11 +323,51 @@ class BlockDataset:
         allow_synthetic=False,
         max_teacher_bytes=64 * 1024 * 1024,
         verify_artifacts=True,
+        admission_path=None,
+        admission_sha256=None,
     ):
         self.path = Path(manifest_path).resolve()
         if not _hash(expected_sha256) or file_sha256(self.path) != expected_sha256:
             raise ValueError("manifest differs from external SHA256 pin")
         self.sha256 = expected_sha256
+        self._fingerprints = {}
+        self._admitted = {}
+        self._fully_audited = admission_path is None
+        if admission_path is not None:
+            admission_path = Path(admission_path)
+            if not _hash(admission_sha256) or file_sha256(admission_path) != admission_sha256:
+                raise ValueError("completed data admission differs from external pin")
+            admission = json.loads(admission_path.read_text())
+            if (
+                set(admission) != {"schema", "manifest_sha256", "source_sha256", "artifacts"}
+                or admission["schema"] != "block_data_completed_admission_v1"
+                or admission["manifest_sha256"] != self.sha256
+                or admission["source_sha256"] != file_sha256(Path(__file__))
+            ):
+                raise ValueError("completed data admission source/manifest schema differs")
+            for record in admission["artifacts"]:
+                if set(record) != {
+                    "path",
+                    "bytes",
+                    "mtime_ns",
+                    "ctime_ns",
+                    "device",
+                    "inode",
+                    "sha256",
+                }:
+                    raise ValueError("completed admission lacks exact host artifact identity")
+                if (
+                    not _hash(record["sha256"])
+                    or _fingerprint(record["path"])
+                    != {k: v for k, v in record.items() if k != "sha256"}
+                    or record["path"] in self._admitted
+                ):
+                    raise ValueError("completed admission artifact path/stat identity differs")
+                self._admitted[record["path"]] = record
+        if verify_artifacts is not True and not self._admitted:
+            raise ValueError(
+                "unchecked artifacts cannot admit data; pinned completed admission required"
+            )
         self.manifest = m = json.loads(self.path.read_text())
         expected = {
             "schema",
@@ -199,6 +460,7 @@ class BlockDataset:
                 "features",
                 "logits",
                 "anchors",
+                "native_receipt",
             }
             if (
                 set(chain) != keys
@@ -262,8 +524,20 @@ class BlockDataset:
                 "prompt_id": chain["prompt_id"],
                 "prompt_sha256": chain["prompt_sha256"],
                 "prompt_length": chain["prompt_length"],
+                "native_receipt_sha256": None
+                if chain["native_receipt"] is None
+                else chain["native_receipt"]["sha256"],
             }:
                 raise ValueError("chain artifacts/prompt boundary differ from producer receipt")
+            if producer["kind"] == "native_target_only":
+                if chain["native_receipt"] is None:
+                    raise ValueError("production chain requires original native producer receipt")
+                native = json.loads(
+                    self._artifact(chain["native_receipt"], verify_artifacts=True).read_text()
+                )
+                validate_native_receipt(
+                    native, chain, tokens, producer, self.vocab_size, self.target_width
+                )
             self.chains[cid] = chain
             self._arrays[cid] = (tokens, features, logits)
         if not self.chains:
@@ -272,27 +546,52 @@ class BlockDataset:
     def _artifact(self, record, *, verify_artifacts):
         if (
             not isinstance(record, dict)
-            or set(record) != {"path", "sha256"}
+            or set(record) not in ({"path", "sha256"}, {"path", "sha256", "shape", "dtype"})
             or not _hash(record["sha256"])
         ):
             raise ValueError("artifact path/SHA256 required")
         path = (self.path.parent / record["path"]).resolve()
-        if not path.is_file() or (verify_artifacts and file_sha256(path) != record["sha256"]):
+        fingerprint = _fingerprint(path) if path.is_file() else None
+        admitted = self._admitted.get(str(path))
+        if self._admitted and (
+            fingerprint is None
+            or admitted is None
+            or admitted != fingerprint | {"sha256": record["sha256"]}
+        ):
+            raise ValueError("completed admission does not bind this exact artifact")
+        if not path.is_file() or (not admitted and file_sha256(path) != record["sha256"]):
             raise ValueError("capture artifact missing or SHA256 differs")
+        self._fingerprints[str(path)] = fingerprint | {"sha256": record["sha256"]}
         return path
 
     def _array(self, record, dtype, verify_artifacts):
-        value = np.load(
-            self._artifact(record, verify_artifacts=verify_artifacts),
-            mmap_mode="r",
-            allow_pickle=False,
-        )
+        path = self._artifact(record, verify_artifacts=verify_artifacts)
+        if "shape" in record:
+            shape = record["shape"]
+            if (
+                not isinstance(shape, list)
+                or not shape
+                or any(type(n) is not int or n < 1 for n in shape)
+                or len(shape) > 3
+                or record["dtype"] != "float32"
+                or dtype != np.dtype("float32")
+            ):
+                raise ValueError("raw native array requires positive declared F32 shape")
+            size = 4
+            for n in shape:
+                size *= n
+            if path.stat().st_size != size:
+                raise ValueError("raw capture file length differs from exact native shape")
+            value = np.memmap(path, mode="r", dtype="<f4", shape=tuple(shape))
+        else:
+            value = np.load(path, mmap_mode="r", allow_pickle=False)
         if value.dtype != dtype or not value.flags.c_contiguous:
             raise ValueError("capture requires contiguous exact native dtype")
         # Check in bounded row slices rather than forming a full logits bool tensor.
-        for first in range(0, len(value), 16):
-            if not np.isfinite(value[first : first + 16]).all():
-                raise ValueError("capture array contains nonfinite values")
+        if self._fully_audited:
+            for first in range(0, len(value), 16):
+                if not np.isfinite(value[first : first + 16]).all():
+                    raise ValueError("capture array contains nonfinite values")
         return value
 
     def load_block(self, chain_id: str, block_index: int, *, require_teacher=False) -> BlockBatch:
@@ -301,6 +600,17 @@ class BlockDataset:
             raise ValueError("block index outside chain")
         tokens, features, logits = self._arrays[chain_id]
         anchor = chain["anchors"][block_index]
+        for name in ("tokens", "features", "logits"):
+            record = chain[name]
+            if record is not None:
+                path = (self.path.parent / record["path"]).resolve()
+                if _fingerprint(path) != {
+                    k: v for k, v in self._fingerprints[str(path)].items() if k != "sha256"
+                }:
+                    raise ValueError("consumed capture artifact changed after admission")
+        for first in range(0, anchor, 16):
+            if not np.isfinite(features[first : first + 16]).all():
+                raise ValueError("consumed native context features nonfinite")
         begin = 0  # both selected releases use the admitted author-layout path
         labels = np.full(7, -1, dtype=np.int64)
         labels[begin:] = tokens[anchor + 1 : anchor + 8 - begin]
@@ -315,6 +625,8 @@ class BlockDataset:
                 raise MemoryError("per-block full-vocabulary teacher exceeds declared bound")
             teacher = np.zeros((7, self.vocab_size), dtype=np.float32)
             teacher[begin:] = logits[anchor : anchor + 7 - begin]
+            if not np.isfinite(teacher).all():
+                raise ValueError("consumed full-vocabulary teacher nonfinite")
         prefix = tuple(int(t) for t in tokens[: anchor + 1])
         hashes = (None,) * begin + tuple(
             token_sha256(tokens[: anchor + i + 1]) for i in range(7 - begin)
@@ -392,6 +704,29 @@ class BlockDataset:
                 block_offset,
             )
         return batch, next_cursor
+
+    def write_admission(self, path):
+        """Publish only after an original full integrity/finite/schema audit.
+
+        This receipt is reusable on the same host/filesystem only. Copying data
+        to another host needs one new audit, never six repeated process audits.
+        Caller records its external SHA pin before a prepared launcher reuses it.
+        """
+        path = Path(path)
+        if path.exists() or not self._fully_audited:
+            raise ValueError("admission requires fresh complete audit and a new output path")
+        for record in self._fingerprints.values():
+            if _fingerprint(record["path"]) != {k: v for k, v in record.items() if k != "sha256"}:
+                raise ValueError("capture artifact changed during audit")
+        receipt = {
+            "schema": "block_data_completed_admission_v1",
+            "manifest_sha256": self.sha256,
+            "source_sha256": file_sha256(Path(__file__)),
+            "artifacts": [self._fingerprints[key] for key in sorted(self._fingerprints)],
+        }
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(receipt, indent=2) + "\n")
+        return file_sha256(path)
 
     def storage_summary(self):
         return {
