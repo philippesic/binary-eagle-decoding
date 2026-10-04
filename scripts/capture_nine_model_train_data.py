@@ -133,6 +133,7 @@ def prepare_plan(plan_path, expected_sha256):
     if set(caps) != {
         "max_requests",
         "max_tokens_per_chain",
+        "max_prompt_tokens",
         "max_request_bytes",
         "max_shard_bytes",
         "max_total_bytes",
@@ -150,6 +151,8 @@ def prepare_plan(plan_path, expected_sha256):
         positive(value, key)
     if not 1 <= caps["max_eagle_golden_tokens"] <= caps["max_tokens_per_chain"] <= 32768:
         raise ValueError("native chain/golden token bounds invalid")
+    if caps["max_prompt_tokens"] + generation["max_new_tokens"] > caps["max_tokens_per_chain"]:
+        raise ValueError("prompt token cap plus generation cap exceeds native chain bound")
     if caps["request_timeout_seconds"] > caps["total_timeout_seconds"]:
         raise ValueError("request timeout exceeds total wall cap")
     native = plan["native"]
@@ -325,6 +328,8 @@ def prepare_plan(plan_path, expected_sha256):
             "counts": counts,
             "max_native_requests": len(records) + 6,
             "max_chain_rows": len(records) * caps["max_tokens_per_chain"],
+            "max_prompt_tokens": caps["max_prompt_tokens"],
+            "max_new_tokens": generation["max_new_tokens"],
             "max_capture_bytes": bound,
             "max_block_request_bytes": request_bytes,
             "max_paired_golden_bytes": golden_bytes,
@@ -472,6 +477,11 @@ def run_capture(
                 raise ValueError(
                     "current production NativeTeacher client source differs from plan pin"
                 )
+            if (
+                "max_prompt_tokens"
+                not in inspect.signature(NativeTeacher.generate_capture).parameters
+            ):
+                raise ValueError("native producer lacks prompt token cap before decoding")
             report["actual_teacher_client_source"] = {
                 "path": str(actual_client_path),
                 "sha256": file_sha256(actual_client_path),
@@ -503,6 +513,7 @@ def run_capture(
             receipt = teacher.generate_capture(
                 **kwargs,
                 max_new_tokens=plan["generation"]["max_new_tokens"],
+                max_prompt_tokens=caps["max_prompt_tokens"],
                 template_mode=plan["input_mode"],
                 tap_ids=TAPS,
                 logits_mode="all" if plan["objective"] == "exact_soft" else "none",
@@ -755,6 +766,8 @@ def validate_generated(receipt, record, plan, device):
     generation = receipt.get("generation", {})
     if (
         receipt.get("prompt_length", 0) < 1
+        or receipt.get("prompt_length", 0) > plan["caps"]["max_prompt_tokens"]
+        or receipt.get("prompt", {}).get("max_prompt_tokens") != plan["caps"]["max_prompt_tokens"]
         or len(receipt.get("tokens", [])) > plan["caps"]["max_tokens_per_chain"]
         or generation.get("mode") != "native_target_greedy"
         or generation.get("max_new_tokens") != plan["generation"]["max_new_tokens"]
