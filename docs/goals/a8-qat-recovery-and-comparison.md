@@ -1,5 +1,32 @@
 # A8 QAT recovery and comparison
 
+## Candidate 20,000 checkpoint; evaluation running — October 4, 10:28 UTC
+
+Candidate training supervisor started10:08:25.718304Z and exited0 at
+10:27:26.033232Z; boundary observed10:27:27Z. Natural step20000/cursor20028,
+checkpoint SHA
+`21f5278f9489b166067a59d83f22f454cacca975e419b0a010a15cdf7df75865`
+hardlink archived; locator `evidence-archive/checkpoints/candidate-step-20000-locator.json`.
+Checkpoint manifest0521d0721b93c3b8fa3c5c15dac44ade5be62e7de010de6f83805e4a913437bc;
+jointjsonb5820510...,jointnpz2d714500..., exact paths/full hashes in operator record.
+Settled budget4132.196864/7200,active_attempt null,remaining3067.803136. Exact
+22738/22743 groups/session/contexts returned,baseline2766MiB/0%.
+
+Scheduled evaluation launched10:28:33Z, same immutable3bd/current9e2/F16 target/
+verifier/KV/frozen24dev/1200s cap, diagnostic faulthandler only. Host tmux session
+`a8-candidate-step20000-eval-20261004-01`, run
+`a8-candidate-step20000-eval-supervisor-20261004-01`; supervisor23230/birth4427166,
+evaluator23235/birth4427174 on sameboot517c4a36. Exact existing manifest SHAfc18f400.
+Initial10:28:50 resource snapshot startup2766MiB/0%; result pending.
+
+Reference stays evaluated20000/3541.357949,0.613546drafts/round/93.850requestTPS,
+belowQ4_0. After candidate terminal archive/release, resume reference20000→25000
+under3658.642051 remaining, then normal evaluation and candidate20000→25000.
+Both7200 endpoints/finals still incomplete; Goal/heartbeat ACTIVE, all admitted
+science/source/recipe/data/precision/budget invariant, no repeated gates. SIGSEGV
+retry1/max2/charges retained, A1 held out, no2080host controls. Canonical current
+operator state latest_operator_observation; exact end versus observation distinct.
+
 ## Reference 20,000 evaluated; candidate resumed — October 4, 10:10 UTC
 
 Reference20000 native evaluation completed exit0: supervisor actualstart
