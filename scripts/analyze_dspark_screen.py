@@ -8,6 +8,14 @@ from benchmark_dspark_screen import ARMS, round_summary
 from benchmark_native_eagle import json_write
 
 
+def percentile(values, probability):
+    ordered = sorted(values)
+    position = (len(ordered) - 1) * probability
+    left = int(position)
+    right = min(left + 1, len(ordered) - 1)
+    return ordered[left] + (ordered[right] - ordered[left]) * (position - left)
+
+
 def summarize(source: Path) -> dict:
     data = json.loads((source / "measurements.json").read_text())
     protocol = json.loads((source / "protocol.json").read_text())
@@ -22,7 +30,8 @@ def summarize(source: Path) -> dict:
         if not data["diagnostic"] and (len(items) != expected or len(pairs) != expected or pairs != set(target)):
             raise ValueError(f"incomplete or duplicate paired measurements: {arm}")
         if any(not isinstance(r["completion_tokens"], int) or not isinstance(r["server_predicted_ms"], (int, float))
-               or r["server_predicted_ms"] <= 0 for r in items):
+               or r["server_predicted_ms"] <= 0 or not isinstance(r["request_wall_s"], (int, float))
+               or r["request_wall_s"] <= 0 for r in items):
             raise ValueError(f"missing actual output/decode counts: {arm}")
         tokens = sum(r["completion_tokens"] for r in items)
         decode_s = sum(r["server_predicted_ms"] for r in items) / 1000
@@ -44,6 +53,9 @@ def summarize(source: Path) -> dict:
                                if a != b), min(len(q4["generated_token_ids"]), len(r["generated_token_ids"])))
                 primary_mismatches.append({"repetition": r["repetition"], "prompt_id": r["prompt_id"], "common_prefix": common})
         entry = {"requests": len(items), "output_tokens": tokens, "decode_s": decode_s, "request_s": wall_s,
+                 "client_request_latency_ms": {"mean": wall_s * 1000 / len(items),
+                    "p50": percentile([r["request_wall_s"] * 1000 for r in items], 0.5),
+                    "p95": percentile([r["request_wall_s"] * 1000 for r in items], 0.95)},
                  "pooled_decode_tps": tokens / decode_s if decode_s else None,
                  "pooled_request_tps": tokens / wall_s if wall_s else None,
                  "output_id_mismatches": mismatches, "primary_q4_output_id_mismatches": primary_mismatches,
@@ -78,7 +90,7 @@ def summarize(source: Path) -> dict:
         for rep, cell in entry["repetitions"].items():
             cell["decode_ratio_to_q4_0"] = cell["decode_tps"] / baseline["repetitions"][rep]["decode_tps"]
             cell["request_ratio_to_q4_0"] = cell["request_tps"] / baseline["repetitions"][rep]["request_tps"]
-    summary["timing_scope"] = "concurrency-one pooled output token rates; decode server predicted_ms; request client HTTP wall; no maximum serving-capacity claim"
+    summary["timing_scope"] = "concurrency-one pooled output token rates; decode server predicted_ms; request client HTTP wall; latency excludes model load/warmups; TTFT unavailable; no maximum serving-capacity claim"
     return summary
 
 

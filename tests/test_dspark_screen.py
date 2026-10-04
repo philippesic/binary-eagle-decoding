@@ -164,6 +164,8 @@ class ScreenContracts(unittest.TestCase):
             result = summarize(root)
             self.assertEqual(result["arms"]["eagle_q4_0"]["pooled_decode_tps"], 10)
             self.assertAlmostEqual(result["arms"]["eagle_q4_0"]["pooled_request_tps"], 40/6)
+            self.assertEqual(result["arms"]["eagle_q4_0"]["client_request_latency_ms"],
+                             {"mean": 3000, "p50": 3000, "p95": 3900})
             self.assertIsNone(result["arms"]["dspark_3"]["native_rounds"]["cpu_wall_totals_us"]["draft_us"])
             # Same aggregate totals cannot cover a missing paired request.
             records[-1]["prompt_id"] = "0"
