@@ -247,3 +247,17 @@ additional proof protocols or redoing completed audit work.
 - Practical lesson: Use the actual declared manifest/content identity when
   integrating an evaluator. Exercise its real ID styles in a contract fixture;
   naming conventions must not replace dataset-role and provenance checks.
+
+### 2026-10-04: Join rotation handoffs to the current launch receipt
+
+- Evidence: Operator handoff for live reference29672/29677 resumed from30k to35k
+  initially copied a prior step25000 session/run/state path and said candidate25k
+  was next. Current launch receipt names step30000; candidate is already30k with
+  only980.107seconds left. Root caught the mismatch before successor dispatch.
+- Status: Confirmed agent handoff/schema mistake, no user error. Process birth
+  identities and measured budgets agreed; the detached job was not interrupted.
+- Agent contribution: Legacy nested ledger fields remained stale after newer
+  canonical observation fields were introduced, making copying ambiguous.
+- Practical lesson: Construct transfers from the current exact launch receipt,
+  process births and checkpoint. Resolve mismatched session/state paths before
+  enabling a successor operator; do not recover or restart from stale labels.

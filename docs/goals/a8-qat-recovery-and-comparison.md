@@ -1,5 +1,158 @@
 # A8 QAT recovery and comparison
 
+## Coordinator rotation handoff — October 4, 13:00 UTC
+
+**Objective remains incomplete:** finish authorized A8 QAT recovery and matched
+7,200 cumulative trainer-accounted seconds per reference/candidate arm on RTX5080,
+with effective recipe/movement proof, exact durable resume, scheduled/final native
+development evaluations, final coverage/telemetry/report and complete release.
+User resumed GPU usage; no new recipe, budget or research decision is pending.
+This is a continuation of the existing goal, not a new experiment.
+
+The second-compaction hook requires a fresh successor at this safe checkpoint.
+Prior owner `01a103da-0980-7332-a041-3f95aca6a3f5` is transferring live work, not
+pausing the GPU or claiming completion. Successor ID/acknowledgment will be
+recorded below. Read this section plus latest STATUS and comparison report first;
+older sections are historical. Do not contact origin chat
+`01a103c6-9cbd-7e70-ab05-7de1c49acf79` or its interrupted workers.
+
+### Completed and current state
+
+Both arms passed actual model/backward/native/admission/positive-step exact-resume
+gates. All candidate families have finite/nonzero gradients and sampled movement
+(sign9,scale9,learned A8 six,midpoint9). Fourteen scheduled original reports through
+both30k are archived. No repeat full corpus gate, recapture, proof9000 evaluation,
+new CUDA gate or regression-driven experiment is needed. Original paired A8/A1
+step1000 remains untouched. Implementation tests passed82+7 root,167 worker;
+helper repair16 tests plus ruff. This handoff changes documentation only; diffcheck
+is the required check. Previous published progress61fc852; execution commits below.
+
+Candidate30k evaluation exit0: actualstart12:40:27.846879Z/end12:53:17.060440Z;
+769.213561 supervisor-wall seconds /764.960383 evaluation-phase seconds,
+terminal absence observed12:54:18Z. CE5.515602 (229labels/48rounds/24prompts),
+600 accepted/10919 proposed/2235rounds=0.268456 drafts/round versus Q4_0
+1.306255. Request70.905 versus Q4_0135.129 (ratio0.524722); decode73.055 versus
+142.891. All24 native and120 timing sequences match Q4_0; five repetitions×24,
+14,290 completion IDs per timing variant,105length/15stop. Target-only88.534.
+Reporta1325ecd...,resultc36cebb9...,timingb1a35a60... full hashes in comparison.md.
+Hardlink archive `evidence-archive/development/candidate-step30000-eval-attempt-0000`,
+locator `candidate-step30000-locator-map.json`. Exact prior eval groups28640/28645,
+Linux session/native contexts absent; baseline2766MiB before next launch.
+
+Candidate inactive: step30000/cursor30054, resume/checkpoint SHA
+`f68255ace54f4803ba8f856f72b65b1ae86fbf9c06ee805ab5cc54bea4dc9c8f`;
+settled6219.892866990007/7200,active_attempt null,**980.107133009993 seconds remain**.
+Reference evaluated30k: step30000/cursor30054, checkpoint SHA
+`108968085f4b99ad3ae3fd600b14bee702aa821885c742120d41d988d351940c`,
+settled5097.991297502003 before current segment;2102.008702497997 remain.
+Reference30k CE3.549471,0.623711drafts/round,95.036requestTPS,70.28% of Q4_0.
+Both remain below primary Q4_0; equal step checkpoints are interim, not equal-budget
+endpoints. Candidate combined features do not isolate causal effects.
+
+### Live job and ownership transfer
+
+Reference30k→35k is LIVE; do not interrupt solely for rotation. Detached Linux
+socket `binary-eagle-runtime`, session `a8-reference-step30000-resume-20261004-01`,
+run `a8-reference-step30000-resume-supervisor-20261004-01`. Supervisor29672,
+birth ticks5311113; trainer29677,birth5311121; boot
+`517c4a36-e475-4a5f-9fa6-65de57edc6fe`. Latest verified12:59:15Z: step30563/
+cursor30618,training5202.857739/7200,optimization true,finite18 gradients,
+GPU9601MiB/77%. Initial preparing snapshot12:56:33Z is historical. Actualstart
+will be read from operator handoff/state.json. Reconnect via fresh host registry,
+inspect these exact handles/births and state.json; silence is not failure.
+
+Prior sole operator `/root/gpu_supervisor` (Luna high) closed only MCP transport
+pane `%284` at13:02:41Z and ceased all remote control. No remote signal or query
+after closure; detached job retained, last verified snapshot12:59:15Z. Successor may appoint ONE
+replacement Luna high after the explicit transport/ownership-ready receipt in
+ignored `runs/qat-a8-recovery/operator-ledger.json`; it owns that ledger. No second
+operator while prior one is active. Recipe/trainer/native-metrics workers are
+finished, no outstanding code edits. Their worktrees were merged/retired.
+Root docs worktree `/private/tmp/eagle-a8-standalone`, branch
+`feature/a8-standalone-integration`, explicitly transferred to successor; prior
+root ceases edits after acknowledgment. Operator worktree
+`/private/tmp/eagle-qat-a8-operator` is preserved until ownership/cleanup review.
+Untracked overnight docs/runs and unrelated fusion CPU work in main are preserved.
+
+ROOT-owned ignored registration: `runs/qat-a8-recovery/monitor-registration.json`.
+Operator-owned ignored ledger: `runs/qat-a8-recovery/operator-ledger.json`.
+Compact14-report evidence: `runs/qat-a8-recovery/comparison-interim-summary.json`.
+Read latest `latest_operator_observation` plus current run records; legacy
+`training.status`/`last_remote_status_observation` can be stale. Compare actual
+observation timestamps, not delivery order. Keep UTC explicit. Operator handoff
+will include tmux MCP reconnect identity and graceful stop instructions.
+
+### Frozen execution and exact next actions
+
+SSH to WSL ONLY through tmux MCP; read
+`~/.config/binary-eagle-decoding/hosts.toml` before connecting, never guess IP.
+RTX5080 only. No RTX2080Ti queries/controls/global pause changes; that device is
+separately human-authorized to another team. Existing WSL durability proof and
+instanceIdleTimeout=-1 passed, do not repeat healthy proof. Current native9e2
+`9e2c7a90051e738751aab7d7bd7c2d8201fb76e3`, binary
+`/home/philip/binary-eagle-decoding/runs/qat-clean-runtime9e2-20261002-01/llama-server`,
+SHA`1ca0c1d9ea62d15ec52e8f32bb50b8a7d31427ab009f4a00ce388f4cf9cef072`.
+Actual RTX5080/SM120/Torch2.14.0+cu130; target/verifier and KV F16, Q4_0 primary.
+Training math frozen583480c79f3ca090de0952deca8278dcb7f15c2d;
+helper-only3bd4837850915cb7d308290e573e8d8a08eee1a2 actual command cwd:
+`/home/philip/binary-eagle-decoding/checkouts/a8-eval-recovery-3bd4837`.
+Run ROOT:
+`/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01`.
+Arms ROOT/arms/reference and ROOT/arms/candidate; configs ROOT/configs/*-training.json.
+Ref config SHA`cf32047642e84d1e0c7df267d7ec68135345fa3d87bdc6265f5ab6506aa58d43`;
+candidate`5bba2e141658a17a2a35caa4fd1e12e3231a8ebf2249aceb4b4e801952aa6c32`.
+Train via existing remote_job supervisor: PYTHONFAULTHANDLER=1, shared .venv python,
+`scripts/train_continuous_w1ax.py --start --resume --allow-cuda --config CONFIG --run-dir ARM`.
+Evaluate `scripts/w1ax_continuous_stages.py evaluate --run-dir ARM
+--development-manifest PINNED --allow-cuda`; exact pinned derived manifest hash
+fc18f400a776161fd0ff40b30d58d69233be723e9e26b858a60160a2b802d091,
+fixed24 prompt content131a3db7958ff6aa818b23019297654507d5b80bed3c298349417b7e3b2ba081.
+Each evaluation separately capped1200seconds; training capped7200 per arm.
+
+1. Fresh successor acknowledges sole ownership in docs/registration, continues
+same goal and SAME15min heartbeat `a8-qat-recovery-monitor` (retarget, no duplicate).
+Prior root/operator retire only after successor can see exact live job.
+2. Monitor reference current job to natural35k or budget endpoint. Preserve hashes,
+exact budget/optimizer/RNG/cursor/recipe/probe/telemetry, hardlink archive, terminal
+state/all-group/context release before scheduled native evaluation.
+3. After ref35k evaluation/release, candidate resume has ONLY980.107133009993seconds
+left. Let original7200 deadline stop it, probably before35k. Preserve matching
+`final_training_complete=true` request/latest checkpoint, settled budget/null attempt,
+then matching final native evaluation/report/ack. No extra5000block or topup.
+4. Continue remaining reference budget via natural scheduled boundaries and final
+cap/eval. No recipe/data/source/precision change, no repeated gates or sealed-final
+access. Save1k, dev5k and final. Evaluation overhead is excluded from training.
+5. Final audit: BOTH budget-used.json training_seconds7200/max7200/nullattempt;
+status completed/final_training_complete, development-request.final_training_complete
+and matching latest checkpoint; result completed/samecheckpoint/reportpath/SHA,
+original final development.json/report runtime and split. Checkpoint elapsed may
+precede serialization/settlement; budget ledger governs. Distinct GPU release proof
+is required, null budget is insufficient.
+6. Report actual committed unique prompts/unique supervised rows/presented tokens
+from finalstatus/resume; do not call all10k available prompts consumed. Exact
+cumulative_sign_flips differs from sampled recipe-audit persistent telemetry
+(flipbacks/netdisagreement/nearzero/familymovement); report observation step/gap.
+Recipe-admission movement is sampled MAXGRAD element proof, not fulltensor movement.
+Extract per-repetition five×24 timing aggregates ONCE from already archived raw
+request_timing.records (completion token sums /whole request wall; separate decode).
+Do not run more requests. Pooled latency across prompt lengths is not confidence.
+7. Preserve allraw failures/step0/proofs/scheduled/final evidence, update final
+comparison/STATUS/goal, commit/push main, prove all owned groups/native contexts
+returned and transport closed, retire fullymerged worktrees. Pause SAME heartbeat
+only at completion or human pause; mark successor native Goal complete only then.
+
+Original unexplained reference SIGSEGV at9681 rolled back to9000; retry1 of max2
+passed. Failed work including conservative downtime remains charged; preserve raw
+incident/archive/postrecovery budget. Equivalent recurrence keeps SAMEincident
+retry_count1/max_retries2 unless distinct cause proven; never reset by timestamp,
+never refund or compensate with extra training. PYTHONFAULTHANDLER diagnostic only.
+Human GPU pause takes immediate priority: local agent_env pause, soleoperator
+interrupt recorded supervisor/processgroup, save/checkpoint/verifyrelease and
+close transport; pause flag alone is insufficient. No unresolved user decision
+prevents completing the authorized experiment. Negative interim results are not a
+reason to pivot or finish early.
+
+
 ## Candidate 30,000 checkpoint; evaluation running — October 4, 12:40 UTC
 
 Candidate trainer actualstart12:19:41.206829Z/end12:38:42.001290Z,exit0; natural

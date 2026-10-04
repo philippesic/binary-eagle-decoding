@@ -57,6 +57,7 @@ Evaluation wall time is separate overhead and is never a serving-rate denominato
 | Reference step 25,000 | 3.5502 | 0.637782 | 13.0419% | 95.171 | 0.7092 |
 | Candidate step 25,000 | 5.8161 | 0.230803 | 4.7259% | 68.954 | 0.5111 |
 | Reference step 30,000 | 3.5495 | 0.623711 | 12.7413% | 95.036 | 0.7028 |
+| Candidate step 30,000 | 5.5156 | 0.268456 | 5.4950% | 70.905 | 0.5247 |
 | Q4_0 at reference step 5,000 | n/a | 1.306255 | 26.5917% | 135.491 | 1.0000 |
 
 Accepted drafts per round is the primary acceptance metric. Acceptance rate uses
@@ -78,6 +79,7 @@ capture counts are:
 | Reference step 25,000 | 1,104 | 8,465 | 1,731 | 2,834 |
 | Candidate step 25,000 | 532 | 11,257 | 2,305 | 2,834 |
 | Reference step 30,000 | 1,089 | 8,547 | 1,746 | 2,834 |
+| Candidate step 30,000 | 600 | 10,919 | 2,235 | 2,834 |
 | Q4_0, each capture | 1,608 | 6,047 | 1,231 | 2,834 |
 
 Both zero checkpoints have identical native acceptance counts. Each A8 report
@@ -179,6 +181,15 @@ with 24/24 native and 120/120 timing matches. Each timing variant generated
 14,290 returned IDs with 105 length and 15 stop finishes. Acceptance is slightly
 lower than at reference 25,000, while throughput is close; both remain below Q4_0.
 
+Candidate step 30,000 measured 0.268456 accepted drafts/round, CE 5.5156 and
+70.905 request tokens/s versus Q4_0 at 135.129 and target-only at 88.534.
+Decode rate was 73.055 versus Q4_0 at 142.891 tokens/s. The evaluation passed
+in 769.214 supervisor-wall seconds (764.960 evaluation-phase seconds), with
+24/24 native and 120/120 timing matches. Every timing variant generated 14,290
+returned IDs with 105 length and 15 stop finishes. This is the candidate's best
+scheduled acceptance so far, but remains below reference and Q4_0. Candidate
+training has used 6,219.893 of 7,200 seconds; its final endpoint is pending.
+
 Candidate's 1,047.285 trainer seconds differ from the reference's 764.725 seconds
 at the same update count; these checkpoint measurements are intermediate observations. The final comparison
 requires both independent 7,200-second cumulative endpoints. No quality, latency
@@ -278,6 +289,13 @@ in-flight update or serialization finishes. Endpoint timing is trainer-accounted
 time; startup, evaluation and physical process-release evidence remain separate.
 
 ## Artifact locations and pending completion
+
+Candidate step 30,000 identities: checkpoint
+`f68255ace54f4803ba8f856f72b65b1ae86fbf9c06ee805ab5cc54bea4dc9c8f`, report
+`a1325ecd864e1ea0253af5a280b0a855ebc1528d6057cfb98cd929dc46852424`, result
+`c36cebb927d39de8ec05241d1bf112f14d8875dc350db1c6964a0af5c520bc03`, timing
+`b1a35a60a09e2831009d21305c2600c0f1a524c4b557478a3954ae0c63e5811a`.
+Archive locator: `evidence-archive/development/candidate-step30000-locator-map.json`.
 
 Reference step 30,000 identities: checkpoint
 `108968085f4b99ad3ae3fd600b14bee702aa821885c742120d41d988d351940c`, report

@@ -4,21 +4,21 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Candidate 30,000 checkpoint; evaluation running — October 4, 12:40 UTC
+## Coordinator rotation; reference training live — October 4, 13:00 UTC
 
-Candidate exited0 at natural30,000/cursor30054,checkpointf68255ac hardlink archived;
-budget settled6,219.893/7,200seconds,active attempt null,980.107training seconds
-remain. Exacttraining resources returned,then native evaluation launched12:40:27UTC:
-supervisor28640/birth5218514,evaluator28645/birth5218521,same3bd/current9e2/fixed24/
-F16/1200s cap. Result pending. Reference stays evaluated30,000/5,097.991seconds,
-0.624drafts/round/95.04requestTPS,below primaryQ4_0.
+Candidate30k evaluation passed and is archived: 0.268456 accepted drafts/round,
+70.905request tokens/s,52.47% of Q4_0. Candidate budget is6219.892867/7200;
+980.107133seconds remain for its final training segment and final evaluation.
+Reference resumed30k→35k: supervisor29672/birth5311113,trainer29677/birth5311121,
+Linux session `a8-reference-step30000-resume-20261004-01`. At12:59:15UTC it reached
+30563/cursor30618,5202.857739trainer seconds. Keep the detached job running.
 
-After this eval/archive/release,reference30,000→35,000 then normal evaluation.
-Candidate's next training naturally stops at original7,200cap (possibly before35k)
-and MUST receive final native evaluation; no addedblock/topup. Both finalendpoints
-incomplete. SAME Goal/heartbeat ACTIVE,recipes/data/precision/budgets unchanged,
-SIGSEGV retry1max2/charges preserved,A1 heldout,no RTX2080Ti controls. Current
-canonicalobservations/exactIDs govern,actualstart/end versus observations distinct.
+Second-compaction hook requires successor coordination. Prior operator closed transport13:02:41UTC and ceased remote control; successor acknowledgment
+and heartbeat retarget will be recorded before prior coordinator retires.
+See [full rotation handoff](goals/a8-qat-recovery-and-comparison.md#coordinator-rotation-handoff--october-4-1300-utc)
+for exact next actions, source/config/checkpoints, budgets, tests, workers and
+endpoint/release audit. BOTH7200 endpoints/finalreports incomplete. SAMEheartbeat
+ACTIVE; no new experiment, budget or pending human decision. No2080controls.
 
 ## Active: A8 QAT recovery and comparison — October 3, 2026
 
@@ -30,8 +30,8 @@ The sole GPU operator continues the scheduled comparison; root maintains the
 report and durable state. See the [ownership checkpoint](goals/a8-qat-recovery-and-comparison.md#standalone-ownership-claimed--october-3-2026).
 Integrated fixes are published (frozen execution source583480c; main8583b68).
 BOTH actual A8 arms have optimizer updates and exact positive-step resume proof.
-Reference is evaluated at30000/5097.991seconds; candidate learned A8/all-nine
-midpoints/latent0.1 AdamW is at30000/6219.893seconds with evaluation running. All33candidate
+Reference is evaluated at30000 and resumed toward35000; candidate learned A8/all-nine
+midpoints/latent0.1 AdamW is evaluated at30000/6219.893seconds. All33candidate
 tensors show finite/nonzero gradients and actualmovement; cache/head execution
 and learned-head serial exception are observed. Arms alternate at scheduled
 5000boundaries toward independent7200second caps. Reference interim acceptance is 0.624 accepted drafts/round versus Q4_0 at
