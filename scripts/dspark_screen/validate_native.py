@@ -25,7 +25,45 @@ def require(condition, message):
         raise ValueError(message)
 
 
+def initial_setup_masks(state):
+    """Recognize only the exact observed pre-injection, unframed setup pair.
+
+    This does not classify it outside target binding: the actual completed
+    probe records it immediately after binding_begin. Callers retain the raw
+    records and account for the recognized initialization rows separately.
+    """
+    begin = next((i for i, r in enumerate(state) if r["event"] == "binding_begin"), None)
+    require(begin == 0, "unknown records before binding begin")
+    require(state[-1]["event"] == "binding_end", "unknown records after binding end")
+    prefix = []
+    index = 1
+    while index < len(state) and state[index]["event"] == "mask":
+        prefix.append(state[index])
+        index += 1
+    if not prefix:
+        return state, 0
+    expected = [{"schema": "dspark_admission_v1", "event": "mask", "seq_id": 0,
+                 "query_position": query, "anchor_position": 0, "max_visible_clean_position": -1,
+                 "visible_noise_positions": [0, 1]} for query in (0, 1)]
+    require(prefix == expected, "unrecognized initial setup mask records")
+    # Neither setup row may be carried as stale noise: actual target feature
+    # injection must overwrite both positions before the first noise event.
+    initial = []
+    first_noise = None
+    for row in state[index:]:
+        if row["event"] == "noise":
+            first_noise = row
+            break
+        require(row["event"] == "inject", "unknown event between setup masks and actual injection")
+        initial.append(row)
+    require(first_noise and first_noise["anchor_position"] >= 2 and
+            any(row["first_position"] == 0 and row["last_position"] >= 1 and row["rc"] == 0 for row in initial),
+            "initial setup mask rows were not overwritten by target features")
+    return [state[0], *state[index:]], 2
+
+
 def check_state(state, rounds, maximum):
+    raw_state = state
     starts = [r for r in state if r["event"] == "binding_begin"]
     ends = [r for r in state if r["event"] == "binding_end"]
     require(len(starts) == len(ends) == 1, "missing complete tensor binding lifetime")
@@ -40,6 +78,7 @@ def check_state(state, rounds, maximum):
             starts[0]["draft_n_outputs_max"] >= 7 and
             (not starts[0]["draft_backend_sampling"] or starts[0]["draft_n_outputs_max_per_seq"] >= 7),
             "draft batch/output capacity cannot cover seven computed noise rows")
+    state, setup_count = initial_setup_masks(state)
     noise = [r for r in state if r["event"] == "noise"]
     injections = [r for r in state if r["event"] == "inject"]
     require(noise and injections, "no actual noise/injection evidence")
@@ -101,6 +140,9 @@ def check_state(state, rounds, maximum):
         key = (tuple(n["prefix_token_ids"]), n["anchor_token_id"])
         proposal_map[key] = proposed
     return proposal_map, {"rounds": len(complete), "injections": len(injections),
+                          "initial_unframed_setup_masks": setup_count,
+                          "initial_setup_mask_records": raw_state[1:3] if setup_count else [],
+                          "initial_setup_scope": "inside binding lifetime; exact pre-injection pair overwritten before real noise",
                           "no_noise_output_cap_boundaries": len(no_noise_boundary),
                           "zero_acceptance": sum(r["n_accepted"] == 0 for r in complete),
                           "partial_acceptance": sum(0 < r["n_accepted"] < r["n_proposed"] for r in complete),

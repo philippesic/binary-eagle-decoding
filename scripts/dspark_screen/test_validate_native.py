@@ -1,7 +1,7 @@
 import copy
 import unittest
 
-from validate_native import check_state
+from validate_native import check_state, initial_setup_masks
 
 
 class NativeEvidenceTests(unittest.TestCase):
@@ -125,6 +125,57 @@ class NativeEvidenceTests(unittest.TestCase):
         state.insert(-9, {"event": "inject", "rc": 0, "target_taps": [2, 10, 18, 26, 34],
                           "feature_hash_fnv1a64": 89, "first_position": 2, "last_position": 5, "n_tokens": 4})
         check_state(state, rounds, 3)
+
+    def test_exact_initial_setup_pair_is_not_a_drafting_block(self):
+        state, rounds = self.fixture()
+        setup = [{"schema": "dspark_admission_v1", "event": "mask", "seq_id": 0,
+                  "query_position": query, "anchor_position": 0, "max_visible_clean_position": -1,
+                  "visible_noise_positions": [0, 1]} for query in (0, 1)]
+        state[1:1] = setup
+        cleaned, count = initial_setup_masks(state)
+        self.assertEqual(count, 2)
+        self.assertEqual(len(state), len(cleaned) + 2)
+        _, summary = check_state(state, rounds, 3)
+        self.assertEqual(summary["initial_unframed_setup_masks"], 2)
+        self.assertEqual(summary["initial_setup_mask_records"], setup)
+
+    def test_unknown_extra_setup_mask_rejects(self):
+        state, _ = self.fixture()
+        state.insert(1, {"event": "mask", "anchor_position": 0, "query_position": 2})
+        with self.assertRaisesRegex(ValueError, "unrecognized initial"):
+            initial_setup_masks(state)
+
+    def test_setup_pair_needs_actual_target_overwrite(self):
+        state, _ = self.fixture()
+        state[1]["first_position"] = 2
+        state[1:1] = [{"schema": "dspark_admission_v1", "event": "mask", "seq_id": 0,
+                       "query_position": query, "anchor_position": 0, "max_visible_clean_position": -1,
+                       "visible_noise_positions": [0, 1]} for query in (0, 1)]
+        with self.assertRaisesRegex(ValueError, "not overwritten"):
+            initial_setup_masks(state)
+
+    def test_late_startup_shaped_mask_is_not_discarded(self):
+        state, rounds = self.fixture()
+        state.insert(2, {"schema": "dspark_admission_v1", "event": "mask", "seq_id": 0,
+                         "query_position": 0, "anchor_position": 0, "max_visible_clean_position": -1,
+                         "visible_noise_positions": [0, 1]})
+        cleaned, count = initial_setup_masks(state)
+        self.assertEqual(count, 0)
+        with self.assertRaisesRegex(ValueError, "seven-row"):
+            check_state(cleaned, rounds, 3)
+
+    def test_real_future_mask_and_prefix_guards_remain_strict(self):
+        for corruption in ("future_mask", "prefix"):
+            state, rounds = self.fixture()
+            cleaned, count = initial_setup_masks(state)
+            if corruption == "future_mask":
+                cleaned[3]["visible_noise_positions"] = [2, 3]
+                message = "actual attention mask"
+            else:
+                cleaned[2]["prefix_token_ids"] = [10]
+                message = "ancestry differs"
+            with self.assertRaisesRegex(ValueError, message):
+                check_state(cleaned, rounds, 3)
 
 
 if __name__ == "__main__":

@@ -95,3 +95,51 @@ operator incrementally rebuilds CUDA, retries actual five-cell admission with
 the common32 settings, verifies exact owned group/context cleanup, and only then
 starts fixed reference/FFN-Q4 measurements under the cumulative7200-second cap.
 The human decision for FFN-only W1A8/W1A1 integration is still pending.
+
+## Completed probe: exact initial setup-mask classification
+
+Operator inspected the already completed25-request/four-cell probe on native
+fcdf/B32: every candidate state begins with `binding_begin`, followed immediately
+by two mask records for seq0, anchor0, query0/1, visible keys `[0,1]` and last
+visible clean key-1. They occur **inside** the binding lifetime, before any
+feature injection or actual noise event. The initial out-of-binding hypothesis
+was incorrect; no report should describe those rows as outside binding.
+
+The CPU validator now recognizes only this exact adjacent schema-v1 pair at
+that initial boundary. It also requires actual target-derived injection of
+positions0..1 before the first noise, proving setup positions are replaced by
+real target ancestry. Raw state files remain unchanged; reports retain the two
+records and count them separately as `initial_unframed_setup_masks`. Unknown,
+late, wrong-query/visibility or un-overwritten records reject. All actual noise
+blocks still require exactly seven observed query masks and complete native
+proposal/verification/cache joins. Eighteen focused tests pass, including setup
+overwrites, unexpected extras, late startup-shaped records and corrupted real
+future-mask/prefix ancestry. No GPU rerun or native source edit is needed.
+
+The completed probe must be revalidated from preserved files on CPU only.
+The output-ID gate remains strict: a separately investigated first-prose
+target-only/speculative difference at output89 is not waived by this mask fix.
+
+## Proposed source-bound numeric receipt, not yet activated
+
+If root accepts the bounded raw-logit diagnostic, the manifest can explicitly
+pin a numeric-gate receipt by path/SHA256. This cannot be a global output-check
+skip. The receipt must bind native binary, frozen target, protocol/requests,
+actual/reference measurement files and full output-token-ID hashes, each
+covered first-divergence position/token pair, and raw-top5 trace files/row keys.
+The diagnostic must reproduce the same shared prefix at the first difference;
+finite/no-NaN raw top-two winners must match the actual sampled/emitted tokens
+on the respective target paths and meet an explicitly root-approved near-tie
+bound. Q4's target-correction/no-accepted-draft control isolates a target-path
+rounding issue from a draft acceptance explanation.
+
+The validator should recompute these joins, margins and coverage from the
+source-pinned evidence. Any unlisted mismatch, changed input/runtime/weights,
+different reached prefix, nonfinite row or large-margin contradiction still
+rejects. Full output differences and any downstream prefix cascade remain
+recorded as a native floating-point correctness caveat; an admitted exception
+must never be described as exact greedy-output parity. Subsequent measurements
+may require their own scoped gate evidence rather than inheriting a blanket
+waiver from this prompt. At this checkpoint no numeric receipt is active and
+the existing exact output-ID check has not changed. Root/Luna/Astra own the
+actual diagnostic and acceptance decision; W1 representation remains pending.
