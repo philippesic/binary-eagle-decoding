@@ -195,3 +195,63 @@ implementation is required, present a concrete selective configuration for
 human decision while runnable reference/Q4 benchmarks proceed. Initial cumulative
 measurement bound remains7200seconds. Matrix revision is explicit and pending
 bounded capability audit; references may start under existing frozen settings.
+
+
+## Actual native readiness and bounded numerical gate
+
+Renewed human study-only resume executed; noRTX5080/QAT/fusion contact or edits.
+Human extended conditions toQ4_0 plus genuine binary-weightW1A8/W1A1. Existing
+DS/DF lacks W1 exporter/loader/graph; scope card for15 FFN-only matrices using
+existing kernels remainspending. No dependent W1 implementation or QATstarted.
+SupportedFFN-onlyQ4 variants areCPU-converted andexact15-matrix/protected-source
+checked; planinprecision-matrix.json. Allphases shareone7200s timing allowance;
+rootcode carrieshashed priorreceipts andchargesfailedtimedrequests. Measured
+inferenceused remains0; admission/build/profile overheadseparate.
+
+Actualfirst targetload passed. Originalprobe failed onAPIemptythinkingwrapper
+while rawYES+[14004,151645] stoppedcorrectly; repairedrawEOSguard9tests. Retry
+revealedshortDS3 lackedoutputcapacity7 andDFlash hitVMMallocationfree0 under
+inheritedbatch2048/micro512. DS7hadnonzero drafts andno suchcapacitywarning;
+initialcombined0draft descriptioncorrected. Bothfailures preserved/groupsclosed.
+
+Nativefcdf5822c5b78f9dbcfd1f5c7106f09c3f0c9b1a public/correctsDRAFT-onlyoutput
+reservation7 forcompute7/propose3 (N7still8,targetverifierunchanged). ActualSM75
+build passed356steps; binarySHA1bd67cdf74d6ced49454ca2546d9a462e71d4e695b8fb5e52d7359fa68473822.
+Allstudyarms freezecommonbatch32/micro32 beforetiming. CurrentprotocolSHA
+367431663597d312bf4cc75544d3e8c1994260a0d3cd266558cdd388b48ceca7.
+
+Completedactual25-request5-cell probeonfcdf/B32: target,DS3/7,DF3/7 allloaded,
+proposed/accepted andstoppedexit0 with7-row masks, nativefeatures/cache and
+immutabletargetbindings. Peakloadedmemory8511MiBtarget/10509DS/10361DF.
+Checkerfirstrejectedexact2 initialsetupmaskrows immediatelyAFTERbinding_begin,
+beforeinject/noise. CPUfix612e07f preserves/validatestheseexactquery0/1 anchor0
+visible[0,1]clean-1 masks andrequiresrealinjectoverwrite0..1; allrealnoise masks
+remainstrict.18roottests pass. ReusecompleteprobeCPUonly, noGPUrerunforchecker.
+
+Target-onlyvsallSpec pathsfirstdiverge atgenerated89 infirstdevprose andits
+warmup; otherprose/EOSmatch. ActualQ4correction9920 israwtargetargmax,naccepted0;
+target-only72499. Rootpredeclaredfinite/argmax/sharedprefix and<=.05logitgate.
+Oneunchanged128-cap2-arm rawhookdiagnosticreproducedallpriorIDs: targetgap
++.008220672607421875,Q4gap-.0031223297119140625,all5topIDsshared,NaN0;
+mean-centeredcommontop5maxdifference.008617782592775569. Thispassesbounded
+near-tiesensitivity, NOTbit-parity orproofbatcharithmeticcause. Gateartifact
+configc3d57320..., operatorCPUsummarySHA510dfe6ef282bbd58d37f5ee299b40ee24f2d452bc8a6c64084c3a8887c2814a.
+Alloldcompletedrequests/cachesettings/withinarmrepeatability preserved.
+
+DS7/DF7fullrawIDs exactlymatchPRIMARYQ4 acrossall5cases. DS3/DF3exactlymatch
+eachotheracross5cases butboth firstdivergefromQ4at94 onfirstprose,33suffix
+positions;89gate doesNOTcover94. SourceboundCPUcomparisonSHA
+3f71a59693b06e0b3dffb7a0ede843fe26c75ef06ae28198d5ea79118fdf8cc4.
+Oneadditionalboundedunchanged2-armQ4/DS3 rawhookat92-95 ran47.4seconds,exit0;
+allgroupsclosed/GPU366MiBbaseline. Position94rawmarginextractionpending.
+No furtherparitycampaign; acceptedscopedreceipt mustderivefromrawhashes and
+rejectuncovered/highmargin mismatches. SourceSol ownsCPUreceiptproducer/consumer;
+Lunaownsremoteread-onlycollectionandactualruns. Rootfulltimingprioritynext.
+
+ActualFFN-Q4hashes:DSa95358608ce2e1c77f9a8253b692e697e3745dd68ba66b859833d41c480193fe;
+DF6f23297bb623217e3df6352c8e83521f59f3b307b26f27f1262269775552b7c3.
+PassedDSQ4receipt766a810b2f0bd0d5ac9a44bd775804e85708d1eb0be9bbdfbb1b03d51c699130;
+DFreceipt880d696977fdea0f111615d5dd53fffc8c7488dae4cce35e572815688aa4bd44.
+Exactnon-FFNbytes/types retained;conf_proj trailing1 collapsenativeextentsunchanged.
+NoA8/A1lowbitclaims. Parentgitlink9e2 remainsuntilactualboundednativeadmission
+and reviewedintegration; allnativecommitsalreadypublic. NoactivemainSTATUS ownershipchange.
