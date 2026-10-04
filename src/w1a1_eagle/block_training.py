@@ -231,14 +231,15 @@ def load_block_checkpoint(model, optimizer, source, receipt):
     return cursor
 
 
-def transition_a8_to_a1(model, *, source_checkpoint_sha256: str, stage="a1_final"):
+def transition_a8_to_a1(model, *, source_checkpoint_sha256: str, stage="a1_final", in_place=False):
     if (
         model.config.activation_bits != 8
         or len(source_checkpoint_sha256) != 64
         or any(c not in "0123456789abcdef" for c in source_checkpoint_sha256)
     ):
         raise ValueError("transition requires committed A8 source checkpoint")
-    result = copy.deepcopy(model)
+    result = model if in_place else copy.deepcopy(model)
+    result.zero_grad(set_to_none=True)
     result.config = replace(model.config, activation_bits=1)
     for layer in result.layers:
         layer.config = result.config

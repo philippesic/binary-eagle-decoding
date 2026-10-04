@@ -177,3 +177,58 @@ def deployment_state_sha256(linears: Mapping) -> str:
         for name, tensor in sorted(tensors.items()):
             add(name, tensor.detach().cpu().numpy())
     return digest.hexdigest()
+
+
+def validate_optimizer_resume(optimizer, saved, *, expected_updates=None):
+    """Validate options, finite F32 moments and exact update counters before load."""
+    import math
+
+    expected = optimizer.state_dict()
+    if not isinstance(saved, Mapping) or set(saved) != set(expected):
+        raise ValueError("resume optimizer inventory differs")
+    groups = saved.get("param_groups")
+    if not isinstance(groups, list) or len(groups) != len(expected["param_groups"]):
+        raise ValueError("resume optimizer family inventory differs")
+    for group, reference in zip(groups, expected["param_groups"]):
+        if set(group) != set(reference) or any(
+            group[k] != reference[k] for k in reference if k != "lr"
+        ):
+            raise ValueError("resume optimizer options/family/layout differ")
+        if (
+            isinstance(group["lr"], bool)
+            or not math.isfinite(group["lr"])
+            or not 0 < group["lr"] <= reference["lr"]
+        ):
+            raise ValueError("resume optimizer learning rate outside warmup contract")
+    ids = [i for group in groups for i in group["params"]]
+    params = [p for group in optimizer.param_groups for p in group["params"]]
+    states = saved.get("state")
+    if not isinstance(states, Mapping) or not set(states).issubset(set(ids)):
+        raise ValueError("resume optimizer has unowned state")
+    if expected_updates is not None and expected_updates > 0 and set(states) != set(ids):
+        raise ValueError("resume progressed optimizer is missing moments")
+    for key, param in zip(ids, params):
+        values = states.get(key, {})
+        if isinstance(optimizer, torch.optim.AdamW):
+            required = {"step", "exp_avg", "exp_avg_sq"}
+        elif isinstance(optimizer, torch.optim.SGD):
+            required = {"momentum_buffer"}
+        else:
+            raise ValueError("unsupported exact-resume optimizer")
+        if values and set(values) != required:
+            raise ValueError("resume optimizer moment inventory differs")
+        for name, value in values.items():
+            if not isinstance(value, torch.Tensor) or not bool(torch.isfinite(value).all()):
+                raise ValueError("resume optimizer moment nonfinite/invalid")
+            if name == "step":
+                if (
+                    value.numel() != 1
+                    or float(value) < 0
+                    or float(value) != int(value)
+                    or (expected_updates is not None and int(value) != expected_updates)
+                ):
+                    raise ValueError("resume optimizer update counter differs")
+            elif value.shape != param.shape or value.dtype != param.dtype:
+                raise ValueError("resume optimizer moment shape/dtype differs")
+            if name == "exp_avg_sq" and bool((value < 0).any()):
+                raise ValueError("resume optimizer second moment negative")

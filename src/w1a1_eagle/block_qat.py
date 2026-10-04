@@ -49,10 +49,17 @@ class BlockQATConfig:
     scale_lr: float = 1e-5
     max_grad_norm: float = 1.0
     seed: int = 8101
+    latent_initialization: str = "preserve_reference_magnitudes"
 
     def __post_init__(self):
-        if self.family not in {"dspark", "dflash"} or self.activation_bits not in {1, 8}:
+        if (
+            self.family not in {"dspark", "dflash"}
+            or type(self.activation_bits) is not int
+            or self.activation_bits not in {1, 8}
+        ):
             raise ValueError("block family/activation width unsupported")
+        if self.latent_initialization not in {"preserve_reference_magnitudes", "unit_probe"}:
+            raise ValueError("explicit calibrated latent policy required")
         if self.profile not in {"ffn15", "ffn15_fusion"}:
             raise ValueError("only fifteen FFN projections and optional fusion admitted")
         if self.num_layers != 5 or self.block_size != 7:
@@ -193,15 +200,16 @@ def _tensor(tensors: Mapping, name: str, shape: tuple) -> Tensor:
 
 
 def _binary(weight, config, initialization, name):
-    if initialization is None:
-        latent, scale = weight, weight.float().abs().mean(-1)
-    else:
-        if name not in initialization:
-            raise ValueError("calibrated initializer missing projection: " + name)
-        latent, scale = initialization[name]
-        if latent.shape != weight.shape:
-            raise ValueError("calibrated sign shape differs: " + name)
-    return BlockBinaryLinear(latent, scale, W1AxContract(config.activation_bits))
+    module = BlockBinaryLinear(
+        weight, weight.float().abs().mean(-1), W1AxContract(config.activation_bits)
+    )
+    if initialization is not None and name in initialization:
+        from .qat_initialization import apply_binary_initialization
+
+        module.initialization_report = apply_binary_initialization(
+            {name: module}, {name: initialization[name]}, policy=config.latent_initialization
+        )
+    return module
 
 
 class BlockBinaryLinear(RowBinaryLinear):
@@ -235,6 +243,11 @@ class BlockDrafter(nn.Module):
     def __init__(self, tensors: Mapping, config: BlockQATConfig, *, binary_initializer=None):
         super().__init__()
         self.config = config
+        supported = {f"blk.{i}.{n}" for i in range(5) for n in ("ffn_gate", "ffn_up", "ffn_down")}
+        if config.profile == "ffn15_fusion":
+            supported.add("fc")
+        if binary_initializer is not None and set(binary_initializer) - supported:
+            raise ValueError("calibrated initializer contains unselected projections")
         h, v = config.hidden_size, config.vocab_size
         self.register_buffer(
             "token_embd", _tensor(tensors, "token_embd.weight", (v, h)).detach().float().clone()

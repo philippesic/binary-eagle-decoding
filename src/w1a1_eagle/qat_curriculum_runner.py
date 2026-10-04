@@ -58,6 +58,7 @@ EXTRA_MATH = (
     "learned_activation.py",
     "fusion_correction.py",
     "affine_binary.py",
+    "qat_initialization.py",
 )
 
 
@@ -188,6 +189,11 @@ class CurriculumRunner:
         allow_cuda: bool = False,
         source_revalidator=None,
         clock=time.monotonic,
+        initialization=None,
+        initialization_sha256=None,
+        initialization_policy="preserve_reference_magnitudes",
+        reserve_optimizer_memory=True,
+        training_admission=None,
     ):
         if not start:
             raise ValueError("model construction requires explicit start")
@@ -206,6 +212,13 @@ class CurriculumRunner:
         self.provider, self.curriculum, self.qat_template = provider, curriculum, qat
         self.config, self.device, self.clock = config, qat.device, clock
         self.source_revalidator = source_revalidator
+        self.reserve_optimizer_memory = reserve_optimizer_memory
+        if training_admission is not None:
+            from .qat_admission import VerifiedTrainingAdmission
+
+            if not isinstance(training_admission, VerifiedTrainingAdmission):
+                raise ValueError("typed current-package production admission required")
+        self.training_admission = training_admission
         self.budget_failed = False
         self.run_dir = Path(run_dir).resolve()
         self.run_dir.mkdir(parents=True, exist_ok=True)
@@ -220,6 +233,8 @@ class CurriculumRunner:
             "runner": asdict(config),
             "source": self.source,
             "runtime": self.runtime,
+            "initialization_sha256": initialization_sha256,
+            "initialization_policy": initialization_policy,
         }
         self.state = CurriculumState(
             curriculum, data_contract=self.source, model_contract=self.contract
@@ -248,6 +263,15 @@ class CurriculumRunner:
         self.qat = qat
         self.linears = install_joint_linears(drafter, target, replace(qat, device="cpu"))
         del target
+        from .qat_initialization import apply_binary_initialization
+
+        if initialization is not None and (
+            not isinstance(initialization_sha256, str)
+            or len(initialization_sha256) != 64
+            or any(c not in "0123456789abcdef" for c in initialization_sha256)
+        ):
+            raise ValueError("calibrated initializer requires immutable SHA256")
+        apply_binary_initialization(self.linears, initialization, policy=initialization_policy)
         self.drafter.to(self.device).eval()
         self.bank = self._activation_bank()
         self.adapter = self._adapter()
@@ -573,6 +597,13 @@ class CurriculumRunner:
             raise ValueError("checkpoint model/phase/transition ancestry differs")
         self.model_phase = phase
         self._bind_phase(phase)
+        from .qat_state import validate_optimizer_resume
+
+        validate_optimizer_resume(
+            self.optimizer,
+            payload["optimizer"],
+            expected_updates=self.state.phases[phase]["updates"],
+        )
         self._load_model(payload["model"])
         self.optimizer.load_state_dict(payload["optimizer"])
         if payload["base_lrs"] != self.base_lrs:
@@ -643,7 +674,7 @@ class CurriculumRunner:
         self.transition_seconds += self.clock() - begin
         self.save()
 
-    def _forward(self, batch, *, adapter=None):
+    def _forward(self, batch, *, adapter=None, execution_metadata=None):
         device_batch = replace(batch, raw_target_features=batch.raw_target_features.to(self.device))
         # forward_torch_round always constructs a new cache from current weights;
         # no recurrent cache or graph survives a backward/optimizer boundary.
@@ -655,6 +686,7 @@ class CurriculumRunner:
                 optimize_cache=self.qat.optimize_cache,
                 optimize_head=self.qat.optimize_head,
                 context_chunk_size=self.qat.context_chunk_size,
+                execution_metadata=execution_metadata,
             )
 
     def _smoke_round(self, batch):
@@ -682,7 +714,7 @@ class CurriculumRunner:
             raise ValueError("smoke optimizer ownership differs from declared parameters")
         self.optimizer.zero_grad(set_to_none=True)
         moment_probe = []
-        if torch.device(self.device).type == "cuda":
+        if torch.device(self.device).type == "cuda" and self.reserve_optimizer_memory:
             moment_probe = [
                 torch.zeros_like(p)
                 for group in self.optimizer.param_groups
@@ -691,7 +723,12 @@ class CurriculumRunner:
             ]
         observer = ObservedAdapter(self.adapter)
         try:
-            logits = self._forward(batch, adapter=observer)
+            execution = {}
+            logits = self._forward(batch, adapter=observer, execution_metadata=execution)
+            execution.update(
+                context_cache_calls=observer.context_cache_calls,
+                optimize_cache_requested=self.qat.optimize_cache,
+            )
             diagnostics = later_gradient(logits, audit, observer)
             recurrent_keys = (
                 "later_state_gradient_norm",
@@ -743,6 +780,7 @@ class CurriculumRunner:
             resources = self.resources()
             return {
                 "activation_bits": self.qat.contract.activation_bits,
+                "execution": execution,
                 "loss": float(loss.detach()),
                 "optimizer_updates": 0,
                 "all_nine_binary_gradients_passed": True,
@@ -823,6 +861,9 @@ class CurriculumRunner:
             restore_rng(self.rng, self.device)
 
     def require_optimization_readiness(self):
+        if self.training_admission is not None:
+            self.training_admission.require_for_qat(self.qat)
+            return
         from .qat_readiness import curriculum_readiness_config, require_measured_cuda_readiness
 
         config = curriculum_readiness_config(self.qat_template, self.config, self.curriculum)

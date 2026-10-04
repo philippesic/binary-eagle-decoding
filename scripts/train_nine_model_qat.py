@@ -43,6 +43,7 @@ from w1a1_eagle.block_training import (  # noqa: E402
     save_block_checkpoint,
     transition_a8_to_a1,
 )
+from w1a1_eagle.continuous_budget import TrainingBudget  # noqa: E402
 from w1a1_eagle.continuous_qat import (  # noqa: E402
     ContinuousTrainer,
     atomic_json,
@@ -101,15 +102,66 @@ def load_spec(path):
     return spec
 
 
-def require_admission(path, bundle_sha, config_sha):
+def training_source_identity():
+    """Exact source-bound admission inventory; CPU-only, no accelerator query."""
+    files = [
+        "scripts/train_nine_model_qat.py",
+        "scripts/train_continuous_w1ax.py",
+        "scripts/prepared_continuous_provider.py",
+        "scripts/train_prepared_continuous_w1ax.py",
+        "scripts/capture_block_qat_teacher.py",
+        "src/w1a1_eagle/block_qat.py",
+        "src/w1a1_eagle/block_training.py",
+        "src/w1a1_eagle/block_data.py",
+        "src/w1a1_eagle/qat_initialization.py",
+        "src/w1a1_eagle/qat_admission.py",
+        "src/w1a1_eagle/qat_curriculum_runner.py",
+    ]
+    from w1a1_eagle.continuous_runtime import ADMISSION_FILES, MATH_FILES
+
+    files.extend("src/w1a1_eagle/" + name for name in MATH_FILES)
+    files.extend("scripts/" + name for name in ADMISSION_FILES)
+    # Missing production modules cannot emit a complete readiness inventory.
+    return {name: sha256(ROOT / name) for name in sorted(set(files))}
+
+
+def declared_qat_configs(spec):
+    """Exact selected arithmetic for current-package source/config admission."""
+    if spec["family"] != "eagle":
+        config = BlockQATConfig(**spec["qat"])
+        return (
+            [replace(config, activation_bits=8), config]
+            if spec.get("precision_stage") == "a8_to_a1"
+            else [config]
+        )
+    api = importlib.import_module("train_continuous_w1ax")
+    locator = spec["eagle_config"]
+    if sha256(Path(locator["path"])) != locator["sha256"]:
+        raise ValueError("EAGLE config source changed")
+    _, config = api.load_config(Path(locator["path"]))
+    if spec.get("precision_stage") == "a8_to_a1":
+        initial = config.qat(8)
+        from w1a1_eagle.recurrent_qat import W1AxContract
+
+        return [initial, replace(initial, contract=W1AxContract(1))]
+    return [config.qat(config.activation_bits[0])]
+
+
+def require_admission(path, bundle_sha, config_sha, *, candidate=None, gpu_uuid=None):
     record = json.loads(Path(path).read_text())
     if (
         record.get("schema") != "nine_model_training_admission_v1"
         or record.get("status") != "PASS"
+        or record.get("artifact_kind") != "production"
         or record.get("bundle_sha256") != bundle_sha
         or record.get("config_sha256") != config_sha
         or record.get("compute_capability") != [12, 0]
         or record.get("optimizer_updates") != 0
+        or record.get("source_files") != training_source_identity()
+        or not isinstance(record.get("gpu_uuid"), str)
+        or not record.get("gpu_uuid")
+        or (gpu_uuid is not None and record.get("gpu_uuid") != gpu_uuid)
+        or (candidate is not None and record.get("candidate") != candidate)
         or any(record.get("checks", {}).get(name) != "PASS" for name in CHECKS)
     ):
         raise ValueError("fresh source/config-bound SM120 training admission required")
@@ -129,6 +181,7 @@ def configure_cuda(*, zero_updates):
     torch.cuda.reset_peak_memory_stats("cuda:0")
     return {
         "device_name": props.name,
+        "gpu_uuid": str(props.uuid),
         "compute_capability": capability,
         "torch_version": torch.__version__,
         "cuda_version": torch.version.cuda,
@@ -182,6 +235,21 @@ def resources(spec, stage):
 def calibration(locator, config):
     if locator is None:
         return None
+    metadata = locator.get("latent_initialization")
+    if not isinstance(metadata, dict) or set(metadata) != {
+        "policy",
+        "reference_kind",
+        "reference_sha256",
+    }:
+        raise ValueError("calibration requires explicit latent policy/reference kind/SHA")
+    if (
+        metadata["policy"] not in {"preserve_reference_magnitudes", "unit_probe"}
+        or metadata["reference_kind"]
+        not in {"eagle_fixed_reference_0.5", "block_source_weight_magnitudes"}
+        or len(metadata["reference_sha256"]) != 64
+        or any(c not in "0123456789abcdef" for c in metadata["reference_sha256"])
+    ):
+        raise ValueError("calibration latent policy/reference identity invalid")
     path = Path(locator["path"])
     if (
         sha256(path) != locator["sha256"]
@@ -192,6 +260,8 @@ def calibration(locator, config):
     names = {key.removesuffix(".latent") for key in arrays if key.endswith(".latent")}
     if set(arrays) != {name + suffix for name in names for suffix in (".latent", ".scale")}:
         raise ValueError("calibration latent/scale inventory differs")
+    if names != {"fc"}:
+        raise ValueError("selected calibration scope is sparse fusion only")
     return {
         name: (
             torch.from_numpy(arrays[name + ".latent"].copy()),
@@ -199,6 +269,20 @@ def calibration(locator, config):
         )
         for name in names
     }
+
+
+def validate_initializer_reference(report, locator, family):
+    if locator is None:
+        return
+    metadata = locator["latent_initialization"]
+    expected_kind = (
+        "eagle_fixed_reference_0.5" if family == "eagle" else "block_source_weight_magnitudes"
+    )
+    if (
+        metadata["reference_kind"] != expected_kind
+        or report.get("fc", {}).get("reference_sha256") != metadata["reference_sha256"]
+    ):
+        raise ValueError("calibrated initializer reference kind/magnitude SHA differs from source")
 
 
 def block_inputs(spec, bundle_sha):
@@ -225,7 +309,16 @@ def block_inputs(spec, bundle_sha):
     }
     tensors = load_block_gguf(spec["model"]["path"], spec["model"]["sha256"], config)
     initializer = calibration(spec.get("initialization"), config)
+    if (
+        initializer is not None
+        and spec["initialization"]["latent_initialization"]["policy"]
+        != config.latent_initialization
+    ):
+        raise ValueError("block initializer magnitude policy differs from QAT contract")
     model = BlockDrafter(tensors, config, binary_initializer=initializer)
+    validate_initializer_reference(
+        getattr(model.fc, "initialization_report", {}), spec.get("initialization"), config.family
+    )
     del tensors
     return model.to(spec["device"]), dataset, source
 
@@ -261,7 +354,46 @@ def native_teacher(spec, source, run_dir):
         yield capture
 
 
-def smoke_block(model, batch, optimizer, teacher_callback=None, *, require_empty_optimizer=True):
+def smoke_with_training_memory(parameters, spec, hardware, callback):
+    """Reserve actual F32 Adam moment shapes through forward/backward on SM120.
+
+    The scratch allocations never attach to the optimizer and never update a
+    model. SM75 development reports pending full training-memory admission.
+    """
+    parameters = [p for p in parameters if p.requires_grad]
+    if any(p.dtype != torch.float32 for p in parameters):
+        raise ValueError("admitted optimizer masters/moments must be F32")
+    reservation = []
+    status = "PENDING"
+    try:
+        if hardware.get("compute_capability") == [12, 0]:
+            reservation = [torch.zeros_like(p) for p in parameters for _ in range(2)]
+            status = "PASS"
+        result = callback()
+        measured = resources(spec, "actual backward with training moment reservation")
+        return result, {
+            "status": status,
+            "reserved_moment_bytes": sum(t.numel() * t.element_size() for t in reservation),
+            "optimizer_moments_attached": 0,
+            "optimizer_updates": 0,
+            "resources": measured,
+        }
+    finally:
+        del reservation
+        if torch.cuda.is_available():
+            torch.cuda.synchronize("cuda:0")
+            torch.cuda.empty_cache()
+
+
+def smoke_block(
+    model,
+    batch,
+    optimizer,
+    teacher_callback=None,
+    *,
+    require_empty_optimizer=True,
+    resource_observer=None,
+):
     optimizer.zero_grad(set_to_none=True)
     output = model(batch)
     # Later slot must backpropagate through previous layer's evolving state/K/V.
@@ -291,6 +423,8 @@ def smoke_block(model, batch, optimizer, teacher_callback=None, *, require_empty
         "selected_projection_count": len(model.binary_linears()),
         "contract": block_contract(model.config),
     }
+    if resource_observer is not None:
+        report["resources_gradients_resident"] = resource_observer()
     optimizer.zero_grad(set_to_none=True)
     return report
 
@@ -308,7 +442,9 @@ def run_block(args, spec, hardware):
     if args.resume:
         receipt = json.loads((args.run_dir / "checkpoints/latest.json").read_text())
         if receipt["cursor"]["stage"] == "a1_final":
-            model, optimizer, _ = transition_a8_to_a1(model, source_checkpoint_sha256="0" * 64)
+            model, optimizer, _ = transition_a8_to_a1(
+                model, source_checkpoint_sha256="0" * 64, in_place=True
+            )
         cursor = load_block_checkpoint(model, optimizer, source, receipt)
     first, _ = dataset.next_block(
         DataCursor(**cursor.data_cursor),
@@ -317,9 +453,37 @@ def run_block(args, spec, hardware):
     with native_teacher(spec, source, args.run_dir) as teacher:
         if args.prepare_only and cursor.step:
             raise ValueError("prepare-only cannot restore real optimizer progress")
-        smoke = smoke_block(
-            model, tensor_batch(first), optimizer, teacher, require_empty_optimizer=not args.resume
+        smoke, training_memory = smoke_with_training_memory(
+            model.parameters(),
+            spec,
+            hardware,
+            lambda: smoke_block(
+                model,
+                tensor_batch(first),
+                optimizer,
+                teacher,
+                require_empty_optimizer=not args.resume,
+                resource_observer=lambda: resources(spec, "actual block gradients resident"),
+            ),
         )
+        if args.smoke_zero_updates and spec.get("precision_stage") == "a8_to_a1":
+            model, optimizer, _ = transition_a8_to_a1(
+                model, source_checkpoint_sha256="0" * 64, in_place=True
+            )
+            a1_smoke, a1_memory = smoke_with_training_memory(
+                model.parameters(),
+                spec,
+                hardware,
+                lambda: smoke_block(
+                    model,
+                    tensor_batch(first),
+                    optimizer,
+                    teacher,
+                    resource_observer=lambda: resources(spec, "actual A1 gradients resident"),
+                ),
+            )
+            smoke = {"A8": smoke, "A1": a1_smoke}
+            training_memory = {"A8": training_memory, "A1": a1_memory}
         footprint = resources(spec, "after actual block forward/backward")
         if args.smoke_zero_updates:
             return {
@@ -333,6 +497,7 @@ def run_block(args, spec, hardware):
                 "optimizer_updates": 0,
                 "checks": {"model": "PASS", "backward": "PASS", "memory": "PASS"},
                 "smoke": smoke,
+                "training_memory": training_memory,
                 "resources": footprint,
             }
         if args.prepare_only:
@@ -345,10 +510,17 @@ def run_block(args, spec, hardware):
                 "optimizer_updates": 0,
                 "checkpoint": committed,
                 "smoke": smoke,
+                "training_memory": training_memory,
                 "resources": footprint,
             }
-        started = time.monotonic()
-        elapsed_base = cursor.elapsed_seconds
+        budget = TrainingBudget(
+            args.run_dir / "budget-used.json",
+            args.bundle_sha256,
+            spec["limits"].get("max_seconds"),
+            atomic_json,
+        )
+        budget.begin(cursor.elapsed_seconds)
+        cursor = replace(cursor, elapsed_seconds=budget.elapsed())
         stopped = False
         previous_handlers = {}
 
@@ -358,7 +530,13 @@ def run_block(args, spec, hardware):
 
         for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP):
             previous_handlers[sig] = signal.signal(sig, stop)
-        latest = None
+        latest = (
+            receipt
+            if args.resume
+            else save_block_checkpoint(
+                model, optimizer, cursor, source, args.run_dir / "checkpoints"
+            )
+        )
         unique = set(cursor.unique_blocks)
 
         def capped():
@@ -378,7 +556,7 @@ def run_block(args, spec, hardware):
                 if (args.run_dir / "STOP").exists():
                     stopped = True
                     break
-                cursor = replace(cursor, elapsed_seconds=elapsed_base + time.monotonic() - started)
+                cursor = replace(cursor, elapsed_seconds=budget.elapsed())
                 if capped():
                     break
                 resources(spec, "block optimizer update")
@@ -398,7 +576,7 @@ def run_block(args, spec, hardware):
                     block_index=cursor.block_index + 1,
                     supervised_tokens=cursor.supervised_tokens + metrics["supervised_tokens"],
                     presented_tokens=cursor.presented_tokens + metrics["presented_tokens"],
-                    elapsed_seconds=elapsed_base + time.monotonic() - started,
+                    elapsed_seconds=budget.elapsed(),
                     unique_blocks=tuple(sorted(unique)),
                     data_cursor=next_data.payload(),
                 )
@@ -408,7 +586,7 @@ def run_block(args, spec, hardware):
                     )
                     del optimizer
                     model, optimizer, transition = transition_a8_to_a1(
-                        model, source_checkpoint_sha256=latest["sha256"]
+                        model, source_checkpoint_sha256=latest["sha256"], in_place=True
                     )
                     cursor = replace(cursor, stage="a1_final")
                     atomic_json(args.run_dir / "precision-transition.json", transition)
@@ -428,7 +606,7 @@ def run_block(args, spec, hardware):
                         "heartbeat_unix": time.time(),
                     },
                 )
-            cursor = replace(cursor, elapsed_seconds=elapsed_base + time.monotonic() - started)
+            cursor = replace(cursor, elapsed_seconds=budget.finish())
             if latest is None or latest["cursor"] != json.loads(json.dumps(asdict(cursor))):
                 latest = save_block_checkpoint(
                     model, optimizer, cursor, source, args.run_dir / "checkpoints"
@@ -456,11 +634,17 @@ def run_block(args, spec, hardware):
                 "config_sha256": sha256(args.config),
                 "committed": True,
                 "completion_reason": "approved_budget_complete",
-                "checkpoint": latest,
+                "checkpoint": {"path": latest["path"], "sha256": latest["sha256"]},
                 "exports": {
                     spec["candidate"]: {
-                        "checkpoint": exported["npz"],
-                        "manifest": exported["manifest"],
+                        "checkpoint": {
+                            "path": exported["npz"],
+                            "sha256": sha256(Path(exported["npz"])),
+                        },
+                        "manifest": {
+                            "path": exported["manifest"],
+                            "sha256": sha256(Path(exported["manifest"])),
+                        },
                         "base_gguf_sha256": source["base_gguf_sha256"],
                     }
                 },
@@ -468,6 +652,7 @@ def run_block(args, spec, hardware):
                 "hardware": hardware,
             }
         finally:
+            budget.finish()
             for sig, previous in previous_handlers.items():
                 signal.signal(sig, previous)
 
@@ -492,22 +677,64 @@ def eagle_inputs(spec, args):
     provider = PreparedProvider(
         authenticated, config.qat(config.activation_bits[0]), create_current_native_child
     )
-    lanes = build_lanes(provider, config, args.run_dir)
+    initializer = calibration(
+        spec.get("initialization"), config.qat(config.activation_bits[0]).contract
+    )
+    expected_initializer = (spec.get("initialization") or {}).get("sha256")
+    if (
+        spec.get("initialization")
+        and spec["initialization"]["latent_initialization"]["policy"]
+        != config.initialization_policy
+    ):
+        raise ValueError("EAGLE initialization policy differs from immutable config")
+    if config.initialization_sha256 != expected_initializer:
+        raise ValueError("EAGLE immutable config initialization hash differs")
+    lanes = build_lanes(provider, config, args.run_dir, initialization=initializer)
+    validate_initializer_reference(
+        getattr(lanes[0].drafter, "qat_initialization_report", {}),
+        spec.get("initialization"),
+        "eagle",
+    )
     return provider, lanes, config
 
 
 def run_eagle(args, spec, hardware):
+    if spec.get("precision_stage") == "a8_to_a1":
+        raise ValueError("EAGLE curriculum adapter not yet integrated; profile remains PENDING")
     provider, lanes, config = eagle_inputs(spec, args)
-    trainer = ContinuousTrainer(provider, lanes, config, args.run_dir)
+    from w1a1_eagle.qat_admission import VerifiedTrainingAdmission
+
+    admission = (
+        None
+        if args.smoke_zero_updates or args.prepare_only
+        else VerifiedTrainingAdmission.from_locator(
+            args.admission,
+            config_path=args.config,
+            bundle_sha256=args.bundle_sha256,
+            candidate=spec["candidate"],
+        )
+    )
+    trainer = ContinuousTrainer(provider, lanes, config, args.run_dir, training_admission=admission)
     if args.resume:
         trainer.resume()
-    batches = list(provider.bounded_rounds())
-    if not batches:
-        raise ValueError("authenticated EAGLE smoke shard empty")
-    # The selected full native-prefix fixture gates current model, not historic
-    # actor receipts. Full corpus source is already authenticated without tensors.
-    smoke = trainer.smoke(max(batches, key=lambda batch: len(batch.rows)))
-    del batches
+    from w1a1_eagle.recurrent_provider import audit_provider_round
+
+    selected = None
+    for batch in provider.bounded_rounds():
+        audit = audit_provider_round(batch, provider)
+        if not any(audit.ce_mask[1:]):
+            continue
+        if selected is None or len(batch.prefix_token_ids) > len(selected.prefix_token_ids):
+            selected = batch
+    if selected is None:
+        raise ValueError("authenticated EAGLE smoke shard has no later-position labels")
+    smoke, training_memory = smoke_with_training_memory(
+        lanes[0].drafter.parameters(),
+        spec,
+        hardware,
+        lambda selected=selected: trainer.smoke(selected, allocate_optimizer_state=False),
+    )
+    del selected
     if any(lane.optimizer.state for lane in lanes) and not args.resume:
         raise ValueError("EAGLE smoke created optimizer moments")
     if args.smoke_zero_updates:
@@ -524,6 +751,7 @@ def run_eagle(args, spec, hardware):
             "optimizer_updates": 0,
             "checks": {"model": "PASS", "backward": "PASS", "memory": "PASS"},
             "smoke": smoke,
+            "training_memory": training_memory,
             "resources": resources(spec, "EAGLE actual forward/backward"),
         }
     if args.prepare_only:
@@ -553,11 +781,17 @@ def run_eagle(args, spec, hardware):
         "config_sha256": sha256(args.config),
         "committed": True,
         "completion_reason": "approved_budget_complete",
-        "checkpoint": trainer.checkpoint,
+        "checkpoint": {"path": trainer.checkpoint["path"], "sha256": trainer.checkpoint["sha256"]},
         "exports": {
             spec["candidate"]: {
-                "checkpoint": str(directory / lane.name / "joint.npz"),
-                "manifest": str(directory / lane.name / "joint.json"),
+                "checkpoint": {
+                    "path": str(directory / lane.name / "joint.npz"),
+                    "sha256": sha256(directory / lane.name / "joint.npz"),
+                },
+                "manifest": {
+                    "path": str(directory / lane.name / "joint.json"),
+                    "sha256": sha256(directory / lane.name / "joint.json"),
+                },
                 "base_gguf_sha256": provider.base_gguf_sha256,
             }
         },
@@ -595,7 +829,9 @@ def main():
     if not (args.smoke_zero_updates or args.prepare_only):
         if args.admission is None:
             parser.error("production updates require --admission")
-        require_admission(args.admission, args.bundle_sha256, sha256(args.config))
+        require_admission(
+            args.admission, args.bundle_sha256, sha256(args.config), candidate=spec["candidate"]
+        )
     if args.resume and args.smoke_zero_updates:
         parser.error("progressed resume is incompatible with zero-update admission smoke")
     args.run_dir = args.run_dir.resolve()
@@ -605,6 +841,14 @@ def main():
     gpu_lock = api.lock(Path.home() / ".cache/binary-eagle-decoding/cuda-0.owner.lock")
     try:
         hardware = configure_cuda(zero_updates=args.smoke_zero_updates or args.prepare_only)
+        if not (args.smoke_zero_updates or args.prepare_only):
+            require_admission(
+                args.admission,
+                args.bundle_sha256,
+                sha256(args.config),
+                candidate=spec["candidate"],
+                gpu_uuid=hardware["gpu_uuid"],
+            )
         receipt = (run_eagle if spec["family"] == "eagle" else run_block)(args, spec, hardware)
         atomic_json(args.completion_output, receipt)
     except BaseException as error:

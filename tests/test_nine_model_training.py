@@ -291,3 +291,276 @@ class BlockCheckpointTests(unittest.TestCase):
             self.assertTrue(torch.equal(module.scale_offset, target.scale_offset))
             self.assertNotEqual(module.latent_sign.data_ptr(), target.latent_sign.data_ptr())
         block_train_step(result, opt, batch)
+
+
+class TypedDiagnosticTests(unittest.TestCase):
+    def test_large_sign_counts_remain_exact_integers(self):
+        from w1a1_eagle.recurrent_qat import typed_diagnostics
+
+        report = typed_diagnostics(
+            {"sign_flips": torch.tensor(2**28 + 3, dtype=torch.int64)},
+            {"loss": torch.tensor(0.25)},
+            device=torch.device("cpu"),
+        )
+        self.assertIs(type(report["sign_flips"]), int)
+        self.assertEqual(report["sign_flips"], 2**28 + 3)
+        self.assertEqual(report["loss"], 0.25)
+        with self.assertRaisesRegex(ValueError, "exact integers"):
+            typed_diagnostics({"count": torch.tensor(2.0)}, {}, device=torch.device("cpu"))
+
+
+class LauncherContractTests(unittest.TestCase):
+    def test_zero_update_smoke_exercises_actual_tiny_models_without_moments(self):
+        import sys
+
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+        from train_nine_model_qat import smoke_block
+
+        for family in ("dspark", "dflash"):
+            for bits in (1, 8):
+                cfg, tensors, batch = block_fixture(family, bits)
+                model = BlockDrafter(tensors, cfg)
+                optimizer = block_optimizer(model)
+                report = smoke_block(model, batch, optimizer)
+                self.assertEqual(report["optimizer_updates"], 0)
+                self.assertEqual(optimizer.state_dict()["state"], {})
+                self.assertGreater(report["later_state_gradient_norm"], 0)
+                self.assertGreater(report["later_k_gradient_norm"], 0)
+                self.assertGreater(report["later_v_gradient_norm"], 0)
+
+    def test_admission_refuses_synthetic_wrong_device_or_stale_source(self):
+        import json
+        import sys
+        from unittest.mock import patch
+
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+        from train_nine_model_qat import CHECKS, require_admission
+
+        source = {"source.py": "d" * 64}
+        record = {
+            "schema": "nine_model_training_admission_v1",
+            "status": "PASS",
+            "artifact_kind": "production",
+            "bundle_sha256": "a" * 64,
+            "config_sha256": "b" * 64,
+            "compute_capability": [12, 0],
+            "optimizer_updates": 0,
+            "gpu_uuid": "GPU-actual",
+            "candidate": "dspark_a8",
+            "source_files": source,
+            "checks": dict.fromkeys(CHECKS, "PASS"),
+        }
+        with (
+            tempfile.TemporaryDirectory() as folder,
+            patch("train_nine_model_qat.training_source_identity", return_value=source),
+        ):
+            path = Path(folder) / "admission.json"
+            path.write_text(json.dumps(record))
+            require_admission(
+                path, "a" * 64, "b" * 64, candidate="dspark_a8", gpu_uuid="GPU-actual"
+            )
+            for key, value in [
+                ("artifact_kind", "synthetic"),
+                ("compute_capability", [7, 5]),
+                ("source_files", {}),
+                ("gpu_uuid", "GPU-other"),
+                ("candidate", "dflash_a8"),
+            ]:
+                bad = dict(record)
+                bad[key] = value
+                path.write_text(json.dumps(bad))
+                with self.assertRaisesRegex(ValueError, "SM120"):
+                    require_admission(
+                        path, "a" * 64, "b" * 64, candidate="dspark_a8", gpu_uuid="GPU-actual"
+                    )
+
+
+class LauncherLifecycleTests(unittest.TestCase):
+    def transaction(
+        self,
+        folder,
+        *,
+        resume=False,
+        max_steps=2,
+        stop_after=None,
+        fail_resource=False,
+        precision_stage="direct",
+    ):
+        import contextlib
+        import json
+        import sys
+        from unittest.mock import patch
+
+        import train_nine_model_qat as launcher
+
+        cfg, tensors, batch = block_fixture(bits=1 if precision_stage == "a8_to_a1" else 8)
+        if precision_stage == "a8_to_a1":
+            cfg = replace(cfg, activation_bits=8)
+        model = BlockDrafter(tensors, cfg)
+        batch.chain_id = "chain"
+        batch.block_index = 0
+
+        class DataCursor:
+            def __init__(self, epoch=0, **kwargs):
+                self.epoch = epoch
+
+            def payload(self):
+                return {"epoch": self.epoch}
+
+        class Dataset:
+            def cursor(self, **_):
+                return DataCursor()
+
+            def next_block(self, cursor, **_):
+                return batch, DataCursor(epoch=cursor.epoch + 1)
+
+        source = dict(BlockCheckpointTests.source)
+        root = Path(folder)
+        config = root / "config.json"
+        config.write_text(json.dumps({"synthetic": "launcher_fixture"}))
+        args = SimpleNamespace(
+            config=config,
+            run_dir=root,
+            bundle_sha256="c" * 64,
+            stage_name="dspark_a8/train",
+            resume=resume,
+            smoke_zero_updates=False,
+            prepare_only=False,
+        )
+        spec = {
+            "candidate": "dspark_a8",
+            "family": "dspark",
+            "checkpoint_every": 1,
+            "limits": {"max_steps": max_steps, "max_seconds": 60},
+            "precision_stage": precision_stage,
+            "a8_warmup_steps": 1,
+        }
+        calls = 0
+
+        def step(*pos, **kwargs):
+            nonlocal calls
+            calls += 1
+            result = block_train_step(*pos, **kwargs)
+            if stop_after is not None and calls >= stop_after:
+                (root / "STOP").touch()
+            return result
+
+        def resource(*_):
+            if fail_resource and calls >= 1:
+                raise RuntimeError("synthetic resource floor failure")
+            return {"fixture_only": True}
+
+        @contextlib.contextmanager
+        def teacher(*_):
+            yield None
+
+        with (
+            patch.dict(
+                sys.modules, {"w1a1_eagle.block_data": SimpleNamespace(BlockCursor=DataCursor)}
+            ),
+            patch.object(launcher, "block_inputs", return_value=(model, Dataset(), source)),
+            patch.object(launcher, "resources", side_effect=resource),
+            patch.object(launcher, "native_teacher", teacher),
+            patch.object(launcher, "block_train_step", side_effect=step),
+        ):
+            return launcher.run_block(args, spec, {"hardware": "CPU synthetic fixture"})
+
+    def test_success_publishes_hash_bound_export_from_committed_endpoint(self):
+        with tempfile.TemporaryDirectory() as folder:
+            result = self.transaction(folder)
+            self.assertEqual(result["completion_reason"], "approved_budget_complete")
+            self.assertEqual(result["counters"]["step"], 2)
+            self.assertEqual(set(result["checkpoint"]), {"path", "sha256"})
+            for kind in ("checkpoint", "manifest"):
+                locator = result["exports"]["dspark_a8"][kind]
+                self.assertEqual(set(locator), {"path", "sha256"})
+                self.assertTrue(Path(locator["path"]).is_file())
+
+    def test_stop_retains_checkpoint_and_never_publishes_export(self):
+        import json
+
+        with tempfile.TemporaryDirectory() as folder:
+            with self.assertRaisesRegex(InterruptedError, "STOP"):
+                self.transaction(folder, stop_after=1, max_steps=3)
+            latest = json.loads((Path(folder) / "checkpoints/latest.json").read_text())
+            self.assertEqual(latest["cursor"]["step"], 1)
+            self.assertFalse((Path(folder) / "final-export").exists())
+            (Path(folder) / "STOP").unlink()
+            resumed = self.transaction(folder, resume=True, max_steps=3)
+            self.assertEqual(resumed["counters"]["step"], 3)
+
+    def test_resource_failure_preserves_last_committed_checkpoint(self):
+        import json
+
+        with tempfile.TemporaryDirectory() as folder:
+            with self.assertRaisesRegex(RuntimeError, "resource floor"):
+                self.transaction(folder, max_steps=3, fail_resource=True)
+            latest = json.loads((Path(folder) / "checkpoints/latest.json").read_text())
+            self.assertEqual(latest["cursor"]["step"], 1)
+            self.assertFalse((Path(folder) / "final-export").exists())
+
+    def test_stage_transition_charges_source_and_exercises_final_a1(self):
+        with tempfile.TemporaryDirectory() as folder:
+            result = self.transaction(folder, precision_stage="a8_to_a1")
+            self.assertEqual(result["counters"]["step"], 2)
+            self.assertEqual(result["counters"]["stage"], "a1_final")
+            self.assertEqual(result["counters"]["supervised_tokens"], 14)
+
+
+class CalibratedInitializationTests(unittest.TestCase):
+    def test_sparse_overlay_preserves_reference_magnitudes_and_changes_inertia_only_by_probe(self):
+        from w1a1_eagle.qat_initialization import apply_binary_initialization
+        from w1a1_eagle.recurrent_qat import RowBinaryLinear, W1AxContract
+
+        reference = torch.tensor([[0.2, -0.3]])
+        first = RowBinaryLinear(reference, torch.tensor([0.5]), W1AxContract(8))
+        second = RowBinaryLinear(reference, torch.tensor([0.5]), W1AxContract(8))
+        fit = (torch.tensor([[0.2, -0.3]]), torch.tensor([0.7]))
+        apply_binary_initialization(
+            {"fc": first}, {"fc": fit}, policy="preserve_reference_magnitudes"
+        )
+        apply_binary_initialization(
+            {"fc": second}, {"fc": (torch.tensor([[1.0, -1.0]]), fit[1])}, policy="unit_probe"
+        )
+        input = torch.ones(1, 2)
+        self.assertTrue(torch.equal(first(input), second(input)))
+        for module in (first, second):
+            optimizer = torch.optim.SGD([module.latent_sign], lr=0.5)
+            module(input).sum().backward()
+            optimizer.step()
+        self.assertTrue(bool(first.latent_sign[0, 0] < 0))
+        self.assertTrue(bool(second.latent_sign[0, 0] > 0))
+
+    def test_fusion_only_block_overlay_retains_other_fifteen_reference_latents(self):
+        cfg, tensors, batch = block_fixture()
+        reference = BlockDrafter(tensors, cfg)
+        latent = -reference.fc.latent_sign.detach().clone()
+        initialized = BlockDrafter(
+            tensors,
+            cfg,
+            binary_initializer={"fc": (latent, reference.fc.initial_scale.detach().clone())},
+        )
+        self.assertTrue(torch.equal(initialized.fc.latent_sign, latent))
+        for name, module in reference.binary_linears().items():
+            if name != "fc":
+                self.assertTrue(
+                    torch.equal(module.latent_sign, initialized.binary_linears()[name].latent_sign)
+                )
+        with self.assertRaisesRegex(ValueError, "magnitudes"):
+            BlockDrafter(
+                tensors,
+                cfg,
+                binary_initializer={
+                    "fc": (torch.where(latent < 0, -1.0, 1.0), reference.fc.initial_scale.clone())
+                },
+            )
+
+    def test_negative_zero_is_refused_as_calibrated_negative_bit(self):
+        from w1a1_eagle.qat_initialization import apply_binary_initialization
+        from w1a1_eagle.recurrent_qat import RowBinaryLinear, W1AxContract
+
+        module = RowBinaryLinear(torch.zeros(1, 1), torch.ones(1), W1AxContract(1))
+        with self.assertRaisesRegex(ValueError, "negative-zero"):
+            apply_binary_initialization(
+                {"fc": module}, {"fc": (torch.tensor([[-0.0]]), torch.ones(1))}
+            )

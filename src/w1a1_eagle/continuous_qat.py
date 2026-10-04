@@ -35,7 +35,7 @@ from .continuous_resources import (
     require_host_memory,
 )
 from .continuous_runtime import training_runtime_identity
-from .qat_state import recipe_state, validate_resume_state
+from .qat_state import recipe_state, validate_optimizer_resume, validate_resume_state
 from .recurrent_provider import audit_provider_round, forward_torch_round
 from .recurrent_qat import (
     JointQATConfig,
@@ -90,6 +90,8 @@ class ContinuousConfig:
     affine_weights: object | None = None
     activation_bits: tuple[int, ...] = (8, 1)
     development_lifecycle: str = "in_process"
+    initialization_sha256: str | None = None
+    initialization_policy: str = "preserve_reference_magnitudes"
 
     def __post_init__(self):
         if torch.device(self.device).type not in {"cpu", "cuda"}:
@@ -147,6 +149,14 @@ class ContinuousConfig:
         object.__setattr__(self, "activation_bits", tuple(self.activation_bits))
         if self.activation_bits not in {(1,), (8,), (8, 1)}:
             raise ValueError("continuous lanes must be direct A1, A8, or paired A8/A1")
+        if self.initialization_policy not in {"preserve_reference_magnitudes", "unit_probe"}:
+            raise ValueError("explicit calibrated initialization policy required")
+        if self.initialization_sha256 is not None and (
+            not isinstance(self.initialization_sha256, str)
+            or len(self.initialization_sha256) != 64
+            or any(c not in "0123456789abcdef" for c in self.initialization_sha256)
+        ):
+            raise ValueError("calibrated initialization SHA256 invalid")
         if self.development_lifecycle not in {"in_process", "standalone"}:
             raise ValueError("development lifecycle must be in_process or standalone")
         if len(self.seeds) != 2 or self.seeds[0] == self.seeds[1]:
@@ -223,6 +233,10 @@ def immutable_config(config: dict) -> dict:
         result.pop("activation_bits")
     if result.get("development_lifecycle") == "in_process":
         result.pop("development_lifecycle")
+    if result.get("initialization_sha256") is None:
+        result.pop("initialization_sha256", None)
+    if result.get("initialization_policy") == "preserve_reference_magnitudes":
+        result.pop("initialization_policy", None)
     return result
 
 
@@ -283,7 +297,9 @@ class Lane:
     rng: dict
 
 
-def build_lanes(provider, config: ContinuousConfig, run_dir: Path | None = None) -> list[Lane]:
+def build_lanes(
+    provider, config: ContinuousConfig, run_dir: Path | None = None, *, initialization=None
+) -> list[Lane]:
     """Install on CPU before accelerator transfer; frozen target stays on CPU.
 
     Provider must expose load_models_cpu for CUDA to avoid transient two dense
@@ -313,6 +329,13 @@ def build_lanes(provider, config: ContinuousConfig, run_dir: Path | None = None)
     first_bits = config.activation_bits[0]
     first_config = config.qat(first_bits)
     linears = install_joint_linears(drafter, target, replace(first_config, device="cpu"))
+    from .qat_initialization import apply_binary_initialization
+
+    if initialization is not None and config.initialization_sha256 is None:
+        raise ValueError("calibrated initializer requires immutable config SHA256")
+    drafter.qat_initialization_report = apply_binary_initialization(
+        linears, initialization, policy=config.initialization_policy
+    )
     models = [(first_bits, drafter, linears)]
     if config.activation_bits == (8, 1):
         if config.device != "cpu":
@@ -464,6 +487,7 @@ class ContinuousTrainer:
         *,
         development_evaluator=None,
         expected_recipe=None,
+        training_admission=None,
     ):
         if [lane.name for lane in lanes] != [f"A{bits}" for bits in config.activation_bits]:
             raise ValueError("continuous lane inventory differs from declared activation_bits")
@@ -500,6 +524,12 @@ class ContinuousTrainer:
                 "attachments_and_optimizer_exact": True,
             },
         )
+        if training_admission is not None:
+            from .qat_admission import VerifiedTrainingAdmission
+
+            if not isinstance(training_admission, VerifiedTrainingAdmission):
+                raise ValueError("typed current-package production admission required")
+        self.training_admission = training_admission
         self.evaluator = development_evaluator
         self.stop_requested = False
         self.step = self.epoch = self.cursor = self.tokens = 0
@@ -611,22 +641,23 @@ class ContinuousTrainer:
         with path.open("a") as stream:
             stream.write(json.dumps(item, sort_keys=True, allow_nan=False) + "\n")
 
-    def smoke(self, batch) -> dict:
+    def smoke(self, batch, *, allocate_optimizer_state: bool = True) -> dict:
         """Actual forward/backward on both resident models before optimization."""
         audit = audit_provider_round(batch, self.provider)
         if len(batch.rows) < 2 or not any(audit.ce_mask[1:]):
             raise ValueError("dual smoke needs a supported later-position supervision row")
         report = {}
-        for lane in self.lanes:
-            for group in lane.optimizer.param_groups:
-                for parameter in group["params"]:
-                    state = lane.optimizer.state[parameter]
-                    if isinstance(lane.optimizer, torch.optim.AdamW):
-                        state.setdefault("step", torch.tensor(0.0))
-                        state.setdefault("exp_avg", torch.zeros_like(parameter))
-                        state.setdefault("exp_avg_sq", torch.zeros_like(parameter))
-                    elif group.get("momentum", 0) > 0:
-                        state.setdefault("momentum_buffer", torch.zeros_like(parameter))
+        if allocate_optimizer_state:
+            for lane in self.lanes:
+                for group in lane.optimizer.param_groups:
+                    for parameter in group["params"]:
+                        state = lane.optimizer.state[parameter]
+                        if isinstance(lane.optimizer, torch.optim.AdamW):
+                            state.setdefault("step", torch.tensor(0.0))
+                            state.setdefault("exp_avg", torch.zeros_like(parameter))
+                            state.setdefault("exp_avg_sq", torch.zeros_like(parameter))
+                        elif group.get("momentum", 0) > 0:
+                            state.setdefault("momentum_buffer", torch.zeros_like(parameter))
         for lane in self.lanes:
             restore_rng(lane.rng, self.config.device)
             lane.optimizer.zero_grad(set_to_none=True)
@@ -648,6 +679,10 @@ class ContinuousTrainer:
             execution.update(
                 context_cache_calls=observer.context_cache_calls,
                 context_chunk_size=self.config.context_chunk_size,
+            )
+            execution.update(
+                context_cache_calls=observer.context_cache_calls,
+                optimize_cache_requested=self.config.optimize_cache,
             )
             diagnostics = later_gradient(logits, audit, observer)
             if any(
@@ -682,6 +717,7 @@ class ContinuousTrainer:
                 "loss": float(loss.detach()),
                 **diagnostics,
                 "execution": execution,
+                "resources_gradients_resident": self.resources(),
             }
             lane.optimizer.zero_grad(set_to_none=True)
             del logits, loss, observer, device_batch
@@ -894,6 +930,9 @@ class ContinuousTrainer:
         for lane in self.lanes:
             saved = payload["lanes"][lane.name]
             validate_resume_state(lane.linears, saved["linears"], saved["recipes"])
+            validate_optimizer_resume(
+                lane.optimizer, saved["optimizer"], expected_updates=counters[0]
+            )
             expected_groups = lane.optimizer.param_groups
             groups = saved["optimizer"].get("param_groups", [])
             if len(groups) != len(expected_groups) or any(
@@ -1071,6 +1110,10 @@ class ContinuousTrainer:
         )
 
     def require_optimization_readiness(self) -> None:
+        if self.training_admission is not None:
+            for lane in self.lanes:
+                self.training_admission.require_for_qat(lane.config)
+            return
         from .qat_readiness import optimization_requires_receipt, require_measured_cuda_readiness
 
         if optimization_requires_receipt(self.config):
