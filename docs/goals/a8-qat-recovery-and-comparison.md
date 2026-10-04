@@ -1,5 +1,20 @@
 # A8 QAT recovery and comparison
 
+## Human RTX5080 pause — October 3, 18:34 PDT
+
+Human requested “pause5080gpuusage”. Root set local rtx5080.pause_requested=true,
+PAUSED the existing recovery heartbeat and native Goal, and directed the sole
+operator to stop candidate training immediately, save/checkpoint exact state,
+verify all owned groups/native contexts released, then disconnect. No further
+training/evaluation/recovery or remote work beyond shutdown verification.
+RTX2080Ti control is untouched. GPU release is pending actual operator proof;
+the pause flag alone is not a resource-release claim.
+
+Latest before shutdown: candidate1717/cursor1719,348.00of7200 trainer seconds,
+33finite gradients, all requested features active. Reference preserved at evaluated
+5000/764.725seconds; all checkpoints and raw failures remain retained. The comparison
+is INCOMPLETE and paused, not marked achieved. Resume only on a new human request.
+
 ## Current execution checkpoint — October 3, 18:28 PDT
 
 **Candidate REAL learned A8/all-nine midpoint training is running.** First proof
