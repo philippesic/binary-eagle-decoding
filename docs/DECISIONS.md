@@ -949,3 +949,18 @@ all144 primary outputs each. FFN-Q4 saves about512MiB and also beats its paired
 anchor; cross-phase rate variation limits causal precision-speed conclusions.
 The above W1 integration choice remains pending; no binary-weight benchmark,
 training, new goal or extra budget was silently selected.
+
+## Clarified: within-DSpark precision comparison — October 4, 2026
+
+The human's requested comparison is DSpark Q4 versus DSpark W1A8 versus
+DSpark W1A1, rather than leading with DSpark versus EAGLE. Completed Q4
+coverage is only fifteen FFN gate/up/down matrices across five layers;
+W1A8/W1A1 cells remain unimplemented and unmeasured. No existing BF16/Q4
+result supplies those missing binary cells.
+
+The recap chat asked whether to hold that fifteen-FFN coverage fixed across
+all three formats (recommended controlled scope) or include all eligible
+drafter matrices, including fusion, attention and the full head. That scope
+answer is pending; no new goal, remote operation, training or budget started
+by this clarification. Current project-wide Q4 EAGLE comparison policy and
+previously frozen measurements are preserved.

@@ -403,3 +403,21 @@ additional proof protocols or redoing completed audit work.
 - Resolution: Candidate sample34701/gap30 and reference43201/gap2 verified.
   Their outer audit steps coincide under the frozen recipe; no experiment rerun
   or original artifact correction was needed.
+
+### 2026-10-04: Lead architecture precision questions with the requested comparison
+
+- Context: The development recap led DSpark/DFlash results with speedups over
+  Q4 EAGLE. The human clarified: “i want comparisons between dspark q4 and
+  dspark w1a8 and dspark w1a1 - not dspark to eagle”.
+- Evidence: Completed DSpark/DFlash measurements cover released BF16 and
+  fifteen-FFN-only Q4_0; genuine W1A8/W1A1 integration and measurements are
+  absent. The existing precision-admission report records that gap.
+- Status: Confirmed communication/scope mismatch, not a user error or proof
+  that the completed native measurements are invalid. Binary layer coverage
+  remains an unresolved implementation choice in this chat.
+- Agent contribution: The recap foregrounded the project-wide EAGLE acceptance
+  baseline, obscuring the missing within-DSpark precision matrix.
+- Practical lesson: For this request lead with DSpark Q4 versus DSpark W1A8
+  versus DSpark W1A1, label exact shared quantized layers, and explicitly mark
+  missing cells. Preserve existing EAGLE anchors as secondary context and
+  historical frozen results; do not silently substitute them for requested cells.
