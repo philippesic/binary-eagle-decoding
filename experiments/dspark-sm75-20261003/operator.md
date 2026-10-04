@@ -531,3 +531,69 @@ same ignored run directory. The source-bound evidence manifest is
 SHA256 `2a1165e28d1bd7aa10cc101a1ef3b60432fc7702676670f208e2792ff4f22741`, with
 all bounded near-tie and cache-prefix checks passing. No full five-repeat timing
 or extra GPU run occurred; cumulative inference time remains 0 seconds.
+
+## Resumed six-repeat reference screen — 2026-10-04
+
+After the human renewed the RTX2080Ti study authorization, I refreshed the
+registry through the local tmux MCP pane: `.29` (`rtx2080ti`) was unpaused;
+`.24` remained paused. SSH to `.29` entered WSL2 kernel
+`6.18.33.2-microsoft-standard-WSL2`; the WSL GPU utility is
+`/usr/lib/wsl/lib/nvidia-smi`. At 02:42:58Z, before launch, the RTX2080Ti UUID
+was `GPU-35b7b96c-d577-95f0-0050-40699c9faef7`, driver 610.74, 11,264 MiB,
+366 MiB allocated, 0% utilization, P8/31C. No compute-app rows, matching
+supervisor/probe/benchmark/server/validator processes, runtime tmux server, or
+listener on 18384 existed. WSL boot was 2026-10-03 16:08:09; the `.wslconfig`
+idle-timeout setting still awaits WSL restart, with the prior 109-second
+disconnect/reconnect proof as current-boot durability evidence.
+
+CPU-only numeric receipt generation used frozen original evidence, without
+loading a model. It covers 20/20 original native-probe measurement outputs and
+has 0 uncovered outputs. Position 94 has opposing raw margins
+`[+0.00127410888671875,-0.00550079345703125]` and centered common-top-five
+maximum `0.004618453979492898`. Receipt:
+`~/binary-eagle-decoding/runs/checkouts/dspark-screen-a9dded1/runs/numeric-admission-fcdf-20261004/results/numeric-receipt.json`,
+SHA256 `d9d1b1a62ae2038470579db9fdc3df2884eb24dcf84ac1e495caf074658f3c17`.
+Copy of the immutable probe manifest with the receipt binding was validated
+CPU-only; `admission.json` passed with memory, anchor-first, target-immutable,
+cache-contract and greedy-semantics fields all true. Its SHA256 is
+`305a56fdeeb112af076edf25da04d6cace7daf57a511c9d0a2000faaa7fe481b`; the
+admitted final fcdf582 binary hash is
+`1bd67cdf74d6ced49454ca2546d9a462e71d4e695b8fb5e52d7359fa68473822`.
+
+The full BF16 reference timing uses immutable checkout
+`dspark-screen-a9dded1` at `a9dded1bb2e554d7394472f93d6160db24f333a9`, frozen
+protocol SHA256 `367431663597d312bf4cc75544d3e8c1994260a0d3cd266558cdd388b48ceca7`,
+final target/hash `Qwen3-4B-f16.gguf` /
+`05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6`, Q4_0
+EAGLE/hash `Qwen3-4B-eagle3-q4_0.gguf` /
+`2db40f99d27e404298b80b2865671b9fd0136060ffb503007cb2ae23759e7280`, DSpark
+BF16/hash `dc5299bdb1e7e906b003334a9b806ba502e72111341432ac5a9fd11de22f520c`,
+and DFlash BF16/hash
+`92925d9e4be49a82d1e4f9d9671aae0e3647c1146fccbd4004bfc8afe0c9896f`. The
+run configuration is
+`runs/reference-sixrep-fcdf-20261004/config.json`, SHA256
+`ff3412d462960484339196a3d219419d0eb7598194280230f92b4e143131fd49`; it binds
+the passed admission by path/SHA and begins at0 prior inference seconds.
+
+Exact supervised launch from the clean immutable checkout:
+
+```sh
+PATH="/usr/lib/wsl/lib:$PATH" tmux -L binary-eagle-runtime new-session -d \
+  -s dspark-ref-6x6-20261004 -c "$PWD" \
+  "exec python3 scripts/remote_job.py dspark-reference-sixrep-fcdf-20261004 \
+  --stop-grace-seconds 10 -- env PATH=/usr/lib/wsl/lib:$PATH PYTHONUNBUFFERED=1 \
+  python3 scripts/benchmark_dspark_screen.py \
+  $PWD/runs/reference-sixrep-fcdf-20261004/config.json \
+  $PWD/runs/reference-sixrep-fcdf-20261004/results"
+```
+
+At the latest checkpoint, the six-arm, six-repeat run had completed 353 of 936
+total records: 325 measured requests and 28 warmups. Inference time was
+466.532/7200 seconds. It was in repetition 2/DSpark7, with server PGID 27165,
+10,679 MiB allocated and 75% GPU utilization. It is still running, so no cleanup
+or GPU-free claim applies yet. Candidate FFN-Q4 source config is staged for later
+use at `runs/q4-native-admission-fcdf-20261004/config.json`; it references the
+persisted plan-selected candidate files and passed exact 15-matrix receipts
+without hashing either large candidate during the timed reference run. Use the
+later root-pinned validator checkout for the Q4 admission phase after this
+reference finishes.
