@@ -4,12 +4,14 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Both original 7,200-second training caps settled — October 4, 15:13 UTC
+## Both caps settled; reference final evaluation running — October 4, 15:15 UTC
 
 Reference43203/cursor43287,aebb8032, exit0 at15:11:59UTC; final request/latest
 match, final_training_complete=true, budget7200/max7200/null. Candidate34731/
 cursor34797,bda021d3,7200/null, matching final native result passed/archived/released.
-Reference final archive/full return and single1200s final evaluation remain pending.
+Reference final archive/release/guard passed; single1200s final evaluation started
+15:14:52UTC,35475/35476,births6144982/6144990. Reference committed531prompts/
+206163rows/tokens; candidate426prompts/165733rows/tokens. Final result/audit pending.
 No45000block, topup or new experiment; original charged SIGSEGV incident preserved.
 
 Successor `01a10704-f186-7991-97c7-6f4b3df51ae9` owns SAME ACTIVE heartbeat;
@@ -17,7 +19,7 @@ sole `/root/gpu_operator` pane285. Goal remains INCOMPLETE until reference final
 result, both CPU coverage/telemetry/latency/five-repeat analysis, published comparison,
 all groups/native contexts/transport return and merged-worktree cleanup. No new
 research decision or2080controls. See
-[current checkpoint](goals/a8-qat-recovery-and-comparison.md#both-original-training-budgets-settled--october-4-1513-utc).
+[current checkpoint](goals/a8-qat-recovery-and-comparison.md#reference-final-native-evaluation-running--october-4-1515-utc).
 
 ## Active: A8 QAT recovery and comparison — October 3, 2026
 
