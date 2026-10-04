@@ -73,6 +73,13 @@ class BuilderTests(unittest.TestCase):
         }
         self.assertEqual(builder.ledger_pending(ledger), [])
 
+    def test_all_declared_source_files_must_match_not_only_minimum_list(self):
+        path = "src/w1a1_eagle/nine_model_report.py"
+        pending = builder.source_pending({"source_files": {path: "f" * 64}})
+        self.assertIn("independent current source evidence PENDING: " + path, pending)
+        with self.assertRaisesRegex(ValueError, "repository relative"):
+            builder.source_pending({"source_files": {"../outside": "f" * 64}})
+
     def test_changed_ledger_refuses_integrity(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder).resolve()

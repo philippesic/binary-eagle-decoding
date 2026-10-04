@@ -76,7 +76,12 @@ def ledger_pending(ledger):
 def source_pending(ledger):
     pending = []
     bindings = ledger.get("source_files", {})
-    for name in CRITICAL_SOURCE:
+    for name in sorted(set(CRITICAL_SOURCE) | set(bindings)):
+        relative = Path(name)
+        require(
+            not relative.is_absolute() and ".." not in relative.parts,
+            "QA source paths must remain repository relative",
+        )
         path = ROOT / name
         if not path.is_file() or bindings.get(name) != sha256(path):
             pending.append("independent current source evidence PENDING: " + name)
