@@ -1,5 +1,33 @@
 # A8 QAT recovery and comparison
 
+## Reference 15,000 checkpoint; scheduled evaluation running — October 4, 08:47 UTC
+
+Reference training exited0 at08:43:32Z, natural step15000/cursor15024. Checkpoint
+SHA `73429bd0ca2302147a2ee7cf883664a63323da5e229f0e3611a6f5e044a940eb`
+hardlink archived with manifest6e88e2f0...80712, status/budget/supervisor evidence.
+Settled trainer budget2767.994800899/7200, active_attempt null,
+remaining4432.005199101. Exact supervisor18551/trainer18557 groups and contexts
+returned; baseline RTX50802766MiB/0%. Same source3bd/configcf320476 authenticated.
+
+Scheduled native evaluation launched08:47:10.123624Z, current9e2, faulthandler
+only, same frozen24 prompts/F16 target/verifier/KV/1200s cap. Run
+`a8-ref-step15000-eval-supervisor-20261004-01`, host tmux session
+`a8-ref-step15000-eval-20261004-01`; supervisor18949/birth3818741 and evaluator
+18955/birth3818749, boot517c4a36. Result pending. Candidate remains evaluated10000/
+2064.260114244,0.180342drafts/round/66.145requestTPS. After ref terminal archive/
+release, resume candidate10000→15000 under remaining5135.739885756.
+
+Older08:29/08:30 messages arrived after the15k boundary, and ledger phase/timestamps
+regressed while a newer nested observation remained. Root requested a fresh compact
+packet rather than restarting. Operator confirmed actual terminal08:43:32 separately
+from observation08:46 and corrected current phase; same15k SHA retained. See
+USER_LESSONS. Preserve current observed_at and actual end times separately.
+
+Goal/heartbeat ACTIVE. Both7200 endpoints/final evaluations remain incomplete;
+no repeated admissions, source/recipe/data/precision/budget changes or research
+pivot. Equivalent unexplained SIGSEGV retry1/max2 policy retained; A1 held out,
+no RTX2080Ti controls. Latest operator ledger owns current command/phase evidence.
+
 ## Candidate 10,000 evaluated; reference resumed — October 4, 08:30 UTC
 
 Candidate10000 evaluation completed exit0 at08:24:42.063721Z,783.215612 supervised
