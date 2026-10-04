@@ -237,6 +237,44 @@ class BlockExportTests(unittest.TestCase):
                     require_cuda=True,
                 )
 
+    @unittest.skipUnless(
+        os.environ.get("BLOCK_TEST_NATIVE"), "actual native fixture binary not selected"
+    )
+    def test_paired_target_geometry_success_and_bad_taps(self):
+        from test_block_teacher_capture import NativeTeacherTests
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            base, checkpoint, manifest, _ = self.fixture(root)
+            model, export = root / "binary.gguf", root / "export.json"
+            export.write_text(json.dumps(export_model(base, checkpoint, manifest, model)))
+            full = root / "full"
+            full.mkdir()
+            target = NativeTeacherTests().target_fixture(full, layers=36)
+            proof = check(
+                Path(os.environ["BLOCK_TEST_NATIVE"]),
+                model,
+                export,
+                gpu_layers=0,
+                require_cuda=False,
+                target=target,
+                target_sha256=sha256(target),
+            )
+            self.assertTrue(proof["paired_target_geometry_checked"])
+            short = root / "short"
+            short.mkdir()
+            wrong = NativeTeacherTests().target_fixture(short)
+            with self.assertRaisesRegex(RuntimeError, "target tap outside"):
+                check(
+                    Path(os.environ["BLOCK_TEST_NATIVE"]),
+                    model,
+                    export,
+                    gpu_layers=0,
+                    require_cuda=False,
+                    target=wrong,
+                    target_sha256=sha256(wrong),
+                )
+
     def test_pack_zero_tail_and_little_order(self):
         latent = np.full((1, 33), -1, np.float32)
         latent[0, 0] = -0.0

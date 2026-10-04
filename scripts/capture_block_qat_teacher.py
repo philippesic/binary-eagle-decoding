@@ -100,7 +100,15 @@ class NativeTeacher:
             stderr=self.log,
             text=True,
             bufsize=1,
-            start_new_session=True,
+            # Stay inside the remote_job process group: a supervisor STOP must
+            # signal the teacher alongside its Python owner. The native child
+            # never forks, so local timeout escalation targets only its PID.
+            start_new_session=False,
+        )
+        self.ancestry.update(
+            producer_pid=self.process.pid,
+            producer_pgid=os.getpgid(self.process.pid),
+            producer_parent_pid=os.getpid(),
         )
         self.closed = False
 
@@ -199,16 +207,16 @@ class NativeTeacher:
             try:
                 self.process.wait(timeout=10)
             except subprocess.TimeoutExpired:
-                os.killpg(self.process.pid, signal.SIGTERM)
+                self.process.terminate()
                 try:
                     self.process.wait(timeout=10)
                 except subprocess.TimeoutExpired:
-                    os.killpg(self.process.pid, signal.SIGKILL)
+                    self.process.kill()
                     self.process.wait(timeout=10)
         finally:
             self.process.stdout.close()
             self.log.close()
-        if self.process.returncode not in (0, -signal.SIGTERM, -signal.SIGKILL):
+        if self.process.returncode not in (0, -signal.SIGINT, -signal.SIGTERM, -signal.SIGKILL):
             raise RuntimeError(f"native teacher failed with exit {self.process.returncode}")
 
     def __enter__(self):
@@ -216,6 +224,11 @@ class NativeTeacher:
 
     def __exit__(self, *args):
         self.close()
+
+
+def supervisor_stop(signum, _frame):
+    """Unwind the CLI context so its exact native child is reaped on STOP."""
+    raise SystemExit(128 + signum)
 
 
 def main():
@@ -227,6 +240,8 @@ def main():
     parser.add_argument("--max-tokens", type=int, required=True)
     parser.add_argument("--gpu-layers", type=int, required=True)
     args = parser.parse_args()
+    signal.signal(signal.SIGTERM, supervisor_stop)
+    signal.signal(signal.SIGINT, supervisor_stop)
     with NativeTeacher(
         args.binary,
         args.target,
