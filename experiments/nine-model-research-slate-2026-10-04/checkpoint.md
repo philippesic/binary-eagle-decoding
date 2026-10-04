@@ -6,21 +6,23 @@ review of every report and integration of worthwhile findings into the
 This is a read-only CPU/web planning slate, not model implementation or a new
 training goal/budget. Existing A8 goal remains complete; no GPU, host-control,
 remote query, weights, model load, test/benchmark or monitoring is authorized
-or launched by this slate. Root owns all documentation writes in the temporary
-worktree; agents own only their independent analyses and return text.
+or launched by this slate. Root owns shared plan/checkpoint/status writes in the temporary worktree.
+After the read-only research, each agent received a reporting-only assignment
+to persist its complete analysis in a uniquely owned Markdown file; no shared
+code or implementation writes are permitted.
 
 ## Agent assignments
 
 | Agent | Method | Scope | Status |
 | --- | --- | --- | --- |
-| /root/literature_quantizers | Research first, Sol high | Published low-bit quantizer, initialization and gradient methods | Running |
-| /root/literature_training_data | Research first, Sol high | Published drafter objectives, data and distillation | Running |
-| /root/literature_train_systems | Research first, Sol high | Published training execution and memory improvements | Running |
-| /root/literature_inference | Research first, Sol high | Published native inference and serving improvements | Running |
-| /root/reason_root_acceptance | Reason first, Astra medium | Root acceptance, fusion geometry and activation information | Initial local derivation received |
-| /root/reason_trajectory | Reason first, Astra medium | Recurrent/block propagation and data/gradient ancestry | Initial local derivation received |
-| /root/reason_latency | Reason first, Astra medium | Measured latency, execution and overhead | Initial local derivation received |
-| /root/reason_cost_quality | Reason first, Astra medium | Cheap cost/quality controls and representation freedom | Initial local derivation received |
+| /root/literature_quantizers | Research first, Sol high | Published low-bit quantizer, initialization and gradient methods | Complete, report saved |
+| /root/literature_training_data | Research first, Sol high | Published drafter objectives, data and distillation | Complete, report saved |
+| /root/literature_train_systems | Research first, Sol high | Published training execution and memory improvements | Complete, report saved |
+| /root/literature_inference | Research first, Sol high | Published native inference and serving improvements | Complete, report saved |
+| /root/reason_root_acceptance | Reason first, Astra medium | Root acceptance, fusion geometry and activation information | Complete, report saved; derivation preceded web |
+| /root/reason_trajectory | Reason first, Astra medium | Recurrent/block propagation and data/gradient ancestry | Complete, report saved; derivation preceded web |
+| /root/reason_latency | Reason first, Astra medium | Measured latency, execution and overhead | Complete, report saved; derivation preceded web |
+| /root/reason_cost_quality | Reason first, Astra medium | Cheap cost/quality controls and representation freedom | Complete, report saved; derivation preceded web |
 
 Research-first agents use primary papers/author implementations as their
 starting point. Reason-first agents sent their locally derived hypotheses
@@ -32,7 +34,10 @@ a falsifier/minimal experiment, and recommend incorporate, probe or defer.
 
 ## Root synthesis and peer review
 
-Pending all eight reports. Root will deduplicate related mechanisms, verify
+All eight scientific reports are complete and saved as 01 through 08 in this
+directory, with SHA256 and word counts in report-manifest.json. Four focused
+Opus 5.5 pair audits are running and cover all eight complete texts. Root will
+deduplicate related mechanisms, verify
 material evidence/precision distinctions, and send every report to Opus 5.5
 through peer-review MCP in bounded prompts. Use exact supported model identifier
 claude-opus-5-5-high; no Fable fallback. Earlier broad max-reasoning prompt timed

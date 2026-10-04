@@ -1,0 +1,46 @@
+{
+  "scope": "Eight-agent research only; documentation writes only, no implementation or experiments",
+  "source_revision": "e211760669259625209dfd61dac736635aa757d5",
+  "reports": [
+    {
+      "file": "01-literature-quantizers.md",
+      "sha256": "e520e0280b7a234d8c6710b17b9b21cc6911cae3d3e16385e93b1caa462b7274",
+      "words": 1096
+    },
+    {
+      "file": "02-literature-training-data.md",
+      "sha256": "90faf528027c16805d8a89276411d24c34fc0d4facf124107a4f858e1f252401",
+      "words": 1243
+    },
+    {
+      "file": "03-literature-train-systems.md",
+      "sha256": "645958efe7bf9d7638cd6f45bf8dc947a23ad7374734250743aa320dca9b053a",
+      "words": 1318
+    },
+    {
+      "file": "04-literature-inference.md",
+      "sha256": "920fdd515ed51b3a35add2bd278726b1523621fe4fbc522bad88fd0e12344f14",
+      "words": 1073
+    },
+    {
+      "file": "05-reason-root-acceptance.md",
+      "sha256": "e53d4d930dfa4f264abc3bf61f9896056ac5d1956b6490485a319504378c9997",
+      "words": 1149
+    },
+    {
+      "file": "06-reason-trajectory.md",
+      "sha256": "b35ca318fe788300dc028d7e768607761bbfe40218781099fce8995b781c525e",
+      "words": 1366
+    },
+    {
+      "file": "07-reason-latency.md",
+      "sha256": "8a3335c372874b94d6a4133d0f1b4e5a848fddf3a704e7abfd861e33b7eea778",
+      "words": 1370
+    },
+    {
+      "file": "08-reason-cost-quality.md",
+      "sha256": "3d8a31285866dab4152c2bca9f02106cc11dab8abb68ec6a02f647f1de74aba7",
+      "words": 1091
+    }
+  ]
+}
