@@ -1,10 +1,79 @@
 import copy
 import unittest
 
-from validate_native import check_state, initial_setup_masks
+from validate_native import (check_state, initial_setup_masks, proposal_histories,
+                             compare_proposal_histories)
 
 
 class NativeEvidenceTests(unittest.TestCase):
+    def history_fixture(self):
+        state, rounds = [{"event": "binding_begin"}], []
+        for request in range(5):
+            for first, last, feature in ((0, 3, 100 + request), (4, 7, 200 + request)):
+                state.append({"event": "inject", "seq_id": 0, "first_position": first,
+                              "last_position": last, "n_tokens": 4, "feature_hash_fnv1a64": feature,
+                              "target_taps": [2, 10, 18, 26, 34], "rc": 0,
+                              "kv_max_before": first - 1, "kv_max_after": last})
+                state.append({"event": "noise", "anchor_position": last + 1,
+                              "prefix_token_ids": list(range(last + 1)), "anchor_token_id": 300 + request,
+                              "kv_max_before": last, "n_noise_tokens": 7})
+                rounds.append({"status": "complete", "replay": False, "n_proposed": 3,
+                               "proposed_token_ids": [31, 32, 33]})
+        state.append({"event": "binding_end"})
+        return state, rounds
+
+    def test_all_five_initial_blocks_require_same_full_history(self):
+        state, rounds = self.history_fixture()
+        histories = proposal_histories(state, rounds)
+        stats = compare_proposal_histories(histories, copy.deepcopy(histories))
+        self.assertEqual(stats["qualifying_first_blocks"], 5)
+        self.assertEqual(stats["matched_history_joins"], 10)
+        self.assertEqual(stats["token_matched_different_history_joins"], 0)
+
+    def test_same_history_later_decision_change_rejects(self):
+        state, rounds = self.history_fixture()
+        left = proposal_histories(state, rounds)
+        right = copy.deepcopy(left)
+        right[1]["proposed"][1] = 999
+        with self.assertRaisesRegex(ValueError, "same-history first-three"):
+            compare_proposal_histories(left, right)
+
+    def test_different_numeric_history_reports_decision_change(self):
+        state, rounds = self.history_fixture()
+        left = proposal_histories(state, rounds)
+        right_state, right_rounds = copy.deepcopy(state), copy.deepcopy(rounds)
+        right_state[3].update(n_tokens=8, last_position=11, feature_hash_fnv1a64=999,
+                              kv_max_after=11)
+        right_rounds[1]["proposed_token_ids"][1] = 999
+        right = proposal_histories(right_state, right_rounds)
+        stats = compare_proposal_histories(left, right)
+        self.assertEqual(stats["matched_history_joins"], 9)
+        self.assertEqual(stats["token_matched_different_history_joins"], 1)
+        self.assertEqual(stats["different_history_decision_changes"], 1)
+        detail = stats["details"][0]
+        self.assertEqual(detail["earliest_history_difference_index"], 3)
+        self.assertEqual(detail["short_history_event"]["n_tokens"], 4)
+        self.assertEqual(detail["maximum_history_event"]["n_tokens"], 8)
+
+    def test_changed_initial_feature_or_missing_request_rejects(self):
+        state, rounds = self.history_fixture()
+        left = proposal_histories(state, rounds)
+        right = copy.deepcopy(left)
+        right[0]["history"][1]["feature_hash_fnv1a64"] += 1
+        with self.assertRaisesRegex(ValueError, "first blocks have different numeric"):
+            compare_proposal_histories(left, right)
+        with self.assertRaisesRegex(ValueError, "every original request"):
+            compare_proposal_histories(left, left[:-2])
+
+    def test_missing_injection_field_or_incomplete_round_join_rejects(self):
+        state, rounds = self.history_fixture()
+        incomplete = copy.deepcopy(state)
+        del incomplete[1]["kv_max_before"]
+        with self.assertRaisesRegex(ValueError, "incomplete numeric injection"):
+            proposal_histories(incomplete, rounds)
+        with self.assertRaisesRegex(ValueError, "noise/round join incomplete"):
+            proposal_histories(state, rounds[:-1])
+
     def fixture(self, proposed=None, verified=None, emitted=None):
         proposed = proposed or [31, 32, 33]
         verified = verified or [31, 99]
