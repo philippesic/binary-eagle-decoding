@@ -1626,8 +1626,8 @@ GPU release and optimizer training remain pending.
 The human separately resumed DSpark/DFlash on RTX2080Ti. The study owns only
 that device; the paused A8 goal, RTX5080 and fusion work remain untouched.
 All five released-reference native cells completed actual model/cache/mask/
-immutable-target proof. Two scoped raw-logit checks passed for observed near-tie
-output differences; full throughput timing is next, with0/7200s measured inference
-used. FFN-only Q4 exports passed; W1A8/W1A1 need a human implementation scope
+immutable-target proof. CPU revalidation now passes computed native admission
+with both source-bound numerical checks; public nativefcdf582 is integrated.
+Full throughput timing is cleared to start, with0/7200s observed inference used. FFN-only Q4 exports passed; W1A8/W1A1 need a human implementation scope
 choice. See the [independent study checkpoint](../experiments/dspark-sm75-20261003/checkpoint.md).
 This adds no active project goal and makes no A8 progress or resource claim.

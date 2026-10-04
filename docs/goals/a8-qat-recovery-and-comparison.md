@@ -467,6 +467,7 @@ After its first context compaction, the independent DSpark/DFlash coordinator
 re-read STATUS and this goal. A8 ownership, pause, checkpoints, training budget,
 RTX5080 controls and jobs are unchanged. Human-authorized RTX2080Ti work is
 recorded separately in [its checkpoint](../../experiments/dspark-sm75-20261003/checkpoint.md):
-actual released-model native proof completed; two bounded near-tie checks passed;
-reference/Q4 throughput timing remains pending with0/7200s used. No cross-task
+actual released-model native admission now passes CPU revalidation with two
+source-bound near-tie checks; public nativefcdf582 is integrated. Reference/Q4
+throughput timing is cleared to start, with0/7200s observed inference used. No cross-task
 contact, new A8 action or new active project goal is implied by this note.
