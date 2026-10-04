@@ -469,6 +469,9 @@ RTX5080 controls and jobs are unchanged. Human-authorized RTX2080Ti work is
 recorded separately in [its checkpoint](../../experiments/dspark-sm75-20261003/checkpoint.md):
 actual released-model native admission now passes CPU revalidation with two
 source-bound near-tie checks; public nativefcdf582 is integrated. Reference/Q4
-throughput timing started02:43UTC; first repeat complete,268.692/7200s request
-wall used. The A8 pause and RTX5080 controls remain unchanged. No cross-task
+throughput timing is complete: 864 measured requests, six repeats,1246.09/7200s
+charged. DFlash7/DSpark7 improve request rate45.8%/42.6% versus Q4_0 EAGLE
+and match all144 primary outputs each. Q4 native model proof finished; its
+numerical-history checker correction precedes timing. The A8 pause and RTX5080
+controls remain unchanged. No cross-task
 contact, new A8 action or new active project goal is implied by this note.
