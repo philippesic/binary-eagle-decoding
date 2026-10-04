@@ -13,12 +13,13 @@ Three new bounded workers own trainer/evaluator/resume, recipe/movement audits,
 and independent checks plus sole GPU operation; root reviews readiness and
 integrates. See the [ownership checkpoint](goals/a8-qat-recovery-and-comparison.md#standalone-ownership-claimed--october-3-2026).
 Integrated fixes are published (frozen execution source583480c; main8583b68).
-CPU checks and BOTH current native/model/backward/memory/five-repeat admissions
-pass on RTX5080/SM120. Reference fresh checkpoint-zero/smoke is published; its
-repaired standalone development evaluation PASSED (751seconds, all5timing reps
-and loss), with raw artifacts archived. Candidate freshzero/evaluation is next,
-then actualoptimizer updates immediately. CPU work/launch prep is complete.
-Updates remain0; no extra gates or repeatedpreparation are pending. The only active goal is
+CPU checks, BOTH current native/model admissions and both step-zero development
+evaluations pass. REAL reference A8 training reached859updates,129.8578budget
+seconds and a preserved positive-step checkpoint; exact same-config resume is
+next. Actual sign/scale movement,18finite gradient tensors, cached batched head
+and100cumulative sign flips are observed. Candidate learned/midpoint/inertia
+recipe is qualified/zero-evaluated and queued. No extra prelaunch gates.
+ The only active goal is
 [A8 QAT recovery and comparison](goals/a8-qat-recovery-and-comparison.md).
 
 RTX5080 is resumed for this A8 work; A1 is held out. The human separately resumed
