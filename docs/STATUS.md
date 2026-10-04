@@ -10,13 +10,14 @@ Candidate30k evaluation passed and is archived: 0.268456 accepted drafts/round,
 70.905request tokens/s,52.47% of Q4_0. Candidate budget is6219.892867/7200;
 980.107133seconds remain for its final training segment and final evaluation.
 Reference resumed30k→35k: supervisor29672/birth5311113,trainer29677/birth5311121,
-Linux session `a8-reference-step30000-resume-20261004-01`. At12:59:15UTC it reached
-30563/cursor30618,5202.857739trainer seconds. Keep the detached job running.
+Linux session `a8-reference-step30000-resume-20261004-01`. Fresh successor proof at13:09:19UTC shows34463/cursor34529 and
+5796.156179trainer seconds, latest saved checkpoint34000; exact births and boot
+match. Keep the detached job running.
 
 Second-compaction hook requires successor coordination. Prior operator closed transport13:02:41UTC and ceased remote control; successor `01a10704-f186-7991-97c7-6f4b3df51ae9` acknowledged the objective
 and exact current job at13:06:45UTC, appointed sole Luna operator `/root/gpu_operator`,
-and has the SAME heartbeat ACTIVE/retargeted. Prior root/operator retire after
-this checkpoint; successor owns further work, including fresh remote proof.
+and has the SAME heartbeat ACTIVE/retargeted. Prior root/operator retired; registration rotation completed13:09:54UTC.
+Successor verified the original live job through sole operator pane285.
 See [full rotation handoff](goals/a8-qat-recovery-and-comparison.md#coordinator-rotation-handoff--october-4-1300-utc)
 for exact next actions, source/config/checkpoints, budgets, tests, workers and
 endpoint/release audit. BOTH7200 endpoints/finalreports incomplete. SAMEheartbeat

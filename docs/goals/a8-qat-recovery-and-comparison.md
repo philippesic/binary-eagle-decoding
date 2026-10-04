@@ -1,5 +1,35 @@
 # A8 QAT recovery and comparison
 
+## Successor live-job proof — October 4, 13:10 UTC
+
+Successor `01a10704-f186-7991-97c7-6f4b3df51ae9` owns the same incomplete native
+Goal and ACTIVE heartbeat. Registration rotation completed13:09:54UTC; prior root
+and operator are retired. Sole `/root/gpu_operator` acquired tmux MCP transport
+session254/window283/pane285 through the freshly read RTX5080 registry and strict
+existing host-key pin. Boot and exact supervisor29672/birth5311113,
+trainer29677/birth5311121 match the original reference30k launch. Detached Linux
+session remains live; no duplicate launch or signal occurred. Fresh status13:09:19UTC
+shows34463/cursor34529 and5796.156178990006/7200seconds; GPU13:10:14UTC shows
+RTX5080/SM120,9601MiB/81%. Latest saved checkpoint is34000. Operator owns the
+ignored ledger and fresh `successor_visible_job_proof`; root owns registration.
+No RTX2080Ti query/control or shared flag change.
+
+CPU-only worker `/root/repeat_aggregation` completed the standalone existing-record
+analysis script, now preserved at `experiments/a8-qat-recovery/aggregate_existing_timing.py`,
+SHA256 `b7421232e6b2653c68653e0d5b839fddb7934fa00507e2929a7196d4ce065143`.
+Root reviewed producer schema and passed its self-test: count/time versus
+mean-of-request-rates fixture and11invalid-record rejection cases. Worker also
+verified multi-input CLI, source-byte preservation and overwrite protection.
+Actual aggregation is pending both final existing timing archives; sole operator
+may stage this separate analysis script and run it once without new requests.
+It reports five24prompt repetitions per variant, matched ratios and descriptive
+ranges, with exact pooled cross-checks and no significance claim.
+
+Next: original reference natural35000 boundary/archive/release and scheduled
+1200s evaluation; candidate original980.107133remaining training seconds/final
+evaluation; remaining reference scheduled/final work and full endpoint audit.
+Both7200endpoints/finalreports remain incomplete. No new budget or experiment.
+
 ## Coordinator rotation handoff — October 4, 13:00 UTC
 
 **Objective remains incomplete:** finish authorized A8 QAT recovery and matched
