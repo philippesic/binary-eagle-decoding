@@ -1,5 +1,29 @@
 # A8 QAT recovery and comparison
 
+## Candidate 10,000 checkpoint; scheduled evaluation running — October 4, 08:11 UTC
+
+Candidate reached natural step10000/cursor10017 and status awaiting_development
+at08:10:33Z. Checkpoint SHA
+`6898e9b1cb6cb0303e1a38340a23decb3eeabf14d215afd761d7e0c8aa7496ae` is preserved
+in verified hardlink archive `evidence-archive/checkpoints/candidate-step-10000`.
+Budget settled2064.260114244/7200 seconds, active_attempt null,
+remaining5135.739885756; prior16980/16986 training leaders absent.
+
+Scheduled native evaluation launched08:11:38.848109Z under same immutable3bd,
+current9e2 runtime, exact frozen24dev requests, F16 target/verifier/KV and existing
+1200s cap. Run `a8-candidate-step10000-eval-supervisor-20261004-01`, host tmux
+session `a8-candidate-step10000-eval-20261004-01`; supervisor17438/birth3605614,
+evaluator17444/birth3605621 on same boot517c4a36. Diagnostic fault handler only;
+no new gates, recipe/math/data/precision/budget change. Result pending.
+
+Reference remains evaluated10000/2005.419445274 with request88.069TPS and
+0.500529accepted drafts/round, below Q4_0. Both are now at10000 committed updates;
+accounted time differs (candidate2064.260, reference2005.419 including failed work
+and conservative downtime). Comparison still requires BOTH7200 endpoints/final
+native evaluations. After candidate terminal archive/resource release, resume
+reference10000→15000. Same Goal/heartbeat ACTIVE; unexplained SIGSEGV retry1/max2
+policy preserved, A1 held out, no2080host-control writes or unrelated science.
+
 ## Reference 10,000 evaluated; candidate resumed — October 4, 07:53 UTC
 
 Reference10000 evaluation completed exit0 at07:47:30.913917Z, 692.18257 supervised
