@@ -4,24 +4,22 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Successor owns comparison; reference training live — October 4, 13:09 UTC
+## Reference 35,000 checkpoint; scheduled evaluation next — October 4, 13:18 UTC
 
-Candidate30k evaluation passed and is archived: 0.268456 accepted drafts/round,
-70.905request tokens/s,52.47% of Q4_0. Candidate budget is6219.892867/7200;
-980.107133seconds remain for its final training segment and final evaluation.
-Reference resumed30k→35k: supervisor29672/birth5311113,trainer29677/birth5311121,
-Linux session `a8-reference-step30000-resume-20261004-01`. Fresh successor proof at13:09:19UTC shows34463/cursor34529 and
-5796.156179trainer seconds, latest saved checkpoint34000; exact births and boot
-match. Keep the detached job running.
+Reference exited0 at35,000/cursor35,066, checkpoint a64fe4da. Budget settled
+5,878.722016/7,200seconds with null active attempt;1,321.277984seconds remain.
+Its exact checkpoint/request and hardlink archive are verified. Sole operator
+observed expected PIDs/session absent and GPU baseline; the scheduled1200s
+native evaluation has conditional GO after full context/group/resource checks.
+Candidate30k evaluation passed:0.268456drafts/round,70.905requesttokens/s,
+52.47% of Q4_0. Candidate6219.892867/7200 has only980.107133training seconds left.
 
-Second-compaction hook requires successor coordination. Prior operator closed transport13:02:41UTC and ceased remote control; successor `01a10704-f186-7991-97c7-6f4b3df51ae9` acknowledged the objective
-and exact current job at13:06:45UTC, appointed sole Luna operator `/root/gpu_operator`,
-and has the SAME heartbeat ACTIVE/retargeted. Prior root/operator retired; registration rotation completed13:09:54UTC.
-Successor verified the original live job through sole operator pane285.
-See [full rotation handoff](goals/a8-qat-recovery-and-comparison.md#coordinator-rotation-handoff--october-4-1300-utc)
-for exact next actions, source/config/checkpoints, budgets, tests, workers and
-endpoint/release audit. BOTH7200 endpoints/finalreports incomplete. SAMEheartbeat
-ACTIVE; no new experiment, budget or pending human decision. No2080controls.
+Successor `01a10704-f186-7991-97c7-6f4b3df51ae9` owns the existing goal and SAME
+ACTIVE heartbeat; prior coordinator/operator are retired. Sole `/root/gpu_operator`
+owns transport pane285. CPU-only existing-record repetition audit is published
+as e155ae2; actual final inputs remain pending. BOTH7200endpoints/finalreports
+incomplete; no new experiment, budget or pending human decision, no2080controls.
+See [current checkpoint](goals/a8-qat-recovery-and-comparison.md#reference-35000-boundary-scheduled-evaluation-authorized--october-4-1318-utc).
 
 ## Active: A8 QAT recovery and comparison — October 3, 2026
 

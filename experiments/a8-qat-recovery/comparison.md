@@ -263,9 +263,16 @@ toward 30,000. Both final 7,200-second endpoints remain pending.
 
 Candidate subsequently reached step 30,000/cursor30,054 and exited cleanly,
 with budget settled at 6,219.893 seconds and 980.107 seconds remaining. Its
-scheduled native evaluation is running. The next candidate training segment must
+scheduled native evaluation passed and is archived. The next candidate training segment must
 stop at the original cap and receive a final native evaluation, even if the
 endpoint precedes step 35,000. Both final 7,200-second endpoints remain pending.
+
+Reference subsequently reached step35,000/cursor35,066 and exited0 at
+13:10:34.068720UTC, budget settled5,878.722016seconds,1321.277984remaining.
+Its checkpoint a64fe4da and pending scheduled development request are archived.
+The scheduled evaluation has conditional GO after full release/resource checks;
+results remain pending. Candidate's next segment remains restricted to its
+original980.107133seconds and final evaluation.
 
 ## Endpoint reporting method
 
