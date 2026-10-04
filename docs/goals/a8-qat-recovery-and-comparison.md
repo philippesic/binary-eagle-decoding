@@ -1,5 +1,41 @@
 # A8 QAT recovery and comparison
 
+## Candidate 25,000 evaluated; reference resumed — October 4, 11:52 UTC
+
+Candidate25000 eval exited0: supervisor actualstart11:34:32.784482Z/end
+11:47:19.990485Z,wall767.206003s; reportphase762.472998s,terminalabsence observed
+11:48:02Z. Report4220d6295c2b72919c8822a528511b15f91eab8fbfb1d7d1de83cf7e4a3fb5a3;
+checkpointb9936e38. CE5.816129214/229labels/48loss rounds/all24prompts. A8 accepted
+532/11257proposals over2305rounds,0.230803drafts/round,0.047259acceptance;
+Q4_0 remains1608/6047/1231/1.306255. Native emitted2834tokens each.
+RequestTPS68.95402 versusQ4_0134.89950 (ratio0.51112),target-only88.71242;
+decode70.99419 versus142.65457 (ratio0.49767). Five×24=120requests per variant,
+14,290returnedIDs/105length/15stop finishes each;24native/120timing matchesQ4_0,
+sealed=false. Slight acceptance gain from20k but still well below reference25k/Q4.
+
+Raw attempt/report/result/timing hardlink archived at
+`evidence-archive/development/candidate-step25000-eval-attempt-0000`,locator
+`candidate-step25000-locator-map.json`; resulte581a54e...,timing3f17c320...,
+checkpointmanifestd351c528...,jointjson45c5e924...,jointnpz2dd1f712.... Twelve
+originalreports in compact summary. Exactgroups/session/native contexts returned,
+baseline2766MiB/0%. Candidate budget unchanged5181.483403728003/7200,
+active_attempt null,remaining2018.516596271997.
+
+Reference resumed exact25000/cursor25044/checkpointe3948dbd/configcf/source3bd,
+run `a8-reference-step25000-resume-supervisor-20261004-01`,host session
+`a8-reference-step25000-resume-20261004-01`,launch11:49:26Z.
+Supervisor27015/birth4912472,trainer27020/birth4912478,sameboot517c4a36,
+faulthandler diagnostic only. Actualpositive resume11:52:49Z: step25594/cursor25640,
+training4428.699774s,finite18gradients,cumulative sign flips50141575,effective
+batchedcache/chunk64. Activeoriginalreservation2875.962133230993 from prior
+4324.037866769007 retained. Continue SAME handles to natural30000,normal1200s
+native eval/archive/release,then candidate25000→30000. No repeated gates/science.
+
+Both7200 endpoints/finals incomplete; Goal/heartbeat ACTIVE,allsource/recipe/math/
+data/precision/budgets unchanged,SIGSEGV retry1max2/charges retained,A1 heldout,
+no2080host controls. Currentcanonicalobservations/exactidentities govern;
+actualstart/end separate from later observations,no restart from stale snapshots.
+
 ## Candidate 25,000 checkpoint; evaluation running — October 4, 11:34 UTC
 
 Candidate trainer actualstart11:13:57.708125Z/end11:33:08.020934Z,exit0; natural
