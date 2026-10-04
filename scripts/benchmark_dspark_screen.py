@@ -127,6 +127,18 @@ def prior_timing_seconds(config: dict) -> float:
     return total
 
 
+def check_admission(config: dict, admission: dict) -> None:
+    if not admission.get("passed") or admission.get("target_sha256") != config["target"]["sha256"]:
+        raise ValueError("missing target-bound actual native admission")
+    if admission.get("binary_sha256") != config["binary"]["sha256"] or admission.get("protocol_sha256") != config["protocol_sha256"]:
+        raise ValueError("native admission runtime/protocol changed")
+    for kind in ("dspark", "dflash", "eagle_q4_0"):
+        if admission.get("model_sha256", {}).get(kind) != config[kind]["sha256"]:
+            raise ValueError(f"native admission model changed: {kind}")
+    if not all(admission.get(k) for k in ("memory", "anchor_first", "target_immutable", "cache_contract", "greedy_semantics")):
+        raise ValueError("incomplete native admission")
+
+
 def run(config_path: Path, destination: Path, diagnostic: bool = False) -> None:
     global _launching, _pending_signal
     config = json.loads(config_path.read_text())
@@ -141,10 +153,7 @@ def run(config_path: Path, destination: Path, diagnostic: bool = False) -> None:
     for key in ("binary", "target", "eagle_q4_0", "dspark", "dflash", "admission"):
         if sha256(Path(config[key]["path"])) != config[key]["sha256"]:
             raise ValueError(f"artifact changed: {key}")
-    if not admission.get("passed") or admission.get("target_sha256") != config["target"]["sha256"]:
-        raise ValueError("missing target-bound actual native admission")
-    if not all(admission.get(k) for k in ("memory", "anchor_first", "target_immutable", "cache_contract", "greedy_semantics")):
-        raise ValueError("incomplete native admission")
+    check_admission(config, admission)
     prompt_path = ROOT / protocol["prompt_file"]
     if sha256(prompt_path) != protocol["prompt_sha256"]:
         raise ValueError("frozen prompts changed")

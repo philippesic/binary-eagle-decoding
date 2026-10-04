@@ -7,7 +7,7 @@ import signal
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from benchmark_dspark_screen import ARMS, command, order, round_summary, stop_owned_server, prior_timing_seconds
+from benchmark_dspark_screen import ARMS, command, order, round_summary, stop_owned_server, prior_timing_seconds, check_admission
 from benchmark_native_eagle import sha256
 from analyze_dspark_screen import summarize
 from analyze_dspark_events import analyze, union
@@ -21,6 +21,19 @@ def fixture(proposed, accepted, emitted=None, **extra):
 
 
 class ScreenContracts(unittest.TestCase):
+    def test_admission_binds_actual_runtime_protocol_and_precision(self):
+        config = {key: {"sha256": key} for key in ("binary", "target", "dspark", "dflash", "eagle_q4_0")}
+        config["protocol_sha256"] = "protocol"
+        admission = dict(passed=True, target_sha256="target", binary_sha256="binary", protocol_sha256="protocol",
+                         model_sha256={key: key for key in ("dspark", "dflash", "eagle_q4_0")},
+                         memory=True, anchor_first=True, target_immutable=True, cache_contract=True, greedy_semantics=True)
+        check_admission(config, admission)
+        for key in ("binary_sha256", "protocol_sha256"):
+            with self.assertRaisesRegex(ValueError, "runtime/protocol"):
+                check_admission(config, {**admission, key: "changed"})
+        with self.assertRaisesRegex(ValueError, "model changed: dspark"):
+            check_admission(config, {**admission, "model_sha256": {**admission["model_sha256"], "dspark": "Q4-candidate"}})
+
     def test_cumulative_budget_uses_local_cost_not_double_counted_prior(self):
         with tempfile.TemporaryDirectory() as temp:
             first, second = Path(temp) / "first.json", Path(temp) / "second.json"
