@@ -1,46 +1,28 @@
 # A8 QAT recovery and comparison
 
-## Current execution checkpoint — October 3, 17:48 PDT
+## Current execution checkpoint — October 3, 18:03 PDT
 
-**REAL A8 optimizer training observed.** Reference control first reported step383,
-then graceful stop preserved step859/cursor860 and129.8578 trainer seconds.
-All18gradient tensors finite, actual sign/scale movement admission passed,100
-cumulative sign flips; cache/head effective (one cache call/chunk64, batched head).
-This control intentionally has fixed A8/symmetric weights; candidate learned A8,
-all-nine midpoints and latent0.1 AdamW are qualified and queued, not yet trained.
+Reference REAL A8 training reached5000updates/cursor5009, then naturally exited0
+at its scheduled development boundary. Checkpoint SHA `884dd8c5...`, manifest
+`29027d08...`, optimizer/RNG/cursor exact; hardlink-archived before later pruning.
+Durable budget settled764.725seconds of7200 (6435.275remains), active_attempt null.
+All owned trainer groups returned, GPU idle baseline. Its scheduled1200s native
+24prompt development evaluation is starting; acknowledgment remains pending.
 
-Positive checkpoint SHA `58c6fce4...`, manifest `a667006d...`,
-optimizer_rng_cursor_exact=true, source `b1a9f991...`; hardlink archive
-`evidence-archive/checkpoints/reference-positive-step-859`. Durable budget ledger
-max7200, used129.8578, active_attempt null after stop;7070.1422 remains. Every
-update is retained/charged. The proposed100boundary passed between observations;
-the actual proof is859. No unscheduled evaluation at859: archive/verify/release,
-then EXACT same-config/source resume directly and observe860+ before continuing.
+Actual positive-step restore was verified859→912 on identical source3bd/config/
+optimizer/RNG/cursor/probe/telemetry. All18reference gradient tensors finite,
+actual sign/scale movement observed, cached batched execution effective. Both
+native/model admissions and both zero evaluations are complete; no prep repeat.
+Candidate is qualified/zero-evaluated with learned A8/all-nine midpoints/latent0.1
+AdamW and reference VJP, but its actual optimizer updates remain0.
 
-Both fresh step-zero evaluations PASSED: reference750.7s, candidate786.2s, each
-within1200; all5native request timing repetitions for A8/Q4/target-only plus loss,
-raw outputs archived. Both native/model/backward/memory/five-repeat receipts
-already passed on RTX5080/SM120/native9e2. Base583 admission/math hashes remain
-unchanged under helper-only repair3bd (current execution source), no revalidation.
-
-Positive-step EXACT resume now verified: reference restored859 and advanced912,
-finite18gradients, preserved129.8578s and active reservation7070.1422s. New
-supervisor10108/birth962865, trainer10114/birth962869, same boot517c4a36/source3bd/
-config/optimizer/RNG/cursor/probe/telemetry. It is running actual optimizer work.
-
-Next: alternate ARMS at natural5000-update development boundaries. Afterreference
-5000scheduled evaluation/archive/release, begin candidate from its preserved0,
-prove its actual early-family movement via graceful save/resume, then candidate
-5000eval. Continue alternating until each independent7200s cap/final evaluation
-is complete. This operational order starts the requested candidate features
-sooner and balances the comparison, without source/data/seed/config/budget change
-or extra evaluations. Save1000/diagnostics100/development5000 cadence unchanged.
-Latest human direction prioritizes real updates and no optional prelaunch chains;
-all independent CPU repair/validation/launch work is complete. Sole operator
-`/root/gpu_supervisor` owns exact commands, births/groups, locators and raw failures
-in operator-ledger.json; root owns monitor-registration.json. Monitor ACTIVE.
-A1 held out; no2080control/query/experiment and no unrelated fusion/architecture
-candidate. Originating chat is uninvolved; no reply is sent there.
+After reference5000eval/archive/release, start candidate actual early updates,
+graceful checkpoint/exact resume proof, then candidate5000scheduled evaluation.
+Alternate arms at natural boundaries until each independent7200s cap/final
+comparison finishes. Source/data/seed/config/budget and1000save/100diagnostic/
+5000development cadence unchanged. No unscheduled859evaluation or extra gate.
+A1 held out; no2080shared flags/queries/experiments and no unrelated fusion input.
+Operator-ledger.json carries exact active commands/births/artifacts; monitor ACTIVE.
 
 ## Standalone ownership claimed — October 3, 2026
 
