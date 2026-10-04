@@ -1,5 +1,24 @@
 # A8 QAT recovery and comparison
 
+## Both original training budgets settled — October 4, 15:13 UTC
+
+Reference reached its original7200.0second cap at43203/cursor43287, supervisor35006
+exit0 at15:11:59.722340UTC. Status awaiting_development/final_training_complete=true;
+budget-used7200/max7200/active_attempt null. Final request elapsed7200/final=true
+matches latest checkpoint SHA256
+`aebb8032c03f2d5263f608d67a65849b3239c85d6ccd372e09a7d9efa507579d`.
+No45000block/topup occurred. Operator archives final endpoint and proves complete
+release before its single authorized1200s final evaluation. Initial GPU snapshot
+is baseline2766MiB/0%; full final physical audit is still required.
+
+Candidate remains34731/cursor34797,bda021d3,7200/null with matching final native
+result completed, archive/release passed. Both cumulative budgets are now settled
+at7200, but reference final evaluation/result, CPU committed-set and sampled/exact
+telemetry joins, final five-repeat analysis/latency/report and all-group/context/
+transport release are INCOMPLETE. SAME heartbeat ACTIVE; do not mark native Goal
+complete until all required audit/publication/cleanup passes. No new experiment,
+source/recipe/data/precision or budget change. Sole pane285 operator unchanged.
+
 ## Reference final original-budget segment positive — October 4, 15:05 UTC
 
 Scheduled40k evaluation exit0/end14:56:13.146507UTC, supervisor wall683.688482s
