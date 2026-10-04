@@ -17,9 +17,13 @@ class CompletedPairTests(unittest.TestCase):
         protocol = {"context_tokens": 2048, "batch_tokens": 32, "microbatch_tokens": 32,
                     "max_output_tokens": 128, "temperature": 0.0, "seed": 42,
                     "enable_thinking": False, "cache_prompt": False}
-        write(reference / "protocol.json", protocol)
+        frozen_protocol = root / "frozen-protocol.json"
+        write(frozen_protocol, protocol)
+        # Actual benchmark json_write sorts copied artifacts; source does not.
+        (reference / "protocol.json").parent.mkdir(parents=True, exist_ok=True)
+        (reference / "protocol.json").write_text(json.dumps(protocol, indent=2, sort_keys=True) + "\n")
         cfg = {key: {"path": "/immutable/"+key, "sha256": key+"-pin"} for key in ("binary", "target", "eagle_q4_0", "dspark")}
-        cfg.update(protocol_sha256=sha256(reference / "protocol.json"), diagnostic_arms=list(ARMS), verify_positions=list(range(88, 96)))
+        cfg.update(protocol_sha256=sha256(frozen_protocol), diagnostic_arms=list(ARMS), verify_positions=list(range(88, 96)))
         write(reference / "config.json", cfg)
         write(diagnostic / "config.json", cfg)
         write(diagnostic / "readiness.json", {"cases": list(CASES), "output_cap": 128})
@@ -65,17 +69,36 @@ class CompletedPairTests(unittest.TestCase):
                     index += 1
             for filename, rows in (("verify.jsonl", traces), ("rounds.jsonl", rounds)):
                 (diagnostic / arm / filename).write_text("\n".join(json.dumps(r) for r in rows) + "\n")
-        return diagnostic, reference, gate
+        return diagnostic, reference, gate, frozen_protocol
 
     def test_complete_reproduction_and_scoped_pair_pass(self):
         with tempfile.TemporaryDirectory() as temp:
             paths = self.fixture(Path(temp))
-            report = audit(*paths)
+            report = audit(*paths[:3], protocol_path=paths[3])
             self.assertTrue(report["passed"], report.get("failure"))
             self.assertEqual(len(report["complete_reproduction"]), 16)
             self.assertEqual(report["competing_ids"], [16062, 28071])
             self.assertEqual(len(report["full_input_prefix"]["generated_token_ids"]), 90)
             self.assertNotIn("admission", report)
+            protocol_files = report["protocol_files"]
+            self.assertNotEqual(protocol_files["frozen_source"]["sha256"],
+                                protocol_files["saved_reference"]["sha256"])
+            self.assertEqual(report["protocol_sha256"], sha256(paths[3]))
+            self.assertEqual(report["evidence_sha256"][str(paths[3].resolve())], sha256(paths[3]))
+
+    def test_changed_saved_protocol_semantics_or_frozen_bytes_fails(self):
+        for mode in ("saved_semantics", "frozen_bytes", "frozen_semantics"):
+            with tempfile.TemporaryDirectory() as temp:
+                paths = self.fixture(Path(temp))
+                path = paths[1] / "protocol.json" if mode == "saved_semantics" else paths[3]
+                value = json.loads(path.read_text())
+                if mode != "frozen_bytes":
+                    value["max_output_tokens"] = 127
+                path.write_text(json.dumps(value, sort_keys=True) + "\n")
+                report = audit(*paths[:3], protocol_path=paths[3])
+                self.assertFalse(report["passed"])
+                self.assertEqual(report["failure"]["message"],
+                                 "saved protocol semantic values changed" if mode == "saved_semantics" else "protocol pin changed")
 
     def test_changed_complete_suffix_or_termination_fails(self):
         for mode in ("suffix", "termination"):
@@ -86,7 +109,7 @@ class CompletedPairTests(unittest.TestCase):
                 if mode == "suffix": value["generated_token_ids"][-1] += 1
                 else: value["finish_reason"] = "stop"
                 path.write_text(json.dumps(value))
-                report = audit(*paths)
+                report = audit(*paths[:3], protocol_path=paths[3])
                 self.assertFalse(report["passed"])
                 self.assertIn("reproduction failed", report["failure"]["message"])
 
@@ -100,7 +123,7 @@ class CompletedPairTests(unittest.TestCase):
                 if mode == "margin": row["raw_top5"][0]["logit"] = 21.0
                 else: row["verifier_prefix_draft_ids"] = [999]
                 path.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
-                self.assertFalse(audit(*paths)["passed"])
+                self.assertFalse(audit(*paths[:3], protocol_path=paths[3])["passed"])
 
     def test_runtime_pin_or_missing_neighbor_capture_fails(self):
         for mode in ("pin", "neighbor"):
@@ -116,7 +139,7 @@ class CompletedPairTests(unittest.TestCase):
                     rows = [json.loads(line) for line in path.read_text().splitlines()]
                     rows = [r for r in rows if not (r["task_id"] == 8 and r["generated_position"] == 95)]
                     path.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
-                self.assertFalse(audit(*paths)["passed"])
+                self.assertFalse(audit(*paths[:3], protocol_path=paths[3])["passed"])
 
 
 if __name__ == "__main__":
