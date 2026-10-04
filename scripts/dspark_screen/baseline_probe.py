@@ -18,7 +18,12 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def run(config_path: Path, output: Path):
     cfg = json.loads(config_path.read_text())
-    for name in ("binary", "target", "eagle_q4_0"):
+    arms = cfg.get("diagnostic_arms", ["target_only", "eagle_q4_0"])
+    allowed = {"target_only", "eagle_q4_0", "dspark_3", "dspark_7", "dflash_3", "dflash_7"}
+    if not isinstance(arms, list) or len(arms) != 2 or len(set(arms)) != 2 or not set(arms) <= allowed:
+        raise ValueError("bounded diagnostic requires two distinct supported arms")
+    assets = {"binary", "target"} | {a.rsplit("_", 1)[0] if a.startswith(("dspark_", "dflash_")) else a for a in arms if a != "target_only"}
+    for name in assets:
         if common.sha256(Path(cfg[name]["path"])) != cfg[name]["sha256"]:
             raise ValueError(f"changed baseline artifact: {name}")
     protocol_path = ROOT / "configs/dspark-screen/protocol.json"
@@ -44,7 +49,7 @@ def run(config_path: Path, output: Path):
     cases = [("warmup-00", prompts[0]), ("warmup-01", prompts[1]),
              ("prompt-00", prompts[0]), ("prompt-01", prompts[1]), ("eos", EOS_FIXTURE)]
     results = {}
-    for arm in ("target_only", "eagle_q4_0"):
+    for arm in arms:
         cell = output / arm
         cell.mkdir()
         port = cfg.get("port", 18290)
@@ -52,6 +57,8 @@ def run(config_path: Path, output: Path):
             raise RuntimeError("baseline port occupied")
         env = {k: v for k, v in os.environ.items() if not k.startswith(("GGML_", "W1AX_", "DSPARK_", "EAGLE_"))}
         env.update(CUDA_VISIBLE_DEVICES="0", W1AX_ROUND_TRACE_JSONL=str(cell / "rounds.jsonl"))
+        if arm.startswith(("dspark_", "dflash_")):
+            env["DSPARK_REQUIRE_AUTHOR_LAYOUT"] = "1"
         if cfg.get("verify_positions"):
             positions = cfg["verify_positions"]
             if not isinstance(positions, list) or any(not isinstance(p, int) or p < 0 for p in positions):
@@ -90,10 +97,10 @@ def run(config_path: Path, output: Path):
                 if proc is not None:
                     screen.stop_owned_server(proc)
                     common.json_write(cell / "stopped.json", {"pid": proc.pid, "pgid": proc.pid, "returncode": proc.returncode})
-        if arm == "eagle_q4_0" and not any(r.get("n_proposed", 0) > 0 for r in screen.rows(cell / "rounds.jsonl")):
-            raise ValueError("Q4 EAGLE made no actual proposals")
-    paired = {name: results["target_only"][name]["generated_token_ids"] == results["eagle_q4_0"][name]["generated_token_ids"] for name, _ in cases}
-    common.json_write(output / "readiness.json", {"scope": "baseline model/token readiness; not five-repeat throughput",
+        if arm != "target_only" and not any(r.get("n_proposed", 0) > 0 for r in screen.rows(cell / "rounds.jsonl")):
+            raise ValueError("diagnostic drafter made no actual proposals")
+    paired = {name: results[arms[0]][name]["generated_token_ids"] == results[arms[1]][name]["generated_token_ids"] for name, _ in cases}
+    common.json_write(output / "readiness.json", {"scope": "two-arm native diagnostic; not five-repeat throughput", "arms": arms,
                        "candidate_admission": None, "results": results, "paired_output_ids": paired})
 
 
