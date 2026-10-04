@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import subprocess
 import tempfile
 from pathlib import Path
@@ -90,7 +91,7 @@ def check(
             or node.get("packed_type") != "i32"
         ):
             raise ValueError("native binary precision/weight type mismatch")
-        if require_cuda and "CUDA" not in node.get("output_buffer", "").upper():
+        if require_cuda and re.fullmatch(r"CUDA[0-9]+", node.get("output_buffer", "")) is None:
             raise ValueError("selected binary operation did not execute in CUDA buffer")
     return {
         **observed,
