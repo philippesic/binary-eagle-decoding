@@ -220,6 +220,10 @@ e3948dbd, with budget 4,324.038 seconds. Its scheduled native evaluation passed
 and is archived. Candidate resumed from 20,000 and has positive optimizer updates
 toward 25,000. Both final 7,200-second endpoints remain pending.
 
+Candidate subsequently reached step 25,000/cursor25,044 and exited cleanly,
+with budget settled at 5,181.483 seconds. Its scheduled native evaluation is
+running. Both final 7,200-second endpoints remain pending.
+
 ## Endpoint reporting method
 
 Final coverage will use the authenticated checkpoint's committed `unique_prompts`
