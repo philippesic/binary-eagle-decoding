@@ -4,22 +4,22 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Reference 35,000 evaluated; candidate final segment next — October 4, 13:44 UTC
+## Candidate final segment training; reference 35,000 evaluated — October 4, 13:50 UTC
 
-Reference35k evaluation passed exit0 at13:33:16UTC and is hardlink archived;
-652.613evaluation seconds within1200cap. Full owned-process/native-context return
-verified13:35:11UTC. Request96.585 vsQ4_0134.705tokens/s (71.70%), decode100.824
-vs142.836. Primary24prompt native acceptance/CE metadata correction is pending;
-five-repeat timing counters remain separate. Reference budget5878.722016/7200,
-null active attempt,1321.277984remaining. Candidate30k has only980.107133training
-seconds left; fresh guards passed and its final-segment launch is next.
+Candidate exact resume started13:45:50UTC, supervisor31596/birth5610816,
+trainer31597/birth5610825, Linux session `a8-candidate-final-budget-resume-20261004-01`.
+Positive updates verified30444/cursor30498 at6329.132481/7200seconds. Original
+remaining reserve980.107133seconds; no topup. Reference35k evaluated and released:
+0.651339native accepted drafts/round vsQ4_01.306255, CE3.596321; request96.585
+vs134.705tokens/s (71.70%).24/24native responses match; five-repeat timing counters
+remain separate. Reference budget5878.722016/7200,null attempt,1321.277984left.
 
-Successor `01a10704-f186-7991-97c7-6f4b3df51ae9` owns the existing goal and SAME
-ACTIVE heartbeat; prior coordinator/operator retired, sole `/root/gpu_operator`
-owns pane285. Existing-record repetition audit is published as e155ae2; final
-inputs pending. BOTH7200endpoints/finalreports incomplete, no new experiment,
-budget or pending human decision, no2080controls. See
-[current checkpoint](goals/a8-qat-recovery-and-comparison.md#reference-35000-evaluation-passed-candidate-final-segment-next--october-4-1344-utc).
+Successor `01a10704-f186-7991-97c7-6f4b3df51ae9` owns existing goal/SAME ACTIVE
+heartbeat; sole `/root/gpu_operator` owns pane285. Prior coordinator/operator
+retired. CPU-only repetition audit published, final inputs pending. BOTH final
+endpoints/results/coverage/telemetry/release incomplete; no new experiment or
+research decision, no2080controls. See
+[current checkpoint](goals/a8-qat-recovery-and-comparison.md#candidate-final-budget-positive-resume-reference-native-metrics-corrected--october-4-1350-utc).
 
 ## Active: A8 QAT recovery and comparison — October 3, 2026
 
@@ -32,8 +32,8 @@ The sole GPU operator continues the scheduled comparison; root maintains the
 report and durable state. See the [ownership checkpoint](goals/a8-qat-recovery-and-comparison.md#standalone-ownership-claimed--october-3-2026).
 Integrated fixes are published (frozen execution source583480c; main8583b68).
 BOTH actual A8 arms have optimizer updates and exact positive-step resume proof.
-Reference is evaluated at30000 and resumed toward35000; candidate learned A8/all-nine
-midpoints/latent0.1 AdamW is evaluated at30000/6219.893seconds. All33candidate
+Reference is evaluated at35000/5878.722seconds; candidate learned A8/all-nine
+midpoints/latent0.1 AdamW has resumed30000toward its original7200endpoint. All33candidate
 tensors show finite/nonzero gradients and actualmovement; cache/head execution
 and learned-head serial exception are observed. Arms alternate at scheduled
 5000boundaries toward independent7200second caps. Reference interim acceptance is 0.624 accepted drafts/round versus Q4_0 at

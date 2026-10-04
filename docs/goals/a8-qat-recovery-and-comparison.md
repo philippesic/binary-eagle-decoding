@@ -1,5 +1,31 @@
 # A8 QAT recovery and comparison
 
+## Candidate final-budget positive resume; reference native metrics corrected — October 4, 13:50 UTC
+
+Candidate final segment started13:45:50.882778UTC in detached Linux session
+`a8-candidate-final-budget-resume-20261004-01`, run
+`a8-candidate-final-budget-resume-supervisor-20261004-01`, supervisor31596/
+birth5610816 and trainer31597/birth5610825, same boot517c4a36. Source3bd clean,
+config5bba... and starting checkpoint f68255ac/30000/cursor30054 authenticated.
+Original6219.892866990007settled budget allows ONLY980.107133009993seconds.
+Initial preparing/optimizerfalse is historical. New observation shows running,
+optimization_started=true,30444/cursor30498,6329.132481352006cumulative trainer
+seconds (870.867519remaining). No extra5000block, new admission or budget topup.
+
+Bounded archived-report metadata read corrected reference35k primary native
+metrics: CE3.5963206857312713 on229labels/48rounds/24prompts;1119accepted/
+8398proposed/1718native rounds =0.651338766native accepted drafts/round,
+13.324601% acceptance rate,2834emitted;24/24native responses matchQ4_0. Q4_0
+1608/6047/1231 =1.306255077drafts/round,26.591698%,2834emitted. Separate
+five-repeat timing counters5595/41990/8535 and8040/30235/6140 are not primary
+native acceptance. Throughput remains96.584945 vs134.704648 (71.70% ofQ4_0).
+Raw report/result/timing hashes from preceding checkpoint remain valid and
+unchanged. This correction required no GPU/native requests or recapture.
+
+Next: original candidate7200endpoint/archive/release/final evaluation; then
+reference original1321.277984seconds through scheduled/final work. Endpoint
+coverage/telemetry, final repeat aggregation/report and full release remain pending.
+
 ## Reference 35,000 evaluation passed; candidate final segment next — October 4, 13:44 UTC
 
 Reference35k evaluation ended13:33:16.575678UTC exit0. Supervisor wall659.179423s;
