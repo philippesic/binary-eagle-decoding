@@ -217,3 +217,47 @@ fresh resource/ownership checks. CPU/source implementation progresses meanwhile.
 Next: settle cross-owner interfaces, land focused tested implementation chunks,
 review native arithmetic and block conditioning, build independent PASS/PENDING/
 EXCLUDED ledger. Portable readiness and fresh SM120 admission remain separate.
+
+## Contract milestone — October 4, 2026
+
+Ownership and decisions published parent commits30791d0,1ce1a9d; CUDA
+local-only plan df9b6f7; slot lesson c1f2fdd; Opus native contract review c276740.
+Parent main is pushed. Native/source implementation remains in author worktrees,
+not yet integrated/admitted. Operator worktree is
+`/private/tmp/nine-model-qat-20261004/cuda-operator`, branch
+`prep/nine-model-cuda-operator`; no remote tmux/session/job exists.
+
+Astra source review resolved both released families to author slot0, compute7,
+explicit `draft-dspark` driver. Schema/tests must bind driver/slot instead of
+infer from family. DSpark native sequential argmax conditions Markov predecessors;
+full-distribution teacher supervision past a student prefix mismatch needs
+current-prefix frozen native teacher rows. Static captures are replay/censored
+profiles, never silently called own-prefix supervision. Native capture owner
+is implementing a real target-only producer decoupled from EAGLE-specific state.
+
+Exact Opus5.5 bounded review completed on native fcdf5822, saved in
+`experiments/nine-model-qat-preparation/opus-native-contract-review.md`. It covers
+selected packed-only loader/graph paths, metadata arithmetic, shared activation
+boundaries, zero sign, block/cache invariants and raw-fusion outliers. The
+reviewer's strictly-positive-scale recommendation is qualified: finite zero
+scales are legal and additive scale gradients/rescue are preserved.
+
+QA initial baseline: full unittest discovery1096 tests,59 errors,2 skips in
+incomplete worker environment; many errors are missing gguf/yaml/package
+metadata. Full Ruff check1183 baseline findings,format73 files. QA is normalizing
+dependencies and submodule initialization before final failure classification.
+No baseline error has been waived or classified as new regression yet. All
+changed/profile-applicable files must pass their suites/build/lint; baseline
+repository debt must stay explicit if it remains.
+
+Storage risk exposed to data/native/training: full151936-vocabulary float32
+teachers cost607744bytes per supervised row (~2.37TB for3.9million rows),
+before five taps/metadata. Bounded streaming/chunk caps and any admitted reduced
+storage precision are explicit profile decisions; no hidden whole-corpus
+dense-teacher materialization. Actual producer rates/storage and SM75 model
+backward memory remain unmeasured pending hardware availability.
+
+No human2080Ti availability reply yet; no host operation or real-model update.
+Next: land tested author APIs, independent contract/failure reviews, actual
+producer integration and storage/resource cost plan; then serialized allowed
+SM75 checks once direct availability is supplied.
