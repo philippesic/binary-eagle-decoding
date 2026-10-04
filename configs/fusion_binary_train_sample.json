@@ -1,0 +1,12 @@
+{
+  "schema": "fusion_binary_saved_train_sample_v1",
+  "remote_root": "/home/philip/binary-eagle-decoding",
+  "binding_relative_path": "runs/qat-optimization-readiness/prepared-full-source-20261003-01/provider-binding.json",
+  "prepared_ready_sha256": "bdfa56f8b10e44e82a6d807a71f32d68c39143af7094e6f8f0da63504d41a498",
+  "shard_ordinal": 0,
+  "fit_prompts": 8,
+  "validation_prompts": 4,
+  "rows_per_prompt": 32,
+  "max_selected_bytes": 11796480,
+  "max_remote_read_bytes": 536870912
+}
