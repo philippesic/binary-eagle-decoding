@@ -1623,15 +1623,16 @@ GPU release and optimizer training remain pending.
 
 ## Independent RTX2080Ti study checkpoint — October 4, 02:15 UTC
 
-The human separately resumed DSpark/DFlash on RTX2080Ti. The study owns only
-that device; the paused A8 goal, RTX5080 and fusion work remain untouched.
-All five released-reference native cells completed actual model/cache/mask/
-immutable-target proof. CPU revalidation now passes computed native admission
-with both source-bound numerical checks; public nativefcdf582 is integrated.
-Full reference timing is complete: 864 measured requests, six repeats,
-1246.09/7200s charged. DFlash7/DSpark7 improve request throughput45.8%/42.6%
-versus Q4_0 EAGLE and match all144 primary outputs each. Q4 native models
-completed25 requests; a token-only proposal-history join is under correction
-before Q4 timing. See the [measured reference report](../experiments/dspark-sm75-20261003/reference-results.md). FFN-only Q4 exports passed; W1A8/W1A1 need a human implementation scope
-choice. See the [independent study checkpoint](../experiments/dspark-sm75-20261003/checkpoint.md).
-This adds no active project goal and makes no A8 progress or resource claim.
+Supported DSpark/DFlash measurements are complete: released-reference and
+FFN-only Q4 phases,1728 measured requests plus144 warmups, six balanced repeats,
+2552.28/7200s request inference. Released DFlash7/DSpark7 beat primary Q4 EAGLE
+by45.8%/42.6%; FFN-Q4 variants beat their paired anchor by55.9%/55.6%. All four
+D7 conditions match primary raw IDs on all144 requests each. Cross-phase anchor
+variation limits causal precision-speed claims. Bounded profile/near-tie checks
+finished; GPU/groups/transport are closed and this study's merged local worktrees
+are removed. See the [full report](../experiments/dspark-sm75-20261003/results.md)
+and [final checkpoint](../experiments/dspark-sm75-20261003/checkpoint.md).
+
+Genuine W1A8/W1A1 remains unimplemented/unmeasured pending the human's15-FFN
+scope choice. No training, new goal, monitor or baseline change was selected.
+The A8 goal and RTX5080 pause/ownership remain untouched.

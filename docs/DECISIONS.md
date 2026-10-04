@@ -941,3 +941,11 @@ The user owns the choice between this bounded FFN extension and completing only
 released-reference/Q4 for now. The question is pending in the study chat; no
 response or implementation authorization is inferred from elapsed time.
 Details: [precision admission](../experiments/dspark-sm75-20261003/precision-admission.md).
+
+
+The independent supported screen is now complete ([results](../experiments/dspark-sm75-20261003/results.md)).
+Released DFlash7/DSpark7 outperform primary Q4 EAGLE in every repeat and match
+all144 primary outputs each. FFN-Q4 saves about512MiB and also beats its paired
+anchor; cross-phase rate variation limits causal precision-speed conclusions.
+The above W1 integration choice remains pending; no binary-weight benchmark,
+training, new goal or extra budget was silently selected.

@@ -218,11 +218,31 @@ additional proof protocols or redoing completed audit work.
   a bounded numerical-history comparison before diagnosing a layout bug.
 - Status: Confirmed insufficient comparison key, not a user mistake. The cause
   and size of later draft decision changes are not established as harmless
-  rounding. Corrected admission still needs matched first-block histories and
-  first-three agreement; equal-history disagreement requires a focused same-cache
-  diagnostic. All original guards and raw failures remain preserved.
+  rounding. Corrected admission passed with all five first-block histories and
+  first-three proposals matching per architecture. Later unequal-history joins
+  had2 DSpark/6 DFlash changes; equal-history disagreement remains a hard failure
+  requiring a focused same-cache diagnostic. All original guards and raw failures remain preserved.
 - Practical lesson: Compare recorded numerical input/cache ancestry when testing
   deterministic draft invariance. Check the actual seven-row graph and read slots
   independently. Count unequal-history decision changes explicitly; do not turn
   symbolic-prefix agreement into a bit-parity requirement or waive a genuine
   equal-input discrepancy. Use native acceptance/throughput to judge the variant.
+
+## October 4: compare frozen protocol bytes separately from a serialized copy
+
+- Context: Final source-bound CPU audit of a completed native diagnostic.
+- Evidence: The frozen protocol's hash matched both run configurations. The
+  benchmark writer saved equivalent JSON with sorted keys, producing a different
+  byte hash. The audit incorrectly required the copied artifact hash to equal
+  the frozen source hash and failed before checking raw logits.
+- Agent contribution: The helper fixtures wrote identical serialization for
+  source/copy, so they missed the actual shared writer's sort_keys behavior.
+  Luna preserved the failure; root/source owner added an explicit frozen-source
+  input, raw source hash check and complete semantic equality with the saved
+  artifact. A fixture now uses the actual differing serializations.
+- Resolution: Final CPU audit passes against original untouched artifacts;
+  source/copy hashes both remain recorded. No GPU rerun or numeric threshold
+  change. This was an agent provenance-check mistake, not a user error.
+- Practical lesson: Bind immutable source bytes and bind copied artifact bytes
+  independently. When a workflow intentionally serializes data, compare the
+  full parsed values too and exercise the real writer in a contract fixture.
