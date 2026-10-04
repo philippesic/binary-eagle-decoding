@@ -1,0 +1,2366 @@
+{
+  "schema": "a8_matched_final_comparison_evidence_v1",
+  "source_compact_summary_sha256": "39a46df45d52cd2b23227f2997f74182855478e4608bf7d2a5e58bbb943ca442",
+  "common": {
+    "evaluation_binary_sha256": "1ca0c1d9ea62d15ec52e8f32bb50b8a7d31427ab009f4a00ce388f4cf9cef072",
+    "evaluation_native_commit": "9e2c7a90051e738751aab7d7bd7c2d8201fb76e3",
+    "evaluation_runtime_manifest_sha256": "c472e36da5d441cae76a813f076cac13f5eff45f7d0e5ec03d75d9deaadc8ba0",
+    "evaluation_source_note": "Development/evaluation binary is current9e2; b5093749 teacher/capture ancestry remains separately identified.",
+    "hardware": "NVIDIA GeForce RTX 5080 (SM120, CUDA 0)",
+    "native_prompts": 24,
+    "native_response_id_match_field_semantics": "24/24 native response sequences match Q4_0 at all18 checkpoints; separate final timing manifests match120/120 A8 and target-only sequences.",
+    "precision": {
+      "binary_drafts": "row W1A8",
+      "draft_kv": "F16",
+      "target_kv": "F16",
+      "target_weights": "F16"
+    },
+    "prompt_sha256": "131a3db7958ff6aa818b23019297654507d5b80bed3c298349417b7e3b2ba081",
+    "request_timing_repetitions": 5,
+    "requests_per_variant": 120,
+    "sealed_test_accessed": false,
+    "source_commit": "3bd4837850915cb7d308290e573e8d8a08eee1a2",
+    "teacher_capture_binary_sha256": "b5093749d67888bc2cafdb6a65c479f4c182f0a904820f1dae4870b6ae66d41c",
+    "warmup_requests_per_server": 1
+  },
+  "reports": [
+    {
+      "A8": {
+        "acceptance_rate": 0.025012141816415735,
+        "accepted_drafts": 309,
+        "accepted_per_round": 0.12237623762376237,
+        "emitted_tokens": 2834,
+        "native_response_id_matches_q4_count": 24,
+        "proposed_drafts": 12354,
+        "rounds": 2525,
+        "validation_labels": 229,
+        "validation_loss": 7.545903830549082,
+        "validation_prompt_count": 24,
+        "validation_rounds": 48
+      },
+      "Q4_0": {
+        "acceptance_rate": 0.2659169836282454,
+        "accepted_drafts": 1608,
+        "accepted_per_round": 1.30625507717303,
+        "emitted_tokens": 2834,
+        "proposed_drafts": 6047,
+        "rounds": 1231
+      },
+      "checkpoint_sha256": "647988c7530ec6d56d1325ca25277d9366c8eccce1a0552c4400ba6c5dbad4aa",
+      "checkpoint_step": 0,
+      "name": "reference_stepzero",
+      "report_sha256": "f889faf140811d0547c53d693d0dc2bd793693b95cc7455a00510cd9e6592dd7",
+      "request_timing_manifest_sha256": "2329209f6e93d1b9ec86364cbadbb3506bbc36b4a2ce338a4a36d6820fcfa37d",
+      "result_sha256": "2b330e7e088722b34607d9f101ba2d0eb83df9eded7af07fe1e578044ad2ce76",
+      "timing": {
+        "A8": {
+          "decode_dist_s": {
+            "max": 1.984116,
+            "median": 1.841577,
+            "min": 0.324854,
+            "p95": 1.956964
+          },
+          "decode_server_s": 207.110004,
+          "decode_tps": 68.99714993970065,
+          "request_tps": 66.9911125210254,
+          "request_wall_dist_s": {
+            "max": 2.035761847,
+            "median": 1.891529412,
+            "min": 0.39544034,
+            "p95": 2.01597699
+          },
+          "request_wall_s": 213.311877684
+        },
+        "Q4_0": {
+          "decode_dist_s": {
+            "max": 1.136847,
+            "median": 0.855311,
+            "min": 0.11191,
+            "p95": 1.051348
+          },
+          "decode_server_s": 99.527747,
+          "decode_tps": 143.57805165628838,
+          "request_tps": 135.37595743778368,
+          "request_wall_dist_s": {
+            "max": 1.204364165,
+            "median": 0.90576462,
+            "min": 0.179458156,
+            "p95": 1.099625453
+          },
+          "request_wall_s": 105.557886869
+        },
+        "decode_speedup_vs_q4_0": 0.480554995,
+        "matched_token_ids": 120,
+        "request_speedup_vs_q4_0": 0.49485236,
+        "target_only": {
+          "decode_dist_s": {
+            "max": 1.392345,
+            "median": 1.3839325,
+            "min": 0.228192,
+            "p95": 1.390585
+          },
+          "decode_server_s": 154.506438,
+          "decode_tps": 92.48805541682347,
+          "request_tps": 89.25955225521673,
+          "request_wall_dist_s": {
+            "max": 1.457865225,
+            "median": 1.427758887,
+            "min": 0.274983804,
+            "p95": 1.449399844
+          },
+          "request_wall_s": 160.094910168
+        },
+        "token_id_parity": "all 120 A8 and target_only sequences matched"
+      }
+    },
+    {
+      "A8": {
+        "acceptance_rate": 0.025012141816415735,
+        "accepted_drafts": 309,
+        "accepted_per_round": 0.12237623762376237,
+        "emitted_tokens": 2834,
+        "native_response_id_matches_q4_count": 24,
+        "proposed_drafts": 12354,
+        "rounds": 2525,
+        "validation_labels": 229,
+        "validation_loss": 7.546294451801017,
+        "validation_prompt_count": 24,
+        "validation_rounds": 48
+      },
+      "Q4_0": {
+        "acceptance_rate": 0.2659169836282454,
+        "accepted_drafts": 1608,
+        "accepted_per_round": 1.30625507717303,
+        "emitted_tokens": 2834,
+        "proposed_drafts": 6047,
+        "rounds": 1231
+      },
+      "checkpoint_sha256": "3588a9eee94ddb3d2302fc7b1f32a929b2acb7fbfc43f104aa8b0558edc8563a",
+      "checkpoint_step": 0,
+      "name": "candidate_stepzero",
+      "report_sha256": "feedfceb994bcf8e534fc38f14b1a12b87edf9dedea7ae8bc558c049e6d4fa53",
+      "request_timing_manifest_sha256": "aeb1dc7d2a61937ff0375f1feac54519ff7eac462e97684facd0ba0d5f8da951",
+      "result_sha256": "ec0eab307efc6f4168808c92d54bfa76380abddbd8450ef3a455b5db628f8e0e",
+      "timing": {
+        "A8": {
+          "decode_dist_s": {
+            "max": 2.086627,
+            "median": 1.9470725,
+            "min": 0.345368,
+            "p95": 2.069594
+          },
+          "decode_server_s": 218.992139,
+          "decode_tps": 65.25348382482349,
+          "request_tps": 63.523957236588856,
+          "request_wall_dist_s": {
+            "max": 2.13677618,
+            "median": 1.991121778,
+            "min": 0.413352296,
+            "p95": 2.12600203
+          },
+          "request_wall_s": 224.954499399
+        },
+        "Q4_0": {
+          "decode_dist_s": {
+            "max": 1.187014,
+            "median": 0.861635,
+            "min": 0.111823,
+            "p95": 1.053359
+          },
+          "decode_server_s": 99.908665,
+          "decode_tps": 143.03063703233354,
+          "request_tps": 135.060665857104,
+          "request_wall_dist_s": {
+            "max": 1.240794294,
+            "median": 0.912218987,
+            "min": 0.169978728,
+            "p95": 1.102615837
+          },
+          "request_wall_s": 105.80430586
+        },
+        "decode_speedup_vs_q4_0": 0.45622032578986743,
+        "matched_token_ids": 120,
+        "request_speedup_vs_q4_0": 0.4703364731208867,
+        "target_only": {
+          "decode_dist_s": {
+            "max": 1.395152,
+            "median": 1.384928,
+            "min": 0.228606,
+            "p95": 1.390431
+          },
+          "decode_server_s": 154.594707,
+          "decode_tps": 92.43524747584017,
+          "request_tps": 89.39358507821673,
+          "request_wall_dist_s": {
+            "max": 1.454009421,
+            "median": 1.4248543135,
+            "min": 0.292717031,
+            "p95": 1.449785109
+          },
+          "request_wall_s": 159.854870878
+        },
+        "token_id_parity": "all 120 A8 and target_only sequences matched"
+      }
+    },
+    {
+      "A8": {
+        "acceptance_rate": 0.07710628163143793,
+        "accepted_drafts": 777,
+        "accepted_per_round": 0.3771844660194175,
+        "emitted_tokens": 2834,
+        "native_response_id_matches_q4_count": 24,
+        "proposed_drafts": 10077,
+        "rounds": 2060,
+        "validation_labels": 229,
+        "validation_loss": 5.117627513981282,
+        "validation_prompt_count": 24,
+        "validation_rounds": 48
+      },
+      "Q4_0": {
+        "acceptance_rate": 0.2659169836282454,
+        "accepted_drafts": 1608,
+        "accepted_per_round": 1.30625507717303,
+        "emitted_tokens": 2834,
+        "proposed_drafts": 6047,
+        "rounds": 1231
+      },
+      "checkpoint_sha256": "884dd8c5f1c07ef539479f17c4f5cb9aca232203a42bd53e9f3b008d5bf210aa",
+      "checkpoint_step": 5000,
+      "name": "reference_step5000",
+      "report_sha256": "cbd1bfe81340de89cf8e839c9ca844bfe952a4690787e587c771ba518a0759bf",
+      "request_timing_manifest_sha256": "b5d052c9b04a47a342eacfd0d2b9e61dfadf33e53e2ef35a63bfa7b5dd3cc1fe",
+      "result_sha256": "fd3135035478707d82f60b647f6f6ed55cc50f77ee6c545aa895d7ee7ab12c0d",
+      "timing": {
+        "A8": {
+          "decode_dist_s": {
+            "max": 1.781069,
+            "median": 1.505785,
+            "min": 0.258364,
+            "p95": 1.749557
+          },
+          "decode_server_s": 169.503082,
+          "decode_tps": 84.3052517475759,
+          "request_tps": 81.4768653426152,
+          "request_wall_dist_s": {
+            "max": 1.8500882,
+            "median": 1.543443856,
+            "min": 0.328339228,
+            "p95": 1.811121812
+          },
+          "request_wall_s": 175.387208871005
+        },
+        "Q4_0": {
+          "decode_dist_s": {
+            "max": 1.124645,
+            "median": 0.856318,
+            "min": 0.112287,
+            "p95": 1.044555
+          },
+          "decode_server_s": 99.574078,
+          "decode_tps": 143.51124596905635,
+          "request_tps": 135.49085976576904,
+          "request_wall_dist_s": {
+            "max": 1.191271257,
+            "median": 0.90850685,
+            "min": 0.179553481,
+            "p95": 1.092368421
+          },
+          "request_wall_s": 105.468369045
+        },
+        "decode_speedup_vs_q4_0": 0.5874470058308437,
+        "matched_token_ids": 120,
+        "request_speedup_vs_q4_0": 0.6013458434278814,
+        "target_only": {
+          "decode_dist_s": {
+            "max": 1.395482,
+            "median": 1.3844265,
+            "min": 0.228487,
+            "p95": 1.389886
+          },
+          "decode_server_s": 154.550204,
+          "decode_tps": 92.46186436609298,
+          "request_tps": 89.43903011588948,
+          "request_wall_dist_s": {
+            "max": 1.457361137,
+            "median": 1.423662936,
+            "min": 0.285856741,
+            "p95": 1.451224573
+          },
+          "request_wall_s": 159.773646712
+        },
+        "token_id_parity": "all 120 A8 and target_only sequences matched"
+      }
+    },
+    {
+      "A8": {
+        "native_acceptance_rate": 0.04458710755430481,
+        "native_accepted_drafts": 507,
+        "native_accepted_per_round": 0.21787709497206703,
+        "native_emitted_tokens": 2834,
+        "native_proposed_drafts": 11371,
+        "native_rounds": 2327,
+        "response_id_matches_q4": 24,
+        "validation_labels": 229,
+        "validation_loss": 5.568933590530829,
+        "validation_prompt_count": 24,
+        "validation_rounds": 48
+      },
+      "Q4_0": {
+        "native_acceptance_rate": 0.2659169836282454,
+        "native_accepted_drafts": 1608,
+        "native_accepted_per_round": 1.3062550771730301,
+        "native_emitted_tokens": 2834,
+        "native_proposed_drafts": 6047,
+        "native_rounds": 1231
+      },
+      "archive": {
+        "attempt_prefix": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/candidate-step5000-eval-attempt-0000",
+        "hardlink_verified": true,
+        "locator_map": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/candidate-step5000-locator-map.json"
+      },
+      "checkpoint_sha256": "893e205d4e64fa04457c3281980570bb5ad13b3fb803cc1fe5f30d2d8b51ad10",
+      "checkpoint_step": 5000,
+      "development_manifest_sha256": "fc18f400a776161fd0ff40b30d58d69233be723e9e26b858a60160a2b802d091",
+      "evaluation_elapsed_seconds": 761.22327,
+      "evaluation_exit_code": 0,
+      "evaluation_timing_complete": true,
+      "name": "candidate_step5000",
+      "native_prompts": 24,
+      "native_response_id_matches_q4": 24,
+      "report_path": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/candidate-step5000-eval-attempt-0000/development.json",
+      "report_sha256": "b5845c6340d8a70fb5f3661d48ee469ad54a7ba69d1039b563dab81882ce54f9",
+      "request_timing_manifest_sha256": "c8876de6f06b703a8d0d1d7c3ffe20f0b95f71d60a9c0fc8cb425bdfc62da779",
+      "result_sha256": "be7072ca05466a7bf850fce4a99580e20d96b09651448679064b7cdbbdfc1e2b",
+      "sealed_test_accessed": false,
+      "timing": {
+        "prompts_sha256": "131a3db7958ff6aa818b23019297654507d5b80bed3c298349417b7e3b2ba081",
+        "repetitions": 5,
+        "requests_per_variant": 120,
+        "speedup_vs_q4_0": {
+          "decode_tokens_per_s": 0.4916569547016218,
+          "request_tokens_per_s": 0.5056466304061618
+        },
+        "token_id_parity": {
+          "A8": {
+            "matched_sequences": 120,
+            "mismatched_sequences": 0,
+            "unavailable": 0
+          },
+          "target_only": {
+            "matched_sequences": 120,
+            "mismatched_sequences": 0,
+            "unavailable": 0
+          }
+        },
+        "variants": {
+          "A8": {
+            "completion_tokens": 14290,
+            "decode_distribution_s": {
+              "max": 2.036783,
+              "median": 1.81832,
+              "min": 0.32839999999999997,
+              "p95": 2.013471
+            },
+            "decode_server_s": 202.89234200000007,
+            "decode_tokens_per_s": 70.43144092643968,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tokens_per_s": 68.34154648621238,
+            "request_wall_distribution_s": {
+              "max": 2.100926249000622,
+              "median": 1.868072122500962,
+              "min": 0.3991639949999808,
+              "p95": 2.0704323170029966
+            },
+            "request_wall_s": 209.09681935399203,
+            "requests": 120,
+            "speculative": {
+              "accepted": 2535,
+              "proposed": 56855,
+              "rounds": 11550
+            }
+          },
+          "Q4_0": {
+            "completion_tokens": 14290,
+            "decode_distribution_s": {
+              "max": 1.133899,
+              "median": 0.8568439999999999,
+              "min": 0.11276800000000001,
+              "p95": 1.055165
+            },
+            "decode_server_s": 99.75343099999998,
+            "decode_tokens_per_s": 143.2532180271574,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tokens_per_s": 135.15673273906103,
+            "request_wall_distribution_s": {
+              "max": 1.2049843780005176,
+              "median": 0.9126163165001344,
+              "min": 0.18068445199969574,
+              "p95": 1.102192557998933
+            },
+            "request_wall_s": 105.72910213499199,
+            "requests": 120,
+            "speculative": {
+              "accepted": 8040,
+              "proposed": 30235,
+              "rounds": 6140
+            }
+          },
+          "target_only": {
+            "completion_tokens": 14290,
+            "decode_distribution_s": {
+              "max": 1.406366,
+              "median": 1.3936345,
+              "min": 0.229586,
+              "p95": 1.3998030000000001
+            },
+            "decode_server_s": 155.60710900000007,
+            "decode_tokens_per_s": 91.83385059868952,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tokens_per_s": 88.64151990822448,
+            "request_wall_distribution_s": {
+              "max": 1.4708246080008394,
+              "median": 1.4378461630003585,
+              "min": 0.2833634050002729,
+              "p95": 1.4582869969999592
+            },
+            "request_wall_s": 161.21113463301663,
+            "requests": 120,
+            "speculative": {
+              "accepted": 0,
+              "proposed": 0,
+              "rounds": 0
+            }
+          }
+        },
+        "warmup_requests_per_server": 1
+      }
+    },
+    {
+      "A8": {
+        "native_acceptance_rate": 0.10240311755791297,
+        "native_accepted_drafts": 946,
+        "native_accepted_per_round": 0.5005291005291005,
+        "native_emitted_tokens": 2834,
+        "native_proposed_drafts": 9238,
+        "native_rounds": 1890,
+        "response_id_matches_q4": 24,
+        "validation_labels": 229,
+        "validation_loss": 4.262763084282521,
+        "validation_prompt_count": 24,
+        "validation_rounds": 48
+      },
+      "Q4_0": {
+        "native_acceptance_rate": 0.2659169836282454,
+        "native_accepted_drafts": 1608,
+        "native_accepted_per_round": 1.3062550771730301,
+        "native_emitted_tokens": 2834,
+        "native_proposed_drafts": 6047,
+        "native_rounds": 1231
+      },
+      "archive": {
+        "attempt_prefix": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/reference-step10000-eval-attempt-0000",
+        "hardlink_verified": true,
+        "locator_map": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/reference-step10000-locator-map.json"
+      },
+      "checkpoint_sha256": "281546e75c0d1d010a32b5477890788ad77077e1ec6819ceae745a2ac5f24f78",
+      "checkpoint_step": 10000,
+      "development_manifest_sha256": "fc18f400a776161fd0ff40b30d58d69233be723e9e26b858a60160a2b802d091",
+      "evaluation_elapsed_seconds": 692.18257,
+      "evaluation_exit_code": 0,
+      "evaluation_timing_complete": true,
+      "name": "reference_step10000",
+      "native_prompts": 24,
+      "native_response_id_matches_q4": 24,
+      "report_path": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/reference-step10000-eval-attempt-0000/development.json",
+      "report_sha256": "3481aeda0ac35e28a6579c3fee9b25ef8e554e459504c5a3212abaa039de2d7c",
+      "request_timing_manifest_sha256": "b21cf1b3ce16c83e934eacd14fc964bc8876610018744e8dd82f3b052bf6a278",
+      "result_sha256": "0d2d7fcfe05f658b5573c13b4ac03bd92f910458cdbf88aaa24acd84dfc57599",
+      "sealed_test_accessed": false,
+      "timing": {
+        "per_repetition_detail": "not included; summary retains the report exact five-repetition aggregates and pooled distributions",
+        "prompts_sha256": "131a3db7958ff6aa818b23019297654507d5b80bed3c298349417b7e3b2ba081",
+        "repetitions": 5,
+        "requests_per_variant": 120,
+        "speedup_vs_q4_0": {
+          "decode_tokens_per_s": 0.639586870561699,
+          "request_tokens_per_s": 0.6518887195639099
+        },
+        "token_id_parity": {
+          "A8": {
+            "matched_sequences": 120,
+            "mismatched_sequences": 0,
+            "unavailable": 0
+          },
+          "note": "Five repetitions over24 prompts produce120 measured requests per variant.",
+          "target_only": {
+            "matched_sequences": 120,
+            "mismatched_sequences": 0,
+            "unavailable": 0
+          }
+        },
+        "variants": {
+          "A8": {
+            "completion_tokens": 14290,
+            "decode_distribution_s": {
+              "max": 1.706048,
+              "median": 1.3757515,
+              "min": 0.277558,
+              "p95": 1.6216220000000001
+            },
+            "decode_server_s": 156.270539,
+            "decode_tokens_per_s": 91.44397972544267,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tokens_per_s": 88.06883958994926,
+            "request_wall_distribution_s": {
+              "max": 1.7697681119971094,
+              "median": 1.427365211500728,
+              "min": 0.3485266209972906,
+              "p95": 1.675254503999895
+            },
+            "request_wall_s": 162.25943326305423,
+            "requests": 120,
+            "speculative": {
+              "accepted": 4730,
+              "proposed": 46190,
+              "rounds": 9400
+            }
+          },
+          "Q4_0": {
+            "completion_tokens": 14290,
+            "decode_distribution_s": {
+              "max": 1.126351,
+              "median": 0.856853,
+              "min": 0.114044,
+              "p95": 1.048732
+            },
+            "decode_server_s": 99.94858499999997,
+            "decode_tokens_per_s": 142.9735098300792,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tokens_per_s": 135.09796526140863,
+            "request_wall_distribution_s": {
+              "max": 1.1982348960009404,
+              "median": 0.9139961289984058,
+              "min": 0.16930156300077215,
+              "p95": 1.0960061530058738
+            },
+            "request_wall_s": 105.77509418701811,
+            "requests": 120,
+            "speculative": {
+              "accepted": 8040,
+              "proposed": 30235,
+              "rounds": 6140
+            }
+          },
+          "target_only": {
+            "completion_tokens": 14290,
+            "decode_distribution_s": {
+              "max": 1.409251,
+              "median": 1.3943565,
+              "min": 0.230234,
+              "p95": 1.3996790000000001
+            },
+            "decode_server_s": 155.62227899999996,
+            "decode_tokens_per_s": 91.82489867019622,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tokens_per_s": 88.7817315250623,
+            "request_wall_distribution_s": {
+              "max": 1.4635532940010307,
+              "median": 1.4329956235014834,
+              "min": 0.2776486709990422,
+              "p95": 1.4593185370031279
+            },
+            "request_wall_s": 160.95653637895157,
+            "requests": 120,
+            "speculative": {
+              "accepted": 0,
+              "proposed": 0,
+              "rounds": 0
+            }
+          }
+        },
+        "warmup_requests_per_server": 1
+      }
+    },
+    {
+      "A8": {
+        "native_acceptance_rate": 0.03693278744455817,
+        "native_accepted_drafts": 433,
+        "native_accepted_per_round": 0.180341524364848,
+        "native_emitted_tokens": 2834,
+        "native_proposed_drafts": 11724,
+        "native_rounds": 2401,
+        "response_id_matches_q4": 24,
+        "validation_labels": 229,
+        "validation_loss": 6.02849299574523,
+        "validation_prompt_count": 24,
+        "validation_rounds": 48
+      },
+      "Q4_0": {
+        "native_acceptance_rate": 0.2659169836282454,
+        "native_accepted_drafts": 1608,
+        "native_accepted_per_round": 1.3062550771730301,
+        "native_emitted_tokens": 2834,
+        "native_proposed_drafts": 6047,
+        "native_rounds": 1231
+      },
+      "archive": {
+        "attempt_prefix": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/candidate-step10000-eval-attempt-0000",
+        "hardlink_verified": true,
+        "locator_map": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/candidate-step10000-locator-map.json"
+      },
+      "checkpoint_sha256": "6898e9b1cb6cb0303e1a38340a23decb3eeabf14d215afd761d7e0c8aa7496ae",
+      "checkpoint_step": 10000,
+      "development_manifest_sha256": "fc18f400a776161fd0ff40b30d58d69233be723e9e26b858a60160a2b802d091",
+      "evaluation_elapsed_seconds": 783.215612,
+      "evaluation_exit_code": 0,
+      "evaluation_timing_complete": true,
+      "name": "candidate_step10000",
+      "native_prompts": 24,
+      "native_response_id_matches_q4": 24,
+      "report_path": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/candidate-step10000-eval-attempt-0000/development.json",
+      "report_sha256": "e561e03ce99c049458d815239f7c0d8ea3433abcaf5be63cbc31ad032fa5acbd",
+      "request_timing_manifest_sha256": "fc12102cd0637c36848e05954a0b7f84879d16a01b7e7fd0d4887a2340f6a8d9",
+      "result_sha256": "3bbbb913eac5c0bb3880815a0da3bf8221f320a835696dadd78cb479dbafbb74",
+      "sealed_test_accessed": false,
+      "timing": {
+        "per_repetition_detail": "not included; raw timing records and pooled distributions retained in the linked archive",
+        "prompts_sha256": "131a3db7958ff6aa818b23019297654507d5b80bed3c298349417b7e3b2ba081",
+        "repetitions": 5,
+        "requests_per_variant": 120,
+        "speedup_vs_q4_0": {
+          "decode_tokens_per_s": 0.4762443453565112,
+          "request_tokens_per_s": 0.4898498408546688
+        },
+        "token_id_parity": {
+          "A8": {
+            "matched_sequences": 120,
+            "mismatched_sequences": 0,
+            "unavailable": 0
+          },
+          "note": "Five repetitions over24 prompts produce120 measured requests per variant.",
+          "target_only": {
+            "matched_sequences": 120,
+            "mismatched_sequences": 0,
+            "unavailable": 0
+          }
+        },
+        "variants": {
+          "A8": {
+            "completion_tokens": 14290,
+            "decode_distribution_s": {
+              "max": 2.155088,
+              "median": 1.917865,
+              "min": 0.311685,
+              "p95": 2.135152
+            },
+            "decode_server_s": 210.0132400000001,
+            "decode_tokens_per_s": 68.04332907772859,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tokens_per_s": 66.144795816823,
+            "request_wall_distribution_s": {
+              "max": 2.2139844369958155,
+              "median": 1.9652940749983827,
+              "min": 0.38181435899605276,
+              "p95": 2.1885982809981215
+            },
+            "request_wall_s": 216.0411839439912,
+            "requests": 120,
+            "speculative": {
+              "accepted": 2165,
+              "proposed": 58620,
+              "rounds": 11910
+            }
+          },
+          "Q4_0": {
+            "completion_tokens": 14290,
+            "decode_distribution_s": {
+              "max": 1.140115,
+              "median": 0.8605035,
+              "min": 0.113819,
+              "p95": 1.0503989999999999
+            },
+            "decode_server_s": 100.01761799999994,
+            "decode_tokens_per_s": 142.87482831274795,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tokens_per_s": 135.03075902079794,
+            "request_wall_distribution_s": {
+              "max": 1.195173911000893,
+              "median": 0.9110033975011902,
+              "min": 0.17168171700177481,
+              "p95": 1.0977250699943397
+            },
+            "request_wall_s": 105.82773957301833,
+            "requests": 120,
+            "speculative": {
+              "accepted": 8040,
+              "proposed": 30235,
+              "rounds": 6140
+            }
+          },
+          "target_only": {
+            "completion_tokens": 14290,
+            "decode_distribution_s": {
+              "max": 1.40825,
+              "median": 1.394627,
+              "min": 0.2294,
+              "p95": 1.402031
+            },
+            "decode_server_s": 155.7841890000001,
+            "decode_tokens_per_s": 91.72946299447622,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tokens_per_s": 88.59358731195192,
+            "request_wall_distribution_s": {
+              "max": 1.4685974419990089,
+              "median": 1.4361791629999061,
+              "min": 0.27779945400106953,
+              "p95": 1.4622829930012813
+            },
+            "request_wall_s": 161.29835616298806,
+            "requests": 120,
+            "speculative": {
+              "accepted": 0,
+              "proposed": 0,
+              "rounds": 0
+            }
+          }
+        },
+        "warmup_requests_per_server": 1
+      }
+    },
+    {
+      "A8": {
+        "native_acceptance_rate": 0.11894172653666324,
+        "native_accepted_drafts": 1043,
+        "native_accepted_per_round": 0.5813823857302118,
+        "native_emitted_tokens": 2834,
+        "native_proposed_drafts": 8769,
+        "native_rounds": 1794,
+        "response_id_matches_q4": 24,
+        "validation_labels": 229,
+        "validation_loss": 3.994632130919846,
+        "validation_prompt_count": 24,
+        "validation_rounds": 48
+      },
+      "Q4_0": {
+        "native_acceptance_rate": 0.2659169836282454,
+        "native_accepted_drafts": 1608,
+        "native_accepted_per_round": 1.3062550771730301,
+        "native_emitted_tokens": 2834,
+        "native_proposed_drafts": 6047,
+        "native_rounds": 1231
+      },
+      "archive": {
+        "attempt_prefix": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/reference-step15000-eval-attempt-0000",
+        "hardlink_verified": true,
+        "locator_map": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/reference-step15000-locator-map.json"
+      },
+      "checkpoint_sha256": "73429bd0ca2302147a2ee7cf883664a63323da5e229f0e3611a6f5e044a940eb",
+      "checkpoint_step": 15000,
+      "development_manifest_sha256": "fc18f400a776161fd0ff40b30d58d69233be723e9e26b858a60160a2b802d091",
+      "evaluation_elapsed_seconds": 683.691812,
+      "evaluation_exit_code": 0,
+      "evaluation_timing_complete": true,
+      "name": "reference_step15000",
+      "native_prompts": 24,
+      "native_response_id_matches_q4": 24,
+      "report_path": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/reference-step15000-eval-attempt-0000/development.json",
+      "report_sha256": "cc5341b12d5733465f5b4ceecc10b9b8c0671ab33a39435703c1cfe23057af74",
+      "request_timing_manifest_sha256": "0c1ade69a26b2d4cec65c096ea97231aae1e6fbd6dc3b9954b5589f3fa59d317",
+      "result_sha256": "8490312be6eafca3c0c7233271eb140a4089c6115019eeaf28c5af1f0f9cde33",
+      "sealed_test_accessed": false,
+      "timing": {
+        "per_repetition_detail": "not included; raw timing records and pooled distributions retained in the linked archive",
+        "prompts_sha256": "131a3db7958ff6aa818b23019297654507d5b80bed3c298349417b7e3b2ba081",
+        "repetitions": 5,
+        "requests_per_variant": 120,
+        "speedup_vs_q4_0": {
+          "decode_tokens_per_s": 0.6735802871964928,
+          "request_tokens_per_s": 0.6855986552516574
+        },
+        "token_id_parity": {
+          "A8": {
+            "matched_sequences": 120,
+            "mismatched_sequences": 0,
+            "unavailable": 0
+          },
+          "note": "Five repetitions over24 prompts produce120 measured requests per variant.",
+          "target_only": {
+            "matched_sequences": 120,
+            "mismatched_sequences": 0,
+            "unavailable": 0
+          }
+        },
+        "variants": {
+          "A8": {
+            "completion_tokens": 14290,
+            "decode_server_s": 148.60327700000005,
+            "decode_tokens_per_s": 96.16207857919576,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tokens_per_s": 92.34038650467595,
+            "request_wall_s": 154.75352162703348,
+            "requests": 120
+          },
+          "Q4_0": {
+            "completion_tokens": 14290,
+            "decode_server_s": 100.09623800000001,
+            "decode_tokens_per_s": 142.7626081211963,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tokens_per_s": 134.68577541299476,
+            "request_wall_s": 106.09880632295244,
+            "requests": 120
+          },
+          "target_only": {
+            "completion_tokens": 14290,
+            "decode_server_s": 155.79259899999997,
+            "decode_tokens_per_s": 91.72451125229642,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tokens_per_s": 88.556078650115,
+            "request_wall_s": 161.3666754199876,
+            "requests": 120
+          }
+        },
+        "warmup_requests_per_server": 1
+      }
+    },
+    {
+      "A8": {
+        "native_acceptance_rate": 0.04285589595880248,
+        "native_accepted_drafts": 491,
+        "native_accepted_per_round": 0.20947098976109216,
+        "native_emitted_tokens": 2834,
+        "native_proposed_drafts": 11457,
+        "native_rounds": 2344,
+        "response_id_matches_q4": 24,
+        "validation_labels": 229,
+        "validation_loss": 5.9516224788265975,
+        "validation_prompt_count": 24,
+        "validation_rounds": 48
+      },
+      "Q4_0": {
+        "native_acceptance_rate": 0.2659169836282454,
+        "native_accepted_drafts": 1608,
+        "native_accepted_per_round": 1.3062550771730301,
+        "native_emitted_tokens": 2834,
+        "native_proposed_drafts": 6047,
+        "native_rounds": 1231
+      },
+      "archive": {
+        "attempt_prefix": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/candidate-step15000-eval-attempt-0000",
+        "hardlink_verified": true,
+        "locator_map": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/candidate-step15000-locator-map.json"
+      },
+      "checkpoint_joint_json_sha256": "5f1f5c8aa58f2250807e7cdcce732046b6b544f279e1e32ba48401665d062964",
+      "checkpoint_joint_npz_sha256": "994c0e1fdf76d1da5ec1f131a83da9472330dcb82cc3f96153b092910ac238c0",
+      "checkpoint_manifest_path": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/checkpoints/candidate-step-15000/manifest.json",
+      "checkpoint_manifest_sha256": "bdef1786b0f869542588c02d55105746afde3a2efb7c82c394367afaabb4e7b8",
+      "checkpoint_sha256": "50e0764ce0a7c343366c04827605b6c12b5fc82f87dec5063ccea316bf12f102",
+      "checkpoint_step": 15000,
+      "development_manifest_sha256": "fc18f400a776161fd0ff40b30d58d69233be723e9e26b858a60160a2b802d091",
+      "evaluation_deadline_seconds": 1200,
+      "evaluation_elapsed_seconds": 769.6065300569971,
+      "evaluation_exit_code": 0,
+      "evaluation_observed_terminal_at_utc": "2026-10-04T09:35:23Z",
+      "name": "candidate_step15000",
+      "native_prompts": 24,
+      "native_response_id_matches_q4": 24,
+      "report_path": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/candidate-step15000-eval-attempt-0000/report.json",
+      "report_sha256": "445e3af8925102393dc4ac0cd86d93463d69010a5f2d2e76eb2ee9a53e9a19b9",
+      "request_timing_manifest_sha256": "1667c7dc07b174ae9eb7915594b84fd7422980b6d8c083bd1652f228bc28fe23",
+      "result_sha256": "276352166478317be789dee4bb5683b00a3a1588419df8c49d8a8e626ef7cda9",
+      "sealed_test_accessed": false,
+      "supervisor_ended_at_utc": "2026-10-04T09:34:57.839048+00:00",
+      "supervisor_started_at_utc": "2026-10-04T09:22:04.135414+00:00",
+      "supervisor_state_path": "/home/philip/binary-eagle-decoding/checkouts/a8-eval-recovery-3bd4837/runs/a8-candidate-step15000-eval-supervisor-20261004-01/state.json",
+      "supervisor_wall_seconds": 773.703634,
+      "timing": {
+        "note": "Five repetitions over 24 prompts produce 120 measured requests per variant.",
+        "prompts_sha256": "131a3db7958ff6aa818b23019297654507d5b80bed3c298349417b7e3b2ba081",
+        "repetitions": 5,
+        "requests_per_variant": 120,
+        "speedup_vs_q4_0": {
+          "decode_tokens_per_s": 0.48817484708831654,
+          "request_tokens_per_s": 0.5003142991054527
+        },
+        "token_id_parity": {
+          "A8": {
+            "matched_sequences": 120,
+            "mismatched_sequences": 0,
+            "unavailable": 0
+          },
+          "target_only": {
+            "matched_sequences": 120,
+            "mismatched_sequences": 0,
+            "unavailable": 0
+          }
+        },
+        "variants": {
+          "A8": {
+            "completion_tokens": 14290,
+            "decode_distribution_s": {
+              "max": 2.126241,
+              "median": 1.8194525,
+              "min": 0.329738,
+              "p95": 2.039346
+            },
+            "decode_server_s": 204.4549459999999,
+            "decode_tps": 69.89314897767261,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tps": 68.26114190408134,
+            "request_wall_distribution_s": {
+              "max": 2.1789600560005056,
+              "median": 1.8634072139975615,
+              "min": 0.38177868799539283,
+              "p95": 2.0901726570009487
+            },
+            "request_wall_s": 209.34311383304885,
+            "requests": 120
+          },
+          "Q4_0": {
+            "completion_tokens": 14290,
+            "decode_distribution_s": {
+              "max": 1.155552,
+              "median": 0.854889,
+              "min": 0.112755,
+              "p95": 1.049618
+            },
+            "decode_server_s": 99.80976199999996,
+            "decode_tps": 143.17236824991133,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tps": 136.43652005575348,
+            "request_wall_distribution_s": {
+              "max": 1.3036740649986314,
+              "median": 0.898627258502529,
+              "min": 0.1621683839985053,
+              "p95": 1.0852742729985039
+            },
+            "request_wall_s": 104.73735326699348,
+            "requests": 120
+          },
+          "target_only": {
+            "completion_tokens": 14290,
+            "decode_distribution_s": {
+              "max": 1.40507,
+              "median": 1.3933145,
+              "min": 0.229798,
+              "p95": 1.399793
+            },
+            "decode_server_s": 155.58086200000005,
+            "decode_tps": 91.84934326948256,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tps": 89.32846035900371,
+            "request_wall_distribution_s": {
+              "max": 1.443612472001405,
+              "median": 1.428362278998975,
+              "min": 0.275242696996429,
+              "p95": 1.4415940019971458
+            },
+            "request_wall_s": 159.97141272299632,
+            "requests": 120
+          }
+        },
+        "warmup_requests_per_server": 1
+      }
+    },
+    {
+      "A8": {
+        "native_acceptance_rate": 0.12549476135040746,
+        "native_accepted_drafts": 1078,
+        "native_accepted_per_round": 0.6135458167330677,
+        "native_emitted_tokens": 2834,
+        "native_proposed_drafts": 8590,
+        "native_rounds": 1757,
+        "response_id_matches_q4": 24,
+        "validation_labels": 229,
+        "validation_loss": 3.6999269591148245,
+        "validation_prompt_count": 24,
+        "validation_rounds": 48
+      },
+      "Q4_0": {
+        "native_acceptance_rate": 0.2659169836282454,
+        "native_accepted_drafts": 1608,
+        "native_accepted_per_round": 1.3062550771730301,
+        "native_emitted_tokens": 2834,
+        "native_proposed_drafts": 6047,
+        "native_rounds": 1231
+      },
+      "archive": {
+        "attempt_prefix": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/reference-step20000-eval-attempt-0000",
+        "hardlink_verified": true,
+        "locator_map": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/reference-step20000-locator-map.json"
+      },
+      "checkpoint_joint_json_sha256": "2190be076e8d2da108845fbfbc66d6af040e2eb6c6b70dc42c8320a119b067dd",
+      "checkpoint_joint_npz_sha256": "c115430c8adc376f0f3217712a64fbbcec93513397b04fb424c70875438eb15a",
+      "checkpoint_manifest_path": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/checkpoints/reference-step-20000/manifest.json",
+      "checkpoint_manifest_sha256": "35bbe4b8b0817b831ef59f7e3f839d8932afcc952335e0f9fe8d46a975d6b535",
+      "checkpoint_sha256": "1fab73c38bab8992fb0c92a0a56691472674ec56a0d465f1fe7b6efa5169ab8d",
+      "checkpoint_step": 20000,
+      "development_manifest_sha256": "fc18f400a776161fd0ff40b30d58d69233be723e9e26b858a60160a2b802d091",
+      "evaluation_elapsed_seconds": 681.7650451879963,
+      "evaluation_exit_code": 0,
+      "evaluation_observed_terminal_at_utc": "2026-10-04T10:06:45Z",
+      "name": "reference_step20000",
+      "native_prompts": 24,
+      "native_response_id_matches_q4": 24,
+      "report_path": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/reference-step20000-eval-attempt-0000/report.json",
+      "report_sha256": "3e4d03de6864109075dfb356dfa66e78ec9f326fb461e69ae53f3b8524c20721",
+      "request_timing_manifest_sha256": "d9291b9980466ccf7c989051ce4739c5397e875a0f827633c5081b6807a9a5b4",
+      "result_sha256": "57a60fb72032eb8c49ac2643f333f22e3d4fb82eb3cad2faf7bd5705a7c26d8a",
+      "sealed_test_accessed": false,
+      "supervisor_ended_at_utc": "2026-10-04T10:06:03.350638+00:00",
+      "supervisor_started_at_utc": "2026-10-04T09:54:36.659778+00:00",
+      "supervisor_state_path": "/home/philip/binary-eagle-decoding/checkouts/a8-eval-recovery-3bd4837/runs/a8-reference-step20000-eval-supervisor-20261004-01/state.json",
+      "supervisor_wall_seconds": 686.69086,
+      "timing": {
+        "prompts_sha256": "131a3db7958ff6aa818b23019297654507d5b80bed3c298349417b7e3b2ba081",
+        "repetitions": 5,
+        "requests_per_variant": 120,
+        "speedup_vs_q4_0": {
+          "decode_tokens_per_s": 0.6881205898099596,
+          "request_tokens_per_s": 0.700128977202353
+        },
+        "token_id_parity": {
+          "A8": {
+            "matched_sequences": 120,
+            "mismatched_sequences": 0,
+            "unavailable": 0
+          },
+          "note": "Five repetitions over 24 prompts produce 120 measured requests per variant.",
+          "target_only": {
+            "matched_sequences": 120,
+            "mismatched_sequences": 0,
+            "unavailable": 0
+          }
+        },
+        "variants": {
+          "A8": {
+            "completion_tokens": 14290,
+            "decode_distribution_s": {
+              "max": 1.5845360000000002,
+              "median": 1.28875,
+              "min": 0.22913,
+              "p95": 1.53132
+            },
+            "decode_server_s": 145.96749100000005,
+            "decode_tps": 97.89851084033496,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tps": 93.8496581949334,
+            "request_wall_distribution_s": {
+              "max": 1.6507041420045425,
+              "median": 1.3467751140015025,
+              "min": 0.30021166000369703,
+              "p95": 1.5986657350003952
+            },
+            "request_wall_s": 152.26480601898947,
+            "requests": 120
+          },
+          "Q4_0": {
+            "completion_tokens": 14290,
+            "decode_distribution_s": {
+              "max": 1.138659,
+              "median": 0.8648640000000001,
+              "min": 0.114194,
+              "p95": 1.062298
+            },
+            "decode_server_s": 100.44323599999998,
+            "decode_tps": 142.26941075454798,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tps": 134.0462418366791,
+            "request_wall_distribution_s": {
+              "max": 1.2078587380019599,
+              "median": 0.9214828139993188,
+              "min": 0.17360243199800607,
+              "p95": 1.111787458001345
+            },
+            "request_wall_s": 106.60500290198979,
+            "requests": 120
+          },
+          "target_only": {
+            "completion_tokens": 14290,
+            "decode_distribution_s": {
+              "max": 1.4067960000000002,
+              "median": 1.3952775000000002,
+              "min": 0.23006800000000002,
+              "p95": 1.402905
+            },
+            "decode_server_s": 155.8374769999999,
+            "decode_tps": 91.69809647264765,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tps": 88.4414718095996,
+            "request_wall_distribution_s": {
+              "max": 1.4674711280022166,
+              "median": 1.4407764614988992,
+              "min": 0.2905481929992675,
+              "p95": 1.4586962609973853
+            },
+            "request_wall_s": 161.575782352018,
+            "requests": 120
+          }
+        },
+        "warmup_requests_per_server": 1
+      }
+    },
+    {
+      "A8": {
+        "native_acceptance_rate": 0.04191980558930741,
+        "native_accepted_drafts": 483,
+        "native_accepted_per_round": 0.20518266779949024,
+        "native_emitted_tokens": 2834,
+        "native_proposed_drafts": 11522,
+        "native_rounds": 2354,
+        "response_id_matches_q4": 24,
+        "validation_labels": 229,
+        "validation_loss": 5.781816153026564,
+        "validation_prompt_count": 24,
+        "validation_rounds": 48
+      },
+      "Q4_0": {
+        "native_acceptance_rate": 0.2659169836282454,
+        "native_accepted_drafts": 1608,
+        "native_accepted_per_round": 1.3062550771730301,
+        "native_emitted_tokens": 2834,
+        "native_proposed_drafts": 6047,
+        "native_rounds": 1231
+      },
+      "archive": {
+        "attempt_prefix": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/candidate-step20000-eval-attempt-0000",
+        "hardlink_verified": true,
+        "locator_map": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/candidate-step20000-locator-map.json"
+      },
+      "checkpoint_joint_json_sha256": "b58205109c1a25c1ebaf13e1d0a0cb9429b52db18a5a922fdcf972226106c3b1",
+      "checkpoint_joint_npz_sha256": "2d714500de08d1b7dd7fba72c47f0d6048b892d4a0b2b23e8c35611e8dd457b3",
+      "checkpoint_manifest_path": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/checkpoints/candidate-step-20000/manifest.json",
+      "checkpoint_manifest_sha256": "0521d0721b93c3b8fa3c5c15dac44ade5be62e7de010de6f83805e4a913437bc",
+      "checkpoint_sha256": "21f5278f9489b166067a59d83f22f454cacca975e419b0a010a15cdf7df75865",
+      "checkpoint_step": 20000,
+      "development_manifest_sha256": "fc18f400a776161fd0ff40b30d58d69233be723e9e26b858a60160a2b802d091",
+      "evaluation_elapsed_seconds": 771.5966156490031,
+      "evaluation_exit_code": 0,
+      "evaluation_observed_terminal_at_utc": "2026-10-04T10:42:14Z",
+      "name": "candidate_step20000",
+      "native_prompts": 24,
+      "native_response_id_matches_q4": 24,
+      "report_path": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/candidate-step20000-eval-attempt-0000/report.json",
+      "report_sha256": "624c8e3397bd5c5c6a6deb6e88431e268ba9af80bcdaaa5f4412767b220a3d64",
+      "request_timing_manifest_sha256": "a505b9868f1338097fe5ad14ff2f6d4914b6166f2bd8a87b55296408fe6ef36c",
+      "result_sha256": "c2c9280adf5f3f91c717e05a1b6c1fda6534229bb7ca08bf6002c9f0a1c3a954",
+      "sealed_test_accessed": false,
+      "supervisor_ended_at_utc": "2026-10-04T10:41:31.094831+00:00",
+      "supervisor_started_at_utc": "2026-10-04T10:28:34.371620+00:00",
+      "supervisor_state_path": "/home/philip/binary-eagle-decoding/checkouts/a8-eval-recovery-3bd4837/runs/a8-candidate-step20000-eval-supervisor-20261004-01/state.json",
+      "supervisor_wall_seconds": 776.723211,
+      "timing": {
+        "prompts_sha256": "131a3db7958ff6aa818b23019297654507d5b80bed3c298349417b7e3b2ba081",
+        "repetitions": 5,
+        "requests_per_variant": 120,
+        "speedup_vs_q4_0": {
+          "decode_tokens_per_s": 0.48589540948953086,
+          "request_tokens_per_s": 0.4988596256290404
+        },
+        "token_id_parity": {
+          "A8": {
+            "matched_sequences": 120,
+            "mismatched_sequences": 0,
+            "unavailable": 0
+          },
+          "note": "Five repetitions over 24 prompts produce 120 measured requests per variant.",
+          "target_only": {
+            "matched_sequences": 120,
+            "mismatched_sequences": 0,
+            "unavailable": 0
+          }
+        },
+        "variants": {
+          "A8": {
+            "completion_tokens": 14290,
+            "decode_distribution_s": {
+              "max": 2.15724,
+              "median": 1.816941,
+              "min": 0.327868,
+              "p95": 2.06099
+            },
+            "decode_server_s": 205.26026600000006,
+            "decode_tps": 69.61892955941116,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tps": 67.75123507474555,
+            "request_wall_distribution_s": {
+              "max": 2.21124038099515,
+              "median": 1.8593900100022438,
+              "min": 0.3991772280060104,
+              "p95": 2.125510595004016
+            },
+            "request_wall_s": 210.91866420198494,
+            "requests": 120
+          },
+          "Q4_0": {
+            "completion_tokens": 14290,
+            "decode_distribution_s": {
+              "max": 1.130047,
+              "median": 0.8574200000000001,
+              "min": 0.113907,
+              "p95": 1.04894
+            },
+            "decode_server_s": 99.73502100000005,
+            "decode_tps": 143.27966101295544,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tps": 135.81222370785002,
+            "request_wall_distribution_s": {
+              "max": 1.1756847640062915,
+              "median": 0.9056911529987701,
+              "min": 0.1685985529984464,
+              "p95": 1.086952535995806
+            },
+            "request_wall_s": 105.21880586197949,
+            "requests": 120
+          },
+          "target_only": {
+            "completion_tokens": 14290,
+            "decode_distribution_s": {
+              "max": 1.407872,
+              "median": 1.395922,
+              "min": 0.23040100000000002,
+              "p95": 1.402148
+            },
+            "decode_server_s": 155.83327999999997,
+            "decode_tps": 91.70056614350929,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tps": 88.85101946602953,
+            "request_wall_distribution_s": {
+              "max": 1.4650570020021405,
+              "median": 1.4330021055029647,
+              "min": 0.2782998420007061,
+              "p95": 1.4577547090011649
+            },
+            "request_wall_s": 160.83101900100883,
+            "requests": 120
+          }
+        },
+        "warmup_requests_per_server": 1
+      }
+    },
+    {
+      "A8": {
+        "native_acceptance_rate": 0.13041937389249852,
+        "native_accepted_drafts": 1104,
+        "native_accepted_per_round": 0.6377816291161178,
+        "native_emitted_tokens": 2834,
+        "native_proposed_drafts": 8465,
+        "native_rounds": 1731,
+        "response_id_matches_q4": 24,
+        "validation_labels": 229,
+        "validation_loss": 3.5501711481783587,
+        "validation_prompt_count": 24,
+        "validation_rounds": 48
+      },
+      "Q4_0": {
+        "native_acceptance_rate": 0.2659169836282454,
+        "native_accepted_drafts": 1608,
+        "native_accepted_per_round": 1.3062550771730301,
+        "native_emitted_tokens": 2834,
+        "native_proposed_drafts": 6047,
+        "native_rounds": 1231
+      },
+      "archive": {
+        "attempt_prefix": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/reference-step25000-eval-attempt-0000",
+        "hardlink_verified": true,
+        "locator_map": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/reference-step25000-locator-map.json"
+      },
+      "checkpoint_joint_json_sha256": "5b792fe9dfffa585abb4c7e2517cb14d0cfe2363f72a798ddad04c63b643e853",
+      "checkpoint_joint_npz_sha256": "f43dc3a5bf945eb52e570fbb49393db80c2a8fbf447f1b0de2b22e036af88950",
+      "checkpoint_manifest_path": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/checkpoints/reference-step-25000/manifest.json",
+      "checkpoint_manifest_sha256": "ef8a346e7054584177098aecf89be0cae8fe5b44e0055bf8247ed26ac207a29d",
+      "checkpoint_sha256": "e3948dbd55be4b443d1d0ff8bb2c6e4b5c08b3e8308e69c435b8692b5c3088a8",
+      "checkpoint_step": 25000,
+      "development_manifest_sha256": "fc18f400a776161fd0ff40b30d58d69233be723e9e26b858a60160a2b802d091",
+      "evaluation_elapsed_seconds": 678.5634391140047,
+      "evaluation_exit_code": 0,
+      "evaluation_observed_terminal_at_utc": "2026-10-04T11:12:32Z",
+      "name": "reference_step25000",
+      "native_prompts": 24,
+      "native_response_id_matches_q4": 24,
+      "report_path": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/reference-step25000-eval-attempt-0000/report.json",
+      "report_sha256": "d80978e41eb18231f59eb1be1ddb9aa0554e609624802d7d9b4d84c5182ebc60",
+      "request_timing_manifest_sha256": "d44833b524a2dfb47593ecb8a9c71d6c86cf1751a251d1e8281d2a0ee81de8a9",
+      "result_sha256": "d99f100e0a2359af26477dcf82b5cc510bbe2bf7bd55855ee6e70e1944b3aba7",
+      "sealed_test_accessed": false,
+      "supervisor_ended_at_utc": "2026-10-04T11:12:31.086497+00:00",
+      "supervisor_started_at_utc": "2026-10-04T11:01:07.378365+00:00",
+      "supervisor_state_path": "/home/philip/binary-eagle-decoding/checkouts/a8-eval-recovery-3bd4837/runs/a8-reference-step25000-eval-supervisor-20261004-01/state.json",
+      "supervisor_wall_seconds": 683.708132,
+      "timing": {
+        "per_repetition_detail": "not included; raw timing records and pooled distributions are retained in the linked archive",
+        "prompts_sha256": "131a3db7958ff6aa818b23019297654507d5b80bed3c298349417b7e3b2ba081",
+        "repetitions": 5,
+        "requests_per_variant": 120,
+        "speedup_vs_q4_0": {
+          "decode_tokens_per_s": 0.69625032877378,
+          "request_tokens_per_s": 0.7092202840583148
+        },
+        "token_id_parity": {
+          "A8": {
+            "matched_sequences": 120,
+            "mismatched_sequences": 0,
+            "unavailable": 0
+          },
+          "note": "Five repetitions over 24 prompts produce 120 measured requests per variant.",
+          "target_only": {
+            "matched_sequences": 120,
+            "mismatched_sequences": 0,
+            "unavailable": 0
+          }
+        },
+        "variants": {
+          "A8": {
+            "completion_tokens": 14290,
+            "decode_server_s": 143.746256,
+            "decode_tps": 99.41128484069874,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tps": 95.17054401179054,
+            "request_wall_s": 150.15150063899637,
+            "requests": 120
+          },
+          "Q4_0": {
+            "completion_tokens": 14290,
+            "decode_server_s": 100.08337799999995,
+            "decode_tps": 142.78095209776,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tps": 134.19038647231534,
+            "request_wall_s": 106.49048993497127,
+            "requests": 120
+          },
+          "target_only": {
+            "completion_tokens": 14290,
+            "decode_server_s": 155.72318199999998,
+            "decode_tps": 91.76539945093083,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tps": 88.41790557252227,
+            "request_wall_s": 161.61884753398772,
+            "requests": 120
+          }
+        },
+        "warmup_requests_per_server": 1
+      }
+    },
+    {
+      "A8": {
+        "native_acceptance_rate": 0.0472594829883628,
+        "native_accepted_drafts": 532,
+        "native_accepted_per_round": 0.23080260303687636,
+        "native_emitted_tokens": 2834,
+        "native_proposed_drafts": 11257,
+        "native_rounds": 2305,
+        "response_id_matches_q4": 24,
+        "validation_labels": 229,
+        "validation_loss": 5.816129214118141,
+        "validation_prompt_count": 24,
+        "validation_rounds": 48
+      },
+      "Q4_0": {
+        "native_acceptance_rate": 0.2659169836282454,
+        "native_accepted_drafts": 1608,
+        "native_accepted_per_round": 1.3062550771730301,
+        "native_emitted_tokens": 2834,
+        "native_proposed_drafts": 6047,
+        "native_rounds": 1231
+      },
+      "archive": {
+        "attempt_prefix": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/candidate-step25000-eval-attempt-0000",
+        "hardlink_verified": true,
+        "locator_map": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/candidate-step25000-locator-map.json"
+      },
+      "checkpoint_joint_json_sha256": "45c5e924946547e3c3ca7b088f29ad9347808df78d40d1806c4a4cd00b0d2395",
+      "checkpoint_joint_npz_sha256": "2dd1f7124a16e8b1f06c12c4d95ea72b14ea059e0f3e7b71bb52b501ffa2dec6",
+      "checkpoint_manifest_path": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/checkpoints/candidate-step-25000/manifest.json",
+      "checkpoint_manifest_sha256": "d351c5281248ad498e22dc72fcf5ee87251c5fb9fe2e7e198c0421d60dd44dbb",
+      "checkpoint_sha256": "b9936e38bee428cbfb8999fe8bb153fa0b014347561543b5d76c09dc87900cdb",
+      "checkpoint_step": 25000,
+      "development_manifest_sha256": "fc18f400a776161fd0ff40b30d58d69233be723e9e26b858a60160a2b802d091",
+      "evaluation_elapsed_seconds": 762.472997592995,
+      "evaluation_exit_code": 0,
+      "evaluation_observed_terminal_at_utc": "2026-10-04T11:48:02Z",
+      "name": "candidate_step25000",
+      "native_prompts": 24,
+      "native_response_id_matches_q4": 24,
+      "report_path": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/candidate-step25000-eval-attempt-0000/report.json",
+      "report_sha256": "4220d6295c2b72919c8822a528511b15f91eab8fbfb1d7d1de83cf7e4a3fb5a3",
+      "request_timing_manifest_sha256": "3f17c3204220b1a06328e2105a338d037c1d68c59cb8040f89f69ad0f742760b",
+      "result_sha256": "e581a54ed357a6e9cee52482f9b5738a15811c914922725cddb64889c75dc8b1",
+      "sealed_test_accessed": false,
+      "supervisor_ended_at_utc": "2026-10-04T11:47:19.990485+00:00",
+      "supervisor_started_at_utc": "2026-10-04T11:34:32.784482+00:00",
+      "supervisor_state_path": "/home/philip/binary-eagle-decoding/checkouts/a8-eval-recovery-3bd4837/runs/a8-candidate-step25000-eval-supervisor-20261004-01/state.json",
+      "supervisor_wall_seconds": 767.206003,
+      "timing": {
+        "per_repetition_detail": "not included; raw timing records and pooled distributions are retained in the linked archive",
+        "prompts_sha256": "131a3db7958ff6aa818b23019297654507d5b80bed3c298349417b7e3b2ba081",
+        "repetitions": 5,
+        "requests_per_variant": 120,
+        "speedup_vs_q4_0": {
+          "decode_tokens_per_s": 0.49766502151918757,
+          "request_tokens_per_s": 0.5111151039407614
+        },
+        "token_id_parity": {
+          "A8": {
+            "matched_sequences": 120,
+            "mismatched_sequences": 0,
+            "unavailable": 0
+          },
+          "note": "Five repetitions over 24 prompts produce 120 measured requests per variant.",
+          "target_only": {
+            "matched_sequences": 120,
+            "mismatched_sequences": 0,
+            "unavailable": 0
+          }
+        },
+        "variants": {
+          "A8": {
+            "completion_tokens": 14290,
+            "decode_server_s": 201.28408199999998,
+            "decode_tps": 70.99418820411243,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tps": 68.95401770757773,
+            "request_wall_s": 207.2395557950149,
+            "requests": 120
+          },
+          "Q4_0": {
+            "completion_tokens": 14290,
+            "decode_server_s": 100.17204699999992,
+            "decode_tps": 142.65456709694683,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tps": 134.89949621835905,
+            "request_wall_s": 105.9307143509941,
+            "requests": 120
+          },
+          "target_only": {
+            "completion_tokens": 14290,
+            "decode_server_s": 155.758333,
+            "decode_tps": 91.7446901540735,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tps": 88.71241852327692,
+            "request_wall_s": 161.082295329943,
+            "requests": 120
+          }
+        },
+        "warmup_requests_per_server": 1
+      }
+    },
+    {
+      "A8": {
+        "native_acceptance_rate": 0.1274131274131274,
+        "native_accepted_drafts": 1089,
+        "native_accepted_per_round": 0.6237113402061856,
+        "native_emitted_tokens": 2834,
+        "native_proposed_drafts": 8547,
+        "native_rounds": 1746,
+        "response_id_matches_q4": 24,
+        "validation_labels": 229,
+        "validation_loss": 3.549470507291727,
+        "validation_prompt_count": 24,
+        "validation_rounds": 48
+      },
+      "Q4_0": {
+        "native_acceptance_rate": 0.2659169836282454,
+        "native_accepted_drafts": 1608,
+        "native_accepted_per_round": 1.3062550771730301,
+        "native_emitted_tokens": 2834,
+        "native_proposed_drafts": 6047,
+        "native_rounds": 1231
+      },
+      "archive": {
+        "attempt_prefix": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/reference-step30000-eval-attempt-0000",
+        "hardlink_verified": true,
+        "locator_map": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/reference-step30000-locator-map.json"
+      },
+      "checkpoint_joint_json_sha256": "999e7ac6365042dbbc062cd6494cee62f67ef84bf3f99ca0350fd033ed34bb9f",
+      "checkpoint_joint_npz_sha256": "fc665873579264abb95a8dc52a330c2b64c9b0d3c571b5f26f6dd04baa88d30f",
+      "checkpoint_manifest_path": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/checkpoints/reference-step-30000/manifest.json",
+      "checkpoint_manifest_sha256": "f8896902d0d6dde5b7a2e75068f6cfc519da6533b6bbdf5f8f38f6327006c80c",
+      "checkpoint_sha256": "108968085f4b99ad3ae3fd600b14bee702aa821885c742120d41d988d351940c",
+      "checkpoint_step": 30000,
+      "development_manifest_sha256": "fc18f400a776161fd0ff40b30d58d69233be723e9e26b858a60160a2b802d091",
+      "evaluation_elapsed_seconds": 669.6131934869991,
+      "evaluation_exit_code": 0,
+      "evaluation_observed_terminal_at_utc": "2026-10-04T12:17:56Z",
+      "name": "reference_step30000",
+      "native_prompts": 24,
+      "native_response_id_matches_q4": 24,
+      "report_path": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/reference-step30000-eval-attempt-0000/report.json",
+      "report_sha256": "faf585b9e9f35c15ff0b2fdba68158cfa06a9157a9aaddeecefb00c2494cc6b5",
+      "request_timing_manifest_sha256": "8e580a5bf94d8935c570975d619c4b0a81d9738ff34487fb397a2cc11f428d75",
+      "result_sha256": "cb038ef2254cd8131a500db8b2a93c70fe138598612963d63af05530e2678043",
+      "sealed_test_accessed": false,
+      "supervisor_ended_at_utc": "2026-10-04T12:17:12.135507+00:00",
+      "supervisor_started_at_utc": "2026-10-04T12:05:57.446184+00:00",
+      "supervisor_state_path": "/home/philip/binary-eagle-decoding/checkouts/a8-eval-recovery-3bd4837/runs/a8-reference-step30000-eval-supervisor-20261004-01/state.json",
+      "supervisor_wall_seconds": 674.689323,
+      "timing": {
+        "per_repetition_detail": "not included; raw timing records and pooled distributions are retained in linked archive",
+        "prompts_sha256": "131a3db7958ff6aa818b23019297654507d5b80bed3c298349417b7e3b2ba081",
+        "repetitions": 5,
+        "requests_per_variant": 120,
+        "speedup_vs_q4_0": {
+          "decode_tokens_per_s": 0.6913535494631627,
+          "request_tokens_per_s": 0.7027791681685678
+        },
+        "token_id_parity": {
+          "A8": {
+            "matched_sequences": 120,
+            "mismatched_sequences": 0,
+            "unavailable": 0
+          },
+          "note": "Five repetitions over 24 prompts produce 120 measured requests per variant.",
+          "target_only": {
+            "matched_sequences": 120,
+            "mismatched_sequences": 0,
+            "unavailable": 0
+          }
+        },
+        "variants": {
+          "A8": {
+            "completion_tokens": 14290,
+            "decode_server_s": 144.350181,
+            "decode_tps": 98.99537292578803,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tps": 95.03626073587654,
+            "request_wall_s": 150.36366003198054,
+            "requests": 120
+          },
+          "Q4_0": {
+            "completion_tokens": 14290,
+            "decode_server_s": 99.79700999999999,
+            "decode_tps": 143.19066272626807,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tps": 135.2291943762927,
+            "request_wall_s": 105.67244792005658,
+            "requests": 120
+          },
+          "target_only": {
+            "completion_tokens": 14290,
+            "decode_server_s": 155.63851900000012,
+            "decode_tps": 91.81531726088957,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tps": 88.71087040128563,
+            "request_wall_s": 161.08510642899637,
+            "requests": 120
+          }
+        },
+        "warmup_requests_per_server": 1
+      }
+    },
+    {
+      "A8": {
+        "native_acceptance_rate": 0.054950087004304426,
+        "native_accepted_drafts": 600,
+        "native_accepted_per_round": 0.2684563758389262,
+        "native_emitted_tokens": 2834,
+        "native_proposed_drafts": 10919,
+        "native_rounds": 2235,
+        "response_id_matches_q4": 24,
+        "validation_labels": 229,
+        "validation_loss": 5.5156019962510685,
+        "validation_prompt_count": 24,
+        "validation_rounds": 48
+      },
+      "Q4_0": {
+        "native_acceptance_rate": 0.2659169836282454,
+        "native_accepted_drafts": 1608,
+        "native_accepted_per_round": 1.3062550771730301,
+        "native_emitted_tokens": 2834,
+        "native_proposed_drafts": 6047,
+        "native_rounds": 1231
+      },
+      "archive": {
+        "attempt_prefix": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/candidate-step30000-eval-attempt-0000",
+        "hardlink_verified": true,
+        "locator_map": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/candidate-step30000-locator-map.json"
+      },
+      "checkpoint_joint_json_sha256": "b4a1e8a36f8d5ababa7e0de2ec8e42fd9431f603c2fe4b7517fc747708a44919",
+      "checkpoint_joint_npz_sha256": "150c8b6d0307ffc4c8581af9b8c42d7447a9a96e3e0d3a1923547b2f7b3321d8",
+      "checkpoint_manifest_path": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/checkpoints/candidate-step-30000/manifest.json",
+      "checkpoint_manifest_sha256": "31d1be181e014a705c8ca38ce222c7d764ba9df92e02e72f9e241fc47e846538",
+      "checkpoint_sha256": "f68255ace54f4803ba8f856f72b65b1ae86fbf9c06ee805ab5cc54bea4dc9c8f",
+      "checkpoint_step": 30000,
+      "development_manifest_sha256": "fc18f400a776161fd0ff40b30d58d69233be723e9e26b858a60160a2b802d091",
+      "evaluation_elapsed_seconds": 764.9603833270012,
+      "evaluation_exit_code": 0,
+      "evaluation_observed_terminal_at_utc": "2026-10-04T12:54:18Z",
+      "name": "candidate_step30000",
+      "native_prompts": 24,
+      "native_response_id_matches_q4": 24,
+      "report_path": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/evidence-archive/development/candidate-step30000-eval-attempt-0000/report.json",
+      "report_sha256": "a1325ecd864e1ea0253af5a280b0a855ebc1528d6057cfb98cd929dc46852424",
+      "request_timing_manifest_sha256": "b1a35a60a09e2831009d21305c2600c0f1a524c4b557478a3954ae0c63e5811a",
+      "result_sha256": "c36cebb927d39de8ec05241d1bf112f14d8875dc350db1c6964a0af5c520bc03",
+      "sealed_test_accessed": false,
+      "supervisor_ended_at_utc": "2026-10-04T12:53:17.060440+00:00",
+      "supervisor_started_at_utc": "2026-10-04T12:40:27.846879+00:00",
+      "supervisor_state_path": "/home/philip/binary-eagle-decoding/checkouts/a8-eval-recovery-3bd4837/runs/a8-candidate-step30000-eval-supervisor-20261004-01/state.json",
+      "supervisor_wall_seconds": 769.213561,
+      "timing": {
+        "per_repetition_detail": "not included; raw timing records and pooled distributions are retained in the linked archive",
+        "prompts_sha256": "131a3db7958ff6aa818b23019297654507d5b80bed3c298349417b7e3b2ba081",
+        "repetitions": 5,
+        "requests_per_variant": 120,
+        "speedup_vs_q4_0": {
+          "decode_tokens_per_s": 0.5112654196508261,
+          "request_tokens_per_s": 0.5247223323709292
+        },
+        "token_id_parity": {
+          "A8": {
+            "matched_sequences": 120,
+            "mismatched_sequences": 0,
+            "unavailable": 0
+          },
+          "note": "Five repetitions over 24 prompts produce 120 measured requests per variant.",
+          "target_only": {
+            "matched_sequences": 120,
+            "mismatched_sequences": 0,
+            "unavailable": 0
+          }
+        },
+        "variants": {
+          "A8": {
+            "completion_tokens": 14290,
+            "decode_server_s": 195.604786,
+            "decode_tps": 73.0554721702975,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tps": 70.9050524356704,
+            "request_wall_s": 201.5371191349841,
+            "requests": 120
+          },
+          "Q4_0": {
+            "completion_tokens": 14290,
+            "decode_server_s": 100.00596300000004,
+            "decode_tps": 142.89147938108445,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tps": 135.12871337388708,
+            "request_wall_s": 105.75102539799263,
+            "requests": 120
+          },
+          "target_only": {
+            "completion_tokens": 14290,
+            "decode_server_s": 155.86738700000006,
+            "decode_tps": 91.68050016774832,
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_tps": 88.53438407721436,
+            "request_wall_s": 161.40621690593252,
+            "requests": 120
+          }
+        },
+        "warmup_requests_per_server": 1
+      }
+    },
+    {
+      "A8": {
+        "native_acceptance_rate": 0.13324601095498928,
+        "native_accepted_drafts": 1119,
+        "native_accepted_emitted": 1119,
+        "native_accepted_per_round": 0.6513387660069848,
+        "native_emitted_tokens": 2834,
+        "native_mean_emitted_per_round": 1.649592549476135,
+        "native_proposed_drafts": 8398,
+        "native_rounds": 1718,
+        "response_id_matches_q4": 24,
+        "validation_labels": 229,
+        "validation_loss": 3.5963206857312713,
+        "validation_prompt_count": 24,
+        "validation_rounds": 48
+      },
+      "Q4_0": {
+        "native_acceptance_rate": 0.2659169836282454,
+        "native_accepted_drafts": 1608,
+        "native_accepted_emitted": 1606,
+        "native_accepted_per_round": 1.3062550771730301,
+        "native_emitted_tokens": 2834,
+        "native_mean_emitted_per_round": 2.3021933387489844,
+        "native_proposed_drafts": 6047,
+        "native_rounds": 1231
+      },
+      "archive": {
+        "attempt_prefix": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/arms/reference/evidence-archive/development/reference-step35000-eval-attempt-0000",
+        "hardlink_verified": true,
+        "locator_map": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/arms/reference/evidence-archive/development/reference-step35000-locator-map.json",
+        "report_path": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/arms/reference/evidence-archive/development/reference-step35000-development.json"
+      },
+      "checkpoint_manifest_path": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/arms/reference/evidence-archive/checkpoints/reference-step-35000/manifest.json",
+      "checkpoint_manifest_sha256": "a3822ade8a3f0ce802624562389d1b5728aa001ae4789bbcb8f0dc086a508745",
+      "checkpoint_sha256": "a64fe4dac94fa0620e95f1011df38719deb5a3b8d2de2b8d90603a392fb31548",
+      "checkpoint_step": 35000,
+      "development_manifest_sha256": "fc18f400a776161fd0ff40b30d58d69233be723e9e26b858a60160a2b802d091",
+      "evaluation_elapsed_seconds": 652.6126850799992,
+      "evaluation_exit_code": 0,
+      "evaluation_observed_terminal_at_utc": "2026-10-04T13:35:11Z",
+      "name": "reference_step35000",
+      "native_prompts": 24,
+      "native_response_id_matches_q4": 24,
+      "report_path": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/arms/reference/evidence-archive/development/reference-step35000-development.json",
+      "report_sha256": "fff25faab09247c903683ec9547ea246e0f7498b130d44c105cb09f9132806f5",
+      "request_timing_manifest_sha256": "5b953c77fb694cbdbce8216d8c4d071963f271c4f595d83ca76cfa623b4d4517",
+      "result_sha256": "34bc088e6a8e88fa811e2410b44c3423e3e10839e1b5acfe58003289757c4144",
+      "sealed_test_accessed": false,
+      "timing": {
+        "complete": true,
+        "per_repetition_detail": "pending one CPU-only aggregate from existing raw timing records after both final timing archives exist",
+        "prompts_sha256": "131a3db7958ff6aa818b23019297654507d5b80bed3c298349417b7e3b2ba081",
+        "records": 360,
+        "repetitions": 5,
+        "requests_per_variant": 120,
+        "speedup_vs_q4_0": {
+          "decode_tokens_per_s": 0.7058701256499867,
+          "request_tokens_per_s": 0.7170127096502498
+        },
+        "token_id_parity": {
+          "A8": {
+            "matched_sequences": 120,
+            "mismatched_sequences": 0,
+            "unavailable": 0
+          },
+          "note": "Five repetitions over 24 prompts produce 120 measured requests per variant.",
+          "target_only": {
+            "matched_sequences": 120,
+            "mismatched_sequences": 0,
+            "unavailable": 0
+          }
+        },
+        "variants": {
+          "A8": {
+            "completion_tokens": 14290,
+            "decode_server_s": 141.732128,
+            "decode_tps": 100.82399948161365,
+            "request_tps": 96.58494467792126,
+            "request_wall_s": 147.9526653729772,
+            "requests": 120,
+            "timing_only_speculative": {
+              "accepted": 5595,
+              "proposed": 41990,
+              "rounds": 8535
+            }
+          },
+          "Q4_0": {
+            "completion_tokens": 14290,
+            "decode_server_s": 100.044475,
+            "decode_tps": 142.83647347842046,
+            "request_tps": 134.70464801807242,
+            "request_wall_s": 106.08394149905507,
+            "requests": 120,
+            "timing_only_speculative": {
+              "accepted": 8040,
+              "proposed": 30235,
+              "rounds": 6140
+            }
+          },
+          "target_only": {
+            "completion_tokens": 14290,
+            "decode_server_s": 155.59992700000004,
+            "decode_tps": 91.83808935848664,
+            "request_tps": 88.64324612614612,
+            "request_wall_s": 161.20799524494214,
+            "requests": 120
+          }
+        }
+      }
+    },
+    {
+      "A8": {
+        "native_acceptance_rate": 0.0506613875641141,
+        "native_acceptance_ratio_to_q4": 0.18953522843128245,
+        "native_accepted_drafts": 563,
+        "native_accepted_emitted": 563,
+        "native_accepted_per_round": 0.24758135444151275,
+        "native_emitted_tokens": 2834,
+        "native_mean_emitted_per_round": 1.2462620932277924,
+        "native_proposed_drafts": 11113,
+        "native_rounds": 2274,
+        "response_id_matches_q4": 24,
+        "validation_labels": 229,
+        "validation_loss": 5.534133500927921,
+        "validation_prompt_count": 24,
+        "validation_rounds": 48
+      },
+      "Q4_0": {
+        "native_acceptance_rate": 0.2659169836282454,
+        "native_accepted_drafts": 1608,
+        "native_accepted_emitted": 1606,
+        "native_accepted_per_round": 1.3062550771730301,
+        "native_emitted_tokens": 2834,
+        "native_mean_emitted_per_round": 2.3021933387489844,
+        "native_proposed_drafts": 6047,
+        "native_rounds": 1231
+      },
+      "archive": {
+        "attempt_prefix": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/arms/candidate/evidence-archive/development/candidate-final7200-eval-attempt-0000",
+        "hardlink_verified": true,
+        "locator_map": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/arms/candidate/evidence-archive/development/candidate-final7200-locator-map.json",
+        "report_path": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/arms/candidate/evidence-archive/development/candidate-final7200-development.json"
+      },
+      "arm": "candidate",
+      "checkpoint_manifest_sha256": "04b23e0e808c473676853cba06db11e3d84acc4c20f28a592cf7372e5b721bfa",
+      "checkpoint_sha256": "bda021d3f09e2db6f9261a1d5d1b7a680aaa826b68874639696de2a4e2cfcd43",
+      "checkpoint_step": 34731,
+      "development_manifest_sha256": "fc18f400a776161fd0ff40b30d58d69233be723e9e26b858a60160a2b802d091",
+      "evaluation_exit_code": 0,
+      "evaluation_observed_terminal_at_utc": "2026-10-04T14:21:01.295326+00:00",
+      "evaluation_split": "development",
+      "evaluator_report_elapsed_seconds": 761.6572104000006,
+      "evaluator_report_max_wall_seconds": 1200.0,
+      "hardware": "NVIDIA GeForce RTX 5080 SM120 (CUDA 0)",
+      "name": "candidate_final",
+      "native_prompts": 24,
+      "native_response_id_matches_q4": 24,
+      "precision": {
+        "binary_drafts": "row W1A8",
+        "draft_kv": "F16",
+        "primary_baseline": "frozen Q4_0 draft with native Q8_1 activation conversion",
+        "target_kv": "F16",
+        "target_weights": "F16"
+      },
+      "report_metadata_source_path": "runs/qat-a8-recovery/final-report-metadata.json",
+      "report_metadata_source_sha256": "134d8ad459e8dcad4fc5c0543dc51832f4308be19c8fdb8c06e516cae63c8e3a",
+      "report_path": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/arms/candidate/evidence-archive/development/candidate-final7200-development.json",
+      "report_sha256": "fcd0c0100d07d23aeff14f7cad7a715677b8852f1389bf16b4f7025120692c28",
+      "request_timing_manifest_path": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/arms/candidate/evidence-archive/development/candidate-final7200-eval-attempt-0000/request-timing/manifest.json",
+      "request_timing_manifest_sha256": "01fbc50b9fb73d5dd0391fd78cd0952c200c61d04a820009254174640a54454d",
+      "result_sha256": "0a5ae30b2be6872f33b9efa4874e4622d3a34f30e6ccf6dd4b33e7bc3bc992f9",
+      "sealed_test_accessed": false,
+      "supervisor_ended_at_utc": "2026-10-04T14:21:01.295326+00:00",
+      "supervisor_started_at_utc": "2026-10-04T14:08:14.085711+00:00",
+      "supervisor_wall_seconds": 767.209615,
+      "timing": {
+        "complete": true,
+        "per_repetition_detail": "See runs/qat-a8-recovery/final-existing-timing-repeat-aggregate.json (SHA-256 e204b574cd64f934bfcbbe94d2ee9fd09ce8fc309340fbf92410a560e7821280); this one 5x24 aggregate covers candidate_final and reference_final only.",
+        "prompts_sha256": "131a3db7958ff6aa818b23019297654507d5b80bed3c298349417b7e3b2ba081",
+        "records": 360,
+        "repetitions": 5,
+        "requests_per_variant": 120,
+        "status": "complete",
+        "variants": {
+          "A8": {
+            "completion_tokens": 14290,
+            "decode_distribution_s": {
+              "max": 2.0770500000000003,
+              "median": 1.7843464999999998,
+              "min": 0.346193,
+              "p95": 1.9796790000000002
+            },
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_wall_distribution_s": {
+              "max": 2.142387988998962,
+              "median": 1.8271251709993521,
+              "min": 0.41661277700040955,
+              "p95": 2.0416995429986855
+            },
+            "requests": 120
+          },
+          "Q4_0": {
+            "completion_tokens": 14290,
+            "decode_distribution_s": {
+              "max": 1.141809,
+              "median": 0.856214,
+              "min": 0.113406,
+              "p95": 1.052613
+            },
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_wall_distribution_s": {
+              "max": 1.2118004889998701,
+              "median": 0.9120331954982248,
+              "min": 0.1673575980021269,
+              "p95": 1.10844897700008
+            },
+            "requests": 120
+          },
+          "target_only": {
+            "completion_tokens": 14290,
+            "decode_distribution_s": {
+              "max": 1.4048779999999998,
+              "median": 1.3942329999999998,
+              "min": 0.230488,
+              "p95": 1.400566
+            },
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_wall_distribution_s": {
+              "max": 1.467093291998026,
+              "median": 1.4391708805014787,
+              "min": 0.29132499099796405,
+              "p95": 1.4608654539988493
+            },
+            "requests": 120
+          }
+        }
+      }
+    },
+    {
+      "A8": {
+        "native_acceptance_rate": 0.13074288413841975,
+        "native_acceptance_ratio_to_q4": 0.4898617461823828,
+        "native_accepted_drafts": 1107,
+        "native_accepted_emitted": 1106,
+        "native_accepted_per_round": 0.6398843930635838,
+        "native_emitted_tokens": 2834,
+        "native_mean_emitted_per_round": 1.638150289017341,
+        "native_proposed_drafts": 8467,
+        "native_rounds": 1730,
+        "response_id_matches_q4": 24,
+        "validation_labels": 229,
+        "validation_loss": 3.6012524220620703,
+        "validation_prompt_count": 24,
+        "validation_rounds": 48
+      },
+      "Q4_0": {
+        "native_acceptance_rate": 0.2659169836282454,
+        "native_accepted_drafts": 1608,
+        "native_accepted_emitted": 1606,
+        "native_accepted_per_round": 1.3062550771730301,
+        "native_emitted_tokens": 2834,
+        "native_mean_emitted_per_round": 2.3021933387489844,
+        "native_proposed_drafts": 6047,
+        "native_rounds": 1231
+      },
+      "archive": {
+        "attempt_prefix": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/arms/reference/evidence-archive/development/reference-step40000-eval-attempt-0000",
+        "hardlink_verified": true,
+        "locator_map": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/arms/reference/evidence-archive/development/reference-step40000-locator-map.json",
+        "report_path": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/arms/reference/evidence-archive/development/reference-step40000-development.json"
+      },
+      "arm": "reference",
+      "checkpoint_manifest_sha256": "2628f5d23568b4c99ac8076911a033a37ac978e0da03d84c76febb1c595369bb",
+      "checkpoint_sha256": "d5ddbd3d4932e8521b2f265dc3026dce01914a87c62084a31db101522ab14251",
+      "checkpoint_step": 40000,
+      "development_manifest_sha256": "fc18f400a776161fd0ff40b30d58d69233be723e9e26b858a60160a2b802d091",
+      "evaluation_exit_code": 0,
+      "evaluation_observed_terminal_at_utc": "2026-10-04T14:56:13.146507+00:00",
+      "evaluation_split": "development",
+      "evaluator_report_elapsed_seconds": 678.7126542159967,
+      "evaluator_report_max_wall_seconds": 1200.0,
+      "hardware": "NVIDIA GeForce RTX 5080 SM120 (CUDA 0)",
+      "name": "reference_step40000",
+      "native_prompts": 24,
+      "native_response_id_matches_q4": 24,
+      "precision": {
+        "binary_drafts": "row W1A8",
+        "draft_kv": "F16",
+        "primary_baseline": "frozen Q4_0 draft with native Q8_1 activation conversion",
+        "target_kv": "F16",
+        "target_weights": "F16"
+      },
+      "report_metadata_source_path": "runs/qat-a8-recovery/final-report-metadata.json",
+      "report_metadata_source_sha256": "134d8ad459e8dcad4fc5c0543dc51832f4308be19c8fdb8c06e516cae63c8e3a",
+      "report_path": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/arms/reference/evidence-archive/development/reference-step40000-development.json",
+      "report_sha256": "d4c23838df4db3a8f32210902a410de5bae07a4c4e33117edd0fa706c7625c98",
+      "request_timing_manifest_path": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/arms/reference/evidence-archive/development/reference-step40000-eval-attempt-0000/request-timing/manifest.json",
+      "request_timing_manifest_sha256": "dcb5fa8d9c42d0a65b32d8198b28e2626cc300a873d4d700b93dd98fd02f53c4",
+      "result_sha256": "6441d022e19ecd137aa280a97f69a616281b9e826da3a69947df3cc26a242d87",
+      "sealed_test_accessed": false,
+      "supervisor_ended_at_utc": "2026-10-04T14:56:13.146507+00:00",
+      "supervisor_started_at_utc": "2026-10-04T14:44:49.458025+00:00",
+      "supervisor_wall_seconds": 683.688482,
+      "timing": {
+        "complete": true,
+        "per_repetition_detail": "Pooled per-request distributions are preserved here; no separate per-repetition aggregate was requested for this intermediate endpoint.",
+        "prompts_sha256": "131a3db7958ff6aa818b23019297654507d5b80bed3c298349417b7e3b2ba081",
+        "records": 360,
+        "repetitions": 5,
+        "requests_per_variant": 120,
+        "status": "complete",
+        "variants": {
+          "A8": {
+            "completion_tokens": 14290,
+            "decode_distribution_s": {
+              "max": 1.486501,
+              "median": 1.276335,
+              "min": 0.232148,
+              "p95": 1.46085
+            },
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_wall_distribution_s": {
+              "max": 1.5543943689990556,
+              "median": 1.3277377124977647,
+              "min": 0.302749706999748,
+              "p95": 1.5267245070062927
+            },
+            "requests": 120
+          },
+          "Q4_0": {
+            "completion_tokens": 14290,
+            "decode_distribution_s": {
+              "max": 1.137402,
+              "median": 0.8605855,
+              "min": 0.11327200000000001,
+              "p95": 1.0516780000000001
+            },
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_wall_distribution_s": {
+              "max": 1.2224176410018117,
+              "median": 0.9175965519971214,
+              "min": 0.17534787700424204,
+              "p95": 1.0979439319999074
+            },
+            "requests": 120
+          },
+          "target_only": {
+            "completion_tokens": 14290,
+            "decode_distribution_s": {
+              "max": 1.405758,
+              "median": 1.394468,
+              "min": 0.23041499999999998,
+              "p95": 1.4005699999999999
+            },
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_wall_distribution_s": {
+              "max": 1.4653357599963783,
+              "median": 1.436551408001833,
+              "min": 0.28133712700218894,
+              "p95": 1.462712772001396
+            },
+            "requests": 120
+          }
+        }
+      }
+    },
+    {
+      "A8": {
+        "native_acceptance_rate": 0.130686517783292,
+        "native_acceptance_ratio_to_q4": 0.488854084083049,
+        "native_accepted_drafts": 1106,
+        "native_accepted_emitted": 1105,
+        "native_accepted_per_round": 0.6385681293302541,
+        "native_emitted_tokens": 2834,
+        "native_mean_emitted_per_round": 1.636258660508083,
+        "native_proposed_drafts": 8463,
+        "native_rounds": 1732,
+        "response_id_matches_q4": 24,
+        "validation_labels": 229,
+        "validation_loss": 3.69614736651229,
+        "validation_prompt_count": 24,
+        "validation_rounds": 48
+      },
+      "Q4_0": {
+        "native_acceptance_rate": 0.2659169836282454,
+        "native_accepted_drafts": 1608,
+        "native_accepted_emitted": 1606,
+        "native_accepted_per_round": 1.3062550771730301,
+        "native_emitted_tokens": 2834,
+        "native_mean_emitted_per_round": 2.3021933387489844,
+        "native_proposed_drafts": 6047,
+        "native_rounds": 1231
+      },
+      "archive": {
+        "attempt_prefix": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/arms/reference/evidence-archive/development/reference-final7200-eval-attempt-0000",
+        "hardlink_verified": true,
+        "locator_map": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/arms/reference/evidence-archive/development/reference-final7200-locator-map.json",
+        "report_path": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/arms/reference/evidence-archive/development/reference-final7200-development.json"
+      },
+      "arm": "reference",
+      "checkpoint_manifest_sha256": "a0f92778d094f352fb86e65275a99c328e592d27539319fb9b3c8d7675464b58",
+      "checkpoint_sha256": "aebb8032c03f2d5263f608d67a65849b3239c85d6ccd372e09a7d9efa507579d",
+      "checkpoint_step": 43203,
+      "development_manifest_sha256": "fc18f400a776161fd0ff40b30d58d69233be723e9e26b858a60160a2b802d091",
+      "evaluation_exit_code": 0,
+      "evaluation_observed_terminal_at_utc": "2026-10-04T15:26:08.712057+00:00",
+      "evaluation_split": "development",
+      "evaluator_report_elapsed_seconds": 670.7425500739992,
+      "evaluator_report_max_wall_seconds": 1200.0,
+      "hardware": "NVIDIA GeForce RTX 5080 SM120 (CUDA 0)",
+      "name": "reference_final",
+      "native_prompts": 24,
+      "native_response_id_matches_q4": 24,
+      "precision": {
+        "binary_drafts": "row W1A8",
+        "draft_kv": "F16",
+        "primary_baseline": "frozen Q4_0 draft with native Q8_1 activation conversion",
+        "target_kv": "F16",
+        "target_weights": "F16"
+      },
+      "report_metadata_source_path": "runs/qat-a8-recovery/final-report-metadata.json",
+      "report_metadata_source_sha256": "134d8ad459e8dcad4fc5c0543dc51832f4308be19c8fdb8c06e516cae63c8e3a",
+      "report_path": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/arms/reference/evidence-archive/development/reference-final7200-development.json",
+      "report_sha256": "2cc27b3f0286f92cb40d642f2733179f5fd539dfc046ea7827a891e0e2296a4b",
+      "request_timing_manifest_path": "/home/philip/binary-eagle-decoding/checkouts/a8-qat-run-583480c7/runs/qat-a8-comparison-20261003-01/arms/reference/evidence-archive/development/reference-final7200-eval-attempt-0000/request-timing/manifest.json",
+      "request_timing_manifest_sha256": "f45e31915137104d8441b9b03bbe7b23e034396a26d959b954066d6ab9043902",
+      "result_sha256": "18c3c406fb0daa5d6217823eb25266de754a681bfb2d90b18a50060cd4b1f303",
+      "sealed_test_accessed": false,
+      "supervisor_ended_at_utc": "2026-10-04T15:26:08.712057+00:00",
+      "supervisor_started_at_utc": "2026-10-04T15:14:52.535458+00:00",
+      "supervisor_wall_seconds": 676.176599,
+      "timing": {
+        "complete": true,
+        "per_repetition_detail": "See runs/qat-a8-recovery/final-existing-timing-repeat-aggregate.json (SHA-256 e204b574cd64f934bfcbbe94d2ee9fd09ce8fc309340fbf92410a560e7821280); this one 5x24 aggregate covers candidate_final and reference_final only.",
+        "prompts_sha256": "131a3db7958ff6aa818b23019297654507d5b80bed3c298349417b7e3b2ba081",
+        "records": 360,
+        "repetitions": 5,
+        "requests_per_variant": 120,
+        "status": "complete",
+        "variants": {
+          "A8": {
+            "completion_tokens": 14290,
+            "decode_distribution_s": {
+              "max": 1.5852870000000001,
+              "median": 1.254404,
+              "min": 0.260812,
+              "p95": 1.531761
+            },
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_wall_distribution_s": {
+              "max": 1.6526041079996503,
+              "median": 1.2973157599953993,
+              "min": 0.3315594450032222,
+              "p95": 1.5926391519969911
+            },
+            "requests": 120
+          },
+          "Q4_0": {
+            "completion_tokens": 14290,
+            "decode_distribution_s": {
+              "max": 1.126217,
+              "median": 0.8586365,
+              "min": 0.113812,
+              "p95": 1.046042
+            },
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_wall_distribution_s": {
+              "max": 1.189648681000108,
+              "median": 0.906380585001898,
+              "min": 0.16897627100115642,
+              "p95": 1.0936543599964352
+            },
+            "requests": 120
+          },
+          "target_only": {
+            "completion_tokens": 14290,
+            "decode_distribution_s": {
+              "max": 1.405579,
+              "median": 1.3935815,
+              "min": 0.22964400000000001,
+              "p95": 1.3990440000000002
+            },
+            "finish_reason_counts": {
+              "length": 105,
+              "stop": 15
+            },
+            "request_wall_distribution_s": {
+              "max": 1.462214369996218,
+              "median": 1.4320879284969124,
+              "min": 0.2758300310015329,
+              "p95": 1.4565836249967106
+            },
+            "requests": 120
+          }
+        }
+      }
+    }
+  ],
+  "final_report_metadata_sha256": "134d8ad459e8dcad4fc5c0543dc51832f4308be19c8fdb8c06e516cae63c8e3a",
+  "endpoint_cpu_audit_sha256": "7486e871f7d809924b21f24fe49d3d4e81c7450739babb508fa29899539a600d",
+  "final_timing_aggregate_sha256": "e204b574cd64f934bfcbbe94d2ee9fd09ce8fc309340fbf92410a560e7821280",
+  "final_endpoint_request_and_decode_totals": {
+    "candidate": {
+      "variants": {
+        "A8": {
+          "requests": 120,
+          "completion_tokens": 14290,
+          "request_wall_s": 205.2481155500136,
+          "decode_server_s": 198.82163500000001,
+          "request_tokens_per_s": 69.62305091915887,
+          "decode_tokens_per_s": 71.87346588312685
+        },
+        "Q4_0": {
+          "requests": 120,
+          "completion_tokens": 14290,
+          "request_wall_s": 106.0655404059653,
+          "decode_server_s": 99.85113199999999,
+          "request_tokens_per_s": 134.72801765120983,
+          "decode_tokens_per_s": 143.11304953458114
+        },
+        "target_only": {
+          "requests": 120,
+          "completion_tokens": 14290,
+          "request_wall_s": 161.52767602899257,
+          "decode_server_s": 155.653964,
+          "request_tokens_per_s": 88.46781153116504,
+          "decode_tokens_per_s": 91.80620674716643
+        }
+      },
+      "a8_ratios": {
+        "Q4_0": {
+          "request_tokens_per_s": 0.5167674262038225,
+          "decode_tokens_per_s": 0.5022146206573546
+        },
+        "target_only": {
+          "request_tokens_per_s": 0.7869873766983868,
+          "decode_tokens_per_s": 0.7828824262510465
+        }
+      },
+      "reported_aggregate_crosscheck": {
+        "passed": true,
+        "numeric_fields_checked": 22,
+        "rel_tol": 1e-09,
+        "abs_tol": 1e-09
+      }
+    },
+    "reference": {
+      "variants": {
+        "A8": {
+          "requests": 120,
+          "completion_tokens": 14290,
+          "request_wall_s": 149.33729838802537,
+          "decode_server_s": 143.605636,
+          "request_tokens_per_s": 95.68942356831765,
+          "decode_tokens_per_s": 99.50862931312807
+        },
+        "Q4_0": {
+          "requests": 120,
+          "completion_tokens": 14290,
+          "request_wall_s": 105.23836152508738,
+          "decode_server_s": 99.712988,
+          "request_tokens_per_s": 135.7869867310074,
+          "decode_tokens_per_s": 143.3113206877323
+        },
+        "target_only": {
+          "requests": 120,
+          "completion_tokens": 14290,
+          "request_wall_s": 160.74567743198713,
+          "decode_server_s": 155.572777,
+          "request_tokens_per_s": 88.8981914057765,
+          "decode_tokens_per_s": 91.85411661064583
+        }
+      },
+      "a8_ratios": {
+        "Q4_0": {
+          "request_tokens_per_s": 0.7047024598747257,
+          "decode_tokens_per_s": 0.6943528873755344
+        },
+        "target_only": {
+          "request_tokens_per_s": 1.0763933670094874,
+          "decode_tokens_per_s": 1.0833333658297366
+        }
+      },
+      "reported_aggregate_crosscheck": {
+        "passed": true,
+        "numeric_fields_checked": 22,
+        "rel_tol": 1e-09,
+        "abs_tol": 1e-09
+      }
+    }
+  }
+}

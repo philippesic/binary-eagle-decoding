@@ -1,5 +1,58 @@
 # A8 QAT recovery and comparison
 
+## Final comparison verified; publication and cleanup — October 4, 16:31 UTC
+
+BOTH original7200/max7200/null budgets and completed/final_training_complete status,
+latest==final request==completed result checkpoints pass. Reference43203/cursor43287,
+aebb8032, native final report2cc27b3f; candidate34731/cursor34797,bda021d3,
+reportfcd0c010. Both final evals exit0 within1200caps; all18 original reports,
+raw failures and checkpoint/probe/data lineage preserved outside Git. Sealed finals
+untouched. No source math/recipe/precision/data/budget change, topup or recapture.
+
+Final native24prompt results: referenceCE3.696147,1106accepted/8463proposed/
+1732rounds=0.638568drafts/round; candidateCE5.534134,563/11113/2274=0.247581;
+Q4_01608/6047/1231=1.306255. All24native response IDs match; native output2834tokens.
+Final timing120requests/variant,14290IDs,5repetitions, all exact variant sequences
+match. Reference95.689requesttokens/s versus135.787Q4_0 (70.47%); candidate69.623
+versus134.728 (51.68%). All five belowQ4_0. Median/p95 request reference1.297/1.593s
+vsQ4_00.906/1.094; candidate1.827/2.042 vs0.912/1.108. Neither arm beatsprimaryQ4_0;
+combined candidate trailsreference; no isolated causal feature/SM75/capacity claim.
+
+Original checkpoint CPU count joins pass: reference531prompts/206163rows/tokens,
+epoch0, exactcommitted flips137097380; candidate426/165733/165733,epoch0,
+exact1119471657. Diagnostic samplesreference43201/gap2 andcandidate34701/gap30
+join saved last_step/observations/cumulative fields. Sampled flips83568564/
+570747555 andflipbacks35514241/267824891 are separate from exact history;
+nearzero0.01 threshold and small-familyL1 values preserved. Original reference
+SIGSEGV9681→9000 retry1/max2 and chargedconservative downtime remain unchanged.
+
+Published scalar artifacts under `experiments/a8-qat-recovery/`: final comparison,
+18report evidence, native/latency metadata, endpointCPUaudit, timing repetitions/
+independentQA, physicalrelease and transportclosure. Utilities b742aggregation and
+c7a7endpointaudit use only existing data. Root checks all18 native/loss/parity
+rows and two endpoint/hash/pooledrate joins; independent Sol final reportQA429
+checks/zeroissues and timingQA472/zeroissues. Reviewed report SHA
+`264990282e859d15e33c04c8cdd5b3bbb0b0ae40f00050ba2ea8da3371de96ed`.
+Endpoint audit SHA `7486e871f7d809924b21f24fe49d3d4e81c7450739babb508fa29899539a600d`;
+physical inventory `98aedf60cda9ca219692f97953c6fe358598cb250a667c2c6b743383b0e8161f`;
+metadata `134d8ad459e8dcad4fc5c0543dc51832f4308be19c8fdb8c06e516cae63c8e3a`;
+timing aggregatee204... and18report source summary39a46df4... fully bound in files.
+
+Physical16:03–16:04UTC inventory: all34finalnative PID/PGID stop/groupgone flags
+true, everyowned supervisor/trainer/evaluator group absent, runtime tmux empty,
+no project/native matches, /dev/dxg fuser noholders, RTX5080/SM1202766MiB/0%/no
+computeapps. CPU audit returned (CUDA_VISIBLE_DEVICES empty,3.572GBpeakRSS).
+Pane285/session254 closed16:05:50UTC. Root review found three missing summary
+rows and required one bounded read-only metadata pass: no requests/GPU/model
+allocation, exact existing reports/timing SHA unchanged. Newpane286/session255
+closed16:17:24UTC and verified absent; operator ceased remote access. Latest
+canonical observation now reflectsclosed/auditedstate, not stale15:14live snapshot.
+No2080query/control/flag write. Sole operator finished; CPU QA workers finished.
+
+Final publication/mainpush, reviewed branch-lineage merge, preserved operator
+preflight, merged-worktree retirement and SAME heartbeatpause remain root's final
+operational steps. Goal stays active until those complete; no new research action.
+
 ## Both final native evaluations passed; timing arithmetic audited — October 4, 15:45 UTC
 
 Reference final eval exit0/end15:26:08.712057UTC (start15:14:52.535458), supervisor
@@ -28,10 +81,14 @@ of rates. Per-request latency quantiles require original pooled metadata separat
 CPU audit script transfer exceeded tmux line capacity; partial ignored b64 was
 left unused, never decoded/executed. Use published Git blob e155ae2 to stage only
 analysis script with verifiedb742SHA, changing refs/ignored files, not frozen3bd
-HEAD/source. Root review also caught diagnostic step-scope bug and corrected its
-own earlier schema guidance: recipe-audit outer step is current update; observation
-step is checkpoint recipe_telemetry.signs.last_step, not the small telemetry dict.
-Use that saved last_step and join counts/gaps; actual verification pending.
+HEAD/source. Root review raised a diagnostic step-scope concern and initially overstated it:
+the small telemetry dict has no step; saved recipe_telemetry.signs.last_step is
+explicit observation identity. Full caller review showed probe.enabled gates writes
+after100updates, so these actual outer audit steps coincide with the saved samples.
+Candidate34701/gap30 and reference43201/gap2 are verified; the original outer-step
+assertion was not demonstrated broken. The published CPU utility now joins saved
+last_step/observations/cumulative counters explicitly. USER_LESSONS records the
+root correction; no experiment or original artifact changed.
 No experiment, model, budget or source math changed. Both native runs are finished,
 but final CPU coverage/telemetry/latency/report/physical inventory/transport closure/
 worktree cleanup/heartbeat pause audit remains INCOMPLETE. Native Goal active.

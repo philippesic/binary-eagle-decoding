@@ -1,0 +1,618 @@
+{
+  "boot_id": "517c4a36-e475-4a5f-9fa6-65de57edc6fe",
+  "final_census": {
+    "all_34_final_manifest_server_pids_absent": true,
+    "dev_dxg": "/dev/dxg exists; /usr/bin/fuser -v /dev/dxg returned no holders at 2026-10-04T16:04:02.759480Z",
+    "nvidia_compute_apps": "no output",
+    "nvidia_smi_at_2026_10_04T16_03_03.469464Z": "NVIDIA GeForce RTX 5080, 2766 MiB, 0%",
+    "owned_pgids_empty": true,
+    "owned_pid_list_absent": true,
+    "owned_pids_checked": [
+      29672,
+      29677,
+      30447,
+      30448,
+      31596,
+      31597,
+      32214,
+      32215,
+      33444,
+      33445,
+      33982,
+      33983,
+      35006,
+      35007,
+      35475,
+      35476
+    ],
+    "remaining_project_native_process_matches": [],
+    "runtime_tmux_socket_sessions": ""
+  },
+  "final_eval_native_d_d_servers": {
+    "candidate": [
+      {
+        "name": "A8",
+        "server_pgid": 32266,
+        "server_pid": 32266,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": 0,
+          "stopped": true
+        }
+      },
+      {
+        "name": "q4_0",
+        "server_pgid": 32344,
+        "server_pid": 32344,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": 0,
+          "stopped": true
+        }
+      }
+    ],
+    "reference": [
+      {
+        "name": "A8",
+        "server_pgid": 35536,
+        "server_pid": 35536,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": 0,
+          "stopped": true
+        }
+      },
+      {
+        "name": "q4_0",
+        "server_pgid": 35601,
+        "server_pid": 35601,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": 0,
+          "stopped": true
+        }
+      }
+    ]
+  },
+  "final_eval_timing_servers": {
+    "candidate": [
+      {
+        "dispatch_confirmed": true,
+        "pid_and_group_absent_at_final_census": true,
+        "repetition": 0,
+        "server_pgid": 32380,
+        "server_pid": 32380,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": -9,
+          "stopped": true
+        },
+        "variant": "Q4_0"
+      },
+      {
+        "dispatch_confirmed": true,
+        "pid_and_group_absent_at_final_census": true,
+        "repetition": 0,
+        "server_pgid": 32408,
+        "server_pid": 32408,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": -9,
+          "stopped": true
+        },
+        "variant": "A8"
+      },
+      {
+        "dispatch_confirmed": true,
+        "pid_and_group_absent_at_final_census": true,
+        "repetition": 0,
+        "server_pgid": 32493,
+        "server_pid": 32493,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": -9,
+          "stopped": true
+        },
+        "variant": "target_only"
+      },
+      {
+        "dispatch_confirmed": true,
+        "pid_and_group_absent_at_final_census": true,
+        "repetition": 1,
+        "server_pgid": 32529,
+        "server_pid": 32529,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": -9,
+          "stopped": true
+        },
+        "variant": "A8"
+      },
+      {
+        "dispatch_confirmed": true,
+        "pid_and_group_absent_at_final_census": true,
+        "repetition": 1,
+        "server_pgid": 32611,
+        "server_pid": 32611,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": -9,
+          "stopped": true
+        },
+        "variant": "target_only"
+      },
+      {
+        "dispatch_confirmed": true,
+        "pid_and_group_absent_at_final_census": true,
+        "repetition": 1,
+        "server_pgid": 32647,
+        "server_pid": 32647,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": -9,
+          "stopped": true
+        },
+        "variant": "Q4_0"
+      },
+      {
+        "dispatch_confirmed": true,
+        "pid_and_group_absent_at_final_census": true,
+        "repetition": 2,
+        "server_pgid": 32703,
+        "server_pid": 32703,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": -9,
+          "stopped": true
+        },
+        "variant": "target_only"
+      },
+      {
+        "dispatch_confirmed": true,
+        "pid_and_group_absent_at_final_census": true,
+        "repetition": 2,
+        "server_pgid": 32754,
+        "server_pid": 32754,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": -9,
+          "stopped": true
+        },
+        "variant": "Q4_0"
+      },
+      {
+        "dispatch_confirmed": true,
+        "pid_and_group_absent_at_final_census": true,
+        "repetition": 2,
+        "server_pgid": 32782,
+        "server_pid": 32782,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": -9,
+          "stopped": true
+        },
+        "variant": "A8"
+      },
+      {
+        "dispatch_confirmed": true,
+        "pid_and_group_absent_at_final_census": true,
+        "repetition": 3,
+        "server_pgid": 32873,
+        "server_pid": 32873,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": -9,
+          "stopped": true
+        },
+        "variant": "target_only"
+      },
+      {
+        "dispatch_confirmed": true,
+        "pid_and_group_absent_at_final_census": true,
+        "repetition": 3,
+        "server_pgid": 32901,
+        "server_pid": 32901,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": -9,
+          "stopped": true
+        },
+        "variant": "A8"
+      },
+      {
+        "dispatch_confirmed": true,
+        "pid_and_group_absent_at_final_census": true,
+        "repetition": 3,
+        "server_pgid": 32989,
+        "server_pid": 32989,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": -9,
+          "stopped": true
+        },
+        "variant": "Q4_0"
+      },
+      {
+        "dispatch_confirmed": true,
+        "pid_and_group_absent_at_final_census": true,
+        "repetition": 4,
+        "server_pgid": 33017,
+        "server_pid": 33017,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": -9,
+          "stopped": true
+        },
+        "variant": "Q4_0"
+      },
+      {
+        "dispatch_confirmed": true,
+        "pid_and_group_absent_at_final_census": true,
+        "repetition": 4,
+        "server_pgid": 33045,
+        "server_pid": 33045,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": -9,
+          "stopped": true
+        },
+        "variant": "target_only"
+      },
+      {
+        "dispatch_confirmed": true,
+        "pid_and_group_absent_at_final_census": true,
+        "repetition": 4,
+        "server_pgid": 33101,
+        "server_pid": 33101,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": -9,
+          "stopped": true
+        },
+        "variant": "A8"
+      }
+    ],
+    "reference": [
+      {
+        "dispatch_confirmed": true,
+        "pid_and_group_absent_at_final_census": true,
+        "repetition": 0,
+        "server_pgid": 35631,
+        "server_pid": 35631,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": -9,
+          "stopped": true
+        },
+        "variant": "Q4_0"
+      },
+      {
+        "dispatch_confirmed": true,
+        "pid_and_group_absent_at_final_census": true,
+        "repetition": 0,
+        "server_pgid": 35682,
+        "server_pid": 35682,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": -9,
+          "stopped": true
+        },
+        "variant": "A8"
+      },
+      {
+        "dispatch_confirmed": true,
+        "pid_and_group_absent_at_final_census": true,
+        "repetition": 0,
+        "server_pgid": 35722,
+        "server_pid": 35722,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": -9,
+          "stopped": true
+        },
+        "variant": "target_only"
+      },
+      {
+        "dispatch_confirmed": true,
+        "pid_and_group_absent_at_final_census": true,
+        "repetition": 1,
+        "server_pgid": 35769,
+        "server_pid": 35769,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": -9,
+          "stopped": true
+        },
+        "variant": "A8"
+      },
+      {
+        "dispatch_confirmed": true,
+        "pid_and_group_absent_at_final_census": true,
+        "repetition": 1,
+        "server_pgid": 35801,
+        "server_pid": 35801,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": -9,
+          "stopped": true
+        },
+        "variant": "target_only"
+      },
+      {
+        "dispatch_confirmed": true,
+        "pid_and_group_absent_at_final_census": true,
+        "repetition": 1,
+        "server_pgid": 35835,
+        "server_pid": 35835,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": -9,
+          "stopped": true
+        },
+        "variant": "Q4_0"
+      },
+      {
+        "dispatch_confirmed": true,
+        "pid_and_group_absent_at_final_census": true,
+        "repetition": 2,
+        "server_pgid": 35887,
+        "server_pid": 35887,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": -9,
+          "stopped": true
+        },
+        "variant": "target_only"
+      },
+      {
+        "dispatch_confirmed": true,
+        "pid_and_group_absent_at_final_census": true,
+        "repetition": 2,
+        "server_pgid": 35915,
+        "server_pid": 35915,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": -9,
+          "stopped": true
+        },
+        "variant": "Q4_0"
+      },
+      {
+        "dispatch_confirmed": true,
+        "pid_and_group_absent_at_final_census": true,
+        "repetition": 2,
+        "server_pgid": 35943,
+        "server_pid": 35943,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": -9,
+          "stopped": true
+        },
+        "variant": "A8"
+      },
+      {
+        "dispatch_confirmed": true,
+        "pid_and_group_absent_at_final_census": true,
+        "repetition": 3,
+        "server_pgid": 35998,
+        "server_pid": 35998,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": -9,
+          "stopped": true
+        },
+        "variant": "target_only"
+      },
+      {
+        "dispatch_confirmed": true,
+        "pid_and_group_absent_at_final_census": true,
+        "repetition": 3,
+        "server_pgid": 36026,
+        "server_pid": 36026,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": -9,
+          "stopped": true
+        },
+        "variant": "A8"
+      },
+      {
+        "dispatch_confirmed": true,
+        "pid_and_group_absent_at_final_census": true,
+        "repetition": 3,
+        "server_pgid": 36076,
+        "server_pid": 36076,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": -9,
+          "stopped": true
+        },
+        "variant": "Q4_0"
+      },
+      {
+        "dispatch_confirmed": true,
+        "pid_and_group_absent_at_final_census": true,
+        "repetition": 4,
+        "server_pgid": 36113,
+        "server_pid": 36113,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": -9,
+          "stopped": true
+        },
+        "variant": "Q4_0"
+      },
+      {
+        "dispatch_confirmed": true,
+        "pid_and_group_absent_at_final_census": true,
+        "repetition": 4,
+        "server_pgid": 36158,
+        "server_pid": 36158,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": -9,
+          "stopped": true
+        },
+        "variant": "target_only"
+      },
+      {
+        "dispatch_confirmed": true,
+        "pid_and_group_absent_at_final_census": true,
+        "repetition": 4,
+        "server_pgid": 36190,
+        "server_pid": 36190,
+        "server_stop": {
+          "process_group_gone": true,
+          "return_code": -9,
+          "stopped": true
+        },
+        "variant": "A8"
+      }
+    ]
+  },
+  "observed_at_utc": "2026-10-04T16:04:02.759480Z",
+  "owned_supervisor_trainer_evaluator_groups": [
+    {
+      "role": "reference step30000 resume training to natural35000",
+      "supervisor": {
+        "birth_ticks": "5311113",
+        "group_empty": true,
+        "pgid": 29672,
+        "pid": 29672,
+        "pid_absent": true
+      },
+      "trainer": {
+        "birth_ticks": "5311121",
+        "group_empty": true,
+        "pgid": 29677,
+        "pid": 29677,
+        "pid_absent": true
+      }
+    },
+    {
+      "evaluator": {
+        "birth_ticks": null,
+        "group_empty": true,
+        "pgid": 30448,
+        "pid": 30448,
+        "pid_absent": true
+      },
+      "role": "reference step35000 scheduled evaluation",
+      "supervisor": {
+        "birth_ticks": null,
+        "group_empty": true,
+        "pgid": 30447,
+        "pid": 30447,
+        "pid_absent": true
+      }
+    },
+    {
+      "role": "candidate final original-budget resume to7200",
+      "supervisor": {
+        "birth_ticks": "5610816",
+        "group_empty": true,
+        "pgid": 31596,
+        "pid": 31596,
+        "pid_absent": true
+      },
+      "trainer": {
+        "birth_ticks": "5610825",
+        "group_empty": true,
+        "pgid": 31597,
+        "pid": 31597,
+        "pid_absent": true
+      }
+    },
+    {
+      "evaluator": {
+        "birth_ticks": "5745145",
+        "group_empty": true,
+        "pgid": 32215,
+        "pid": 32215,
+        "pid_absent": true
+      },
+      "role": "candidate final7200 evaluation",
+      "supervisor": {
+        "birth_ticks": "5745136",
+        "group_empty": true,
+        "pgid": 32214,
+        "pid": 32214,
+        "pid_absent": true
+      }
+    },
+    {
+      "role": "reference training through natural40000 boundary",
+      "supervisor": {
+        "birth_ticks": "5849330",
+        "group_empty": true,
+        "pgid": 33444,
+        "pid": 33444,
+        "pid_absent": true
+      },
+      "trainer": {
+        "birth_ticks": "5849338",
+        "group_empty": true,
+        "pgid": 33445,
+        "pid": 33445,
+        "pid_absent": true
+      }
+    },
+    {
+      "evaluator": {
+        "birth_ticks": "5964682",
+        "group_empty": true,
+        "pgid": 33983,
+        "pid": 33983,
+        "pid_absent": true
+      },
+      "role": "reference step40000 scheduled evaluation",
+      "supervisor": {
+        "birth_ticks": "5964673",
+        "group_empty": true,
+        "pgid": 33982,
+        "pid": 33982,
+        "pid_absent": true
+      }
+    },
+    {
+      "role": "reference final original-budget resume to7200",
+      "supervisor": {
+        "birth_ticks": "6064726",
+        "group_empty": true,
+        "pgid": 35006,
+        "pid": 35006,
+        "pid_absent": true
+      },
+      "trainer": {
+        "birth_ticks": "6064736",
+        "group_empty": true,
+        "pgid": 35007,
+        "pid": 35007,
+        "pid_absent": true
+      }
+    },
+    {
+      "evaluator": {
+        "birth_ticks": "6144990",
+        "group_empty": true,
+        "pgid": 35476,
+        "pid": 35476,
+        "pid_absent": true
+      },
+      "role": "reference final7200 evaluation",
+      "supervisor": {
+        "birth_ticks": "6144982",
+        "group_empty": true,
+        "pgid": 35475,
+        "pid": 35475,
+        "pid_absent": true
+      }
+    }
+  ],
+  "remote_audit_command": "cd /home/philip/binary-eagle-decoding/checkouts/a8-eval-recovery-3bd4837 && CUDA_VISIBLE_DEVICES='' /home/philip/binary-eagle-decoding/.venv/bin/python runs/a8-final-cpu-audit-20261004/audit_final_endpoints.py > runs/a8-final-cpu-audit-20261004/final-endpoint-cpu-audit.json",
+  "remote_cpu_audit_result_path": "/home/philip/binary-eagle-decoding/checkouts/a8-eval-recovery-3bd4837/runs/a8-final-cpu-audit-20261004/final-endpoint-cpu-audit.json",
+  "remote_cpu_audit_result_sha256": "7486e871f7d809924b21f24fe49d3d4e81c7450739babb508fa29899539a600d",
+  "remote_cpu_audit_script_sha256": "c7a70733049510c45d029226925ec47d41d93ce60a84a14bc41b2e8da43b6612",
+  "schema": "a8_final_physical_release_v1",
+  "transport": "tmux MCP pane %285; direct WSL Ubuntu; pinned host SHA256:CFMXul7DWzihyD1Qr3ENOSZ7CUGJHzRh1tFjN0j4ZFI"
+}

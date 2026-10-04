@@ -300,21 +300,25 @@ additional proof protocols or redoing completed audit work.
   remain5,595/41,990/8,535 and8,040/30,235/6,140 (120requests). Original report
   SHAfff25faa... is unchanged; no experiment rerun was needed.
 
-### 2026-10-04: Use the saved diagnostic observation step
+### 2026-10-04: Read audit write conditions before calling a timestamp wrong
 
-- Context: Final A8 endpoint telemetry joins must distinguish exact optimizer
-  history from diagnostics sampled every100updates.
-- Evidence: The CPU audit initially set sample_step from recipe-audit.json.step,
-  which is updated each optimizer step. Root source review found the actual
-  observation position is saved recipe_telemetry.signs.last_step in resume.pt;
-  the small telemetry dict has counts/gaps but no step field.
-- Agent contribution: Operator used the outer audit step; root had earlier
-  incorrectly suggested the step was inside the telemetry dict. Root corrected
-  that guidance from SignFlipDiagnostics.observe/state_dict before accepting
-  audit results. This is an agent schema mistake, not a user or training error.
-- Practical lesson: Join the saved diagnostic last_step/observations/cumulative
-  counters to the small telemetry fields; record the outer update step separately.
-  Compute endpoint minus saved last_step for the sample lag. Do not infer the
-  observation timestamp from a file's current update timestamp.
-- Resolution: Read-only CPU audit correction requested; no model/optimizer/data/
-  budget change or GPU request. Actual gap verification remains pending.
+- Context: Final A8 telemetry joins distinguish exact optimizer history from
+  diagnostics sampled every100updates.
+- Evidence: Root initially claimed recipe-audit.json.step updates each optimizer
+  step, and incorrectly suggested the small telemetry dict contains a step field.
+  Full source review showed that after100updates the probe is enabled only at
+  diagnostic intervals, so the outer audit step matches the saved sign-history
+  last_step on these actual endpoints (candidate34701,reference43201).
+- Status: Confirmed root schema-review overstatement; the original operator's
+  outer-step assertion was not demonstrated broken on actual endpoint data.
+  No user/training error, model mutation, budget change or GPU request occurred.
+- Agent contribution: Root inspected the atomic write without its enclosing
+  probe.enabled condition, then corrected the claim and acknowledged it to the
+  operator. The revised CPU utility explicitly uses saved_signs.last_step and
+  joins saved observations/cumulative counters to the small telemetry fields.
+- Practical lesson: Inspect callers and write conditions before declaring a stale
+  timestamp. Prefer the saved diagnostic last_step as explicit observation identity;
+  retain the outer audit step separately and compute endpoint minus observation.
+- Resolution: Candidate sample34701/gap30 and reference43201/gap2 verified.
+  Their outer audit steps coincide under the frozen recipe; no experiment rerun
+  or original artifact correction was needed.
