@@ -62,6 +62,12 @@ def run(config_path: Path, output: Path):
              ("prompt-00", prompts[0]), ("prompt-01", prompts[1]), ("eos", EOS_FIXTURE)]
     if profile:
         cases = [("warmup-00", prompts[0]), ("prompt-00", prompts[0])]
+    prefix = cfg.get("diagnostic_prefix_prompts")
+    if prefix is not None:
+        if profile or not cfg.get("verify_positions") or isinstance(prefix, bool) or not isinstance(prefix, int) or not 1 <= prefix <= len(prompts):
+            raise ValueError("request-prefix diagnostic requires raw logits and a bounded prompt count")
+        cases = [("warmup-00", prompts[0]), ("warmup-01", prompts[1])]
+        cases += [(f"prompt-{idx:02d}", prompt) for idx, prompt in enumerate(prompts[:prefix])]
     results = {}
     for arm in arms:
         cell = output / arm
