@@ -76,6 +76,11 @@ def main():
     parser.add_argument("--activation-bits", type=int, choices=(1, 8), required=True)
     parser.add_argument("--orientation-rescue", action="store_true")
     parser.add_argument("--coordinate-flips", type=int, default=0)
+    parser.add_argument(
+        "--latent-initialization",
+        choices=("preserve_reference_magnitudes", "unit_probe"),
+        default="preserve_reference_magnitudes",
+    )
     parser.add_argument("--rows-per-chain", type=int, default=32)
     parser.add_argument("--max-total-rows", type=int, default=512)
     parser.add_argument("--max-array-bytes", type=int, default=512 * 1024 * 1024)
@@ -114,7 +119,11 @@ def main():
     fit_y = (fit_x @ weight.T).astype(np.float32)
     validation_y = (validation_x @ weight.T).astype(np.float32)
     config = FusionFitConfig(
-        args.activation_bits, args.orientation_rescue, args.coordinate_flips, args.max_seconds
+        args.activation_bits,
+        args.orientation_rescue,
+        args.coordinate_flips,
+        args.max_seconds,
+        args.latent_initialization,
     )
     candidate = fit_fusion(fit_x, fit_y, weight, config)
     # Freeze/export before reading validation teacher through candidate; signs
@@ -128,8 +137,8 @@ def main():
         **{"fc.latent": candidate["control_latent"], "fc.scale": candidate["control_scale"]},
     )
     codes, beta = quantize(validation_x, args.activation_bits)
-    predicted = project(codes, beta, candidate["latent"], candidate["scale"])
-    control = project(codes, beta, candidate["control_latent"], candidate["control_scale"])
+    predicted = project(codes, beta, candidate["hard_signs"], candidate["scale"])
+    control = project(codes, beta, candidate["control_hard_signs"], candidate["control_scale"])
     report = {
         "schema": "block_fusion_fit_v1",
         "config": asdict(config),

@@ -54,7 +54,7 @@ def main():
     fit_y = (x[mask] @ weight.T).astype(np.float32)
     reports = {}
     for bits in (8, 1):
-        cfg = FusionFitConfig(bits, True, 0, 60)
+        cfg = FusionFitConfig(bits, True, 0, 60, reference_kind="eagle_fixed_reference_0.5")
         candidate = fit_fusion(x[mask], fit_y, weight, cfg)
         path = output / f"fusion-a{bits}.npz"
         np.savez(path, **{"fc.latent": candidate["latent"], "fc.scale": candidate["scale"]})
@@ -66,8 +66,10 @@ def main():
         # Validation starts after immutable saved initializers, with no updates.
         validation_y = (x[~mask] @ weight.T).astype(np.float32)
         codes, beta = quantize(x[~mask], bits)
-        prediction = projection(codes, beta, candidate["latent"], candidate["scale"])
-        baseline = projection(codes, beta, candidate["control_latent"], candidate["control_scale"])
+        prediction = projection(codes, beta, candidate["hard_signs"], candidate["scale"])
+        baseline = projection(
+            codes, beta, candidate["control_hard_signs"], candidate["control_scale"]
+        )
         reports[str(bits)] = {
             "config": asdict(cfg),
             "fit": candidate["report"],
