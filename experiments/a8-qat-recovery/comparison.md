@@ -145,8 +145,8 @@ attempt remains charged. Retry 1 passed the failure point and reached step 10,00
 cursor10,017, exit 0, with budget settled at 2,005.419 seconds. Its scheduled native
 evaluation passed and is archived; candidate resume reached step 10,000/cursor10,017, checkpoint6898e9b1,
 with settled budget2,064.260seconds. Its scheduled native evaluation passed and is archived.
-Reference has resumed from step 10,000 and advanced to step 10,058 toward its
-next scheduled 15,000 boundary. Both final endpoints remain pending. Fault cause is
+Reference resumed from step 10,000 and reached the scheduled step 15,000 boundary
+with budget settled at 2,767.995 seconds; its native evaluation is running. Both final endpoints remain pending. Fault cause is
 unexplained; equivalent recurrence retains the same retry limit (one of two used).
 
 ## Endpoint reporting method

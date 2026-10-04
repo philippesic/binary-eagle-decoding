@@ -21,6 +21,24 @@ evidence changes the lesson.
 
 ## Lessons
 
+### 2026-10-04: Keep live observations monotonic
+
+- Context: The sole A8 GPU operator supervised a reference boundary and evaluation.
+- Evidence: Messages describing 08:29 preparation and 08:30 updates arrived after
+  the 08:43 step15,000 boundary. The operator then called the old 08:30 snapshot
+  latest. Its ledger phase/update/observation regressed to 08:29 while a nested
+  training observation remained at 08:41. A fresh packet confirmed actual exit0
+  at 08:43:32, checkpoint73429bd0 and budget2767.995; evaluation launched08:47:10.
+- Agent contribution: The operator mixed older observations with current state;
+  cached ledger updates may have contributed, but the write mechanism is not
+  established. Root compared timestamps and exact process/checkpoint identities,
+  requested a fresh packet and retained the existing pipeline. No duplicate
+  training launch, source change or user mistake is shown.
+- Practical lesson: Use observed_at and actual start/end times separately; delivery
+  order does not establish freshness. Re-read the ledger before patching it and
+  reject older snapshots as current state. On conflicting status, inspect the same
+  kernel handles and authoritative supervisor/checkpoint/budget files before acting.
+
 ### 2026-10-04: Compare actual SSH key fingerprints
 
 - Context: The sole RTX5080 operator reconnected to observe resumed A8 training.
