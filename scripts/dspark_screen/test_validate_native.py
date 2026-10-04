@@ -1,7 +1,7 @@
 import copy
 import unittest
 
-from validate_native import check_state
+from validate_native import check_state, initial_setup_masks
 
 
 class NativeEvidenceTests(unittest.TestCase):
@@ -13,7 +13,9 @@ class NativeEvidenceTests(unittest.TestCase):
                    "embedding_hash_fnv1a64": 100, "head_hash_fnv1a64": 200,
                    "target_embedding_bytes": 777912320, "target_head_bytes": 777912320,
                    "target_embedding_dtype": "f16", "target_head_dtype": "f16",
-                   "borrows_embedding": True, "borrows_head": True}
+                   "borrows_embedding": True, "borrows_head": True,
+                   "draft_n_batch": 32, "draft_n_ubatch": 32, "draft_n_outputs_max": 7,
+                   "draft_n_outputs_max_per_seq": 7, "draft_backend_sampling": True}
         state = [{"event": "binding_begin", **binding},
                  {"event": "inject", "rc": 0, "target_taps": [2, 10, 18, 26, 34],
                   "feature_hash_fnv1a64": 88, "first_position": 0, "last_position": 1, "n_tokens": 2},
@@ -66,6 +68,31 @@ class NativeEvidenceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "actual attention mask"):
             check_state(state, rounds, 3)
 
+    def test_reject_old_four_output_capacity(self):
+        state, rounds = self.fixture()
+        for binding in (state[0], state[-1]):
+            binding["draft_n_outputs_max_per_seq"] = 4
+        with self.assertRaisesRegex(ValueError, "capacity cannot cover"):
+            check_state(state, rounds, 3)
+
+    def test_reject_zero_drafts_and_permanently_truncated_drafts(self):
+        for proposed, verified in (([], [99]), ([31], [31, 99])):
+            state, rounds = self.fixture()
+            rounds[0].update(proposed_token_ids=proposed, verified_token_ids=verified,
+                             n_proposed=len(proposed), n_accepted=len(verified)-1,
+                             n_accepted_usable_prefix=min(len(verified)-1, len(rounds[0]["emitted_token_ids"])))
+            with self.assertRaisesRegex(ValueError, "configured maximum"):
+                check_state(state, rounds, 3)
+
+    def test_legitimate_no_noise_output_cap_boundary_is_separate(self):
+        state, rounds = self.fixture()
+        rounds.append({"status": "complete", "replay": False, "n_draft_max": 0,
+                       "n_proposed": 0, "n_accepted": 0, "proposed_token_ids": [],
+                       "n_emitted": 1, "emitted_token_ids": [151645]})
+        _, summary = check_state(state, rounds, 3)
+        self.assertEqual(summary["rounds"], 1)
+        self.assertEqual(summary["no_noise_output_cap_boundaries"], 1)
+
     def test_reject_stale_noise_cache(self):
         state, rounds = self.fixture()
         state[2]["kv_max_before"] = 8
@@ -98,6 +125,57 @@ class NativeEvidenceTests(unittest.TestCase):
         state.insert(-9, {"event": "inject", "rc": 0, "target_taps": [2, 10, 18, 26, 34],
                           "feature_hash_fnv1a64": 89, "first_position": 2, "last_position": 5, "n_tokens": 4})
         check_state(state, rounds, 3)
+
+    def test_exact_initial_setup_pair_is_not_a_drafting_block(self):
+        state, rounds = self.fixture()
+        setup = [{"schema": "dspark_admission_v1", "event": "mask", "seq_id": 0,
+                  "query_position": query, "anchor_position": 0, "max_visible_clean_position": -1,
+                  "visible_noise_positions": [0, 1]} for query in (0, 1)]
+        state[1:1] = setup
+        cleaned, count = initial_setup_masks(state)
+        self.assertEqual(count, 2)
+        self.assertEqual(len(state), len(cleaned) + 2)
+        _, summary = check_state(state, rounds, 3)
+        self.assertEqual(summary["initial_unframed_setup_masks"], 2)
+        self.assertEqual(summary["initial_setup_mask_records"], setup)
+
+    def test_unknown_extra_setup_mask_rejects(self):
+        state, _ = self.fixture()
+        state.insert(1, {"event": "mask", "anchor_position": 0, "query_position": 2})
+        with self.assertRaisesRegex(ValueError, "unrecognized initial"):
+            initial_setup_masks(state)
+
+    def test_setup_pair_needs_actual_target_overwrite(self):
+        state, _ = self.fixture()
+        state[1]["first_position"] = 2
+        state[1:1] = [{"schema": "dspark_admission_v1", "event": "mask", "seq_id": 0,
+                       "query_position": query, "anchor_position": 0, "max_visible_clean_position": -1,
+                       "visible_noise_positions": [0, 1]} for query in (0, 1)]
+        with self.assertRaisesRegex(ValueError, "not overwritten"):
+            initial_setup_masks(state)
+
+    def test_late_startup_shaped_mask_is_not_discarded(self):
+        state, rounds = self.fixture()
+        state.insert(2, {"schema": "dspark_admission_v1", "event": "mask", "seq_id": 0,
+                         "query_position": 0, "anchor_position": 0, "max_visible_clean_position": -1,
+                         "visible_noise_positions": [0, 1]})
+        cleaned, count = initial_setup_masks(state)
+        self.assertEqual(count, 0)
+        with self.assertRaisesRegex(ValueError, "seven-row"):
+            check_state(cleaned, rounds, 3)
+
+    def test_real_future_mask_and_prefix_guards_remain_strict(self):
+        for corruption in ("future_mask", "prefix"):
+            state, rounds = self.fixture()
+            cleaned, count = initial_setup_masks(state)
+            if corruption == "future_mask":
+                cleaned[3]["visible_noise_positions"] = [2, 3]
+                message = "actual attention mask"
+            else:
+                cleaned[2]["prefix_token_ids"] = [10]
+                message = "ancestry differs"
+            with self.assertRaisesRegex(ValueError, message):
+                check_state(cleaned, rounds, 3)
 
 
 if __name__ == "__main__":

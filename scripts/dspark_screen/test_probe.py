@@ -9,6 +9,24 @@ import probe
 
 
 class ProbeTests(unittest.TestCase):
+    def test_eos_uses_raw_generated_content_and_target_eos_id(self):
+        measurement = {"finish_reason": "stop", "generated_token_ids": [14004, 151645]}
+        response = {
+            "choices": [{"message": {"content": "<think>\n\n</think>\n\nYES"}}],
+            "__verbose": {"content": "YES", "tokens": [14004, 151645],
+                          "stop": True, "stop_type": "eos"},
+        }
+        self.assertTrue(probe.one_word_eos_satisfied(response, measurement))
+
+        # Visible chat content may include template markup even when raw completion is exact.
+        response["__verbose"]["content"] = "YES!"
+        self.assertFalse(probe.one_word_eos_satisfied(response, measurement))
+        response["__verbose"]["content"] = "YES"
+        measurement["generated_token_ids"] = [14004]
+        self.assertFalse(probe.one_word_eos_satisfied(response, measurement))
+        response.pop("__verbose")
+        self.assertFalse(probe.one_word_eos_satisfied(response, measurement))
+
     def inputs(self, root):
         def asset(name, value):
             path = root / name
@@ -82,6 +100,35 @@ class ProbeTests(unittest.TestCase):
         self.assertNotIn("EAGLE_CAPTURE_PREFIX", env)
         self.assertEqual(env["DSPARK_REQUIRE_AUTHOR_LAYOUT"], "1")
 
+    def test_q4_requires_exact_source_bound_ffn_coverage(self):
+        from precision_q4 import EXPECTED
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            config, _, _ = self.inputs(root)
+            row = config["dspark"]
+            row["reference"] = {"path": row["path"], "sha256": row["sha256"]}
+            candidate = root / "dspark-q4.gguf"
+            candidate.write_text("Q4 fixture")
+            row.update(path=str(candidate), sha256=probe.sha256(candidate))
+            receipt = {"schema": "dspark_precision_q4_ffn_v1", "passed": True,
+                       "source_export_bound": True, "non_ffn_immutable": True,
+                       "candidate_sha256": row["sha256"],
+                       "source_gguf_sha256": row["reference"]["sha256"],
+                       "source_export_sha256": row["export"]["sha256"],
+                       "original_checkpoint_sha256": row["source"]["sha256"],
+                       "target_sha256": config["target"]["sha256"],
+                       "selected": [{"name": name, "type": "Q4_0"} for name in sorted(EXPECTED)]}
+            path = root / "precision.json"
+            probe.write(path, receipt)
+            row["precision"] = {"path": str(path), "sha256": probe.sha256(path)}
+            probe.preflight(config, root)
+            for mutation in ({"candidate_sha256": "wrong"}, {"non_ffn_immutable": False},
+                             {"selected": receipt["selected"][:-1]}):
+                probe.write(path, {**receipt, **mutation})
+                row["precision"]["sha256"] = probe.sha256(path)
+                with self.assertRaisesRegex(ValueError, "Q4 precision ancestry"):
+                    probe.preflight(config, root)
+
     def test_supervisor_cleanup_grace_is_verified_before_launch(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -138,8 +185,14 @@ class ProbeTests(unittest.TestCase):
             def request(url, body, timeout, directory):
                 directory.mkdir()
                 probe.write(directory / "request.json", body)
-                probe.write(directory / "response.json", {"choices": [{"message": {"content": "YES"}}]})
-                measurement = {"generated_token_ids": [42], "prompt_tokens": 20, "finish_reason": "stop"}
+                is_eos = directory.name == "eos"
+                ids = [42, 151645] if is_eos else [42]
+                response = {"choices": [{"message": {"content": "YES"}}]}
+                if is_eos:
+                    response["__verbose"] = {"content": "YES", "tokens": ids,
+                                              "stop": True, "stop_type": "eos"}
+                probe.write(directory / "response.json", response)
+                measurement = {"generated_token_ids": ids, "prompt_tokens": 20, "finish_reason": "stop"}
                 probe.write(directory / "measurement.json", measurement)
                 with (directory.parent / "rounds.jsonl").open("a") as file:
                     file.write(json.dumps({"emitted_token_ids": [42, 151645]}) + "\n")

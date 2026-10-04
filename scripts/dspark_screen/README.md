@@ -7,7 +7,8 @@ A8 ownership are untouched. Sole GPU operator owns actual SM75 execution.
 
 ## Checkpoint and acceptance
 
-Native commit `76847aa877261817026e2f29472f080235b6a829` (predecessors
+Native commit `fcdf5822c5b78f9dbcfd1f5c7106f09c3f0c9b1a` (base
+`76847aa877261817026e2f29472f080235b6a829`, predecessors
 `cbc50bc736a47d911a095bb6a26ab1544d68d3e0` and
 `a4884f5dd15f7dcdd2d9c16a8d754467a776dfb3`) is published at
 `https://github.com/philippesic/llama.cpp.git`, branch `feature/dspark-admission`.
@@ -112,6 +113,7 @@ DSPARK_REQUIRE_AUTHOR_LAYOUT=1 DSPARK_ADMISSION_JSONL=state.jsonl \
 W1AX_ROUND_TRACE_JSONL=rounds.jsonl \
 llama-server -m FIXED_TARGET_F16.gguf -md DRAFT.gguf \
   --n-gpu-layers all --spec-draft-ngl all --ctx-size 2048 --parallel 1 \
+  --batch-size 32 --ubatch-size 32 \
   --fit off --cache-type-k f16 --cache-type-v f16 \
   --spec-draft-type-k f16 --spec-draft-type-v f16 \
   --spec-type draft-dspark --spec-draft-n-max 3 --spec-draft-p-min 0 \
@@ -260,3 +262,14 @@ and node intervals separately or union same-stream intervals; never add graph
 parents, node children and transfer grandchildren as independent costs. These
 synchronized CUDA events include stream idle and change execution, so serving
 rates come only from the separately measured reference run.
+
+Reference-runtime recovery now reserves seven draft outputs for author mode3,
+retains the original eight-output reservation for mode7, and records actual
+context capacities. Root froze common batch/ubatch32 for all study arms before
+measurements after the old512-microbatch DFlash scratch failure. The validator
+requires nonzero/full-length actual drafting cells; explicit no-noise zero-cap
+boundaries remain separate. See the durable
+[recovery report](../../experiments/dspark-sm75-20261003/native-runtime-admission.md)
+for preserved failures, seven native CPU reservation checks, thirteen validator
+checks, and remaining actual SM75 admission. This does not change target
+precision/verifier or start W1Ax integration.

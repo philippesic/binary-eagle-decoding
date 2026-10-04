@@ -6,6 +6,8 @@
   "target_precision": "f16",
   "kv_precision": "f16",
   "context_tokens": 2048,
+  "batch_tokens": 32,
+  "microbatch_tokens": 32,
   "concurrency": 1,
   "max_output_tokens": 128,
   "temperature": 0.0,

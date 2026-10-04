@@ -7,7 +7,8 @@ import signal
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from benchmark_dspark_screen import ARMS, command, order, round_summary, stop_owned_server
+from benchmark_dspark_screen import ARMS, command, order, round_summary, stop_owned_server, prior_timing_seconds
+from benchmark_native_eagle import sha256
 from analyze_dspark_screen import summarize
 from analyze_dspark_events import analyze, union
 
@@ -20,6 +21,17 @@ def fixture(proposed, accepted, emitted=None, **extra):
 
 
 class ScreenContracts(unittest.TestCase):
+    def test_cumulative_budget_uses_local_cost_not_double_counted_prior(self):
+        with tempfile.TemporaryDirectory() as temp:
+            first, second = Path(temp) / "first.json", Path(temp) / "second.json"
+            first.write_text(json.dumps(dict(diagnostic=False, inference_s=100, records=[])))
+            second.write_text(json.dumps(dict(diagnostic=False, inference_s=200, prior_timing_s=100,
+                                             combined_timing_s=300, records=[])))
+            cfg = {"prior_timing_receipts": [{"path": str(p), "sha256": sha256(p)} for p in (first, second)]}
+            self.assertEqual(prior_timing_seconds(cfg), 300)
+            first.write_text(json.dumps(dict(diagnostic=True, inference_s=100, records=[])))
+            with self.assertRaises(ValueError):
+                prior_timing_seconds(cfg)
     def test_reached_prefix_differs_from_all_proposals(self):
         result = round_summary([fixture(3, 0), fixture(3, 1), fixture(3, 3)], 3)
         self.assertEqual(result["position"]["2"], dict(eligible=3, reached=2, survived=1,

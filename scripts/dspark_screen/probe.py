@@ -40,6 +40,23 @@ def require(condition, message):
         raise ValueError(message)
 
 
+def one_word_eos_satisfied(response: dict, measurement: dict) -> bool:
+    """Check raw generated content and token-level EOS, not chat-template markup."""
+    verbose = response.get("__verbose")
+    if not isinstance(verbose, dict):
+        return False
+    content = verbose.get("content")
+    raw_tokens = verbose.get("tokens")
+    generated = measurement.get("generated_token_ids")
+    return (
+        isinstance(content, str) and content.strip() == "YES" and
+        verbose.get("stop") is True and verbose.get("stop_type") == "eos" and
+        measurement.get("finish_reason") == "stop" and
+        isinstance(raw_tokens, list) and raw_tokens == generated and
+        len(raw_tokens) > 0 and raw_tokens[-1] == 151645
+    )
+
+
 def load_helpers(project: Path):
     sys.path.insert(0, str(project / "scripts"))
     return importlib.import_module("benchmark_dspark_screen"), importlib.import_module("benchmark_native_eagle")
@@ -92,6 +109,25 @@ def preflight(config: dict, project: Path):
         for key in ("source", "conversion_config", "canonical", "export"):
             pin(row[key])
         canonical, export = read(row["canonical"]["path"]), read(row["export"]["path"])
+        reference_sha = row["sha256"]
+        if "precision" in row:
+            pin(row["precision"])
+            pin(row["reference"])
+            precision = read(row["precision"]["path"])
+            from precision_q4 import EXPECTED
+            require(precision.get("schema") == "dspark_precision_q4_ffn_v1" and
+                    precision.get("passed") and precision.get("source_export_bound") and
+                    precision.get("non_ffn_immutable") and
+                    precision.get("candidate_sha256") == row["sha256"] and
+                    precision.get("source_gguf_sha256") == row["reference"]["sha256"] and
+                    precision.get("source_export_sha256") == row["export"]["sha256"] and
+                    precision.get("original_checkpoint_sha256") == row["source"]["sha256"] and
+                    precision.get("target_sha256") == config["target"]["sha256"] and
+                    len(precision.get("selected", [])) == 15 and
+                    {item["name"] for item in precision["selected"]} == EXPECTED and
+                    all(item.get("type") == "Q4_0" for item in precision["selected"]),
+                    "FFN Q4 precision ancestry or coverage changed")
+            reference_sha = row["reference"]["sha256"]
         if canonical.get("target_tied_head_fallback"):
             pin({"path": canonical["target_config_path"], "sha256": canonical["target_config_sha256"]})
             pin({"path": canonical["target_loader_path"], "sha256": canonical["target_loader_sha256"]})
@@ -102,7 +138,7 @@ def preflight(config: dict, project: Path):
                 canonical["target_sha256"] == config["target"]["sha256"], "canonical ancestry changed")
         require(export.get("passed") and export["source_sha256"] == row["source"]["sha256"] and
                 export["config_sha256"] == row["conversion_config"]["sha256"] and
-                export["draft_sha256"] == row["sha256"] and export["target_sha256"] == config["target"]["sha256"] and
+                export["draft_sha256"] == reference_sha and export["target_sha256"] == config["target"]["sha256"] and
                 export["canonical_comparison_sha256"] == row["canonical"]["sha256"] and
                 Path(export["canonical_comparison_path"]).resolve() == Path(row["canonical"]["path"]).resolve(),
                 "export/canonical ancestry changed")
@@ -197,8 +233,8 @@ def run(config_path: Path, destination: Path, project: Path = ROOT):
                         write(directory / "rounds.json", round_rows)
                         if name == "eos":
                             response = read(directory / "response.json")
-                            text = response["choices"][0]["message"].get("content", "")
-                            require(text.strip() == "YES" and result["finish_reason"] == "stop", "one-word EOS fixture did not stop")
+                            require(one_word_eos_satisfied(response, result),
+                                    "one-word EOS fixture lacked exact raw YES plus target EOS")
                             if arm != "target_only":
                                 require(any(151645 in r.get("emitted_token_ids", []) for r in round_rows),
                                         "EOS fixture lacks actual native EOS emission")
@@ -227,6 +263,8 @@ def run(config_path: Path, destination: Path, project: Path = ROOT):
                 "export": row["export"]["path"], "launch": str(launch_path),
                 "server_log": str(cell / "server.log"), "state": str(cell / "state.jsonl"),
                 "rounds": str(cell / "rounds.jsonl"), "outputs": outputs})
+            if "precision" in row:
+                manifest["cells"][-1]["precision"] = row["precision"]["path"]
         write(destination / "manifest.json", manifest)
         admission = validate(manifest)
         admission["probe_evidence"] = {"protocol_path": str(protocol_path), "protocol_sha256": sha256(protocol_path),
