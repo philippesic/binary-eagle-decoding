@@ -6,6 +6,7 @@ from pathlib import Path
 
 from check_export import sha256
 from numeric_gate import CASES, consume, covered_output, produce
+from precision_q4 import EXPECTED
 
 
 class NumericGateTests(unittest.TestCase):
@@ -50,9 +51,12 @@ class NumericGateTests(unittest.TestCase):
                     ids = sequences[name][arm]
                     case_request = {**request, "messages": [{"role": "user", "content": "prose" if name.endswith("00") else name.replace("warmup", "prompt")}]}
                     dest = folder / arm / name
-                    write(dest / "measurement.json", {"generated_token_ids": ids})
+                    finish = "stop" if name == "eos" else "length"
+                    stop_type = "eos" if name == "eos" else "limit"
+                    write(dest / "measurement.json", {"generated_token_ids": ids, "finish_reason": finish})
                     write(dest / "request.json", case_request)
-                    write(dest / "response.json", {"__verbose": {"prompt": case_request["messages"][0]["content"]}})
+                    write(dest / "response.json", {"__verbose": {"prompt": case_request["messages"][0]["content"],
+                                                                "stop": True, "stop_type": stop_type}})
                     if not position or name == "eos": continue
                     task = case_index+1
                     if arm == "target_only":
@@ -111,8 +115,10 @@ class NumericGateTests(unittest.TestCase):
                 cell = {"kind": kind, "maximum": n, "outputs": []}
                 for name in CASES:
                     actual_path = probe / f"{kind}_{n}" / name / "measurement.json"
-                    write(actual_path, {"generated_token_ids": sequences[name]["dspark_3" if n == 3 else "eagle_q4_0"]})
+                    write(actual_path, {"generated_token_ids": sequences[name]["dspark_3" if n == 3 else "eagle_q4_0"],
+                                        "finish_reason": "stop" if name == "eos" else "length"})
                     write(actual_path.parent / "request.json", json.loads((primary / "target_only" / name / "request.json").read_text()))
+                    write(actual_path.parent / "response.json", json.loads((primary / "target_only" / name / "response.json").read_text()))
                     cell["outputs"].append({"actual": str(actual_path), "reference": str(primary / "target_only" / name / "measurement.json")})
                 manifest["cells"].append(cell)
         write(probe / "manifest.json", manifest)
@@ -163,6 +169,51 @@ class NumericGateTests(unittest.TestCase):
             path.write_text(json.dumps(receipt))
             with self.assertRaisesRegex(ValueError, "reproduce raw"):
                 consume({"path": str(path), "sha256": sha256(path)}, manifest, "binary-pin", "target-pin")
+
+    def q4_candidate(self, inputs):
+        path = Path(inputs["manifest"]).parent / "config.json"
+        cfg = json.loads(path.read_text())
+        for key in ("dspark", "dflash"):
+            row = cfg[key]
+            reference = copy.deepcopy(row)
+            row["sha256"] = key + "-q4-pin"
+            export = {"draft_sha256": reference["sha256"], "source_sha256": key + "-checkpoint", "target_sha256": "target-pin"}
+            export_path = path.parent / (key + "-export.json")
+            export_path.write_text(json.dumps(export))
+            precision = {"schema": "dspark_precision_q4_ffn_v1", "passed": True, "source_export_bound": True,
+                         "non_ffn_immutable": True, "candidate_sha256": row["sha256"],
+                         "source_gguf_sha256": reference["sha256"], "source_export_sha256": sha256(export_path),
+                         "original_checkpoint_sha256": export["source_sha256"], "target_sha256": "target-pin",
+                         "selected": [{"name": name, "type": "Q4_0"} for name in sorted(EXPECTED)]}
+            precision_path = path.parent / (key + "-precision.json")
+            precision_path.write_text(json.dumps(precision))
+            row.update(reference=reference, export={"path": str(export_path), "sha256": sha256(export_path)},
+                       precision={"path": str(precision_path), "sha256": sha256(precision_path)})
+        path.write_text(json.dumps(cfg))
+
+    def test_q4_reference_route_requires_full_ids_and_termination(self):
+        with tempfile.TemporaryDirectory() as temp:
+            inputs, manifest = self.fixture(Path(temp))
+            self.q4_candidate(inputs)
+            receipt = produce(inputs)
+            self.assertEqual(len(receipt["covered_outputs"]), 20)
+            self.assertEqual(receipt["q4_reference_ancestry"]["dspark"]["reference_sha256"], "ds-pin")
+            pair = manifest["cells"][0]["outputs"][0]
+            path = Path(pair["actual"])
+            measurement = json.loads(path.read_text())
+            measurement["finish_reason"] = "stop"
+            path.write_text(json.dumps(measurement))
+            receipt = produce(inputs)
+            self.assertEqual(len(receipt["uncovered_outputs"]), 1)
+
+    def test_reference_receipt_shape_remains_compatible(self):
+        with tempfile.TemporaryDirectory() as temp:
+            inputs, manifest = self.fixture(Path(temp))
+            receipt = produce(inputs)
+            self.assertNotIn("q4_reference_ancestry", receipt)
+            self.assertNotIn("termination", receipt["covered_outputs"][0])
+            response = str((Path(manifest["cells"][0]["outputs"][0]["actual"]).parent / "response.json").resolve())
+            self.assertNotIn(response, receipt["evidence_sha256"])
 
 
 if __name__ == "__main__":
