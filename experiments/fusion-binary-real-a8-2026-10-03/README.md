@@ -149,3 +149,13 @@ The [earlier synthetic report](../fusion-binary-discrete-a8-2026-10-03/README.md
 is historical. Neither synthetic nor real fitting initializes the current QAT
 run. Native acceptance/depth survival and throughput against Q4_0 require later,
 separately authorized GPU availability.
+
+## CPU permission resumed — October 3, 23:22 PDT
+
+The human requested “resume cpu work” in this supporting chat. CPU permission is
+recorded separately in the shared machine-local `cpu-control.json`; this team
+does not acquire a GPU slot or restart an experiment. Calibration and its CPU
+checks are complete, so no unfinished CPU fit needs restarting. The separate
+A8 goal records an independently authorized “resume gpu usage” at 23:21 PDT;
+that owner and its GPU-control flag are left unchanged. Fusion native GPU
+acceptance/throughput still require separate authorization and coordination.
