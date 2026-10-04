@@ -111,11 +111,30 @@ def command(config: dict, protocol: dict, arm: str, port: int) -> list[str]:
                   "--spec-draft-ngl", "all", "--spec-draft-type-k", "f16", "--spec-draft-type-v", "f16"]
 
 
+def prior_timing_seconds(config: dict) -> float:
+    total = 0.0
+    for entry in config.get("prior_timing_receipts", []):
+        path = Path(entry["path"])
+        if sha256(path) != entry["sha256"]:
+            raise ValueError("previous timing receipt changed")
+        receipt = json.loads(path.read_text())
+        spent = receipt.get("inference_s")
+        if receipt.get("diagnostic") is not False or not isinstance(spent, (int, float)) or spent < 0:
+            raise ValueError("previous receipt is not actual non-diagnostic timing")
+        if not isinstance(receipt.get("records"), list):
+            raise ValueError("previous timing records missing")
+        total += spent
+    return total
+
+
 def run(config_path: Path, destination: Path, diagnostic: bool = False) -> None:
     global _launching, _pending_signal
     config = json.loads(config_path.read_text())
     protocol_path = ROOT / "configs/dspark-screen/protocol.json"
     protocol = json.loads(protocol_path.read_text())
+    prior_s = prior_timing_seconds(config)
+    if prior_s >= protocol["measurement_budget_s"]:
+        raise TimeoutError("combined timing budget exhausted")
     admission = json.loads(Path(config["admission"]["path"]).read_text())
     if sha256(protocol_path) != config["protocol_sha256"]:
         raise ValueError("frozen protocol changed")
@@ -177,7 +196,7 @@ def run(config_path: Path, destination: Path, diagnostic: bool = False) -> None:
                     cases = [(True, i, prompts[i]) for i in range(protocol["warmups_per_cell"])]
                     cases += [(False, i, p) for i, p in enumerate(prompts[:2] if diagnostic else prompts)]
                     for warmup, idx, prompt in cases:
-                        remaining = protocol["measurement_budget_s"] - inference_s
+                        remaining = protocol["measurement_budget_s"] - prior_s - inference_s
                         if remaining <= 0:
                             raise TimeoutError("cumulative inference budget reached")
                         before = len(rows(trace))
@@ -200,11 +219,13 @@ def run(config_path: Path, destination: Path, diagnostic: bool = False) -> None:
                             if not result["round_summary"]["rounds"]:
                                 raise RuntimeError("no complete native rounds")
                         records.append(result)
-                        json_write(destination / "progress.json", {"inference_s": inference_s, "records": records})
+                        json_write(destination / "progress.json", {"diagnostic": diagnostic, "inference_s": inference_s,
+                                   "prior_timing_s": prior_s, "combined_timing_s": prior_s + inference_s, "records": records})
                 finally:
                     if proc is not None:
                         stop_owned_server(proc)
-    json_write(destination / "measurements.json", {"diagnostic": diagnostic, "inference_s": inference_s, "records": records})
+    json_write(destination / "measurements.json", {"diagnostic": diagnostic, "inference_s": inference_s,
+               "prior_timing_s": prior_s, "combined_timing_s": prior_s + inference_s, "records": records})
 
 
 def interrupted(signum: int, _frame) -> None:
