@@ -4,13 +4,13 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Reference 35,000 checkpoint; scheduled evaluation next — October 4, 13:18 UTC
+## Reference 35,000 evaluation running — October 4, 13:23 UTC
 
 Reference exited0 at35,000/cursor35,066, checkpoint a64fe4da. Budget settled
 5,878.722016/7,200seconds with null active attempt;1,321.277984seconds remain.
-Its exact checkpoint/request and hardlink archive are verified. Sole operator
-observed expected PIDs/session absent and GPU baseline; the scheduled1200s
-native evaluation has conditional GO after full context/group/resource checks.
+Its exact checkpoint/request and hardlink archive are verified. Full prior
+release/resource checks passed; scheduled1200s evaluation started13:22:17UTC,
+supervisor30447/birth5469471,evaluator30448/birth5469476.
 Candidate30k evaluation passed:0.268456drafts/round,70.905requesttokens/s,
 52.47% of Q4_0. Candidate6219.892867/7200 has only980.107133training seconds left.
 
@@ -19,7 +19,7 @@ ACTIVE heartbeat; prior coordinator/operator are retired. Sole `/root/gpu_operat
 owns transport pane285. CPU-only existing-record repetition audit is published
 as e155ae2; actual final inputs remain pending. BOTH7200endpoints/finalreports
 incomplete; no new experiment, budget or pending human decision, no2080controls.
-See [current checkpoint](goals/a8-qat-recovery-and-comparison.md#reference-35000-boundary-scheduled-evaluation-authorized--october-4-1318-utc).
+See [current checkpoint](goals/a8-qat-recovery-and-comparison.md#reference-35000-evaluation-live--october-4-1323-utc).
 
 ## Active: A8 QAT recovery and comparison — October 3, 2026
 

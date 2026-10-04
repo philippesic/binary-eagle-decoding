@@ -1,5 +1,36 @@
 # A8 QAT recovery and comparison
 
+## Reference 35,000 evaluation live — October 4, 13:23 UTC
+
+Scheduled evaluation actualstart13:22:17.396255UTC, original1200second cap,
+Linux session `a8-reference-step35000-eval-20261004-01`, run
+`a8-reference-step35000-eval-supervisor-20261004-01`, supervisor30447/
+birth5469471 and evaluator30448/birth5469476, same boot517c4a36. Source3bd clean,
+config/native/runtime hashes and request/latest a64fe4da joined; full prior owned
+group/native release and resource preflight passed (20.25GB host available,
+237.6GB/home free,2766MiB GPU baseline). First state running; native A8 server
+activity observed. No final evaluation result yet.
+
+Command: frozen helper checkout `remote_job.py RUN -- env PYTHONFAULTHANDLER=1
+/home/philip/binary-eagle-decoding/.venv/bin/python scripts/w1ax_continuous_stages.py
+evaluate --run-dir ROOT/arms/reference --development-manifest
+ROOT/arms/reference/development-manifest-step-000015000.json --allow-cuda`.
+The historical15k manifest filename is reused because its exact frozen bytes SHA
+fc18f400... remain valid; actual evaluator checkpoint is current35000/a64fe4da.
+Fixed24 development content, F16 target/KV, native9e2 andQ4_0 baseline unchanged.
+
+Root gives standing conditional GO for the remainder of the ORIGINAL sequence:
+after successful35k evaluation/archive/full release, candidate30k resume has ONLY
+980.107133009993seconds to7200/null and matching final evaluation; then reference
+has1321.277983692993seconds through any natural40k scheduled eval/release and its
+final endpoint/evaluation. Each dispatch requires fresh exact identities/resource
+and archive/request/checkpoint joins, unchanged reviewed commands/configs/source
+and original1200s evaluation cap. Operator reports receipts/boundaries/failures;
+root audits/checkpoints in parallel. Missing/incompatible joins or genuine failure
+stop dependent dispatch for root review. Preserve same SIGSEGV retry1/max2,
+no topup, extra requests, repeated admissions or changed science. BOTH final
+endpoints remain incomplete; SAME heartbeat ACTIVE.
+
 ## Reference 35,000 boundary; scheduled evaluation authorized — October 4, 13:18 UTC
 
 Original reference30k resume exited0 at13:10:34.068720UTC and reached35000/
