@@ -58,6 +58,18 @@ class ScreenContracts(unittest.TestCase):
         self.assertEqual(result["accepted"], 3)
         self.assertEqual(result["emitted"], 1)
 
+    def test_no_proposal_boundary_round_is_preserved_separately(self):
+        terminal = fixture(0, 0, emitted=1, verified_token_ids=[])
+        terminal["status"] = "no_proposal"
+        result = round_summary([fixture(3, 2), terminal], 3)
+        self.assertEqual(result["accepted_per_round"], 2)
+        self.assertEqual(result["accepted_per_traced_decode_round"], 1)
+        self.assertEqual(result["no_proposal_rounds"], 1)
+        self.assertEqual(result["traced_emitted_tokens"], 4)
+        terminal["n_accepted"] = 1
+        with self.assertRaises(ValueError):
+            round_summary([terminal], 3)
+
     def test_replays_and_incomplete_rounds_stay_separate(self):
         replay = fixture(3, 0)
         replay["replay"] = True

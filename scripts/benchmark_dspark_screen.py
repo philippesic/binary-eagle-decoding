@@ -59,6 +59,10 @@ def duration_sum(value) -> int | float:
 
 def round_summary(records: list[dict], maximum: int) -> dict:
     complete = [r for r in records if r.get("status") == "complete" and not r.get("replay")]
+    no_proposal = [r for r in records if r.get("status") == "no_proposal" and not r.get("replay")]
+    for r in no_proposal:
+        if r["n_proposed"] != 0 or r["n_accepted"] != 0 or r["proposed_token_ids"] or r["n_emitted"] != 1 or len(r["emitted_token_ids"]) != 1:
+            raise ValueError("invalid native no-proposal round")
     for r in complete:
         if not 0 <= r["n_accepted"] <= r["n_proposed"] <= maximum:
             raise ValueError("invalid native round counts")
@@ -83,6 +87,11 @@ def round_summary(records: list[dict], maximum: int) -> dict:
         "round_us", "begin_us", "draft_us", "target_decode_sync_us", "process_us", "kv_repair_us",
         "process_feature_copy_us", "process_draft_decode_us", "draft_seed_decode_us", "draft_step_decode_us", "draft_sampler_us")}
     return dict(rounds=len(complete), proposed=proposed, accepted=accepted,
+                no_proposal_rounds=len(no_proposal),
+                traced_decode_rounds=len(complete) + len(no_proposal),
+                accepted_per_traced_decode_round=accepted / (len(complete) + len(no_proposal)) if complete or no_proposal else None,
+                traced_emitted_tokens=sum(r["n_emitted"] for r in complete + no_proposal),
+                round_denominator_scope="accepted_per_round uses complete draft rounds; traced_decode_rounds also includes no-proposal records; initial seed may be outside the trace",
                 accepted_usable_prefix=usable,
                 usable_acceptance=usable / proposed if usable is not None and proposed else None,
                 usable_accepted_per_round=usable / len(complete) if usable is not None and complete else None,
