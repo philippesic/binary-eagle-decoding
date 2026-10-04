@@ -41,7 +41,7 @@ artifact paths/hash and fresh exclusive availability lease; they are artifact
 arguments, not source edits:
 
 ```sh
-python3 scripts/remote_job.py RUN_ID -- python3 scripts/run_nine_model_campaign.py --start --bundle BUNDLE_JSON --bundle-sha256 BUNDLE_SHA256 --availability LEASE_JSON --run-dir runs/RUN_ID/campaign --supervisor-state runs/RUN_ID/state.json
+python3 scripts/remote_job.py RUN_ID --stop-grace-seconds 90 -- python3 scripts/run_nine_model_campaign.py --start --bundle BUNDLE_JSON --bundle-sha256 BUNDLE_SHA256 --availability LEASE_JSON --run-dir runs/RUN_ID/campaign --supervisor-state runs/RUN_ID/state.json
 ```
 
 The lease schema is `nine_model_gpu_lease_v1`, with host `rtx5080`, actual

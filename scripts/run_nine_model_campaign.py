@@ -64,6 +64,10 @@ def main(argv=None):
         and os.environ.get("TMUX"),
         "detached Linux tmux remote_job supervision absent",
     )
+    require(
+        supervisor.get("stop_grace_seconds", 0) >= 90,
+        "remote supervisor needs 90-second grace for checkpoint/group/resource receipts",
+    )
     lease = require_available(args.availability, args.bundle_sha256)
 
     def authorization():
