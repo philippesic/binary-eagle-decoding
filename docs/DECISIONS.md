@@ -1048,3 +1048,47 @@ ancestry, frozen Q4 controls and sealed finals remain protected. Software and
 SM75 readiness must be distinguished from fresh SM120 admission; no claim of
 literal 100% or bypass of source/resource checks is authorized. Major final
 coverage/recipe/budget choices remain human-owned while preparation proceeds.
+
+## Pending: nine-model prepared coverage and compute — October 4, 2026
+
+Coordinator `01a10903-1c7a-71b1-abb1-0de3ecc046b8` is implementing the authorized
+foundation. No real-model optimizer updates, quality/performance evaluation or
+RTX5080 action are started. The preparation team can exercise CPU fixtures and,
+once opened, bounded RTX2080Ti CUDA/real-model zero-update checks and TRAIN data
+capture. The human still selects final coverage, recipes and campaign budget.
+
+Concrete coverage options being prepared:
+
+- EAGLE: existing all-nine binary projection profile with deployed A8/A1
+  arithmetic; explicit original floating exceptions/target bindings.
+- DSpark/DFlash: exactly fifteen FFN binary projections, retaining original
+  fusion, private head/embedding, attention and Markov/confidence; alternatively
+  fifteen FFN plus binary fusion with calibrated A8/A1 arithmetic. The latter
+  adds a precision change beyond historical FFN-only Q4 controls and must be
+  labeled as a deployment comparison. Historical controls are never redefined.
+- Full block attention, private head/embedding and Markov quantization remain
+  excluded from initial implementation unless separately admitted.
+
+Fixed A8 reference remains the default software profile. Direct A1 and A8→A1
+with explicit optimizer state/reset policy are preparation profiles, not a
+selected winning long-run recipe. Learned thresholds/other probes remain
+explicitly off by default until independently admitted. The unsuccessful
+learned-A8/midpoint/low-inertia combination is not inherited as the default.
+
+Cost evidence currently supports only EAGLE projections: prior fixed-A8 arm
+processed206163 rows in7200 accounted seconds (~28.6rows/s); a3,899,930row
+pass extrapolates to37.8accounted hours, conditional on the old workload and
+crash charging. Block training/capture rates and new balanced schedule cost
+are unmeasured and will be costed using bounded preparation observations, not
+borrowed EAGLE rates. Exact target-only five-tap/full-vocabulary block TRAIN
+captures are missing; capture path/materialization and producer hardware
+portability are readiness dependencies.
+
+Both released block models use the frozen author-anchor-first driver
+(`draft-dspark`, first prediction slot0, seven bidirectional noise rows), even
+rank-zero DFlash. Family name must not infer generic DFlash slot1 semantics.
+Static confidence/runtime options need matching controls if measured later.
+
+Next decision presentation will bind actual implemented profiles, capture
+size/cost and balanced row/epoch milestones with wall/evaluation allowances.
+No unbounded budget, automatic recipe promotion or sealed-final tuning.
