@@ -1,5 +1,24 @@
 # A8 QAT recovery and comparison
 
+## Human RTX5080 resume — October 3, 23:21 PDT
+
+The human requested “resume gpu usage”. Only RTX5080 is resumed for the existing
+A8 comparison. The SAME recovery heartbeat is ACTIVE and native Goal is active;
+sole operator `/root/gpu_supervisor` is reconnecting via tmux MCP using the fresh
+shared host registry and checking availability before launch. No other chat is
+contacted. RTX2080Ti controls remain untouched.
+
+Continue candidate from exact step2081/cursor2084, archived checkpoint
+`ac8af0f058b7d1d...`, settled budget441.281998629of7200 seconds; active_attempt null
+at shutdown. Reference is preserved/evaluated at5000/764.725seconds. Pause downtime
+is not training time. Reuse admitted native/model/zero/positive-resume evidence;
+no preparation repeats, source/recipe/data/precision change, or unscheduled eval.
+Resume SAME immutable source3bd/config/optimizer/RNG/cursor/recipe, observe actual
+positive updates, then candidate5000 scheduled eval and alternate natural5000
+boundaries until both independent7200s arms finish. Evaluation cap1200 unchanged.
+Fresh process/resource/checkpoint availability and actual resumed updates are
+pending operator evidence; the resume flag alone is not a launch claim.
+
 ## Final human-pause shutdown checkpoint — October 3, 18:34 PDT
 
 Owned RTX5080 A8 usage is STOPPED. The sole operator issued the human-pause

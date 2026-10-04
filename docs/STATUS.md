@@ -4,16 +4,15 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Human pause: owned RTX5080 usage stopped — October 3, 18:34 PDT
+## RTX5080 A8 resume requested — October 3, 23:21 PDT
 
-The human requested “pause5080gpuusage”. Candidate training stopped gracefully,
-exit0, at2081updates/cursor2084; exact optimizer/RNG/cursor checkpoint and budget
-are archived. Candidate used441.282of7200seconds; reference preserved/evaluated
-5000updates/764.725seconds. All owned train/native/monitor groups and remote tmux
-sessions are absent. Host residual3537MiB/21% is separate from the stopped A8 jobs.
-SSH transport is CLOSED (owned MCP session249 removed). LocalRTX5080newruns are blocked;
-existingheartbeat and Goal PAUSED. No new GPU/eval/recovery or remotework beyond
-closure until explicithumanresume. Comparison remains incomplete;2080untouched.
+Human requested “resume gpu usage”. RTX5080 new runs are unblocked and the SAME
+recovery heartbeat is ACTIVE; native Goal resumed. Sole operator is verifying
+fresh availability and exact candidate2081/cursor2084 checkpoint before launching
+unchanged source3bd/config/state. Candidate budget441.282of7200 seconds;
+reference preserved/evaluated5000/764.725seconds. Pause downtime is excluded.
+No repeated preparation/gates or unscheduled evaluation;2080 controls untouched.
+Actual resumed updates remain pending observation. See latest goal checkpoint.
 
 ## Active: A8 QAT recovery and comparison — October 3, 2026
 
