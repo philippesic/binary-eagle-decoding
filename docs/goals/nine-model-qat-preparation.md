@@ -32,8 +32,8 @@ from the shared registry in AGENT_OPERATIONS; never persist IPs here or guess.
 
 ## Ownership and durable record
 
-New independent Codex task is being created. It will become the sole preparation
-coordinator and register its task ID here and in STATUS on startup. Parent
+Sole preparation coordinator is `01a10903-1c7a-71b1-abb1-0de3ecc046b8`,
+claimed October 4 from published handoff `da097e5`. Parent
 recap/research chat is a launcher only and will stop editing these records after
 dispatch. Do not reuse the completed A8 team's ownership or restart its monitors.
 The previous A8 goal and eight-agent research slate remain COMPLETE.
@@ -177,3 +177,43 @@ command, any excluded probes, and the narrowly defined remaining SM120 checks.
 Never claim literal 100% hardware/quality certainty or immediate execution
 without a fresh resource check. Complete all work that can be done independently
 while a host or scientific decision is pending.
+
+## Implementation team started — October 4, 2026
+
+Native Goal is active in the coordinator chat. Source baseline parent `da097e5`,
+native `fcdf5822`. All original untracked overnight files and older worktrees
+are preserved. No host connection or training/evaluation was started.
+
+Temporary worktree root: `/private/tmp/nine-model-qat-20261004/`.
+Each author owns its isolated branch; coordinator reviews/tests/cherry-picks to
+main and pushes before retiring any merged worktree.
+
+| Native subagent | Worktree / branch suffix | Exclusive responsibility |
+| --- | --- | --- |
+| `/root/native` (Sol high) | native | native fork export/load/graphs, block export and TRAIN teacher capture producer |
+| `/root/training` (Sol high) | training | block QAT, EAGLE continuous/recurrent QAT, exact resume/stages, training CLI |
+| `/root/data_fusion` (Sol high) | data-fusion | five-tap/full-vocabulary data bridge, deployed-arithmetic fusion fitting |
+| `/root/pipeline` (Sol high) | pipeline | frozen configs/launcher, process/resource/evaluator lifecycle and report aggregation |
+| `/root/qa` (Luna high) | qa | independent requirement/profile ledger, CPU suites and failure-path tests |
+| `/root/cuda_operator` (Luna high) | own report worktree pending | sole coordinated RTX2080Ti operator, initially local planning only |
+| `/root/contracts_advisor` (Astra medium) | read-only | native architecture/data/mask/ownership advice |
+
+Coordinator exclusively owns STATUS, this goal, DECISIONS and integration.
+Training ownership additionally includes `recurrent_qat.py` for sign clone and
+typed diagnostics. Workers must request overlapping expansions. Peer reviews
+use exact `claude-opus-5-5-high` with bounded focused requests.
+
+Early concrete dependency: existing EAGLE three-tap/pruned-vocabulary data cannot
+supply block five-tap/full-vocabulary teachers. Native owns the real capture
+producer; data owner defines ancestry/storage/cursor contracts. Materialized
+block TRAIN captures and producer hardware/portability evidence remain PENDING.
+The sole operator must plan their cost and identify source model dependencies.
+
+RTX5080 remains locally paused/unavailable; no query/staging/resume authorized.
+RTX2080Ti availability clarification requested; stale registry flags are ignored.
+No remote operation until direct human availability, followed by sole-operator
+fresh resource/ownership checks. CPU/source implementation progresses meanwhile.
+
+Next: settle cross-owner interfaces, land focused tested implementation chunks,
+review native arithmetic and block conditioning, build independent PASS/PENDING/
+EXCLUDED ledger. Portable readiness and fresh SM120 admission remain separate.

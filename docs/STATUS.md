@@ -11,8 +11,10 @@ prepare the nine-model campaign and automatic QAT-to-evaluation pipeline.
 RTX2080Ti is for development/CUDA preflight once opened; real training and
 quality/performance evaluation stay on RTX5080, currently unavailable. Parent
 blocked new RTX5080 runs locally; no remote action or availability claim.
-The new independent task will claim sole coordination from the
-[preparation goal](goals/nine-model-qat-preparation.md). Parent is a launcher only.
+Sole preparation coordinator is `01a10903-1c7a-71b1-abb1-0de3ecc046b8`;
+ownership claimed from handoff `da097e5`. Parent is a launcher only.
+See the [preparation goal](goals/nine-model-qat-preparation.md) for live worker
+partitions, missing block capture artifacts and readiness evidence.
 
 Required output is a tested, frozen source/data/config/launch bundle with
 independent QA and truthful profile/hardware evidence, plus minimal fresh
