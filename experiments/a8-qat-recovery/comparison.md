@@ -250,6 +250,12 @@ with budget settled at 5,097.991 seconds. Its scheduled native evaluation passed
 and is archived. Candidate resumed from 25,000 with positive optimizer updates
 toward 30,000. Both final 7,200-second endpoints remain pending.
 
+Candidate subsequently reached step 30,000/cursor30,054 and exited cleanly,
+with budget settled at 6,219.893 seconds and 980.107 seconds remaining. Its
+scheduled native evaluation is running. The next candidate training segment must
+stop at the original cap and receive a final native evaluation, even if the
+endpoint precedes step 35,000. Both final 7,200-second endpoints remain pending.
+
 ## Endpoint reporting method
 
 Final coverage will use the authenticated checkpoint's committed `unique_prompts`
