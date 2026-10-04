@@ -176,3 +176,22 @@ protocol SHA6244571641791b4f47e2109295f9e28e2827d2c63c290670548f60893c16cf3c.
 All prepared assets/run paths, failures and operator-return evidence are in
 operator.md. Runtime source76847aa ispublic; parentgitlink remains9e2c7a900,
 awaiting model-admission validation before integration.
+
+## Human resume and scope extension — renewed authorization
+
+Human confirmsRTX2080Ti free and authorizes proceeding with DSpark/DFlash
+Q4,A8,A1 benchmarking. This renews study-only resume over prior shared pause;
+RTX5080/QAT/fusion sources/config/jobs remain out of scope. Root resumed2080
+from authoritative registry; same sole Luna must verify fresh resources before
+actual launch. Reuse passed source/build/export evidence and immutable03f6c81
+reference protocol; no repeated model downloads/builds without need.
+
+A8/A1 mean binary-weight W1A8/W1A1 activation conditions, not FP16-weight casts.
+Released BF16 reference and target-only/Q4_0 EAGLE anchors remain mandatory.
+Inspect actual DSpark/DFlash quantization/export/loader/graph/CUDA capability;
+report precise supported coverage and never label float fallback as low-bit.
+No new QAT/training authorized. If substantial new low-bit representation/
+implementation is required, present a concrete selective configuration for
+human decision while runnable reference/Q4 benchmarks proceed. Initial cumulative
+measurement bound remains7200seconds. Matrix revision is explicit and pending
+bounded capability audit; references may start under existing frozen settings.
