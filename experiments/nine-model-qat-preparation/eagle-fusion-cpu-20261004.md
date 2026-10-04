@@ -67,3 +67,37 @@ Remaining work: expand code validation and campaign-selected calibration coverag
 produce/authenticate five-tap block TRAIN captures; fit block-family fusion at
 both deployed precisions; validate actual native operators/graphs/trajectories;
 run the narrow fresh SM120 portability gates when RTX5080 is available.
+
+## Latent recipe binding — same calibration, preserved reference inertia
+
+The four original NPZ files above contain **unit** sign latents. They preserve
+deployment bits but are eligible only for an explicit `unit_probe` QAT recipe.
+They must not be relabeled as reference-magnitude initializers. Source `7c6b6b1`
+separates fitted hard bits from QAT latent magnitude and records the initializer
+policy. Block default preserves the absolute original weight magnitudes;
+EAGLE default preserves its actual historical fixed magnitude `0.5`. Negative
+fitted signs on exact zero source magnitudes refuse preservation rather than
+quietly introducing a magnitude floor. Magnitudes above the STE window are
+reported and preserve the declared block baseline recipe.
+
+Actual reference-preserving EAGLE sibling artifacts were materialized under
+`results/nine-model-qat-preparation/eagle-fusion-fixed-half-20261004/` with no new
+fitting and zero optimizer updates. Reopening each NPZ verified identical hard
+bits and F32 scales to its original unit artifact, with all magnitudes exactly
+`0.5`. The earlier raw/post-norm metrics therefore remain valid. Original unit
+files, fit report and executed script remain unchanged.
+
+| Fixed-reference artifact | SHA256 |
+|---|---|
+| `fusion-a8.npz` | `7a40b375deb2f337a4037aa6d034477d933b66542341fdc15385723f907e0a8f` |
+| `control-a8.npz` | `9b907187f3299e76d0f9435851b4d683dc987c4ee22abb0a696a7f70f095e771` |
+| `fusion-a1.npz` | `fa2780b1222929b2275138d7368598640c03fe6048efa89d685dff1b8aeae851` |
+| `control-a1.npz` | `f4f4c102f4d8749c716903e3862723ae9968d505d65eae2e4958c14d067af32b` |
+
+The sibling `initialization-contract.json` records source artifact pins and
+`latent_initialization`: `policy=preserve_reference_magnitudes`,
+`reference_kind=eagle_fixed_reference_0.5`,
+`reference_sha256=9b24af2690be153cc84d2ed90353762f8f2094a9655683a774d46af38c7784b9`.
+This reference SHA hashes contiguous little-endian F32 absolute initializer
+bytes, with shape `[2560,7680]` bound separately. Training locators extract those
+three exact fields; additional source-zero/STE counters remain report metadata.
