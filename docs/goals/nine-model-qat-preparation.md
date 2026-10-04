@@ -1,6 +1,27 @@
 # Nine model QAT preparation
 
-## Current hardware authorization — October 4, 2026
+## Current hardware boundary: Mac only
+
+Latest direct human instruction: **“pause all 5080 usage continue mac only.”**
+Root immediately ran `agent_env.py pause rtx5080`. All feature/QA owners were
+notified; preparation remains active for Mac source/CPU work. Do not connect,
+query, stage, build or run on either remote GPU host until renewed authorization.
+
+The sole operator confirmed its dependency supervisor was already terminal
+(`nineprep-5080-uvsync-20261004`, exit0,23:45:20.701665UTC). No compiler probe,
+CUDA build, model load or capture had started. Its SSH invocations returned
+and MCP transport `nine-model-5080` session256 was closed. No other team's
+processes, stale state, dirty root checkout or untracked artifacts were changed.
+No remote call was made after cleanup/closure. The last device snapshot is
+historical23:42:18.969940UTC:13,495MiB free, zero compute rows/DXG holders;
+this is not a new claim about current whole-device occupancy.
+
+Preserve the isolated remote checkout pinned b998f4f/native874cd2b, locked
+Python3.11.15/CMake3.31.10/Torch2.14.0 environment,4.31GB cache and raw logs.
+They are preparation artifacts, not CUDA execution evidence. Actual CUDA build,
+model/backward/memory and materialized native TRAIN/golden checks remain PENDING.
+
+## Historical RTX5080 development authorization — October 4, 2026
 
 The human explicitly announced: **“5080 is open use that for development work.”**
 This supersedes the initial RTX5080 no-query/pause boundary below. Root resumed
@@ -373,3 +394,24 @@ passes, prioritize actual source CUDA compilation, deployed-width binary operato
 oracles, Linux STOP/resource/resume fixtures, authentic bounded balanced TRAIN
 capture and zero-update model/memory checks. The prepared campaign remains
 PENDING until those artifacts and independently tested production contracts exist.
+
+## Mac-only continuation checkpoint
+
+Current published main658bead, native50ca2676. Integrated75nine-model source
+tests PASS(twoLinux-only skips),55block/capture tests PASS and ownedRuff PASS.
+Independent QA actual source-loader checks caught strict Python-vs-GGUF F32
+epsilon mismatch;658bead canonicalizes exactF32 metadata and adds realGGUF
+round-trip tests without broad tolerance or changing model math.
+
+All remote development is now paused. Local followups: training8a16cea
+curriculum/normalized smoke contract/audit reuse, pipeline final-counter/sampler/
+paused-start fixes, root fresh-admission API join, independent ledger and applicable
+full suites. Native/data/training are addressing a concrete finite-subnormal
+A8 reciprocal-overflow risk with boundedCPU tests, explicit revised arithmetic
+and unchanged normal-domain behavior; CUDA behavior remains unverified.
+
+Actual released DSpark/DFlash weights are missing locally; native owner may
+materialize exact public source-pinned snapshots outsideGit and exercise actual
+CPU export/load/graph with synthetic activations. Heavy CPU jobs must be serialized
+against Mac memory. No quality/throughput or SM120 claim follows from CPU evidence.
+Native Goal remains active; the human paused GPU usage, not source preparation.

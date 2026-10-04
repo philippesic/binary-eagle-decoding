@@ -8,11 +8,11 @@ The target/verifier model precision remains as frozen for each experiment.
 
 The human requested an independent Codex task and implementation/test team to
 prepare the nine-model campaign and automatic QAT-to-evaluation pipeline.
-The human now opened RTX5080 for development: “5080 is open use that for
-development work.” Root resumed its local flag. The same sole operator owns
-fresh identity/resource checks, CUDA development and TRAIN preparation there.
-Real long QAT and quality/performance evaluation still await recipe/budget
-selection. RTX2080Ti is not queried or controlled by this team.
+Latest human steering: **“pause all 5080 usage continue mac only.”**
+RTX5080 is locally paused; the sole operator closed its transport. The only
+remote job was locked dependency setup, which had already finished exit0.
+No compiler probe, CUDA build, model load, capture, training or evaluation
+started. Preparation continues on Mac CPU/source; both remote hosts are unused.
 Sole preparation coordinator is `01a10903-1c7a-71b1-abb1-0de3ecc046b8`;
 ownership claimed from handoff `da097e5`. Parent is a launcher only.
 See the [preparation goal](goals/nine-model-qat-preparation.md) for live worker
