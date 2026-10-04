@@ -23,8 +23,18 @@ raw outputs archived. Both native/model/backward/memory/five-repeat receipts
 already passed on RTX5080/SM120/native9e2. Base583 admission/math hashes remain
 unchanged under helper-only repair3bd (current execution source), no revalidation.
 
-Next: confirm positive-step exact resume, train reference toward cumulative7200s
-with save1000/development5000/final cadence, then candidate same budget/proof.
+Positive-step EXACT resume now verified: reference restored859 and advanced912,
+finite18gradients, preserved129.8578s and active reservation7070.1422s. New
+supervisor10108/birth962865, trainer10114/birth962869, same boot517c4a36/source3bd/
+config/optimizer/RNG/cursor/probe/telemetry. It is running actual optimizer work.
+
+Next: alternate ARMS at natural5000-update development boundaries. Afterreference
+5000scheduled evaluation/archive/release, begin candidate from its preserved0,
+prove its actual early-family movement via graceful save/resume, then candidate
+5000eval. Continue alternating until each independent7200s cap/final evaluation
+is complete. This operational order starts the requested candidate features
+sooner and balances the comparison, without source/data/seed/config/budget change
+or extra evaluations. Save1000/diagnostics100/development5000 cadence unchanged.
 Latest human direction prioritizes real updates and no optional prelaunch chains;
 all independent CPU repair/validation/launch work is complete. Sole operator
 `/root/gpu_supervisor` owns exact commands, births/groups, locators and raw failures
