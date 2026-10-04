@@ -281,6 +281,13 @@ CE3.596321, with24/24native response matches. Timing counters across120requests
 are5,595/41,990/8,535; their rounds and token workload are kept separate. Candidate's next segment remains restricted to its
 original980.107133seconds and final evaluation.
 
+Candidate reached its original7,200.0second cap at34,731updates/cursor34,797,
+training exit0 at14:03:56.696195UTC, checkpointbda021d3. Budget is settled with
+no active attempt; final request matches latest and final_training_complete=true.
+Final archive/release and matching final evaluation remain pending. Reference
+still has1,321.277984training seconds left; the equal-budget comparison is not
+complete yet.
+
 ## Endpoint reporting method
 
 Final coverage will use the authenticated checkpoint's committed `unique_prompts`
