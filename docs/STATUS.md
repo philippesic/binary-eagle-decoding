@@ -4,22 +4,22 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Reference 35,000 evaluation running — October 4, 13:23 UTC
+## Reference 35,000 evaluated; candidate final segment next — October 4, 13:44 UTC
 
-Reference exited0 at35,000/cursor35,066, checkpoint a64fe4da. Budget settled
-5,878.722016/7,200seconds with null active attempt;1,321.277984seconds remain.
-Its exact checkpoint/request and hardlink archive are verified. Full prior
-release/resource checks passed; scheduled1200s evaluation started13:22:17UTC,
-supervisor30447/birth5469471,evaluator30448/birth5469476.
-Candidate30k evaluation passed:0.268456drafts/round,70.905requesttokens/s,
-52.47% of Q4_0. Candidate6219.892867/7200 has only980.107133training seconds left.
+Reference35k evaluation passed exit0 at13:33:16UTC and is hardlink archived;
+652.613evaluation seconds within1200cap. Full owned-process/native-context return
+verified13:35:11UTC. Request96.585 vsQ4_0134.705tokens/s (71.70%), decode100.824
+vs142.836. Primary24prompt native acceptance/CE metadata correction is pending;
+five-repeat timing counters remain separate. Reference budget5878.722016/7200,
+null active attempt,1321.277984remaining. Candidate30k has only980.107133training
+seconds left; fresh guards passed and its final-segment launch is next.
 
 Successor `01a10704-f186-7991-97c7-6f4b3df51ae9` owns the existing goal and SAME
-ACTIVE heartbeat; prior coordinator/operator are retired. Sole `/root/gpu_operator`
-owns transport pane285. CPU-only existing-record repetition audit is published
-as e155ae2; actual final inputs remain pending. BOTH7200endpoints/finalreports
-incomplete; no new experiment, budget or pending human decision, no2080controls.
-See [current checkpoint](goals/a8-qat-recovery-and-comparison.md#reference-35000-evaluation-live--october-4-1323-utc).
+ACTIVE heartbeat; prior coordinator/operator retired, sole `/root/gpu_operator`
+owns pane285. Existing-record repetition audit is published as e155ae2; final
+inputs pending. BOTH7200endpoints/finalreports incomplete, no new experiment,
+budget or pending human decision, no2080controls. See
+[current checkpoint](goals/a8-qat-recovery-and-comparison.md#reference-35000-evaluation-passed-candidate-final-segment-next--october-4-1344-utc).
 
 ## Active: A8 QAT recovery and comparison — October 3, 2026
 

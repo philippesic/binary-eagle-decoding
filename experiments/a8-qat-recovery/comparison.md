@@ -270,8 +270,13 @@ endpoint precedes step 35,000. Both final 7,200-second endpoints remain pending.
 Reference subsequently reached step35,000/cursor35,066 and exited0 at
 13:10:34.068720UTC, budget settled5,878.722016seconds,1321.277984remaining.
 Its checkpoint a64fe4da and pending scheduled development request are archived.
-The scheduled evaluation has conditional GO after full release/resource checks;
-results remain pending. Candidate's next segment remains restricted to its
+Its scheduled evaluation passed exit0 at13:33:16UTC in659.179supervisor-wall
+seconds (652.613evaluation-phase seconds), with full return verified13:35:11UTC.
+Request rate was96.585 vsQ4_0134.705tokens/s (ratio0.717013), decode100.824 vs
+142.836. Raw report/result/timing hashes are respectivelyfff25faa...,34bc088e...
+and5b953c77... in the current goal checkpoint. Primary24prompt native acceptance
+and CE metadata extraction is pending; five-repeat timing counters are kept
+separate. Candidate's next segment remains restricted to its
 original980.107133seconds and final evaluation.
 
 ## Endpoint reporting method

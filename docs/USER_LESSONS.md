@@ -261,3 +261,24 @@ additional proof protocols or redoing completed audit work.
 - Practical lesson: Construct transfers from the current exact launch receipt,
   process births and checkpoint. Resolve mismatched session/state paths before
   enabling a successor operator; do not recover or restart from stale labels.
+
+### 2026-10-04: Keep native acceptance and timing counters separate
+
+- Context: Successor operator collected the reference35,000 development report.
+- Evidence: Its first compact summary used accepted5,595/proposed41,990/rounds8,535
+  and Q4_0 accepted8,040/rounds6,140 from the five-repeat120request timing workload.
+  It called those acceptance values while the primary native capture uses24prompts.
+  Earlier reports preserve Q4_0 native accepted1,608/rounds1,231 separately.
+- Status: Confirmed agent metric-scope confusion; no user error or demonstrated
+  experiment failure. Root caught the mismatch before publishing native35k counts.
+- Agent contribution: The replacement operator condensed a report into generic
+  accepted/proposed/rounds fields without retaining the parent metrics scope.
+- Practical lesson: Extract primary native acceptance directly from report.metrics
+  native_* fields; preserve its24prompt denominator. Timing counters,360records,
+ 120requests per variant and14,290completion IDs belong to their separate ledger.
+  Label both paths explicitly and never substitute timing acceptance for native
+  acceptance merely because both have similarly named counters.
+- Resolution: Root requested a bounded read of original report metadata and a
+  corrected compact summary; candidate training may proceed independently. No
+  new native requests, recapture or regression experiment are authorized by this
+  correction. Correction verification remains pending.
