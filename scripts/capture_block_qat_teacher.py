@@ -3,8 +3,10 @@
 
 Native helper loads target once, resets F16 KV for each request, and writes raw
 F32 row-major files. `NativeTeacher.capture_prefix(tokens,tap_ids,logits_mode)`
-serves either final-prefix full logits for live DSpark L1, or all rows for bounded
-TRAIN sequence capture. Teacher target/precision/hardware ancestry is recorded;
+serves final-prefix full logits for live DSpark L1, dense rows by default, or
+opt-in indexed full-vocabulary rows for TRAIN sequence capture. Indexed output
+selects storage only after identical dense-head decoding; features remain complete.
+Teacher target/precision/hardware ancestry is recorded;
 no optimizer or drafter is present. GPU use belongs to the sole operator.
 """
 
@@ -16,13 +18,23 @@ import json
 import os
 import signal
 import subprocess
+import sys
 import uuid
 from pathlib import Path
 
 import numpy as np
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from export_block_binary import sha256
 from gguf import GGMLQuantizationType as Type
 from gguf import GGUFReader
+
+from w1a1_eagle.block_data import (
+    BLOCK_LOGITS_SELECTION,
+    block_teacher_indices,
+    generated_block_anchors,
+    validate_logits_indices,
+)
 
 
 class NativeTeacher:
@@ -133,7 +145,14 @@ class NativeTeacher:
         self.closed = False
 
     def capture_prefix(
-        self, tokens, tap_ids, *, logits_mode="last", chain_ancestry=None, decode_history=None
+        self,
+        tokens,
+        tap_ids,
+        *,
+        logits_mode="last",
+        chain_ancestry=None,
+        decode_history=None,
+        logits_indices=None,
     ):
         if self.closed or self.process.poll() is not None:
             raise RuntimeError("native teacher process is not live")
@@ -145,7 +164,7 @@ class NativeTeacher:
         ):
             raise ValueError("exact nonempty bounded integer token prefix required")
         self._validate_taps(tap_ids)
-        if logits_mode not in ("all", "last", "none"):
+        if logits_mode not in ("all", "last", "none", "indexed"):
             raise ValueError("unsupported logits mode")
         request = {
             "id": uuid.uuid4().hex,
@@ -153,6 +172,13 @@ class NativeTeacher:
             "tap_ids": list(tap_ids),
             "logits_mode": logits_mode,
         }
+        if logits_mode == "indexed":
+            validate_logits_indices(logits_indices, len(tokens))
+            if not logits_indices:
+                raise ValueError("nonempty indexed teacher row map required for replay")
+            request["logits_indices"] = list(logits_indices)
+        elif logits_indices is not None:
+            raise ValueError("logit selection requires indexed mode")
         if decode_history is not None:
             if not isinstance(decode_history, list) or not decode_history:
                 raise ValueError("nonempty source decode history required")
@@ -200,7 +226,7 @@ class NativeTeacher:
         chain_ancestry=None,
     ):
         self._validate_taps(tap_ids)
-        if logits_mode not in ("all", "last", "none"):
+        if logits_mode not in ("all", "last", "none", "indexed"):
             raise ValueError("unsupported logits mode")
         if type(max_new_tokens) is not int or not 0 <= max_new_tokens <= self.max_tokens:
             raise ValueError("invalid bounded native continuation")
@@ -246,6 +272,8 @@ class NativeTeacher:
             "tap_ids": list(tap_ids),
             "logits_mode": logits_mode,
         }
+        if logits_mode == "indexed":
+            request["logits_selection"] = dict(BLOCK_LOGITS_SELECTION)
         receipt = self._capture_request(request, chain_ancestry)
         receipt["prompt_source_sha256"] = hashlib.sha256(source_text.encode()).hexdigest()
         receipt["rendered_prompt_sha256"] = hashlib.sha256(
@@ -362,6 +390,17 @@ class NativeTeacher:
                 != {"add_special": True, "parse_special": True, "implementation": "llama_tokenize"}
             ):
                 raise ValueError("invalid native generation/tokenizer contract")
+        if logits_mode == "indexed":
+            expected = (
+                block_teacher_indices(
+                    generated_block_anchors(receipt["prompt_length"], len(tokens))
+                )
+                if "prompt" in request
+                else request["logits_indices"]
+            )
+            validate_logits_indices(receipt.get("logits_indices"), len(tokens), expected=expected)
+        elif "logits_indices" in receipt or "logits_selection" in receipt:
+            raise ValueError("unexpected indexed teacher row map in dense response")
         directory = self.root / request["id"]
         features_shape, logits_shape = receipt["features_shape"], receipt["logits_shape"]
         if (
@@ -369,7 +408,15 @@ class NativeTeacher:
             or features_shape[:2] != [len(tokens), len(request["tap_ids"])]
             or features_shape[2] <= 0
             or logits_shape[0]
-            != (len(tokens) if logits_mode == "all" else 1 if logits_mode == "last" else 0)
+            != (
+                len(tokens)
+                if logits_mode == "all"
+                else 1
+                if logits_mode == "last"
+                else len(receipt["logits_indices"])
+                if logits_mode == "indexed"
+                else 0
+            )
             or logits_shape[1] <= 0
         ):
             raise ValueError("native teacher response shape mismatch")
@@ -480,6 +527,7 @@ def main():
                         logits_mode=request.get("logits_mode", "all"),
                         chain_ancestry=request.get("chain_ancestry"),
                         decode_history=request.get("decode_history"),
+                        logits_indices=request.get("logits_indices"),
                     )
                 print(json.dumps(receipt), flush=True)
 

@@ -472,3 +472,35 @@ quality or a reason to fake CUDA readiness. BoundedmetadataSHA
 remotely and copied only as metadata forQA. ActualA1initializedactor/allnine
 serialization/native/SM120 admission still waits for safe GPU availability after
 healthyA8. A1proposed directlane24h budget is source-supported, not yet launched.
+
+### Indexed block teacher source checkpoint — October 5, 2026
+
+Bounded owner completed additive exact indexed F32/full-vocabulary teacher
+storage in isolated `/tmp/binary-eagle-indexed-teacher`, parent/native branches
+`feature/indexed-block-teacher`. Native commit
+`ecff6d4e74814c631801df2e74f562d4ed6bd0eb` is already published to the user's
+llama.cpp fork before the parent gitlink. Root owns review/integration; no main
+merge, remote operations, GPU work or running-source changes occurred.
+
+Dense defaults remain compatible. Opt-in indexed capture keeps unchanged dense
+native head flags/decode partitions/F16 KV and selects only output writes. It
+retains all seven teacher positions per existing selected anchor, exact tokens,
+full context features and original TRAIN/source/prompt ancestry. Native/client/
+producer/dataset maps are bound and malformed or incomplete maps reject.
+Planner reports full feature storage, exact retained anchor-union rows and
+pre-truncation peak rows; it selects no new exposure or duration. Feature-only
+3.9M-row cost199,680,000,000B remains near/above reported free197GB, so complete
+corpus feasibility and coverage decisions remain unresolved and user-owned.
+
+New13 CPU/synthetic/model-free tests passed, including all8 divergence choices
+×128 padding masks×2anchors with identical dense/indexed losses/gradients.
+Existing21 block-data/22 capture/14 portability tests passed; CPU-only native
+compile and model-free C++ protocol passed; Ruff/diff checks passed. Independent
+Luna review/final13 tests passed. No actual target/CUDA/SM75/throughput/acceptance
+or production-readiness claim. Q4_0 EAGLE remains primary baseline.
+
+Detailed contract, costs, tests, raw QA log locations and integration needs:
+`experiments/nine-model-qat-overnight/indexed-block-teacher.md`. Next: root review
+and integrate published coherent source; future real indexed capture needs new
+source/client/runtime pins and coordinated resource admission. Healthy5080 QAT
+continues independently under its frozen existing source/config/lane.
