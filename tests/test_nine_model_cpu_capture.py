@@ -245,6 +245,29 @@ class CpuCaptureTests(unittest.TestCase):
         self.assertTrue(proof["actual_dyld_paths_checked"])
         self.assertFalse(proof["actual_linux_mapping_checked"])
 
+    def test_extra_backend_dylib_refuses_otool_and_loaded_runtime(self):
+        for name in (
+            "cuda",
+            "metal",
+            "vulkan",
+            "hip",
+            "sycl",
+            "opencl",
+            "cann",
+            "musa",
+            "rpc",
+            "webgpu",
+            "blas",
+            "openvino",
+        ):
+            with self.assertRaisesRegex(ValueError, "unapproved"):
+                capture.require_cpu_project_libraries(
+                    "dyld[42]: /extra/libggml-" + name + ".0.dylib"
+                )
+        capture.require_cpu_project_libraries(
+            "/System/Library/Frameworks/Accelerate.framework/Versions/A/Accelerate"
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

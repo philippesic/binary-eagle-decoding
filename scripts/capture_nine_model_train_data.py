@@ -447,6 +447,13 @@ CPU_OFF_OPTIONS = (
 )
 
 
+def require_cpu_project_libraries(text):
+    allowed = {"libllama", "libggml", "libggml-base", "libggml-cpu"}
+    stems = {name.split(".")[0] for name in re.findall(r"lib(?:llama|ggml)[\w-]*\.[^\s/]+", text)}
+    if stems - allowed or "metal.framework" in text.lower():
+        raise ValueError("CPU runtime inventory includes an unapproved GPU/backend library")
+
+
 def validate_cpu_build(record, native, base):
     """Pinned CPU-only build and exact resolved dylibs; not Linux map proof."""
     path = pinned(record, base)
@@ -494,11 +501,7 @@ def validate_cpu_build(record, native, base):
     links = pinned(proof["otool_links"], path.parent).read_text()
     if any(Path(item["path"]).name.split(".")[0] + "." not in links for item in dylibs):
         raise ValueError("CPU otool dependency inventory lacks pinned project dylib")
-    if any(
-        name in links.lower()
-        for name in ("metal.framework", "libggml-cuda", "libggml-metal", "libggml-vulkan")
-    ):
-        raise ValueError("CPU dependency inventory includes GPU backend")
+    require_cpu_project_libraries(links)
     return {
         "proof": {"path": str(path), "sha256": record["sha256"]},
         "dylibs": dylibs,
@@ -547,6 +550,7 @@ def mac_cpu_device():
 
 def cpu_loaded_library_proof(teacher, build):
     text = Path(teacher.log.name).read_text(errors="replace")
+    require_cpu_project_libraries(text)
     pid = teacher.process.pid
     loaded = set()
     for line in text.splitlines():
