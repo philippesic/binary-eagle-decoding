@@ -933,3 +933,42 @@ Remaining A1/block actors, captures, admissions, candidate QAT and final nine
 comparisons remain unfinished. Native Goal ACTIVE, SAME30-minute heartbeat ACTIVE.
 Continue read-only monitoring approximately every30minutes with existing sole
 transport, preserve healthy86,400trainersecond allocation and natural endpoint.
+
+## A1 serial bootstrap gap checkpoint — October 5, 05:58 PDT
+
+The previous goal turn was progress (A1 link/retention/depth/archive integration).
+This continuation first verified the same five exact live kernel identities
+read-only; no new job/monitor/source/lease change. Existing A8 and watcher remain
+sole remote jobs. Approximately30-minute full healthchecks remain in force.
+
+Bounded read-only explorer `/root/a1_queue_capability_audit` completed. Existing
+one-lane endpoint automates only its own export/evaluation; its remaining-candidate
+list is metadata. Existing generic campaign trains EAGLEA8 thenA1 when already
+fully prepared, but cannot bootstrap this missing A1 actor/export/bind/QA. No
+automatic current-watcher-to-A1 bootstrap exists; do not claim it is armed.
+
+Actual A1 packet's request/command/config/initializer-report/source pins freshly
+verified. Producer checkout remainsc2544aa7928b0d0c454099a56ae912262c6b0ab5;
+train scriptSHAf1437b4e588dbfe3672a795e064fc7027730617ddb2c687d6af417941280834d.
+Initial requestSHA1ec799438ce9fc696366f18b305a7be05160ccff9439a4864f3996f364d04405
+pins configSHA559ea40e5755f79046441badf81d7389a44b82ff306427370570af8aa0199e7b.
+The packet's existing initial_prepare/initial_export argv use that preserved
+producer. No initial-prepare directory or production-inputs exists. Running
+current-main trainer/binder against this unchanged request would correctly fail
+after the retention source edit; use matchingc254source, never relabel old pins.
+Ignored bounded proof `results/nine-model-qat-overnight/a1-bootstrap-source-pins-20261005.json`
+SHA57487056cd9be3a1691ca322d0033241ed2e44375c0f558e0f69df24e76d9a6e.
+
+New bounded source-only feature owner `/root/a1_handoff_plan_owner` owns new
+`scripts/prepare_nine_model_lane_handoff.py`, focused model-free tests and report
+`experiments/nine-model-qat-overnight/a1-handoff-plan.md` in its isolated worktree.
+Task: inspectable immutable stage/source/receipt/dependency plan for A1 after
+successful natural A8 endpoint and actual owned release. Late-bound actor/export/
+bind/QA/admission/QAT/endpoint artifacts remain PENDING; JSON cannot prove kernel
+release or authorize execution. It implements no launcher/watcher/driver, changes
+no existing exact-source guards and selects no policy. Root will review/tests and
+materialize genuine metadata with CUDAhidden; actual serial execution remains a
+later required action under standing authorization after natural GPUrelease.
+Worker has no remote/GPU authority or durable-doc ownership. Root remains sole
+operator; block exposure/conditioning response stays pending. Fullsix+three Goal
+ACTIVE, unchanged healthy A8 allocation and passive watcher preserved.

@@ -72,6 +72,12 @@ and frozen30a/cc9 source remain intact; finite18gradients, heartbeat0.015s,
 endpoint. Owned worker worktrees/branches retired with needed raw proof preserved;
 root alone supervises the unchanged GPU jobs.
 
+**05:58 PDT next-lane preparation:** actual A1 command/source pins verified.
+The current watcher automates A8 export/evaluation only; automatic A1 bootstrap
+is not armed. One bounded CPU/source owner prepares an immutable handoff plan
+with truthful pending model/admission stages and mandatory fresh live release
+checks. Existing GPU jobs remain unchanged under sole root ownership.
+
 ## Historical preparation checkpoint — October 4, 2026
 
 The human requested an independent Codex task and implementation/test team to
