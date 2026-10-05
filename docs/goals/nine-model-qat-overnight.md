@@ -99,3 +99,37 @@ fresh immutable current source. Next: freshinventory, productiondata availabilit
 stagedlane integration/review and actual source-bound preflight, then sustained
 QAT. No successful launch or morning-active guarantee is claimed before its
 actual process / positive updates / durable checkpoint evidence.
+
+
+## Production source and durability milestone — October 5, 00:01 PDT
+
+Published source: d027ea1 authenticated EAGLE initializer; 584f337 additive
+staged lane; 5f53740 complete calibrated export plan. Native remains published
+624f50e74. Author checks: four initializer tests, 41 affected lane/builder/
+admission tests including seven new staged checks, changed-file Ruff/format.
+Independent QA checked candidate-local contracts and 40 runtime source pins,
+including imported resource/runtime/admission verifier leaves; its report is
+being repinned to the final changed source. Original 51-pin packet stays
+immutable historical evidence; new source requires an additive current ledger.
+
+Actual fresh RTX5080 inventory: driver616.92, nvcc13.1.115, Torch2.14.0+cu130;
+13,264MiB GPU free, approximately18GiB host available within20GiB WSL cap,
+199GiB disk free. No project job found. Original completed preparation-ready
+receipt bdfa56f8... and original resolved config/providers are located remotely;
+full authentication and actual calibration remain pending. Planned initializer
+uses 32fit+16validation prompts per each prose/code/reasoning domain,16raw
+feature rows each (1536fit/768validation), source±0.5 scale-only/no rescue.
+
+Fresh CPU disconnect proof PASS: remote_job supervisor44534/child44540 ran
+240.011seconds while own SSH was closed, natural exit0/no signal,240heartbeat
+rows. Reconnect verified both absent, no tmux job/server left and GPU baseline
+unchanged. New transport: MCP session$258/window@287/pane%289; sole operator
+remains /root/overnight_5080_operator. Raw job is preserved in the clean d7bbdee
+checkout's runs/nine-model-overnight-cpu-disconnect-20261005-01. Current source
+5f53740 is being staged separately before production preparation.
+
+CPU initializer plan reviewed/GO: wholephase900seconds, fit300seconds, threads2,
+8GiB cap and4GiB available floor; serialize against a heavy nativebuild phase.
+Nativebuild exact source/argv/cap review is pending. No CUDA model test, new
+optimizer update or successful training claim yet. Exact live registration is
+in main ignored runs/nine-model-qat-overnight/monitor-registration.json.

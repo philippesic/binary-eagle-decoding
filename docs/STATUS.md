@@ -18,8 +18,10 @@ packet feature owner and independent QA. First ready calibratedfixedA8 lane
 is prioritized with delegated24h cumulativetrainerallocation and frequent
 checkpoints; remaining candidates queue without premature readiness claims.
 30-minute heartbeat `nine-model-overnight-qat-monitor` is ACTIVE in this chat.
-Fresh GPU/source/data/model/memory admission and real updates are not yet
-proved. Preflight and production integration are in progress; healthy runs
+First-lane source and calibration helper are integrated through5f53740; fresh
+5080 inventory and a240-second normal-completion disconnected CPU durability
+proof passed. Actual production calibration/native build/model/memory admission
+and real updates are not yet proved. Preflight continues; healthy runs
 will not be stopped merely for morning, idle chat or a monitoring tick.
 
 ## Historical preparation checkpoint — October 4, 2026
