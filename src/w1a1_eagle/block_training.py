@@ -91,7 +91,23 @@ def _cpu_tree(value):
     return value
 
 
-def _validate_optimizer(model, optimizer, saved):
+def _validate_optimizer(model, optimizer, saved, *, expected_updates, serialized=False):
+    """Exact stage-local Adam publication/recovery contract, before mutation."""
+    if type(expected_updates) is not int or expected_updates < 0:
+        raise ValueError("optimizer stage update count must be a nonnegative integer")
+    if not isinstance(optimizer, torch.optim.AdamW):
+        raise ValueError("block checkpoints require the declared AdamW optimizer")
+    declared_fused = getattr(model.config, "optimizer_backend", "serial") == "fused_fp32_probe"
+    if any(bool(group.get("fused")) != declared_fused for group in optimizer.param_groups):
+        raise ValueError("optimizer execution backend differs from declared profile")
+    parameters = [p for group in optimizer.param_groups for p in group["params"]]
+    model_parameters = [p for p in model.parameters() if p.requires_grad]
+    if len(parameters) != len(model_parameters) or {id(p) for p in parameters} != {
+        id(p) for p in model_parameters
+    }:
+        raise ValueError("optimizer must own exactly current student parameters")
+    if any(p.dtype != torch.float32 for p in parameters):
+        raise ValueError("optimizer checkpoint masters/moments must be F32")
     expected = optimizer.state_dict()
     if not isinstance(saved, dict) or set(saved) != set(expected):
         raise ValueError("optimizer checkpoint inventory differs")
@@ -101,24 +117,49 @@ def _validate_optimizer(model, optimizer, saved):
     for group, reference in zip(groups, expected["param_groups"]):
         if set(group) != set(reference) or any(group[k] != reference[k] for k in reference):
             raise ValueError("optimizer checkpoint family/options/rates differ")
-    parameters = [p for group in optimizer.param_groups for p in group["params"]]
     ids = [i for group in groups for i in group["params"]]
-    if not isinstance(saved["state"], dict) or not set(saved["state"]).issubset(set(ids)):
-        raise ValueError("optimizer checkpoint contains unowned state")
-    for key, parameter in zip(ids, parameters):
-        values = saved["state"].get(key, {})
-        if values and set(values) != {"step", "exp_avg", "exp_avg_sq"}:
-            raise ValueError("optimizer moments missing/extra")
-        for name, value in values.items():
-            if not isinstance(value, torch.Tensor) or not bool(torch.isfinite(value).all()):
-                raise ValueError("optimizer tensor invalid/nonfinite")
-            if name == "step":
-                if value.numel() != 1 or float(value) < 0 or float(value) != int(value):
-                    raise ValueError("optimizer update counter invalid")
-            elif value.shape != parameter.shape or value.dtype != parameter.dtype:
-                raise ValueError("optimizer moment shape/dtype differs")
-            if name == "exp_avg_sq" and bool((value < 0).any()):
-                raise ValueError("optimizer second moment negative")
+    states = saved["state"]
+    if not isinstance(states, dict) or len(set(ids)) != len(ids):
+        raise ValueError("optimizer state/owned IDs invalid")
+    if expected_updates == 0:
+        if states:
+            raise ValueError("zero-update/reset checkpoint requires empty optimizer state")
+        return
+    if set(states) != set(ids):
+        raise ValueError("progressed optimizer checkpoint requires all owned moments")
+    for group, live_group in zip(groups, optimizer.param_groups):
+        for key, parameter in zip(group["params"], live_group["params"]):
+            values = states[key]
+            if not isinstance(values, dict) or set(values) != {"step", "exp_avg", "exp_avg_sq"}:
+                raise ValueError("optimizer moments missing/extra")
+            step = values["step"]
+            step_device = (
+                torch.device("cpu") if serialized or not group.get("fused") else parameter.device
+            )
+            if (
+                not isinstance(step, torch.Tensor)
+                or step.ndim != 0
+                or step.dtype != torch.float32
+                or step.device != step_device
+                or not bool(torch.isfinite(step))
+                or float(step) != expected_updates
+            ):
+                raise ValueError(
+                    "optimizer step must be scalar F32 on declared device at exact stage count"
+                )
+            for name in ("exp_avg", "exp_avg_sq"):
+                value = values[name]
+                moment_device = torch.device("cpu") if serialized else parameter.device
+                if (
+                    not isinstance(value, torch.Tensor)
+                    or value.dtype != torch.float32
+                    or value.shape != parameter.shape
+                    or value.device != moment_device
+                    or not bool(torch.isfinite(value).all())
+                ):
+                    raise ValueError("optimizer moment shape/dtype/device/finite differs")
+                if name == "exp_avg_sq" and bool((value < 0).any()):
+                    raise ValueError("optimizer second moment negative")
 
 
 def _runtime(model):
@@ -149,7 +190,9 @@ def _runtime(model):
 
 def save_block_checkpoint(model, optimizer, cursor, source, directory):
     validate_source(source)
-    _validate_optimizer(model, optimizer, optimizer.state_dict())
+    _validate_optimizer(
+        model, optimizer, optimizer.state_dict(), expected_updates=cursor.stage_updates
+    )
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
     checkpoint = (
@@ -228,10 +271,9 @@ def load_block_checkpoint(model, optimizer, source, receipt):
                     raise ValueError("frozen checkpoint scale/bias differs")
             elif value != tensor:
                 raise ValueError("binary checkpoint parameter contract differs")
-    _validate_optimizer(model, optimizer, saved["optimizer"])
-    from .qat_state import validate_optimizer_resume
-
-    validate_optimizer_resume(optimizer, saved["optimizer"], expected_updates=cursor.stage_updates)
+    _validate_optimizer(
+        model, optimizer, saved["optimizer"], expected_updates=cursor.stage_updates, serialized=True
+    )
     # Validate RNG in isolation and restore the caller's RNG before any mutation.
     original = rng_state(str(model.token_embd.device))
     try:
