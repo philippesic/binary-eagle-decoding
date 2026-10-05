@@ -276,3 +276,19 @@ are repinned before a versioned lane/plan and fresh lease. Initializer/model/
 export/native-golden bytes remain valid and are reused. Root retains exclusive
 MCP$258/@287/%289 operation; old Luna must issue no remote command. Next: fresh
 seven-gate admission then sustained24h QAT;30-minute heartbeat remains ACTIVE.
+
+
+## Fresh admission02 checkpoint — October 5, 02:52 PDT
+
+Refreshed selected ledger07c30324... pins52files; actual source19b63c2. Plan
+cd64a699..., resolved-inputs047971fa..., lane18819a83... frozen separately from
+original. Fresh owned lease and adjacent13.9GB GPU/19.8GB host headroom passed.
+Controller eagle-a8-qat-overnight-20261005-02 started09:47:10UTC, supervisor54132/
+child54133; native kernel272/272 cases and actual portability PASS. Native smoke
+generated8tokens but required loader/dispatch log markers were absent: native
+GGML INFO maps verbosity4 while server default3 filters it. Exact logging-only
+repair is in feature/independent QA; all-nine typed CUDA validation stays intact.
+Controller naturally exited1, allfour owned phase groups/identities are absent,
+cleanup/resource return PASS with no DXG holders/GPUbaseline. Zero QAT updates.
+Root keeps sole5080 operation and monitor ACTIVE; no source/data/math gate waived.
+Next: publish reviewed logging fix, repin versioned ledger/lane/lease and retry.
