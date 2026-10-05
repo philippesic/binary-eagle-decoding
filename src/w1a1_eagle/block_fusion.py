@@ -86,7 +86,7 @@ def validate_norm_descriptor(metadata, *, family, weights_sha256, norm_sha256, s
             not isinstance(source, dict)
             or set(source) != {"name", "shape", "kind", "payload_sha256"}
             or source["name"] != tensor_name
-            or source["kind"] not in ("F16", "F32")
+            or source["kind"] not in ("BF16", "F16", "F32")
             or not isinstance(source["shape"], list)
             or len(source["shape"]) != rank
             or any(type(n) is not int or n < 1 for n in source["shape"])
