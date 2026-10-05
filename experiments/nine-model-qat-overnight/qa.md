@@ -308,4 +308,6 @@ Raw output is under ignored
 `/private/tmp/nine-model-qat-20261004/overnight-qa/results/nine-model-qat-overnight/final-packet-schema-tests.log`.
 This is a source/schema test only; attempt 01 was preserved as failed evidence,
 and no model/data/calibration rerun or GPU operation occurred during QA. At this
-checkpoint the canonical-field fix was not yet in main.
+checkpoint the canonical-field fix was not yet in main. It is subsequently
+integrated at `9ed0352` in current main `c690625`; the helper and test file
+SHA256 values there match the tested values above.
