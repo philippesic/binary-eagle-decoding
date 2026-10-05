@@ -206,3 +206,17 @@ optimizer updates; all owned fit processes were reaped. These files are
 calibration initializers only. They do not establish a selected training recipe,
 trained checkpoint, native export, CUDA/SM120 behavior, quality or throughput.
 All nine aggregate and prelaunch profile statuses remain `PENDING`.
+
+## CPU composition provenance guard review
+
+The integrated guard now pins and joins the completed fit phase, selected fit
+report, original model SHA, selected family/activation bits, exact initializer
+NPZ, norm epsilon and current train manifest before calibration or model loading.
+An independent negative against main `832faac` repinned a fit report and phase
+receipt while making its data hash differ from the admitted capture; it refused,
+as did wrong base-model and phase status/completeness pins. The focused test
+passed 1/1. Its raw output SHA256 is
+`af76b6194ce3eae05a2bad21bcd577b5a39e58a9a92f4ad6c0820ba79540a52f`.
+Temporary mismatched descriptors were removed. The test did not load calibration
+NPZ arrays or any model weights. This guard is source-composition evidence only;
+real-model execution, QAT updates, CUDA, and quality remain untested or pending.

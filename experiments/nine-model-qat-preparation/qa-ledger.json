@@ -12,10 +12,10 @@
     "pipeline_worktree_dirty": true,
     "coordination": "ca2b1c515c12",
     "qa_base": "da097e5",
-    "note": "All 50 declared source_files hashes match current integrated main 9ac362a8ba2b822727e8c0134ec4b771386525c9. Four source-bound scale-only development_CPU calibration initializers are recorded; profile readiness remains PENDING.",
-    "main_source_snapshot": "9ac362a",
+    "note": "All 51 declared source_files hashes match current integrated main 832faac0c28835cd143fb94d4bd47aeb2dc908de. The CPU composition guard joins fit/phase/data/model hashes before calibration or model load; its bounded mismatch negative was independently exercised. All campaign/prelaunch status gates remain PENDING.",
+    "main_source_snapshot": "832faac",
     "source_map_refresh_pending": false,
-    "integrated_main": "9ac362a8ba2b822727e8c0134ec4b771386525c9"
+    "integrated_main": "832faac0c28835cd143fb94d4bd47aeb2dc908de"
   },
   "source_files": {
     "scripts/export_block_binary.py": "8589392470540e8e12271fdaa52b7407a3a943901c1952b7d7c5f6e9599f8967",
@@ -66,8 +66,9 @@
     "tests/test_nine_model_calibration_artifact.py": "7634905c01e58c453e4dcead28eb8b9c3af43e793306ce44562cc8aaa9fef99a",
     "tests/test_nine_model_admission_contracts.py": "70a083e20e6831131bb8ec9c169557c1414283887ebbcf4a14de7cce620287d2",
     "tests/test_nine_model_cpu_capture.py": "c11eb718ea0678f2b68aebf374830170ac7d618a241eba736da6704ac37f6931",
-    "scripts/check_block_qat_cpu_model.py": "8545534722612dd880250a3f8d6467d168d5db60ea0a2a9c30eb22f266e603ca",
-    "scripts/fit_block_fusion.py": "bb9eb46cbb0688ec77b2e904e1bc195b8234def92c37a8156245f9dfe16e2bc2"
+    "scripts/check_block_qat_cpu_model.py": "f214dc39dcd3d98b356d6cbff790e3d7d7f5037e9a36cd8e89167bfa7ecb1419",
+    "scripts/fit_block_fusion.py": "bb9eb46cbb0688ec77b2e904e1bc195b8234def92c37a8156245f9dfe16e2bc2",
+    "tests/test_block_cpu_composition.py": "092073e044ee5f392ed4253c1480a8f0bced4ec13373dfc53400203a635ec2d7"
   },
   "hardware": {
     "host": "MacBook Pro Mac15,10, Apple M3 Max, 36 GB RAM",
@@ -2043,7 +2044,7 @@
     "quality, acceptance and throughput conclusions"
   ],
   "final_qa_refresh": {
-    "integrated_main": "9ac362a8ba2b822727e8c0134ec4b771386525c9",
+    "integrated_main": "832faac0c28835cd143fb94d4bd47aeb2dc908de",
     "hardware": "Apple M3 Max CPU; macOS; CUDA unavailable; no GPU query or remote activity",
     "python": "3.11.15 from /Users/pippo/github/binary-eagle-decoding/.venv/bin/python",
     "torch": "2.14.0",
@@ -2152,10 +2153,19 @@
         "raw_path": "runs/nine-model-qa-baseline/cpu-fusion-independent-audit.txt",
         "sha256": "86d76a36f12cb83485a41262d60614165406f479420e1fdc2480409047dda0e6",
         "cleanup": "Read-only 131 MB per-family extracted FC references and NPZ byte streams for hashes/comparison; numerical latent/scale arrays were not loaded or refit. No model, optimizer, GPU, or source mutation."
+      },
+      {
+        "name": "independent_CPU_composition_fit_phase_data_model_join_negative",
+        "command": "PYTHONPATH=src:scripts:tests .venv/bin/python -m unittest test_block_cpu_composition.BlockCPUCompositionTests.test_fit_capture_model_and_phase_join_refuse_repinned_mismatch -v",
+        "source_revision": "832faac0c28835cd143fb94d4bd47aeb2dc908de",
+        "result": "1 test PASS. Repinned fit-data mismatch, wrong base-model SHA, phase status/completeness, and stale phase hash all refuse before calibration/model loading.",
+        "raw_path": "runs/nine-model-qa-baseline/cpu-composition-fit-phase-join-main.txt",
+        "sha256": "af76b6194ce3eae05a2bad21bcd577b5a39e58a9a92f4ad6c0820ba79540a52f",
+        "cleanup": "All mismatched report/index files were created under TemporaryDirectory and removed. Calibration was patched only in the negative test; no NPZ arrays or model weights loaded."
       }
     ],
     "readiness": "Every aggregate and prelaunch profile remains PENDING. CPU tests and source-bound CPU zero-update evidence establish neither production TRAIN readiness nor CUDA/SM120 readiness.",
-    "source_files_verified": 50,
+    "source_files_verified": 51,
     "source_files_pending": []
   },
   "external_development_cpu_attempts": [
