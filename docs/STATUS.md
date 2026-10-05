@@ -19,10 +19,10 @@ is prioritized with delegated24h cumulativetrainerallocation and frequent
 checkpoints; remaining candidates queue without premature readiness claims.
 30-minute heartbeat `nine-model-overnight-qat-monitor` is ACTIVE in the successor chat.
 **QAT is actively running onRTX5080/SM120**: calibrated fixed EAGLE W1A8,
-219828updates with committed219750 checkpoint; all required fresh admission/source/
+222749updates with committed222500 checkpoint; all required fresh admission/source/
 device gates PASS. Finite18selected gradients, actual sign/scale movement and
-cache/batchedhead execution;8.16GBGPUfree/18.07GBhostavailable. ActualTRAIN
-coverage2689prompts/1046108rows at32978.63trainerseconds; no quality/win claim.
+cache/batchedhead execution;8.16GBGPUfree/18.05GBhostavailable. ActualTRAIN
+coverage2726prompts/1059989rows at33412.43trainerseconds; no quality/win claim.
 
 Run eagle-a8-qat-overnight-20261005-04; supervisor55097/controller55098/trainer
 55398. Root is sole remote operator.24h cumulative allocation/no smaller cap,
@@ -187,6 +187,13 @@ unchanged,18finitegradients/finite loss, resources/checkpoint freshness pass.
 Bounded Luna timing assistant manages local waits only; root remains sole remote
 operator and SAME monitor unchanged. Healthy trainer/passive watcher continue;
 full Goal ACTIVE, quality/evaluation pending. Next check around12:53PDT.
+
+**12:30 PDT human check-in:** fresh live health PASS at222749/checkpoint222500,
+33412.43trainerseconds,2726TRAINprompts/1059989rows; unchanged jobs/source/plan.
+Current calibrated untrained/trained acceptance remains unmeasured. Root reported
+historical matched RTX5080 study separately:Q4_01.306accepted/round26.59%, old
+untrainedA80.122/2.50%, old2hfixedA80.639/13.07%. These do not establish current
+overnight quality. Full Goal ACTIVE; natural endpoint plan and12:53check unchanged.
 
 **07:50 PDT exclusive transfer:** fresh successor chat owns the same unfinished
 goal after explicit local registration transfer and SAME heartbeat retarget.

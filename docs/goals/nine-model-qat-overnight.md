@@ -95,7 +95,7 @@ chat turns and ownership rotation. Human pause/stop takes priority.
 
 Calibrated EAGLE W1A8 QAT is admitted and actively running on RTX5080/SM120.
 All fresh receipt gates and strict source/device checks passed. It has passed
-219828 optimizer updates with a committed219750 checkpoint (earlier2750 bytes SHA-verified), finite gradients and
+222749 optimizer updates with a committed222500 checkpoint (earlier2750 bytes SHA-verified), finite gradients and
 actual cache/head execution. Root owns the exact live supervisor/controller/
 trainer and transport recorded in the latest checkpoint below and ignored
 monitor registration. The30-minute heartbeat is ACTIVE; preserve healthy
@@ -1614,3 +1614,34 @@ healthy86,400trainersecond allocation unchanged; about14.84trainerhours remain,
 not a wall ETA. Next around12:53PDT. Originalsource-pinned A1 queues after natural
 trainer AND endpoint release; remaining model/device/held-out gates and09:25
 human inputs stay pending. No scientific choice or missing-control substitute.
+
+## Human acceptance check-in; fresh health — October 5, 12:30 PDT
+
+Human asked how QAT is going and draft acceptance forQ4/untrainedA8/trainedA8.
+Root answered directly: current calibrated overnight acceptance remains PENDING;
+no acceptance estimate follows from training loss or exposure. Historical
+matched24-promptRTX5080/SM120 study in
+`experiments/a8-qat-recovery/comparison.md` reports Q4_01.306255accepted/round/
+26.5917%accepted-proposed; old reference step00.122376/2.501214%; old fixedA8
+2hfinal0.638568/13.0687%. Historical fixedQAT gain about5.2× over its own step0,
+still belowQ4; this is explicitly not current calibrated untrained/trained data.
+User check-in does not authorize changing source/config/budget, interrupting the
+healthy run or adding a GPU side job. Existing natural endpoint comparison remains.
+
+19:30:08UTC fresh actual read-only health PASS: same five exact boot/birth/PGID
+identities, both running/no-signal supervisors, clean30a/cc9, endpoint plan rehash.
+QAT222,749updates/33,412.4342trainerseconds (9.28h of24h),2,726TRAINprompts/
+1,059,989distinct supervised rows,18finitegradients/finite loss3.739182,
+heartbeat1.4994s. GPUfree8,161,067,008B,hostavailable18,051,256,320B,
+diskfree196,280,033,280B; resources/checkpoint freshness PASS. Passive watcher
+unchanged/GPUqueriedfalse/trainingchangedfalse; no repair/new job/lifecycle change.
+
+Checkpoint222,500 SHA
+153167f3fe342c5fdbe475c4b309b5fa26a60f5af60dd31a540f63d3845e0b45
+is manifest-declared, not newly byte-rehashed. Ignored proof
+`results/nine-model-qat-overnight/health-20261005-usercheck-1230.json`, SHA
+6716c6fca9c57b7d70ea24488c59d71744ad8586d86aaa4ec314f376efedd960;
+adjacent raw result/capture preserved. Root remains sole remote operator. Local
+timing helper's next deadline19:52:54UTC stays unchanged by this extra human
+check-in. Full Goal ACTIVE/unfinished; remaining candidate/model/device/controls/
+held-out gates and09:25human inputs still pending; healthy allocation preserved.
