@@ -95,7 +95,7 @@ chat turns and ownership rotation. Human pause/stop takes priority.
 
 Calibrated EAGLE W1A8 QAT is admitted and actively running on RTX5080/SM120.
 All fresh receipt gates and strict source/device checks passed. It has passed
-148216 optimizer updates with a committed148000 checkpoint (earlier2750 bytes SHA-verified), finite gradients and
+160002 optimizer updates with a committed160000 checkpoint (earlier2750 bytes SHA-verified), finite gradients and
 actual cache/head execution. Root owns the exact live supervisor/controller/
 trainer and transport recorded in the latest checkpoint below and ignored
 monitor registration. The30-minute heartbeat is ACTIVE; preserve healthy
@@ -1456,3 +1456,38 @@ Next full check around09:52PDT. A1 originalsource model/export/bind/currentQA/
 freshSM120 admission queues after natural trainer AND endpoint release. Other
 five candidates, original controls, block scientific choices and native held-out
 comparison remain unfinished. Full native Goal ACTIVE; no quality/win claim.
+
+## Scheduled health and pending input surfaced — October 5, 09:52 PDT
+
+Previous turn was progress plus verified waiting. At09:25 successor re-presented
+the unanswered earlier block TRAIN exposure/conditioning choice via asynchronous
+question (450balanced prompts×128 captured-prefix boundedpilot;750×128 captured;
+450×128 live-current-student prefixes, always full context/F32 teachers and
+DSpark full-probability L1). Also requested accessible paths/URLs for exact
+original DSpark/DFlashQ4 files without2080 access. No answer is recorded as of
+this checkpoint; no science, allocation or missing-control substitute selected.
+The authoritative original file/check hashes remain in
+`experiments/nine-model-qat-overnight/remaining-inputs.md`. This is missing-input
+clarification; existing healthy training is independent and continues.
+
+16:52:12UTC scheduled read-only check through sole MCP$258/@287/%289 verifies
+all five unchanged boot/birth/PGID identities, both running/no-signal supervisors,
+clean30a/cc9 source and rehashed endpoint plan. QAT160,002updates/
+23,937.6404trainerseconds,1,964TRAINprompts/761,459supervised rows,
+18finite gradient tensors/finite loss14.19119, heartbeat0.0313s.
+Checkpoint progression/freshness and resource floors PASS:GPUfree8,161,067,008B,
+hostavailable18,071,429,120B, diskfree196,377,018,368B.
+Watcher still waiting_for_natural_endpoint/GPUqueriedfalse/trainingchangedfalse.
+No repair, new job, or running source/config/lease/budget/process change.
+
+Checkpoint160,000 SHA
+93760cf5d495275987e69fe671c71692cc8084b44e803dee91a6305d761e86cf
+is manifest-declared, not newly byte-rehashed. Ignored local proof
+`results/nine-model-qat-overnight/health-20261005-0952.json`, SHA
+860bd07a50a1a10f9d77d537706c5d8b57d06581d8b9ee6af794a7cf2156ea06;
+adjacent raw command/result/capture retained. SAME ACTIVE heartbeat and sole
+owner/operator verified locally. Keep healthy86,400trainersecond allocation
+unchanged; about17.35trainerhours remain, not a wall ETA. Next around10:22PDT.
+Full Goal ACTIVE/unfinished; source-pinned A1 queues after natural trainer AND
+endpoint release. Final comparison and remaining model/device gates are pending;
+no quality/acceptance/throughput conclusion follows from this healthcheck.

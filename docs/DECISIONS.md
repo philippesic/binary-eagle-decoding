@@ -1253,3 +1253,10 @@ replace those live queries. Source supports both routes; neither is selected.
 The human owns exposure/conditioning and sufficient training allocation.
 Continue independent retention/preparation and healthy EAGLE training while
 these choices are pending; do not manufacture missing Q4 controls or use2080.
+
+October5,09:25PDT: successor chat01a10c8a-22bb-7380-9a8c-d9802a51b679
+re-presented the unanswered exposure/conditioning choice and requested accessible
+paths/URLs for the exact original DSpark/DFlashQ4 files, without2080 access.
+No answer recorded by09:52PDT; recommendation/default selection is not approval.
+Exposure choice does not itself select sufficient long-training allocation or
+prove resource/device admission. Healthy EAGLE A8 continues independently.
