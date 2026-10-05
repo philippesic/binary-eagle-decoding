@@ -2,6 +2,8 @@
 
 import json
 import sys
+import threading
+import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -176,6 +178,45 @@ class CpuCaptureTests(unittest.TestCase):
         result = self.run_(clock=lambda: next(ticks))
         self.assertEqual(result["failure"]["type"], "TimeoutError")
         self.assertEqual(fixtures.SyntheticNativeTeacher.instances, [])
+
+    def test_background_monitor_interrupts_blocked_cpu_request_and_stops(self):
+        class BlockingTeacher(CpuTeacher):
+            def generate_capture(self, **kwargs):
+                time.sleep(8)
+                raise AssertionError("resource watcher must interrupt blocked native request")
+
+        started = time.monotonic()
+
+        def available():
+            return (
+                3 if threading.current_thread().name == "development-cpu-resource-monitor" else 32
+            ) * 1024**3
+
+        result = capture.run_capture(
+            self.path,
+            self.pin,
+            self.root / "output",
+            execute=True,
+            execution_profile="development_CPU",
+            teacher_factory=BlockingTeacher,
+            device_query=lambda: {
+                "name": "fixture CPU",
+                "backend": "CPU",
+                "compute_capability": None,
+            },
+            rss_query=lambda: 0,
+            available_query=available,
+        )
+        self.assertLess(time.monotonic() - started, 4)
+        self.assertEqual(result["status"], "FAIL")
+        self.assertEqual(result["failure"]["type"], "MemoryError")
+        self.assertTrue(result["producer_closed"])
+        self.assertTrue((self.root / "output/capture-report.json").exists())
+        self.assertFalse(
+            any(t.name == "development-cpu-resource-monitor" for t in threading.enumerate())
+        )
+        # A stopped watcher has no opportunity to deliver a late signal.
+        time.sleep(0.1)
 
     def test_mac_memory_metric_exact_and_missing_refuses(self):
         output = (

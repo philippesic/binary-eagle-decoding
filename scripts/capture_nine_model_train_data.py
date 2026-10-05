@@ -492,7 +492,7 @@ def validate_cpu_build(record, native, base):
             raise ValueError("CPU runtime project dylib directory/name differs")
         dylibs.append({"path": str(resolved), "sha256": library["sha256"]})
     links = pinned(proof["otool_links"], path.parent).read_text()
-    if any(Path(item["path"]).name not in links for item in dylibs):
+    if any(Path(item["path"]).name.split(".")[0] + "." not in links for item in dylibs):
         raise ValueError("CPU otool dependency inventory lacks pinned project dylib")
     if any(
         name in links.lower()
@@ -699,7 +699,7 @@ def run_capture(
                     last_progress = clock()
                     progress = {
                         "schema": "development_cpu_capture_progress_v1",
-                        "artifact_kind": "development_CPU",
+                        "artifact_kind": report["artifact_kind"],
                         "elapsed_seconds": clock() - start,
                         "completed_prompt_count": report.get("completed_prompt_count", 0),
                         "rss_bytes": report["last_owner_and_producer_rss_bytes"],
@@ -727,7 +727,7 @@ def run_capture(
             raise ValueError("actual CUDA device differs from selected capture device")
         report["producer_device"] = device
         budget()
-        if cpu and not injected:
+        if cpu:
             monitor = threading.Thread(
                 target=watch_cpu, name="development-cpu-resource-monitor", daemon=True
             )
