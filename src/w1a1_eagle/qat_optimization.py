@@ -171,9 +171,18 @@ def make_binary_optimizer(
     *,
     extra_parameters=(),
     extra_lr: float | None = None,
+    backend: str = "serial",
 ) -> torch.optim.Optimizer:
+    if backend not in {"serial", "fused_fp32_probe"} or (
+        backend != "serial" and config.optimizer != "adamw"
+    ):
+        raise ValueError("fused FP32 backend is an explicit AdamW-only probe")
     signs, scales = binary_parameter_families(linears)
     extras = _extra_parameters(extra_parameters)
+    if backend == "fused_fp32_probe" and any(
+        p.dtype != torch.float32 for p in signs + scales + extras
+    ):
+        raise ValueError("fused probe requires all F32 masters/moments")
     if len({id(p) for p in signs + scales + extras}) != len(signs + scales + extras):
         raise ValueError("additional optimizer parameters alias binary parameters")
     if extras:
@@ -194,10 +203,16 @@ def make_binary_optimizer(
         groups.append({"params": extras, "lr": extra_lr, "family": "additional"})
     if config.optimizer == "adamw":
         optimizer = torch.optim.AdamW(
-            groups, betas=config.betas, eps=config.eps, weight_decay=0, foreach=False
+            groups,
+            betas=config.betas,
+            eps=config.eps,
+            weight_decay=0,
+            foreach=False,
+            **({"fused": True} if backend == "fused_fp32_probe" else {}),
         )
     else:
         optimizer = torch.optim.SGD(groups, momentum=config.momentum, weight_decay=0, foreach=False)
+    optimizer._binary_backend = backend
     optimizer._binary_recipe = config.manifest()
     optimizer._binary_extra_layout = [
         {"shape": list(p.shape), "dtype": str(p.dtype)} for p in extras
@@ -307,6 +322,7 @@ def optimizer_checkpoint(
         raise ValueError("optimizer recipe differs from checkpoint config")
     return {
         "schema": "binary_optimizer_v1",
+        "execution_backend": getattr(optimizer, "_binary_backend", "serial"),
         "recipe": config.manifest(),
         "layout": binary_layout(linears),
         "contract_sha256": digest(contract),
@@ -329,6 +345,8 @@ def load_optimizer_checkpoint(
     validate_optimizer_ownership(linears, optimizer, additional_parameters=extras)
     if (
         saved.get("schema") != "binary_optimizer_v1"
+        or saved.get("execution_backend", "serial")
+        != getattr(optimizer, "_binary_backend", "serial")
         or saved.get("recipe") != config.manifest()
         or saved.get("layout") != binary_layout(linears)
         or saved.get("contract_sha256") != digest(contract)

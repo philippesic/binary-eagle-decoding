@@ -176,7 +176,7 @@ def _runtime(model):
                 "recurrent_binary.py",
             )
         },
-        "optimizer": "serial_fp32_adamw_foreach_false",
+        "optimizer": model.config.optimizer_backend + "_fp32_adamw_foreach_false",
     }
     if device.type == "cuda":
         props = torch.cuda.get_device_properties(device)

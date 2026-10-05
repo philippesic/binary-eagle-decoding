@@ -57,6 +57,7 @@ class BlockQATConfig:
     seed: int = 8101
     latent_initialization: str = "preserve_reference_magnitudes"
     initialization_encoding: str = "policy_latents"
+    optimizer_backend: str = "serial"
 
     def __post_init__(self):
         if (
@@ -65,6 +66,8 @@ class BlockQATConfig:
             or self.activation_bits not in {1, 8}
         ):
             raise ValueError("block family/activation width unsupported")
+        if self.optimizer_backend not in {"serial", "fused_fp32_probe"}:
+            raise ValueError("unknown block optimizer execution backend")
         if self.initialization_encoding not in {"policy_latents", "hard_signs"}:
             raise ValueError("initializer encoding unsupported")
         if self.latent_initialization not in {"preserve_reference_magnitudes", "unit_probe"}:
@@ -501,6 +504,7 @@ def block_optimizer(model):
         ],
         weight_decay=0,
         foreach=False,
+        **({"fused": True} if cfg.optimizer_backend == "fused_fp32_probe" else {}),
     )
 
 

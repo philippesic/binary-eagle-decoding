@@ -93,6 +93,9 @@ class ContinuousConfig:
     initialization_sha256: str | None = None
     initialization_policy: str = "preserve_reference_magnitudes"
     initialization_encoding: str = "policy_latents"
+    optimizer_backend: str = "serial"
+    status_every_steps: int = 1
+    status_max_interval_seconds: float = 15.0
 
     def __post_init__(self):
         if torch.device(self.device).type not in {"cpu", "cuda"}:
@@ -150,6 +153,14 @@ class ContinuousConfig:
         object.__setattr__(self, "activation_bits", tuple(self.activation_bits))
         if self.activation_bits not in {(1,), (8,), (8, 1)}:
             raise ValueError("continuous lanes must be direct A1, A8, or paired A8/A1")
+        if type(self.status_every_steps) is not int or self.status_every_steps < 1:
+            raise ValueError("status cadence must be a positive integer")
+        if (
+            isinstance(self.status_max_interval_seconds, bool)
+            or not math.isfinite(self.status_max_interval_seconds)
+            or not 0 < self.status_max_interval_seconds <= 30
+        ):
+            raise ValueError("status publication must remain within thirty-second watchdog bound")
         if self.initialization_encoding not in {"policy_latents", "hard_signs"}:
             raise ValueError("initialization encoding unsupported")
         if self.initialization_policy not in {"preserve_reference_magnitudes", "unit_probe"}:
@@ -199,6 +210,7 @@ class ContinuousConfig:
             optimize_cache=self.optimize_cache,
             optimize_head=self.optimize_head,
             context_chunk_size=self.context_chunk_size,
+            optimizer_backend=self.optimizer_backend,
         )
 
 
@@ -238,6 +250,12 @@ def immutable_config(config: dict) -> dict:
         result.pop("development_lifecycle")
     if result.get("initialization_sha256") is None:
         result.pop("initialization_sha256", None)
+    if result.get("optimizer_backend") == "serial":
+        result.pop("optimizer_backend", None)
+    if result.get("status_every_steps") == 1:
+        result.pop("status_every_steps", None)
+    if result.get("status_max_interval_seconds") == 15.0:
+        result.pop("status_max_interval_seconds", None)
     if result.get("initialization_encoding") == "policy_latents":
         result.pop("initialization_encoding", None)
     if result.get("initialization_policy") == "preserve_reference_magnitudes":
@@ -539,6 +557,7 @@ class ContinuousTrainer:
                 raise ValueError("typed current-package production admission required")
         self.training_admission = training_admission
         self.evaluator = development_evaluator
+        self.last_status_monotonic = 0.0
         self.stop_requested = False
         self.step = self.epoch = self.cursor = self.tokens = 0
         self.unique_prompts: set[str] = set()
@@ -610,6 +629,7 @@ class ContinuousTrainer:
         return result
 
     def status(self, status: str, **extra) -> None:
+        self.last_status_monotonic = time.monotonic()
         atomic_json(
             self.run_dir / "status.json",
             {
@@ -634,6 +654,13 @@ class ContinuousTrainer:
                 + " on identical rounds; one live autograd graph",
                 **extra,
             },
+        )
+
+    def should_publish_running_status(self, step: int) -> bool:
+        return (
+            step % self.config.status_every_steps == 0
+            or time.monotonic() - self.last_status_monotonic
+            >= self.config.status_max_interval_seconds
         )
 
     def log(self, item: dict) -> None:
@@ -661,7 +688,14 @@ class ContinuousTrainer:
                     for parameter in group["params"]:
                         state = lane.optimizer.state[parameter]
                         if isinstance(lane.optimizer, torch.optim.AdamW):
-                            state.setdefault("step", torch.tensor(0.0))
+                            state.setdefault(
+                                "step",
+                                torch.zeros(
+                                    (),
+                                    dtype=torch.float32,
+                                    device=parameter.device if group.get("fused") else "cpu",
+                                ),
+                            )
                             state.setdefault("exp_avg", torch.zeros_like(parameter))
                             state.setdefault("exp_avg_sq", torch.zeros_like(parameter))
                         elif group.get("momentum", 0) > 0:
@@ -1345,7 +1379,8 @@ class ContinuousTrainer:
                             **diagnostics,
                         )
                         self.metrics[lane.name] = item
-                        self.status("running", **resource_metrics)
+                        if self.config.status_every_steps == 1:
+                            self.status("running", **resource_metrics)
                         del logits, observer
                     del device_batch
                     self.step += 1
@@ -1389,7 +1424,8 @@ class ContinuousTrainer:
                             self.status("development_evaluation", **self.resources())
                             result = self.evaluate_development()
                             atomic_json(self.run_dir / "development.json", result)
-                    self.status("running", **self.resources())
+                    if self.should_publish_running_status(self.step):
+                        self.status("running", **self.resources())
                 if self.stop_requested or self.capped():
                     break
                 if not yielded and self.cursor == 0:

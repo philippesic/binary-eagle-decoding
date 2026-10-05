@@ -796,3 +796,108 @@ class FixedFiniteA8Tests(unittest.TestCase):
         codes, scale, _ = fixed_activation_codes(x, 8)
         self.assertTrue(torch.equal(codes, old_codes))
         self.assertTrue(torch.equal(scale, old_scale))
+
+
+class OptionalOptimizerAndCadenceTests(unittest.TestCase):
+    def test_fused_cpu_reference_exact_resume_and_backend_reject(self):
+        cfg, tensors, batch = block_fixture()
+        cfg = replace(cfg, optimizer_backend="fused_fp32_probe")
+        model = BlockDrafter(tensors, cfg)
+        optimizer = block_optimizer(model)
+        block_train_step(model, optimizer, batch)
+        self.assertTrue(all(group["fused"] for group in optimizer.param_groups))
+        self.assertTrue(
+            all(
+                state["step"].device.type == "cpu" and state["step"].dtype == torch.float32
+                for state in optimizer.state.values()
+            )
+        )
+        with tempfile.TemporaryDirectory() as folder:
+            receipt = save_block_checkpoint(
+                model, optimizer, BlockCursor(step=1), BlockCheckpointTests.source, Path(folder)
+            )
+            other = BlockDrafter(tensors, cfg)
+            restored = block_optimizer(other)
+            load_block_checkpoint(other, restored, BlockCheckpointTests.source, receipt)
+            block_train_step(model, optimizer, batch)
+            block_train_step(other, restored, batch)
+            self.assertTrue(
+                all(torch.equal(a, b) for a, b in zip(model.parameters(), other.parameters()))
+            )
+            with self.assertRaisesRegex(ValueError, "config/runtime"):
+                serial = BlockDrafter(tensors, replace(cfg, optimizer_backend="serial"))
+                load_block_checkpoint(
+                    serial, block_optimizer(serial), BlockCheckpointTests.source, receipt
+                )
+
+    def test_optional_cadence_preserves_durable_final_pair_and_exact_fused_eagle_resume(self):
+        from unittest.mock import patch
+
+        with tempfile.TemporaryDirectory() as a, tempfile.TemporaryDirectory() as b:
+            reference = make(
+                Path(a),
+                config(
+                    max_steps=3,
+                    activation_bits=(1,),
+                    optimizer_backend="fused_fp32_probe",
+                    status_every_steps=50,
+                ),
+            )
+            reference.run(require_smoke=False)
+            first = make(
+                Path(b),
+                config(
+                    max_steps=1,
+                    activation_bits=(1,),
+                    optimizer_backend="fused_fp32_probe",
+                    status_every_steps=50,
+                ),
+            )
+            first.run(require_smoke=False)
+            resumed = make(
+                Path(b),
+                config(
+                    max_steps=3,
+                    activation_bits=(1,),
+                    optimizer_backend="fused_fp32_probe",
+                    status_every_steps=50,
+                ),
+            )
+            resumed.resume()
+            resumed.run(require_smoke=False)
+            self.assertEqual(resumed.step, 3)
+            for name, module in reference.lanes[0].linears.items():
+                self.assertTrue(
+                    torch.equal(module.latent_sign, resumed.lanes[0].linears[name].latent_sign)
+                )
+            reference.last_status_monotonic = 10
+            with patch("w1a1_eagle.continuous_qat.time.monotonic", return_value=26):
+                self.assertTrue(reference.should_publish_running_status(1))
+            with patch("w1a1_eagle.continuous_qat.time.monotonic", return_value=11):
+                self.assertFalse(reference.should_publish_running_status(1))
+                self.assertTrue(reference.should_publish_running_status(50))
+
+
+class FamilyWarmStageTests(unittest.TestCase):
+    def test_both_block_families_reset_resume_and_update_final_precision(self):
+        import copy
+
+        for family in ("dspark", "dflash"):
+            cfg, tensors, batch = block_fixture(family)
+            model = BlockDrafter(tensors, cfg)
+            optimizer = block_optimizer(model)
+            block_train_step(model, optimizer, batch)
+            final, reset, _ = transition_a8_to_a1(model, source_checkpoint_sha256="d" * 64)
+            cursor = BlockCursor(step=1, stage="a1_final", stage_updates=0)
+            with tempfile.TemporaryDirectory() as folder:
+                receipt = save_block_checkpoint(
+                    final, reset, cursor, BlockCheckpointTests.source, Path(folder)
+                )
+                other = copy.deepcopy(final)
+                restored = block_optimizer(other)
+                load_block_checkpoint(other, restored, BlockCheckpointTests.source, receipt)
+                block_train_step(final, reset, batch)
+                block_train_step(other, restored, batch)
+                self.assertTrue(
+                    all(torch.equal(a, b) for a, b in zip(final.parameters(), other.parameters()))
+                )

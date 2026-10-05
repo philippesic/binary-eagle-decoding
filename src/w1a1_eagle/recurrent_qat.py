@@ -437,6 +437,7 @@ class JointQATConfig:
     optimize_cache: bool = False
     optimize_head: bool = False
     context_chunk_size: int = 64
+    optimizer_backend: str = "serial"
 
     def __post_init__(self) -> None:
         if type(self.allow_accelerator) is not bool:
@@ -464,6 +465,8 @@ class JointQATConfig:
             )
         ):
             raise ValueError("learning rates and gradient bound must be finite and positive")
+        if self.optimizer_backend not in {"serial", "fused_fp32_probe"}:
+            raise ValueError("unknown optimizer execution backend")
         if self.a1_computation not in ("reference", "single_forward"):
             raise ValueError("unknown A1 computation implementation")
         if self.activation_quantization not in ("fixed", "learned"):
@@ -487,6 +490,12 @@ class JointQATConfig:
                 )
             elif not isinstance(self.binary_optimization, BinaryOptimizationConfig):
                 raise ValueError("binary optimization requires a validated recipe")
+        if (
+            self.optimizer_backend == "fused_fp32_probe"
+            and self.binary_optimization is not None
+            and self.binary_optimization.optimizer != "adamw"
+        ):
+            raise ValueError("fused optimizer backend requires AdamW")
         if self.fusion_correction is not None:
             from .fusion_correction import FusionCorrectionConfig
 
@@ -693,7 +702,9 @@ def joint_optimizer(linears, config: JointQATConfig) -> torch.optim.Optimizer:
     if config.binary_optimization is not None:
         from .qat_optimization import make_binary_optimizer
 
-        optimizer = make_binary_optimizer(linears, config.binary_optimization)
+        optimizer = make_binary_optimizer(
+            linears, config.binary_optimization, backend=config.optimizer_backend
+        )
     else:
         optimizer = torch.optim.AdamW(
             [
@@ -702,6 +713,7 @@ def joint_optimizer(linears, config: JointQATConfig) -> torch.optim.Optimizer:
             ],
             weight_decay=0,
             foreach=False,
+            **({"fused": True} if config.optimizer_backend == "fused_fp32_probe" else {}),
         )
     rates = [("activation", config.activation_lr), ("fusion", config.fusion_lr)]
     if config.affine_weights is not None:
@@ -709,6 +721,10 @@ def joint_optimizer(linears, config: JointQATConfig) -> torch.optim.Optimizer:
     for family, lr in rates:
         if families[family]:
             optimizer.add_param_group({"params": families[family], "lr": lr, "family": family})
+    if config.optimizer_backend == "fused_fp32_probe" and any(
+        p.dtype != torch.float32 for group in optimizer.param_groups for p in group["params"]
+    ):
+        raise ValueError("fused optimizer probe requires F32 student masters")
     return optimizer
 
 

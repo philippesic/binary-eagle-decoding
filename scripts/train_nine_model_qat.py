@@ -914,6 +914,8 @@ def run_eagle_curriculum(args, spec, hardware):
     if sha256(Path(locator["path"])) != locator["sha256"]:
         raise ValueError("EAGLE curriculum configuration SHA differs")
     original, continuous = api.load_config(Path(locator["path"]))
+    if continuous.status_every_steps != 1:
+        raise ValueError("status cadence probe is supported by direct EAGLE only, not warm runner")
     if continuous.activation_bits != (8,) or continuous.activation_quantization != "fixed":
         raise ValueError("EAGLE warm profile starts fixed-reference A8 single lane")
     curriculum = CurriculumConfig(
