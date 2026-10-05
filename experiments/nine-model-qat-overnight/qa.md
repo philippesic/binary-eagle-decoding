@@ -406,3 +406,40 @@ This is command/source-contract QA only; no real native smoke or GPU activity
 occurred during independent QA. The actual prior failed smoke was preserved as
 evidence; retry requires the integrated command and existing selected-lane
 inputs.
+
+## Canonical physical GPU UUID production metadata
+
+The controller's actual CUDA UUID comparison showed Torch returning a bare
+36-character UUID while the selected NVIDIA device identity uses the `GPU-`
+prefix. Bundle owner added `canonical_gpu_uuid` in commit
+`30a8dc7ee6bc8564471e8b176aeb1c5b8aef860c`. It accepts only a complete
+8-4-4-4-12 hexadecimal UUID with an optional `GPU-` prefix and emits the
+canonical lower-case `GPU-…` form. Both producer hardware metadata and the live
+`VerifiedTrainingAdmission` query use this helper. Stored receipt comparison in
+`require_admission` and the backward consumer's exact UUID comparison remain
+strict; old bare receipts are not rewritten or accepted against a canonical
+lease.
+
+Independent focused tests passed **4/4**:
+
+```sh
+PYTHONPATH=src:scripts:tests \
+  /Users/pippo/github/binary-eagle-decoding/.venv/bin/python \
+  -m unittest test_nine_model_gpu_uuid -v
+```
+
+They cover accepted bare/prefixed/uppercase forms, malformed/truncated/MIG and
+ordinal IDs, mocked live `configure_cuda`, exact typed current admission for
+the matching device and rejection of another device, and refusal by both
+consumers for legacy bare/wrong-device receipts. `ruff check`,
+`ruff format --check`, and `git diff --check` passed. Tested source hashes:
+`train_nine_model_qat.py`
+`f1437b4e588dbfe3672a795e064fc7027730617ddb2c687d6af417941280834d`;
+`qat_admission.py`
+`bf1db98b6e678f3cc22bd3b4aea7dd081cbb6f75be6c95e1687943eb9a51e2a4`;
+test `78029a65ce99b7a0ef173025c5ee8ac102a049863d22aa2fcf34c9f3166f3a91`.
+This source repair preserves exact device equality; it does not validate or
+reinterpret previous hardware receipts. Fresh current-source backward/admission
+remains pending. The selected additive ledger v4 only refreshes these two source
+pins and the refresh manifest metadata; its aggregate readiness statuses remain
+unchanged.
