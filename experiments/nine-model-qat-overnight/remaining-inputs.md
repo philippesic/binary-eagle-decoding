@@ -240,5 +240,6 @@ at A1 bind, and complete prepare-to-bind preservation
 for both A8/A1. Existing source/corpus/probe/ancestry/checkpoint/no-overwrite
 refusals still pass. Changed-file Ruff/format and CLI help pass. Tests use
 explicit metadata/tensor fixtures and grant no production hardware readiness.
-Independent source QA is reviewing the implementation. Authentic A1 calibration,
+Independent source QA passed final source `7d65420`, independently running all
+14 focused packet tests plus Ruff/format/diff checks. Actual A1 calibration,
 initialized actor and SM120 admission remain PENDING.
