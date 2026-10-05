@@ -59,6 +59,7 @@ class Runner:
 
     def run(self, argv, *, directory, **_):
         self.events.append(str(directory))
+        self.process_groups.append(len(self.events))
         directory.mkdir(parents=True, exist_ok=True)
         if directory.name == "kernel":
             (directory / "stdout.log").write_text(kernel_log())
@@ -441,6 +442,24 @@ class AdmissionTests(unittest.TestCase):
             self.assertFalse((root / "result.json").exists())
             state = json.loads((root / "run/state.json").read_text())
             self.assertEqual(state["cleanup_failure"]["reason"], "owned CUDA context survives")
+
+    def test_preexisting_stop_refuses_before_resources_or_producers(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp).resolve()
+            plan = self.fixture(root)
+            run = root / "run"
+            run.mkdir()
+            (run / "STOP").touch()
+            runner, resources = Runner(plan), Resources()
+            with patch.object(resources, "snapshot") as snapshot:
+                with self.assertRaisesRegex(InterruptedError, "STOP"):
+                    Admission(
+                        plan, Files(), runner, resources, "a" * 64, run, fixture=True
+                    ).execute(root / "result.json")
+                snapshot.assert_not_called()
+                self.assertEqual(resources.release_calls, 0)
+            self.assertFalse(runner.events)
+            self.assertFalse((root / "result.json").exists())
 
 
 if __name__ == "__main__":

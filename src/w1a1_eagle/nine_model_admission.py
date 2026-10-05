@@ -318,6 +318,13 @@ class Admission:
         self.bundle_hash, self.run = bundle_hash, Path(run_dir).resolve()
         self.fixture = fixture
 
+    def guard(self):
+        if (self.run / "STOP").exists():
+            raise InterruptedError("fresh admission STOP requested")
+        authorization = getattr(self.runner, "authorization", None)
+        if authorization is not None:
+            authorization()
+
     def release(self, baseline):
         report = self.resources.require_released(
             self.runner.process_groups, self.runner.process_identities
@@ -329,6 +336,7 @@ class Admission:
         return report
 
     def command(self, name, spec, **values):
+        self.guard()
         self.files.check(spec["producer"])
         directory = self.run / name
         receipt = directory / "receipt.json"
@@ -346,6 +354,7 @@ class Admission:
             stop_path=self.run / "STOP",
             wall_seconds=spec["wall_seconds"],
         )
+        self.guard()
         require(receipt.is_file(), f"actual producer receipt missing: {name}")
         return json.loads(receipt.read_text()), {"path": str(receipt), "sha256": sha256(receipt)}
 
@@ -360,6 +369,7 @@ class Admission:
             "optimizer_updates": 0,
         }
         try:
+            self.guard()
             baseline = self.resources.snapshot()
             require(baseline.get("compute_capability") == [12, 0], "fresh actual SM120 required")
             resource_gate(baseline, baseline, self.plan["resource_policy"])
@@ -371,6 +381,7 @@ class Admission:
                 stop_path=self.run / "STOP",
                 wall_seconds=300,
             )
+            self.guard()
             kernel_log = kernel_dir / "stdout.log"
             kernel = kernel_summary(kernel_log.read_text())
             kernel_evidence = {"path": str(kernel_log), "sha256": sha256(kernel_log)}
@@ -452,12 +463,16 @@ class Admission:
             state.update(
                 status="failed", failure={"type": type(error).__name__, "reason": str(error)}
             )
-            try:
-                state["owned_release"] = self.resources.require_released(
-                    self.runner.process_groups, self.runner.process_identities
-                )
-            except BaseException as cleanup:
-                state["cleanup_failure"] = {"type": type(cleanup).__name__, "reason": str(cleanup)}
+            if self.runner.process_groups or self.runner.process_identities:
+                try:
+                    state["owned_release"] = self.resources.require_released(
+                        self.runner.process_groups, self.runner.process_identities
+                    )
+                except BaseException as cleanup:
+                    state["cleanup_failure"] = {
+                        "type": type(cleanup).__name__,
+                        "reason": str(cleanup),
+                    }
             raise
         finally:
             atomic_json(self.run / "state.json", state)
