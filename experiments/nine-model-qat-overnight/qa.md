@@ -242,3 +242,38 @@ model load, capture, training, or evaluation occurred. I requested the bounded
 attempt-04 report/member/source hashes and selection summary through the sole
 operator; raw weights and full corpus are excluded. Actual production evidence
 and fresh SM120 admission remain pending independently.
+
+## Overnight continuation cadence correction
+
+The initial packet inherited `development_every=1000`; standalone EAGLE training
+returns at that boundary and the staged runner treats the return as interrupted
+unless the 24-hour cap was reached. Bundle owner fixed this in commit
+`21994b2568d05509986575f5f802568ad873fac1` by setting
+`development_every=2**63-1` and reporting the deferred periodic evaluation.
+The config remains standalone and time-capped at 86,400 seconds; checkpoint
+cadence remains 250 updates with three retained checkpoints. At QA time this
+commit had not yet been integrated into main.
+
+The focused packet suite passed **6 tests** on the final cadence-fix commit:
+real source config parsing accepts the sentinel and preserves standalone/time-
+only controls; a tiny CPU `ContinuousTrainer` runs two actual updates from step
+999 through the old boundary to fixture cap 1001 and emits the final development
+request; the other packet join tests remain passing. This proves lifecycle
+control flow only; it does not prove RTX5080 throughput, actual model readiness,
+or a production run.
+
+Test command, run from `/private/tmp/nine-model-qat-20261004/overnight-bundle`:
+
+```sh
+PYTHONPATH=src:scripts:tests python3 -m unittest test_eagle_lane_packet -v
+```
+
+Tested source hashes:
+
+| Path | SHA256 |
+| --- | --- |
+| `scripts/prepare_eagle_lane_packet.py` | `6c3946a671fd11990b20a663279c18bda5585c302e33beebf6bfad8cac6533e7` |
+| `tests/test_eagle_lane_packet.py` | `b57354160fe577a373fe239d1e5bda5cb18597db5c23424e1caea8fce384c2d4` |
+
+Raw 6-test output is retained under ignored
+`/private/tmp/nine-model-qat-20261004/overnight-qa/results/nine-model-qat-overnight/final-packet-lifecycle-tests.log`.
