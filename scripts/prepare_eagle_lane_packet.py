@@ -489,6 +489,9 @@ def initial_export_join(args, files, runtime):
     require(
         set(descriptor["candidates"]) == {candidate}
         and descriptor["candidates"][candidate]["config"] == request["config"]
+        and descriptor["candidates"][candidate]["profile"]
+        == ("fixed_reference" if bits == 8 else "direct_a1")
+        and descriptor["candidates"][candidate]["initialization"] == spec["initialization"]
         and continuous["training"]["activation_bits"] == [bits]
         and spec["initialization"]["activation_bits"] == bits,
         "initial request/config/descriptor precision differs",

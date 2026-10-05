@@ -233,9 +233,10 @@ allocation with copied delegated authorization; the coordinator must freeze
 the actual later lane before execution. The current live A8 packet/config is
 untouched and should not be rebound to this changed source.
 
-Thirteen focused packet tests pass on Mac. New regressions cover direct-A1
+Fourteen focused packet tests pass on Mac. New regressions cover direct-A1
 configuration/budget/export/dispatch, refusal of A8 calibration as A1, refusal
-of A8 receipt/lane/audit at A1 bind, and complete prepare-to-bind preservation
+of A8 receipt/lane/audit and warm/different-initializer descriptor substitutions
+at A1 bind, and complete prepare-to-bind preservation
 for both A8/A1. Existing source/corpus/probe/ancestry/checkpoint/no-overwrite
 refusals still pass. Changed-file Ruff/format and CLI help pass. Tests use
 explicit metadata/tensor fixtures and grant no production hardware readiness.
