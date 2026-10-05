@@ -1,0 +1,238 @@
+{
+  "arithmetic_revision": "fixed_w1a8_finite_reciprocal_v2",
+  "artifact_kind": "source_contract_ledger",
+  "block_scope": {
+    "conditioning": "captured_prefix author training or native_greedy exact prefix replay masking at first mismatch; runtime native teacher callback supports exact full logits on current prefixes",
+    "deployment": "native export must prove selected binary load/graph with no dense fallback; Python F32 dot is hard-arithmetic training simulation only",
+    "driver": "draft-dspark p_min=0 for both selected releases; anchor-first seven computed slots; return cap3/7 invariant",
+    "normal_precision_exceptions": "private full-vocabulary embedding/head, attention, norms, Markov; source values own cloned buffers, F32 training simulation and F16 KV boundaries",
+    "objectives": [
+      "hard_ce both families",
+      "DSpark exact full-vocabulary CE plus probability L1; weighted valid-token mean"
+    ],
+    "supported": [
+      "ffn15",
+      "ffn15_fusion"
+    ],
+    "unsupported": [
+      "generic slot1 DFlash",
+      "reduced-vocabulary block head",
+      "shared K/V variants",
+      "SWA/rotated-cache/DSV4/MoE/conv/selector/postnorm/outscale variants",
+      "dense fallback for selected deployed projections"
+    ]
+  },
+  "calibration": {
+    "actual_eagle_npz": "A8/A1 reference-half siblings and historical unit tensors with explicit hard-sign conversion independently checked; producer hashes remain separate; all-domain/native calibration admission pending",
+    "block_reference": "raw original source weight magnitudes; post-update projection remains explicit",
+    "default_policy": "preserve_reference_magnitudes",
+    "eagle_reference": "fixed historical magnitude0.5",
+    "encoding": "policy_latents default; hard_signs conversion only explicitly declared, exact scales retained",
+    "scope": "sparse FC overlay; untouched FFNs keep declared binary reference initializer",
+    "unit_probe": "implemented, off by default, not a recipe promotion",
+    "zero_magnitude": "negative selected sign at source magnitude zero refuses without a separate unsupported floor recipe"
+  },
+  "core_profiles": [
+    {
+      "actual_released_model_and_data": "PENDING",
+      "default_recipe": "fixed quantizers, serial AdamW; no learned-A8/midpoint/low-inertia stack",
+      "evidence": "synthetic CPU hard-forward/backward, private/frozen ownership, exact checkpoint/optimizer/RNG/cursor, export; warm includes both-stage reset and next-step resume",
+      "family": "eagle",
+      "final_activation_bits": 8,
+      "native_cuda": "PENDING",
+      "profile": "fixed_reference_a8",
+      "quality_convergence_throughput": "PENDING",
+      "software_contract": "PASS"
+    },
+    {
+      "actual_released_model_and_data": "PENDING",
+      "default_recipe": "fixed quantizers, serial AdamW; no learned-A8/midpoint/low-inertia stack",
+      "evidence": "synthetic CPU hard-forward/backward, private/frozen ownership, exact checkpoint/optimizer/RNG/cursor, export; warm includes both-stage reset and next-step resume",
+      "family": "eagle",
+      "final_activation_bits": 1,
+      "native_cuda": "PENDING",
+      "profile": "direct_a1",
+      "quality_convergence_throughput": "PENDING",
+      "software_contract": "PASS"
+    },
+    {
+      "actual_released_model_and_data": "PENDING",
+      "default_recipe": "fixed quantizers, serial AdamW; no learned-A8/midpoint/low-inertia stack",
+      "evidence": "synthetic CPU hard-forward/backward, private/frozen ownership, exact checkpoint/optimizer/RNG/cursor, export; warm includes both-stage reset and next-step resume",
+      "family": "eagle",
+      "final_activation_bits": 1,
+      "native_cuda": "PENDING",
+      "profile": "a8_to_a1_reset",
+      "quality_convergence_throughput": "PENDING",
+      "software_contract": "PASS"
+    },
+    {
+      "actual_released_model_and_data": "PENDING",
+      "default_recipe": "fixed quantizers, serial AdamW; no learned-A8/midpoint/low-inertia stack",
+      "evidence": "synthetic CPU hard-forward/backward, private/frozen ownership, exact checkpoint/optimizer/RNG/cursor, export; warm includes both-stage reset and next-step resume",
+      "family": "dspark",
+      "final_activation_bits": 8,
+      "native_cuda": "PENDING",
+      "profile": "fixed_reference_a8",
+      "quality_convergence_throughput": "PENDING",
+      "software_contract": "PASS"
+    },
+    {
+      "actual_released_model_and_data": "PENDING",
+      "default_recipe": "fixed quantizers, serial AdamW; no learned-A8/midpoint/low-inertia stack",
+      "evidence": "synthetic CPU hard-forward/backward, private/frozen ownership, exact checkpoint/optimizer/RNG/cursor, export; warm includes both-stage reset and next-step resume",
+      "family": "dspark",
+      "final_activation_bits": 1,
+      "native_cuda": "PENDING",
+      "profile": "direct_a1",
+      "quality_convergence_throughput": "PENDING",
+      "software_contract": "PASS"
+    },
+    {
+      "actual_released_model_and_data": "PENDING",
+      "default_recipe": "fixed quantizers, serial AdamW; no learned-A8/midpoint/low-inertia stack",
+      "evidence": "synthetic CPU hard-forward/backward, private/frozen ownership, exact checkpoint/optimizer/RNG/cursor, export; warm includes both-stage reset and next-step resume",
+      "family": "dspark",
+      "final_activation_bits": 1,
+      "native_cuda": "PENDING",
+      "profile": "a8_to_a1_reset",
+      "quality_convergence_throughput": "PENDING",
+      "software_contract": "PASS"
+    },
+    {
+      "actual_released_model_and_data": "PENDING",
+      "default_recipe": "fixed quantizers, serial AdamW; no learned-A8/midpoint/low-inertia stack",
+      "evidence": "synthetic CPU hard-forward/backward, private/frozen ownership, exact checkpoint/optimizer/RNG/cursor, export; warm includes both-stage reset and next-step resume",
+      "family": "dflash",
+      "final_activation_bits": 8,
+      "native_cuda": "PENDING",
+      "profile": "fixed_reference_a8",
+      "quality_convergence_throughput": "PENDING",
+      "software_contract": "PASS"
+    },
+    {
+      "actual_released_model_and_data": "PENDING",
+      "default_recipe": "fixed quantizers, serial AdamW; no learned-A8/midpoint/low-inertia stack",
+      "evidence": "synthetic CPU hard-forward/backward, private/frozen ownership, exact checkpoint/optimizer/RNG/cursor, export; warm includes both-stage reset and next-step resume",
+      "family": "dflash",
+      "final_activation_bits": 1,
+      "native_cuda": "PENDING",
+      "profile": "direct_a1",
+      "quality_convergence_throughput": "PENDING",
+      "software_contract": "PASS"
+    },
+    {
+      "actual_released_model_and_data": "PENDING",
+      "default_recipe": "fixed quantizers, serial AdamW; no learned-A8/midpoint/low-inertia stack",
+      "evidence": "synthetic CPU hard-forward/backward, private/frozen ownership, exact checkpoint/optimizer/RNG/cursor, export; warm includes both-stage reset and next-step resume",
+      "family": "dflash",
+      "final_activation_bits": 1,
+      "native_cuda": "PENDING",
+      "profile": "a8_to_a1_reset",
+      "quality_convergence_throughput": "PENDING",
+      "software_contract": "PASS"
+    }
+  ],
+  "hardware": {
+    "machine": "arm64",
+    "platform": "macOS-27.0-arm64-arm-64bit",
+    "scope": "Mac CPU synthetic optimizer fixtures and actual calibration NPZ/real GGUF format tests; no released-model optimizer update; no GPU/SSH",
+    "torch": "2.8.0"
+  },
+  "integration_dependencies": [
+    "data completed-admission interface/source matching exact host stats and per-consumed-block validation",
+    "native current exporter/load/graph and NativeTeacher source",
+    "six real selected configs with model/data/calibration artifact pins",
+    "independent integrated suites/review",
+    "fresh authorized device admission"
+  ],
+  "launch_boundary": "Current GPU pause means Mac-only. No long QAT, held-out/final evaluation or recipe quality/performance screening. Human coverage/recipe/budget choice and actual production data remain separate gates.",
+  "optional_profiles": [
+    {
+      "cpu_success_and_exact_resume": "PASS",
+      "cuda_backend_state_and_timing": "PENDING",
+      "default": false,
+      "families": [
+        "eagle",
+        "dspark",
+        "dflash"
+      ],
+      "name": "fused_fp32_probe",
+      "note": "FP32 AdamW only; source version/backend/group options bind resume. Floating reassociation benefit/decision impact unmeasured.",
+      "source": "PASS"
+    },
+    {
+      "cpu_durability": "PASS",
+      "default": false,
+      "families": [
+        "direct_eagle"
+      ],
+      "measured_speed_benefit": "PENDING",
+      "name": "status_cadence",
+      "note": "default cadence1 unchanged; optional steps plus<=30second bound, forced checkpoint/STOP/failure/final publication, budget and metric-log durability unchanged",
+      "source": "PASS"
+    },
+    {
+      "families": [
+        "warm_eagle",
+        "dspark",
+        "dflash"
+      ],
+      "name": "status_cadence",
+      "note": "not implemented in these runners; warm EAGLE nondefault cadence explicitly refuses",
+      "source": "EXCLUDED"
+    },
+    {
+      "cpu_current_actor": "PASS",
+      "default": false,
+      "families": [
+        "direct_eagle"
+      ],
+      "name": "learned_a1_threshold",
+      "native_current_profile": "PENDING",
+      "note": "existing attached six-boundary bank, full parameter/teacher ownership and serial learned-head safeguard; ad hoc current direct-A1 two-step CPU test passed, not quality evidence",
+      "source": "PASS"
+    },
+    {
+      "families": [
+        "warm_eagle",
+        "dspark",
+        "dflash"
+      ],
+      "name": "learned_a1_threshold",
+      "note": "selected warm profile requires fixed quantization; block threshold export/graph schema not supported",
+      "source": "EXCLUDED"
+    },
+    {
+      "cpu_state_kv_gradients": "PASS",
+      "cuda_memory_and_speed": "PENDING",
+      "families": [
+        "dspark",
+        "dflash"
+      ],
+      "name": "grouped_block_attention",
+      "note": "core GQA grouping avoids physical repeated K/V; no performance claim",
+      "source": "PASS"
+    }
+  ],
+  "owner": "training feature worker",
+  "resume": "same arithmetic/source/config/runtime exact; A8-to-A1 changes activation bits and resets optimizer, retaining latent magnitude/sign and scale representation, RNG/data cursor and charged warm-source lineage; zero/update-count Adam state validation on save and load",
+  "schema": "nine_model_training_profile_support_v1",
+  "source_commit": "0ea83785835f32d20d289dcc16b8cdca2c595892",
+  "tests": {
+    "focused_command": "PYTHONPATH=src:tests:scripts:<gguf-py> .venv/bin/python -m unittest test_block_checkpoint_contract test_nine_model_training test_block_gguf_metadata test_continuous_qat test_recurrent_qat test_qat_curriculum_runner test_qat_optimization test_qat_optimization_profiles test_qat_a8_recipe_audit -q",
+    "last_focused_count": 97,
+    "result": "PASS",
+    "ruff": "PASS",
+    "source_sha256": {
+      "scripts/train_nine_model_qat.py": "edf025d81694722fc56a730409d6fbcd9e8c333058517ab1a8be730634b2d9d8",
+      "src/w1a1_eagle/block_qat.py": "98adfc8c3704a5c845c4b75995b2263c0b5627b2f2dfe2f8d469d7c36822147b",
+      "src/w1a1_eagle/block_training.py": "f36682893f7679c1486c24080df49671e55d7890bf2d6d44663f9a517c14a233",
+      "tests/test_block_checkpoint_contract.py": "642965d826756cc4fb8b8373438bb3572afe123bbc1c6b6ee9d231d88c5be8e5",
+      "tests/test_block_gguf_metadata.py": "0d3f95af75ffc936b934ae935831125e01f1477d0a4d1bb774aa70dc02ca11bd",
+      "tests/test_continuous_qat.py": "2e97e8e17adcacf2d91d6d396ccbe60821ad90495a18d5c7525502e7592a3fa7",
+      "tests/test_nine_model_training.py": "903664b772d2e726b67c0558c9762e78ce1fe4666dc4c390f2796a239fb7b55e",
+      "tests/test_qat_curriculum_runner.py": "50960df8621e207cee1173b153a252a030cee3e1c587c992ddc7e07bf9d3ea53"
+    }
+  }
+}
