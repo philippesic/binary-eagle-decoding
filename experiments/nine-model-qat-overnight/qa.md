@@ -145,6 +145,44 @@ surfaces. Full actual-model/native/device admission, positive training,
 checkpoint continuity, automatic export/evaluation and overall campaign
 completion remain outside this CPU QA result.
 
+## Actual initializer attempt 04 metadata
+
+Sole operator transferred only the 6.9 KiB metadata receipt; its raw initializer,
+feature rows, row-evidence file, prompt bodies/tokens and source corpus remain
+remote. Receipt SHA256:
+`84fe31e82b3fa0694e270a67e80803f8826a5462ee221154ca59d70b59862a6d`.
+The exact same receipt is preserved at the ignored main-worktree path
+`results/nine-model-qat-overnight/eagle-initializer-attempt04.json`.
+
+The receipt says the supervised job exited 0 after 29.507432 seconds (6.967064
+seconds fitting) on the RTX5080 host with `CUDA_VISIBLE_DEVICES` empty and
+execution device CPU. It created no model/optimizer and made zero updates; GPU
+utilization and memory were unchanged, and its supervisor/process groups were
+released. The selected source was the frozen 10,000-prompt / 3,899,930-row TRAIN
+preparation, READY SHA `bdfa56f8...`, resolved-config SHA
+`09e8afa7...`, captured-source identity `b1a9f991...`, original FC weights
+SHA `58ac5bbf...`, helper source SHA `49395a80...`, and native source commit
+`624f50e74f51b6af93bf6b879f84703e726df172`. The helper SHA matches the current
+main-tree file and the source commit recorded by the operator (`0b2ca0a`).
+
+Selection counts join: 32 fit and 16 validation prompts in each of prose, code,
+and reasoning; 144 distinct prompts total; 1,536 fit rows, 768 validation rows,
+and 2,304 row-evidence records with SHA `acec4f98...`. The receipt records a
+TRAIN-only, group/topic/content-disjoint holdout. NPZ member metadata reports
+only `fc.latent` ([2560, 7680], F32) and `fc.scale` ([2560], F32), with member
+hashes recorded in the local receipt. The whole NPZ SHA is
+`ae910cd8...`, initializer JSON SHA is `7d2b89a6...`, and reference magnitude
+is 0.5 with reference SHA `9b24af26...`. Per-domain validation RSEs are about
+0.0615–0.0635, while the scale-only fit RSE is about 0.0627; these remain
+initializer diagnostics, not drafter quality or deployment evidence.
+
+The report and initializer metadata themselves are still remote files, pinned
+by report SHA `4c2a75db...` and initializer JSON SHA above. I have not inspected
+their bytes locally. A follow-up asks the operator for safe scalar report
+fields (fit policy/reference, no orientation/coordinate changes, and source
+config/prepared-directory joins) to finish direct report-level verification.
+No member values or corpus material were copied.
+
 ## EAGLE packet helper QA (source commit `4a808b5`)
 
 The metadata-only helper and focused tests were reviewed at final author commit
