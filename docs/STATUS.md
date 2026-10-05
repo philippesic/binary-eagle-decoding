@@ -46,9 +46,12 @@ exclusive ownership October 4, 21:40 PDT (October 5, 04:40 UTC). Its native Goal
 continues the unchanged unfinished objective. No preparation worker or owned job
 transfers. Ownership is published `cb16cd6` and its isolated worktree/branch
 are retired. A focused independent Mac feasibility audit found no justified
-remaining independent deliverable; second consecutive impasse observation recorded,
-native Goal stays ACTIVE pending its consecutive-turn audit threshold. See the
-successor ownership and feasibility checkpoints in the goal file.
+remaining independent deliverable. After three consecutive goal-turn impasse
+audits, native Goal is BLOCKED (October 4, 21:43 PDT / October 5, 04:43 UTC).
+The full project objective is preserved and unfinished; no work is running.
+Resume needs human campaign choices and genuine production inputs; remote
+hardware work additionally requires renewed authorization. See the successor
+ownership and blocked checkpoint in the goal file.
 
 Final integrated source checks:172 campaign tests OK/five Linux/device skips,
 78 block tests PASS, changed-file Ruff/format PASS;51 independent source pins
