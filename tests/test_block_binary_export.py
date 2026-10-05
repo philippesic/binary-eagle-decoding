@@ -263,6 +263,10 @@ class BlockExportTests(unittest.TestCase):
                 target_sha256=sha256(target),
             )
             self.assertTrue(proof["paired_target_geometry_checked"])
+            self.assertTrue(
+                proof["target_binding"]["private_embedding_and_head_distinct_from_target"]
+            )
+            self.assertEqual(proof["target_binding"]["head_shape"], [32, 32])
             short = root / "short"
             short.mkdir()
             wrong = NativeTeacherTests().target_fixture(short)
