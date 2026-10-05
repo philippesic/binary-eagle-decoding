@@ -598,3 +598,16 @@ additional proof protocols or redoing completed audit work.
   retained. QA was told not to race an overwrite from its stale copy.
 - Lesson: use explicit field whitelists for summaries and hash the resulting
   artifact; distinguish coordinator scope requests from direct human policy.
+
+
+### 2026-10-05: Restart completed native QA explicitly
+
+- Context: root queued logging-fix review messages after QA completed the v2
+  ledger assignment. Native send_message delivers messages but does not start
+  a completed worker turn.
+- Evidence: list_agents showed QA completed while root waited for review.
+- Agent contribution: root assumed queued review messages restarted QA, adding
+  about two minutes to the launch critical path. No user error.
+- Resolution: followup_task explicitly restarted the scoped review.
+- Lesson: use followup_task for a new assignment to an idle/completed worker;
+  reserve send_message for updates to an already-running assignment.
