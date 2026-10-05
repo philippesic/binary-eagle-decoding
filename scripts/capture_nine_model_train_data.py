@@ -493,11 +493,21 @@ def validate_cpu_build(record, native, base):
         raise ValueError("CPU build requires resolved project dylib pins")
     for library in proof["dylibs"]:
         resolved = pinned(library, path.parent)
-        if resolved.parent != library_directory or not resolved.name.startswith(
-            ("libllama", "libggml")
-        ):
+        if resolved.parent != library_directory or resolved.name.split(".")[0] not in {
+            "libllama",
+            "libggml",
+            "libggml-base",
+            "libggml-cpu",
+        }:
             raise ValueError("CPU runtime project dylib directory/name differs")
         dylibs.append({"path": str(resolved), "sha256": library["sha256"]})
+    if len(dylibs) != 4 or {Path(p["path"]).name.split(".")[0] for p in dylibs} != {
+        "libllama",
+        "libggml",
+        "libggml-base",
+        "libggml-cpu",
+    }:
+        raise ValueError("CPU runtime must pin each of the four project libraries exactly once")
     links = pinned(proof["otool_links"], path.parent).read_text()
     if any(Path(item["path"]).name.split(".")[0] + "." not in links for item in dylibs):
         raise ValueError("CPU otool dependency inventory lacks pinned project dylib")
@@ -556,8 +566,12 @@ def cpu_loaded_library_proof(teacher, build):
     for line in text.splitlines():
         if "dyld[" + str(pid) + "]" in line:
             for match in re.findall(r"(/[^\r\n]+?\.dylib)", line):
-                loaded.add(str(Path(match).resolve()))
+                path = Path(match).resolve()
+                if path.name.startswith(("libllama", "libggml")):
+                    loaded.add(str(path))
     missing = [p for p in build["dylibs"] if p["path"] not in loaded]
+    if loaded - {p["path"] for p in build["dylibs"]}:
+        raise ValueError("Mac dyld loaded extra project library paths outside exact CPU pins")
     if missing:
         raise ValueError("Mac dyld log does not prove all pinned project libraries loaded")
     for record in build["dylibs"]:

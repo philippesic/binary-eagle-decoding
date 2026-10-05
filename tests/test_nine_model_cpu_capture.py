@@ -268,6 +268,21 @@ class CpuCaptureTests(unittest.TestCase):
             "/System/Library/Frameworks/Accelerate.framework/Versions/A/Accelerate"
         )
 
+    def test_extra_cpu_project_path_rejected_even_when_pins_loaded(self):
+        import types
+
+        build = capture.validate_cpu_build(self.plan["cpu_build"], self.plan["native"], self.root)
+        log = self.root / "dyld-extra.log"
+        log.write_text(
+            "\n".join("dyld[42]: " + p["path"] for p in build["dylibs"])
+            + "\ndyld[42]: /another/build/libllama.0.dylib\n"
+        )
+        teacher = types.SimpleNamespace(
+            log=types.SimpleNamespace(name=str(log)), process=types.SimpleNamespace(pid=42)
+        )
+        with self.assertRaisesRegex(ValueError, "extra project"):
+            capture.cpu_loaded_library_proof(teacher, build)
+
 
 if __name__ == "__main__":
     unittest.main()
