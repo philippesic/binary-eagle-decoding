@@ -461,3 +461,42 @@ additional proof protocols or redoing completed audit work.
 - Practical lesson: Carry explicit driver, first prediction slot, compute block
   length and returned proposal length in model/data/evaluator schemas. Tests
   must use the released driver contract rather than infer it from family.
+
+### 2026-10-04: Pin a development checkout independently of moving main
+
+- Context: The human briefly opened RTX5080 for development before pausing all
+  remote use and directing Mac-only continuation.
+- Evidence: The operator preserved the dirty old checkout, created an isolated
+  b998f4f checkout and completed locked dependency setup. Root then published
+  source6153546/native50ca and a narrow658bead scalar-metadata fix. The operator
+  requested another freeze confirmation after observing main advance; no
+  compiler probe, CUDA build or model load started before the human pause.
+- Status: Coordination confusion between an immutable dispatch pin and moving
+  integration main; no user mistake, GPU job failure or unauthorized model work.
+- Agent contribution: Root supplied several evolving source messages while
+  implementation proceeded. The operator treated a newer main head as invalidating
+  an already authorized pinned checkout. Dependency setup also consumed time.
+- Practical lesson: Dispatch one structured parent/native/config tuple per
+  development operation. Execute it after its guards pass; unrelated main
+  advances do not require a new permission request. Replace the tuple only for
+  a relevant source fix, and proceed with independent dependency/compiler work.
+- Resolution: Root explicitly pinned658bead/native50ca before the pause. The
+  pause took precedence; setup artifacts and logs remain preserved, remote
+  transport closed, and all development now runs on the Mac.
+
+### 2026-10-04: Review the complete checkpoint contract
+
+- Context: Root requested a bounded Opus review of the generic block optimizer
+  validator.
+- Evidence: The snippet permits partial optimizer state and any nonnegative
+  integral step tensor. Opus called this a loader bypass. The full8a16 caller
+  already applied a separate stage-count/completeness load guard; save still
+  used the weaker generic validator.
+- Status: Valid save/rank/dtype issues, qualified whole-loader conclusion; no
+  observed checkpoint corruption or user error.
+- Agent contribution: Root intentionally narrowed the peer prompt but omitted
+  the caller guard while mentioning stage counters. The reviewer generalized
+  the snippet to the whole loader.
+- Practical lesson: Provide relevant caller guards for focused reviews, or
+  explicitly limit their conclusion. Prefer one stage-bound validator used
+  before both save and load, with independent missing/stale-state tests.
