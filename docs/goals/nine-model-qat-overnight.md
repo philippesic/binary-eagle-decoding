@@ -95,7 +95,7 @@ chat turns and ownership rotation. Human pause/stop takes priority.
 
 Calibrated EAGLE W1A8 QAT is admitted and actively running on RTX5080/SM120.
 All fresh receipt gates and strict source/device checks passed. It has passed
-41765 optimizer updates with a committed41750 checkpoint (earlier2750 bytes SHA-verified), finite gradients and
+123999 optimizer updates with a committed123750 checkpoint (earlier2750 bytes SHA-verified), finite gradients and
 actual cache/head execution. Root owns the exact live supervisor/controller/
 trainer and transport recorded in the latest checkpoint below and ignored
 monitor registration. The30-minute heartbeat is ACTIVE; preserve healthy
@@ -1371,3 +1371,37 @@ actor/export/fullbind/currentQA/freshSM120 backward/fullmoment/native admission,
 then admitted QAT plus automatic endpoint. Remaining block scientific choices,
 authentic controls and real final inputs stay pending as recorded above.
 Predecessor may retire; successor alone owns remote/durable goal operation.
+
+## Scheduled verified training wait — October 5, 08:21 PDT
+
+Previous goal turn was a verified wait on the five exact live handles. This
+continuation preserved the approximately30-minute full healthcheck cadence;
+no duplicate monitor/job/operator, corpus audit, completed test rerun or source
+expansion. Read-only local A1 runbook review confirms originalc254 packet/actor/
+export command binding, truthful PENDING stages and fresh per-stage release/
+device/QA gates; an optional sequencer remains unnecessary to manual advancement.
+
+At15:21:03UTC transferred MCP$258/@287/%289 read-only observation verifies the
+same boot and all five PID/birth/PGID identities, both supervisors running/no
+signal, clean30a/cc9 training source and unchanged rehashed endpoint plan.
+Actual123,999updates/18,463.8596trainerseconds,1,523unique TRAIN prompts/
+590,751supervised rows,18finite gradient tensors/loss0.6097453, heartbeat5.072s.
+GPUfree8,161,067,008B, hostavailable18,184,138,752B, diskfree196,424,847,360B;
+all existing resource floors retained. Watcher is waiting_for_natural_endpoint,
+gpu_queried=false/training_changed=false. No repair or runtime change occurred.
+
+Committed checkpoint123,750 SHA
+305c1d1789996b5aef510d2fd67c717d892a79d95cc440be795efd616068f97e
+is manifest-declared, not newly byte-rehashed. Ignored coherent local proof
+`results/nine-model-qat-overnight/health-20261005-0821.json`, SHA
+0e11dfb07e122c17ebe56286cf7c6da4496b9098bcf353b736f1c1b7f11d1604;
+raw command/result/capture retained in adjacent `health-20261005-0821-raw.json`.
+Machine-local owner/operator and SAME ACTIVE heartbeat target remain exact.
+
+Keep healthy86,400cumulative trainerseconds/108,000outerwall/checkpoint250/keep3/
+no smaller cap unchanged. About18.87trainerhours remain, not a wall ETA.
+Next full check around08:51PDT. After natural training AND endpoint release,
+originalsource-pinned A1 model/export/bind/currentQA/freshSM120 admission and
+authorized QAT/automatic endpoint remain priority. All six candidates, three
+original controls and held-out comparison stay unfinished; no quality/win claim.
+Full native Goal stays ACTIVE. Scientific block choices remain pending.
