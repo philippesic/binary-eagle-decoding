@@ -1146,3 +1146,23 @@ proposed until its allowance is selected. The prepared launcher automatically
 sequences admitted training/export/resource-return/fresh evaluation once the
 human chooses those inputs and reopens the host; no further source integration
 or redundant permission is intended at that boundary.
+
+
+## Delegated RTX5080 overnight execution — October4,23:41PDT
+
+Human explicitly reopened5080, authorized relevantQAT afterpreflight and
+requested30-minute monitoring/repair withhealthyQATcontinuingthroughmorning.
+This replaces preparation-only/Mac-only limits. Coordinator records operational
+choices under this delegation: calibratedfixedA8/directA1, blockffn15_fusion,
+probesOFF/reference/private precision retained; firstproductionadmittedA8lane
+preferredEAGLE, thenremaininglanes, serializedGPU. Firstlane24h cumulative
+trainerallocation86400seconds, no smaller exposurestop, checkpoint250updates
+initially withactualintervalcheck. Numbers are agent-selectedoperationalsettings,
+not directhumanexact numericchoices or evidenceofwinningrecipe. Fullobjective
+remains6candidates+3originalQ4; budgetmetadata must preserveauthorizationprovenance.
+
+Stagedlaneadmission preserves allseven source/resource/kernel/model/backward/
+memory/portability gates; unavailablelaterfamilies remainPENDING. Finalquality
+results/trainedexports do not gatefirstlaunch. Seriouseligibledata/calibration
+andfreshhardwareproof remaintrue prerequisites; oldlocalEAGLEdiagnostic and
+blocknine-chainpilot do not becomeproductionready by goahead. Seeactivegoal.

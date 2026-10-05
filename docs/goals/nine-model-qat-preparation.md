@@ -1,6 +1,14 @@
 # Nine model QAT preparation
 
-## Current hardware boundary: Mac only
+## Superseded by authorized RTX5080 overnight execution
+
+Human October4,23:41PDT reopened5080 and authorized QAT after preflight,
+30-minute monitoring/repair and continued healthyovernight runs. The new
+[active overnight goal](nine-model-qat-overnight.md) carries this fullunfinished
+objective; previous nativeblocked state does not indicate projectcompletion.
+Latestauthorization controls over historicalpause text below.
+
+## Historical hardware boundary: Mac only
 
 Latest direct human instruction: **“pause all 5080 usage continue mac only.”**
 Root immediately ran `agent_env.py pause rtx5080`. All feature/QA owners were

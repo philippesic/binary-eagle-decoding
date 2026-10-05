@@ -4,7 +4,25 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Active preparation: nine model QAT pipeline — October 4, 2026
+## Active: nine-model RTX5080 overnight QAT — October 4, 23:41 PDT
+
+Human declared RTX5080 fully available and authorized relevant QAT as soon
+as preflight passes, 30-minute healthcheck/repair and continued healthy runs
+overnight/into morning. Root resumed5080 locally and created a new ACTIVE
+native Goal carrying the full unfinished nine-model objective. RTX2080Ti
+remains outside this team's scope.
+
+[Active overnight goal](goals/nine-model-qat-overnight.md) records sole owner
+`01a10a5b-4993-7762-af8a-f173c0219394`, one Luna GPU operator, production
+packet feature owner and independent QA. First ready calibratedfixedA8 lane
+is prioritized with delegated24h cumulativetrainerallocation and frequent
+checkpoints; remaining candidates queue without premature readiness claims.
+30-minute heartbeat `nine-model-overnight-qat-monitor` is ACTIVE in this chat.
+Fresh GPU/source/data/model/memory admission and real updates are not yet
+proved. Preflight and production integration are in progress; healthy runs
+will not be stopped merely for morning, idle chat or a monitoring tick.
+
+## Historical preparation checkpoint — October 4, 2026
 
 The human requested an independent Codex task and implementation/test team to
 prepare the nine-model campaign and automatic QAT-to-evaluation pipeline.
