@@ -26,11 +26,25 @@ ACTUAL_CPU_CAPTURE = Path(
         "development-cpu-pilot-capture-20261004-01",
     )
 ).resolve()
+ACTUAL_CPU_CAPTURE_02 = Path(
+    os.environ.get(
+        "NINE_MODEL_ACTUAL_CPU_CAPTURE_02",
+        "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/"
+        "development-cpu-pilot-capture-20261004-02",
+    )
+).resolve()
 ACTUAL_CPU_PLAN = Path(
     os.environ.get(
         "NINE_MODEL_ACTUAL_CPU_PLAN",
         "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/"
         "development-cpu-pilot-plan-20261004-01",
+    )
+).resolve()
+ACTUAL_CPU_PLAN_02 = Path(
+    os.environ.get(
+        "NINE_MODEL_ACTUAL_CPU_PLAN_02",
+        "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/"
+        "development-cpu-pilot-plan-20261004-02",
     )
 ).resolve()
 spec = importlib.util.spec_from_file_location(
@@ -265,41 +279,37 @@ class PrelaunchLedgerContracts(unittest.TestCase):
             self.skipTest("preserved development_CPU attempt 01 is unavailable")
         receipt = json.loads(receipt_path.read_text())
         plan = json.loads(plan_path.read_text())
+        report = json.loads((ACTUAL_CPU_CAPTURE / "capture-report.json").read_text())
+        record = json.loads((ACTUAL_CPU_CAPTURE / "original-source-joins.json").read_text())[
+            "records"
+        ][0]
         self.assertEqual(receipt["hardware"], ["Apple M3 Max"])
         self.assertEqual(receipt["gpu_layers"], 0)
         self.assertEqual(receipt["executed_result_buffers"], ["CPU"])
         self.assertEqual(set(receipt["target_storage_buffers"]), {"CPU_Mapped"})
-        # Attempt 01 predates the current prefix-contract label. Adapt only this
-        # unrelated label so this test reaches the CPU device-list guard.
-        receipt["prefix_contract"] = "teacher_forced_exact_caller_token_ids"
-        with tempfile.TemporaryDirectory() as folder:
-            for name, descriptor in receipt["files"].items():
-                path = Path(folder) / f"{name}.f32"
-                with path.open("wb") as stream:
-                    stream.truncate(math.prod(descriptor["shape"]) * 4)
-                descriptor["path"] = str(path)
-                descriptor["sha256"] = cpu_capture.file_sha256(path)
-            device = {"name": "Apple M3 Max", "backend": "CPU", "compute_capability": None}
-            cpu_capture.validate_replay(
-                receipt,
-                receipt["tokens"],
-                receipt["tap_ids"],
-                plan["native"],
-                device,
-                execution_profile="development_CPU",
-            )
-            for bad_hardware in (["Apple M3 Max", "Apple M3 Max"], ["Apple M3 Max", "CPU"]):
-                mixed = json.loads(json.dumps(receipt))
-                mixed["hardware"] = bad_hardware
-                with self.assertRaises(ValueError):
-                    cpu_capture.validate_replay(
-                        mixed,
-                        mixed["tokens"],
-                        mixed["tap_ids"],
-                        plan["native"],
-                        device,
-                        execution_profile="development_CPU",
-                    )
+        for descriptor in receipt["files"].values():
+            path = Path(descriptor["path"])
+            self.assertEqual(path.stat().st_size, math.prod(descriptor["shape"]) * 4)
+            self.assertEqual(cpu_capture.file_sha256(path), descriptor["sha256"])
+        device = report["producer_device"]
+        cpu_capture.validate_generated(
+            receipt,
+            record,
+            plan,
+            device,
+            execution_profile="development_CPU",
+        )
+        for bad_hardware in (["Apple M3 Max", "Apple M3 Max"], ["Apple M3 Max", "CPU"]):
+            mixed = json.loads(json.dumps(receipt))
+            mixed["hardware"] = bad_hardware
+            with self.assertRaises(ValueError):
+                cpu_capture.validate_generated(
+                    mixed,
+                    record,
+                    plan,
+                    device,
+                    execution_profile="development_CPU",
+                )
 
     def test_attempt_01_dyld_closure_matches_four_pins_and_records_system_metal(self):
         plan_path = ACTUAL_CPU_PLAN / "plan.json"
@@ -335,6 +345,58 @@ class PrelaunchLedgerContracts(unittest.TestCase):
             )
             with self.assertRaises(ValueError):
                 cpu_capture.cpu_loaded_library_proof(hostile, build)
+
+    def test_native_goldens_reject_generated_receipt_relabelled_as_replay(self):
+        receipt_path = (
+            ACTUAL_CPU_CAPTURE_02 / "native/926e202070584eaa839b45f9e47d8b39/receipt.json"
+        )
+        inventory_path = ACTUAL_CPU_CAPTURE_02 / "train-inventory.json"
+        plan_path = ACTUAL_CPU_PLAN_02 / "plan.json"
+        if not all(path.is_file() for path in (receipt_path, inventory_path, plan_path)):
+            self.skipTest("preserved development_CPU attempt 02 is unavailable")
+        receipt = json.loads(receipt_path.read_text())
+        plan = json.loads(plan_path.read_text())
+        self.assertEqual(
+            receipt["prefix_contract"], "native_tokenized_prompt_then_target_only_greedy"
+        )
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            relabelled_path = root / "relabelled-generated-receipt.json"
+            relabelled = json.loads(json.dumps(receipt))
+            # Use CUDA output metadata so the replay-only prefix rule is the
+            # rejection under test; captured files remain untouched.
+            relabelled["prefix_contract"] = "teacher_forced_exact_caller_token_ids"
+            relabelled["executed_result_buffers"] = ["CUDA0"]
+            relabelled_path.write_text(json.dumps(relabelled, sort_keys=True))
+            manifest = {
+                "schema": "nine_model_train_capture_goldens_v1",
+                "family": "dspark",
+                "tap_ids": [2, 10, 18, 26, 34],
+                "vocab_size": plan["vocab_size"],
+                "target_width": plan["target_width"],
+                "target_sha256": plan["native"]["target"]["sha256"],
+                "train_inventory": {
+                    "path": str(inventory_path),
+                    "sha256": hashlib.sha256(inventory_path.read_bytes()).hexdigest(),
+                },
+                "cases": [
+                    {
+                        "chain_id": "attempt02-generated",
+                        "native_receipt": {
+                            "path": str(relabelled_path),
+                            "sha256": hashlib.sha256(relabelled_path.read_bytes()).hexdigest(),
+                        },
+                    }
+                ],
+            }
+            golden_path = root / "goldens.json"
+            golden_path.write_text(json.dumps(manifest, sort_keys=True))
+            with self.assertRaises(ValueError):
+                NativeCaptureGoldens(
+                    golden_path,
+                    expected_sha256=hashlib.sha256(golden_path.read_bytes()).hexdigest(),
+                    max_capture_bytes=128 * 1024**2,
+                )
 
 
 if __name__ == "__main__":

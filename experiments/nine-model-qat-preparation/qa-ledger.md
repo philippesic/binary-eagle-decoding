@@ -138,45 +138,45 @@ The focused owner arithmetic suite also passes 11/11, including its tiny recipro
 
 ## Final integrated source refresh — October 4, 2026
 ## Final integrated source refresh — October 4, 2026
+## Final integrated source refresh — October 4, 2026
 
 The final source map is pinned to integrated main
-`1a5406bd7a257859382f5a9eecffdbe7029a8e19`, with llama.cpp submodule
-`624f50e74f51b6af93bf6b879f84703e726df172`. `qa-ledger.json` contains 49
-repository-relative source paths whose SHA256 values were recomputed from that
-checkout; the independent builder reports no source-pin mismatches and 41
-production dependencies pending. All nine aggregate campaign profiles and all
-nine prelaunch profiles remain `PENDING`.
+`9ac362a8ba2b822727e8c0134ec4b771386525c9`; the llama.cpp submodule is
+`624f50e74f51b6af93bf6b879f84703e726df172`. The JSON ledger checks 49
+repository-relative source paths against that checkout with no mismatches. The
+latest implementation change is `4cba39c`, which enforces separate generated
+and replay receipt semantics and rejects generated metadata in replay goldens.
+Every aggregate campaign profile and every production prelaunch profile remains
+`PENDING`.
 
-The CPU capture safety suite (14/14), production capture contract regressions
-(19/19 synthetic fixtures), and six prelaunch ledger/library-closure checks
-were run against integrated main `e9107d68409bab767056d8a09626439940e74404`.
-After the final CPU protocol changes, two additional independent checks passed
-against `1a5406b`: the preserved actual attempt-01 wrapper receipt accepts the
-exact single registered `Apple M3 Max` device, while duplicate or mixed device
-lists reject; the pinned CPU build and DYLD audit verify exactly the four
-project GGML libraries, reject an extra `libggml-metal`, and record the passive
-system `Metal.framework` path. A compatibility label was changed only in an
-in-memory copy of the old receipt so this focused test reaches the CPU device
-guard; no saved receipt or captured tensor file was changed or read. The full
-command, environment, cleanup and raw-output SHA are recorded in the JSON.
+The independent CPU checks against the new source pass. Nine QA-owned prelaunch
+and captured-source boundary tests pass, including actual attempt-01 device and
+DYLD checks plus an attempt-02 generated-as-replay negative for
+`NativeCaptureGoldens`; selected Ruff and format checks pass. Attempts 01 and 02
+both produced 53 rows for the first selected prompt, but their capture reports
+remain `FAIL`: attempt 01 hit the old Apple CPU name guard, and attempt 02 hit the
+replay-only validator on generated data. Their output feature/logit byte hashes
+are identical across the two deterministic retries and are pinned in the JSON.
+Offline validation of both preserved receipts now passes `validate_generated`,
+`import_capture_plan`, `BlockDataset`, and one full-vocabulary block read. That
+confirms the source contract and captured bytes; it does not change either
+capture report or admit their data as a production capture.
 
-The separately preserved development CPU attempt `development-cpu-pilot-capture-20261004-01`
-remains `FAIL`: its native process returned zero after producing 53 rows, but
-the old capture guard rejected the registered hardware description and the
-receipt predates the current prefix-contract label. The failure report SHA256
-is `e3b038d2d5f339e28afea9cf1670bfeb9a9d872d8b3288bbc6f9b39537d46126`. The
-supplementary DYLD audit SHA256 is
-`425b5747b5f6f527ff3bf491e028886eeb9277b4e775daf2ad32114206a81d4a`; it
-proves the four pinned project library paths in the log and records an
-Apple system Metal framework loaded transitively through the CPU runtime. The
-Mac runtime mapping remains unchecked. This failed development run does not
-supply accepted corpus admission or production training data, and it does not
-clear a profile gate.
+A later separately supervised development CPU capture, attempt 03, completed
+with `PASS` in the capture report. The metadata-only QA audit verified its report
+pin, nine-chain DSpark and DFlash manifests, split/domain counts, native receipt
+hashes and generated identities, raw payload byte geometries, and replay-only
+EAGLE/DSpark/DFlash golden receipt metadata. It did not reread tensor payloads.
+The report records Apple M3 Max CPU, zero optimizer updates, development-only
+data status, producer closure, and `SM120` pending. The Mac runtime map remains
+unchecked; the supplementary DYLD proof lists the four pinned project libraries
+and records transitive system Metal. This is CPU development capture evidence,
+not CUDA portability, trained quality, throughput, or production readiness.
 
-All test executions recorded here used the project's Python 3.11.15 / PyTorch
-2.14.0 environment on Apple M3 Max CPU. QA did not initiate another capture,
-load model weights or captured tensor arrays, query a GPU, or use SSH. Temporary
-sparse files and adversarial logs from the focused test were created under a
-`TemporaryDirectory` and removed automatically. The paused SM120 status remains
-`PENDING`; CPU runtime evidence establishes no CUDA, SM75, SM120, native-quality
-or throughput claim.
+The exact commands, environment, run directories, cleanup and raw-output hashes
+for these independent checks are in `qa-ledger.json` and the ignored
+`runs/nine-model-qa-baseline/` directory. QA did not launch a producer or read
+model weights. All current production data/calibration, selected initial
+exports, quality, and fresh SM120 gates remain pending; the CPU-development
+artifacts do not satisfy those requirements. Baseline full-suite stop-control
+errors and Ruff/format debt remain separately recorded and are not waived.
