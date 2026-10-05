@@ -164,3 +164,29 @@ initializer; original F16/unmodified W1 models cannot stand in for it.
 The positive-trained-endpoint `export_nine_model_candidate.py` wrapper rejects
 step zero and is intentionally not used for this initial actor. Production
 training starts only after separate fresh current candidate admission.
+
+## Actual-source selection repair
+
+Operator attempt `eagle-fixed-a8-initializer-20261005-03` reached genuine
+native child loading after source-history availability was repaired, then
+failed because the helper selected the longest accepted-prefix round before
+checking whether that round had an admitted CE label. The CE refusal was
+correct; the selection order was wrong. No initializer output was published,
+no optimizer or GPU work started, and the operator reported its process groups
+released. The full original TRAIN prompt/index selection had already passed
+all requested domain/group/topic/content-disjoint quotas.
+
+The helper now scans authentic round metadata in descending accepted-prefix
+length and selects the longest structurally audited round with at least one
+admitted CE label. It skips only valid all-false CE masks and refuses malformed
+trace ancestry immediately. A prompt with no eligible round is refused. Once
+selected, exact raw native features are loaded and the ordinary provider-round
+audit must match the metadata audit in full, retaining the CE eligibility gate.
+Each selected row records the round policy and skipped unsupervised round IDs.
+
+Three new regressions use the actual shared native trace auditor: terminal
+longest round chooses the longest earlier admitted round, all terminal/unmapped
+rounds refuse the prompt, and malformed longer metadata cannot be silently
+skipped. Seven total focused helper tests and changed-file Ruff/format pass.
+Actual calibrated artifact readiness remains unproved pending a new reviewed
+source-bound operator attempt.

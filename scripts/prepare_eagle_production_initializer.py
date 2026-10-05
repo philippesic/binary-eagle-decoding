@@ -145,6 +145,38 @@ def source_prompt_records(auth, spec):
     return result
 
 
+def longest_eligible_round(child, prompt_id):
+    """Pick the longest authentically supervised round before reading features.
+
+    A terminal accepted prefix may have no next CE label. Structural corruption
+    still raises immediately; only a valid all-false CE mask is skipped.
+    """
+    from w1a1_eagle.recurrent_trace import validate_recurrent_trace
+
+    keys = [key for key in child.capture.anchors if key[0] == prompt_id]
+    require(keys, "selected TRAIN prompt has no native accepted prefix")
+    keys.sort(
+        key=lambda key: (len(child.capture.anchors[key].prefix_token_ids), key[1]),
+        reverse=True,
+    )
+    skipped = []
+    for key in keys:
+        audit = validate_recurrent_trace(
+            child.capture.rows[key],
+            [child.capture.anchors[key]],
+            offsets=child.d2t_offsets,
+            target_vocab_size=child.target_vocab_size,
+            draft_vocab_size=child.draft_vocab_size,
+            allowed_prompt_ids=child.allowed_prompt_ids,
+            split=child.split,
+            max_depth=child.max_depth,
+        )
+        if any(audit.ce_mask):
+            return key, audit, skipped
+        skipped.append(key[1])
+    raise ValueError("selected native TRAIN prompt has no admitted-label round: " + prompt_id)
+
+
 def collect_operands(auth, continuous, selected, rows_per_prompt):
     from train_prepared_continuous_w1ax import create_current_native_child
 
@@ -167,12 +199,7 @@ def collect_operands(auth, continuous, selected, rows_per_prompt):
             "selected native child source/eligibility differs",
         )
         for prompt in (row for row in selected if row["shard_ordinal"] == ordinal):
-            keys = [key for key in child.capture.anchors if key[0] == prompt["id"]]
-            require(keys, "selected TRAIN prompt has no native accepted prefix")
-            key = max(
-                keys,
-                key=lambda key, anchors=child.capture.anchors: len(anchors[key].prefix_token_ids),
-            )
+            key, selection_audit, skipped_rounds = longest_eligible_round(child, prompt["id"])
             data = child.capture.round_inputs(*key)
             batch = ProviderRound(
                 data.anchor,
@@ -183,7 +210,10 @@ def collect_operands(auth, continuous, selected, rows_per_prompt):
                 child.capture_id,
             )
             audit = audit_provider_round(batch, child)
-            require(any(audit.ce_mask), "selected native TRAIN round has no admitted labels")
+            require(
+                any(audit.ce_mask) and audit == selection_audit,
+                "selected native TRAIN round labels changed between metadata and feature load",
+            )
             positions = tuple(data.feature_positions)
             require(len(positions) >= rows_per_prompt, "selected TRAIN prompt has too few raw rows")
             require(
@@ -220,6 +250,8 @@ def collect_operands(auth, continuous, selected, rows_per_prompt):
                         "tap_ids": [2, 18, 33],
                         "accepted_prefix": True,
                         "round_ce_mask": list(audit.ce_mask),
+                        "round_selection": "longest_native_round_with_admitted_ce_labels",
+                        "skipped_unsupervised_longer_rounds": skipped_rounds,
                     }
                 )
             del data, batch, values
