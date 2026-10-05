@@ -342,3 +342,36 @@ filesystem/control-flow regression only; the synthetic fixture is not actual
 capture evidence, and no capture, model, GPU, training, or production readiness
 claim was added. The preserved actual failed attempt needs only a retry of bind
 with its existing receipts after the source fix is integrated.
+
+## Fail-closed read-only WSL DXG census
+
+Admission 01 stopped at the global `/proc` device-holder census because the
+unprivileged observer could not read `/proc/1/fd`; no kernel/model admission or
+optimizer update had begun. Bundle owner added a constrained root helper in
+commit `fe4e33260e44875a89531842e7b4037e73a7dfbb`. The trainer stays
+unprivileged; only a fixed stdlib helper is launched through the confirmed
+`wsl.exe -d Ubuntu -u root` bridge with a pinned helper hash. The helper reads
+`/proc` only and returns a complete flag, effective UID, boot ID, PID namespace,
+and PID/start-time/boot identities. Invalid or unavailable census data fails
+closed as release PENDING. The resource return comparison is unchanged: any
+new holder outside baseline still blocks release.
+
+Independent focused validation passed **7 tests** using:
+
+```sh
+PYTHONPATH=src:scripts:tests \
+  /Users/pippo/github/binary-eagle-decoding/.venv/bin/python \
+  -m unittest test_read_only_dxg_census -v
+```
+
+The tests cover direct/helper holder identity agreement, the exact fixed WSL
+command, non-escalation for alternate namespaces, source hash/UID/protocol,
+boot/PID namespace and holder identity rejection, timeouts/permission failures,
+unknown DXG contexts blocking return, and arbitrary helper arguments. `ruff
+check`, `ruff format --check`, and `git diff --check` passed. Tested committed hashes:
+helper `4f91c975e0876074db5a0e88de53b829354c381a0078dee436170b6db793587f`,
+pipeline `2c7b6896c8168c75a775836f6247bd98921f8e6bcbce4a8deb44bd3e41389cfc`,
+test `ca05bf69e71ecf577878923bbe48855cf17fd4d496225c142da966e5aab8459e`.
+This validates the software protocol only; an actual WSL observer receipt and
+fresh admission remain pending. Pin the helper in the selected QA source ledger
+before rebuilding the lane packet.
