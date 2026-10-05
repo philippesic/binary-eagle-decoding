@@ -643,3 +643,62 @@ parent+native RSS≤12GiB, retained≤8GiB, timeout≤1753, prompt≤512/new≤3
 No GPU/optimizer/quality or held-out work. At6.18seconds completed0/source audits,
 no other heavy owned job. Owner reports milestones and explicit close/reap;
 no automatic retry; fits require terminal producer cleanup and separate plan.
+
+
+## Authentic CPU pilot and fusion fit milestone
+
+Published main `2d519bc`/native624; data checkpoint6d6398f and QA ledgerba88de7
+integrated. Attempt03 completed PASS on Mac:9 original TRAIN chains,3 domains×
+train/fit/validation,6 physical golden calls (3 shared five-tap block goldens plus
+3 three-tap EAGLE goldens). DSpark/DFlash golden manifests each reference the same
+three block receipts; nine metadata cases are not nine physical golden calls.
+Report SHA256 `312396136b2b52ff3c5b1830f40b2ebd68cdf7d151beb1ba38c5a4006b21d140`.
+Elapsed93.007193917s; cumulative three capture attempts139.152521375s<1800.
+Exec1792 exit0, controller1957/teacher1978 reaped0 and absent; producer_closedtrue.
+Sampled combined RSS8,770,224,128 bytes<12GiB, minavailable14,987,984,896>4GiB,
+retained565,604,996 bytes. Exact four CPU loaded-path/hash proof PASS, passive
+system Metal record retained, Mac Linux mapping unchecked. No GPU/optimizer/
+quality evaluation. Original two FAILs/partial receipts stay unchanged.
+
+Both family manifests and completed admissions are genuine native CPU artifacts
+under capture03: DSmanifest77891f9b.../admission24199f53..., DFmanifest54f1c2be.../
+admissionb7954c39.... FullF32 teacher vocabulary151936 and5 native taps, actual
+original row/content/domain/prompt-disjoint role/runtime/partition joins validated.
+CPU goldens use an explicitly distinct schema and cannot grant CUDA portability.
+Independent QA verified9-chain/receipt/generated identity/hash and raw geometry
+metadata; no actual model weight/tensor read by that audit. All aggregate and
+prelaunch production statuses stay PENDING for serious coverage/selected inputs.
+
+Root reviewed and dispatched exactly4 sequential scale-only CPU fits after
+teacher closure: sourceF32 FC/gamma/native epsilon pins,96 fit+96 prompt-disjoint
+validation rows/32 per chain/all3 domains, preserve_reference_magnitudes,
+orientation rescue OFF/coordinate flips0. Phase plan SHA1bf1a481...; phase report
+`development-cpu-pilot-fusion-20261004/phase-report.json` SHA256
+`0aae6b5c0faafc4ba2f6d35edcd59db58a98db8c25c4a05e79f1a5224bc25d77`.
+All4 passed/reaped0; supervisor2721, children2724/2747/2761/2773 absent.
+Wholephase16.307379s<720, each~4.05s<180, sampled maxRSS1,412,644,864<12GiB,
+minavailable19,098,353,664>4GiB. Workspace estimate833,617,920 bytes does not include
+process overhead. CPU NumPy calibration only, zero optimizer/quality work.
+
+Raw/postnorm validation relativeSSE diagnostics versus original promotedF32 FC:
+DSA8 .012557/.861737, DSA1 .692043/1.304644, DFA8 .021948/.784016,
+DFA1 .584944/1.356983. These are initializer diagnostics, not native acceptance or
+quality. Candidate/control NPZ bytes match with rescue/coordinate disabled.
+Artifact index SHA `e59edcd2c235c4fbca800892dde1bc86199db57729177e93371b006a8c490800`.
+Independent QA verified all4 report/NPZ/source/model/manifest/admission/reference/
+gamma/epsilon897988541 joins, F32 FC-only latent2560×12800 and scale2560,
+reference-magnitude policy and all-domain split counts; no native quality gate.
+
+Remaining useful Mac integration is assigned without a new goal: training owner
+fresh worktree `training-cpu-integration` owns only CPU guard optional actual
+TRAIN/admission/calibration arguments +focused tests/report, uses existing source
+APIs and preserves CUDA-only production training gate. Plan/source before ROOT
+GO; intended4 actual-model zero-update fwd/backward cells, sequential16GiB RSS/
+pre12/live4/600s percell. Snapshot parameters after calibrated init, forbidstep,
+empty optimizer state/private values retained. Native owner separately prepares
+4 calibrated FC16 packed export/load/graph checks with protected original tensors;
+reserve8GiB sequential native phase only AFTER training releases heavy slot.
+No runs in either new phase have launched yet. Final QA/source/artifact packet
+will include these scopes; GPU admission, frozen block Q4 files, human long
+coverage/recipe/budget and measured quality remain PENDING. Both remote hosts
+unused; RTX5080 pause persists.
