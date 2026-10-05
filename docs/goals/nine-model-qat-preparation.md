@@ -415,3 +415,48 @@ materialize exact public source-pinned snapshots outsideGit and exercise actual
 CPU export/load/graph with synthetic activations. Heavy CPU jobs must be serialized
 against Mac memory. No quality/throughput or SM120 claim follows from CPU evidence.
 Native Goal remains active; the human paused GPU usage, not source preparation.
+
+
+## Actual-model Mac milestone and first compaction checkpoint
+
+Published main `01a24db`, native `624f50e74`; root coordination rebased onto
+that integrated source. No unmerged worker artifact or original overnight
+untracked record was removed. Native Goal stays ACTIVE; Mac-only boundary above
+is authoritative, with no remote query after operator closure.
+
+All source packages are integrated: normalized zero-update smoke/stages,
+calibrated reference-magnitude initialization, optimizer save/load validation,
+source/config/producer-bound fresh admission and captured-prefix replay. Final
+root nine-model discovery ran140 tests OK with5 Linux/device-only skips.
+Independent QA refresh is assigned after source quiescence; full-repo stopped
+research-reference failures and pre-existing Ruff debt remain separately recorded.
+
+Native original-model Mac evidence is published in
+`experiments/nine-model-qat-preparation/native-cpu-artifacts.md`: four actual
+FC16 CPU export/load/graphs and representative DSpark A8/frozen F16 target
+co-load, separate private head/embedding pointers and exact geometry/taps.
+The machine-readable summary is
+`models/nine-model-original-snapshots/actual-cpu-summary.json`, SHA256
+`d484a70ab08e3f9a397725bd6edf175d6a66a8a4616c5b27f55c0023575d2628`.
+Fresh BF16 conversions do not replace inaccessible frozen block Q4 controls.
+Data owner extracted actual BF16 FC/F32 gamma references with source/epsilon
+pins; fitting awaits authentic five-tap TRAIN captures. Historical EAGLE fitting
+shows raw improvement but postnorm degradation for orientation rescue, so rescue
+remains off by default. CUDA finite-subnormal arithmetic is still unverified.
+
+Training owner completed all4 actual original block CPU cells (DSpark/DFlash,
+A8/A1), full private heads/16 binary projections:32/32 selected gradient tensors
+finite/nonzero, later-state/noise K/V gradients nonzero, parameters unchanged,
+optimizer updates0/moments empty. Synthetic features/labels only. Peak RSS
+14.266–15.050GB stayed below16GiB; minimum available host RAM12.811–15.331GB
+exceeded4GiB live floor. Each cell took7.29–8.47seconds. PTYs16269/51603 exited0,
+owned processes/helpers absent; heavy slot released. Reports are under ignored
+`results/nine-model-qat-preparation/actual-cpu-training/`; owner is publishing
+guard/structured report and exact hashes, not a real-training admission.
+
+Next bounded work: native owner uses the released heavy CPU slot for actual
+FFN15-only graphs, sequentially with prior caps; training publishes its results;
+QA refreshes exact source/artifact joins and requirement ledger. Root reviews,
+independently tests, integrates/pushes and prepares final Mac checkpoint. Missing
+production captures/calibration/frozen control files, fresh hardware checks and
+human coverage/recipe/long budget remain PENDING; no completed-goal declaration.

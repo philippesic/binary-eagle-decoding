@@ -21,12 +21,22 @@ partitions, missing block capture artifacts and readiness evidence.
 Required output is a tested, frozen source/data/config/launch bundle with
 independent QA and truthful profile/hardware evidence, plus minimal fresh
 SM120 checks and automatic evaluation after committed training and cleanup.
-Native block export/load/graphs and persistent teacher producer, block data/fusion
-contracts, QAT foundation and resource-safe launcher/evaluator are integrated
-through `fa0ce7d` (native `874cd2b04`), with CPU/independent QA evidence.
-Portable preparation is still PENDING: production block captures, balanced
-calibration, exact resolved configs, Linux/SM75 checks and final integration.
-No real training/evaluation budget or unavailable-host run is started now.
+Source is integrated/pushed through `01a24db`, native fork `624f50e74`.
+Implemented native binary export/load/graphs, authentic TRAIN capture APIs,
+block/EAGLE QAT and exact resume, calibrated initialization, source-bound fresh
+SM120 admission, supervised launch/evaluation and reporting. Integrated Mac
+nine-model suite:140 tests OK,5 Linux/device-only skips; final independent ledger
+refresh is underway. CUDA and production-data evidence remain PENDING.
+
+Actual original DSpark/DFlash weights now have four successful CPU native
+sixteen-projection graphs and a paired private-target ownership check. All four
+Torch CPU A8/A1 forward/backward cells also passed with zero optimizer updates,
+finite/nonzero selected and later-state/K/V gradients, and unchanged parameters.
+These use synthetic inputs/labels: no calibration, convergence or quality claim.
+Actual FFN15-only native graphs are being checked sequentially on Mac.
+Original frozen block Q4 files, native production TRAIN/goldens, block fusion
+fits, selected campaign recipe/budget and fresh authorized hardware admission
+remain explicit dependencies. Both remote hosts stay unused.
 Completed A8/research goals below remain historical and intact.
 
 ## Nine model research slate COMPLETE — October 4, 2026
