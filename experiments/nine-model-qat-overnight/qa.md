@@ -572,3 +572,36 @@ artifact guard source SHA256 is
 run revalidated read-only DXG hash/permission tests and endpoint fixtures; it
 made no remote call or GPU query. This is a source identity fix only, not a new
 admission, endpoint run, or model readiness claim.
+
+## Actual endpoint packet metadata QA
+
+The bounded metadata package at
+`results/nine-model-qat-overnight/endpoint-bounded-qa-package.json` matched
+SHA256 `1fff31248d12edae95ba9c5f5500d3c92c8b035186c40702ba1ba4b1f0849d6b`
+and size 40,415 bytes. Its endpoint QA request is pinned at SHA256
+`bb54fbcb6b0db5e9ce9aad70b6d7c699fa03c3a806465287dd6e601a5b6e67a6` and
+matches the actual frozen lane v4 locator. Its 230-entry Python source
+inventory exactly matched the current local C254 `source_inventory()` output
+and hashes.
+
+The selected operational protocol uses five clean repetitions and two warmups
+on the prior unsealed 24-prompt development set, context 2048, batch/ubatch 32,
+maximum output 128 and F16 KV. Clean logging is verbosity 3; diagnostic logging
+is verbosity 4 and separate. The root-selected delegated policy is explicitly
+`human_selected: false`, with 111,600-second passive wait and 600/1,200-second
+export/evaluation caps. The original Q4_0 model locator and provenance agree on
+SHA256 `2db40f99d27e404298b80b2865671b9fd0136060ffb503007cb2ae23759e7280`.
+Development metadata ties the prior 24 unsealed prompts to the original 10,000
+TRAIN-row source, reports 8 prompts per prose/code/reasoning domain, no
+train ID/group/content overlap, and confirms sealed final bytes were not opened.
+The full frozen training binding is represented by its canonical source digest
+in this local metadata; full source wrappers and corpus artifacts remain remote
+for exact builder revalidation.
+
+I created the ignored minimal QA gate at
+`results/nine-model-qat-overnight/endpoint-qa-ledger-v1.json`, SHA256
+`4765ed7ce62ada0507693f2ad3bb3faab730c238065f5fdcd550f04d27d05edd`. It binds
+the exact QA-request lane, 230 source hashes, protocol, development prompts,
+and original control model. Its PASS scope is source/protocol/control metadata
+only; `production_execution` remains PENDING. No endpoint watcher, serializer,
+native evaluation, or GPU execution was run during this review.
