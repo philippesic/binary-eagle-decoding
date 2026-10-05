@@ -500,3 +500,21 @@ additional proof protocols or redoing completed audit work.
 - Practical lesson: Provide relevant caller guards for focused reviews, or
   explicitly limit their conclusion. Prefer one stage-bound validator used
   before both save and load, with independent missing/stale-state tests.
+
+## Separate preparation readiness from campaign completion
+
+- Context: October4 nine-model preparation; an independent QA aggregate profile
+  status included trained checkpoints, final exports and measured quality, while
+  the bundle builder used that same status as a prerequisite to first launch.
+- Evidence: source review of `prepare_nine_model_bundle.ledger_pending` and the
+  QA ledger confirmed a circular gate. Root raised the mismatch; pipeline/QA
+  aligned explicit prelaunch status/requirements while keeping campaign results
+  pending. Main `32f514c,bd28e17` and focused tests record the correction.
+- Agent contribution: coordination initially left the meaning of profile PASS
+  ambiguous between independent QA and launcher owners. This was an agent
+  interface defect, not a user mistake or authorization issue.
+- Practical lesson: name lifecycle phases explicitly in shared schemas. Require
+  real data/calibrated initial-model/export evidence before preparation PASS,
+  and fresh device checks at launch; do not require post-training outcomes before
+  the first training run. Known synthetic scope variants must not grant actual
+  prelaunch evidence merely because their string differs from `cpu_synthetic`.
