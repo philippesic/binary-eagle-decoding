@@ -15,11 +15,13 @@ import inspect
 import json
 import math
 import os
+import platform
 import re
 import shutil
 import signal
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -95,7 +97,7 @@ def selected_jsonl_rows(path, positions, max_row_bytes):
     return selected
 
 
-def prepare_plan(plan_path, expected_sha256):
+def prepare_plan(plan_path, expected_sha256, *, execution_profile="production_CUDA"):
     """Authenticate explicit TRAIN source selection and report conservative costs."""
     path = pinned({"path": str(Path(plan_path).resolve()), "sha256": expected_sha256}, Path.cwd())
     plan = json.loads(path.read_text())
@@ -113,7 +115,16 @@ def prepare_plan(plan_path, expected_sha256):
         "caps",
         "selection",
     }
-    if set(plan) != fields or plan["schema"] != "nine_model_train_capture_plan_v1":
+    cpu = execution_profile == "development_CPU"
+    if execution_profile not in ("production_CUDA", "development_CPU"):
+        raise ValueError("unsupported execution profile")
+    if cpu:
+        fields |= {"execution_profile", "cpu_build"}
+    if (
+        set(plan) != fields
+        or plan["schema"] != "nine_model_train_capture_plan_v1"
+        or (cpu and plan["execution_profile"] != "development_CPU")
+    ):
         raise ValueError("unsupported explicit TRAIN capture plan")
     if plan["input_mode"] not in ("raw_text", "native_chat"):
         raise ValueError("explicit raw_text or native_chat input mode required")
@@ -130,7 +141,7 @@ def prepare_plan(plan_path, expected_sha256):
     if generation["max_new_tokens"] < 8:
         raise ValueError("seven-slot author profile requires at least eight generated tokens")
     caps = plan["caps"]
-    if set(caps) != {
+    cap_fields = {
         "max_requests",
         "max_tokens_per_chain",
         "max_prompt_tokens",
@@ -145,10 +156,25 @@ def prepare_plan(plan_path, expected_sha256):
         "request_timeout_seconds",
         "total_timeout_seconds",
         "max_eagle_golden_tokens",
-    }:
+    }
+    if cpu:
+        cap_fields.add("min_host_available_live_bytes")
+    if set(caps) != cap_fields:
         raise ValueError("explicit request/source/storage/host/time bounds required")
     for key, value in caps.items():
         positive(value, key)
+    if cpu and (
+        caps["max_tokens_per_chain"] > 544
+        or caps["max_prompt_tokens"] > 512
+        or generation["max_new_tokens"] > 32
+        or caps["max_requests"] > 15
+        or caps["max_total_bytes"] > 8 * 1024**3
+        or caps["max_host_rss_bytes"] > 12 * 1024**3
+        or caps["min_host_available_bytes"] < 12 * 1024**3
+        or caps["min_host_available_live_bytes"] < 4 * 1024**3
+        or caps["total_timeout_seconds"] > 1800
+    ):
+        raise ValueError("development_CPU exceeds approved pilot caps or weakens memory floors")
     if not 1 <= caps["max_eagle_golden_tokens"] <= caps["max_tokens_per_chain"] <= 32768:
         raise ValueError("native chain/golden token bounds invalid")
     if caps["max_prompt_tokens"] + generation["max_new_tokens"] > caps["max_tokens_per_chain"]:
@@ -180,10 +206,18 @@ def prepare_plan(plan_path, expected_sha256):
             or any(c not in "0123456789abcdef" for c in native[key])
         ):
             raise ValueError("native tokenizer/template SHA256 pins required")
-    if type(native["gpu_layers"]) is not int or not 1 <= native["gpu_layers"] <= 999:
-        raise ValueError("actual CUDA target offload required")
-    if native["expected_compute_capability"] not in ([7, 5], [12, 0]):
-        raise ValueError("explicit supported CUDA device required")
+    if cpu:
+        if (
+            native["gpu_layers"] != 0
+            or type(native["gpu_layers"]) is not int
+            or native["expected_compute_capability"] is not None
+        ):
+            raise ValueError("development_CPU requires zero GPU layers and no CUDA capability")
+    else:
+        if type(native["gpu_layers"]) is not int or not 1 <= native["gpu_layers"] <= 999:
+            raise ValueError("actual CUDA target offload required")
+        if native["expected_compute_capability"] not in ([7, 5], [12, 0]):
+            raise ValueError("explicit supported CUDA device required")
     corpus_path = pinned(plan["corpus"], path.parent, max_bytes=caps["max_source_bytes"])
     runtime_path = pinned(plan["runtime"], path.parent, max_bytes=caps["max_source_bytes"])
     client_path = pinned(native["client_source"], path.parent, max_bytes=caps["max_source_bytes"])
@@ -201,9 +235,12 @@ def prepare_plan(plan_path, expected_sha256):
         raise ValueError(
             "runtime schema/native/client/target/tokenizer/template source inventory differs"
         )
+    cpu_build = validate_cpu_build(plan["cpu_build"], native, path.parent) if cpu else None
     corpus = json.loads(corpus_path.read_text())
     shards = corpus["files"]["train"]["shards"]
     selected = plan["selection"]
+    if cpu and len(selected) > 9:
+        raise ValueError("development_CPU supports only the bounded nine-chain pilot")
     if not isinstance(selected, list) or not selected or len(selected) + 6 > caps["max_requests"]:
         raise ValueError("selected capture/golden requests exceed explicit count cap")
     records, loaded, source_bytes = (
@@ -339,6 +376,15 @@ def prepare_plan(plan_path, expected_sha256):
             "capture_portability": "PENDING fresh device numeric/decision gate",
             "corpus": plan["corpus"],
             "runtime": {"path": str(runtime_path), "sha256": file_sha256(runtime_path)},
+            **(
+                {
+                    "execution_profile": "development_CPU",
+                    "cpu_build": cpu_build,
+                    "readiness_scope": "development CPU data only; CUDA/SM120 remains PENDING",
+                }
+                if cpu
+                else {}
+            ),
         },
     )
 
@@ -385,6 +431,144 @@ def tree_bytes(root):
     return sum(p.stat().st_size for p in Path(root).rglob("*") if p.is_file())
 
 
+CPU_OFF_OPTIONS = (
+    "GGML_CUDA",
+    "GGML_METAL",
+    "GGML_BLAS",
+    "GGML_BACKEND_DL",
+    "GGML_VULKAN",
+    "GGML_HIP",
+    "GGML_SYCL",
+    "GGML_OPENCL",
+    "GGML_CANN",
+    "GGML_MUSA",
+    "GGML_RPC",
+    "GGML_WEBGPU",
+)
+
+
+def validate_cpu_build(record, native, base):
+    """Pinned CPU-only build and exact resolved dylibs; not Linux map proof."""
+    path = pinned(record, base)
+    proof = json.loads(path.read_text())
+    fields = {
+        "schema",
+        "binary_sha256",
+        "source_revision",
+        "cmake_cache",
+        "dylibs",
+        "otool_links",
+        "library_directory",
+    }
+    if (
+        set(proof) != fields
+        or proof["schema"] != "nine_model_cpu_teacher_build_v1"
+        or proof["binary_sha256"] != native["binary"]["sha256"]
+        or proof["source_revision"] != native["source_revision"]
+    ):
+        raise ValueError("CPU-only build proof source/binary differs")
+    cache = pinned(proof["cmake_cache"], path.parent)
+    options = {}
+    for line in cache.read_text().splitlines():
+        if line.startswith("GGML_") and ":" in line and "=" in line:
+            key, value = line.split("=", 1)
+            options[key.split(":", 1)[0]] = value
+    if options.get("GGML_CPU") != "ON" or any(
+        options.get(k, "OFF") != "OFF" for k in CPU_OFF_OPTIONS
+    ):
+        raise ValueError("development_CPU requires CPU ON and GPU/BLAS/dynamic backends OFF")
+    # These must be explicit actual cache entries, never inferred defaults.
+    if any(options.get(k) != "OFF" for k in CPU_OFF_OPTIONS[:4]):
+        raise ValueError("CPU build lacks explicit CUDA/Metal/BLAS/backend-DL OFF evidence")
+    library_directory = Path(proof["library_directory"]).resolve()
+    dylibs = []
+    if not isinstance(proof["dylibs"], list) or not proof["dylibs"]:
+        raise ValueError("CPU build requires resolved project dylib pins")
+    for library in proof["dylibs"]:
+        resolved = pinned(library, path.parent)
+        if resolved.parent != library_directory or not resolved.name.startswith(
+            ("libllama", "libggml")
+        ):
+            raise ValueError("CPU runtime project dylib directory/name differs")
+        dylibs.append({"path": str(resolved), "sha256": library["sha256"]})
+    links = pinned(proof["otool_links"], path.parent).read_text()
+    if any(Path(item["path"]).name not in links for item in dylibs):
+        raise ValueError("CPU otool dependency inventory lacks pinned project dylib")
+    if any(
+        name in links.lower()
+        for name in ("metal.framework", "libggml-cuda", "libggml-metal", "libggml-vulkan")
+    ):
+        raise ValueError("CPU dependency inventory includes GPU backend")
+    return {
+        "proof": {"path": str(path), "sha256": record["sha256"]},
+        "dylibs": dylibs,
+        "library_directory": str(library_directory),
+        "options": options,
+        "scope": "pinned CPU build/link inventory; dyld loaded paths checked at launch",
+    }
+
+
+def mac_available_bytes():
+    output = subprocess.check_output(["vm_stat"], text=True, timeout=10)
+    match = re.search(r"page size of (\d+) bytes", output)
+    if match is None:
+        raise ValueError("Mac vm_stat page size unavailable")
+    counts = {}
+    for label in ("Pages free", "Pages inactive", "Pages speculative"):
+        value = re.search(r"^" + re.escape(label) + r":\s*(\d+)\.", output, re.MULTILINE)
+        if value is None:
+            raise ValueError("Mac vm_stat free/reclaimable page count unavailable")
+        counts[label] = int(value.group(1))
+    return int(match.group(1)) * sum(counts.values())
+
+
+def mac_rss_bytes(pid=None):
+    output = subprocess.check_output(
+        ["ps", "-o", "rss=", "-p", str(pid or os.getpid())], text=True, timeout=10
+    ).strip()
+    if not output.isdigit():
+        raise ValueError("Mac process RSS unavailable")
+    return int(output) * 1024
+
+
+def mac_cpu_device():
+    if platform.system() != "Darwin":
+        raise ValueError("development_CPU is a local Mac-only profile")
+    name = subprocess.check_output(
+        ["sysctl", "-n", "machdep.cpu.brand_string"], text=True, timeout=10
+    ).strip()
+    return {
+        "name": name,
+        "backend": "CPU",
+        "compute_capability": None,
+        "hardware_scope": "Mac CPU; no GPU query or compute",
+    }
+
+
+def cpu_loaded_library_proof(teacher, build):
+    text = Path(teacher.log.name).read_text(errors="replace")
+    pid = teacher.process.pid
+    loaded = set()
+    for line in text.splitlines():
+        if "dyld[" + str(pid) + "]" in line:
+            for match in re.findall(r"(/[^\r\n]+?\.dylib)", line):
+                loaded.add(str(Path(match).resolve()))
+    missing = [p for p in build["dylibs"] if p["path"] not in loaded]
+    if missing:
+        raise ValueError("Mac dyld log does not prove all pinned project libraries loaded")
+    for record in build["dylibs"]:
+        if file_sha256(Path(record["path"])) != record["sha256"]:
+            raise ValueError("Mac pinned runtime dylib changed during capture")
+    return {
+        "scope": "mac_dyld_loaded_path_and_file_hash",
+        "actual_dyld_paths_checked": True,
+        "actual_linux_mapping_checked": False,
+        "libraries": build["dylibs"],
+        "producer_pid": pid,
+        "dyld_log_sha256_at_check": file_sha256(Path(teacher.log.name)),
+    }
+
+
 def run_capture(
     plan_path,
     expected_sha256,
@@ -392,22 +576,43 @@ def run_capture(
     *,
     execute=False,
     teacher_factory=None,
-    device_query=cuda_device,
-    rss_query=rss_bytes,
-    available_query=host_available_bytes,
+    device_query=None,
+    rss_query=None,
+    available_query=None,
     clock=time.monotonic,
+    execution_profile="production_CUDA",
 ):
-    plan, records, cost = prepare_plan(plan_path, expected_sha256)
+    cpu = execution_profile == "development_CPU"
+    injected = teacher_factory is not None
+    plan, records, cost = prepare_plan(
+        plan_path, expected_sha256, execution_profile=execution_profile
+    )
+    device_query = device_query or (mac_cpu_device if cpu else cuda_device)
+    rss_query = rss_query or (mac_rss_bytes if cpu else rss_bytes)
+    available_query = available_query or (mac_available_bytes if cpu else host_available_bytes)
     output = Path(output_root).resolve()
     if output.exists():
         raise FileExistsError("refuse to overwrite capture history")
     output.mkdir(parents=True)
     report = cost | {
-        "artifact_kind": "synthetic_fixture" if teacher_factory else "production",
+        "artifact_kind": "synthetic_fixture"
+        if injected
+        else "development_CPU"
+        if cpu
+        else "production",
         "status": "PENDING",
         "failure": None,
         "producer_closed": None,
         "orchestrator_source_sha256": file_sha256(Path(__file__)),
+        **(
+            {
+                "execution_profile": "development_CPU",
+                "sm120_readiness": "PENDING",
+                "production_data_status": "PENDING_CPU_DEVELOPMENT_CAPTURE",
+            }
+            if cpu
+            else {}
+        ),
     }
     write_json(output / "cost.json", cost)
     inventory = {
@@ -426,11 +631,20 @@ def run_capture(
         return report
     teacher = None
     old_handlers = {}
+    monitor_stop = threading.Event()
+    monitor = None
+    monitor_error = []
+    saved_environment = {}
+    construction_started = False
     start = clock()
     caps, native = plan["caps"], plan["native"]
 
     report["host_available_floor_bytes"] = caps["min_host_available_bytes"]
-    report["host_available_scope"] = "actual Linux MemAvailable; separate from GPU resource release"
+    report["host_available_scope"] = (
+        "Mac vm_stat (free+inactive+speculative)*page_size; excludes compressed/purgeable"
+        if cpu
+        else "actual Linux MemAvailable; separate from GPU resource release"
+    )
 
     def budget():
         if clock() - start >= caps["total_timeout_seconds"]:
@@ -442,12 +656,28 @@ def run_capture(
         report["min_observed_host_available_bytes"] = min(
             report.get("min_observed_host_available_bytes", available), available
         )
-        if available < caps["min_host_available_bytes"]:
-            raise MemoryError("capture Linux MemAvailable below explicit host floor")
+        floor = (
+            caps["min_host_available_live_bytes"]
+            if cpu and construction_started
+            else caps["min_host_available_bytes"]
+        )
+        if available < floor:
+            raise MemoryError(
+                "capture host available memory below explicit prelaunch/live floor"
+                if cpu
+                else "capture Linux MemAvailable below explicit host floor"
+            )
         measured_rss = rss_query()
         if teacher is not None and hasattr(teacher, "process") and teacher.process.poll() is None:
-            child_stat = Path(f"/proc/{teacher.process.pid}/statm")
-            measured_rss += int(child_stat.read_text().split()[1]) * os.sysconf("SC_PAGE_SIZE")
+            if cpu:
+                measured_rss += mac_rss_bytes(teacher.process.pid)
+            else:
+                child_stat = Path(f"/proc/{teacher.process.pid}/statm")
+                measured_rss += int(child_stat.read_text().split()[1]) * os.sysconf("SC_PAGE_SIZE")
+        report["last_owner_and_producer_rss_bytes"] = measured_rss
+        report["max_observed_owner_and_producer_rss_bytes"] = max(
+            report.get("max_observed_owner_and_producer_rss_bytes", 0), measured_rss
+        )
         if measured_rss > caps["max_host_rss_bytes"]:
             raise MemoryError("capture owner plus native producer host RSS cap reached")
         if tree_bytes(output) > caps["max_total_bytes"]:
@@ -456,7 +686,34 @@ def run_capture(
             raise MemoryError("capture free disk floor reached")
 
     def stopped(signum, _frame):
+        if monitor_error:
+            raise monitor_error[0]
         raise InterruptedError(f"capture STOP signal {signum}")
+
+    def watch_cpu():
+        last_progress = 0.0
+        while not monitor_stop.wait(2):
+            try:
+                budget()
+                if clock() - last_progress >= 15:
+                    last_progress = clock()
+                    progress = {
+                        "schema": "development_cpu_capture_progress_v1",
+                        "artifact_kind": "development_CPU",
+                        "elapsed_seconds": clock() - start,
+                        "completed_prompt_count": report.get("completed_prompt_count", 0),
+                        "rss_bytes": report["last_owner_and_producer_rss_bytes"],
+                        "host_available_bytes": report["last_host_available_bytes"],
+                    }
+                    with (output / "progress.jsonl").open("a") as stream:
+                        stream.write(json.dumps(progress) + "\n")
+                    print(json.dumps(progress), flush=True)
+            except Exception as error:
+                if monitor_stop.is_set():
+                    return
+                monitor_error.append(error)
+                os.kill(os.getpid(), signal.SIGINT)
+                return
 
     try:
         for sig in (signal.SIGTERM, signal.SIGINT):
@@ -464,10 +721,17 @@ def run_capture(
         binary = pinned(native["binary"], Path(plan_path).resolve().parent)
         target = pinned(native["target"], Path(plan_path).resolve().parent)
         device = device_query()
-        if device["compute_capability"] != native["expected_compute_capability"]:
+        if device["compute_capability"] != native["expected_compute_capability"] or (
+            cpu and device.get("backend") != "CPU"
+        ):
             raise ValueError("actual CUDA device differs from selected capture device")
         report["producer_device"] = device
         budget()
+        if cpu and not injected:
+            monitor = threading.Thread(
+                target=watch_cpu, name="development-cpu-resource-monitor", daemon=True
+            )
+            monitor.start()
         if teacher_factory is None:
             from capture_block_qat_teacher import NativeTeacher
 
@@ -486,6 +750,19 @@ def run_capture(
                 "path": str(actual_client_path),
                 "sha256": file_sha256(actual_client_path),
             }
+        if cpu:
+            for key in (
+                "DYLD_LIBRARY_PATH",
+                "DYLD_PRINT_LIBRARIES",
+                "DYLD_INSERT_LIBRARIES",
+                "DYLD_FRAMEWORK_PATH",
+                "DYLD_FALLBACK_LIBRARY_PATH",
+            ):
+                saved_environment[key] = os.environ.get(key)
+                os.environ.pop(key, None)
+            os.environ["DYLD_LIBRARY_PATH"] = cost["cpu_build"]["library_directory"]
+            os.environ["DYLD_PRINT_LIBRARIES"] = "1"
+        construction_started = True
         teacher = teacher_factory(
             binary,
             target,
@@ -519,7 +796,10 @@ def run_capture(
                 logits_mode="all" if plan["objective"] == "exact_soft" else "none",
                 chain_ancestry=ancestry,
             )
-            validate_generated(receipt, r, plan, device)
+            validate_generated(receipt, r, plan, device, execution_profile=execution_profile)
+            if cpu and not injected:
+                report["cpu_runtime_proof"] = cpu_loaded_library_proof(teacher, cost["cpu_build"])
+                report["native_runtime_binding"] = receipt.get("native_runtime_binding")
             if sum(Path(d["path"]).stat().st_size for d in receipt["files"].values()) > min(
                 caps["max_request_bytes"], caps["max_shard_bytes"]
             ):
@@ -539,6 +819,7 @@ def run_capture(
                     "native_receipt": receipt_pin,
                 }
             )
+            report["completed_prompt_count"] = len(chains)
             budget()
             if r["domain"] in {g["domain"] for g in goldens}:
                 continue
@@ -559,7 +840,14 @@ def run_capture(
                 chain_ancestry=golden_ancestry,
                 decode_history=history,
             )
-            validate_replay(block_golden, golden_tokens, TAPS, native, device)
+            validate_replay(
+                block_golden,
+                golden_tokens,
+                TAPS,
+                native,
+                device,
+                execution_profile=execution_profile,
+            )
             block_pin = write_json(
                 output / "receipts" / f"{len(block_goldens):06d}-block-golden.json", block_golden
             )
@@ -575,7 +863,14 @@ def run_capture(
                 chain_ancestry=golden_ancestry,
                 decode_history=history,
             )
-            validate_replay(golden, golden_tokens, EAGLE_TAPS, native, device)
+            validate_replay(
+                golden,
+                golden_tokens,
+                EAGLE_TAPS,
+                native,
+                device,
+                execution_profile=execution_profile,
+            )
             golden_pin = write_json(output / "receipts" / f"{len(goldens):06d}-eagle.json", golden)
             goldens.append(
                 {
@@ -612,7 +907,9 @@ def run_capture(
         eagle_pin = write_json(
             output / "eagle-goldens.json",
             {
-                "schema": "nine_model_train_capture_goldens_v1",
+                "schema": "nine_model_cpu_development_goldens_v1"
+                if cpu
+                else "nine_model_train_capture_goldens_v1",
                 "family": "eagle",
                 "tap_ids": list(EAGLE_TAPS),
                 "target_sha256": native["target"]["sha256"],
@@ -624,13 +921,16 @@ def run_capture(
         )
         from check_block_capture_portability import NativeCaptureGoldens
 
-        NativeCaptureGoldens(eagle_pin["path"], expected_sha256=eagle_pin["sha256"])
+        if not cpu:
+            NativeCaptureGoldens(eagle_pin["path"], expected_sha256=eagle_pin["sha256"])
         block_golden_pins = {}
         for family in ("dspark", "dflash"):
             pin = write_json(
                 output / f"{family}-goldens.json",
                 {
-                    "schema": "nine_model_train_capture_goldens_v1",
+                    "schema": "nine_model_cpu_development_goldens_v1"
+                    if cpu
+                    else "nine_model_train_capture_goldens_v1",
                     "family": family,
                     "tap_ids": list(TAPS),
                     "target_sha256": native["target"]["sha256"],
@@ -640,15 +940,20 @@ def run_capture(
                     "cases": block_goldens,
                 },
             )
-            NativeCaptureGoldens(pin["path"], expected_sha256=pin["sha256"])
+            if not cpu:
+                NativeCaptureGoldens(pin["path"], expected_sha256=pin["sha256"])
             block_golden_pins[family] = pin
         write_json(output / "eagle-generation-joins.json", {"cases": goldens})
         budget()
         report.update(
             status="PASS",
-            production_data_status="CAPTURED"
-            if report["artifact_kind"] == "production"
-            else "SYNTHETIC_ONLY",
+            production_data_status=(
+                "CAPTURED"
+                if report["artifact_kind"] == "production"
+                else "DEVELOPMENT_CPU_ONLY"
+                if report["artifact_kind"] == "development_CPU"
+                else "SYNTHETIC_ONLY"
+            ),
             manifests=manifests,
             eagle_goldens=eagle_pin,
             block_goldens=block_golden_pins,
@@ -658,10 +963,24 @@ def run_capture(
     except (Exception, KeyboardInterrupt) as error:
         report.update(status="FAIL", failure={"type": type(error).__name__, "message": str(error)})
     finally:
+        monitor_stop.set()
+        if monitor is not None:
+            monitor.join(timeout=30)
+            if monitor.is_alive():
+                report.update(
+                    status="FAIL",
+                    failure={
+                        "type": "ResourceError",
+                        "message": "CPU resource monitor did not stop",
+                    },
+                )
         if teacher is not None:
             try:
                 teacher.close()
                 report["producer_closed"] = teacher.closed
+                if hasattr(teacher, "process"):
+                    report["producer_pid"] = teacher.process.pid
+                    report["producer_returncode"] = teacher.process.poll()
                 if not teacher.closed or (
                     hasattr(teacher, "process") and teacher.process.poll() is None
                 ):
@@ -673,6 +992,11 @@ def run_capture(
                 )
         for sig, handler in old_handlers.items():
             signal.signal(sig, handler)
+        for key, value in saved_environment.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
         report["elapsed_wall_seconds"] = clock() - start
         report["retained_bytes"] = tree_bytes(output)
         write_json(output / "capture-report.json", report)
@@ -704,7 +1028,24 @@ def prefix_history(history, length):
     return bounded
 
 
-def validate_replay(receipt, tokens, taps, native, device):
+def validate_replay(receipt, tokens, taps, native, device, *, execution_profile="production_CUDA"):
+    cpu = execution_profile == "development_CPU"
+    buffers = receipt.get("executed_result_buffers", [])
+    storage = receipt.get("target_storage_buffers", {})
+    hardware = receipt.get("hardware", [])
+    execution_ok = (
+        bool(buffers)
+        and all(isinstance(b, str) and re.fullmatch(r"CPU(?:_Mapped)?", b) for b in buffers)
+        and bool(storage)
+        and all(re.fullmatch(r"CPU(?:_Mapped)?", b) for b in storage)
+        and bool(hardware)
+        and all(str(b).startswith("CPU") for b in hardware)
+        and receipt.get("gpu_layers") == 0
+        if cpu
+        else bool(buffers)
+        and all(isinstance(b, str) and re.fullmatch(r"CUDA[0-9]+", b) for b in buffers)
+        and any(re.fullmatch(r"CUDA[0-9]+", b) for b in storage)
+    )
     if (
         receipt.get("schema") != "block_native_teacher_request_v1"
         or receipt.get("complete") is not True
@@ -718,14 +1059,7 @@ def validate_replay(receipt, tokens, taps, native, device):
         or receipt.get("producer_source_revision") != native["source_revision"]
         or receipt.get("client_source_sha256") != native["client_source"]["sha256"]
         or not any(device["name"] in str(x) for x in receipt.get("hardware", []))
-        or not receipt.get("executed_result_buffers")
-        or not all(
-            isinstance(x, str) and re.fullmatch(r"CUDA[0-9]+", x)
-            for x in receipt["executed_result_buffers"]
-        )
-        or not any(
-            re.fullmatch(r"CUDA[0-9]+", x) for x in receipt.get("target_storage_buffers", {})
-        )
+        or not execution_ok
         or receipt.get("teacher_context_reset_between_requests") is not True
     ):
         raise ValueError("native receipt lacks exact target/prefix/taps/actual CUDA producer proof")
@@ -748,7 +1082,7 @@ def validate_replay(receipt, tokens, taps, native, device):
             raise ValueError("original native raw capture bytes differ from receipt")
 
 
-def validate_generated(receipt, record, plan, device):
+def validate_generated(receipt, record, plan, device, *, execution_profile="production_CUDA"):
     tokens = receipt.get("tokens")
     if (
         not isinstance(tokens, list)
@@ -761,7 +1095,9 @@ def validate_generated(receipt, record, plan, device):
         r["count"] for r in history
     ) != len(tokens):
         raise ValueError("native-generated decode history differs from complete token chain")
-    validate_replay(receipt, tokens, TAPS, plan["native"], device)
+    validate_replay(
+        receipt, tokens, TAPS, plan["native"], device, execution_profile=execution_profile
+    )
     # Native helper must bind its actual tokenizer, model template and generation history.
     generation = receipt.get("generation", {})
     if (
@@ -794,8 +1130,19 @@ def main():
     parser.add_argument("--plan-sha256", required=True)
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument("--execute", action="store_true")
+    parser.add_argument(
+        "--development-cpu",
+        action="store_true",
+        help="Explicit local Mac CPU data development; never CUDA readiness",
+    )
     args = parser.parse_args()
-    report = run_capture(args.plan, args.plan_sha256, args.output_root, execute=args.execute)
+    report = run_capture(
+        args.plan,
+        args.plan_sha256,
+        args.output_root,
+        execute=args.execute,
+        execution_profile="development_CPU" if args.development_cpu else "production_CUDA",
+    )
     print(
         json.dumps(
             {
