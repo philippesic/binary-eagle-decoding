@@ -21,6 +21,8 @@ SCHEMA = "native_block_train_v1"
 TAPS = (2, 10, 18, 26, 34)
 DOMAINS = ("prose", "code", "reasoning")
 SPLITS = ("train", "calibration_fit", "calibration_validation")
+REPLAY_PREFIX_CONTRACT = "teacher_forced_exact_caller_token_ids"
+GENERATED_PREFIX_CONTRACT = "native_tokenized_prompt_then_target_only_greedy"
 
 
 def file_sha256(path: Path) -> str:
@@ -91,6 +93,92 @@ def crop_decode_history(history, length):
     return validate_decode_history(result, length)
 
 
+def validate_native_generation(
+    native,
+    *,
+    prompt_sha256,
+    prompt_length,
+    token_count,
+    tokenizer_metadata_sha256,
+    chat_template_sha256,
+):
+    """Validate the producer's generated chain without relabeling it as replay."""
+    prompt = native.get("prompt", {})
+    generation = native.get("generation", {})
+    mode = prompt.get("template_mode")
+    if mode == "native_chat":
+        messages = prompt.get("messages")
+        if (
+            not isinstance(messages, list)
+            or not messages
+            or any(
+                not isinstance(m, dict)
+                or set(m) != {"role", "content"}
+                or any(not isinstance(v, str) for v in m.values())
+                for m in messages
+            )
+        ):
+            raise ValueError("native generated original messages missing")
+        source = json.dumps(messages, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        wanted_prompt = {"messages", "template_mode", "max_new_tokens", "max_prompt_tokens"}
+    elif mode == "raw_text" and isinstance(prompt.get("text"), str) and prompt["text"]:
+        source = prompt["text"]
+        wanted_prompt = {"text", "template_mode", "max_new_tokens", "max_prompt_tokens"}
+    else:
+        raise ValueError("native generated prompt/template mode differs")
+    maximum = prompt.get("max_new_tokens")
+    boundary = native.get("prompt_length")
+    rendered, template = native.get("rendered_prompt"), native.get("chat_template")
+    if (
+        native.get("prefix_contract") != GENERATED_PREFIX_CONTRACT
+        or native.get("prefix_freshness") != "native_generated_chain"
+        or set(prompt) != wanted_prompt
+        or type(boundary) is not int
+        or boundary != prompt_length
+        or not 1 <= boundary <= token_count
+        or type(maximum) is not int
+        or maximum < 0
+        or type(prompt.get("max_prompt_tokens")) is not int
+        or not 1 <= boundary <= prompt["max_prompt_tokens"]
+        or hashlib.sha256(source.encode()).hexdigest() != prompt_sha256
+        or native.get("prompt_source_sha256") != prompt_sha256
+        or not isinstance(rendered, str)
+        or not rendered
+        or native.get("rendered_prompt_sha256") != hashlib.sha256(rendered.encode()).hexdigest()
+        or not isinstance(template, str)
+        or native.get("chat_template_sha256") != hashlib.sha256(template.encode()).hexdigest()
+        or not _hash(chat_template_sha256)
+        or (mode == "native_chat" and native.get("chat_template_sha256") != chat_template_sha256)
+        or (mode == "raw_text" and (template != "" or rendered != source))
+        or native.get("target_chat_template_sha256") != chat_template_sha256
+        or not _hash(tokenizer_metadata_sha256)
+        or native.get("tokenizer_metadata_sha256") != tokenizer_metadata_sha256
+        or native.get("tokenizer")
+        != {"implementation": "llama_tokenize", "add_special": True, "parse_special": True}
+        or generation.get("mode") != "native_target_greedy"
+        or generation.get("max_new_tokens") != maximum
+        or type(generation.get("generated_tokens")) is not int
+        or generation["generated_tokens"] != token_count - boundary
+        or not 0 <= generation["generated_tokens"] <= maximum
+        or generation.get("stop_eog") is not True
+        or generation.get("termination") not in ("max_new_tokens", "eog")
+        or (
+            generation["termination"] == "max_new_tokens"
+            and generation["generated_tokens"] != maximum
+        )
+        or (generation["termination"] == "eog" and generation["generated_tokens"] < 1)
+    ):
+        raise ValueError(
+            "native generated prompt/tokenizer/template/greedy history contract differs"
+        )
+    history = validate_decode_history(native.get("decode_history"), token_count)
+    for chunk in history:
+        if chunk["phase"] != (
+            "prefill" if chunk["offset"] < boundary else "target_only_greedy"
+        ) or (chunk["offset"] < boundary and chunk["offset"] + chunk["count"] > boundary):
+            raise ValueError("native generated decode history crosses exact prompt boundary")
+
+
 def _fingerprint(path):
     path = Path(path).resolve()
     stat = path.stat()
@@ -118,7 +206,6 @@ def validate_native_receipt(native, chain, tokens, producer, vocab_size, target_
         or native.get("complete") is not True
         or native.get("optimizer_updates") != 0
         or native.get("teacher_context_reset_between_requests") is not True
-        or native.get("prefix_contract") != "teacher_forced_exact_caller_token_ids"
         or native.get("kv_type") != "F16"
         or native.get("target_precision") != "F16"
         or native.get("tap_ids") != list(TAPS)
@@ -133,6 +220,22 @@ def validate_native_receipt(native, chain, tokens, producer, vocab_size, target_
         raise ValueError("native producer receipt differs from exact target/prefix/TRAIN ancestry")
     if not _hash(native.get("client_source_sha256")) or not native.get("producer_host"):
         raise ValueError("native receipt missing client/host provenance")
+    if "generation_identity" in producer:
+        pins = producer["generation_identity"]
+        if native.get("client_source_sha256") != pins["teacher_client_sha256"]:
+            raise ValueError("generated native client differs from pinned runtime")
+        validate_native_generation(
+            native,
+            prompt_sha256=chain["prompt_sha256"],
+            prompt_length=chain["prompt_length"],
+            token_count=len(tokens),
+            tokenizer_metadata_sha256=pins["tokenizer_metadata_sha256"],
+            chat_template_sha256=pins["chat_template_sha256"],
+        )
+    elif native.get("prefix_contract") != REPLAY_PREFIX_CONTRACT or any(
+        k in native for k in ("generation", "prompt", "prompt_source_sha256")
+    ):
+        raise ValueError("native replay prefix contract differs")
     validate_decode_history(native.get("decode_history"), len(tokens))
     files = native.get("files", {})
     for name in ("features", "logits"):
@@ -198,6 +301,7 @@ def import_capture_plan(
 
     inventory_path = artifact(plan["train_inventory"], plan_path.parent)
     runtime_path = artifact(plan["runtime"], plan_path.parent)
+    runtime = json.loads(runtime_path.read_text())
     inventory = json.loads(inventory_path.read_text())
     chains, producer, receipt_chains, total_bytes = [], None, {}, 0
     if not isinstance(plan["chains"], list) or not plan["chains"]:
@@ -234,6 +338,26 @@ def import_capture_plan(
             "runtime_sha256": file_sha256(runtime_path),
             "hardware": json.dumps(native.get("hardware"), sort_keys=True),
         }
+        if native.get("prefix_contract") == GENERATED_PREFIX_CONTRACT:
+            expected_runtime = {
+                "schema": "nine_model_train_capture_runtime_v1",
+                "binary_sha256": current["binary_sha256"],
+                "target_sha256": current["target_sha256"],
+                "native_source_revision": current["native_revision"],
+                "teacher_client_sha256": native.get("client_source_sha256"),
+                "tokenizer_metadata_sha256": native.get("tokenizer_metadata_sha256"),
+                "chat_template_sha256": native.get("target_chat_template_sha256"),
+            }
+            if runtime != expected_runtime:
+                raise ValueError("generated receipt differs from pinned runtime identity")
+            current["generation_identity"] = {
+                key: runtime[key]
+                for key in (
+                    "teacher_client_sha256",
+                    "tokenizer_metadata_sha256",
+                    "chat_template_sha256",
+                )
+            }
         if producer is not None and current != producer:
             raise ValueError("mixed target/source/hardware/runtime producer chains")
         producer = current
@@ -443,8 +567,15 @@ class BlockDataset:
             "hardware",
             "receipt",
         }
-        if set(producer) != producer_keys:
+        if set(producer) not in (producer_keys, producer_keys | {"generation_identity"}):
             raise ValueError("producer ancestry fields differ")
+        if "generation_identity" in producer and (
+            not isinstance(producer["generation_identity"], dict)
+            or set(producer["generation_identity"])
+            != {"teacher_client_sha256", "tokenizer_metadata_sha256", "chat_template_sha256"}
+            or not all(_hash(v) for v in producer["generation_identity"].values())
+        ):
+            raise ValueError("generated producer identity differs")
         if producer["kind"] not in ("native_target_only", "synthetic_fixture"):
             raise ValueError("teacher producer must be target-only native capture")
         if producer["kind"] == "synthetic_fixture" and not allow_synthetic:

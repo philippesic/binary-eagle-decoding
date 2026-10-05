@@ -31,10 +31,13 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from w1a1_eagle.block_data import (  # noqa: E402
     DOMAINS,
+    GENERATED_PREFIX_CONTRACT,
+    REPLAY_PREFIX_CONTRACT,
     SPLITS,
     TAPS,
     file_sha256,
     import_capture_plan,
+    validate_native_generation,
 )
 
 EAGLE_TAPS = (2, 18, 33)
@@ -1055,7 +1058,9 @@ def prefix_history(history, length):
     return bounded
 
 
-def validate_replay(receipt, tokens, taps, native, device, *, execution_profile="production_CUDA"):
+def _validate_capture(
+    receipt, tokens, taps, native, device, *, execution_profile="production_CUDA"
+):
     cpu = execution_profile == "development_CPU"
     buffers = receipt.get("executed_result_buffers", [])
     storage = receipt.get("target_storage_buffers", {})
@@ -1095,8 +1100,6 @@ def validate_replay(receipt, tokens, taps, native, device, *, execution_profile=
         raise ValueError("native feature/full-vocabulary file inventory differs")
     if receipt.get("features_shape", [])[:2] != [len(tokens), len(taps)]:
         raise ValueError("native replay feature shape differs from exact prefix")
-    if receipt.get("prefix_contract") != "teacher_forced_exact_caller_token_ids":
-        raise ValueError("native replay prefix contract differs")
     for descriptor in receipt.get("files", {}).values():
         path = Path(descriptor["path"])
         expected_bytes = math.prod(descriptor["shape"]) * 4
@@ -1106,6 +1109,14 @@ def validate_replay(receipt, tokens, taps, native, device, *, execution_profile=
             or file_sha256(path) != descriptor["sha256"]
         ):
             raise ValueError("original native raw capture bytes differ from receipt")
+
+
+def validate_replay(receipt, tokens, taps, native, device, *, execution_profile="production_CUDA"):
+    if receipt.get("prefix_contract") != REPLAY_PREFIX_CONTRACT or any(
+        k in receipt for k in ("generation", "prompt", "prompt_source_sha256")
+    ):
+        raise ValueError("native replay prefix contract differs")
+    _validate_capture(receipt, tokens, taps, native, device, execution_profile=execution_profile)
 
 
 def validate_generated(receipt, record, plan, device, *, execution_profile="production_CUDA"):
@@ -1121,9 +1132,26 @@ def validate_generated(receipt, record, plan, device, *, execution_profile="prod
         r["count"] for r in history
     ) != len(tokens):
         raise ValueError("native-generated decode history differs from complete token chain")
-    validate_replay(
+    if receipt.get("prefix_contract") != GENERATED_PREFIX_CONTRACT:
+        raise ValueError("native generated prefix contract differs")
+    _validate_capture(
         receipt, tokens, TAPS, plan["native"], device, execution_profile=execution_profile
     )
+    validate_native_generation(
+        receipt,
+        prompt_sha256=record["prompt_sha256"],
+        prompt_length=receipt.get("prompt_length"),
+        token_count=len(tokens),
+        tokenizer_metadata_sha256=plan["native"]["tokenizer_metadata_sha256"],
+        chat_template_sha256=plan["native"]["chat_template_sha256"],
+    )
+    mode = "all" if plan["objective"] == "exact_soft" else "none"
+    if (
+        receipt.get("features_shape") != [len(tokens), 5, plan["target_width"]]
+        or receipt.get("logits_mode") != mode
+        or receipt.get("logits_shape") != [len(tokens) if mode == "all" else 0, plan["vocab_size"]]
+    ):
+        raise ValueError("generated native feature/full-vocabulary shape differs")
     # Native helper must bind its actual tokenizer, model template and generation history.
     generation = receipt.get("generation", {})
     if (
@@ -1139,7 +1167,10 @@ def validate_generated(receipt, record, plan, device, *, execution_profile="prod
         or receipt.get("prompt", {}).get("template_mode") != plan["input_mode"]
         or receipt.get("prompt_source_sha256") != record["prompt_sha256"]
         or receipt.get("tokenizer_metadata_sha256") != plan["native"]["tokenizer_metadata_sha256"]
-        or receipt.get("chat_template_sha256") != plan["native"]["chat_template_sha256"]
+        or (
+            plan["input_mode"] == "native_chat"
+            and receipt.get("chat_template_sha256") != plan["native"]["chat_template_sha256"]
+        )
     ):
         raise ValueError("authentic native tokenizer/template/target generation history differs")
     ancestry = {k: record[k] for k in ("prompt_id", "prompt_sha256", "domain")} | {

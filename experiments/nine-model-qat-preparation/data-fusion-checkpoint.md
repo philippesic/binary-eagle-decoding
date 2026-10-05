@@ -166,3 +166,37 @@ existing source-bound completed admission to avoid full teacher payload audits
 per precision. All applicable CPU checks currently pass: 53 package tests,
 19 capture tests and 20 historical discrete-fitter tests; actual CUDA remains
 unverified under the pause.
+
+## CPU pilot generated-chain protocol checkpoint
+
+The approved Mac-only capture attempts 01 and 02 are preserved as FAIL artifacts
+under `results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-{01,02}`.
+Each produced one authentic original TRAIN chain (21 native prompt tokens plus
+32 target-only greedy tokens), five native taps and full-vocabulary logits.
+Both producers closed and were reaped. Attempt 01 consumed 13.776090708 seconds;
+attempt 02 consumed 32.369236750 seconds. The original cumulative 1800-second
+capture budget has 1753 whole seconds remaining; another capture requires root
+review and GO. No fusion fit or optimizer update ran.
+
+Attempt 01 exposed the native CPU hardware description protocol; the corrected
+guard requires exactly the queried CPU brand, CPU result/storage buffers, the
+CPU-only build and exact loaded project library closure. Passive transitive
+system Metal.framework is recorded separately and does not grant GPU execution.
+NativeTeacher's Mac runtime mapping remains explicitly unchecked; actual DYLD
+path/hash evidence supplements it without rewriting that field.
+
+Attempt 02 exposed a shared CPU/CUDA metadata bug: generated receipts correctly
+declare `native_tokenized_prompt_then_target_only_greedy`, while the controller
+and importer expected an exact-prefix replay. Generated chains now have a
+separate validation path for original prompt bytes, native tokenizer flags and
+pins, rendered/template hashes, greedy termination and the exact prefill/greedy
+decode boundary. The importer retains client/tokenizer/template identity from
+the pinned runtime. Replay goldens retain their strict original contract, and
+generated receipts cannot be relabeled as replay.
+
+The bounded offline audit consumed both original native receipts and raw files,
+validated CPU DYLD closure, imported the single chains and read exact seven-slot
+full-vocabulary batches. It launched zero producers, changed neither failed
+report nor original receipt, and grants no production or CUDA readiness:
+`results/nine-model-qat-preparation/development-cpu-generated-protocol-audit-20261004/report.json`.
+The source hashes and new report pin are reported with the reviewed commit.

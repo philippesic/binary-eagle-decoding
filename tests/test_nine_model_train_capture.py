@@ -102,13 +102,29 @@ class SyntheticNativeTeacher:
         tokens = list(range(2 + max_new_tokens))
         result = self.make(tokens, tap_ids, logits_mode, chain_ancestry | {"prompt_length": 2})
         result.update(
+            prefix_contract="native_tokenized_prompt_then_target_only_greedy",
+            prefix_freshness="native_generated_chain",
             prompt_length=2,
-            prompt={"template_mode": template_mode, "max_prompt_tokens": max_prompt_tokens},
+            prompt={
+                "template_mode": template_mode,
+                "max_prompt_tokens": max_prompt_tokens,
+                "max_new_tokens": max_new_tokens,
+                **({"messages": messages} if messages is not None else {"text": prompt_text}),
+            },
             prompt_source_sha256=capture.content_hash(
                 messages if messages is not None else prompt_text
             ),
             tokenizer_metadata_sha256="c" * 64,
-            chat_template_sha256="d" * 64,
+            chat_template="fixture template",
+            chat_template_sha256=capture.content_hash("fixture template"),
+            target_chat_template_sha256=capture.content_hash("fixture template"),
+            rendered_prompt="fixture rendered prompt",
+            rendered_prompt_sha256=capture.content_hash("fixture rendered prompt"),
+            tokenizer={
+                "implementation": "llama_tokenize",
+                "add_special": True,
+                "parse_special": True,
+            },
             generation={
                 "mode": "native_target_greedy",
                 "max_new_tokens": max_new_tokens,
@@ -117,6 +133,13 @@ class SyntheticNativeTeacher:
                 "termination": "max_new_tokens",
             },
         )
+        if template_mode == "raw_text":
+            result.update(
+                chat_template="",
+                chat_template_sha256=capture.content_hash(""),
+                rendered_prompt=prompt_text,
+                rendered_prompt_sha256=capture.content_hash(prompt_text),
+            )
         if self.fault == "prompt":
             result["prompt_length"] = max_prompt_tokens + 1
         if self.fault == "client":
@@ -127,12 +150,22 @@ class SyntheticNativeTeacher:
             result["executed_result_buffers"] = ["CPU"]
         if self.fault == "short":
             result["tokens"] = [0, 1, 2]
+        if self.fault == "generated_contract":
+            result["prefix_contract"] = "teacher_forced_exact_caller_token_ids"
+        if self.fault == "rendered":
+            result["rendered_prompt"] += " changed"
+        if self.fault == "prompt_payload":
+            result["prompt"]["messages"][0] = {"role": "user", "content": "changed original"}
+        if self.fault == "tokenizer_flags":
+            result["tokenizer"]["parse_special"] = False
         return result
 
     def capture_prefix(self, tokens, taps, *, logits_mode, chain_ancestry, decode_history):
         self.asserted_history = decode_history
         result = self.make(tokens, taps, logits_mode, chain_ancestry)
         result["decode_history"] = decode_history
+        if self.fault == "replay_contract":
+            result["prefix_contract"] = "native_tokenized_prompt_then_target_only_greedy"
         return result
 
     def close(self):
@@ -208,7 +241,7 @@ class CaptureTests(unittest.TestCase):
                 "source_revision": "a" * 40,
                 "client_source": {"path": str(client), "sha256": file_sha256(client)},
                 "tokenizer_metadata_sha256": "c" * 64,
-                "chat_template_sha256": "d" * 64,
+                "chat_template_sha256": capture.content_hash("fixture template"),
                 "gpu_layers": 999,
                 "expected_compute_capability": [7, 5],
             },
@@ -594,6 +627,61 @@ class CaptureTests(unittest.TestCase):
             self.assertIn(error, result["failure"]["message"])
             self.assertTrue(SyntheticNativeTeacher.instances[-1].closed)
             self.assertTrue((out / "capture-report.json").exists())
+
+    def test_generated_and_replay_contracts_and_native_prompt_bindings_are_distinct(self):
+        for fault, error in (
+            ("generated_contract", "generated prefix"),
+            ("replay_contract", "replay prefix"),
+            ("rendered", "history contract"),
+            ("prompt_payload", "history contract"),
+            ("tokenizer_flags", "history contract"),
+        ):
+            SyntheticNativeTeacher.fault = fault
+            result = capture.run_capture(
+                self.path,
+                self.pin,
+                self.root / fault,
+                execute=True,
+                teacher_factory=SyntheticNativeTeacher,
+                device_query=lambda: {"name": "fixture CUDA", "compute_capability": [7, 5]},
+                rss_query=lambda: 0,
+                available_query=lambda: 10**9,
+            )
+            self.assertEqual(result["status"], "FAIL", fault)
+            self.assertIn(error, result["failure"]["message"])
+            self.assertTrue(SyntheticNativeTeacher.instances[-1].closed)
+
+    def test_importer_rejects_generated_receipt_relabeling_and_runtime_drift(self):
+        result = self.run_()
+        self.assertEqual(result["status"], "PASS", result["failure"])
+        plan = json.loads((self.root / "output/dspark-capture-plan.json").read_text())
+        original = json.loads(Path(plan["chains"][0]["native_receipt"]["path"]).read_text())
+        for fault in ("prefix_contract", "client_source_sha256", "tokenizer_metadata_sha256"):
+            receipt = dict(original)
+            receipt[fault] = (
+                "teacher_forced_exact_caller_token_ids" if fault == "prefix_contract" else "e" * 64
+            )
+            pin = capture.write_json(self.root / (fault + "-receipt.json"), receipt)
+            modified = dict(plan, chains=[dict(plan["chains"][0], native_receipt=pin)])
+            plan_pin = capture.write_json(self.root / (fault + "-plan.json"), modified)
+            with self.assertRaisesRegex(ValueError, "replay prefix|pinned runtime"):
+                capture.import_capture_plan(
+                    plan_pin["path"],
+                    expected_sha256=plan_pin["sha256"],
+                    output_dir=self.root / (fault + "-import"),
+                )
+
+    def test_eog_on_final_allowed_token_and_exact_prompt_history_boundary(self):
+        result = self.run_()
+        self.assertEqual(result["status"], "PASS", result["failure"])
+        receipt = json.loads((self.root / "output/receipts/000000-block.json").read_text())
+        record = capture.prepare_plan(self.path, self.pin)[1][0]
+        device = {"name": "fixture CUDA", "compute_capability": [7, 5]}
+        receipt["generation"]["termination"] = "eog"
+        capture.validate_generated(receipt, record, self.plan, device)
+        receipt["decode_history"][1]["phase"] = "prefill"
+        with self.assertRaisesRegex(ValueError, "prompt boundary"):
+            capture.validate_generated(receipt, record, self.plan, device)
 
 
 if __name__ == "__main__":
