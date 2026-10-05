@@ -166,3 +166,51 @@ Fresh fixed-reference cache/head optimizations are selected only with applicable
 observed execution admission; no old readiness or silent fallback. All10k
 providers remain the production corpus, no small exposure limit; 24h may stop
 before a full pass and actual coverage must be reported. No QAT updates yet.
+
+
+## Actual initialization checkpoint — October 5, 01:32 PDT
+
+Native link issue resolved with explicit Boolean string-key instantiation only.
+Advisor review PASS; forkcc9cab3c64f61580cf63e5ef050b075b11cd1fb9 published before
+parent0760c52. Actual SM120 incremental links pass all six tools/tests; repeated
+configure/build run04 naturalexit0/3seconds emits LLAMA_COMMITcc9cab3 and no
+unresolved bool symbol. Root native fix worktree/branch retired after publication;
+fork branch remains reachable. Compiler/CUDA/header/math settings retained.
+
+Official production framework probe: AngelSlim0.5.0 genuine direct_url0358,
+full public config/drafter/Eagle3Model/ModelLoader imports and Transformers4.57.6
+RoPE pass without model/GPU allocation. Bounded initializer metadata receipt
+15753a4... independently checked/copied to ignored main results; original
+report4c2a75... and NPZae910c... remain remotely immutable, no rawweights/corpus
+transferred. F32FC shape2560x7680 latents and2560scales match sparse initializer.
+
+Packet metadata attempt01 exit1 exposed actual FusionFitConfig field mismatch
+in the new helper/fixtures. Canonical dataclass-field fix9ed0352 (eventless,
+fixedA8/eaglehalf/norescue/no coordinate flips) passes eight focused tests and
+independent QA. Attempt02 naturalexit0 on source2420615/nativecc9; packet is
+`/home/philip/binary-eagle-decoding/data/nine-model-overnight/eagle-fixed-a8-packet-20261005-02`.
+Runtime SHAe48896... binds ten project libraries/compiler/header/UI provenance;
+configcd3eb841..., continuous4b7dbcbc..., commands667d4d15..., immutableinitial
+request158a2f61... and generationrequestsea1e999... are emitted.
+
+Delegated resource-return policy explicitly selected (no historical values
+inferred): hostfloor2GiB/GPUfloor1GiB, hostreturntol512MiB/GPUreturntol128MiB.
+Exact owned process/group/CUDA/DXG release remains mandatory. Initial model
+phase GO: exact emitted argv,1800s/16GiBMemoryMax+2GiBswap, adjacent14GiBhost/
+8GiBdisk floor, source12GiB CUDAreserved/internal1GiBfree protection.
+
+**Actual all-nine zero-update CUDA prepare finishedexit0 in91seconds** at
+08:28:55.974903UTC. Supervisor52343/child52345 are absent; GPU13264MiBfree/
+2714MiBbaseline/0%, hostavailable20,032,552,960B, disk209,747,767,296B.
+Its actual smoke/checkpoint/effective cache/head/moment-reservation receipts
+are being audited; no positive optimizer update or training claim yet.
+
+Sole operator turn then errored due modelcapacity; SAME worker was restored.
+Fresh08:32:03 localtmux/remote readback found noLinuxserver/session or owned
+remote_job/train/export/capture/llama process. No export/generation was live
+and no phase was duplicated. Root read its own pane only, issued no competing
+SSHcommand. Current owned transport remainsMCP$258/@287/%289; operator owns
+continuation of reviewed CPUexport (8GiB/600s) and sequential actualthree-domain
+GPUgeneration/replay (600s each) with exact source/target/F16KV/partitionjoins.
+Only after actual artifactQA/packetbinding and all seven fresh admission gates
+may sustainedQATstart. Monitor staysACTIVE and healthy phases survive turns.

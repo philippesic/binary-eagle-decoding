@@ -18,10 +18,12 @@ packet feature owner and independent QA. First ready calibratedfixedA8 lane
 is prioritized with delegated24h cumulativetrainerallocation and frequent
 checkpoints; remaining candidates queue without premature readiness claims.
 30-minute heartbeat `nine-model-overnight-qat-monitor` is ACTIVE in this chat.
-First-lane source and calibration helper are integrated through5f53740; fresh
-5080 inventory and a240-second normal-completion disconnected CPU durability
-proof passed. Actual production calibration/native build/model/memory admission
-and real updates are not yet proved. Preflight continues; healthy runs
+Production calibration passed1536fit/768validation rows across all3domains;
+nativecc9 link/build-info fix is fork-published and integrated0760c52. Legitimate
+official loader and metadata packet passed. Actual all-nine CUDA zero-update
+preparation exited0 in91seconds with owned groups released. Its receipts,
+initial export and three-domain native goldens are next; fresh seven-gate
+admission and positive optimizer updates remain PENDING. Healthy runs
 will not be stopped merely for morning, idle chat or a monitoring tick.
 
 ## Historical preparation checkpoint — October 4, 2026

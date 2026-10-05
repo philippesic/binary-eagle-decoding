@@ -557,3 +557,28 @@ additional proof protocols or redoing completed audit work.
   independent QA passed; actual calibration is still pending.
 - Lesson: obtain bounded prompt-local mask/round evidence before generalizing
   a refusal or relaxing a gate. Preserve all label and ancestry semantics.
+
+
+### 2026-10-05: Distinguish native workers from other Codex chats
+
+- Context: independent QA was asked to obtain bounded metadata from the sole
+  operator. It read the handoff's no-other-chat-messaging rule as prohibiting
+  native collaboration with that operator.
+- Status: coordination interpretation disagreement, clarified; no user error.
+- Agent contribution: coordinator had repeated “no other chat messaging”
+  without explicitly distinguishing same-goal native workers from unrelated
+  user-owned Codex chats. QA's caution delayed the artifact request.
+- Lesson: permit native collaboration among `/root/...` workers assigned to
+  the same goal; reserve the explicit-human-message requirement for launcher/
+  other Codex chats and `send_message_to_thread`. Keep one remote operator.
+
+### 2026-10-05: Use producer schemas in packet fixtures
+
+- Context: actual packet preparation refused `orientation_rescue` because
+  FusionFitConfig serializes `zero_scale_orientation_rescue` instead.
+- Agent contribution: feature/helper and test fixture used invented short
+  field names; initial source QA did not compare them with the real dataclass.
+- Resolution: canonical field checks and real `asdict(FusionFitConfig)`
+  fixtures now pass eight narrow tests; no fit/data/math gate was weakened.
+- Lesson: test metadata consumers against real producer schemas before
+  deployment; preserve source failures and correct the API, not the artifact.
