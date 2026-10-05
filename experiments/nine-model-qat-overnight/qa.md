@@ -311,3 +311,34 @@ and no model/data/calibration rerun or GPU operation occurred during QA. At this
 checkpoint the canonical-field fix was not yet in main. It is subsequently
 integrated at `9ed0352` in current main `c690625`; the helper and test file
 SHA256 values there match the tested values above.
+
+## First-bind output guard correction
+
+The actual `eagle-packet-bind-20261005-01` attempt exposed a software-only guard
+bug: `prepare` creates immutable `golden-source-joins.json`, while `bind` used
+`golden-*.json` to detect prior outputs and rejected that source file on the
+first attempt. Bundle owner fixed the check in commit
+`0255955edd788396486db9a19539dd9bde4e5d06` to enumerate the seven files that
+`bind` itself publishes. The source-join manifest remains allowed; existing
+real golden outputs still stop a retry before mutation.
+
+Independent focused tests against the committed files passed 3/3, including a
+prepare-to-bind metadata fixture that retains the join file through native
+`NativeCaptureGoldens` validation and rejects a repeat bind, plus explicit
+preexisting-output refusal and the step-zero join regression:
+
+```sh
+/Users/pippo/github/binary-eagle-decoding/.venv/bin/python tests/test_eagle_lane_packet.py \
+  PacketTests.test_prepare_to_first_bind_preserves_source_joins_and_repeat_refuses_overwrite \
+  PacketTests.test_preexisting_generated_bind_artifacts_refuse_without_touching_source_join \
+  PacketTests.test_step_zero_export_source_checkpoint_and_initializer_joins
+```
+
+`ruff check`, `ruff format --check`, and `git diff --check` passed for the two
+changed Python files. Tested committed source hashes: helper
+`07b6a3b67efa6603db3ce3a74fab215a73ac3af8550c7a04c9ba1dce909b06a2` and test
+`086e725a8990cc32775bf6ee614aa1dacd8e1b456fef2953771c6cde73ac749c`. This is a
+filesystem/control-flow regression only; the synthetic fixture is not actual
+capture evidence, and no capture, model, GPU, training, or production readiness
+claim was added. The preserved actual failed attempt needs only a retry of bind
+with its existing receipts after the source fix is integrated.
