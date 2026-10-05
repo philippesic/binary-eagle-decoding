@@ -1,0 +1,14 @@
+{
+  "schema": "nine_model_lane_endpoint_policy_v1",
+  "human_selected": false,
+  "status": "ROOT_SELECTED_OPERATIONAL_VALUES_PINS_PENDING",
+  "authorization": {
+    "kind": "human_delegated_operational_settings",
+    "record": null,
+    "instruction": "Natural-budget endpoint export and development comparison under the existing overnight QAT goal."
+  },
+  "wait_wall_seconds": 111600,
+  "export_wall_seconds": 600,
+  "evaluation_wall_seconds": 1200,
+  "poll_seconds": 30
+}

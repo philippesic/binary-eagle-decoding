@@ -427,3 +427,103 @@ diagnostic only. Fresh source/QA/manifest and actual backward admission are
 required before updates. Four focused tests and independent QA/Ruff/format/diff
 checks pass for producer/live-query normalization and unchanged mismatch refusal;
 no device query or GPU execution occurred in these mocked property tests.
+
+## Additive single-lane endpoint automation — source draft
+
+The running frozen trainer is unchanged. Existing full-campaign exporter,
+evaluator and aggregation require all six candidates/all nine cells, so they
+cannot serve the first genuine EAGLE endpoint without fabricating readiness.
+New `prepare_nine_model_lane_endpoint.py` and `run_nine_model_lane_endpoint.py`
+provide a separately frozen, EAGLE-only endpoint plan. It explicitly retains the
+five remaining candidate statuses and full six-candidate/three-Q4 campaign as
+unfinished. No current source/config/recipe, optimizer, RNG, cursor, data or
+training time allocation is modified, and the endpoint never writes the
+original trainer's STOP or sends it a signal.
+
+The default inspection reports PENDING and queries no GPU. The source builder
+requires the exact original frozen lane/source/config, original controller and
+supervisor kernel identities and state paths, original F16 export base/target/
+native runtime, independent endpoint QA, and a separately selected finite policy
+for wait/export/evaluation. `configs/nine-model/protocol.json` remains a proposal:
+its14,400-second allowance and10 repetitions are not automatically authorized.
+The new source refuses `PROPOSED_not_budget_authorization`; root must provide
+explicitly selected protocol/policy before publication/execution. No new training
+budget, recipe or final/held-out use is inferred. Only the previously
+authenticated24 unsealed development prompt bytes
+`131a3db7958ff6aa818b23019297654507d5b80bed3c298349417b7e3b2ba081`
+and genuine frozen original EAGLE Q4_0 model
+`2db40f99d27e404298b80b2865671b9fd0136060ffb503007cb2ae23759e7280`
+are supported; actual source/corpus-disjoint provenance and byte pins remain
+required. Target/verifier and target/draft KV stay F16.
+
+Endpoint waiting reads only local state/kernel identities while a confirmed
+original trainer/controller is live. A vanished handle, interrupted supervisor,
+partial/STOP receipt, zero updates, wrong physical device, changed config/source,
+unreached cumulative training cap or mismatched checkpoint/optimizer-RNG-cursor/
+all-nine joint export refuses execution. The natural supervisor must finish
+exit0 and both original identities must be absent. Actual process groups,
+descendants, CUDA/DXG holders and host/device resource return are checked before
+export/evaluation under the shared sole-GPU lock. A fresh startup endpoint lease
+is checked once; its immutable ownership/pause binding persists through the wait
+and child phases without pretending the startup lease is a short training cap.
+
+CPU export invokes the original frozen serializer script/interpreter in its own
+process, joined to the exact positive committed
+checkpoint and original base. Native comparison uses fresh sequential processes
+for trained EAGLE, original Q4_0 EAGLE (primary baseline) and target-only. At least
+five paired repetitions/two warmups and fixed rotated/reversed order are
+required. Clean processes use verbosity3; diagnostic processes use4 and provide
+matching all-nine loader/typed CUDA execution proof. The inspected server and
+speculative TRACE4 paths log during decoding, so4 must not instrument clean
+timing. Model/native CLI/environment remain identical except declared verbosity
+and diagnostic instrumentation, and greedy token parity is mandatory. Detailed
+typed dispatch, round tracing and
+memory sampling occur only in a separate diagnostic pass, never clean request
+timing. Actual all-nine typed CUDA proof/no dense fallback and target-only greedy
+token equality remain required. Reports retain raw requests/counts/latencies,
+Q4-relative throughput and acceptance; they cannot be labeled a complete
+nine-model report or a quality winner without measured evidence.
+
+Minimal draft inspector input is `{"schema":"nine_model_lane_endpoint_inputs_v1"}`.
+Its required resolved fields are: `lane`, `training_run_dir`,
+`training_supervisor_state`, `controller_identity`, `supervisor_identity`,
+`control` (model/provenance), `protocol`, `prompts`, `development_admission`,
+`policy` and `qa_ledger`. All immutable file locators require absolute canonical
+path/SHA. The selected policy schema is `nine_model_lane_endpoint_policy_v1`,
+with delegated authorization record and positive finite `wait_wall_seconds`,
+`export_wall_seconds`, `evaluation_wall_seconds`, `poll_seconds`. Independent
+QA schema is `nine_model_lane_endpoint_qa_v1`, binding original lane, complete
+endpoint source inventory, selected protocol/prompts and original control.
+No real production endpoint packet has been published by this feature owner.
+
+Nine focused local fixtures pass for explicit PENDING/proposed-protocol refusal,
+healthy live wait/no trainer mutation, natural positive exact checkpoint joins,
+interrupted/partial/zero/other-source/device rejection, matched Q4-primary
+arithmetic/token pairing and native logging/F16 policy. These are software/source
+checks only; independent source review, authorized actual inputs/policy and a
+released genuine runtime endpoint are still required before any execution.
+
+Root subsequently selected the operational endpoint values under the same full
+goal delegation:31h passive wait,600s CPU export,1200s evaluation; prior24
+development prompts,5 clean paired repetitions,2 warmups, context2048/batch32/
+ubatch32/max128/seed42/draft5. The selected draft policy/protocol files record
+these values but have no authorization/artifact/QA pins and cannot launch.
+Original proposed all-six10-repeat/14,400s allowance remains separately PENDING.
+
+After natural terminal and actual old-owned release, the new controller obtains
+the shared flock and rechecks unpaused/unchanged original standing lease, same
+boot/device, floors/return and **empty** global CUDA and DXG holder censuses.
+Only then it writes an immutable typed continuation/release proof, binding the
+original startup lease/authorization and endpoint/train-lane hashes, current
+owner kernel identity and stage scope, with agent verification freshness at most
+300s and `new_human_announcement=false`. The child verifies same live parent,
+actual held lock/owner metadata, fresh stage scope and release proof before
+dispatch, then repeats strict actual empty-holder/floor checks. Export completion
+and owned return produce a separate fresh evaluation continuation. Original
+training lease/config/checkpoint are never mutated. Tests exercise real advisory
+lock refusal, expired/stage-swapped proof refusal, unchanged origin lease and
+foreign/missing census refusal without querying any GPU.
+Independent source review reran all nine cases and changed-file Ruff/format/diff
+checks successfully. Actual source/metadata packet remains PENDING until root
+supplies the pinned authorization, original model/development provenance and
+endpoint QA ledger; no watcher/evaluation process was launched here.
