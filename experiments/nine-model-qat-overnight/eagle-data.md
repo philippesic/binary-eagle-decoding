@@ -115,10 +115,52 @@ Four focused local tests pass: alias-disjoint selection, missing code validation
 refusal, missing opaque identity/invalid quota refusal, and negative-correlation
 scale-only preservation of ±0.5 with rescue disabled. Changed-file Ruff and
 format checks pass. No actual production calibration or model test has yet run.
-Independent QA is reviewing this additive helper.
+Independent QA source review passed on receipt ancestry, native accepted-prefix
+joins, three-domain split and scale-only/reference policy. It explicitly did
+not infer actual initialized production input readiness from the helper tests.
 
 Remaining: operator executes authentic-source calibration once, verifies its
 rows and output SHA bindings; bundle owner produces current complete actor and
 native export/admission; independent QA checks the resulting packet; sole
 operator launches and monitors the admitted lane. Hardware and training
 readiness remain PENDING until their authoritative reports exist.
+
+## Full calibrated native actor preparation
+
+The bundle owner owns the exact selected configuration and native admission
+interfaces; its [production plan](production-plan.md) specifies this sequence:
+
+```sh
+python scripts/train_nine_model_qat.py \
+  --config SELECTED_A8_CONFIG --run-dir INITIAL_PREPARE \
+  --bundle-sha256 INITIAL_PREPARATION_REQUEST_SHA256 \
+  --stage-name eagle_a8/initial-prepare \
+  --completion-output INITIAL_PREPARATION_RECEIPT \
+  --allow-cuda --prepare-only
+
+python scripts/export_recurrent_binary.py \
+  --base /home/philip/binary-eagle-decoding/models/gguf/Qwen3-4B-eagle3-f16.gguf \
+  --checkpoint INITIAL_PREPARE/checkpoints/step-000000000000-e000000-r000000000000/A8/joint.npz \
+  --manifest INITIAL_PREPARE/checkpoints/step-000000000000-e000000-r000000000000/A8/joint.json \
+  --output CALIBRATED_INITIAL_GGUF --audit INITIAL_EXPORT_AUDIT
+```
+
+Uppercase paths/digest are explicit generated request/config/artifact locators
+from that plan, not literal shell commands ready for execution. Initial request
+SHA binds the real preparation request and is not a fabricated production bundle
+or admission. The operator runs preparation under its own `remote_job` and
+verifies current source, GPU availability and exclusive ownership first.
+
+The existing trainer installs calibrated FC latents/scales before `build_lanes`
+and checkpoint publication. Its zero-update actual forward/backward and
+full-Adam-moment reservation are model preparation evidence. The saved all-nine
+NPZ/manifest must retain zero optimizer updates and actual calibrated FC; the
+serializer must pass every selected projection's packed-bit/scale hash and
+unchanged protected tensor bytes/metadata. `serialization_audit_passed` alone
+is not native loader/graph proof. Native admission must load and exercise this
+exact **calibrated initial GGUF** joined to its export audit and sparse
+initializer; original F16/unmodified W1 models cannot stand in for it.
+
+The positive-trained-endpoint `export_nine_model_candidate.py` wrapper rejects
+step zero and is intentionally not used for this initial actor. Production
+training starts only after separate fresh current candidate admission.
