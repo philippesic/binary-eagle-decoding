@@ -95,7 +95,7 @@ chat turns and ownership rotation. Human pause/stop takes priority.
 
 Calibrated EAGLE W1A8 QAT is admitted and actively running on RTX5080/SM120.
 All fresh receipt gates and strict source/device checks passed. It has passed
-232042 optimizer updates with a committed232000 checkpoint (earlier2750 bytes SHA-verified), finite gradients and
+244334 optimizer updates with a committed244250 checkpoint (earlier2750 bytes SHA-verified), finite gradients and
 actual cache/head execution. Root owns the exact live supervisor/controller/
 trainer and transport recorded in the latest checkpoint below and ignored
 monitor registration. The30-minute heartbeat is ACTIVE; preserve healthy
@@ -1698,3 +1698,28 @@ does not replace the12:53full resource/identity/source health receipt. Timing
 helper's20:23:34UTC deadline remains unchanged. Human received exact start and
 about9h52elapsed answer. Full Goal ACTIVE; healthy original allocation/endpoint/
 source/config/lifecycle preserved; remaining candidate/evaluation gates pending.
+
+## Scheduled verified training wait — October 5, 13:24 PDT
+
+Previous turn was progress plus verified waiting (exact budget start/clock domain
+clarified without runtime changes). Local timing helper finished its deadline;
+root20:24:22UTC actual remote read-only healthcheck PASS. Same five exact
+boot/birth/PGID identities, both running/no-signal supervisors, clean30a/cc9 and
+frozen endpoint plan rehash. QAT244,334updates/36,667.8325trainerseconds,
+2,989TRAINprompts/1,162,698distinct supervised rows,18finitegradients/finite
+loss7.367797,heartbeat0.0076s. Resources/checkpoint freshness PASS:
+GPUfree8,161,067,008B,hostavailable18,154,672,128B,diskfree196,242,800,640B.
+Watcher passive waiting_for_natural_endpoint/GPUqueriedfalse/trainingchangedfalse.
+No repair/new job/running source/config/lease/budget/process change.
+
+Checkpoint244,250 SHA
+e2e3a0bee13d2f433dbd7847c7336a126f41df3b519e5d3af2263735e3460147
+is manifest-declared, not newly byte-rehashed. Ignored proof
+`results/nine-model-qat-overnight/health-20261005-1324.json`, SHA
+87f144776d87de9f820b709b08e76672e3a64001a3ba0cbd833c1677ebadbc1a;
+adjacent raw command/result/capture preserved. Sole owner/operator/SAME ACTIVE
+monitor verified. Full GoalACTIVE/unfinished; healthy86,400trainersecond budget
+unchanged/about13.81trainerhours remain/no wall ETA. Next around13:54PDT. Current
+calibrated native acceptance PENDING; originalsource-pinned A1 queues after
+natural trainer AND endpoint release. Other model/device/controls/held-out gates
+and09:25human inputs stay pending; no quality conclusion from training telemetry.
