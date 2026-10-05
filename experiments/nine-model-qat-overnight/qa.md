@@ -375,3 +375,34 @@ test `ca05bf69e71ecf577878923bbe48855cf17fd4d496225c142da966e5aab8459e`.
 This validates the software protocol only; an actual WSL observer receipt and
 fresh admission remain pending. Pin the helper in the selected QA source ledger
 before rebuilding the lane packet.
+
+## Native smoke log visibility correction
+
+The actual controller smoke passed all 272 kernel cases and capture
+portability, but generated its bounded response without emitting the loader and
+CUDA dispatch markers required by the unchanged native smoke gate. llama.cpp's
+`common/log.h` defines `LOG_LEVEL_TRACE=4`, and `common_log_get_verbosity`
+maps `GGML_LOG_LEVEL_INFO` to TRACE(4); server default verbosity 3 filters those
+native INFO callbacks. The integrated fix in commit
+`b5d621b30ef5da461de30903ad93f76fae1fa4ee` sets `--log-verbosity 4` on the
+bounded EAGLE smoke server. It does not change native arithmetic, expected
+markers, or the typed all-nine `validate_cuda_dispatch` checks.
+
+Independent focused tests passed **4/4**:
+
+```sh
+PYTHONPATH=src:scripts:tests \
+  /Users/pippo/github/binary-eagle-decoding/.venv/bin/python \
+  -m unittest test_eagle_native_smoke_preflight -v
+```
+
+The added launch test reads the actual llama.cpp verbosity mapping, checks the
+launched argv uses that level, and asserts the typed nine-projection validator
+still runs. `ruff check`, `ruff format --check`, and `git diff --check` passed.
+The changed checker SHA256 is
+`4435bebbc06481c2bf8856a2eba2fa21f564a9fe13fd8d600187da91d623aba4`; the test
+source was `e8d3ea27494bc842357b8de6dfe7dc1ebc62ff81f93287a66d343343b0684076`.
+This is command/source-contract QA only; no real native smoke or GPU activity
+occurred during independent QA. The actual prior failed smoke was preserved as
+evidence; retry requires the integrated command and existing selected-lane
+inputs.
