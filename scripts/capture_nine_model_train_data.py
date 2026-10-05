@@ -447,10 +447,12 @@ CPU_OFF_OPTIONS = (
 )
 
 
-def require_cpu_project_libraries(text):
+def require_cpu_project_libraries(text, *, allow_transitive_system_frameworks=False):
     allowed = {"libllama", "libggml", "libggml-base", "libggml-cpu"}
     stems = {name.split(".")[0] for name in re.findall(r"lib(?:llama|ggml)[\w-]*\.[^\s/]+", text)}
-    if stems - allowed or "metal.framework" in text.lower():
+    if stems - allowed or (
+        not allow_transitive_system_frameworks and "metal.framework" in text.lower()
+    ):
         raise ValueError("CPU runtime inventory includes an unapproved GPU/backend library")
 
 
@@ -560,7 +562,7 @@ def mac_cpu_device():
 
 def cpu_loaded_library_proof(teacher, build):
     text = Path(teacher.log.name).read_text(errors="replace")
-    require_cpu_project_libraries(text)
+    require_cpu_project_libraries(text, allow_transitive_system_frameworks=True)
     pid = teacher.process.pid
     loaded = set()
     for line in text.splitlines():
@@ -579,6 +581,13 @@ def cpu_loaded_library_proof(teacher, build):
             raise ValueError("Mac pinned runtime dylib changed during capture")
     return {
         "scope": "mac_dyld_loaded_path_and_file_hash",
+        "execution_scope": "CPU native model execution under pinned CPU-only GGML runtime",
+        "observed_system_metal_framework": [
+            line
+            for line in text.splitlines()
+            if "dyld[" + str(pid) + "]" in line
+            and "/System/Library/Frameworks/Metal.framework/" in line
+        ],
         "actual_dyld_paths_checked": True,
         "actual_linux_mapping_checked": False,
         "libraries": build["dylibs"],

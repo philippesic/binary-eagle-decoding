@@ -300,6 +300,31 @@ class CpuCaptureTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "extra project"):
             capture.cpu_loaded_library_proof(teacher, build)
 
+    def test_transitive_system_metal_is_recorded_but_direct_project_link_refuses(self):
+        import types
+
+        build = capture.validate_cpu_build(self.plan["cpu_build"], self.plan["native"], self.root)
+        metal = "/System/Library/Frameworks/Metal.framework/Versions/A/Metal"
+        log = self.root / "dyld-system-metal.log"
+        log.write_text(
+            "\n".join("dyld[42]: " + p["path"] for p in build["dylibs"])
+            + "\ndyld[42]: "
+            + metal
+            + "\n"
+        )
+        teacher = types.SimpleNamespace(
+            log=types.SimpleNamespace(name=str(log)), process=types.SimpleNamespace(pid=42)
+        )
+        proof = capture.cpu_loaded_library_proof(teacher, build)
+        self.assertTrue(proof["actual_dyld_paths_checked"])
+        self.assertEqual(len(proof["observed_system_metal_framework"]), 1)
+        with self.assertRaises(ValueError):
+            capture.require_cpu_project_libraries(metal)
+        with self.assertRaises(ValueError):
+            capture.require_cpu_project_libraries(
+                "/extra/libggml-metal.0.dylib", allow_transitive_system_frameworks=True
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
