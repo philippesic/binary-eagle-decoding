@@ -150,7 +150,7 @@ completion remain outside this CPU QA result.
 Sole operator transferred only the 6.9 KiB metadata receipt; its raw initializer,
 feature rows, row-evidence file, prompt bodies/tokens and source corpus remain
 remote. Receipt SHA256:
-`84fe31e82b3fa0694e270a67e80803f8826a5462ee221154ca59d70b59862a6d`.
+`15753a4375d5a3cb31a40f6a7c40a558e77708bdf1cb87c86753f8beec729c8c`.
 The exact same receipt is preserved at the ignored main-worktree path
 `results/nine-model-qat-overnight/eagle-initializer-attempt04.json`.
 
@@ -164,6 +164,10 @@ preparation, READY SHA `bdfa56f8...`, resolved-config SHA
 SHA `58ac5bbf...`, helper source SHA `49395a80...`, and native source commit
 `624f50e74f51b6af93bf6b879f84703e726df172`. The helper SHA matches the current
 main-tree file and the source commit recorded by the operator (`0b2ca0a`).
+The receipt's CUDA visibility is empty and the selected execution device is CPU;
+the RTX5080 is host identity only. It reports utilization 0% and 2714 MiB both
+before and after. A systemd 8 GiB cap was configured, but actual cap enforcement
+was not measured.
 
 Selection counts join: 32 fit and 16 validation prompts in each of prose, code,
 and reasoning; 144 distinct prompts total; 1,536 fit rows, 768 validation rows,
@@ -176,20 +180,27 @@ is 0.5 with reference SHA `9b24af26...`. Per-domain validation RSEs are about
 0.0615–0.0635, while the scale-only fit RSE is about 0.0627; these remain
 initializer diagnostics, not drafter quality or deployment evidence.
 
-The report and initializer metadata themselves are still remote files, pinned
-by report SHA `4c2a75db...` and initializer JSON SHA above. I have not inspected
-their bytes locally. A follow-up asks the operator for safe scalar report
-fields (fit policy/reference, no orientation/coordinate changes, and source
-config/prepared-directory joins) to finish direct report-level verification.
-No member values or corpus material were copied.
+The follow-up receipt adds direct scalar report fields: A8, policy
+`preserve_reference_magnitudes`, reference kind `eagle_fixed_reference_0.5`,
+orientation rescue false, zero coordinate flips, a 300-second fit cap, and zero
+fit events. Its candidate and scale-only fit metrics are equal. It also binds
+the original report config hash (`09e8afa...`), prepared directory and full
+captured-source identity, matching the initializer preparation checks.
+
+The report and initializer files themselves remain remote, pinned by report
+SHA `4c2a75db...` and initializer JSON SHA `7d2b89a6...`; no arrays or prompt
+content were transferred. Source/report joins are checked from the bounded
+receipt and pinned helper contract, not from report bytes. No member values or
+corpus material were copied.
 
 ## EAGLE packet helper QA (source commit `4a808b5`)
 
 The metadata-only helper and focused tests were reviewed at final author commit
 `4a808b5b8600b74a8201d92272a898e8cd9bb206` in
 `/private/tmp/nine-model-qat-20261004/overnight-bundle`, based on `5f53740`.
-At review time it had not yet been integrated into main. SHA256 of the final
-files tested:
+It is integrated in main at `765d9d1c5d5191950b818178231c7944bc78f8cb`;
+file hashes in main match the tested author checkout. SHA256 of the files
+tested:
 
 | Path | SHA256 |
 | --- | --- |
@@ -207,7 +218,8 @@ Python 3.11.3 and Torch 2.8.0:
 PYTHONPATH=src:scripts:tests python3 -m unittest test_eagle_lane_packet -v
 ```
 
-Result: **PASS, 5 tests**. Raw output is retained in ignored
+Result: **PASS, 5 tests** at author commit `4a808b5` before the separate
+standalone-cadence correction. Raw output is retained in ignored
 `/private/tmp/nine-model-qat-20261004/overnight-qa/results/nine-model-qat-overnight/final-packet-tests.log`.
 
 The reviewed source binds exact original `preparation-ready.json` and its
