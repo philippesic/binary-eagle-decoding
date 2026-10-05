@@ -538,3 +538,22 @@ additional proof protocols or redoing completed audit work.
   system Metal dependency is distinct from a registered GGML model GPU backend.
   Use followup_task for work assigned to an idle/completed agent. These are agent
   coordination/implementation errors, not user mistakes.
+
+
+### 2026-10-05: Check the selected round before classifying a data failure
+
+- Context: overnight EAGLE production calibration selected the longest native
+  prefix and required at least one supported CE label.
+- Evidence: attempt03 refused code prompt `magicoder:line-012903-index-35307`.
+  Round82/prefix433 had one valid row but no supported CE label and no invalid
+  reason; round81/prefix431 had three valid rows and two CE labels. The child
+  and original TRAIN corpus were not thereby ineligible.
+- Agent contribution: the helper selected by prefix length alone; coordinator
+  initially described the unlabeled round as terminal before inspecting its
+  metadata. Actual evidence shows an unsupported-label case. No user error.
+- Resolution: source fix0b2ca0a selects the longest structurally valid round
+  with supported labels, rejects corrupted/all-unlabeled cases and rechecks
+  the loaded batch against its metadata audit. Seven focused tests and
+  independent QA passed; actual calibration is still pending.
+- Lesson: obtain bounded prompt-local mask/round evidence before generalizing
+  a refusal or relaxing a gate. Preserve all label and ancestry semantics.

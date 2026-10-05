@@ -133,3 +133,36 @@ CPU initializer plan reviewed/GO: wholephase900seconds, fit300seconds, threads2,
 Nativebuild exact source/argv/cap review is pending. No CUDA model test, new
 optimizer update or successful training claim yet. Exact live registration is
 in main ignored runs/nine-model-qat-overnight/monitor-registration.json.
+
+
+## Source repair checkpoint — October 5, 00:24 PDT
+
+Independent QA report integrated/pushed782357f; final tested staged-source
+bytes are pinned there. CPU calibration attempts01/02 exit1 are preserved:
+new shallow source lacked exact frozen6f/7547 Git objects needed by ancestry
+checks. Exact objects were fetched without changing HEAD/worktree; all seven
+historical audit source pins now verify. Both groups were reaped before retry.
+
+Attempt03 passed the complete three-domain selection quota but refused its
+first unsupported-label longest code round. Bounded one-shard metadata proof
+found round82/prefix433 valid_count1/CE_count0, earlier round81/prefix431
+valid_count3/CE_count2. All groups absent/no OOM; GPU stayed at baseline.
+Published0b2ca0a fixes round selection without altering data or masks: choose
+longest actually labeled structural round, fail corruption/no eligible round,
+then require loaded ProviderRound audit equal metadata audit. Seven focused
+tests/Ruff/format and independent source QA pass. Actual initializer04 is
+authorized on a distinct clean source/output under original8GiB/900s limits.
+
+Native build GO: immutable5f53740/native624; testsON, CUDA arch120, Release,
+CUDAON/MetalOFF, two compile jobs,12GiB MemoryMax/2GiB swap,45min wall cap.
+Explicit targets server/cli/bench/block-teacher/backend-ops (+block-binary).
+No runtime model/kernel call is implied by compilation. Heavy CPU phases are
+serialized; native build begins after initializer slot release.
+
+Packet helper remains under independent review: exact config/ready/initializer
+join, generated-token→replay-history join, zero-update checkpoint and all-nine
+export/base/output provenance must be proved. No malformed packet is promoted.
+Fresh fixed-reference cache/head optimizations are selected only with applicable
+observed execution admission; no old readiness or silent fallback. All10k
+providers remain the production corpus, no small exposure limit; 24h may stop
+before a full pass and actual coverage must be reported. No QAT updates yet.
