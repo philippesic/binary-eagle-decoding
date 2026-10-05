@@ -115,6 +115,7 @@ class PacketTests(unittest.TestCase):
                     "teacher_binary": {"path": "/fixture/teacher", "sha256": "e" * 64},
                 },
                 "gpu_uuid": "fixture",
+                "device_name": "synthetic CUDA fixture",
                 "gpu_control_path": "/fixture/control",
                 "resource_policy": {},
                 "native_source_revision": "d" * 40,
@@ -257,6 +258,59 @@ class PacketTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 packet.exact_replay_join(rows, requests)
 
+    def initial_export_fixture(self, args):
+        runtime = json.loads(args.runtime.read_text())
+        report = json.loads((args.initializer_dir / "report.json").read_text())
+        checkpoint = (
+            args.output / "initial-prepare/checkpoints/step-000000000000-e000000-r000000000000"
+        )
+        resume = write(checkpoint / "resume.pt", {"fixture": "no model"})
+        joint = write(checkpoint / "A8/joint.npz", {"fixture": "no tensors"})
+        joint_manifest = write(checkpoint / "A8/joint.json", {"fixture": "no tensors"})
+        outer = {
+            "step": 0,
+            "epoch": 0,
+            "cursor": 0,
+            "sha256": resume["sha256"],
+            "optimizer_rng_cursor_exact": True,
+            "source_sha256": report["source_sha256"],
+            "exports": {
+                "A8": {"joint.npz": joint["sha256"], "joint.json": joint_manifest["sha256"]}
+            },
+        }
+        write(checkpoint / "manifest.json", outer)
+        request_path = args.output / "initial-preparation-request.json"
+        request = json.loads(request_path.read_text())
+        receipt = {
+            "schema": "nine_model_preparation_v1",
+            "status": "PASS",
+            "artifact_kind": "production",
+            "stage": "eagle_a8/initial-prepare",
+            "optimizer_updates": 0,
+            "bundle_sha256": packet.builder.sha256(request_path),
+            "config_sha256": request["config"]["sha256"],
+            "source": report["authenticated_full_source"],
+            "checkpoint": dict(resume, step=0),
+        }
+        receipt_path = args.output / "initial-prepare-receipt.json"
+        write(receipt_path, receipt)
+        model = write(args.output / "initial.gguf", {"fixture": "not native"})
+        audit = {
+            "serialization_audit_passed": True,
+            "activation_bits": 8,
+            "projections": {str(i): {} for i in range(9)},
+            "base_gguf": runtime["base_model"],
+            "output": model,
+            "checkpoint": joint,
+            "checkpoint_manifest": joint_manifest,
+        }
+        audit_path = args.output / "audit.json"
+        write(audit_path, audit)
+        bind_args = SimpleNamespace(
+            packet=args.output, export_audit=audit_path, initial_model=Path(model["path"])
+        )
+        return bind_args, runtime, receipt_path, receipt, checkpoint, outer, audit_path, audit
+
     def test_step_zero_export_source_checkpoint_and_initializer_joins(self):
         import copy
 
@@ -264,55 +318,8 @@ class PacketTests(unittest.TestCase):
             args, ready, _ = self.fixture(Path(temp).resolve())
             with patch.object(packet, "READY_SHA", ready):
                 packet.prepare(args)
-            runtime = json.loads(args.runtime.read_text())
-            report = json.loads((args.initializer_dir / "report.json").read_text())
-            checkpoint = (
-                args.output / "initial-prepare/checkpoints/step-000000000000-e000000-r000000000000"
-            )
-            resume = write(checkpoint / "resume.pt", {"fixture": "no model"})
-            joint = write(checkpoint / "A8/joint.npz", {"fixture": "no tensors"})
-            joint_manifest = write(checkpoint / "A8/joint.json", {"fixture": "no tensors"})
-            outer = {
-                "step": 0,
-                "epoch": 0,
-                "cursor": 0,
-                "sha256": resume["sha256"],
-                "optimizer_rng_cursor_exact": True,
-                "source_sha256": report["source_sha256"],
-                "exports": {
-                    "A8": {"joint.npz": joint["sha256"], "joint.json": joint_manifest["sha256"]}
-                },
-            }
-            write(checkpoint / "manifest.json", outer)
-            request_path = args.output / "initial-preparation-request.json"
-            request = json.loads(request_path.read_text())
-            receipt = {
-                "schema": "nine_model_preparation_v1",
-                "status": "PASS",
-                "artifact_kind": "production",
-                "stage": "eagle_a8/initial-prepare",
-                "optimizer_updates": 0,
-                "bundle_sha256": packet.builder.sha256(request_path),
-                "config_sha256": request["config"]["sha256"],
-                "source": report["authenticated_full_source"],
-                "checkpoint": dict(resume, step=0),
-            }
-            receipt_path = args.output / "initial-prepare-receipt.json"
-            write(receipt_path, receipt)
-            model = write(args.output / "initial.gguf", {"fixture": "not native"})
-            audit = {
-                "serialization_audit_passed": True,
-                "activation_bits": 8,
-                "projections": {str(i): {} for i in range(9)},
-                "base_gguf": runtime["base_model"],
-                "output": model,
-                "checkpoint": joint,
-                "checkpoint_manifest": joint_manifest,
-            }
-            audit_path = args.output / "audit.json"
-            write(audit_path, audit)
-            bind_args = SimpleNamespace(
-                packet=args.output, export_audit=audit_path, initial_model=Path(model["path"])
+            bind_args, runtime, receipt_path, receipt, checkpoint, outer, audit_path, audit = (
+                self.initial_export_fixture(args)
             )
             with patch.object(packet, "READY_SHA", ready):
                 packet.initial_export_join(bind_args, packet.Files(), runtime)
@@ -329,12 +336,125 @@ class PacketTests(unittest.TestCase):
                     elif item == "step":
                         changed_outer["step"] = 1
                     else:
-                        changed_audit["checkpoint"] = model
+                        changed_audit["checkpoint"] = audit["output"]
                     write(receipt_path, changed_receipt)
                     write(checkpoint / "manifest.json", changed_outer)
                     write(audit_path, changed_audit)
                     with self.subTest(item=item), self.assertRaises(ValueError):
                         packet.initial_export_join(bind_args, packet.Files(), runtime)
+
+    def test_prepare_to_first_bind_preserves_source_joins_and_repeat_refuses_overwrite(self):
+        import numpy as np
+
+        with tempfile.TemporaryDirectory() as temp:
+            args, ready, _ = self.fixture(Path(temp).resolve())
+            with patch.object(packet, "READY_SHA", ready):
+                packet.prepare(args)
+            bound, runtime, *_ = self.initial_export_fixture(args)
+            joins_path = args.output / "golden-source-joins.json"
+            original_joins = joins_path.read_bytes()
+            joins = json.loads(original_joins)
+            native = {
+                "binary": runtime["inputs"]["teacher_binary"],
+                "target": runtime["inputs"]["target"],
+                "source_revision": runtime["native_source_revision"],
+                "client_source": packet.builder.pin(ROOT / "scripts/capture_block_qat_teacher.py"),
+            }
+            generated, requests, receipts = [], [], []
+            for ordinal, case in enumerate(joins["cases"]):
+                tokens = [ordinal + 1, 7]
+                history = [
+                    {
+                        "offset": 0,
+                        "count": 2,
+                        "phase": "prefill",
+                        "kv_reused_from_same_chain": False,
+                    }
+                ]
+                ancestry = dict(case["ancestry"], prompt_length=1)
+                request = {
+                    "tokens": tokens,
+                    "tap_ids": [2, 18, 33],
+                    "logits_mode": "last",
+                    "chain_ancestry": ancestry,
+                    "decode_history": history,
+                }
+                requests.append(request)
+                generated.append({"tokens": tokens, "decode_history": history, "prompt_length": 1})
+                descriptors = {}
+                for name, shape in (("features", (2, 3, 2560)), ("logits", (1, 151936))):
+                    path = args.output / f"synthetic-{ordinal}-{name}.f32"
+                    np.zeros(shape, dtype=np.float32).tofile(path)
+                    descriptors[name] = dict(
+                        packet.builder.pin(path), shape=list(shape), dtype="float32"
+                    )
+                receipts.append(
+                    dict(
+                        request,
+                        schema="block_native_teacher_request_v1",
+                        complete=True,
+                        optimizer_updates=0,
+                        target_sha256=native["target"]["sha256"],
+                        producer_source_revision=native["source_revision"],
+                        producer_binary_sha256=native["binary"]["sha256"],
+                        client_source_sha256=native["client_source"]["sha256"],
+                        target_precision="F16",
+                        kv_type="F16",
+                        executed_result_buffers=["CUDA0"],
+                        target_storage_buffers={"CUDA0": "synthetic"},
+                        hardware=[runtime["device_name"]],
+                        teacher_context_reset_between_requests=True,
+                        prefix_contract="teacher_forced_exact_caller_token_ids",
+                        prefix_freshness="caller_current_student_prefix",
+                        features_shape=[2, 3, 2560],
+                        logits_shape=[1, 151936],
+                        files=descriptors,
+                    )
+                )
+            parent_path = args.output / "synthetic-generation-log.jsonl"
+            request_path = args.output / "replay-requests.jsonl"
+            receipt_path = args.output / "synthetic-replay-log.jsonl"
+            packet.publish_jsonl(parent_path, generated)
+            packet.publish_jsonl(request_path, requests)
+            packet.publish_jsonl(receipt_path, receipts)
+            link_path = args.output / "generation-replay-link.json"
+            write(
+                link_path,
+                {
+                    "source_joins": packet.builder.pin(joins_path),
+                    "generation_receipts": packet.builder.pin(parent_path),
+                    "replay_requests": packet.builder.pin(request_path),
+                    "native": native,
+                    "requests": requests,
+                },
+            )
+            bound.receipts = receipt_path
+            bound.generation_link_sha256 = packet.builder.sha256(link_path)
+            bound.qa_ledger = args.output / "fixture-qa.json"
+            write(bound.qa_ledger, {"schema": "fixture_only_no_hardware_readiness"})
+            with patch.object(packet, "READY_SHA", ready):
+                packet.bind(bound)
+                self.assertEqual(joins_path.read_bytes(), original_joins)
+                self.assertTrue((args.output / "production-inputs.json").is_file())
+                before = {
+                    path: path.read_bytes() for path in args.output.rglob("*") if path.is_file()
+                }
+                with self.assertRaisesRegex(ValueError, "preserve production"):
+                    packet.bind(bound)
+                self.assertEqual({path: path.read_bytes() for path in before}, before)
+
+    def test_preexisting_generated_bind_artifacts_refuse_without_touching_source_join(self):
+        for name in ("golden-0.json", "eagle-goldens.json"):
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                source = root / "golden-source-joins.json"
+                source.write_bytes(b"preserved source joins")
+                existing = root / name
+                existing.write_bytes(b"preserved prior output")
+                with self.assertRaisesRegex(ValueError, "preserve previous"):
+                    packet.bind(SimpleNamespace(packet=root))
+                self.assertEqual(source.read_bytes(), b"preserved source joins")
+                self.assertEqual(existing.read_bytes(), b"preserved prior output")
 
     def test_build_and_initialization_provenance_are_frozen_in_admission_source(self):
         import test_nine_model_admission_plan_builder as fixtures

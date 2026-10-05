@@ -339,3 +339,18 @@ substitutions or nonempty orientation-event reports before publication;
 independent QA reran the seven packet checks before the final event assertion.
 Changed-file Ruff/format pass. All existing
 source, full TRAIN, zero-state, export and exact replay gates remain intact.
+
+## First bind overwrite-guard correction
+
+Actual bind attempt01 refused before publication because its broad
+`golden-*.json` guard matched preparation's own `golden-source-joins.json`.
+The guard now checks only exact filenames that bind creates, including the
+three golden receipts, their manifest/inventory and native smoke outputs.
+Preparation's immutable source joins remain valid input. Actual failed run and
+existing packet/model/generation/replay/QA bytes are preserved; retry needs no
+hardware run or artifact regeneration. A filesystem regression executes prepare
+through first bind with finite synthetic F32 files and the real metadata
+validators, then proves a second bind preserves every file while refusing.
+Separate preexisting golden/manifest cases refuse without changing source joins.
+Three focused checks and independent QA/Ruff/format/diff checks pass. Synthetic
+test data provides no production hardware or readiness evidence.

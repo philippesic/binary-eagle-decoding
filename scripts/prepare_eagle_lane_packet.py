@@ -27,6 +27,15 @@ from w1a1_eagle.nine_model_pipeline import Files, atomic_json, require  # noqa: 
 READY_SHA = "bdfa56f8b10e44e82a6d807a71f32d68c39143af7094e6f8f0da63504d41a498"
 DOMAINS = ("prose", "code", "reasoning")
 FINAL_ONLY_DEVELOPMENT_EVERY = 2**63 - 1
+BIND_OUTPUT_NAMES = (
+    "golden-0.json",
+    "golden-1.json",
+    "golden-2.json",
+    "eagle-goldens.json",
+    "train-inventory.json",
+    "native-smoke-prompts.jsonl",
+    "native-smoke-capture.json",
+)
 
 
 def read(files, path, expected=None):
@@ -540,7 +549,13 @@ def initial_export_join(args, files, runtime):
 
 def bind(args):
     require(not (args.packet / "production-inputs.json").exists(), "preserve production packet")
-    require(not any(args.packet.glob("golden-*.json")), "preserve previous golden bind attempt")
+    require(
+        not any(
+            (args.packet / name).exists() or (args.packet / name).is_symlink()
+            for name in BIND_OUTPUT_NAMES
+        ),
+        "preserve previous golden bind attempt",
+    )
     files = Files()
     joins = read(files, args.packet / "golden-source-joins.json")
     runtime = joins["runtime"]
