@@ -763,3 +763,36 @@ Mac preparation is checkpointed; do not infer GPU availability or choose those
 major decisions. Current hardware boundary remains Mac only with no remote
 query/staging/build/model/capture/train/eval. Next meaningful goal progress needs
 those human/external inputs; avoid repeating completed corpus/CPU/source audits.
+
+
+## Completion audit continuation — EAGLE CPU evidence gap
+
+Previous goal turn classified PROGRESS: source/data/calibration/current-model
+block CPU proofs, integration and immutable PENDINGpacket completed. Fresh audit
+onmainf95579d reverified51sourcepins, draft102missing entries/sixUNSELECTED, 5080
+pause true. Full objective remains unproved; see completion-audit-2026-10-04.md.
+A text question now requests human blockcoverage/A1path and exposure/training/
+evaluationcaps; no choices inferred and no GPU permission requested or changed.
+
+One meaningful remaining Mac check was identified: actual EAGLE source/model/
+reference-half FC composition. Original SF436.9MB/config/denseGGUF442.7MB locally
+present; F16target8.05GB supports FrozenOperands mmap without full target loading.
+Original production continuous provider payloads remain remote-only; metadata
+copies and sampled fusion operands cannot reconstruct its rounds. Complete local
+TRAIN diagnostic bundle52a6f718... is preparation_only/training_eligiblefalse,
+four identity/numeric/mask/completeness gates unverified; originalTRAIN prompt
+urban-waterways-01 membership confirmed, no final/held-out content accessed.
+
+Existing training owner now owns isolated eagle-training-cpu worktree/branch
+prep/eagle-qat-cpu-diagnostic/newcheck_eagle_qat_cpu_model.py+tests/report ONLY.
+Uses exact unmodified AngelSlim git0358da9 leaf source/config/originalSF and
+NativeStepAdapter/forward_torch_round, FrozenOperands mmap input lookup. Normal
+full package import lacksdatasets, so private namespace leaf import is explicitly
+not the official full loader. Source/import probe allowed, no weights/model/edits
+in core training code; source+plan/tests/independentQA beforeROOTheavyGO.
+DirectA8/A1only, freshreference±0.5 andSCALEONLY control-halfFCNPZ (rescueOFF),
+CPU16GiBRSS/pre12/live4/600s, forbidoptimizerstep/stateempty/privateownership/
+postinitparamversions. Diagnosticeligibilityfalse preserved; never feedineligible
+bundle toContinuousTrainer/CurriculumRunner orclaimwarm/production readiness.
+No heavy EAGLErun has started. QAfocusedsource/scope review assigned. This is
+aligned additional required evidence, not a new goal or changed success target.
