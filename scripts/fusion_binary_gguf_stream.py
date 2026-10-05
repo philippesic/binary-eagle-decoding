@@ -3,7 +3,8 @@
 This module keeps metadata as file ranges: tokenizer arrays are never expanded
 into Python strings or NumPy objects. Original KV records and nonfusion tensor
 payloads are copied and hashed in 1 MiB chunks. Only F32/F16/I32/I64 source tensors
-and the project's existing binary metadata are supported; other formats fail.
+and BF16 source tensors plus the project's existing binary metadata are
+supported; other formats fail.
 """
 
 from __future__ import annotations
@@ -19,7 +20,7 @@ import numpy as np
 
 CHUNK_BYTES = 1024 * 1024
 SCALAR_SIZES = {0: 1, 1: 1, 2: 2, 3: 2, 4: 4, 5: 4, 6: 4, 7: 1, 10: 8, 11: 8, 12: 8}
-TENSOR_SIZES = {0: 4, 1: 2, 26: 4, 27: 8}  # GGML F32, F16, I32, I64
+TENSOR_SIZES = {0: 4, 1: 2, 26: 4, 27: 8, 30: 2}  # GGML F32, F16, I32, I64, BF16
 PREFIX = "eagle3.w1a1."
 
 

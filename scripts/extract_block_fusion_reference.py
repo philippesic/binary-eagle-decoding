@@ -2,7 +2,7 @@
 """One-time bounded original GGUF FC/gamma/F32-epsilon reference extraction.
 
 Uses the existing streaming header reader: tokenizer arrays are skipped, never
-expanded. Only original dense F16/F32 block GGUFs are supported. Extracted NPY
+expanded. Original dense BF16/F16/F32 block GGUFs are supported. Extracted NPY
 files and externally pinned metadata let each A8/A1 fit avoid rereading a model.
 This CPU preparation command does not create a model context or optimize it.
 """
@@ -60,8 +60,8 @@ def extract_reference(
     if (
         fc is None
         or gamma is None
-        or fc["kind"] not in (0, 1)
-        or gamma["kind"] not in (0, 1)
+        or fc["kind"] not in (0, 1, 30)
+        or gamma["kind"] not in (0, 1, 30)
         or len(fc["dims"]) != 2
         or len(gamma["dims"]) != 1
         or fc["dims"][1] != gamma["dims"][0]
@@ -69,7 +69,9 @@ def extract_reference(
         or "fc.bias" in tensors
         or "fc.scale" in tensors
     ):
-        raise ValueError("unscaled original five-tap FC and post-FC norm F16/F32 tensors required")
+        raise ValueError(
+            "unscaled original five-tap FC and post-FC norm BF16/F16/F32 tensors required"
+        )
     requested_bytes = 4 * (np.prod(fc["dims"], dtype=np.int64) + gamma["dims"][0])
     if requested_bytes > max_array_bytes:
         raise MemoryError("FC/gamma reference arrays exceed extraction bound")
@@ -100,14 +102,19 @@ def extract_reference(
         path = output / filename
         original = np.memmap(
             model,
-            dtype="<f2" if tensor["kind"] == 1 else "<f4",
+            dtype={0: "<f4", 1: "<f2", 30: "<u2"}[tensor["kind"]],
             offset=tensor["start"],
             shape=shape,
             mode="r",
         )
         destination = np.lib.format.open_memmap(path, mode="w+", dtype="<f4", shape=shape)
         for first in range(0, len(original), 64):
-            chunk = original[first : first + 64].astype(np.float32)
+            raw = original[first : first + 64]
+            chunk = (
+                (raw.astype("<u4") << np.uint32(16)).view("<f4")
+                if tensor["kind"] == 30
+                else raw.astype(np.float32)
+            )
             if not np.isfinite(chunk).all():
                 raise ValueError("original model fusion/norm tensor is nonfinite")
             destination[first : first + 64] = chunk
@@ -118,7 +125,7 @@ def extract_reference(
         descriptors[name] = {
             "name": name,
             "shape": list(shape),
-            "kind": "F16" if tensor["kind"] == 1 else "F32",
+            "kind": {0: "F32", 1: "F16", 30: "BF16"}[tensor["kind"]],
             "payload_sha256": payload_sha,
         }
     if _stat(model) != before:
