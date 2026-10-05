@@ -702,3 +702,64 @@ No runs in either new phase have launched yet. Final QA/source/artifact packet
 will include these scopes; GPU admission, frozen block Q4 files, human long
 coverage/recipe/budget and measured quality remain PENDING. Both remote hosts
 unused; RTX5080 pause persists.
+
+
+## Final Mac checkpoint and remaining launch boundary
+
+Parent `b3d02b9`/native624 published. All4 calibrated actual-model CPU TRAIN+FC
+checks passed on one prose block each: context20×5×2560/materialized7×151936
+teacher/hardCE labels only. Exact initializer/reference and untouched15FFN/private
+weights,32 finite/nonzero selected gradients/later-state/K/V gradients, postinit
+versions unchanged, forbiddenstep/moments0. MaxRSS14,977,122,304 bytes<16GiB,
+minavailable12,863,684,608>4GiB; session93711/master5424/all childgroups reaped0,
+slot released. Report `actual-train-fusion-cpu-2026-10-04.json` SHA
+`6bcbc655422e304dedb78fad2e2b1a84725c5a5402624ba708bfc24a09c05546`.
+Source helper341a5b6/832faac binds exact fit/data/base/phase lineage and canonical
+main argv; seven author/root and independent repin-negative tests PASS.
+
+Native subsequent4 calibrated FC16 exact-composition/export/standalone graphs
+passed; all12 stages exit0/groups finally absent. Original30FFN+two fittedFC NPY
+members copied byte-exactly, protected BF16 head/embedding SHAeabe5625 unchanged,
+16 named I32/W1 nodes/correct1or8bits/actualCPU outputs/MASK151669/fullvocabfinite.
+Synthetic3context rows/anchor2+sixMASK atpositions3..9; no nativeTRAIN trajectory,
+quality or CUDA claim. Maxexportkernel5,602,787,328 bytes<8GiB/graph2,224,340,992;
+available21,895,544,832 onrelease. Summary SHA
+`77ba22ef6c1ddb3e00f2d891c68ea1be809e28482ae1d6ae819739151c70b009` at
+`models/nine-model-calibrated-native-03-scale-only/actual-cpu-summary.json`.
+Reports2873f12/78d9062 integrated. No additional model runs planned.
+
+Final root suites172 nine-model OK(5 Linux/device skips)/78 block PASS, changed
+six files Ruff/format PASS;98 earlier QAT/export regressions unchanged/PASS.
+Ignored logs root-final-mac-2 SHAcampaign2032de87.../block50f91a12.... Baseline
+full-repo12 stopped-reference errors and1183 Ruff/73 format findings are not
+waived or represented as a clean global suite. QA51 file pins verify and final
+ledger3b960264... statuses aggregate/prelaunchallPENDING. Final packet report
+b3d02b9: exact source inspector exit0/PENDING,102 missing field/status entries,
+GPUqueriedfalse/optimizer0/sixcandidatesUNSELECTED. Immutable draft SHA
+`85e7c4ce36398afe908e5aac9068e5923f4306a679a59b92db0d796d743a2015`, output
+`a8e86b12f87d1a1cbd84f64a070c30a0f4b164dec3aad6717b9fab3f910c2b5a`, receipt
+`e580af47370d4aaa27df891683e6f2fb422f940a3dbda1b4e1fddce85d837c0a`.
+Main `results/nine-model-qat-preparation/final-draft-packet/` includes exact
+inspect command; future detached launch documented, not runnable as production
+until actual choices/artifacts/device readiness exist. Root independently
+verified all four packet hashes and current51sourcepins; 5080 pause true locally.
+
+All feature/operator workers completed/checkpointed. Training original/new,
+operator, data-capture, data-fusion/data-cpu, native(parent+nestedsubmodule), QA
+and pipeline worktrees/branches are retired after patch-equivalent rebase and
+needed ignored artifacts preserved. Root coordination tree retires after this
+final document publication. Nested native624 remains published in fork origin/
+prep/nine-model-block-native; root submodule detached624 untouched, forkmaster
+unchanged. Native-build/binaries/libs/current+old packets/cache/version metadata
+remain outside retiredtree. QA160files/2,175,344bytes archived into main ignored
+runs/nine-model-qa-baseline; archive-mapSHA
+`54ebc2a2466bd4728d7174e374a28427374c9fe3aeab678a99f103b639ca70c3` preserves
+original absolute locators. Otherteams/overnight untracked records preserved.
+
+The active goal is NOT complete: serious coverage/calibration allocation,
+original frozen blockQ4 files, human recipe/coverage/long budget, production
+portability inputs and authorized freshSM120 checks remain. Bounded authorized
+Mac preparation is checkpointed; do not infer GPU availability or choose those
+major decisions. Current hardware boundary remains Mac only with no remote
+query/staging/build/model/capture/train/eval. Next meaningful goal progress needs
+those human/external inputs; avoid repeating completed corpus/CPU/source audits.

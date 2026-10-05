@@ -21,26 +21,25 @@ partitions, missing block capture artifacts and readiness evidence.
 Required output is a tested, frozen source/data/config/launch bundle with
 independent QA and truthful profile/hardware evidence, plus minimal fresh
 SM120 checks and automatic evaluation after committed training and cleanup.
-Source is integrated/pushed through `2d519bc`, native fork `624f50e74`.
-Implemented native binary export/load/graphs, authentic TRAIN capture APIs,
-block/EAGLE QAT and exact resume, calibrated initialization, source-bound fresh
-SM120 admission, supervised launch/evaluation and reporting. Integrated Mac
-nine-model suite:140 tests OK,5 Linux/device-only skips; final independent ledger
-refresh is underway. CUDA and production-data evidence remain PENDING.
+Source/reports are integrated/pushed through `b3d02b9`, native fork `624f50e74`.
+[Mac checkpoint](../experiments/nine-model-qat-preparation/mac-checkpoint-2026-10-04.md)
+and [inspectable draft packet](../experiments/nine-model-qat-preparation/pipeline-draft-packet.md)
+record actual CPU data/calibration/initialized-model/native export evidence.
+Nine authentic TRAIN chains/six physical CPU golden calls, four scale-only fits,
+four calibrated actual-model zero-update forward/backward cells and four native
+calibrated CPU exports/graphs passed. Prior failures are preserved and fixed.
+All owned groups are reaped; merged workers/worktrees are being retired with
+raw artifacts and build/runtime/QA provenance preserved outside Git.
 
-Actual original DSpark/DFlash weights now have four successful CPU native
-sixteen-projection graphs and a paired private-target ownership check. All four
-Torch CPU A8/A1 forward/backward cells also passed with zero optimizer updates,
-finite/nonzero selected and later-state/K/V gradients, and unchanged parameters.
-These use synthetic inputs/labels: no calibration, convergence or quality claim.
-Actual FFN15-only native graphs also passed for all four cells. A bounded
-authentic native CPU TRAIN pilot and four scale-only block fusion fits passed;
-earlier failures remain preserved/closed. Actual calibrated CPU model integration
-is the next bounded check. The
-default CUDA capture and fresh SM120 gates remain intact.
-Original frozen block Q4 files, native production TRAIN/goldens, block fusion
-fits, selected campaign recipe/budget and fresh authorized hardware admission
-remain explicit dependencies. Both remote hosts stay unused.
+Final integrated source checks:172 campaign tests OK/five Linux/device skips,
+78 block tests PASS, changed-file Ruff/format PASS;51 independent source pins
+verify. Native graph inputs are synthetic; actual Torch checks use one prose
+TRAIN block/hardCE, not full-L1 or quality evaluation. All nine aggregate and
+prelaunch statuses remain PENDING. The genuine draft inspector exits0/PENDING.
+Remaining: serious production coverage/calibration, exact frozen block Q4 files,
+human coverage/recipe/long-budget choices, production portability inputs and fresh
+authorized SM120 execution/full-moment-memory/release checks. Both remote hosts
+remain unused and RTX5080 pause stays true; no long QAT or evaluation is started.
 Completed A8/research goals below remain historical and intact.
 
 ## Nine model research slate COMPLETE — October 4, 2026
