@@ -37,12 +37,32 @@
     "path": "/Users/pippo/github/binary-eagle-decoding/results/recurrent-binary-cpu-smoke-20260928-a16/bundle/train_prompts.jsonl",
     "sha256": "2ab1588947e6bccd7c6a094ba87819c672fb18581dd8b2a43291afdff55bf499"
   },
+  "capture_source_cell": {
+    "path": "/Users/pippo/github/binary-eagle-decoding/results/recurrent-binary-cpu-smoke-20260928-a16/bundle/source_cell_manifest.json",
+    "sha256": "a8f2b41176d108bbd3063cb5d8e100969092438c6414cf74d1568d36d1f3a705"
+  },
+  "capture_source_reports": {
+    "cell_manifest": {
+      "path": "/Users/pippo/github/binary-eagle-decoding/results/recurrent-binary-cpu-smoke-20260928-a16/cell_manifest.json",
+      "sha256": "a8f2b41176d108bbd3063cb5d8e100969092438c6414cf74d1568d36d1f3a705"
+    },
+    "features": {
+      "path": "/Users/pippo/github/binary-eagle-decoding/results/recurrent-binary-cpu-smoke-20260928-a16/bundle/features_preparation.json",
+      "sha256": "178020729c0ee01f4f4539d6018b5204e682143adb6bc310d52338926a3d17a5"
+    },
+    "rows": {
+      "path": "/Users/pippo/github/binary-eagle-decoding/results/recurrent-binary-cpu-smoke-20260928-a16/bundle/rows_preparation.json",
+      "sha256": "6f7e300fcdc848a1b71d96556bf17a5d761731e533e81cf659de9f8f3b3002d3"
+    }
+  },
   "checked_before_any_weights": {
-    "focused_tests": "6 PASS",
+    "focused_tests": "7 PASS",
+    "historical_ancestry_preflight": "All3 source reports + duplicate sourcecell SHA joined to manifest; targetF16 metadata pin exact; localD40,333,664bytes hash10e matched; no tensor/model load",
     "local_capture_structural_audit": "PASS [32,7680] context,5proposalrows, original TRAIN96membershipexact",
     "official_leaf_import": "PASS Torch2.14; no framework install, no model constructed",
     "ruff": "PASS"
   },
+  "current_source_role": "original_dense_reference_initializer",
   "diagnostic_round": {
     "bundle_training_eligible": false,
     "context_features_shape": [
@@ -118,6 +138,16 @@
     "python": "/Users/pippo/github/binary-eagle-decoding/.venv/bin/python",
     "reviewed_root_go_required": true
   },
+  "historical_capture_drafter": {
+    "declared_sha256": "10e8e98e616480b25ff7600f195ba7ea3e0fd7c24832765013f960783c7609cf",
+    "payload": {
+      "path": "/Users/pippo/github/binary-eagle-decoding/results/binary-scale-fitting-5080/results/scale-fit/D.gguf",
+      "sha256": "10e8e98e616480b25ff7600f195ba7ea3e0fd7c24832765013f960783c7609cf"
+    },
+    "payload_status": "historical_payload_SHA_checked_only; native execution identity remains UNVERIFIED",
+    "role": "historical_candidate_d_capture_actor"
+  },
+  "historical_source_note": "models/gguf/Qwen3-4B-eagle3-all-w1a1.gguf SHA4318123dc9aa5a73c07a13fa7131d5e10fc0c6d0e66d048a5f5f4ece1a835506 differs from historical candidateD10e; not selected as capture source",
   "initialization_contract": {
     "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/eagle-fusion-fixed-half-20261004/initialization-contract.json",
     "sha256": "c4cd37492b8056597f1eee3889a1ab4bd2d88a4329a4e08d3a25134ac6a1deda"
@@ -161,11 +191,11 @@
     "sha256": "80e365bbc6d2caf4abd5e216e53d72ce62d80f9cf1a668e6862efb845a185e74"
   },
   "schema": "eagle_qat_cpu_diagnostic_plan_v1",
-  "scope": "Direct A8/A1 development-only source-class/native adapter CPU hard-forward and backward from original private32K pruned draft head+maps, frozen F16 target embedding mmap and separately preserved source-magnitude FC scale-only controls. One original TRAIN diagnostic round; ineligible/preparation_only and all4historical unresolved gates retained. Calibration and diagnostic captures are intentionally distinct, each with immutable originalTRAIN ancestry. No ContinuousTrainer/CurriculumRunner, optimization, quality, warm lifecycle, target forward, GPU/SSH or production admission.",
+  "scope": "Direct A8/A1 development-only source-class/native adapter CPU hard-forward and backward from original private32K pruned draft head+maps, frozen F16 target embedding mmap and separately preserved source-magnitude FC scale-only controls. One original TRAIN diagnostic round; ineligible/preparation_only and all4historical unresolved gates retained. Calibration and diagnostic captures are intentionally distinct, each with immutable originalTRAIN ancestry. No ContinuousTrainer/CurriculumRunner, optimization, quality, warm lifecycle, target forward, GPU/SSH or production admission. Historical candidateD10e proposals are replayed under current reference-initialized dense-source modelc1f; roles stay distinct. Matching historical payload bytehash is not native execution identity or resolution of any diagnostic gate.",
   "source_files": {
     "scripts/audit_recurrent_binary_capture.py": "5fb1c1e703bb217e77a0786d90f8c58aff7ec734449117866c3448cd4bb4b6b2",
     "scripts/check_block_qat_cpu_model.py": "f214dc39dcd3d98b356d6cbff790e3d7d7f5037e9a36cd8e89167bfa7ecb1419",
-    "scripts/check_eagle_qat_cpu_model.py": "aacdb1b8b104b97ec87bdbcae770fe89560d193923f3017a6c80435e207271e6",
+    "scripts/check_eagle_qat_cpu_model.py": "fc3612df27a5f84d69dbf1e9b29e36133d1b2962f87a9f5582b2a5baa05c69c7",
     "scripts/export_recurrent_binary.py": "2232bf29d25324ca50e8b72e7308d8bb445485793c387fc2af155d4fbe081a2d",
     "scripts/train_nine_model_qat.py": "edf025d81694722fc56a730409d6fbcd9e8c333058517ab1a8be730634b2d9d8",
     "src/w1a1_eagle/adapter.py": "c451a8008317d5e05b621ae6d32f19aac35147695fef19b0a9599e444f65b0ae",

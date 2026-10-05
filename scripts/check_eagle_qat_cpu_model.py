@@ -85,6 +85,65 @@ def require_diagnostic_capture(manifest, *, production=False):
         raise ValueError("preserve original TRAIN diagnostic ineligibility and all four gates")
 
 
+def capture_ancestry(plan, manifest):
+    """Bind original report bytes and distinguish old actor from current source."""
+    reports = plan["capture_source_reports"]
+    if (
+        set(reports) != {"cell_manifest", "features", "rows"}
+        or {name: locator["sha256"] for name, locator in reports.items()}
+        != manifest["source_report_sha256"]
+    ):
+        raise ValueError("capture source report pins differ from original manifest")
+    parsed = {name: json.loads(checked(locator).read_text()) for name, locator in reports.items()}
+    cell_path = checked(plan["capture_source_cell"])
+    cell = json.loads(cell_path.read_text())
+    if (
+        plan["capture_source_cell"]["sha256"] != reports["cell_manifest"]["sha256"]
+        or cell != parsed["cell_manifest"]
+        or cell.get("schema") != "binary_head_capture_cell_v1"
+        or cell.get("complete") is not True
+        or cell.get("target_sha256") != plan["target_gguf"]["sha256"]
+        or cell.get("prompts_sha256") != manifest["prompts_sha256"]
+        or parsed["features"]["sources"]["cell_manifest_sha256"]
+        != reports["cell_manifest"]["sha256"]
+        or parsed["rows"]["source_sha256"]["cell_manifest"] != reports["cell_manifest"]["sha256"]
+    ):
+        raise ValueError("capture source cell/report/target ancestry differs")
+    for name in ("features", "feature_rows"):
+        if parsed["features"][name + "_sha256"] != manifest[name]["sha256"]:
+            raise ValueError("feature source report differs from consumed capture")
+    for name in ("rows", "anchors", "offsets", "t2d"):
+        if parsed["rows"]["output_sha256"][manifest[name]["path"]] != manifest[name]["sha256"]:
+            raise ValueError("row source report differs from consumed capture")
+    historical = plan["historical_capture_drafter"]
+    if (
+        historical.get("role") != "historical_candidate_d_capture_actor"
+        or historical.get("declared_sha256") != cell.get("draft_sha256")
+        or plan.get("current_source_role") != "original_dense_reference_initializer"
+    ):
+        raise ValueError("historical capture actor/current reference roles differ")
+    payload = historical.get("payload")
+    status = "historicalSHA_unverified_payload_absent"
+    if payload is not None:
+        if payload["sha256"] != historical["declared_sha256"]:
+            raise ValueError("historical drafter payload pin differs from capture source")
+        checked(payload)
+        status = "historical_payload_SHA_checked_only"
+    return {
+        "source_reports": reports,
+        "source_cell": plan["capture_source_cell"],
+        "target_sha256": cell["target_sha256"],
+        "historical_capture_drafter": historical,
+        "historical_payload_status": status,
+        "current_dense_base": plan["base_gguf"],
+        "current_source_role": plan["current_source_role"],
+        "native_execution_identity": "UNVERIFIED; all four diagnostic gates retained",
+        "conditioning_scope": (
+            "historical candidate-D captured proposals; current reference-initialized student"
+        ),
+    }
+
+
 def authenticate(plan, bits):
     if (
         plan.get("schema") != "eagle_qat_cpu_diagnostic_plan_v1"
@@ -107,6 +166,7 @@ def authenticate(plan, bits):
     capture_path = checked(plan["capture"])
     manifest = json.loads(capture_path.read_text())
     require_diagnostic_capture(manifest)
+    capture_ancestry(plan, manifest)
     original_train = checked(plan["original_train"])
     prompts = checked(plan["capture_prompts"])
     original_rows = [json.loads(line) for line in original_train.read_text().split("\n") if line]
@@ -182,8 +242,14 @@ def official_classes(source):
             sys.modules[name] = module
     config = importlib.import_module(package + ".configuration_eagle3_model")
     draft = importlib.import_module(package + ".draft.llama3_eagle3")
-    if Path(draft.__file__).resolve() != (base / "draft/llama3_eagle3.py").resolve():
-        raise ValueError("official class import escaped pinned leaf source")
+    parent = importlib.import_module(package + ".draft.base_model")
+    for module, name in (
+        (config, "configuration_eagle3_model.py"),
+        (draft, "draft/llama3_eagle3.py"),
+        (parent, "draft/base_model.py"),
+    ):
+        if Path(module.__file__).resolve() != (base / name).resolve():
+            raise ValueError("official class import escaped pinned leaf source")
     return config.Eagle3Config, draft.Llama3Eagle3Drafter
 
 
@@ -348,6 +414,7 @@ def main():
             plan, args.activation_bits
         )
         Config, Drafter = official_classes(plan["angelslim_source"])
+        report["capture_ancestry"] = capture_ancestry(plan, manifest)
         if args.import_probe:
             publish(
                 "PASS_IMPORT_ONLY_NO_WEIGHTS",

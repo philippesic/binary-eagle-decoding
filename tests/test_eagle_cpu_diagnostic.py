@@ -2,6 +2,8 @@
 
 import copy
 import json
+import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -10,6 +12,7 @@ import torch
 from check_eagle_qat_cpu_model import (
     UNRESOLVED,
     authenticate,
+    capture_ancestry,
     official_classes,
     require_diagnostic_capture,
     smoke,
@@ -18,6 +21,7 @@ from test_continuous_qat import FixtureProvider
 from test_recurrent_provider import dense_drafter
 from torch import nn
 
+from w1a1_eagle.continuous_qat import sha256
 from w1a1_eagle.native_step import NativeStepAdapter
 from w1a1_eagle.qat_initialization import apply_binary_initialization
 from w1a1_eagle.recurrent_provider import audit_provider_round
@@ -49,6 +53,44 @@ SOURCE = {
 
 
 class EagleCPUDiagnosticTests(unittest.TestCase):
+    @unittest.skipUnless(MANIFEST.exists(), "local immutable TRAIN diagnostic absent")
+    def test_capture_source_report_cell_drift_and_distinct_actor_roles(self):
+        plan, manifest = json.loads(PLAN.read_text()), json.loads(MANIFEST.read_text())
+        joined = capture_ancestry(plan, manifest)
+        self.assertNotEqual(
+            joined["historical_capture_drafter"]["declared_sha256"],
+            joined["current_dense_base"]["sha256"],
+        )
+        self.assertEqual(joined["historical_payload_status"], "historical_payload_SHA_checked_only")
+        absent = copy.deepcopy(plan)
+        absent["historical_capture_drafter"]["payload"] = None
+        self.assertEqual(
+            capture_ancestry(absent, manifest)["historical_payload_status"],
+            "historicalSHA_unverified_payload_absent",
+        )
+        for report_name, changed_key in (
+            ("features", "features_sha256"),
+            ("cell_manifest", "target_sha256"),
+        ):
+            altered_plan, altered_manifest = copy.deepcopy(plan), copy.deepcopy(manifest)
+            original = plan["capture_source_reports"][report_name]
+            record = json.loads(Path(original["path"]).read_text())
+            record[changed_key] = "0" * 64
+            with tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp) / "changed-report.json"
+                path.write_text(json.dumps(record))
+                locator = {"path": str(path), "sha256": sha256(path)}
+                altered_plan["capture_source_reports"][report_name] = locator
+                altered_manifest["source_report_sha256"][report_name] = locator["sha256"]
+                if report_name == "cell_manifest":
+                    altered_plan["capture_source_cell"] = locator
+                with self.assertRaisesRegex(ValueError, "ancestry|source report"):
+                    capture_ancestry(altered_plan, altered_manifest)
+                # Byte drift without repinning is independently refused.
+                path.write_text(json.dumps({**record, "complete": False}))
+                with self.assertRaisesRegex(ValueError, "SHA differs"):
+                    capture_ancestry(altered_plan, altered_manifest)
+
     @unittest.skipUnless(MANIFEST.exists(), "local immutable TRAIN diagnostic absent")
     def test_actual_scale_only_controls_join_without_model_loading(self):
         plan = json.loads(PLAN.read_text())
@@ -98,6 +140,13 @@ class EagleCPUDiagnosticTests(unittest.TestCase):
         wrong["files"]["draft/base_model.py"] = "0" * 64
         with self.assertRaisesRegex(ValueError, "source SHA"):
             official_classes(wrong)
+        for module in (
+            sys.modules[config.__module__],
+            sys.modules[drafter.__bases__[0].__module__],
+        ):
+            with patch.object(module, "__file__", "/tmp/escaped-official-source.py"):
+                with self.assertRaisesRegex(ValueError, "escaped"):
+                    official_classes(SOURCE)
 
     def test_both_direct_widths_calibrated_sparse_fc_and_forbidden_update(self):
         provider = FixtureProvider()
