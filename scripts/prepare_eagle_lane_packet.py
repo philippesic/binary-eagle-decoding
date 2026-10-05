@@ -12,6 +12,7 @@ import copy
 import hashlib
 import json
 import sys
+from dataclasses import fields
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,6 +21,7 @@ import prepare_nine_model_bundle as builder  # noqa: E402
 from capture_nine_model_train_data import prefix_history, validate_generated  # noqa: E402
 from check_block_capture_portability import NativeCaptureGoldens  # noqa: E402
 
+from w1a1_eagle.block_fusion import FusionFitConfig  # noqa: E402
 from w1a1_eagle.nine_model_pipeline import Files, atomic_json, require  # noqa: E402
 
 READY_SHA = "bdfa56f8b10e44e82a6d807a71f32d68c39143af7094e6f8f0da63504d41a498"
@@ -77,9 +79,19 @@ def prepare(args):
         "packet changes original target/base model",
     )
     require(
-        initializer["activation_bits"] == 8
-        and report["fit_config"]["orientation_rescue"] is False
-        and report["fit_config"]["coordinate_flips"] == 0,
+        set(report["fit_config"]) == {field.name for field in fields(FusionFitConfig)},
+        "production initializer must use canonical FusionFitConfig schema",
+    )
+    fit_config = FusionFitConfig(**report["fit_config"])
+    require(
+        initializer["activation_bits"] == fit_config.activation_bits == 8
+        and fit_config.zero_scale_orientation_rescue is False
+        and fit_config.max_coordinate_flips_per_row == 0
+        and fit_config.latent_initialization == "preserve_reference_magnitudes"
+        and fit_config.reference_kind == "eagle_fixed_reference_0.5"
+        and report["fit"]["events"] == []
+        and initializer["latent_initialization"]["policy"] == fit_config.latent_initialization
+        and initializer["latent_initialization"]["reference_kind"] == fit_config.reference_kind,
         "fixed A8 scale-only initialization required",
     )
     files.check({key: initializer[key] for key in ("path", "sha256")})

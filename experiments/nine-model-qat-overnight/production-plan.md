@@ -321,3 +321,21 @@ successful preparation or full-moment capacity is inferred from startup/source
 alone. This phase establishes initialization/serialization evidence; the frozen
 lane's fresh native/kernel/portability/current-package admission remains required
 before real optimizer updates.
+
+## Actual initializer report schema correction
+
+The first actual metadata packet attempt refused before output publication:
+the packet helper expected invented `orientation_rescue` / `coordinate_flips`
+keys, while the production fitter serializes canonical `FusionFitConfig`
+fields `zero_scale_orientation_rescue` and `max_coordinate_flips_per_row`.
+The fixture repeated the same hand-written aliases and therefore missed this
+source/API mismatch. The failure and original initializer/report bytes remain
+unchanged; it was not a data or eligibility failure and no refit is needed.
+The helper now constructs the actual dataclass from its complete canonical
+schema and verifies fixed A8, rescue OFF, flips zero and reference-half policy.
+Fixtures serialize `dataclasses.asdict(FusionFitConfig(...))`. Three focused
+checks pass for the actual schema and refusal of rescue/flips/A1/unit/reference
+substitutions or nonempty orientation-event reports before publication;
+independent QA reran the seven packet checks before the final event assertion.
+Changed-file Ruff/format pass. All existing
+source, full TRAIN, zero-state, export and exact replay gates remain intact.

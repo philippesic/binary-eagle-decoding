@@ -5,6 +5,7 @@ import json
 import sys
 import tempfile
 import unittest
+from dataclasses import asdict
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -12,6 +13,8 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import prepare_eagle_lane_packet as packet  # noqa: E402
+
+from w1a1_eagle.block_fusion import FusionFitConfig  # noqa: E402
 
 
 def write(path, value):
@@ -90,7 +93,10 @@ class PacketTests(unittest.TestCase):
             "initializer": init,
             "prepared_ready_sha256": ready["sha256"],
             "authenticated_full_source": source,
-            "fit_config": {"orientation_rescue": False, "coordinate_flips": 0},
+            "fit_config": asdict(
+                FusionFitConfig(8, False, 0, 300, reference_kind="eagle_fixed_reference_0.5")
+            ),
+            "fit": {"events": []},
             "selected_prompts": selected,
             "config": packet.builder.pin(prepared / "resolved_config.json"),
             "prepared_run_dir": str(prepared.resolve()),
@@ -185,6 +191,42 @@ class PacketTests(unittest.TestCase):
             with (
                 patch.object(packet, "READY_SHA", ready),
                 self.assertRaisesRegex(ValueError, "corpus join"),
+            ):
+                packet.prepare(args)
+            self.assertFalse(args.output.exists())
+
+    def test_canonical_fitter_recipe_rejects_probes_and_wrong_reference_without_publication(self):
+        changes = (
+            {"zero_scale_orientation_rescue": True},
+            {"max_coordinate_flips_per_row": 1},
+            {"activation_bits": 1},
+            {"latent_initialization": "unit_probe"},
+            {"reference_kind": "block_source_weight_magnitudes"},
+        )
+        for change in changes:
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as temp:
+                args, ready, _ = self.fixture(Path(temp))
+                report_path = args.initializer_dir / "report.json"
+                report = json.loads(report_path.read_text())
+                report["fit_config"].update(change)
+                write(report_path, report)
+                with (
+                    patch.object(packet, "READY_SHA", ready),
+                    self.assertRaisesRegex(ValueError, "scale-only"),
+                ):
+                    packet.prepare(args)
+                self.assertFalse(args.output.exists())
+
+    def test_scale_only_report_with_orientation_event_refuses_before_publication(self):
+        with tempfile.TemporaryDirectory() as temp:
+            args, ready, _ = self.fixture(Path(temp))
+            report_path = args.initializer_dir / "report.json"
+            report = json.loads(report_path.read_text())
+            report["fit"]["events"] = [{"row": 0, "kind": "orientation_rescue"}]
+            write(report_path, report)
+            with (
+                patch.object(packet, "READY_SHA", ready),
+                self.assertRaisesRegex(ValueError, "scale-only"),
             ):
                 packet.prepare(args)
             self.assertFalse(args.output.exists())
