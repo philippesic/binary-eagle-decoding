@@ -582,3 +582,19 @@ additional proof protocols or redoing completed audit work.
   fixtures now pass eight narrow tests; no fit/data/math gate was weakened.
 - Lesson: test metadata consumers against real producer schemas before
   deployment; preserve source failures and correct the API, not the artifact.
+
+
+### 2026-10-05: Whitelist bounded QA receipt fields
+
+- Context: root copied native TRAIN generation/replay receipt metadata for QA.
+  A recursive blacklist removed tokens/messages but missed rendered_prompt
+  and chat_template fields, making the no-prompt-text-transfer description
+  inaccurate.
+- Evidence: QA identified both fields in the ignored local proxy. Original
+  TRAIN capture access was authorized; this was a bounded QA-scope mismatch,
+  not a human no-transfer prohibition or sealed-data access. No user error.
+- Resolution: root replaced only its proxy with a metadata whitelist and
+  case-ID hashes (SHA6467ccd9...,10103B). Original complete remote evidence is
+  retained. QA was told not to race an overwrite from its stale copy.
+- Lesson: use explicit field whitelists for summaries and hash the resulting
+  artifact; distinguish coordinator scope requests from direct human policy.

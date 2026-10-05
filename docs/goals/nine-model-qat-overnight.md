@@ -245,10 +245,13 @@ GPU returned baseline2714MiB used/13264MiB free/0%. Generation link SHA
 c7cafa89bfeb9f446535cfdc9f0095dd4683507c4d5384c45e195fa2cabecb1c.
 No held-out/quality evaluation or optimizer update occurred.
 
-Two bounded metadata-only QA receipts are ignored in main results: initial/
-export536a50b4...18031B and nativegoldens2300e719...41153B. No rawweights,
-activations, logits, token/message/decode payload or fullcorpus copied; large
-shard inventories replaced by counts/hashes. Exact generated-prefix/history
+Initial/export QA receipt536a50b4...18031B is ignored in main results. The first
+nativegoldens proxy2300e719...41153B mistakenly retained TRAIN rendered-prompt
+and chat-template text; QA identified the incomplete filtering. Root replaced
+that proxy with whitelisted metadata6467ccd9...10103B, case-ID hashes and
+domain/count/source/device/output hashes. Original complete evidence remains
+remote. No rawweights/activations/logits or held-out/sealed content moved;
+large shard metadata inventories are summarized by counts/hashes. Exact generated-prefix/history
 ancestry stays verified remotely by helper and will be revalidated at bind.
 Independent QA prepares selected portable/prelaunch ledger with otherfive and
 wholecampaign PENDING; freshphysical seven-gate Admission remains unexecuted.
