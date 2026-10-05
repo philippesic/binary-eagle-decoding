@@ -204,6 +204,9 @@ class AdmissionPlanBuilderTests(unittest.TestCase):
                     self.assertIn("{receipt}", candidate["native"]["argv"])
                     if warm and name.endswith("a1"):
                         self.assertEqual(candidate["profile"], "a8_to_a1_reset")
+                        self.assertEqual(candidate["precision_stage"], "a8_to_a1")
+                    else:
+                        self.assertEqual(candidate["precision_stage"], "direct")
                 self.assertEqual(
                     Path(plan["portability"]["eagle"]["producer"]["path"]).name,
                     "check_eagle_capture_portability.py",

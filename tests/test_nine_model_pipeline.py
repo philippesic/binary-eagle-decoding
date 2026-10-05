@@ -281,6 +281,26 @@ class LifecycleTests(unittest.TestCase):
         for path, content in receipts.items():
             self.assertEqual(Path(path).read_bytes(), content)
 
+    def test_each_fresh_admission_attempt_has_unique_stage_directory(self):
+        self.bundle["admission"]["argv"].append("{stage_dir}/fresh-sm120")
+        original = self.runner.run
+        paths = []
+
+        def track(argv, **kwargs):
+            if argv[1] == "admission":
+                paths.append(argv[-1])
+            return original(argv, **kwargs)
+
+        self.runner.run = track
+        self.runner.fail_stage = CANDIDATES[0] + "/export"
+        with self.assertRaises(RuntimeError):
+            self.campaign().execute()
+        self.runner.fail_stage = None
+        self.campaign().execute(resume=True)
+        self.assertEqual(len(paths), 2)
+        self.assertNotEqual(paths[0], paths[1])
+        self.assertTrue(all(path.endswith("/fresh-sm120") for path in paths))
+
     def test_resume_changed_checkpoint_is_not_reinitialized(self):
         self.runner.fail_stage = CANDIDATES[0] + "/export"
         with self.assertRaises(RuntimeError):

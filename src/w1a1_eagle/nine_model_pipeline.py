@@ -875,6 +875,7 @@ class Campaign:
             bundle_sha256=self.bundle_hash,
             run_dir=str(self.run),
             receipt=str(output),
+            stage_dir=str(output.parent),
             resume="--resume" if resume else "",
         )
         argv = [a.format_map(values) for a in spec["argv"]]

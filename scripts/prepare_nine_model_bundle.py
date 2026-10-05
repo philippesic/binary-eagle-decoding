@@ -552,6 +552,7 @@ def materialize_admission_plan(descriptor, output, *, fixture=False, inspect_dra
             "model": selected["initial_model"],
             "export": selected["initial_export_audit"],
             "profile": selected["profile"],
+            "precision_stage": spec.get("precision_stage", "direct"),
             "source_bindings": bindings,
             "native": {
                 "producer": pin(native_script),
@@ -643,6 +644,10 @@ def materialize_admission_plan(descriptor, output, *, fixture=False, inspect_dra
             "argv": argv,
             "wall_seconds": settings.get("wall_seconds", 900),
         }
+    require(
+        set(descriptor["controls"]) == set(FAMILIES),
+        "three immutable original Q4 controls required",
+    )
     for family, control in descriptor["controls"].items():
         require(control.get("frozen_original") is True, "original Q4 control must remain frozen")
         files.check(control["model"])
@@ -915,7 +920,7 @@ def build(descriptor, output, *, inspect_draft=False):
                 "--bundle-sha256",
                 "{bundle_sha256}",
                 "--run-dir",
-                "{run_dir}/fresh-sm120",
+                "{stage_dir}/fresh-sm120",
                 "--receipt",
                 "{receipt}",
                 "--gpu-uuid",
