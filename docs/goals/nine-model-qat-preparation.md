@@ -75,8 +75,9 @@ from the shared registry in AGENT_OPERATIONS; never persist IPs here or guess.
 
 ## Ownership and durable record
 
-Sole preparation coordinator is `01a10903-1c7a-71b1-abb1-0de3ecc046b8`,
-claimed October 4 from published handoff `da097e5`. Parent
+Sole preparation coordinator is `01a10a5b-4993-7762-af8a-f173c0219394`,
+claimed October 4, 21:43 PDT from published rotation handoff `2247643`. Previous
+coordinator `01a10903-1c7a-71b1-abb1-0de3ecc046b8` may stop safely. Parent
 recap/research chat is a launcher only and will stop editing these records after
 dispatch. Do not reuse the completed A8 team's ownership or restart its monitors.
 The previous A8 goal and eight-agent research slate remain COMPLETE.
@@ -897,3 +898,47 @@ This second-compaction checkpoint is the handoff to a fresh successor Codex task
 Old coordinator01a10903-1c7a-71b1-abb1-0de3ecc046b8 will stop goal work after
 successor read-only verification and ownership acknowledgment. No native Goal
 is marked complete merely to rotate; durable objective remains unfinished.
+
+
+## Successor ownership verified — October 4, 21:43 PDT / October 5, 04:43 UTC
+
+Successor `01a10a5b-4993-7762-af8a-f173c0219394` acknowledges exclusive
+coordination from `2247643` and continues the full unchanged unfinished
+objective in its own ACTIVE native Goal, without a new research goal or budget.
+Old coordinator `01a10903-1c7a-71b1-abb1-0de3ecc046b8` may stop safely.
+No messaging authorization to other chats is inferred.
+
+Read-only local verification: main and local origin/main both `2247643`;
+native gitlink and checkout `624f50e74f51b6af93bf6b879f84703e726df172`
+are contained in local `origin/prep/nine-model-block-native`. Both QA ledgers'
+51 source pins match current files. Exact EAGLE report/plan/additive-ledger,
+all four immutable draft packet hashes, and both QA archive-map hashes match
+the rotation checkpoint. Original diagnostic manifest SHA `52a6f718...` matches
+and retains preparation_only / training_eligible=false. All nine production
+statuses remain PENDING. Preserved raw EAGLE A8/A1 outputs and CPU build tree
+are present; no model weights or full raw corpus were rehashed or executed.
+
+Local shared registry confirms RTX5080 pause_requested=true with unchanged
+October 4, 23:50 UTC timestamp. RTX2080Ti's old false flag is not permission.
+Recorded EAGLE master15683 and PGIDs15685/15772 are absent; no preparation
+worker process found. Local tmux inventory has no nine-model preparation
+transport. A pre-existing SSH PID38210 started October 3, 15:09 local time,
+with parent shell20102; ownership is unconfirmed and it is untouched. This
+local observation does not establish current remote process/device occupancy.
+No SSH/query/staging/build/model/capture/train/eval or host flag write occurred.
+
+Ownership edits are isolated in
+`/private/tmp/nine-model-qat-20261004/successor-ownership`, branch
+`prep/nine-model-successor-ownership`, to integrate/push and retire after review.
+Other teams' worktrees, three overnight untracked groups, all ignored model/data/
+raw artifacts and `/private/tmp/nine-model-qat-20261004/native-build` are preserved.
+No previous workers transfer. No completed tests have been repeated.
+
+Next action remains a bounded feasibility audit against the current objective
+and Mac-only boundary; continue only if a concrete missing deliverable can
+advance independently. Human coverage/A1-path/exposure/training/evaluation
+choices remain unanswered. Production data/calibration, original block Q4 files,
+continuous EAGLE provider payloads, portability inputs and fresh authorized
+SM120 checks remain external dependencies. Do not invent training/tests or
+claim completion. A genuine impasse must follow the native Goal's consecutive
+turn audit rule; ownership progress alone is not goal completion or blockade.

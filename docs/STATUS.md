@@ -13,8 +13,10 @@ RTX5080 is locally paused; the sole operator closed its transport. The only
 remote job was locked dependency setup, which had already finished exit0.
 No compiler probe, CUDA build, model load, capture, training or evaluation
 started. Preparation continues on Mac CPU/source; both remote hosts are unused.
-Sole preparation coordinator is `01a10903-1c7a-71b1-abb1-0de3ecc046b8`;
-ownership claimed from handoff `da097e5`. Parent is a launcher only.
+Sole preparation coordinator is `01a10a5b-4993-7762-af8a-f173c0219394`;
+ownership claimed from published rotation checkpoint `2247643`. Prior
+coordinator `01a10903-1c7a-71b1-abb1-0de3ecc046b8` may stop safely; parent
+is a launcher only.
 See the [preparation goal](goals/nine-model-qat-preparation.md) for live worker
 partitions, missing block capture artifacts and readiness evidence.
 
@@ -39,9 +41,10 @@ with four unresolved gates; this establishes neither warm/production admission
 nor a native calibrated trajectory. Seven focused tests and changed-file
 Ruff/format passed. See the latest rotation checkpoint in the goal file.
 
-After two compactions this coordinator is checkpointing a fresh successor.
-There are no live preparation workers or owned local/remote jobs to transfer;
-successor verification and exclusive ownership must precede further work.
+Successor verified local source/report/packet/archive identities and claimed
+exclusive ownership October 4, 21:43 PDT (October 5, 04:43 UTC). Its native Goal
+continues the unchanged unfinished objective. No preparation worker or owned job
+transfers. See the successor ownership checkpoint in the goal file.
 
 Final integrated source checks:172 campaign tests OK/five Linux/device skips,
 78 block tests PASS, changed-file Ruff/format PASS;51 independent source pins
