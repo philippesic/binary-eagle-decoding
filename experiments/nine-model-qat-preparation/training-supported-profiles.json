@@ -1,4 +1,9 @@
 {
+  "actual_cpu_model_development_summary": {
+    "path": "experiments/nine-model-qat-preparation/actual-block-qat-cpu-2026-10-04.json",
+    "scope": "Actual authenticated released DSpark/DFlash BF16/F16 weights; synthetic feature/teacher-label TRAIN layout; hard forward/backward; zero real optimizer updates",
+    "sha256": "3fb4e84be6dfb4cb58fdfaf1a51008f1bdc657bbe748c07b851f5c5bf665171b"
+  },
   "arithmetic_revision": "fixed_w1a8_finite_reciprocal_v2",
   "artifact_kind": "source_contract_ledger",
   "block_scope": {
@@ -67,7 +72,8 @@
       "software_contract": "PASS"
     },
     {
-      "actual_released_model_and_data": "PENDING",
+      "actual_released_model_and_data": "PENDING production data; actual model zero-update synthetic-input CPU exercised",
+      "actual_released_model_zero_update_cpu": "PASS",
       "default_recipe": "fixed quantizers, serial AdamW; no learned-A8/midpoint/low-inertia stack",
       "evidence": "synthetic CPU hard-forward/backward, private/frozen ownership, exact checkpoint/optimizer/RNG/cursor, export; warm includes both-stage reset and next-step resume",
       "family": "dspark",
@@ -78,7 +84,8 @@
       "software_contract": "PASS"
     },
     {
-      "actual_released_model_and_data": "PENDING",
+      "actual_released_model_and_data": "PENDING production data; actual model zero-update synthetic-input CPU exercised",
+      "actual_released_model_zero_update_cpu": "PASS",
       "default_recipe": "fixed quantizers, serial AdamW; no learned-A8/midpoint/low-inertia stack",
       "evidence": "synthetic CPU hard-forward/backward, private/frozen ownership, exact checkpoint/optimizer/RNG/cursor, export; warm includes both-stage reset and next-step resume",
       "family": "dspark",
@@ -89,7 +96,8 @@
       "software_contract": "PASS"
     },
     {
-      "actual_released_model_and_data": "PENDING",
+      "actual_released_model_and_data": "PENDING production data; actual model zero-update synthetic-input CPU exercised",
+      "actual_released_model_zero_update_cpu": "PASS",
       "default_recipe": "fixed quantizers, serial AdamW; no learned-A8/midpoint/low-inertia stack",
       "evidence": "synthetic CPU hard-forward/backward, private/frozen ownership, exact checkpoint/optimizer/RNG/cursor, export; warm includes both-stage reset and next-step resume",
       "family": "dspark",
@@ -100,7 +108,8 @@
       "software_contract": "PASS"
     },
     {
-      "actual_released_model_and_data": "PENDING",
+      "actual_released_model_and_data": "PENDING production data; actual model zero-update synthetic-input CPU exercised",
+      "actual_released_model_zero_update_cpu": "PASS",
       "default_recipe": "fixed quantizers, serial AdamW; no learned-A8/midpoint/low-inertia stack",
       "evidence": "synthetic CPU hard-forward/backward, private/frozen ownership, exact checkpoint/optimizer/RNG/cursor, export; warm includes both-stage reset and next-step resume",
       "family": "dflash",
@@ -111,7 +120,8 @@
       "software_contract": "PASS"
     },
     {
-      "actual_released_model_and_data": "PENDING",
+      "actual_released_model_and_data": "PENDING production data; actual model zero-update synthetic-input CPU exercised",
+      "actual_released_model_zero_update_cpu": "PASS",
       "default_recipe": "fixed quantizers, serial AdamW; no learned-A8/midpoint/low-inertia stack",
       "evidence": "synthetic CPU hard-forward/backward, private/frozen ownership, exact checkpoint/optimizer/RNG/cursor, export; warm includes both-stage reset and next-step resume",
       "family": "dflash",
@@ -122,7 +132,8 @@
       "software_contract": "PASS"
     },
     {
-      "actual_released_model_and_data": "PENDING",
+      "actual_released_model_and_data": "PENDING production data; actual model zero-update synthetic-input CPU exercised",
+      "actual_released_model_zero_update_cpu": "PASS",
       "default_recipe": "fixed quantizers, serial AdamW; no learned-A8/midpoint/low-inertia stack",
       "evidence": "synthetic CPU hard-forward/backward, private/frozen ownership, exact checkpoint/optimizer/RNG/cursor, export; warm includes both-stage reset and next-step resume",
       "family": "dflash",
@@ -133,6 +144,7 @@
       "software_contract": "PASS"
     }
   ],
+  "core_profiles_note": "Nine rows enumerate alternative software schedules for three families, not nine new trained model artifacts.",
   "hardware": {
     "machine": "arm64",
     "platform": "macOS-27.0-arm64-arm-64bit",
