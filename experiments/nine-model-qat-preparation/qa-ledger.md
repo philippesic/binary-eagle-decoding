@@ -180,3 +180,29 @@ model weights. All current production data/calibration, selected initial
 exports, quality, and fresh SM120 gates remain pending; the CPU-development
 artifacts do not satisfy those requirements. Baseline full-suite stop-control
 errors and Ruff/format debt remain separately recorded and are not waived.
+
+## Four CPU fusion-initializer artifacts
+
+After the nine-chain attempt-03 development capture, an independent metadata and
+hash audit covered the four DSpark/DFlash W1A8/W1A1 scale-only NPZ outputs. The
+source map now also pins `scripts/fit_block_fusion.py`. All fit reports join the
+exact family manifest, completed admission, extracted original FC/norm
+reference files, model hash, tokenizer-independent norm descriptor and F32
+epsilon bits. Each fit and validation split has 96 rows across prose, code and
+reasoning, with disjoint prompt IDs. All four configurations preserve reference
+magnitudes, disable zero-scale orientation rescue and use zero coordinate flips.
+The archives contain only the sparse FC latent and scale arrays with the pinned
+F32 shapes. Candidate and scale-only control bytes match for each fit, as
+expected with zero coordinate flips.
+
+The phase report SHA256 is
+`0aae6b5c0faafc4ba2f6d35edcd59db58a98db8c25c4a05e79f1a5224bc25d77`; its four
+fit report and NPZ pins, source/reference joins, exact audit command, and raw
+output SHA are recorded in `qa-ledger.json` and
+`runs/nine-model-qa-baseline/cpu-fusion-independent-audit.txt`. QA streamed file
+hashes and inspected archive headers without materializing the numeric NPZ
+arrays or full model weights. The phase ran on Apple M3 Max CPU, with zero
+optimizer updates; all owned fit processes were reaped. These files are
+calibration initializers only. They do not establish a selected training recipe,
+trained checkpoint, native export, CUDA/SM120 behavior, quality or throughput.
+All nine aggregate and prelaunch profile statuses remain `PENDING`.
