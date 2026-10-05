@@ -199,6 +199,11 @@ def export_model(base_path: Path, checkpoint: Path, manifest_path: Path, output:
             "family": manifest["family"],
             "profile": manifest["profile"],
             "activation_bits": manifest["activation_bits"],
+            "activation_quantizer_contract": (
+                "fixed_w1a8_finite_reciprocal_v2"
+                if manifest["activation_bits"] == 8
+                else "fixed_w1a1_sign_meanabs_v1"
+            ),
             "serialization_audit_passed": True,
             "native_runtime_gate": "pending",
             "projections": {
