@@ -1,0 +1,816 @@
+{
+  "artifact_kind": "development_CPU",
+  "base_commit": "9ac362a",
+  "capture_report": {
+    "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-03/capture-report.json",
+    "sha256": "312396136b2b52ff3c5b1830f40b2ebd68cdf7d151beb1ba38c5a4006b21d140"
+  },
+  "cells": [
+    {
+      "activation_bits": 8,
+      "argv": [
+        "/Users/pippo/github/binary-eagle-decoding/.venv/bin/python",
+        "/private/tmp/nine-model-qat-20261004/training-cpu-integration/scripts/check_block_qat_cpu_model.py",
+        "--family",
+        "dspark",
+        "--activation-bits",
+        "8",
+        "--base",
+        "/Users/pippo/github/binary-eagle-decoding/models/nine-model-original-snapshots/dspark/3457dff1417cb84927f6098a5fcb7cee85c934b7/base-bf16.gguf",
+        "--base-sha256",
+        "3685ea7785729b4d3e9de3939264c1c87eb98a2bf7935a8c838eccf36be9fd13",
+        "--report",
+        "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/actual-cpu-train-fusion-integration-20261004/dspark-a8.json",
+        "--memory-python",
+        "/Library/Frameworks/Python.framework/Versions/3.11/bin/python3",
+        "--input-mode",
+        "native_train",
+        "--objective",
+        "hard_ce",
+        "--data-manifest",
+        "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-03/dspark/manifest.json",
+        "--data-sha256",
+        "77891f9b7027a38c6707ef0722e88e1376df826b382c652a269260676019bbd7",
+        "--data-admission",
+        "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-03/dspark/completed-admission.json",
+        "--data-admission-sha256",
+        "24199f53d50cf95af032c23d3daa532d7f88c551a084974e34902cc80407b1b2",
+        "--initialization-index",
+        "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-fusion-20261004/artifact-index.json",
+        "--initialization-index-sha256",
+        "e59edcd2c235c4fbca800892dde1bc86199db57729177e93371b006a8c490800",
+        "--max-rss-bytes",
+        "17179869184",
+        "--prelaunch-free-bytes",
+        "12884901888",
+        "--live-free-bytes",
+        "4294967296",
+        "--max-seconds",
+        "600",
+        "--threads",
+        "4"
+      ],
+      "config": {
+        "activation_bits": 8,
+        "block_size": 7,
+        "conditioning": "captured_prefix",
+        "depth_decay": 1.0,
+        "family": "dspark",
+        "head_dim": 128,
+        "hidden_size": 2560,
+        "initialization_encoding": "policy_latents",
+        "intermediate_size": 9728,
+        "latent_initialization": "preserve_reference_magnitudes",
+        "mask_token_id": 151669,
+        "max_grad_norm": 1.0,
+        "norm_eps": 1e-06,
+        "num_heads": 32,
+        "num_kv_heads": 8,
+        "num_layers": 5,
+        "objective": "hard_ce",
+        "optimizer_backend": "serial",
+        "probability_l1_weight": 1.0,
+        "profile": "ffn15_fusion",
+        "rope_theta": 1000000.0,
+        "scale_lr": 1e-05,
+        "seed": 8101,
+        "sign_lr": 0.001,
+        "vocab_size": 151936
+      },
+      "family": "dspark",
+      "input_contract": {
+        "completed_admission": {
+          "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-03/dspark/completed-admission.json",
+          "sha256": "24199f53d50cf95af032c23d3daa532d7f88c551a084974e34902cc80407b1b2"
+        },
+        "context_features_shape": [
+          20,
+          5,
+          2560
+        ],
+        "data_cursor": {
+          "block_offset": 0,
+          "chain_offset": 0,
+          "dataset_sha256": "77891f9b7027a38c6707ef0722e88e1376df826b382c652a269260676019bbd7",
+          "epoch": 0,
+          "order_sha256": "8b84f2fd1be546482140111a3f20ec153b334c358371865044e8b4fcb3de69c7",
+          "seed": 8101,
+          "split": "train"
+        },
+        "data_manifest": {
+          "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-03/dspark/manifest.json",
+          "sha256": "77891f9b7027a38c6707ef0722e88e1376df826b382c652a269260676019bbd7"
+        },
+        "initialization": {
+          "activation_bits": 8,
+          "latent_initialization": {
+            "policy": "preserve_reference_magnitudes",
+            "reference_kind": "block_source_weight_magnitudes",
+            "reference_sha256": "9a2a4c243d43bac9e337a8a7e2deac4ab6b52881a70a116c4ac925adb3d5f1e7"
+          },
+          "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-fusion-20261004/dspark-a8-scale-only/fusion_candidate.npz",
+          "sha256": "caa9d4337015271d69fbfc56a8ef71f9d7d6883b21058b9340b3a9c20ac79c32"
+        },
+        "initialization_index": {
+          "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-fusion-20261004/artifact-index.json",
+          "sha256": "e59edcd2c235c4fbca800892dde1bc86199db57729177e93371b006a8c490800"
+        },
+        "input_mode": "native_train",
+        "next_data_cursor": {
+          "block_offset": 1,
+          "chain_offset": 0,
+          "dataset_sha256": "77891f9b7027a38c6707ef0722e88e1376df826b382c652a269260676019bbd7",
+          "epoch": 0,
+          "order_sha256": "8b84f2fd1be546482140111a3f20ec153b334c358371865044e8b4fcb3de69c7",
+          "seed": 8101,
+          "split": "train"
+        },
+        "predecessor_ids": [
+          198,
+          151667,
+          198,
+          32313,
+          11,
+          279,
+          1196
+        ],
+        "prefix_tokens": [
+          151644,
+          872,
+          198,
+          840,
+          20772,
+          752,
+          279,
+          7286,
+          315,
+          330,
+          42,
+          19726,
+          1,
+          304,
+          60224,
+          13,
+          151645,
+          198,
+          151644,
+          77091,
+          198
+        ],
+        "producer": {
+          "binary_sha256": "b7ab98ae2783d1f6d5cb1246184c757659325fffa16fddaa4215f449d91ed488",
+          "generation_identity": {
+            "chat_template_sha256": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8",
+            "teacher_client_sha256": "8a43ee3f6f472184b1b229e1c556ae65d45e8fa76fa26c9dc058209ddbb1c052",
+            "tokenizer_metadata_sha256": "155263bd71468c455d61be4f42e9058362992c6914922bf802b620dfc24def18"
+          },
+          "hardware": "[\"Apple M3 Max\"]",
+          "kind": "native_target_only",
+          "native_revision": "624f50e74f51b6af93bf6b879f84703e726df172",
+          "receipt": {
+            "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-03/dspark/producer-receipt.json",
+            "sha256": "18d2fe0b4d3f9ce5f50192e9a7922438c7a4e1fff67a67cdd1a25f5102cbef36"
+          },
+          "runtime_sha256": "80d9421f3cdee0d85e7c2dca3b0f227c3a033d9a45e4c5f10e253210745c7c7a",
+          "target_precision": "F16",
+          "target_sha256": "05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6"
+        },
+        "production_readiness": "PENDING",
+        "scope": "one original TRAIN block, captured-prefix hard CE or exact captured-prefix full L1; CPU development only",
+        "target_sha256": "05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6",
+        "teacher_logits_shape": [
+          7,
+          151936
+        ],
+        "teacher_prefix_sha256": [
+          "93cc6ee0493c64407c6b40c89867a67a3bfde0c6fd38e7a0e95e245c4da7bb5e",
+          "302a410d479f6dd52a94cf59c9cea6f2ab0b4d4d2a9ab792cbf61b73c2eb047f",
+          "22b026974d2a38a06f723259638839c79889c862feaef638cc7b419f5801e3a6",
+          "79f187ddfa3050932a0ffcfbfe1663abb720e5d3e93b0d67fe236a2efb1bfb98",
+          "96d185fbc6898685a0863799372deaee7972e41bbd76e9a3e924ff4d43f5e335",
+          "76aa069a3fd94fa8c4da2994339ee752105bb7ffcd4c6129ef29c5c162285fd5",
+          "d97edb488d488a5bd0565abadfc90e1a8057837de93d9ce7f41cecc9870738cf"
+        ]
+      },
+      "source_model": {
+        "path": "/Users/pippo/github/binary-eagle-decoding/models/nine-model-original-snapshots/dspark/3457dff1417cb84927f6098a5fcb7cee85c934b7/base-bf16.gguf",
+        "sha256": "3685ea7785729b4d3e9de3939264c1c87eb98a2bf7935a8c838eccf36be9fd13"
+      },
+      "status": "PENDING root GO"
+    },
+    {
+      "activation_bits": 1,
+      "argv": [
+        "/Users/pippo/github/binary-eagle-decoding/.venv/bin/python",
+        "/private/tmp/nine-model-qat-20261004/training-cpu-integration/scripts/check_block_qat_cpu_model.py",
+        "--family",
+        "dspark",
+        "--activation-bits",
+        "1",
+        "--base",
+        "/Users/pippo/github/binary-eagle-decoding/models/nine-model-original-snapshots/dspark/3457dff1417cb84927f6098a5fcb7cee85c934b7/base-bf16.gguf",
+        "--base-sha256",
+        "3685ea7785729b4d3e9de3939264c1c87eb98a2bf7935a8c838eccf36be9fd13",
+        "--report",
+        "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/actual-cpu-train-fusion-integration-20261004/dspark-a1.json",
+        "--memory-python",
+        "/Library/Frameworks/Python.framework/Versions/3.11/bin/python3",
+        "--input-mode",
+        "native_train",
+        "--objective",
+        "hard_ce",
+        "--data-manifest",
+        "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-03/dspark/manifest.json",
+        "--data-sha256",
+        "77891f9b7027a38c6707ef0722e88e1376df826b382c652a269260676019bbd7",
+        "--data-admission",
+        "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-03/dspark/completed-admission.json",
+        "--data-admission-sha256",
+        "24199f53d50cf95af032c23d3daa532d7f88c551a084974e34902cc80407b1b2",
+        "--initialization-index",
+        "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-fusion-20261004/artifact-index.json",
+        "--initialization-index-sha256",
+        "e59edcd2c235c4fbca800892dde1bc86199db57729177e93371b006a8c490800",
+        "--max-rss-bytes",
+        "17179869184",
+        "--prelaunch-free-bytes",
+        "12884901888",
+        "--live-free-bytes",
+        "4294967296",
+        "--max-seconds",
+        "600",
+        "--threads",
+        "4"
+      ],
+      "config": {
+        "activation_bits": 1,
+        "block_size": 7,
+        "conditioning": "captured_prefix",
+        "depth_decay": 1.0,
+        "family": "dspark",
+        "head_dim": 128,
+        "hidden_size": 2560,
+        "initialization_encoding": "policy_latents",
+        "intermediate_size": 9728,
+        "latent_initialization": "preserve_reference_magnitudes",
+        "mask_token_id": 151669,
+        "max_grad_norm": 1.0,
+        "norm_eps": 1e-06,
+        "num_heads": 32,
+        "num_kv_heads": 8,
+        "num_layers": 5,
+        "objective": "hard_ce",
+        "optimizer_backend": "serial",
+        "probability_l1_weight": 1.0,
+        "profile": "ffn15_fusion",
+        "rope_theta": 1000000.0,
+        "scale_lr": 1e-05,
+        "seed": 8101,
+        "sign_lr": 0.001,
+        "vocab_size": 151936
+      },
+      "family": "dspark",
+      "input_contract": {
+        "completed_admission": {
+          "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-03/dspark/completed-admission.json",
+          "sha256": "24199f53d50cf95af032c23d3daa532d7f88c551a084974e34902cc80407b1b2"
+        },
+        "context_features_shape": [
+          20,
+          5,
+          2560
+        ],
+        "data_cursor": {
+          "block_offset": 0,
+          "chain_offset": 0,
+          "dataset_sha256": "77891f9b7027a38c6707ef0722e88e1376df826b382c652a269260676019bbd7",
+          "epoch": 0,
+          "order_sha256": "8b84f2fd1be546482140111a3f20ec153b334c358371865044e8b4fcb3de69c7",
+          "seed": 8101,
+          "split": "train"
+        },
+        "data_manifest": {
+          "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-03/dspark/manifest.json",
+          "sha256": "77891f9b7027a38c6707ef0722e88e1376df826b382c652a269260676019bbd7"
+        },
+        "initialization": {
+          "activation_bits": 1,
+          "latent_initialization": {
+            "policy": "preserve_reference_magnitudes",
+            "reference_kind": "block_source_weight_magnitudes",
+            "reference_sha256": "9a2a4c243d43bac9e337a8a7e2deac4ab6b52881a70a116c4ac925adb3d5f1e7"
+          },
+          "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-fusion-20261004/dspark-a1-scale-only/fusion_candidate.npz",
+          "sha256": "06652d0812173994e6d7b3cc830f7b047fb53e4e9c5e19f2818f2211da7c47e0"
+        },
+        "initialization_index": {
+          "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-fusion-20261004/artifact-index.json",
+          "sha256": "e59edcd2c235c4fbca800892dde1bc86199db57729177e93371b006a8c490800"
+        },
+        "input_mode": "native_train",
+        "next_data_cursor": {
+          "block_offset": 1,
+          "chain_offset": 0,
+          "dataset_sha256": "77891f9b7027a38c6707ef0722e88e1376df826b382c652a269260676019bbd7",
+          "epoch": 0,
+          "order_sha256": "8b84f2fd1be546482140111a3f20ec153b334c358371865044e8b4fcb3de69c7",
+          "seed": 8101,
+          "split": "train"
+        },
+        "predecessor_ids": [
+          198,
+          151667,
+          198,
+          32313,
+          11,
+          279,
+          1196
+        ],
+        "prefix_tokens": [
+          151644,
+          872,
+          198,
+          840,
+          20772,
+          752,
+          279,
+          7286,
+          315,
+          330,
+          42,
+          19726,
+          1,
+          304,
+          60224,
+          13,
+          151645,
+          198,
+          151644,
+          77091,
+          198
+        ],
+        "producer": {
+          "binary_sha256": "b7ab98ae2783d1f6d5cb1246184c757659325fffa16fddaa4215f449d91ed488",
+          "generation_identity": {
+            "chat_template_sha256": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8",
+            "teacher_client_sha256": "8a43ee3f6f472184b1b229e1c556ae65d45e8fa76fa26c9dc058209ddbb1c052",
+            "tokenizer_metadata_sha256": "155263bd71468c455d61be4f42e9058362992c6914922bf802b620dfc24def18"
+          },
+          "hardware": "[\"Apple M3 Max\"]",
+          "kind": "native_target_only",
+          "native_revision": "624f50e74f51b6af93bf6b879f84703e726df172",
+          "receipt": {
+            "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-03/dspark/producer-receipt.json",
+            "sha256": "18d2fe0b4d3f9ce5f50192e9a7922438c7a4e1fff67a67cdd1a25f5102cbef36"
+          },
+          "runtime_sha256": "80d9421f3cdee0d85e7c2dca3b0f227c3a033d9a45e4c5f10e253210745c7c7a",
+          "target_precision": "F16",
+          "target_sha256": "05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6"
+        },
+        "production_readiness": "PENDING",
+        "scope": "one original TRAIN block, captured-prefix hard CE or exact captured-prefix full L1; CPU development only",
+        "target_sha256": "05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6",
+        "teacher_logits_shape": [
+          7,
+          151936
+        ],
+        "teacher_prefix_sha256": [
+          "93cc6ee0493c64407c6b40c89867a67a3bfde0c6fd38e7a0e95e245c4da7bb5e",
+          "302a410d479f6dd52a94cf59c9cea6f2ab0b4d4d2a9ab792cbf61b73c2eb047f",
+          "22b026974d2a38a06f723259638839c79889c862feaef638cc7b419f5801e3a6",
+          "79f187ddfa3050932a0ffcfbfe1663abb720e5d3e93b0d67fe236a2efb1bfb98",
+          "96d185fbc6898685a0863799372deaee7972e41bbd76e9a3e924ff4d43f5e335",
+          "76aa069a3fd94fa8c4da2994339ee752105bb7ffcd4c6129ef29c5c162285fd5",
+          "d97edb488d488a5bd0565abadfc90e1a8057837de93d9ce7f41cecc9870738cf"
+        ]
+      },
+      "source_model": {
+        "path": "/Users/pippo/github/binary-eagle-decoding/models/nine-model-original-snapshots/dspark/3457dff1417cb84927f6098a5fcb7cee85c934b7/base-bf16.gguf",
+        "sha256": "3685ea7785729b4d3e9de3939264c1c87eb98a2bf7935a8c838eccf36be9fd13"
+      },
+      "status": "PENDING root GO"
+    },
+    {
+      "activation_bits": 8,
+      "argv": [
+        "/Users/pippo/github/binary-eagle-decoding/.venv/bin/python",
+        "/private/tmp/nine-model-qat-20261004/training-cpu-integration/scripts/check_block_qat_cpu_model.py",
+        "--family",
+        "dflash",
+        "--activation-bits",
+        "8",
+        "--base",
+        "/Users/pippo/github/binary-eagle-decoding/models/nine-model-original-snapshots/dflash/02d530b7962ea1412beaf41a05c0b8e36d5f9b1d/base-bf16.gguf",
+        "--base-sha256",
+        "61b294dc798c507fdc4a87f397b4015a78b3cdd7edad1e940e683bba10fb5575",
+        "--report",
+        "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/actual-cpu-train-fusion-integration-20261004/dflash-a8.json",
+        "--memory-python",
+        "/Library/Frameworks/Python.framework/Versions/3.11/bin/python3",
+        "--input-mode",
+        "native_train",
+        "--objective",
+        "hard_ce",
+        "--data-manifest",
+        "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-03/dflash/manifest.json",
+        "--data-sha256",
+        "54f1c2bef6b83c7cc2104c56055fa7fbc2a08cc9801b0cb5315f8d7bbbe06040",
+        "--data-admission",
+        "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-03/dflash/completed-admission.json",
+        "--data-admission-sha256",
+        "b7954c392b7f7a47197d51d027007f8e0846c22b8a6d84f42ecbd0828cdb45ee",
+        "--initialization-index",
+        "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-fusion-20261004/artifact-index.json",
+        "--initialization-index-sha256",
+        "e59edcd2c235c4fbca800892dde1bc86199db57729177e93371b006a8c490800",
+        "--max-rss-bytes",
+        "17179869184",
+        "--prelaunch-free-bytes",
+        "12884901888",
+        "--live-free-bytes",
+        "4294967296",
+        "--max-seconds",
+        "600",
+        "--threads",
+        "4"
+      ],
+      "config": {
+        "activation_bits": 8,
+        "block_size": 7,
+        "conditioning": "captured_prefix",
+        "depth_decay": 1.0,
+        "family": "dflash",
+        "head_dim": 128,
+        "hidden_size": 2560,
+        "initialization_encoding": "policy_latents",
+        "intermediate_size": 9728,
+        "latent_initialization": "preserve_reference_magnitudes",
+        "mask_token_id": 151669,
+        "max_grad_norm": 1.0,
+        "norm_eps": 1e-06,
+        "num_heads": 32,
+        "num_kv_heads": 8,
+        "num_layers": 5,
+        "objective": "hard_ce",
+        "optimizer_backend": "serial",
+        "probability_l1_weight": 1.0,
+        "profile": "ffn15_fusion",
+        "rope_theta": 1000000.0,
+        "scale_lr": 1e-05,
+        "seed": 8101,
+        "sign_lr": 0.001,
+        "vocab_size": 151936
+      },
+      "family": "dflash",
+      "input_contract": {
+        "completed_admission": {
+          "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-03/dflash/completed-admission.json",
+          "sha256": "b7954c392b7f7a47197d51d027007f8e0846c22b8a6d84f42ecbd0828cdb45ee"
+        },
+        "context_features_shape": [
+          20,
+          5,
+          2560
+        ],
+        "data_cursor": {
+          "block_offset": 0,
+          "chain_offset": 0,
+          "dataset_sha256": "54f1c2bef6b83c7cc2104c56055fa7fbc2a08cc9801b0cb5315f8d7bbbe06040",
+          "epoch": 0,
+          "order_sha256": "8b84f2fd1be546482140111a3f20ec153b334c358371865044e8b4fcb3de69c7",
+          "seed": 8101,
+          "split": "train"
+        },
+        "data_manifest": {
+          "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-03/dflash/manifest.json",
+          "sha256": "54f1c2bef6b83c7cc2104c56055fa7fbc2a08cc9801b0cb5315f8d7bbbe06040"
+        },
+        "initialization": {
+          "activation_bits": 8,
+          "latent_initialization": {
+            "policy": "preserve_reference_magnitudes",
+            "reference_kind": "block_source_weight_magnitudes",
+            "reference_sha256": "fb6c5eeea87bcda0c4c752de1e411d8a48e2af2e6bca1fe2e779b766cb1dd3b8"
+          },
+          "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-fusion-20261004/dflash-a8-scale-only/fusion_candidate.npz",
+          "sha256": "effb7421beada9addd90f9b73b6146126f7380d5b800b45ac7315fd603a40085"
+        },
+        "initialization_index": {
+          "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-fusion-20261004/artifact-index.json",
+          "sha256": "e59edcd2c235c4fbca800892dde1bc86199db57729177e93371b006a8c490800"
+        },
+        "input_mode": "native_train",
+        "next_data_cursor": {
+          "block_offset": 1,
+          "chain_offset": 0,
+          "dataset_sha256": "54f1c2bef6b83c7cc2104c56055fa7fbc2a08cc9801b0cb5315f8d7bbbe06040",
+          "epoch": 0,
+          "order_sha256": "8b84f2fd1be546482140111a3f20ec153b334c358371865044e8b4fcb3de69c7",
+          "seed": 8101,
+          "split": "train"
+        },
+        "predecessor_ids": [
+          198,
+          151667,
+          198,
+          32313,
+          11,
+          279,
+          1196
+        ],
+        "prefix_tokens": [
+          151644,
+          872,
+          198,
+          840,
+          20772,
+          752,
+          279,
+          7286,
+          315,
+          330,
+          42,
+          19726,
+          1,
+          304,
+          60224,
+          13,
+          151645,
+          198,
+          151644,
+          77091,
+          198
+        ],
+        "producer": {
+          "binary_sha256": "b7ab98ae2783d1f6d5cb1246184c757659325fffa16fddaa4215f449d91ed488",
+          "generation_identity": {
+            "chat_template_sha256": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8",
+            "teacher_client_sha256": "8a43ee3f6f472184b1b229e1c556ae65d45e8fa76fa26c9dc058209ddbb1c052",
+            "tokenizer_metadata_sha256": "155263bd71468c455d61be4f42e9058362992c6914922bf802b620dfc24def18"
+          },
+          "hardware": "[\"Apple M3 Max\"]",
+          "kind": "native_target_only",
+          "native_revision": "624f50e74f51b6af93bf6b879f84703e726df172",
+          "receipt": {
+            "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-03/dflash/producer-receipt.json",
+            "sha256": "83f0ce5d450e4f2411ad6a57ae5242580dd64ba9023c7449fa0d4e26960aa2b2"
+          },
+          "runtime_sha256": "80d9421f3cdee0d85e7c2dca3b0f227c3a033d9a45e4c5f10e253210745c7c7a",
+          "target_precision": "F16",
+          "target_sha256": "05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6"
+        },
+        "production_readiness": "PENDING",
+        "scope": "one original TRAIN block, captured-prefix hard CE or exact captured-prefix full L1; CPU development only",
+        "target_sha256": "05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6",
+        "teacher_logits_shape": [
+          7,
+          151936
+        ],
+        "teacher_prefix_sha256": [
+          "93cc6ee0493c64407c6b40c89867a67a3bfde0c6fd38e7a0e95e245c4da7bb5e",
+          "302a410d479f6dd52a94cf59c9cea6f2ab0b4d4d2a9ab792cbf61b73c2eb047f",
+          "22b026974d2a38a06f723259638839c79889c862feaef638cc7b419f5801e3a6",
+          "79f187ddfa3050932a0ffcfbfe1663abb720e5d3e93b0d67fe236a2efb1bfb98",
+          "96d185fbc6898685a0863799372deaee7972e41bbd76e9a3e924ff4d43f5e335",
+          "76aa069a3fd94fa8c4da2994339ee752105bb7ffcd4c6129ef29c5c162285fd5",
+          "d97edb488d488a5bd0565abadfc90e1a8057837de93d9ce7f41cecc9870738cf"
+        ]
+      },
+      "source_model": {
+        "path": "/Users/pippo/github/binary-eagle-decoding/models/nine-model-original-snapshots/dflash/02d530b7962ea1412beaf41a05c0b8e36d5f9b1d/base-bf16.gguf",
+        "sha256": "61b294dc798c507fdc4a87f397b4015a78b3cdd7edad1e940e683bba10fb5575"
+      },
+      "status": "PENDING root GO"
+    },
+    {
+      "activation_bits": 1,
+      "argv": [
+        "/Users/pippo/github/binary-eagle-decoding/.venv/bin/python",
+        "/private/tmp/nine-model-qat-20261004/training-cpu-integration/scripts/check_block_qat_cpu_model.py",
+        "--family",
+        "dflash",
+        "--activation-bits",
+        "1",
+        "--base",
+        "/Users/pippo/github/binary-eagle-decoding/models/nine-model-original-snapshots/dflash/02d530b7962ea1412beaf41a05c0b8e36d5f9b1d/base-bf16.gguf",
+        "--base-sha256",
+        "61b294dc798c507fdc4a87f397b4015a78b3cdd7edad1e940e683bba10fb5575",
+        "--report",
+        "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/actual-cpu-train-fusion-integration-20261004/dflash-a1.json",
+        "--memory-python",
+        "/Library/Frameworks/Python.framework/Versions/3.11/bin/python3",
+        "--input-mode",
+        "native_train",
+        "--objective",
+        "hard_ce",
+        "--data-manifest",
+        "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-03/dflash/manifest.json",
+        "--data-sha256",
+        "54f1c2bef6b83c7cc2104c56055fa7fbc2a08cc9801b0cb5315f8d7bbbe06040",
+        "--data-admission",
+        "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-03/dflash/completed-admission.json",
+        "--data-admission-sha256",
+        "b7954c392b7f7a47197d51d027007f8e0846c22b8a6d84f42ecbd0828cdb45ee",
+        "--initialization-index",
+        "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-fusion-20261004/artifact-index.json",
+        "--initialization-index-sha256",
+        "e59edcd2c235c4fbca800892dde1bc86199db57729177e93371b006a8c490800",
+        "--max-rss-bytes",
+        "17179869184",
+        "--prelaunch-free-bytes",
+        "12884901888",
+        "--live-free-bytes",
+        "4294967296",
+        "--max-seconds",
+        "600",
+        "--threads",
+        "4"
+      ],
+      "config": {
+        "activation_bits": 1,
+        "block_size": 7,
+        "conditioning": "captured_prefix",
+        "depth_decay": 1.0,
+        "family": "dflash",
+        "head_dim": 128,
+        "hidden_size": 2560,
+        "initialization_encoding": "policy_latents",
+        "intermediate_size": 9728,
+        "latent_initialization": "preserve_reference_magnitudes",
+        "mask_token_id": 151669,
+        "max_grad_norm": 1.0,
+        "norm_eps": 1e-06,
+        "num_heads": 32,
+        "num_kv_heads": 8,
+        "num_layers": 5,
+        "objective": "hard_ce",
+        "optimizer_backend": "serial",
+        "probability_l1_weight": 1.0,
+        "profile": "ffn15_fusion",
+        "rope_theta": 1000000.0,
+        "scale_lr": 1e-05,
+        "seed": 8101,
+        "sign_lr": 0.001,
+        "vocab_size": 151936
+      },
+      "family": "dflash",
+      "input_contract": {
+        "completed_admission": {
+          "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-03/dflash/completed-admission.json",
+          "sha256": "b7954c392b7f7a47197d51d027007f8e0846c22b8a6d84f42ecbd0828cdb45ee"
+        },
+        "context_features_shape": [
+          20,
+          5,
+          2560
+        ],
+        "data_cursor": {
+          "block_offset": 0,
+          "chain_offset": 0,
+          "dataset_sha256": "54f1c2bef6b83c7cc2104c56055fa7fbc2a08cc9801b0cb5315f8d7bbbe06040",
+          "epoch": 0,
+          "order_sha256": "8b84f2fd1be546482140111a3f20ec153b334c358371865044e8b4fcb3de69c7",
+          "seed": 8101,
+          "split": "train"
+        },
+        "data_manifest": {
+          "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-03/dflash/manifest.json",
+          "sha256": "54f1c2bef6b83c7cc2104c56055fa7fbc2a08cc9801b0cb5315f8d7bbbe06040"
+        },
+        "initialization": {
+          "activation_bits": 1,
+          "latent_initialization": {
+            "policy": "preserve_reference_magnitudes",
+            "reference_kind": "block_source_weight_magnitudes",
+            "reference_sha256": "fb6c5eeea87bcda0c4c752de1e411d8a48e2af2e6bca1fe2e779b766cb1dd3b8"
+          },
+          "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-fusion-20261004/dflash-a1-scale-only/fusion_candidate.npz",
+          "sha256": "4c392657542350803afa7a41da47228fec084f829ecf0c2463d4b798efeb51fd"
+        },
+        "initialization_index": {
+          "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-fusion-20261004/artifact-index.json",
+          "sha256": "e59edcd2c235c4fbca800892dde1bc86199db57729177e93371b006a8c490800"
+        },
+        "input_mode": "native_train",
+        "next_data_cursor": {
+          "block_offset": 1,
+          "chain_offset": 0,
+          "dataset_sha256": "54f1c2bef6b83c7cc2104c56055fa7fbc2a08cc9801b0cb5315f8d7bbbe06040",
+          "epoch": 0,
+          "order_sha256": "8b84f2fd1be546482140111a3f20ec153b334c358371865044e8b4fcb3de69c7",
+          "seed": 8101,
+          "split": "train"
+        },
+        "predecessor_ids": [
+          198,
+          151667,
+          198,
+          32313,
+          11,
+          279,
+          1196
+        ],
+        "prefix_tokens": [
+          151644,
+          872,
+          198,
+          840,
+          20772,
+          752,
+          279,
+          7286,
+          315,
+          330,
+          42,
+          19726,
+          1,
+          304,
+          60224,
+          13,
+          151645,
+          198,
+          151644,
+          77091,
+          198
+        ],
+        "producer": {
+          "binary_sha256": "b7ab98ae2783d1f6d5cb1246184c757659325fffa16fddaa4215f449d91ed488",
+          "generation_identity": {
+            "chat_template_sha256": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8",
+            "teacher_client_sha256": "8a43ee3f6f472184b1b229e1c556ae65d45e8fa76fa26c9dc058209ddbb1c052",
+            "tokenizer_metadata_sha256": "155263bd71468c455d61be4f42e9058362992c6914922bf802b620dfc24def18"
+          },
+          "hardware": "[\"Apple M3 Max\"]",
+          "kind": "native_target_only",
+          "native_revision": "624f50e74f51b6af93bf6b879f84703e726df172",
+          "receipt": {
+            "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-03/dflash/producer-receipt.json",
+            "sha256": "83f0ce5d450e4f2411ad6a57ae5242580dd64ba9023c7449fa0d4e26960aa2b2"
+          },
+          "runtime_sha256": "80d9421f3cdee0d85e7c2dca3b0f227c3a033d9a45e4c5f10e253210745c7c7a",
+          "target_precision": "F16",
+          "target_sha256": "05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6"
+        },
+        "production_readiness": "PENDING",
+        "scope": "one original TRAIN block, captured-prefix hard CE or exact captured-prefix full L1; CPU development only",
+        "target_sha256": "05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6",
+        "teacher_logits_shape": [
+          7,
+          151936
+        ],
+        "teacher_prefix_sha256": [
+          "93cc6ee0493c64407c6b40c89867a67a3bfde0c6fd38e7a0e95e245c4da7bb5e",
+          "302a410d479f6dd52a94cf59c9cea6f2ab0b4d4d2a9ab792cbf61b73c2eb047f",
+          "22b026974d2a38a06f723259638839c79889c862feaef638cc7b419f5801e3a6",
+          "79f187ddfa3050932a0ffcfbfe1663abb720e5d3e93b0d67fe236a2efb1bfb98",
+          "96d185fbc6898685a0863799372deaee7972e41bbd76e9a3e924ff4d43f5e335",
+          "76aa069a3fd94fa8c4da2994339ee752105bb7ffcd4c6129ef29c5c162285fd5",
+          "d97edb488d488a5bd0565abadfc90e1a8057837de93d9ce7f41cecc9870738cf"
+        ]
+      },
+      "source_model": {
+        "path": "/Users/pippo/github/binary-eagle-decoding/models/nine-model-original-snapshots/dflash/02d530b7962ea1412beaf41a05c0b8e36d5f9b1d/base-bf16.gguf",
+        "sha256": "61b294dc798c507fdc4a87f397b4015a78b3cdd7edad1e940e683bba10fb5575"
+      },
+      "status": "PENDING root GO"
+    }
+  ],
+  "checks": {
+    "focused_unit_tests": "6 PASS; actual pinned data/FC artifacts read without model construction",
+    "ruff": "PASS"
+  },
+  "execution": {
+    "approval": "root must authorize first cell; later cells require root continuation",
+    "concurrency": 1,
+    "hardware": "Mac CPU F32 student and floating math/F16 cache; original BF16/F16 GGUF",
+    "limits": {
+      "live_available_bytes": 4294967296,
+      "max_seconds_per_cell": 600,
+      "prelaunch_available_bytes": 12884901888,
+      "rss_bytes": 17179869184
+    },
+    "optimizer_state": "empty; no moments",
+    "optimizer_step": "patched forbidden",
+    "optimizer_updates": 0,
+    "optional_dspark_full_probability_l1": "source supported with pinned full-vocabulary captured-prefix logits; not part of approved four-cell hard-CE plan",
+    "order": [
+      "dspark-a8",
+      "dspark-a1",
+      "dflash-a8",
+      "dflash-a1"
+    ],
+    "parameter_versions": "checked after initialization before/after backward"
+  },
+  "schema": "block_qat_actual_train_cpu_composition_plan_v1",
+  "scope": "one authenticated original TRAIN block per actual model family/activation profile after sparse source-magnitude FC calibration; establishes composition only. No optimizer steps, GPU/SSH, quality/evaluation, campaign readiness or SM120 proof. Old synthetic reports remain immutable.",
+  "source_files": {
+    "scripts/check_block_qat_cpu_model.py": "2a4499e666800c0f9b13f480c610a293a35000a0101b171690ce3b0cc3457cd5",
+    "scripts/train_nine_model_qat.py": "edf025d81694722fc56a730409d6fbcd9e8c333058517ab1a8be730634b2d9d8",
+    "src/w1a1_eagle/block_data.py": "b2062f4e2fded053cd4b6818dcb47bd59572957f5f09806408064d38e7e762ad",
+    "src/w1a1_eagle/block_qat.py": "98adfc8c3704a5c845c4b75995b2263c0b5627b2f2dfe2f8d469d7c36822147b",
+    "src/w1a1_eagle/block_training.py": "89e6f095464a44b8ce5ad12eb413655ba3db12451b3cc429e30cf9d20e6f1363",
+    "src/w1a1_eagle/qat_initialization.py": "03f18cd02d646d9cc6c774f9747578a24f19485dadafeec2e55b4c0366f9baa2",
+    "src/w1a1_eagle/recurrent_qat.py": "ececcb925410bc9c77776b473e84d671d9e2da1a841a1b217caa68a0cafe7a12"
+  },
+  "status": "PREPARED_CPU_ONLY_AWAIT_ROOT_GO"
+}
