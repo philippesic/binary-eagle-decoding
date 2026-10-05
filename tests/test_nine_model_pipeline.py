@@ -26,6 +26,7 @@ from w1a1_eagle.nine_model_pipeline import (
     sha256,
     validate_bundle,
     validate_cuda_dispatch,
+    validate_stage,
 )
 from w1a1_eagle.nine_model_report import aggregate
 
@@ -354,6 +355,14 @@ class LifecycleTests(unittest.TestCase):
             self.assertNotIn("GGML_W1AX_ACT_BITS", native_environment("eagle", None))
             self.assertNotIn("GGML_W1AX_ACT_BITS", native_environment("dspark", 8))
             self.assertNotIn("GGML_FORCE_DENSE", native_environment("eagle", 1))
+
+    def test_unused_pinned_script_argument_cannot_bind_alternate_executable(self):
+        record = self.bundle["source"]["source"]
+        stage = {"producer": record, "wall_seconds": 1, "argv": [sys.executable, record["path"]]}
+        validate_stage(stage, Files())
+        for argv in (["/bin/echo", record["path"]], [sys.executable, "-c", "pass", record["path"]]):
+            with self.assertRaisesRegex(ValueError, "execute the pinned producer"):
+                validate_stage(dict(stage, argv=argv), Files())
 
     def test_ambient_flags_cleared(self):
         with patch.dict(

@@ -279,6 +279,10 @@ def validate_bundle(path):
         *(s for c in bundle["candidates"].values() for s in c["stages"].values()),
     ]:
         validate_stage(stage, files)
+        require(
+            stage["producer"] in bundle["source"].values(),
+            "actual stage producer does not join frozen source inventory",
+        )
     for name, value in bundle["resource_policy"].items():
         require(type(value) is int and value >= 0, f"invalid resource policy: {name}")
     require(
@@ -308,7 +312,12 @@ def validate_stage(stage, files):
         "finite positive stage wall cap required",
     )
     files.check(stage["producer"])
-    require(stage["producer"]["path"] in stage["argv"], "command does not invoke pinned producer")
+    require(
+        len(stage["argv"]) >= 2
+        and stage["argv"][0] == sys.executable
+        and stage["argv"][1] == stage["producer"]["path"],
+        "command must execute the pinned producer with the current admitted Python",
+    )
 
 
 def require_available(path, bundle_hash, *, now=None):

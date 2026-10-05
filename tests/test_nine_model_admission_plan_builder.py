@@ -195,6 +195,9 @@ class AdmissionPlanBuilderTests(unittest.TestCase):
                 resolved = json.loads(Path(receipt["resolved_inputs"]["path"]).read_text())
                 self.assertEqual(resolved["inputs"]["admission_plan"], receipt["plan"])
                 self.assertEqual(set(plan["candidates"]), set(CANDIDATES))
+                self.assertEqual(plan["python_invocation"], sys.executable)
+                self.assertEqual(plan["python"]["path"], str(Path(sys.executable).resolve()))
+                self.assertEqual(plan["python"]["sha256"], sha256(Path(sys.executable)))
                 self.assertEqual(plan["environment"]["CUDA_VISIBLE_DEVICES"], "GPU-source-fixture")
                 for name, candidate in plan["candidates"].items():
                     self.assertNotIn("bundle_sha256", candidate["source_bindings"])

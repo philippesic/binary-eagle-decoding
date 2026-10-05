@@ -651,8 +651,12 @@ def materialize_admission_plan(descriptor, output, *, fixture=False, inspect_dra
     for family, control in descriptor["controls"].items():
         require(control.get("frozen_original") is True, "original Q4 control must remain frozen")
         files.check(control["model"])
+    python = pin(sys.executable)
+    source["runtime:python"] = python
     plan = {
         "schema": "nine_model_sm120_plan_v1",
+        "python": python,
+        "python_invocation": sys.executable,
         "artifact_kind": "fixture" if fixture else "production",
         "source": source,
         "training_source_files": training_source,
