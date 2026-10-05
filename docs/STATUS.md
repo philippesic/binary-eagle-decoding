@@ -29,6 +29,9 @@ Run eagle-a8-qat-overnight-20261005-04; supervisor55097/controller55098/trainer
 checkpoints250/keep3;30-minute heartbeat ACTIVE. Actual run passed1000 without
 periodic evaluation stop. Keep healthy training active into morning; remaining
 five candidates/fullnine-model endpoint preparation/evaluation stay unfinished.
+DirectA1 packet source passes14 independentchecks; authentic CPU-only A1fusion
+calibration completed1536fit/768validation rows without interrupting A8. Actual
+A1 actor/export/SM120 admission remainsPENDING.
 Latest live handles and source/checkpoint proof are in the linked goal and
 ignored monitor registration. All previous failed attempts are retained.
 

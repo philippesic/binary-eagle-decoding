@@ -94,7 +94,7 @@ chat turns and ownership rotation. Human pause/stop takes priority.
 
 Calibrated EAGLE W1A8 QAT is admitted and actively running on RTX5080/SM120.
 All fresh receipt gates and strict source/device checks passed. It has passed
-1200 optimizer updates with a committed1000 checkpoint, finite gradients and
+2838 optimizer updates with a SHA-verified2750 checkpoint, finite gradients and
 actual cache/head execution. Root owns the exact live supervisor/controller/
 trainer and transport recorded in the latest checkpoint below and ignored
 monitor registration. The30-minute heartbeat is ACTIVE; preserve healthy
@@ -413,3 +413,62 @@ cache/headobserved; CUDAfree8,163,164,160B, hostavailable17,222,848,512B,
 diskfree197,499,883,520B. Supervisor/controller/trainer identities and immutable
 execution source/lane unchanged. No stop, restart, configuration mutation or
 quality claim. Source/status checkpoint is published; heartbeat ACTIVE/30min.
+
+
+## Continued preparation alongside healthy QAT — October 5, 03:43 PDT
+
+Previous goal turn made progress: actual admitted QAT/positive checkpoints and
+monitoring were established. Current turn revalidated live kernel handles: supervisor
+55097/start12953909,controller55098/start12953914,trainer55398/start12966638,
+all non-zombie; A8running4233updates/fresh0.064s heartbeat/finitegradients.
+No stop/restart or live-source change. Ordinary healthchecks stay30-minute.
+
+Published remaining-input audit2dae275, direct-A1 packet92b8dbe/1b5a07b, sourceQA
+f9c56bd.14 focused tests and independentQA/Ruff pass; defaultA8 unchanged. A1
+requires its own calibratedA1 fit/actor/export/source/currentSM120; software
+fixture checks do not grant readiness. Exact original controls and candidate
+prerequisites are in experiments/nine-model-qat-overnight/remaining-inputs.md.
+
+Root launched separate CPU-only authentic A1 initializer01 from unchanged30a
+source/helper49395a... in binary-eagle-runtime/root-eagle-a1-cpu-calibration-
+20261005-01, projectrun eagle-direct-a1-initializer-20261005-01. CUDAmaskedempty,
+threads2,8GiBMemoryMax/noSwap,900s outer/300s fit cap. Startup requires14GiBhost
+available and live healthy A8exactidentity; leaves at least6GiB beyond CPUcap.
+Uses same original10k native source/144disjointTRAIN prompts/1536fit+768validation
+rows, A1arithmetic/reference±0.5/norescue/no flips. No actor or GPUinference;
+outputs separate data/nine-model-overnight/eagle-direct-a1-initializer-01.
+GPUtrainer remains sole GPUprocess and healthy; CPUfit does not claim A1CUDA.
+Exact separate CPU job registration is outsideGit.
+
+Local feature work continues separately: endpoint owner prepares additive
+EAGLE-only committed-endpoint export/resource-safe native comparison, without
+faking full6/3 readiness or touching live source; evaluation allowance/protocol
+needs an explicit truthful operational selection before arming. Row-indexed
+teacher owner implements exact native F32 retained-logit rows for every selected
+blockanchor, preserving dense computation/decodehistory/fullcontext/no teacher
+quantization; CPU/source checks only. Astra found fullfeatures alone≈199.7GB for
+3.9Mrows, so this optimization alone cannot guarantee fullcorpus fits197GBdisk.
+Serious balanced block exposure/storage plan remains a separate recorded choice;
+never substitute CE for DSpark fullprobabilityL1 or crop context silently.
+
+
+### Authentic CPU A1 calibration complete — October 5, 03:47 PDT
+
+Separate CPU initializer01 naturalexit0 at10:43:46.333266UTC/28.008s. Supervisor
+55794 and owned55799group are absent. OnlyDXGholder remains exactA8trainer55398;
+no extra GPUcontext/modelactor/update occurred. A8healthy13963updates, finite
+gradients, CUDAfree8,163,164,160B/hostavailable16,947,654,656B. No live source,
+config, budget or dataset change.
+
+A1initializer3df0ad91fab26a9f196f8366f3a5b3b811cb3f934c16e0aec05235b7f51894bf,
+report6997714a6f512707788526bd78b59d15252458f207c7446dea2c2ed9459732f3.
+Rawinputb05e4101... and rowevidenceacec4f98... exactly match oldA8 operands;
+fit512/validation256rows percode/prose/reasoning =1536/768total. A1scale-only,
+reference±0.5/rescueoff/flips0/events0. RawFC validation RSE≈0.676–0.697 (A1),
+which is substantially worse than A8rawFCfit and is recorded without promoting
+or changing the recipe. It is a coordinate diagnostic, not native acceptance/
+quality or a reason to fake CUDA readiness. BoundedmetadataSHA
+671f4e854dfc8f48696b339ddd76eea200a1c9f40e33390ee9e9bc101ad524b4 is retained
+remotely and copied only as metadata forQA. ActualA1initializedactor/allnine
+serialization/native/SM120 admission still waits for safe GPU availability after
+healthyA8. A1proposed directlane24h budget is source-supported, not yet launched.
