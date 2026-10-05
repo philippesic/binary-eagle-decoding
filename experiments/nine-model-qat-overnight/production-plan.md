@@ -390,3 +390,22 @@ Independent QA must repin changed `nine_model_pipeline.py` and the new
 `scripts/read_only_dxg_census.py` in the additive critical-source ledger, then
 freeze a new manifest before controller retry. Calibrated initialization,
 original training data, exported model and native goldens remain unchanged.
+
+## Native admission logging visibility correction
+
+Actual controller02 passed272/272 CUDA kernel cases and capture portability,
+then the native smoke failed its required loader/dispatch evidence despite
+loading the calibrated model and generating eight tokens. The preserved server
+log exposed only srv/cmn INFO/WARN at default verbosity3. Source confirms
+`common_log_default_callback` maps GGML/LLAMA INFO to TRACE4; the all-nine EAGLE
+loader message, packed CUDA dispatch marker and typed `W1AX_ADMISSION_TRACE`
+are all emitted at that native INFO level and were filtered out.
+`check_eagle_binary_native.py` now passes explicit `--log-verbosity 4`, the minimum
+threshold that exposes that evidence. This changes only bounded smoke logging;
+native arithmetic/model/data and exact all-nine typed CUDA trace validation are
+unchanged. The mocked lifecycle regression captures the actual Popen argv and
+ties its threshold to the current native log header/callback; scoped typed
+dispatch/projection rejection tests remain intact. Actual native admission must
+still execute and prove all nine CUDA operators; generated tokens or newly
+visible messages alone cannot grant readiness. Controller02/failure artifacts
+remain preserved, and the source/QA/manifest must be repinned before retry.

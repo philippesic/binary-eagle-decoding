@@ -81,6 +81,10 @@ def smoke(config_path, receipt_path):
     require_value(available_port("127.0.0.1", port), "native smoke port occupied")
     command = [
         str(paths["binary"]),
+        # common_log_default_callback maps GGML/LLAMA INFO to TRACE(4),
+        # whereas server default3 only exposes its srv/cmn INFO messages.
+        "--log-verbosity",
+        "4",
         "-m",
         str(paths["target"]),
         "-md",
