@@ -1092,3 +1092,57 @@ Static confidence/runtime options need matching controls if measured later.
 Next decision presentation will bind actual implemented profiles, capture
 size/cost and balanced row/epoch milestones with wall/evaluation allowances.
 No unbounded budget, automatic recipe promotion or sealed-final tuning.
+
+
+## Nine-model preparation evidence for the next decision
+
+Current hardware boundary is Mac only following **“pause all 5080 usage
+continue mac only.”** The briefly authorized RTX5080 interval completed locked
+dependency setup; no compiler probe/model/capture/training/evaluation ran. All
+remote work stays paused. No long recipe or allocation is selected by the
+following evidence.
+
+Implemented block coverage alternatives are exactly `ffn15` and
+`ffn15_fusion` (sixteen matrices including FC), with full private head/embedding,
+attention, norms and DSpark Markov retained. Actual FC16 CPU native graphs and
+zero-update Torch forward/backward now pass for both families and A8/A1;
+FFN15-only full-source native checks are being completed separately. These use
+untrained original-weight prototypes and synthetic operands. They do not select
+a winning coverage or predict CUDA memory/acceptance. Historical Q4 controls
+remain unchanged and are still unavailable locally for the two block families.
+
+Calibration default preserves actual reference magnitudes: EAGLE±0.5; block
+original source magnitudes, with fitted signs/scales overlaid explicitly.
+Unit±1 is an off-default probe because it changes distance to sign flips under
+AdamW. Row-orientation rescue improved saved EAGLE raw fit but worsened postnorm
+validation for both precisions, so it is off by default. Actual original block
+FC/gamma/F32-epsilon references are now available; authentic five-tap TRAIN
+capture is the remaining fitting dependency. Historical EAGLE validation has
+no code-domain rows and cannot establish balanced final calibration.
+
+The bounded preparation pilot is concrete:9 prompt-disjoint original TRAIN
+records,3 domains×3 roles(train/calibration-fit/calibration-validation), plus
+6 separate golden captures, native prompt≤512/new tokens≤32/chain≤544.
+Full-vocabulary F32 teacher upper bound is3,226,189,824 bytes for the9 block
+chains plus137,339,904 bytes for6 goldens, with total retained cap8GiB. This is
+a development artifact budget only. It is not enough evidence to call a serious
+long-QAT campaign prepared. Actual native capture and updates-per-second rates
+are unmeasured; the previous EAGLE28.6rows/s extrapolation above remains merely
+conditional. The7.29–8.47second Mac synthetic forward/backward observations
+cannot be used as a real CUDA training-cost estimate.
+
+Human decisions to resolve after artifact/hardware preparation:
+
+| Decision | Prepared alternatives | Evidence still needed |
+|---|---|---|
+| Block deployment coverage | FFN15 with original fusion, or FFN15+binary calibrated FC | Native calibrated trajectory checks and a fair within-family original-Q4 comparison |
+| A1 training path | Direct fixed A1, or charged A8 warm phase followed by explicit reset and positive A1 exposure | Short approved real-QAT comparison; neither source profile is selected as superior |
+| Objective/storage | Captured-prefix hard CE; DSpark full-vocabulary CE+probability L1 with exact-prefix teacher support | Authentic capture rates, storage and bounded native prefix mismatch diagnostics |
+| Exposure/accounting | Equal supervised-token/whole-chain milestones with domain-balanced cursors; record actual source tokens and per-stage updates | User-selected tokens/epochs, optimizer wall caps and evaluation allowance for all6 candidates |
+
+No budget is inferred from successful tests. Optional fused AdamW/logging cadence
+are implemented and gated, with no CUDA speed claim. Evaluation protocol remains
+proposed until its allowance is selected. The prepared launcher automatically
+sequences admitted training/export/resource-return/fresh evaluation once the
+human chooses those inputs and reopens the host; no further source integration
+or redundant permission is intended at that boundary.
