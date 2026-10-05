@@ -12,10 +12,10 @@
     "pipeline_worktree_dirty": true,
     "coordination": "ca2b1c515c12",
     "qa_base": "da097e5",
-    "note": "All 51 declared source_files hashes match current integrated main 832faac0c28835cd143fb94d4bd47aeb2dc908de. The CPU composition guard joins fit/phase/data/model hashes before calibration or model load; its bounded mismatch negative was independently exercised. All campaign/prelaunch status gates remain PENDING.",
-    "main_source_snapshot": "832faac",
+    "note": "All 51 declared source_files hashes match current integrated main 78d9062064ca0f6d7fc96ee9849376a8999cf3b4. Actual CPU native composition and zero-update native-TRAIN hard-CE source joins are recorded separately; their development CPU scopes do not promote any aggregate or prelaunch profile.",
+    "main_source_snapshot": "78d9062",
     "source_map_refresh_pending": false,
-    "integrated_main": "832faac0c28835cd143fb94d4bd47aeb2dc908de"
+    "integrated_main": "78d9062064ca0f6d7fc96ee9849376a8999cf3b4"
   },
   "source_files": {
     "scripts/export_block_binary.py": "8589392470540e8e12271fdaa52b7407a3a943901c1952b7d7c5f6e9599f8967",
@@ -2044,7 +2044,7 @@
     "quality, acceptance and throughput conclusions"
   ],
   "final_qa_refresh": {
-    "integrated_main": "832faac0c28835cd143fb94d4bd47aeb2dc908de",
+    "integrated_main": "78d9062064ca0f6d7fc96ee9849376a8999cf3b4",
     "hardware": "Apple M3 Max CPU; macOS; CUDA unavailable; no GPU query or remote activity",
     "python": "3.11.15 from /Users/pippo/github/binary-eagle-decoding/.venv/bin/python",
     "torch": "2.14.0",
@@ -2162,6 +2162,15 @@
         "raw_path": "runs/nine-model-qa-baseline/cpu-composition-fit-phase-join-main.txt",
         "sha256": "af76b6194ce3eae05a2bad21bcd577b5a39e58a9a92f4ad6c0820ba79540a52f",
         "cleanup": "All mismatched report/index files were created under TemporaryDirectory and removed. Calibration was patched only in the negative test; no NPZ arrays or model weights loaded."
+      },
+      {
+        "name": "independent_actual_native_and_train_CPU_composition_metadata_hash_join",
+        "command": "PYTHONPATH=/Users/pippo/github/binary-eagle-decoding/src:/Users/pippo/github/binary-eagle-decoding/scripts /Users/pippo/github/binary-eagle-decoding/.venv/bin/python runs/nine-model-qa-baseline/audit_final_cpu_composition.py",
+        "source_revision": "78d9062064ca0f6d7fc96ee9849376a8999cf3b4",
+        "result": "PASS metadata/report/hash joins for four calibrated FFN15+FC native CPU exports/graphs and four one-block Torch CPU composition reports. Native graph receipts show 16 CPU packed outputs/cell, synthetic activations only, no target binding/paired geometry, no dense fallback, zero updates, all 12 groups absent. Torch reports join one original prose TRAIN block per cell to actual native capture and family fit, use hard CE on 7 labels, zero updates/moments, preserved private source/parameter versions, all four child groups reaped. No full-probability L1 or quality test.",
+        "raw_path": "runs/nine-model-qa-baseline/final-cpu-composition-audit.txt",
+        "sha256": "b5eff61f19ba6c6ee9838e9aea941f446dc836ffc9a2055874d1289304922abf",
+        "cleanup": "Read small summary/receipt JSON and original TRAIN token-ID arrays only. Full base GGUFs, calibrated GGUFs, activation features, teacher logits and NPZ tensor values were not loaded. No producer/model/GPU/SSH process started."
       }
     ],
     "readiness": "Every aggregate and prelaunch profile remains PENDING. CPU tests and source-bound CPU zero-update evidence establish neither production TRAIN readiness nor CUDA/SM120 readiness.",
@@ -2384,5 +2393,97 @@
       }
     ],
     "readiness_effect": "none; initializer artifacts are not a trained checkpoint or initial native export, no GPU/native trajectory/quality evaluation occurred; all aggregate and prelaunch profile statuses remain PENDING"
+  },
+  "external_actual_cpu_composition": {
+    "artifact_kind": "development_CPU",
+    "native_operator_summary": {
+      "path": "/Users/pippo/github/binary-eagle-decoding/models/nine-model-calibrated-native-03-scale-only/actual-cpu-summary.json",
+      "sha256": "77ba22ef6c1ddb3e00f2d891c68ea1be809e28482ae1d6ae819739151c70b009",
+      "hardware": "Apple M3 Max Darwin arm64 CPU, CUDA/Metal disabled",
+      "optimizer_updates": 0,
+      "scope": "calibrated FC scales and original FFN binary initializers; synthetic activations only",
+      "cells": [
+        {
+          "family": "dspark",
+          "activation_bits": 8,
+          "compose_sha256": "7728936476593e04ec2146fa6b61b57d06769b17a1e3b7ee5f47f71b57ff868f",
+          "manifest_sha256": "c33479b819369fac80639e340da9736a8f2d0da14e1bd10ad2bc57e0abbb0f78",
+          "export_sha256": "222a1959702074bb054b53c3133baf9654cf005d1a6b1a85b7b9768f1285ea53",
+          "native_cpu_sha256": "762d38a5d75d468635106b5c29baa7c6e37c03f58145062094dfa50763bb7cd9"
+        },
+        {
+          "family": "dspark",
+          "activation_bits": 1,
+          "compose_sha256": "b8d5b7dfa485b84483a3d1bfc24ec4e6059957ae70ec00eb901acdaf43f18071",
+          "manifest_sha256": "e2abecc5638a55d83fbfc5bd55d6ebcc1e67e122343106ecb5facafe1e59575d",
+          "export_sha256": "4f16ecfd990d3a2f8937aeb8c8f24d1fa78a36867b67da0998d661c5c0e8b50c",
+          "native_cpu_sha256": "7a4d7d0745d361118c4beb522be535a57d1700da21047716cbc1d0fdc12d2377"
+        },
+        {
+          "family": "dflash",
+          "activation_bits": 8,
+          "compose_sha256": "5a15012446088cdf24151771b6ac2d27e321356f5bc60e7b0c72d485759f0dbf",
+          "manifest_sha256": "541164b8aeeb0010ff8e1e215cb0ba8e3086df5d6d4954eff9046bde0ea08ba2",
+          "export_sha256": "204c5dbc49bad194c4e695ee38860d59e15c0d02281efb92a4457f2c989e20ad",
+          "native_cpu_sha256": "9192385570baed74a39fd4a0ab1a6d2ff5ebcc256c4e83a1a74612669ed21e9e"
+        },
+        {
+          "family": "dflash",
+          "activation_bits": 1,
+          "compose_sha256": "bc026513d5735528f9b9ab6ea7b16de504ed04f815edd034ce7c736a85e7ba3c",
+          "manifest_sha256": "a819fe01f777ac9cbe04fd464f98bd9589c06fe08d3c96e283a3874288971d20",
+          "export_sha256": "4149ab61bfb290149f8f780d01923658f1c12e5cf29ad004cfc2a698f34a3fe0",
+          "native_cpu_sha256": "af9cb5893cf210a1a89515fa5dd538696f5bf42db5157cc5a6493e7b2f23509b"
+        }
+      ],
+      "limits": "CPU instrumented operator smoke; source graph did not bind/evaluate the verifier target, did not run paired target geometry, quality or throughput; native runtime gate remains pending"
+    },
+    "torch_train_block_summary": {
+      "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/actual-cpu-train-fusion-integration-20261004/orchestration.json",
+      "sha256": "42843b139b6181a7d1c32f1ce7456e5ad0d5a10ce9d36428331ea69017cdf0be",
+      "status": "PASS",
+      "hardware": "Apple M3 Max CPU; PyTorch 2.14.0; F32 masters; CUDA unavailable",
+      "input_scope": "one captured prose TRAIN block per family/activation cell, native target feature prefix, hard CE over 7 actual token labels",
+      "optimizer_updates": 0,
+      "optimizer_moment_tensors": 0,
+      "full_probability_l1_run": false,
+      "quality_or_trajectory_test": false,
+      "all_child_groups_gone": true,
+      "all_cells": [
+        {
+          "family": "dspark",
+          "activation_bits": 8,
+          "report_sha256": "6e2f12c4e6cafec37729951ed4342174ceb4fb2fb7001e1d89628cd71fddb677",
+          "prompt_id": "dolly:line-011821",
+          "prompt_domain": "prose",
+          "split": "train"
+        },
+        {
+          "family": "dspark",
+          "activation_bits": 1,
+          "report_sha256": "249f0479c736dd0a5e219420c768e4d018507fb8ac7bdfd3067857f5dfc2fe05",
+          "prompt_id": "dolly:line-011821",
+          "prompt_domain": "prose",
+          "split": "train"
+        },
+        {
+          "family": "dflash",
+          "activation_bits": 8,
+          "report_sha256": "43ab6e7673a2e03cedd06f441cb615f1e77c5db1c0d3f27a7c28bcf84385661e",
+          "prompt_id": "dolly:line-011821",
+          "prompt_domain": "prose",
+          "split": "train"
+        },
+        {
+          "family": "dflash",
+          "activation_bits": 1,
+          "report_sha256": "67d332b62281a3e9ed7d2f6443dfa2dc0b9889b8fd2bb6d541429b77c7695c87",
+          "prompt_id": "dolly:line-011821",
+          "prompt_domain": "prose",
+          "split": "train"
+        }
+      ]
+    },
+    "readiness_effect": "none; no optimizer update, full probability L1 run, native target pairing, quality or throughput evaluation. Fresh SM120 and all aggregate/prelaunch production profiles remain PENDING."
   }
 }

@@ -220,3 +220,31 @@ passed 1/1. Its raw output SHA256 is
 Temporary mismatched descriptors were removed. The test did not load calibration
 NPZ arrays or any model weights. This guard is source-composition evidence only;
 real-model execution, QAT updates, CUDA, and quality remain untested or pending.
+
+## Actual CPU native and Torch composition audit
+
+The final read-only audit joined the four calibrated native CPU artifacts to
+their composition, export, manifest and native-graph receipt hashes, and joined
+the four Torch zero-update composition reports to the matching original model,
+family/activation, fit initializer and captured dataset. The native graphs each
+report 16 CPU packed outputs (15 FFN projections plus FC), zero GPU layers,
+no dense fallback and no optimizer updates. Their inputs are synthetic
+activations; reports mark target binding and paired-target geometry absent and
+quality/throughput false.
+
+The Torch reports used one captured prose TRAIN block per DSpark/DFlash
+W1A8/W1A1 cell with captured-prefix hard CE and seven actual token labels. They
+record zero optimizer/moment updates, exact sparse FC calibration application,
+unchanged FFN parameters and frozen source buffers, nonzero gradients, and
+reaped child groups. Full-vocabulary logits were available but the selected
+objective was hard CE; full-probability L1 remains untested. The native graph
+smoke and Torch TRAIN smoke are separate CPU-only evidence, not a target-paired
+native trajectory or quality test.
+
+Independent metadata/hash joins are recorded in
+`runs/nine-model-qa-baseline/final-cpu-composition-audit.txt`, SHA256
+`b5eff61f19ba6c6ee9838e9aea941f446dc836ffc9a2055874d1289304922abf`. QA read
+small receipts and token-ID arrays only; it did not load base/calibrated model
+weights, activations, or teacher-logit tensors. Every aggregate and prelaunch
+profile remains `PENDING`; fresh SM120 admission, full L1 training, paired
+quality, and throughput remain separate gates.
