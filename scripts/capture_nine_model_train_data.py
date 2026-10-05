@@ -1056,8 +1056,7 @@ def validate_replay(receipt, tokens, taps, native, device, *, execution_profile=
         and all(isinstance(b, str) and re.fullmatch(r"CPU(?:_Mapped)?", b) for b in buffers)
         and bool(storage)
         and all(re.fullmatch(r"CPU(?:_Mapped)?", b) for b in storage)
-        and bool(hardware)
-        and all(str(b).startswith("CPU") for b in hardware)
+        and hardware == [device["name"]]
         and receipt.get("gpu_layers") == 0
         if cpu
         else bool(buffers)
