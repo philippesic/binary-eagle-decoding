@@ -1047,3 +1047,51 @@ sourcepin relabel, capture/control regeneration, sealed evaluation, source/math/
 sampler/head/cache change or quality gate. Block scientific answer remains
 pending, authentic DSpark/DFlash Q4 still absent. The active fullsix+three goal
 remains unchanged; these source gaps must not be hidden by narrower completion.
+
+## Staged export and collection source integrated — October 5, 07:00 PDT
+
+Both source owners/independent QA complete; no worker processes or remote/GPU
+authority. Published stagedexport8cd5ba9 reviewed/cherry-pickedebf2c92;
+collection1cb225b reviewed/cherry-picked8d420c0. Exact9-file equality verified
+before original branch ancestry preserved6d36647/dbc2eb8. Root combined16focused
+CPU checks PASS in0.507s. Exportowner7 checks cover actual six tiny GGUF family
+serializer APIs and six serialized CPUstate joins; independent21 total17PASS/
+4native skips. Collection9focused checks and related230PASS/5device skips;
+Ruffcheck/format/diffPASS. Mac arm64/CPU only, no pretrained models/nativeGPU/
+quality/throughput evidence. Export QA in ignored
+`results/nine-model-qat-overnight/staged-export-qa/qa.txt`, SHA
+28dc562544eb276a2a1e316ff0949de89048680fdaa91327fd04ec1120e14d25.
+
+New adapter supports staged EAGLE/DSpark/DFlash directA8/A1 exports with original
+frozenlane/config/target/base/serialized optimizer/RNG/cursor/source/NPZ joins;
+original receipt hashes remain unchanged. Real CPU export requires trusted live
+release/CPUresource callbacks around original pinned serializer; CLIinspect does
+not authorize execution. New collection validates six independent original lane
+hashes, authentic three Q4 controls and per-lane development disjointness, and
+shares existing native argv. Old same-bundle evaluator remains strict. Collection
+execution fails closed before GPUpending fresh collection-bound lease/lock/live
+controller/continuations/admission/release. Actual serialized context validation
+does not retain checkpoint tensors in the collection, avoiding six-payload RAM
+accumulation; real loads are CPU mmap and require whole-run resource admission.
+
+Remaining concrete source/runtime requirements: wire actual collection runtime
+adapter/source receipt, authenticated final sealed-heldout import route (current
+collection admits development only), six real trained/exported endpoints,
+three original controls (block two still absent), authentic held-out admissions,
+selected final operational policy and current native model/dispatch/resource
+proof. Neither an EAGLE-only evaluation-source plan nor self-asserted block Q4
+references can promote a full-nine collection. No source-only completion claim.
+All stage sources/controllers are separate from frozen live30a/cc9.
+
+Scheduled health13:49:33UTC verified five exact boot/birth identities, both
+running supervisors and frozen training source. Healthy87,249updates/
+12,977.184trainerseconds,1,072TRAINprompts/415,474rows,18finitegrads/loss8.94285,
+heartbeat1.303s, GPUfree8,161,067,008B/hostavailable17,035,829,248B/
+diskfree196,482,412,544B. Checkpoint87,000 manifest-declared SHA
+5b210d5239860c97eebd2931323240af2aa150733127709e3deb39c88e00ffca,
+not byte-rehashed. Passive watcher waits unchanged, no GPU query/trainingchange.
+Coherent ignored proof `results/nine-model-qat-overnight/health-0648-20261005.json`,
+SHAc2280ef12afaea531507f102f9ae6fe858c73e70073850d3953282cb5928b079.
+GoalACTIVE/fullsix+three; this turn progresses source capability and verifies
+live waiting. Keep original86,400trainerseconds, SAME30-minute monitor/sole
+transport. Next check approximately07:19PDT. Block scientific answer pending.

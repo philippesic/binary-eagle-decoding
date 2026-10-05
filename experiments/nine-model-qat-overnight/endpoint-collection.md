@@ -102,3 +102,9 @@ production endpoints, disjoint heldout admissions or operational policy remain
 PENDING. Healthy frozen 30a/cc9 training, budgets, sampler/head/cache semantics,
 existing watcher and all remote jobs are untouched. This worker ran no remote,
 GPU, pretrained-model, capture, launcher, watcher or training action.
+
+Root reviewed published1cb225b and dependency8cd5ba9, integrated them in that
+order (ebf2c92/8d420c0), verified exact owned-file equality and preserved both
+branch histories. Combined16focused integration checks PASS in0.507s. Runtime
+dispatch, authenticated sealed-final import and actual endpoint/control inputs
+remain pending; this integration does not expand readiness claims.

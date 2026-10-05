@@ -85,3 +85,7 @@ CPU serialization suite: 21 tests total, 17 PASS and four expected native-fixtur
 Ruff check/format and diff whitespace checks pass. Ignored QA proof is retained
 at `results/nine-model-qat-overnight/staged-export-qa/qa.txt` and copied to primary
 before the worktree is retired.
+
+Root reviewed published8cd5ba9, cherry-pickedebf2c92 and preserved branch ancestry
+after exact owned-file equality. Combined adapter/collection16integration tests
+PASS in0.507s. These CPU checks add no actual trained-endpoint/native admission.
