@@ -36,7 +36,6 @@ class BlockGGUFMetadataTests(unittest.TestCase):
                     "dflash.attention.head_count_kv": config.num_kv_heads,
                     "dflash.attention.key_length": config.head_dim,
                     "dflash.attention.value_length": config.head_dim,
-                    "dflash.rope.dimension_count": config.head_dim,
                     "tokenizer.ggml.mask_token_id": config.mask_token_id,
                 }.items():
                     writer.add_uint32(name, value)
@@ -49,6 +48,7 @@ class BlockGGUFMetadataTests(unittest.TestCase):
                 writer.write_tensors_to_file()
                 writer.close()
                 pin = sha256(path)
+                # Actual released BF16 bases omit optional rope.dimension_count.
                 loaded = load_block_gguf(path, pin, config)
                 self.assertEqual(len(BlockDrafter(loaded, config).binary_linears()), 16)
                 with self.assertRaisesRegex(ValueError, "rms_epsilon"):

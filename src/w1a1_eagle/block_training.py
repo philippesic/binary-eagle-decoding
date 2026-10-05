@@ -456,7 +456,6 @@ def load_block_gguf(path, expected_sha256, config: BlockQATConfig):
         "dflash.attention.head_count_kv": config.num_kv_heads,
         "dflash.attention.key_length": config.head_dim,
         "dflash.attention.value_length": config.head_dim,
-        "dflash.rope.dimension_count": config.head_dim,
         "dflash.rope.freq_base": config.rope_theta,
         "dflash.attention.layer_norm_rms_epsilon": config.norm_eps,
         "tokenizer.ggml.mask_token_id": config.mask_token_id,
@@ -466,4 +465,11 @@ def load_block_gguf(path, expected_sha256, config: BlockQATConfig):
         expected = float(np.float32(value)) if isinstance(value, float) else value
         if field(key) != expected:
             raise ValueError("source GGUF model geometry differs: " + key)
+    # Native llama-model.cpp defaults n_rot_full to actual key head width;
+    # this optional key is absent in both authenticated released BF16 exports.
+    rotary = field("dflash.rope.dimension_count")
+    if rotary is None:
+        rotary = field("dflash.attention.key_length")
+    if rotary != config.head_dim:
+        raise ValueError("source GGUF effective rotary dimension differs")
     return tensors
