@@ -18,6 +18,7 @@ import tempfile
 from pathlib import Path
 
 from export_block_binary import sha256
+from gguf import GGUFReader
 
 
 def check(
@@ -82,6 +83,18 @@ def check(
         or observed.get("passed") is not True
     ):
         raise ValueError("invalid native graph proof")
+    model_metadata = GGUFReader(model)
+    mask_field = model_metadata.fields.get("tokenizer.ggml.mask_token_id")
+    if mask_field is None:
+        raise ValueError("source-bound model MASK metadata missing")
+    mask = mask_field.contents()
+    if (
+        observed.get("mask_token_id") != mask
+        or observed.get("anchor_token_id") != 2
+        or observed.get("noise_input_token_ids") != [2] + [mask] * 6
+        or observed.get("noise_input_positions") != list(range(3, 10))
+    ):
+        raise ValueError("native author anchor/MASK noise block mismatch")
     nodes = observed.get("nodes", [])
     if len(nodes) != len(expected) or {node.get("packed") for node in nodes} != expected:
         raise ValueError("native selected operator coverage mismatch")
