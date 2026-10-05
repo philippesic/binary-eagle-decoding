@@ -22,6 +22,22 @@ and `sha256`. Required fields are:
 `--inspect-draft` reports missing preparation dependencies without loading a
 model or touching a GPU. It cannot publish a production bundle:
 
+The genuine local inventory is outside Git under
+`results/nine-model-qat-preparation/final-draft-packet/`. Inspect its unselected
+artifact references with the existing source API:
+
+```sh
+.venv/bin/python scripts/prepare_nine_model_bundle.py --inputs results/nine-model-qat-preparation/final-draft-packet/bundle-inputs.draft-inventory.json --inspect-draft
+```
+
+The finalized packet adds `bundle-inputs.draft.json`, the independent QA ledger
+snapshot, `inspection.stdout.json` and `packet-receipt.json` with hashes and the
+exact inspection command. It remains PENDING. Original block Q4 controls,
+human-selected budgets/recipes, production data/calibration/initial exports,
+and fresh authorized SM120 evidence are separate missing dependencies; CPU
+development artifacts do not supply them. Models, captures and this local
+packet remain outside Git. Once actual choices and inputs are available, use:
+
 ```sh
 python3 scripts/prepare_nine_model_bundle.py --inputs resolved-inputs.json --materialize-configs selected-configs
 python3 scripts/prepare_nine_model_bundle.py --inputs selected-configs/resolved-inputs.json --materialize-admission-plan selected-configs/sm120-plan.json
