@@ -829,3 +829,35 @@ cost script and evidence are preserved in main; evidenceSHA
 7e50d79353de6714011d0150d5e7d0ada117e0968a30dcab665444db860dbbd6 verified.
 Advisor has no live jobs; report-only worktree can retire after integration push.
 Retention feature owner remains active and source-only. No remote/GPU sidejob.
+
+## Predecessor worker histories reconciled — October 5, 05:43 PDT
+
+Bounded local Luna audit `/root/old_worker_archive_qa` is complete. It inventoried
+the five old overnight worker trees and preserved14 unique raw evidence files,
+41,214B, into ignored
+`results/nine-model-qat-overnight/old-worker-archive-audit-20261005/`.
+ReportSHA70e8e9c2d74a87b55d6ac402a439c4115a241ff8617335851421d04aaa7db64b
+includes the root's explicit reconciliation. Three original source branches
+were patch-equivalent to main. QA patch IDs differ for three report revisions,
+but final entire QA report is byte-identical to main (Gitblob1c562f96df35b6ad092fc5cf5a99506b14571148).
+No QA facts were missing; the audit's initial uncertainty is corrected by an
+appended resolution rather than erased.
+
+Original operator report09488bd4 contained a real missing metadata-preflight
+milestone. It was reviewed and cherry-picked dccef34; resulting entire operator
+file exactly matches original worker tip. These are historical01:25PDT facts,
+not current GPU-free or unstarted-QAT claims. All five original worker branches'
+ancestry is preserved through reviewed ours merges (tip8319c3e); no source tree
+change beyond the operator report. After integration/push, the exact five owned
+tracked-clean worktrees/branches may retire with original history and raw proof
+preserved. Unrelated/prunable research trees and untracked overnight20261002
+research remain untouched. No remote command or GPU operation in this audit.
+
+Root remains sole live GPU operator; retained registered05:30PDT observation
+was55,383updates/checkpoint55,250,8,238.959trainerseconds,684TRAINprompts/
+264,175rows,18finitegradients/loss0.65652 and8.16GBGPUfree/17.09GBhostavailable.
+All five exact boot/birth identities and waiting passive watcher verified then.
+No repair, new job, source or allocation change. Next scheduled read-only health
+check is approximately06:00PDT. Human block exposure/conditioning answer is
+pending; do not infer approval from elapsed time. Retention feature owner/QA
+continues local CPU/source work, including bounded serialization admission.
