@@ -261,6 +261,30 @@ class PacketTests(unittest.TestCase):
                     with self.subTest(substitution=substitution), self.assertRaises(ValueError):
                         packet.initial_export_join(bound, packet.Files(), runtime)
 
+    def test_a1_bind_refuses_warm_profile_or_different_descriptor_initializer(self):
+        import copy
+
+        with tempfile.TemporaryDirectory() as temp:
+            args, ready, _ = self.fixture(Path(temp).resolve(), bits=1)
+            with patch.object(packet, "READY_SHA", ready):
+                packet.prepare(args)
+            bound, runtime, *_ = self.initial_export_fixture(args)
+            descriptor_path = args.output / "configs/resolved-inputs.json"
+            descriptor = json.loads(descriptor_path.read_text())
+            for substitution in ("profile", "initializer"):
+                changed = copy.deepcopy(descriptor)
+                if substitution == "profile":
+                    changed["candidates"]["eagle_a1"]["profile"] = "a8_to_a1_reset"
+                else:
+                    changed["candidates"]["eagle_a1"]["initialization"]["activation_bits"] = 8
+                write(descriptor_path, changed)
+                with (
+                    self.subTest(substitution=substitution),
+                    patch.object(packet, "READY_SHA", ready),
+                    self.assertRaisesRegex(ValueError, "descriptor precision differs"),
+                ):
+                    packet.initial_export_join(bound, packet.Files(), runtime)
+
     def test_wrong_initializer_corpus_pin_refuses_before_publication(self):
         with tempfile.TemporaryDirectory() as temp:
             args, ready, _ = self.fixture(Path(temp))
