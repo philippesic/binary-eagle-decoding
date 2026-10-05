@@ -58,6 +58,37 @@ class W1AxContract:
         return "row_w1ax_requires_native_validation"
 
 
+FIXED_A8_ARITHMETIC_REVISION = "fixed_w1a8_finite_reciprocal_v2"
+
+
+def fixed_activation_codes(input: Tensor, bits: int):
+    """Native fixed symmetric codes, including finite subnormal rows.
+
+    Normal rows retain F32 reciprocal then F32 multiply. The rare overflow
+    branch uses DOUBLE divide then multiply, casts normalized values to F32,
+    then performs integer RNE. A host predicate avoids allocating a full F64
+    activation matrix on ordinary rows; its CUDA stage cost remains unmeasured.
+    IEEE magnitude comparison avoids flushing subnormal absmax values.
+    """
+    if type(bits) is not int or bits not in (4, 8):
+        raise ValueError("fixed symmetric code width unsupported")
+    x = input.float()
+    qmax = (1 << (bits - 1)) - 1
+    magnitude = x.contiguous().view(torch.int32) & 2147483647
+    absmax = magnitude.amax(dim=-1, keepdim=True).view(torch.float32)
+    scale = absmax / qmax
+    inv = torch.where(absmax > 0, qmax / absmax, 0)
+    normalized = x * inv
+    overflow = (absmax > 0) & ~torch.isfinite(inv)
+    if bool(overflow.any()):
+        fallback = (
+            (x.double() / absmax.double().clamp_min(torch.finfo(torch.float64).tiny)) * qmax
+        ).float()
+        normalized = torch.where(overflow, fallback, normalized)
+    codes = torch.round(normalized).clamp(-qmax, qmax)
+    return codes, scale, codes.abs() == qmax
+
+
 class _HardActivationSTE(torch.autograd.Function):
     @staticmethod
     def forward(ctx, x: Tensor, bits: int) -> tuple[Tensor, Tensor, Tensor]:
@@ -67,13 +98,7 @@ class _HardActivationSTE(torch.autograd.Function):
             hard = torch.where(x < 0, -torch.ones_like(x), torch.ones_like(x))
             saturation = torch.zeros_like(x, dtype=torch.bool)
         else:
-            qmax = (1 << (bits - 1)) - 1
-            absmax = x.abs().amax(dim=-1, keepdim=True)
-            scale = absmax / qmax
-            # Native uses x * (qmax / absmax), then round-to-nearest-even.
-            normalized = x * torch.where(absmax > 0, qmax / absmax, 0)
-            hard = torch.round(normalized).clamp(-qmax, qmax)
-            saturation = hard.abs() == qmax
+            hard, scale, saturation = fixed_activation_codes(x, bits)
         codes = hard.detach()
         if bits == 1:
             raw = x.contiguous().view(torch.int32)

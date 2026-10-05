@@ -19,7 +19,13 @@ import torch
 from torch import Tensor, nn
 from torch.nn import functional as F
 
-from .recurrent_qat import RowBinaryLinear, W1AxContract, shared_round_hard_signs
+from .recurrent_qat import (
+    FIXED_A8_ARITHMETIC_REVISION,
+    RowBinaryLinear,
+    W1AxContract,
+    fixed_activation_codes,
+    shared_round_hard_signs,
+)
 
 NATIVE_SOURCE = "fcdf5822c5b78f9dbcfd1f5c7106f09c3f0c9b1a"
 TAPS = (2, 10, 18, 26, 34)
@@ -227,9 +233,7 @@ class BlockBinaryLinear(RowBinaryLinear):
             return surrogate
         with torch.no_grad():
             raw = input.float()
-            absmax = raw.abs().amax(-1, keepdim=True)
-            scale = absmax / 127
-            codes = torch.round(raw * torch.where(absmax > 0, 127 / absmax, 0)).clamp(-127, 127)
+            codes, scale, _ = fixed_activation_codes(raw, 8)
             signs = (
                 torch.where(self.latent_sign < 0, -1.0, 1.0)
                 if self._round_hard_signs is None
@@ -551,6 +555,7 @@ def block_contract(config):
         "p_min": 0,
         "compute_slots": 7,
         "kv_precision": "F16",
+        "fixed_a8_arithmetic_revision": FIXED_A8_ARITHMETIC_REVISION,
         "floating_exceptions": "private full embedding/head, norms, attention, Markov",
         "teacher": "native full vocabulary; exact conditioning prefix",
     }

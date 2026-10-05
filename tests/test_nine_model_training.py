@@ -759,3 +759,40 @@ class FinalPrecisionExposureTests(unittest.TestCase):
             self.assertEqual(result["counters"]["stage_supervised_tokens"], 14)
             self.assertEqual(result["counters"]["step"], 3)
             self.assertEqual(result["counters"]["supervised_tokens"], 21)
+
+
+class FixedFiniteA8Tests(unittest.TestCase):
+    def test_subnormal_codes_follow_native_double_divide_then_multiply_f32_rne(self):
+        from w1a1_eagle.recurrent_qat import fixed_activation_codes, hard_activation
+
+        row = torch.tensor(
+            [[1e-37, -1e-37, 5e-38, -5e-38, 0.0, -0.0]], dtype=torch.float32, requires_grad=True
+        )
+        codes, scale, _ = fixed_activation_codes(row, 8)
+        reference = torch.round(
+            (
+                (row.detach().double() / row.detach().abs().amax(-1, keepdim=True).double()) * 127
+            ).float()
+        )
+        self.assertTrue(torch.equal(codes, reference))
+        self.assertEqual(codes[0, 0], 127)
+        self.assertEqual(codes[0, 1], -127)
+        self.assertEqual(codes[0, -1], 0)
+        values, _, _ = hard_activation(row, 8)
+        self.assertTrue(torch.isfinite(values).all())
+        values.sum().backward()
+        self.assertTrue(torch.equal(row.grad, torch.ones_like(row)))
+        zeros = torch.tensor([[0.0, -0.0]], dtype=torch.float32)
+        code, beta, _ = fixed_activation_codes(zeros, 8)
+        self.assertTrue(torch.equal(code, torch.zeros_like(zeros)))
+        self.assertEqual(beta, 0)
+
+    def test_normal_domain_is_bit_identical_to_original_fixed_quantizer(self):
+        from w1a1_eagle.recurrent_qat import fixed_activation_codes
+
+        x = torch.randn(17, 128, generator=torch.Generator().manual_seed(7))
+        old_scale = x.abs().amax(-1, keepdim=True) / 127
+        old_codes = torch.round(x * (127 / x.abs().amax(-1, keepdim=True))).clamp(-127, 127)
+        codes, scale, _ = fixed_activation_codes(x, 8)
+        self.assertTrue(torch.equal(codes, old_codes))
+        self.assertTrue(torch.equal(scale, old_scale))

@@ -424,7 +424,10 @@ def smoke_with_training_memory(parameters, spec, hardware, callback, *, optimize
 def completed_zero_update_smoke_contract(bits, optimizers):
     if any(optimizer.state for optimizer in optimizers):
         raise ValueError("zero-update admission requires empty real optimizer state")
+    from w1a1_eagle.recurrent_qat import FIXED_A8_ARITHMETIC_REVISION
+
     return {
+        "fixed_w1a8_arithmetic_revision": FIXED_A8_ARITHMETIC_REVISION,
         "hard_forward": True,
         "optimizer_updates": 0,
         "optimizer_moment_tensors": 0,
