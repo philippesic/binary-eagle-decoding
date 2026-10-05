@@ -21,7 +21,7 @@ partitions, missing block capture artifacts and readiness evidence.
 Required output is a tested, frozen source/data/config/launch bundle with
 independent QA and truthful profile/hardware evidence, plus minimal fresh
 SM120 checks and automatic evaluation after committed training and cleanup.
-Source is integrated/pushed through `01a24db`, native fork `624f50e74`.
+Source is integrated/pushed through `a28cb36`, native fork `624f50e74`.
 Implemented native binary export/load/graphs, authentic TRAIN capture APIs,
 block/EAGLE QAT and exact resume, calibrated initialization, source-bound fresh
 SM120 admission, supervised launch/evaluation and reporting. Integrated Mac
@@ -34,7 +34,7 @@ Torch CPU A8/A1 forward/backward cells also passed with zero optimizer updates,
 finite/nonzero selected and later-state/K/V gradients, and unchanged parameters.
 These use synthetic inputs/labels: no calibration, convergence or quality claim.
 Actual FFN15-only native graphs also passed for all four cells. A bounded
-authentic native CPU TRAIN pilot is being prepared for source review; the
+authentic native CPU TRAIN pilot is source-tested and awaiting final plan review; the
 default CUDA capture and fresh SM120 gates remain intact.
 Original frozen block Q4 files, native production TRAIN/goldens, block fusion
 fits, selected campaign recipe/budget and fresh authorized hardware admission

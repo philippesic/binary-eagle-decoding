@@ -504,3 +504,50 @@ succeeds, fit actual block A8/A1 FC references for both families separately, wit
 rescue off and≤96 calibration rows/1GiB workspace, only after producer closure.
 CPU artifacts/goldens never grant CUDA/SM120 readiness. Source/capture progress
 and failures must be preserved; pipeline/QA defer final source pins accordingly.
+
+
+## Published CPU capture implementation and launch-review boundary
+
+Main `a28cb36`/native `624f50e74` are pushed. Prelaunch/campaign circular gate
+and synthetic-scope loophole fixed in `32f514c,bd28e17`; actual preparation
+requires explicit prelaunch evidence while aggregate training/quality stays
+separate. Real draft inspection exits0/PENDING, noGPUquery/no updates, with
+62 explicit missing dependencies; inventory/interim receipts remain in ignored
+`results/nine-model-qat-preparation/final-draft-packet/`. Final QA snapshot waits
+source quiescence, now announced to QA/pipeline.
+
+CPU capture source `df36c95,f016001,11faf22,a28cb36` adds explicit Mac-only
+`--development-cpu`: default CUDA plan/execution guards unchanged, distinct CPU
+ golden schema, original TRAIN/content/role/runtime joins, exact native replay,
+2second RSS/free/wall/STOP watcher and15second typed progress. Root/author tests
+include a truly blocked8second fixture request interrupted by real SIGINT in
+<4seconds; producer closed, FAIL report retained, watcher joined/no late signal.
+Final capture suite33 tests PASS. QA additionally rejects CPU receipts/goldens
+as SM120 readiness and checks backend-library closure independently.
+
+CPU build is pinned: CPU ON, all device/BLAS/backend-DL off. Exactly four project
+libraries (llama,ggml,ggml-base,ggml-cpu) and exact canonical loaded paths required;
+no extra backend/project copy accepted. Native reconfigured/rebuilt only teacher
+against clean624, exit0; old packet/binaries/libs backed up. Fresh packet
+`runs/nine-model-native-cpu-20261004/cpu-native-packet/rebuilt-624/packet.json`
+SHA256 `9782bb05e7fa43acb54471f5ad32519ee8673be13676556734c7fa7b07c78c1a`.
+Teacher SHA b7ab98ae..., base dylib SHA cb5f310...; actual loaded-path proof will
+be checked at capture. Native Mac Linux-map-unchecked status remains unchanged.
+Native build/worktree must stay intact until capture finishes.
+
+Data owner now uses `/private/tmp/nine-model-qat-20261004/data-cpu-pilot`, branch
+`prep/nine-model-data-cpu-pilot`; old data-fusion tree remains clean/checkpointed.
+Actual pilot plan is under main ignored
+`results/nine-model-qat-preparation/development-cpu-pilot-plan-20261004-01/plan.json`,
+SHA prefix36306ad4,9 existing original TRAIN rows/3domains×3roles,6 separate CPU
+ golden requests. Frozen F16 target/KV and original native chat template; no
+optimizer, drafter-quality, held-out or GPU work. Bounds remain9+6 requests,
+512prompt/32new/544chain,8GiB retained,12GiB parent+producer sampled RSS,
+12GiB prelaunch/4GiB live available,1800seconds,1 persistent target-only CPU
+producer. CPU available metric is vm_stat free+inactive+speculative pages;
+RSS aggregate is an explicit conservative guard, not allocator peak.
+
+Root reviewed all source; no target has loaded yet. Data must run real plan-only
+inspection on publishedmain and report exact argv/cost/resource snapshot before
+root heavy-slot GO. Once approved, update progress/cleanup/artifact pins and fit
+bounded actual A8/A1 block FCs only after producer close. GPU pause stays in force.
