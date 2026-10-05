@@ -861,3 +861,11 @@ No repair, new job, source or allocation change. Next scheduled read-only health
 check is approximately06:00PDT. Human block exposure/conditioning answer is
 pending; do not infer approval from elapsed time. Retention feature owner/QA
 continues local CPU/source work, including bounded serialization admission.
+
+All five exact predecessor trees/branches were subsequently retired after
+4b6a289 was pushed and each original tip verified ancestor of origin/main.
+Bundle's initialized nested native clone required explicit inspection: clean
+detachedcc9, no local branch heads, only disposable GGUF bytecode cache and
+cc9 ancestry already retained in primary nativeecff. Its bounded retirement
+proof is preserved in ignored archive audit; force removal applied only to that
+reviewed parent tree. No native source/history or unpublished work was lost.
