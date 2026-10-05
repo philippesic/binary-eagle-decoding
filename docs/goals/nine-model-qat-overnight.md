@@ -310,3 +310,21 @@ Root retains sole remote operation and healthy phase is uninterrupted. Exact
 run registration updated;30-minute heartbeat ACTIVE. Next: actual admission
 PASS, positive QAT updates and committed250-update checkpoint before reporting
 training active. Do not change any live source, config, lane or lease bytes.
+
+
+## Actual backward/moment memory PASS; UUID format repair — October 5, 03:04 PDT
+
+Controller03 naturally exited1 after real model/backward/moment receipt PASS.
+Strict hardware join differs only by Torch bare UUID versus NVIDIA GPU-prefix:
+44ceb8b5-b67a-a317-fee3-f01c9201994e and GPU-44ceb8b5-b67a-a317-fee3-f01c9201994e.
+No update/admission occurred. Root read-only in-memory format diagnostic proves
+remaining backward contract PASS; original receipt stays unchanged. Actual
+F32moment reservation1746401280B/peakreserved5460983808B, GPUfree10.1GB/host
+available17.1GB, laterK/state/V finite/nonzero, cache1/chunk64/headbatched.
+Allfive owned phase identities/groups are absent, noDXGholders/GPUbaseline;
+cleanup/resource return PASS.
+
+Feature/QA own strict canonical producer+live-query normalization in
+train_nine_model_qat.py and qat_admission.py. Keep exact consumer device equality,
+full validatedUUID and source/config gates; new source/QA/lane/lease reruns actual
+backward before updates. Root soleoperator/30-minute heartbeat unchanged.

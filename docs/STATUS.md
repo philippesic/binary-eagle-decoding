@@ -18,13 +18,14 @@ packet feature owner and independent QA. First ready calibratedfixedA8 lane
 is prioritized with delegated24h cumulativetrainerallocation and frequent
 checkpoints; remaining candidates queue without premature readiness claims.
 30-minute heartbeat `nine-model-overnight-qat-monitor` is ACTIVE in this chat.
-Production calibration, all-nine zero-update CUDA preparation/export and three-domain
-native generation/replay passed. First final admission attempt stopped before model
-execution at a protected /proc observer permission failure. Reviewed repair19b63c2
-is published; actual5080 read-only privileged census and resource snapshot now pass.
-Root is sole remote operator. Refreshing source QA and frozen lane before fresh
-seven-gate admission; positive optimizer updates remain PENDING. Healthy runs
-will not be stopped merely for morning, idle chat or a monitoring tick.
+Production calibration, zero-update CUDA preparation/export, native generation/
+replay,272 CUDA kernel checks, portability and exact all-nine native dispatch pass.
+Actual model/backward/fullF32moment receipt also passes; controller03 refuses
+Torch bareUUID versus NVIDIA GPU-prefixed UUID metadata. Strict canonical-format
+repair is underway in producer and live-query paths; no device gate waived.
+All owned phases released; QAT updates remain zero. Root is sole remote operator,
+30-minute heartbeat ACTIVE; fresh source-bound admission and sustained QAT next.
+Healthy runs continue into morning under the24h operational allocation.
 
 ## Historical preparation checkpoint — October 4, 2026
 
