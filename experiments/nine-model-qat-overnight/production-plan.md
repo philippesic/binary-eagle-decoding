@@ -140,3 +140,127 @@ preserves all six candidates/three frozen Q4 comparisons in the objective and
 records remaining family lanes and automatic evaluation integration separately.
 Full trained exports, all-nine final evaluation and actual throughput/acceptance
 are later campaign outcomes, not prerequisites for the first safe lane.
+
+## Concrete EAGLE packet helper
+
+`scripts/prepare_eagle_lane_packet.py` supplies the actual source-bound config,
+initial preparation identity and argv lists. It is metadata-only: it does not
+load a model, construct NativeTeacher, launch a process or query hardware.
+Its `prepare` mode requires the successful production initializer and original
+completed receipt `bdfa56f8...`; it verifies their full source/target/base join,
+preserves the original resolved config's frozen stages/model/data declarations,
+copies immutable authorization, and writes fixed A8/probes-off 24h/30h settings.
+It requests the existing fixed-reference cache/head optimizations; the current
+typed production admission must show executed cache calls and an effective
+batched head for this exact config before any update. Learned quantizers,
+midpoints, correction/alternative binary optimizer recipes remain OFF. This is
+an explicit current execution request, not reuse of historical optimization
+readiness. The packet writes `effective-controls.json` with these selections.
+The packet's `commands.json` binds exact producer source pins and complete argv
+lists for zero-update prepare, all-nine export, native generation and replay.
+Root reviews those commands before the operator executes them under remote_job.
+
+Minimum runtime JSON (`schema=eagle_lane_packet_runtime_v1`) from the operator:
+`native_source_revision` (native624 full SHA), actual `gpu_uuid` and `device_name`,
+canonical `gpu_control_path`, original `base_model` F16 EAGLE locator, `inputs`
+with exact path/SHA pins for `backend_binary`, `teacher_binary`, `binary` server,
+F16 `target` and `runtime_library_0...N`, exact `environment` including the UUID
+visibility and current library path, and the four established `resource_policy`
+floor/return-tolerance fields. Missing build hashes remain unavailable until the
+actual build completes; no guessed runtime pin is published.
+Include `build_provenance` with pinned native build/compile-flag metadata and
+the external `cuda-glibc-compat` include-shim manifest used for CUDA13.1/GCC15.2;
+the descriptor adds these to the frozen admission source inventory. This records
+the actual header/flags without changing native624 or asserting runtime readiness.
+
+The original prepared directory is:
+
+```
+/home/philip/binary-eagle-decoding/runs/qat-optimization-readiness/retained-capture-adoption-20261002-01/checkout/runs/retained-a8-a1-preparation-20261002-01
+```
+
+Use these commands with the operator's exact runtime JSON/pin and the successful
+initializer at `data/nine-model-overnight/eagle-fixed-a8-initializer-01`:
+
+```sh
+python scripts/prepare_eagle_lane_packet.py prepare --runtime RUNTIME_JSON --runtime-sha256 RUNTIME_SHA --prepared-run-dir ORIGINAL_PREPARED_DIR --initializer-dir /home/philip/binary-eagle-decoding/data/nine-model-overnight/eagle-fixed-a8-initializer-01 --authorization IMMUTABLE_AUTHORIZATION_TEXT --output /home/philip/binary-eagle-decoding/data/nine-model-overnight/eagle-fixed-a8-packet-01
+```
+
+The packet prepares exactly one original TRAIN prompt per domain for bounded
+target-only greedy generation: 512 native prompt-token cap, 32 new tokens,
+544 chain cap, five native taps and no stored chain logits. This capture is
+portability goldens only; it does not recapture or replace the full training
+corpus. After the operator runs the exact `native_generation` argv, use its
+three JSON receipt lines to build source-preserving replay requests:
+
+```sh
+python scripts/prepare_eagle_lane_packet.py replay --packet PACKET_DIR --receipts GENERATION_JOB_STDOUT_LOG
+```
+
+`replay` verifies unchanged native generation/CUDA/source/target/tokenizer/input
+ancestry through the existing validator and preserves every native-issued F16
+KV decode partition. The operator then runs the exact `native_replay` argv:
+three taps 2/18/33 and full-vocabulary **last-row** logits. After replay and the
+separate initial model export complete, bind genuine receipts and current QA:
+
+```sh
+python scripts/prepare_eagle_lane_packet.py bind --packet PACKET_DIR --generation-link-sha256 REPLAY_PREPARATION_LINK_SHA --receipts REPLAY_JOB_STDOUT_LOG --initial-model PACKET_DIR/initial-calibrated-a8.gguf --export-audit PACKET_DIR/initial-export-audit.json --qa-ledger CURRENT_ADDITIVE_QA_LEDGER
+python scripts/prepare_nine_model_bundle.py --inputs PACKET_DIR/production-inputs.json --materialize-admission-plan PACKET_DIR/lane-admission.json
+python scripts/prepare_nine_model_lane.py --inputs PACKET_DIR/lane-admission.json-inputs/resolved-inputs.json --output PACKET_DIR/lane.json
+```
+
+`bind` validates the exact three-domain replay file bytes with
+`NativeCaptureGoldens`; it cannot promote generated receipts to replay goldens.
+`replay` prints the generation/replay-link locator; pass that externally recorded
+SHA to `bind`, which rejects changed link/request/raw-generation bytes.
+All-nine initial model and selected data/config pins then join the ordinary
+fresh SM120 plan. Missing actual initialization/native/model/memory/QA evidence
+still refuses production launch. These helper steps emit no production PASS
+hardware claim and zero optimizer updates. Binding rederives each replay's
+ordered prompt/domain/tokens/partitions from the pinned native generated parent;
+substituted prefixes, duplicate domains and reordered requests refuse. Initial
+binding checks the actual zero-update producer receipt/config/request/source,
+step-zero outer checkpoint and all-nine joint NPZ/manifest hashes against the
+serializer's base/output/checkpoint audit. The trainer's preparation receipt now
+includes these truthful source/config/stage fields; no math or admission is
+changed. Five focused metadata fixture tests verify positive joins and reject
+corpus/prefix/domain/order/checkpoint/source/export substitutions; the relevant
+trainer test module passes 30 tests. Changed-file Ruff and format pass. No full
+completed suite was repeated.
+
+The training provider iterates all 320 original shards and sorted native
+`(prompt_id, round_index)` anchors, preserving whole prompt chains and exact
+resume cursor. Its selected-shard iterator is smoke-only. There is no 13-prompt
+or pilot exposure cap: actual unique prompt/row counters must be monitored.
+The 24-hour allocation may end before every original TRAIN prompt is consumed;
+source eligibility for 10,000 prompts is not a claim of completed exposure.
+Zero-update smoke executes cache/head requests without requiring an existing
+optimization receipt, so admission is not circular. Production `run()` then
+requires current typed admission whose observed execution paths match the
+selected fixed recipe. No historical readiness or silent fallback is used.
+The frozen admission source inventory retains the externally pinned generation
+link, raw parent receipt log, exact replay requests and original prompt joins,
+plus the initial request, actual zero-update receipt and outer checkpoint
+manifest. These proofs remain inspectable after packet freezing.
+
+## Official author source dependency
+
+Current `w1ax_capture_provider.NativeCaptureProvider.load_models_cpu()` calls
+`w1a1_eagle.official_loader.load_official_eagle3`. It requires installed AngelSlim
+distribution metadata whose real VCS `commit_id` is
+`0358da9c651e6a7d7ccafea26ced4b9c98d11681`, plus these official package modules:
+
+- `angelslim.compressor.speculative.inference.models.eagle3.configuration_eagle3_model`
+- `angelslim.compressor.speculative.inference.models.eagle3.draft`
+- `angelslim.compressor.speculative.inference.models.eagle3.eagle3_model`
+
+The third supplies `Eagle3Model` and `ModelLoader`; Transformers must provide
+`AutoTokenizer` and `ROPE_INIT_FUNCTIONS['default']`. Locate the original working
+environment/pinned author Git checkout on RTX5080 through the sole operator.
+Reusing an existing exact installation is preferable. If installation into the
+locked current environment is needed, use the authentic local Git checkout and
+`pip install --no-deps git+file://PINNED_AUTHOR_CHECKOUT@0358da9c651e6a7d7ccafea26ced4b9c98d11681`,
+then check revision metadata and official module imports without model loading.
+Record loaded module paths/hashes and package versions. Do not replace this
+official loader with the private leaf namespace from the Mac diagnostic or
+forge distribution metadata; neither establishes production model ancestry.

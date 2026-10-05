@@ -496,6 +496,12 @@ def materialize_admission_plan(descriptor, output, *, fixture=False, inspect_dra
             files.check(record)
             source["artifact:" + name] = record
     training_source = trainer.training_source_identity()
+    for name, record in preflight.get("build_provenance", {}).items():
+        files.check(record)
+        source["artifact:build_provenance:" + name] = record
+    for name, record in preflight.get("preparation_provenance", {}).items():
+        files.check(record)
+        source["artifact:preparation_provenance:" + name] = record
     for name, digest in training_source.items():
         require(source[name]["sha256"] == digest, "actual trainer source inventory differs")
     environment = dict(descriptor.get("environment", {}))

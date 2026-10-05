@@ -855,6 +855,11 @@ def run_eagle(args, spec, hardware):
             "optimizer_updates": 0,
             "checkpoint": trainer.checkpoint,
             "smoke": smoke,
+            "bundle_sha256": args.bundle_sha256,
+            "config_sha256": sha256(args.config),
+            "stage": args.stage_name,
+            "artifact_kind": "production",
+            "source": provider.source_metadata,
         }
     trainer.run()
     if trainer.stop_requested or not trainer.capped():
