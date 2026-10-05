@@ -177,25 +177,52 @@ def materialize_configs(descriptor, directory, *, source_validate=True):
         }
         limits = budget["candidates"][name]["training_limits"]
         if family == "eagle":
-            require(
-                selected["profile"] != "a8_to_a1_reset",
-                "EAGLE curriculum configuration source integration PENDING",
-            )
+            warm = selected["profile"] == "a8_to_a1_reset"
             base_config = files.check(selected["eagle_config_template"])
             eagle = json.loads(base_config.read_text())
             eagle["training"].update(limits)
             eagle["training"].update(
-                activation_bits=[bits],
+                activation_bits=[8 if warm else bits],
                 development_lifecycle="standalone",
                 activation_quantization="fixed",
                 initialization_sha256=initializer["sha256"],
                 initialization_policy=policy,
             )
+            if "encoding" in initializer:
+                eagle["training"]["initialization_encoding"] = initializer["encoding"]
             lane_config = directory / (name + "-continuous.json")
             atomic_json(lane_config, eagle)
             if source_validate:
                 importlib.import_module("train_continuous_w1ax").load_config(lane_config)
             spec.update(eagle_config=pin(lane_config), prepared=selected["prepared"])
+            if warm:
+                require(
+                    not source_validate or hasattr(trainer, "run_eagle_curriculum"),
+                    "actual EAGLE curriculum source API integration PENDING",
+                )
+                curriculum = copy.deepcopy(budget["candidates"][name]["curriculum"])
+                require(
+                    [stage["activation_bits"] for stage in curriculum["stages"]] == [8, 1]
+                    and curriculum.get("optimizer_transition") == "fresh",
+                    "EAGLE curriculum must declare A8-to-A1 with fresh optimizer",
+                )
+                if source_validate:
+                    from w1a1_eagle.qat_curriculum import CurriculumConfig, PrecisionStage
+                    from w1a1_eagle.qat_curriculum_runner import RunnerConfig
+
+                    CurriculumConfig(
+                        tuple(PrecisionStage(**stage) for stage in curriculum["stages"]),
+                        curriculum["optimizer_transition"],
+                    )
+                    RunnerConfig(**selected.get("curriculum_runner", {}))
+                spec.update(
+                    precision_stage="a8_to_a1",
+                    curriculum=curriculum,
+                    curriculum_runner=selected.get("curriculum_runner", {}),
+                )
+                for quota in ("min_a1_updates", "min_a1_supervised_tokens"):
+                    if quota in budget["candidates"][name]:
+                        spec[quota] = budget["candidates"][name][quota]
         else:
             require(
                 selected["deployment_coverage"]["profile"] in {"ffn15", "ffn15_fusion"},
@@ -213,13 +240,23 @@ def materialize_configs(descriptor, directory, *, source_validate=True):
             spec.update(
                 qat=qat,
                 model=selected["base_model"],
-                data=selected["data"],
+                data={
+                    **selected["data"],
+                    **(
+                        {"admission": selected["data_admission"]}
+                        if selected.get("data_admission")
+                        else {}
+                    ),
+                },
                 limits=limits,
                 checkpoint_every=selected["checkpoint_every"],
                 precision_stage="a8_to_a1" if selected["profile"] == "a8_to_a1_reset" else "direct",
             )
             if spec["precision_stage"] == "a8_to_a1":
                 spec["a8_warmup_steps"] = selected["a8_warmup_steps"]
+                for quota in ("min_a1_updates", "min_a1_supervised_tokens"):
+                    if quota in budget["candidates"][name]:
+                        spec[quota] = budget["candidates"][name][quota]
                 max_steps = limits.get("max_steps")
                 require(
                     max_steps is None or max_steps > selected["a8_warmup_steps"],
@@ -316,7 +353,7 @@ def build(descriptor, output, *, inspect_draft=False):
         # Reuse actual completed admissions; do not redo multi-hour corpus scans.
         if spec["family"] != "eagle":
             data = spec["data"]
-            files.check(data)
+            files.check({key: data[key] for key in ("path", "sha256")})
             module = importlib.import_module("w1a1_eagle.block_data")
             module.BlockDataset(
                 data["path"],
@@ -344,15 +381,16 @@ def build(descriptor, output, *, inspect_draft=False):
         else:
             eagle_api = importlib.import_module("train_continuous_w1ax")
             _, eagle_config = eagle_api.load_config(files.check(spec["eagle_config"]))
+            initial_precision = 8 if selected["profile"] == "a8_to_a1_reset" else precision
             require(
-                eagle_config.activation_bits == (precision,)
+                eagle_config.activation_bits == (initial_precision,)
                 and eagle_config.development_lifecycle == "standalone",
                 "EAGLE candidate arithmetic/fresh-process lifecycle differs",
             )
         if selected["profile"] == "a8_to_a1_reset":
             require(
-                spec["family"] != "eagle" and spec.get("precision_stage") == "a8_to_a1",
-                "EAGLE transition launcher not admitted; block transition must be explicit",
+                spec.get("precision_stage") == "a8_to_a1",
+                "warm precision transition must use actual source launcher",
             )
         limits = budget["candidates"][name]
         require(
@@ -369,10 +407,24 @@ def build(descriptor, output, *, inspect_draft=False):
                 key: getattr(eagle_config, key)
                 for key in ("max_steps", "max_tokens", "max_seconds", "max_epochs")
             }
-            require(
-                caps == limits["training_limits"],
-                "selected EAGLE budget differs from actual continuous config",
-            )
+            if selected["profile"] == "a8_to_a1_reset":
+                from w1a1_eagle.qat_curriculum import CurriculumConfig, PrecisionStage
+                from w1a1_eagle.qat_curriculum_runner import RunnerConfig
+
+                CurriculumConfig(
+                    tuple(PrecisionStage(**stage) for stage in spec["curriculum"]["stages"]),
+                    spec["curriculum"]["optimizer_transition"],
+                )
+                RunnerConfig(**spec.get("curriculum_runner", {}))
+                require(
+                    spec["curriculum"] == limits["curriculum"],
+                    "human curriculum phase caps differ from actual source config",
+                )
+            else:
+                require(
+                    caps == limits["training_limits"],
+                    "selected EAGLE budget differs from actual continuous config",
+                )
         train_argv = [
             sys.executable,
             str(ROOT / "scripts/train_nine_model_qat.py"),

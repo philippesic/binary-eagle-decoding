@@ -7,6 +7,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from w1a1_eagle.nine_model_pipeline import CANDIDATES, CELLS, sha256
 
@@ -95,7 +96,95 @@ class BuilderTests(unittest.TestCase):
                 )
 
 
+class PausedLaunchTests(unittest.TestCase):
+    def test_paused_start_refuses_before_source_audit_or_gpu_query(self):
+        spec = importlib.util.spec_from_file_location(
+            "paused_campaign_cli", ROOT / "scripts/run_nine_model_campaign.py"
+        )
+        cli = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cli)
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            control = root / "gpu-control.json"
+            control.write_text(json.dumps({"rtx5080": {"pause_requested": True}}))
+            with (
+                patch.object(cli, "validate_bundle", side_effect=AssertionError("source audit")),
+                patch.object(cli, "LinuxResources", side_effect=AssertionError("GPU query")),
+            ):
+                with self.assertRaisesRegex(InterruptedError, "paused; no GPU query"):
+                    cli.main(
+                        [
+                            "--start",
+                            "--bundle",
+                            str(root / "not-opened.json"),
+                            "--bundle-sha256",
+                            "a" * 64,
+                            "--gpu-control",
+                            str(control),
+                        ]
+                    )
+
+
 class SixSourceConfigTests(unittest.TestCase):
+    def fixture(self, root):
+        def pin(path):
+            return {"path": str(path), "sha256": sha256(path)}
+
+        artifact = root / "source-fixture"
+        artifact.write_bytes(b"fixture metadata only; never model or GPU loaded")
+        artifact_pin = pin(artifact)
+        candidates = {}
+        budgets = {}
+        for candidate in CANDIDATES:
+            family = candidate.split("_")[0]
+            bits = 8 if candidate.endswith("a8") else 1
+            candidates[candidate] = {
+                "profile": "fixed_reference" if bits == 8 else "direct_a1",
+                "initialization": {
+                    **artifact_pin,
+                    "activation_bits": bits,
+                    "latent_initialization": {
+                        "policy": "preserve_reference_magnitudes",
+                        "reference_kind": "eagle_fixed_reference_0.5"
+                        if family == "eagle"
+                        else "block_source_weight_magnitudes",
+                        "reference_sha256": "a" * 64,
+                    },
+                },
+                "base_model": artifact_pin,
+                "data": artifact_pin,
+                "checkpoint_every": 1,
+                "deployment_coverage": {"profile": "ffn15_fusion"},
+                "eagle_config_template": pin(ROOT / "configs/continuous_w1ax.json"),
+                "prepared": {
+                    "run_dir": str(root / "missing-production-data"),
+                    "ready_sha256": "a" * 64,
+                },
+            }
+            budgets[candidate] = {
+                "training_limits": {
+                    "max_steps": 1,
+                    ("max_tokens" if family == "eagle" else "max_supervised_tokens"): None,
+                    "max_seconds": None,
+                    "max_epochs": None,
+                }
+            }
+        budget = root / "budget.json"
+        budget.write_text(
+            json.dumps(
+                {
+                    "schema": "nine_model_selected_budget_v1",
+                    "human_selected": True,
+                    "candidates": budgets,
+                }
+            )
+        )
+        return {
+            "schema": "nine_model_bundle_inputs_v1",
+            "candidates": candidates,
+            "budget": pin(budget),
+        }, budgets
+
     def test_six_real_source_profiles_parse_without_model_or_gpu(self):
         from w1a1_eagle.block_qat import BlockQATConfig
         from w1a1_eagle.continuous_qat import ContinuousConfig
@@ -107,64 +196,9 @@ class SixSourceConfigTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder).resolve()
 
-            def pin(path):
-                return {"path": str(path), "sha256": sha256(path)}
-
-            artifact = root / "source-fixture"
-            artifact.write_bytes(b"fixture metadata only; never model or GPU loaded")
-            artifact_pin = pin(artifact)
-            candidates = {}
-            budgets = {}
-            for candidate in CANDIDATES:
-                family = candidate.split("_")[0]
-                bits = 8 if candidate.endswith("a8") else 1
-                candidates[candidate] = {
-                    "profile": "fixed_reference" if bits == 8 else "direct_a1",
-                    "initialization": {
-                        **artifact_pin,
-                        "activation_bits": bits,
-                        "latent_initialization": {
-                            "policy": "preserve_reference_magnitudes",
-                            "reference_kind": "eagle_fixed_reference_0.5"
-                            if family == "eagle"
-                            else "block_source_weight_magnitudes",
-                            "reference_sha256": "a" * 64,
-                        },
-                    },
-                    "base_model": artifact_pin,
-                    "data": artifact_pin,
-                    "checkpoint_every": 1,
-                    "deployment_coverage": {"profile": "ffn15_fusion"},
-                    "eagle_config_template": pin(ROOT / "configs/continuous_w1ax.json"),
-                    "prepared": {
-                        "run_dir": str(root / "missing-production-data"),
-                        "ready_sha256": "a" * 64,
-                    },
-                }
-                budgets[candidate] = {
-                    "training_limits": {
-                        "max_steps": 1,
-                        ("max_tokens" if family == "eagle" else "max_supervised_tokens"): None,
-                        "max_seconds": None,
-                        "max_epochs": None,
-                    }
-                }
-            budget = root / "budget.json"
-            budget.write_text(
-                json.dumps(
-                    {
-                        "schema": "nine_model_selected_budget_v1",
-                        "human_selected": True,
-                        "candidates": budgets,
-                    }
-                )
-            )
+            descriptor, _ = self.fixture(root)
             receipt = builder.materialize_configs(
-                {
-                    "schema": "nine_model_bundle_inputs_v1",
-                    "candidates": candidates,
-                    "budget": pin(budget),
-                },
+                descriptor,
                 root / "configs",
             )
             self.assertEqual(set(receipt["configs"]), set(CANDIDATES))
@@ -178,6 +212,42 @@ class SixSourceConfigTests(unittest.TestCase):
                     spec["initialization"]["latent_initialization"]["policy"],
                     "preserve_reference_magnitudes",
                 )
+
+    def test_three_warm_profiles_use_real_curriculum_and_block_source_apis(self):
+        import train_nine_model_qat as trainer
+
+        if not hasattr(trainer, "run_eagle_curriculum"):
+            self.skipTest("EAGLE warm source integration PENDING")
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            descriptor, budgets = self.fixture(root)
+            for candidate in ("eagle_a1", "dspark_a1", "dflash_a1"):
+                selected = descriptor["candidates"][candidate]
+                selected["profile"] = "a8_to_a1_reset"
+                selected["initialization"]["activation_bits"] = 8
+                selected["a8_warmup_steps"] = 1
+                budgets[candidate]["training_limits"]["max_steps"] = 5
+                budgets[candidate]["min_a1_updates"] = 2
+                if candidate == "eagle_a1":
+                    budgets[candidate]["curriculum"] = {
+                        "optimizer_transition": "fresh",
+                        "stages": [
+                            {"activation_bits": 8, "gpu_seconds": 100, "max_updates": 2},
+                            {"activation_bits": 1, "gpu_seconds": 200, "max_updates": 3},
+                        ],
+                    }
+            budget = Path(descriptor["budget"]["path"])
+            content = json.loads(budget.read_text())
+            content["candidates"] = budgets
+            budget.write_text(json.dumps(content))
+            descriptor["budget"]["sha256"] = sha256(budget)
+            receipt = builder.materialize_configs(descriptor, root / "warm-configs")
+            self.assertEqual(receipt["source_validation"], "PASS")
+            for candidate in ("eagle_a1", "dspark_a1", "dflash_a1"):
+                spec = json.loads(Path(receipt["configs"][candidate]["path"]).read_text())
+                self.assertEqual(spec["precision_stage"], "a8_to_a1")
+                self.assertEqual(spec["min_a1_updates"], 2)
+            self.assertFalse(receipt["production_preparation_ready"])
 
 
 if __name__ == "__main__":

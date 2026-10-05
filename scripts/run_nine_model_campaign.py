@@ -22,6 +22,15 @@ from w1a1_eagle.nine_model_pipeline import (  # noqa: E402
 )
 
 
+def require_unpaused(path):
+    try:
+        control = json.loads(Path(path).read_text())
+    except FileNotFoundError as error:
+        raise InterruptedError("RTX5080 control absent; no GPU query authorized") from error
+    if control.get("rtx5080", {}).get("pause_requested") is not False:
+        raise InterruptedError("RTX5080 paused; no GPU query authorized")
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bundle", type=Path, required=True)
@@ -37,6 +46,8 @@ def main(argv=None):
         default=Path.home() / ".config/binary-eagle-decoding/gpu-control.json",
     )
     args = parser.parse_args(argv)
+    if args.start:
+        require_unpaused(args.gpu_control)
     require(sha256(args.bundle) == args.bundle_sha256, "frozen bundle SHA256 differs")
     bundle, files = validate_bundle(args.bundle)
     if not args.start:
@@ -71,9 +82,7 @@ def main(argv=None):
     lease = require_available(args.availability, args.bundle_sha256)
 
     def authorization():
-        control = json.loads(args.gpu_control.read_text())
-        if control.get("rtx5080", {}).get("pause_requested") is not False:
-            raise InterruptedError("RTX5080 paused or control absent")
+        require_unpaused(args.gpu_control)
         # Lease freshness is checked once before long QAT; owner/pause identity is
         # checked at every boundary. A five-minute lease is not a five-minute job cap.
         current = json.loads(args.availability.read_text())
