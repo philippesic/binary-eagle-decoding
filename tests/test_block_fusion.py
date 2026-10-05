@@ -85,10 +85,27 @@ class FusionTests(unittest.TestCase):
         np.testing.assert_array_equal(codes, [[1, 1, -1, 1]])
         np.testing.assert_array_equal(beta, [1])
 
-    def test_tiny_a8_reciprocal_refuses_substitution(self):
-        with np.errstate(over="ignore"):
-            with self.assertRaisesRegex(ValueError, "overflow"):
-                quantize(np.full((1, 4), 1e-40, dtype=np.float32), 8)
+    def test_tiny_a8_finite_reciprocal_fallback_and_rne_ties(self):
+        raw = np.array([[1, 3, 254, 0x80000003, 0x80000000]], dtype=np.uint32).view(np.float32)
+        codes, beta = quantize(raw, 8)
+        np.testing.assert_array_equal(codes, [[0, 2, 127, -2, 0]])
+        np.testing.assert_array_equal(beta.view(np.uint32), [2])
+        max_subnormal = np.array([[0x007FFFFF, 0x807FFFFF, 0]], dtype=np.uint32).view(np.float32)
+        codes, beta = quantize(max_subnormal, 8)
+        np.testing.assert_array_equal(codes, [[127, -127, 0]])
+        self.assertTrue(np.isfinite(beta).all())
+
+    def test_a8_normal_domain_exact_historical_codes_and_scales(self):
+        rng = np.random.default_rng(192)
+        raw = rng.normal(size=(32, 32)).astype(np.float32)
+        raw *= np.geomspace(1e-30, 1e30, 32).astype(np.float32)[:, None]
+        limit = np.max(np.abs(raw), axis=1)
+        inv = np.divide(np.float32(127), limit, dtype=np.float32)
+        expected = np.clip(np.rint(raw * inv[:, None]), -127, 127).astype(np.int16)
+        expected_beta = np.divide(limit, np.float32(127), dtype=np.float32)
+        codes, beta = quantize(raw, 8)
+        np.testing.assert_array_equal(codes, expected)
+        np.testing.assert_array_equal(beta.view(np.uint32), expected_beta.view(np.uint32))
 
     def test_invalid_inputs_and_config_refuse(self):
         for bits in (True, 4, 16):

@@ -15,7 +15,7 @@ from dataclasses import dataclass
 import numpy as np
 
 ARITHMETIC = {
-    8: "f32_absmax_reciprocal_rint127_integer_dot_scale_f32_token_scale_f32",
+    8: "fixed_w1a8_finite_reciprocal_v2",
     1: "f64_meanabs_to_f32_zero_positive_sign_integer_dot_scale_f32_token_scale_f32",
 }
 
@@ -30,14 +30,29 @@ def quantize(raw, bits):
         beta = np.mean(np.abs(x).astype(np.float64), axis=1).astype(np.float32)
         codes = np.where(x < 0, -1, 1).astype(np.int16)
     else:
-        limit = np.max(np.abs(x), axis=1)
-        beta = np.divide(limit, np.float32(127), dtype=np.float32)
-        inv = np.divide(np.float32(127), limit, out=np.zeros_like(limit), where=limit > 0)
-        if not np.isfinite(inv).all():
-            raise ValueError("native fixed A8 reciprocal overflow; no substitution")
-        codes = np.clip(np.rint(np.multiply(x, inv[:, None], dtype=np.float32)), -127, 127).astype(
-            np.int16
-        )
+        # Positive IEEE F32 magnitude bits are monotonic, including subnormals.
+        # Match native bitwise absmax without a denormal-flushing fabs path.
+        magnitude_bits = np.bitwise_and(x.view(np.uint32), np.uint32(0x7FFFFFFF))
+        limit_bits = np.max(magnitude_bits, axis=1)
+        limit = limit_bits.view(np.float32)
+        with np.errstate(over="ignore", under="ignore"):
+            beta = np.divide(limit, np.float32(127), dtype=np.float32)
+            inv = np.divide(np.float32(127), limit, out=np.zeros_like(limit), where=limit_bits > 0)
+        fallback = ~np.isfinite(inv)
+        # Preserve historical F32 multiply/RNE on finite-inv rows and avoid
+        # 0*inf before selecting the fallback branch.
+        safe_inv = np.where(fallback, np.float32(0), inv)
+        codes = np.clip(
+            np.rint(np.multiply(x, safe_inv[:, None], dtype=np.float32)), -127, 127
+        ).astype(np.int16)
+        if np.any(fallback):
+            # Native: double(x)/double(absmax)*127, cast normalized to F32,
+            # then nearbyintf/RNE and clamp. A double reciprocal or rounding
+            # before the F32 cast would be a different arithmetic contract.
+            normalized = (
+                x[fallback].astype(np.float64) / limit[fallback, None].astype(np.float64) * 127.0
+            ).astype(np.float32)
+            codes[fallback] = np.clip(np.rint(normalized), -127, 127).astype(np.int16)
     if x.shape[1] * (127 if bits == 8 else 1) >= 2**24:
         raise ValueError("integer dot exceeds exact F32 range")
     return codes, beta
