@@ -982,3 +982,27 @@ only whether a human response or external-state change enables meaningful
 work; avoid repeated tests, broad source scans or idle diagnostics. If this
 same condition persists through three consecutive goal turns, mark the native
 Goal blocked, preserving the full objective and explicit next requirements.
+
+
+## Mac feasibility audit 2 — October 4, 21:42 PDT / October 5, 04:42 UTC
+
+Previous turn classified PROGRESS for verified ownership/publication and new
+independent feasibility evidence; it recorded genuine impasse observation1.
+This continuation makes no implementation progress and is not a verified wait:
+no owned live process/session exists to supervise.
+
+Current main remains `9b7013c`, with no tracked changes to decisions/status/goal
+records, only the same three unrelated overnight untracked groups. No human
+response or newly bound production input has arrived in this task or the
+authoritative decision record. Read-only local pause check is still true with
+unchanged timestamp. The same blockers from audit1 persist: human choices,
+selected serious production artifacts/provider/Q4/portability and authentic
+EAGLE admission, plus currently prohibited fresh remote hardware evidence.
+No independent safe action was identified beyond preserving this audit record.
+No source/test/model/data/remote operation or flag mutation was performed.
+
+**Consecutive genuine impasse observation2.** Goal stays ACTIVE until the
+required third consecutive goal-turn audit. Preserve the full unfinished
+objective and PENDING statuses. Recheck only new human/external-state evidence
+next turn; if unchanged, call native update_goal(blocked), record its returned
+status and stop work without claiming completion or changing authorization.

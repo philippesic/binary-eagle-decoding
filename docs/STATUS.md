@@ -46,7 +46,7 @@ exclusive ownership October 4, 21:40 PDT (October 5, 04:40 UTC). Its native Goal
 continues the unchanged unfinished objective. No preparation worker or owned job
 transfers. Ownership is published `cb16cd6` and its isolated worktree/branch
 are retired. A focused independent Mac feasibility audit found no justified
-remaining independent deliverable; first genuine impasse observation recorded,
+remaining independent deliverable; second consecutive impasse observation recorded,
 native Goal stays ACTIVE pending its consecutive-turn audit threshold. See the
 successor ownership and feasibility checkpoints in the goal file.
 
