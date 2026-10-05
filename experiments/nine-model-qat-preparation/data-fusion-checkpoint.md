@@ -128,3 +128,41 @@ exercise round-trip, one-ULP mismatch, wrong source/gamma/family/pruned models,
 scalar type/range, extraction caps and overwrite refusal. Actual block-model
 reference extraction/fitting remains PENDING local artifacts or later authorized
 operator access. No remote operation or model context was used.
+
+## Actual original block references — Mac materialization
+
+The native owner then materialized and audited both original model snapshots
+locally. Their FC payload is **BF16**, so `6156200` extends the bounded parser to
+GGML kind 30 and decodes BF16 with exact raw U16→U32 bit shift into F32, without a
+lossy F16 round trip. A real small BF16 GGUF byte oracle passes alongside the
+F16/F32 cases. Gamma is F32 in both actual original models; originals and the
+historical EAGLE artifacts remain untouched.
+
+Both actual pinned source models were extracted and revalidated on Apple M3 Max
+CPU without a model context, optimizer or remote operation. Ignored outputs:
+`results/nine-model-qat-preparation/block-fusion-references-20261004/{dspark,dflash}/`
+contains `fc-weight.npy`, `fc-norm.npy`, `reference.json`; the shared
+`preparation-report.json` records exact model/payload/file pins and scope.
+
+| Reference | DSpark | DFlash |
+|---|---|---|
+| Original GGUF | `3685ea7785729b4d3e9de3939264c1c87eb98a2bf7935a8c838eccf36be9fd13` | `61b294dc798c507fdc4a87f397b4015a78b3cdd7edad1e940e683bba10fb5575` |
+| Metadata | `455caaf63bff36821233abfde5a88cf9607e6e5a138457666cfce21fd264a3c4` | `ca1bcb35755f394ceea1b30008176a375ae78aa4b38d7698da8ca2462e1fe9ec` |
+| F32 FC NPY | `5ef5ce45c065f85d6c730ea8eea198e6d9c0f2fe7e92c83ae8504aecca3e1a86` | `a40c8492ac447ab4a2991bd86f219ad7e1a1778d792d0c09c7faf86b278239be` |
+| F32 gamma NPY | `e618c94c0feb35fe13d7c4a6f7edc34da13e17b24e7098822bafa92c9279714c` | `ce40f6da96b3a095ca4066c0a3d06e80d4c1a149739642d79b864cb5e72969af` |
+
+Both FC references are F32 `[2560,12800]`, gamma `[2560]`, 131,082,240 combined
+array bytes; source-zero FC magnitudes are zero. Both model norm epsilons are
+canonical F32 `9.999999974752427e-7`, bits `897988541`. Extractor maximum RSS was
+412,680,192 bytes (DSpark) and 414,826,496 bytes (DFlash), below 396 MiB. Actual
+weight/gamma/epsilon provenance is now materialized rather than a missing
+dependency. **Fusion fitting still requires authentic five-tap TRAIN captures**,
+which remain PENDING while GPU use is paused.
+
+For the approved pilot's three calibration groups × 32 rows, use
+`--max-total-rows 96 --max-array-bytes 1073741824`: conservative fitter workspace
+estimate is 833,617,920 bytes (795 MiB), not a process-RSS guarantee. Include the
+existing source-bound completed admission to avoid full teacher payload audits
+per precision. All applicable CPU checks currently pass: 53 package tests,
+19 capture tests and 20 historical discrete-fitter tests; actual CUDA remains
+unverified under the pause.
