@@ -33,7 +33,9 @@ sixteen-projection graphs and a paired private-target ownership check. All four
 Torch CPU A8/A1 forward/backward cells also passed with zero optimizer updates,
 finite/nonzero selected and later-state/K/V gradients, and unchanged parameters.
 These use synthetic inputs/labels: no calibration, convergence or quality claim.
-Actual FFN15-only native graphs are being checked sequentially on Mac.
+Actual FFN15-only native graphs also passed for all four cells. A bounded
+authentic native CPU TRAIN pilot is being prepared for source review; the
+default CUDA capture and fresh SM120 gates remain intact.
 Original frozen block Q4 files, native production TRAIN/goldens, block fusion
 fits, selected campaign recipe/budget and fresh authorized hardware admission
 remain explicit dependencies. Both remote hosts stay unused.

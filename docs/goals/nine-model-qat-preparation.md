@@ -460,3 +460,47 @@ QA refreshes exact source/artifact joins and requirement ledger. Root reviews,
 independently tests, integrates/pushes and prepares final Mac checkpoint. Missing
 production captures/calibration/frozen control files, fresh hardware checks and
 human coverage/recipe/long budget remain PENDING; no completed-goal declaration.
+
+
+## Mac data continuation and prelaunch gate correction
+
+Integrated/pushed main `b17d9c7` includes the actual block CPU training guard
+and four-cell report. Root independently ran69 block tests PASS,140 nine-model
+tests OK(5 Linux/device-only skips),98 QAT/export/fusion regressions PASS;
+new guard Ruff/format and diff-check pass. Four actual raw CPU report SHA256s
+and all core source pins match integrated source. Logs remain ignored in
+`results/nine-model-qat-preparation/root-final-mac/`.
+
+Native completed four additional actual FFN15-only CPU graphs, both families
+and A1/A8: exactly15 selected I32/W1 operations, original dense BF16 FC bytes,
+correct bits/MASK/seven noise slots, finite full-vocabulary outputs. Six stages
+exited0 with owned groups empty; export peak6.93GB/graph peak2.29GB within8GiB.
+Source unchanged; report publication pending. Separate summary SHA256
+`5868db9d37ed55168150c9ef516ee74b530df72ca56d27f47b277643113cdbc6` at
+`models/nine-model-original-snapshots/actual-cpu-ffn15-summary.json`.
+Heavy CPU slot is released. Training/operator/data-capture merged worktrees
+and branches were retired after checkpoint, patch-equivalent rebase and needed
+raw-log preservation; other teams' worktrees remain untouched.
+
+Root/pipeline review found a concrete prelaunch deadlock: bundle builder gated
+on aggregate profile PASS, while QA aggregate completion also requires trained
+checkpoints/final exports/evaluation. Pipeline is correcting this to explicit
+strict prelaunch_status plus portable initial-model/data/export/source evidence;
+aggregate campaign results remain independent PENDING. Missing prelaunch status
+refuses; current missing production inputs are not waived. QA coordinates schema
+and negative tests. Fresh SM120 remains an authorized runtime gate.
+
+A read-only data-owner audit established that NativeTeacher(gpu_layers=0) and
+raw importer support authentic frozen-F16 CPU TRAIN captures; only the full pilot
+controller/portability execution deliberately require CUDA. Root authorized a
+separate explicit development_CPU path to finish useful Mac artifacts without
+relaxing default CUDA/readiness gates. Data owns implementation/tests and will
+publish source and exact plan for root review before any heavy launch. Bound:
+9 original prompt-disjoint pilot chains plus6 separate CPU goldens, prompt≤512,
+new≤32/chain≤544, retained≤8GiB, RSS≤12GiB, prelaunch available≥12GiB/live≥4GiB,
+wall≤1800s, one persistent target-only CPU producer, STOP/failure close/reap.
+No optimizer updates, quality evaluation, GPU/SSH or changed controls. If capture
+succeeds, fit actual block A8/A1 FC references for both families separately, with
+rescue off and≤96 calibration rows/1GiB workspace, only after producer closure.
+CPU artifacts/goldens never grant CUDA/SM120 readiness. Source/capture progress
+and failures must be preserved; pipeline/QA defer final source pins accordingly.
