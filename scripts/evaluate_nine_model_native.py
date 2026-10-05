@@ -134,8 +134,8 @@ def run(args):
         result = inspect_collection(args)
         require(
             getattr(args, "inspect_collection", False),
-            "collection execution PENDING: fresh supervised collection lease/lock/"
-            "continuation/admission/release adapter required",
+            "collection execution PENDING: requires run_nine_model_endpoint_collection.py "
+            "with a frozen runtime plan and fresh supervised collection stage continuation",
         )
         print(json.dumps(result, sort_keys=True))
         return result
@@ -195,6 +195,15 @@ def run(args):
     # the pipeline never reads final prompts during preparation or selection.
     if protocol["split"] == "final":
         require(bundle.get("final_set_authorized") is True, "final set remains sealed")
+    return evaluate(
+        args, bundle, files, inputs, protocol, coverage, models, LinuxResources(bundle["gpu_uuid"])
+    )
+
+
+def evaluate(
+    args, bundle, files, inputs, protocol, coverage, models, observer, *, guard=None, ancestry=None
+):
+    """Shared unchanged native protocol; collection ownership is an explicit guard."""
     prompts = load_opaque_prompts(files.check(bundle["inputs"]["prompts"]))
     require(
         prompts and all(p.get("split") == protocol["split"] for p in prompts),
@@ -203,7 +212,6 @@ def run(args):
     require(len({p["id"] for p in prompts}) == len(prompts), "duplicate prompt IDs")
     destination = args.completion_output.parent / "native-results"
     destination.mkdir(parents=True, exist_ok=False)
-    observer = LinuxResources(bundle["gpu_uuid"])
     hardware = observer.snapshot()
     records, diagnostics, memory = [], [], []
     started = time.monotonic()
@@ -226,6 +234,8 @@ def run(args):
                 label = "diagnostic" if diagnostic else f"rep-{rep:02d}"
                 directory = destination / label / cell
                 directory.mkdir(parents=True)
+                if guard is not None:
+                    guard.before_cell(directory)
                 bits = (8 if cell.endswith("a8") else 1) if cell.endswith(("a8", "a1")) else None
                 env = native_environment(
                     cell.split("_")[0] if cell != "target_only" else cell,
@@ -259,6 +269,8 @@ def run(args):
                         mask = {signal.SIGINT, signal.SIGTERM, signal.SIGHUP}
                         old_mask = signal.pthread_sigmask(signal.SIG_BLOCK, mask)
                         try:
+                            if guard is not None:
+                                guard.admit_cell_launch()
                             proc = subprocess.Popen(
                                 cmd,
                                 cwd=ROOT,
@@ -270,6 +282,8 @@ def run(args):
                                     signal.SIG_SETMASK, old_mask
                                 ),
                             )
+                            if guard is not None:
+                                guard.register(proc)
                             atomic_json(
                                 directory / "owned-process.json",
                                 {"pid": proc.pid, "pgid": proc.pid, "argv": cmd},
@@ -293,6 +307,9 @@ def run(args):
                         cases += [(False, i, p) for i, p in enumerate(prompts)]
                         for warmup, i, prompt in cases:
                             require(not (args.run_dir / "STOP").exists(), "campaign STOP requested")
+                            if guard is not None:
+                                guard.authorize()
+                                guard.discover(proc)
                             remaining = protocol["evaluation_wall_seconds"] - (
                                 time.monotonic() - started
                             )
@@ -344,7 +361,15 @@ def run(args):
                                 memory.append(sample)
                         finally:
                             if proc is not None:
-                                stop_owned_server(proc)
+                                try:
+                                    if guard is not None:
+                                        guard.discover(proc)
+                                finally:
+                                    try:
+                                        stop_owned_server(proc)
+                                    finally:
+                                        if guard is not None:
+                                            guard.after_cell(directory)
                 if cell.endswith(("a8", "a1")):
                     text = (directory / "server.log").read_text(errors="replace")
                     markers = bundle["candidates"][cell]["native_markers"]
@@ -385,12 +410,32 @@ def run(args):
         "diagnostic_records": diagnostics,
         "diagnostic_sampled_memory": memory,
     }
+    if ancestry is not None:
+        measurements["collection_ancestry"] = ancestry
     atomic_json(destination / "measurements.json", measurements)
     report = destination / "report.json"
-    atomic_json(report, aggregate(measurements))
+    result = aggregate(measurements)
+    if ancestry is not None:
+        result["collection_ancestry"] = ancestry
+    atomic_json(report, result)
+    receipt = (
+        {
+            "schema": "nine_model_collection_evaluation_receipt_v1",
+            "collection_ancestry": ancestry,
+            "status": "PASS",
+            "artifact_kind": "production",
+            "native": True,
+            "cells": list(CELLS),
+            "target_only_diagnostic": True,
+            "report": {"path": str(report), "sha256": sha256(report)},
+        }
+        if ancestry is not None
+        else None
+    )
     atomic_json(
         args.completion_output,
-        {
+        receipt
+        or {
             "schema": "nine_model_stage_receipt_v1",
             "stage": "evaluation",
             "status": "PASS",
