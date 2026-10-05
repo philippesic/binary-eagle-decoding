@@ -1,0 +1,459 @@
+{
+  "artifact_kind": "development_CPU",
+  "canonical_main_revision_executed": "24a8a8a",
+  "cells": [
+    {
+      "activation_bits": 8,
+      "capture_ancestry": {
+        "conditioning_scope": "historical candidate-D captured proposals; current reference-initialized student",
+        "current_dense_base": {
+          "path": "/Users/pippo/github/binary-eagle-decoding/models/gguf/Qwen3-4B-eagle3-f16.gguf",
+          "sha256": "c1f895a130b64cd3d5a97fba7aa7605dc7fe3a389dd6d48e6751128614ee76d1"
+        },
+        "current_source_role": "original_dense_reference_initializer",
+        "historical_capture_drafter": {
+          "declared_sha256": "10e8e98e616480b25ff7600f195ba7ea3e0fd7c24832765013f960783c7609cf",
+          "payload": {
+            "path": "/Users/pippo/github/binary-eagle-decoding/results/binary-scale-fitting-5080/results/scale-fit/D.gguf",
+            "sha256": "10e8e98e616480b25ff7600f195ba7ea3e0fd7c24832765013f960783c7609cf"
+          },
+          "payload_status": "historical_payload_SHA_checked_only; native execution identity remains UNVERIFIED",
+          "role": "historical_candidate_d_capture_actor"
+        },
+        "historical_payload_status": "historical_payload_SHA_checked_only",
+        "native_execution_identity": "UNVERIFIED; all four diagnostic gates retained",
+        "source_cell": {
+          "path": "/Users/pippo/github/binary-eagle-decoding/results/recurrent-binary-cpu-smoke-20260928-a16/bundle/source_cell_manifest.json",
+          "sha256": "a8f2b41176d108bbd3063cb5d8e100969092438c6414cf74d1568d36d1f3a705"
+        },
+        "source_reports": {
+          "cell_manifest": {
+            "path": "/Users/pippo/github/binary-eagle-decoding/results/recurrent-binary-cpu-smoke-20260928-a16/cell_manifest.json",
+            "sha256": "a8f2b41176d108bbd3063cb5d8e100969092438c6414cf74d1568d36d1f3a705"
+          },
+          "features": {
+            "path": "/Users/pippo/github/binary-eagle-decoding/results/recurrent-binary-cpu-smoke-20260928-a16/bundle/features_preparation.json",
+            "sha256": "178020729c0ee01f4f4539d6018b5204e682143adb6bc310d52338926a3d17a5"
+          },
+          "rows": {
+            "path": "/Users/pippo/github/binary-eagle-decoding/results/recurrent-binary-cpu-smoke-20260928-a16/bundle/rows_preparation.json",
+            "sha256": "6f7e300fcdc848a1b71d96556bf17a5d761731e533e81cf659de9f8f3b3002d3"
+          }
+        },
+        "target_sha256": "05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6"
+      },
+      "checkpoint": {
+        "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/actual-eagle-direct-cpu-diagnostic-20261004/a8/state.npz",
+        "sha256": "10e0d291254ecb2b558ccea2024ac0d6f573a19ef0363307072eb322925026d5"
+      },
+      "checkpoint_manifest": {
+        "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/actual-eagle-direct-cpu-diagnostic-20261004/a8/state-manifest.json",
+        "sha256": "c64f8a019fbf74a26548f77744a0374515cba4182a5beb7adc7b8d3c2a04ee18"
+      },
+      "context_features_shape": [
+        32,
+        7680
+      ],
+      "diagnostic_gguf": {
+        "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/actual-eagle-direct-cpu-diagnostic-20261004/a8/diagnostic.gguf",
+        "sha256": "2e2554ddacb0cc60c761a329521cdb3f2bcb89fd9db430fe81c2e78bff2e267a"
+      },
+      "elapsed_seconds": 24.057303541805595,
+      "exported_projection_count": 9,
+      "group_gone": true,
+      "hardware": {
+        "KV": "F16",
+        "device": "CPU",
+        "platform": "macOS-27.0-arm64-arm-64bit",
+        "source_weights": "original BF16 converted to source F16 then promoted to F32",
+        "student_masters": "F32",
+        "teacher_embedding": "read-only target F16 GGUF mmap row copies",
+        "torch": "2.14.0"
+      },
+      "initializer": {
+        "activation_bits": 8,
+        "latent_initialization": {
+          "policy": "preserve_reference_magnitudes",
+          "reference_kind": "eagle_fixed_reference_0.5",
+          "reference_sha256": "9b24af2690be153cc84d2ed90353762f8f2094a9655683a774d46af38c7784b9"
+        },
+        "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/eagle-fusion-fixed-half-20261004/control-a8.npz",
+        "sha256": "9b907187f3299e76d0f9435851b4d683dc987c4ee22abb0a696a7f70f095e771"
+      },
+      "initializer_application": {
+        "fc": {
+          "policy": "preserve_reference_magnitudes",
+          "reference_sha256": "9b24af2690be153cc84d2ed90353762f8f2094a9655683a774d46af38c7784b9"
+        }
+      },
+      "log": {
+        "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/actual-eagle-direct-cpu-diagnostic-20261004/a8.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "minimum_host_available_bytes": 15474376704,
+      "native_execution_identity": "UNVERIFIED",
+      "native_graph_admitted": false,
+      "peak_rss_bytes": 5800787968,
+      "pgid": 15685,
+      "pid": 15685,
+      "preserved_tensors": {
+        "blk.0.attn_norm.weight": {
+          "raw_sha256": "de248f08836fb6d72255720250f7d67ddfdb2a772728933f63daa84f5988589b",
+          "type": "F32"
+        },
+        "blk.0.attn_norm_2.weight": {
+          "raw_sha256": "41462428f65f5e8d2e1bae1dcebf1c83d1ae774184997e70bd25f39f2d9fa9e9",
+          "type": "F32"
+        },
+        "blk.0.ffn_norm.weight": {
+          "raw_sha256": "379b71be18e6725e0e254bb400f75826acbab19fd2d7e40908bf8e70aff708eb",
+          "type": "F32"
+        },
+        "d2t": {
+          "raw_sha256": "03d2f0e3420175955c14a43a1c1dda360cde26c8a03318ffb1a013bb06d0fe0a",
+          "type": "I64"
+        },
+        "output_norm.weight": {
+          "raw_sha256": "95822a099083538e0aeb0c878730fda9e13ac2a3740412d1d99fde7181c95407",
+          "type": "F32"
+        }
+      },
+      "private_source_projection_values_exact_before_binarization": true,
+      "production_readiness": "PENDING",
+      "prompt_id": "qat-revisit-train-prose-urban-waterways-01",
+      "pruned_maps_exact": true,
+      "raw_report": {
+        "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/actual-eagle-direct-cpu-diagnostic-20261004/a8/report.json",
+        "sha256": "1f51f578d204d2ff283e9f4dd25306780d833caf8a424aa0ade3b7c32ca9f13d"
+      },
+      "returncode": 0,
+      "serialization_audit_passed": true,
+      "smoke": {
+        "execution": {
+          "actual_context_cache_calls": 1,
+          "effective_batched": true,
+          "optimize_cache_requested": true,
+          "optimize_head_requested": true,
+          "path": "batched",
+          "reason": "batched",
+          "requested": true,
+          "saturation_scope": "valid_chain_mean"
+        },
+        "hard_forward": true,
+        "later_k_gradient_norm": 0.5727861523628235,
+        "later_position_gradient_norm": 1.046198159456253,
+        "later_state_gradient_norm": 0.16684669256210327,
+        "later_v_gradient_norm": 0.3065653145313263,
+        "logits_shape": [
+          5,
+          32000
+        ],
+        "loss_diagnostic_only": 10.570785522460938,
+        "optimizer_moment_tensors": 0,
+        "optimizer_updates": 0,
+        "parameter_versions_after_initialization_unchanged": true,
+        "resources_gradients_resident": {
+          "host_available_bytes": 16381476864,
+          "host_total_bytes": 38654705664,
+          "psutil_module": "/Users/pippo/Library/Python/3.11/lib/python/site-packages/psutil/__init__.py",
+          "psutil_version": "7.2.2",
+          "python": "/Library/Frameworks/Python.framework/Versions/3.11/bin/python3",
+          "rss_bytes": 4725047296
+        },
+        "selected_gradient_tensors_finite_nonzero": 18,
+        "supervised_rows": 5
+      },
+      "status": "PASS_DIRECT_CPU_DIAGNOSTIC_ONLY",
+      "target_parameters_loaded": 0,
+      "training_eligible": false,
+      "unresolved_gates": [
+        "native_model_execution_identity",
+        "native_target_feature_numeric_parity",
+        "full_drafter_mask_position_and_kv_parity",
+        "initial_sample_terminal_emission_and_request_completeness"
+      ],
+      "unused_embedding": "meta; never executed; FrozenOperands performs actual borrowed embedding lookup",
+      "warm_lifecycle": "NOT_EXERCISED"
+    },
+    {
+      "activation_bits": 1,
+      "capture_ancestry": {
+        "conditioning_scope": "historical candidate-D captured proposals; current reference-initialized student",
+        "current_dense_base": {
+          "path": "/Users/pippo/github/binary-eagle-decoding/models/gguf/Qwen3-4B-eagle3-f16.gguf",
+          "sha256": "c1f895a130b64cd3d5a97fba7aa7605dc7fe3a389dd6d48e6751128614ee76d1"
+        },
+        "current_source_role": "original_dense_reference_initializer",
+        "historical_capture_drafter": {
+          "declared_sha256": "10e8e98e616480b25ff7600f195ba7ea3e0fd7c24832765013f960783c7609cf",
+          "payload": {
+            "path": "/Users/pippo/github/binary-eagle-decoding/results/binary-scale-fitting-5080/results/scale-fit/D.gguf",
+            "sha256": "10e8e98e616480b25ff7600f195ba7ea3e0fd7c24832765013f960783c7609cf"
+          },
+          "payload_status": "historical_payload_SHA_checked_only; native execution identity remains UNVERIFIED",
+          "role": "historical_candidate_d_capture_actor"
+        },
+        "historical_payload_status": "historical_payload_SHA_checked_only",
+        "native_execution_identity": "UNVERIFIED; all four diagnostic gates retained",
+        "source_cell": {
+          "path": "/Users/pippo/github/binary-eagle-decoding/results/recurrent-binary-cpu-smoke-20260928-a16/bundle/source_cell_manifest.json",
+          "sha256": "a8f2b41176d108bbd3063cb5d8e100969092438c6414cf74d1568d36d1f3a705"
+        },
+        "source_reports": {
+          "cell_manifest": {
+            "path": "/Users/pippo/github/binary-eagle-decoding/results/recurrent-binary-cpu-smoke-20260928-a16/cell_manifest.json",
+            "sha256": "a8f2b41176d108bbd3063cb5d8e100969092438c6414cf74d1568d36d1f3a705"
+          },
+          "features": {
+            "path": "/Users/pippo/github/binary-eagle-decoding/results/recurrent-binary-cpu-smoke-20260928-a16/bundle/features_preparation.json",
+            "sha256": "178020729c0ee01f4f4539d6018b5204e682143adb6bc310d52338926a3d17a5"
+          },
+          "rows": {
+            "path": "/Users/pippo/github/binary-eagle-decoding/results/recurrent-binary-cpu-smoke-20260928-a16/bundle/rows_preparation.json",
+            "sha256": "6f7e300fcdc848a1b71d96556bf17a5d761731e533e81cf659de9f8f3b3002d3"
+          }
+        },
+        "target_sha256": "05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6"
+      },
+      "checkpoint": {
+        "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/actual-eagle-direct-cpu-diagnostic-20261004/a1/state.npz",
+        "sha256": "88a51c011d41feb14cd5589f5c52309dd37c3c8435dc6680951dfb9c1ffed7bc"
+      },
+      "checkpoint_manifest": {
+        "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/actual-eagle-direct-cpu-diagnostic-20261004/a1/state-manifest.json",
+        "sha256": "40df57f06cc3734d9ce676bcaad2f45174c0b180d6ac1b80bc092251ffd0734b"
+      },
+      "context_features_shape": [
+        32,
+        7680
+      ],
+      "diagnostic_gguf": {
+        "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/actual-eagle-direct-cpu-diagnostic-20261004/a1/diagnostic.gguf",
+        "sha256": "f98252af88b692f2c8960f5d3617a9a8383137da322b2be231a38185a77cdee0"
+      },
+      "elapsed_seconds": 24.013492499943823,
+      "exported_projection_count": 9,
+      "group_gone": true,
+      "hardware": {
+        "KV": "F16",
+        "device": "CPU",
+        "platform": "macOS-27.0-arm64-arm-64bit",
+        "source_weights": "original BF16 converted to source F16 then promoted to F32",
+        "student_masters": "F32",
+        "teacher_embedding": "read-only target F16 GGUF mmap row copies",
+        "torch": "2.14.0"
+      },
+      "initializer": {
+        "activation_bits": 1,
+        "latent_initialization": {
+          "policy": "preserve_reference_magnitudes",
+          "reference_kind": "eagle_fixed_reference_0.5",
+          "reference_sha256": "9b24af2690be153cc84d2ed90353762f8f2094a9655683a774d46af38c7784b9"
+        },
+        "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/eagle-fusion-fixed-half-20261004/control-a1.npz",
+        "sha256": "f4f4c102f4d8749c716903e3862723ae9968d505d65eae2e4958c14d067af32b"
+      },
+      "initializer_application": {
+        "fc": {
+          "policy": "preserve_reference_magnitudes",
+          "reference_sha256": "9b24af2690be153cc84d2ed90353762f8f2094a9655683a774d46af38c7784b9"
+        }
+      },
+      "log": {
+        "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/actual-eagle-direct-cpu-diagnostic-20261004/a1.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "minimum_host_available_bytes": 15418245120,
+      "native_execution_identity": "UNVERIFIED",
+      "native_graph_admitted": false,
+      "peak_rss_bytes": 5794185216,
+      "pgid": 15772,
+      "pid": 15772,
+      "preserved_tensors": {
+        "blk.0.attn_norm.weight": {
+          "raw_sha256": "de248f08836fb6d72255720250f7d67ddfdb2a772728933f63daa84f5988589b",
+          "type": "F32"
+        },
+        "blk.0.attn_norm_2.weight": {
+          "raw_sha256": "41462428f65f5e8d2e1bae1dcebf1c83d1ae774184997e70bd25f39f2d9fa9e9",
+          "type": "F32"
+        },
+        "blk.0.ffn_norm.weight": {
+          "raw_sha256": "379b71be18e6725e0e254bb400f75826acbab19fd2d7e40908bf8e70aff708eb",
+          "type": "F32"
+        },
+        "d2t": {
+          "raw_sha256": "03d2f0e3420175955c14a43a1c1dda360cde26c8a03318ffb1a013bb06d0fe0a",
+          "type": "I64"
+        },
+        "output_norm.weight": {
+          "raw_sha256": "95822a099083538e0aeb0c878730fda9e13ac2a3740412d1d99fde7181c95407",
+          "type": "F32"
+        }
+      },
+      "private_source_projection_values_exact_before_binarization": true,
+      "production_readiness": "PENDING",
+      "prompt_id": "qat-revisit-train-prose-urban-waterways-01",
+      "pruned_maps_exact": true,
+      "raw_report": {
+        "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/actual-eagle-direct-cpu-diagnostic-20261004/a1/report.json",
+        "sha256": "7055f26c5ec0b54cd021c210cf61b0f97ebb9f63698ad444c2b3f8669e8fef9c"
+      },
+      "returncode": 0,
+      "serialization_audit_passed": true,
+      "smoke": {
+        "execution": {
+          "actual_context_cache_calls": 1,
+          "effective_batched": true,
+          "optimize_cache_requested": true,
+          "optimize_head_requested": true,
+          "path": "batched",
+          "reason": "batched",
+          "requested": true,
+          "saturation_scope": "valid_chain_mean"
+        },
+        "hard_forward": true,
+        "later_k_gradient_norm": 0.15486100316047668,
+        "later_position_gradient_norm": 0.4672256335616112,
+        "later_state_gradient_norm": 0.11236272007226944,
+        "later_v_gradient_norm": 0.20000191032886505,
+        "logits_shape": [
+          5,
+          32000
+        ],
+        "loss_diagnostic_only": 10.193406105041504,
+        "optimizer_moment_tensors": 0,
+        "optimizer_updates": 0,
+        "parameter_versions_after_initialization_unchanged": true,
+        "resources_gradients_resident": {
+          "host_available_bytes": 16442441728,
+          "host_total_bytes": 38654705664,
+          "psutil_module": "/Users/pippo/Library/Python/3.11/lib/python/site-packages/psutil/__init__.py",
+          "psutil_version": "7.2.2",
+          "python": "/Library/Frameworks/Python.framework/Versions/3.11/bin/python3",
+          "rss_bytes": 4725145600
+        },
+        "selected_gradient_tensors_finite_nonzero": 18,
+        "supervised_rows": 5
+      },
+      "status": "PASS_DIRECT_CPU_DIAGNOSTIC_ONLY",
+      "target_parameters_loaded": 0,
+      "training_eligible": false,
+      "unresolved_gates": [
+        "native_model_execution_identity",
+        "native_target_feature_numeric_parity",
+        "full_drafter_mask_position_and_kv_parity",
+        "initial_sample_terminal_emission_and_request_completeness"
+      ],
+      "unused_embedding": "meta; never executed; FrozenOperands performs actual borrowed embedding lookup",
+      "warm_lifecycle": "NOT_EXERCISED"
+    }
+  ],
+  "checks": {
+    "actual_A8_and_direct_A1": "PASS_CPU_ONLY",
+    "focused_tests": "7 PASS; root seven and independent QA seven PASS",
+    "gradients": "18/18 selected sign/scale tensors finite and nonzero; later state/K/V gradients positive",
+    "native_execution_identity": "UNVERIFIED; all four historical diagnostic gates retained",
+    "native_graph_loader": "PENDING; not exercised",
+    "optimizer_moments": 0,
+    "optimizer_updates": 0,
+    "parameter_versions_after_initialization": "UNCHANGED, including after export",
+    "private_pruned_head_and_maps": "Original source values verified before binarization; current student owns private binary head; maps exact",
+    "production_continuous_or_warm_lifecycle": "PENDING original completed TRAIN provider payloads and fresh hardware",
+    "quality_convergence_throughput_SM120": "PENDING; no optimizer updates or GPU execution",
+    "ruff": "PASS",
+    "serialization": "Nine projections per cell; exported GGUF reread audit PASS; protected F32 norms/I64 d2t bytes exact",
+    "source_pin_checks": "All 16 canonical main pins verified before every cell; three official leaf files, revision, and canonical paths checked before construction",
+    "sparse_FC_initialization": "Scale-only controls, historical reference half, non-FC parameter versions untouched"
+  },
+  "frozen_target_embedding_source": {
+    "path": "/Users/pippo/github/binary-eagle-decoding/models/gguf/Qwen3-4B-f16.gguf",
+    "sha256": "05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6"
+  },
+  "initialization_contract": {
+    "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/eagle-fusion-fixed-half-20261004/initialization-contract.json",
+    "sha256": "c4cd37492b8056597f1eee3889a1ab4bd2d88a4329a4e08d3a25134ac6a1deda"
+  },
+  "limits": {
+    "live_free_bytes": 4294967296,
+    "max_rss_bytes": 17179869184,
+    "max_seconds": 600,
+    "prelaunch_free_bytes": 12884901888
+  },
+  "official_leaf_source": {
+    "files": {
+      "configuration_eagle3_model.py": "248bc33aed309f2779d64a2bcbc436d82d6a66ebd7671ce2bf7a4c1fbd70ddb2",
+      "draft/base_model.py": "fed4eaf004e51a8f1ddcdf1c867feb2d89c7f0a123ad6d336e54d973515f9d8d",
+      "draft/llama3_eagle3.py": "82a132b04cb914b20aa84d96676ce34e4f9aa7bfbf4edf8225bb42a7c99979a8"
+    },
+    "path": "/Users/pippo/.cache/uv/git-v0/checkouts/4f55df2cf6edc6bf/0358da9",
+    "revision": "0358da9c651e6a7d7ccafea26ced4b9c98d11681"
+  },
+  "orchestration": {
+    "after": {
+      "host_available_bytes": 20651982848,
+      "host_total_bytes": 38654705664,
+      "psutil_module": "/Users/pippo/Library/Python/3.11/lib/python/site-packages/psutil/__init__.py",
+      "psutil_version": "7.2.2",
+      "timestamp_unix": 1791173738.532216
+    },
+    "all_owned_groups_gone": true,
+    "local_exec_session": 2426,
+    "owner_pid": 15683,
+    "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/actual-eagle-direct-cpu-diagnostic-20261004/orchestration.json",
+    "returncode": 0,
+    "sha256": "ede9c02bd969389415967b97fb667fa84ab11fbfeeb8161638774538ecec2cc1"
+  },
+  "original_calibration_report": {
+    "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/eagle-fusion-20261004/report.json",
+    "sha256": "4002b8f9b1b514a3b55e2c57a1c703628ff7d06cb1ad331000d19deb3e425bc7"
+  },
+  "original_dense_base": {
+    "path": "/Users/pippo/github/binary-eagle-decoding/models/gguf/Qwen3-4B-eagle3-f16.gguf",
+    "sha256": "c1f895a130b64cd3d5a97fba7aa7605dc7fe3a389dd6d48e6751128614ee76d1"
+  },
+  "original_draft_config": {
+    "path": "/Users/pippo/github/binary-eagle-decoding/models/hf/Qwen3-4B_eagle3/config.json",
+    "sha256": "1fc560b1fe78e79cd31255da282651f7802bb41a8dc42c7c79e7333f036c5195"
+  },
+  "original_draft_safetensors": {
+    "path": "/Users/pippo/github/binary-eagle-decoding/models/hf/Qwen3-4B_eagle3/model.safetensors",
+    "sha256": "58ac5bbfdd71047ebaa5d5535b895c2af37004eb820ca2dda55bd7666658853e"
+  },
+  "plan": {
+    "path": "/Users/pippo/github/binary-eagle-decoding/experiments/nine-model-qat-preparation/eagle-direct-cpu-diagnostic-plan-2026-10-04.json",
+    "sha256": "4d96ed73038afdb1dbc11580eb8c1027eab331d09673ecdfa86ee12063db9238"
+  },
+  "schema": "eagle_qat_actual_direct_cpu_diagnostic_v1",
+  "scope": "One authentic original TRAIN prose diagnostic round: 32 context three-tap vectors and five historical candidate-D proposal prefixes, replayed under the current original dense-source EAGLE initialized with reference \u00b10.5 sign latents and calibrated scale-only FC controls. The pinned official source class was constructed on meta and assigned the original SF weights. The absent unused embedding was never executed; actual borrowed target F16 embeddings came from read-only mmap row copies, with no full target model or forward. This proves current recurrent source-adapter CPU hard forward/backward and checkpoint/export serialization only. The bundle remains training_eligible=false/preparation_only with all four unresolved historical gates. No ContinuousTrainer/CurriculumRunner, warm lifecycle, production corpus admission, optimization, native graph/trajectory, quality/evaluation, latency/throughput, or CUDA/SM120 result is claimed. Distinct historical actor10e/current dense basec1 roles are preserved. Prior reports remain unchanged.",
+  "source_feature_commits": [
+    "8ec3369",
+    "2b8f620"
+  ],
+  "source_files": {
+    "scripts/audit_recurrent_binary_capture.py": "5fb1c1e703bb217e77a0786d90f8c58aff7ec734449117866c3448cd4bb4b6b2",
+    "scripts/check_block_qat_cpu_model.py": "f214dc39dcd3d98b356d6cbff790e3d7d7f5037e9a36cd8e89167bfa7ecb1419",
+    "scripts/check_eagle_qat_cpu_model.py": "fc3612df27a5f84d69dbf1e9b29e36133d1b2962f87a9f5582b2a5baa05c69c7",
+    "scripts/export_recurrent_binary.py": "2232bf29d25324ca50e8b72e7308d8bb445485793c387fc2af155d4fbe081a2d",
+    "scripts/train_nine_model_qat.py": "edf025d81694722fc56a730409d6fbcd9e8c333058517ab1a8be730634b2d9d8",
+    "src/w1a1_eagle/adapter.py": "c451a8008317d5e05b621ae6d32f19aac35147695fef19b0a9599e444f65b0ae",
+    "src/w1a1_eagle/continuous_qat.py": "cdc9a306b58c088328c2be2ee4ec829257477494370fecb63a9ce1128aac18d7",
+    "src/w1a1_eagle/frozen_operands.py": "7de0f5c9cd3eee5133f271294354e1b21c71297049def169d5f0008f05d69f50",
+    "src/w1a1_eagle/native_step.py": "844e52095ee0518cf507c81a10a895cdab7a61e32a1cb75836f2edb70e91d1c9",
+    "src/w1a1_eagle/qat_initialization.py": "03f18cd02d646d9cc6c774f9747578a24f19485dadafeec2e55b4c0366f9baa2",
+    "src/w1a1_eagle/qat_optimization.py": "4509fd94a926b20363999807527051a1f271b1b642383cdf09e8f1bcc4eb4719",
+    "src/w1a1_eagle/recurrent_binary.py": "7624fa4486bcb130440cbc6b84c2463af01f0750e0145236063a125ab8b3de06",
+    "src/w1a1_eagle/recurrent_provider.py": "36c7eda803baede517add00ced7715307035e989730f10edc5e8c98eb3aebd9a",
+    "src/w1a1_eagle/recurrent_qat.py": "ececcb925410bc9c77776b473e84d671d9e2da1a841a1b217caa68a0cafe7a12",
+    "src/w1a1_eagle/recurrent_rollout.py": "a286b198cb921b66cbf9ff86126be929b9ca452baa7a205c11f5caed093afc2b",
+    "src/w1a1_eagle/recurrent_trace.py": "c8213c72dae47c65eba8ba78a79160c74e83ce667681866271980bb54129b991"
+  },
+  "status": "PASS_DIRECT_CPU_DIAGNOSTIC_ONLY",
+  "training_eligible": false,
+  "unresolved_gates": [
+    "native_model_execution_identity",
+    "native_target_feature_numeric_parity",
+    "full_drafter_mask_position_and_kv_parity",
+    "initial_sample_terminal_emission_and_request_completeness"
+  ]
+}
