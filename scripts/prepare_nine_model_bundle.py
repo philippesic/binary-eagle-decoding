@@ -286,6 +286,406 @@ def materialize_configs(descriptor, directory, *, source_validate=True):
     return receipt
 
 
+def inspect_admission_inputs(descriptor):
+    pending = []
+    for role in ("backend_binary", "block_native_binary", "teacher_binary", "binary", "target"):
+        if role not in descriptor.get("inputs", {}):
+            pending.append("missing actual admission binary/target: " + role)
+    if not descriptor.get("preflight", {}).get("native_source_revision"):
+        pending.append("missing actual native producer source revision")
+    for family in FAMILIES:
+        if (
+            not descriptor.get("preflight", {})
+            .get("portability", {})
+            .get(family, {})
+            .get("golden_manifest")
+        ):
+            pending.append(family + ": bounded native TRAIN golden manifest PENDING")
+    for role in ("eagle_smoke_prompts", "eagle_smoke_capture"):
+        if role not in descriptor.get("inputs", {}):
+            pending.append("missing authenticated EAGLE TRAIN native smoke input: " + role)
+    for name in CANDIDATES:
+        for role in ("config", "initial_model", "initial_export_audit", "data_admission"):
+            if role not in descriptor.get("candidates", {}).get(name, {}):
+                pending.append(name + ": " + role + " PENDING")
+    for role in ("resource_policy", "gpu_uuid", "controls"):
+        if role not in descriptor:
+            pending.append("missing actual admission binding: " + role)
+    return sorted(pending)
+
+
+def admission_source_bindings(selected, spec, files, target_sha256):
+    """Metadata-only exact trainer source join; never constructs a model."""
+    if spec["family"] == "eagle":
+        ready_path = files.check(selected["data_admission"])
+        require(
+            ready_path == Path(spec["prepared"]["run_dir"]).resolve() / "preparation-ready.json"
+            and selected["data_admission"]["sha256"] == spec["prepared"]["ready_sha256"],
+            "EAGLE prepared metadata locator differs from actual source config",
+        )
+        ready = json.loads(ready_path.read_text())
+        require(
+            ready.get("schema") == "continuous_w1ax_preparation_ready_v1"
+            and ready.get("preparation_complete") is True
+            and ready.get("optimization_started") is False,
+            "actual completed EAGLE teacher source metadata absent",
+        )
+        source = ready["teacher_coverage"]["source"]
+        require(
+            source["common_source_sha256"]["target_gguf"] == target_sha256,
+            "EAGLE native teacher target differs",
+        )
+        require("bundle_sha256" not in source, "EAGLE provider source must not bind wrapper bundle")
+        return source
+    data = spec["data"]
+    manifest = json.loads(files.check({key: data[key] for key in ("path", "sha256")}).read_text())
+    require(
+        data.get("admission") == selected["data_admission"],
+        "completed current-host block data admission not wired into trainer config",
+    )
+    admission = json.loads(files.check(selected["data_admission"]).read_text())
+    require(
+        admission.get("schema") == "block_data_completed_admission_v1"
+        and admission.get("manifest_sha256") == data["sha256"],
+        "actual completed block data metadata admission absent",
+    )
+    require(
+        manifest["producer"]["target_sha256"] == target_sha256,
+        "block native teacher target differs",
+    )
+    return {
+        "base_gguf_sha256": spec["model"]["sha256"],
+        "data_manifest_sha256": data["sha256"],
+        "synthetic": False,
+        "target_sha256": target_sha256,
+    }
+
+
+def materialize_admission_plan(descriptor, output, *, fixture=False, inspect_draft=False, api=None):
+    """Wire known source CLIs from materialized pins, without GPU/model load.
+
+    Plan is an execution request, not an admission receipt or readiness result.
+    Only a later actual fresh hardware producer can grant training admission.
+    """
+    pending = inspect_admission_inputs(descriptor)
+    if inspect_draft:
+        return {
+            "schema": "nine_model_admission_plan_inspection_v1",
+            "status": "PENDING" if pending else "PASS",
+            "pending": pending,
+            "model_loaded": False,
+            "gpu_queried": False,
+            "production_ready": False,
+        }
+    require(not pending, "actual admission preparation PENDING: " + "; ".join(pending))
+    require(not output.exists(), "preserve existing frozen admission plan")
+    files = Files()
+    inputs = descriptor["inputs"]
+    for name in (
+        "backend_binary",
+        "block_native_binary",
+        "teacher_binary",
+        "binary",
+        "target",
+        "eagle_smoke_prompts",
+        "eagle_smoke_capture",
+    ):
+        files.check(inputs[name])
+    preflight = descriptor["preflight"]
+    if not fixture:
+        from check_block_capture_portability import NativeCaptureGoldens
+
+        for family in FAMILIES:
+            record = preflight["portability"][family]["golden_manifest"]
+            NativeCaptureGoldens(files.check(record), expected_sha256=record["sha256"])
+
+    revision = preflight["native_source_revision"]
+    require(
+        isinstance(revision, str)
+        and len(revision) == 40
+        and all(c in "0123456789abcdef" for c in revision),
+        "native source revision required",
+    )
+    directory = output.parent / (output.name + "-inputs")
+    require(not directory.exists(), "preserve previous admission input publications")
+    directory.mkdir(parents=True)
+    trainer = importlib.import_module("train_nine_model_qat")
+    source = {}
+    for folder in (ROOT / "src/w1a1_eagle", ROOT / "scripts"):
+        for path in sorted(folder.rglob("*.py")):
+            source[str(path.relative_to(ROOT))] = pin(path)
+    for name, record in inputs.items():
+        if name in {
+            "backend_binary",
+            "block_native_binary",
+            "teacher_binary",
+            "binary",
+            "target",
+            "eagle_smoke_prompts",
+            "eagle_smoke_capture",
+        } or name.startswith("runtime_library_"):
+            files.check(record)
+            source["artifact:" + name] = record
+    training_source = trainer.training_source_identity()
+    for name, digest in training_source.items():
+        require(source[name]["sha256"] == digest, "actual trainer source inventory differs")
+    environment = dict(descriptor.get("environment", {}))
+    require(
+        environment.get("CUDA_VISIBLE_DEVICES", descriptor["gpu_uuid"]) == descriptor["gpu_uuid"],
+        "admission device visibility differs from selected physical UUID",
+    )
+    environment["CUDA_VISIBLE_DEVICES"] = descriptor["gpu_uuid"]
+    candidates = {}
+    for name in CANDIDATES:
+        selected = descriptor["candidates"][name]
+        config_path = files.check(selected["config"])
+        spec = trainer.load_spec(config_path)
+        family, precision = name.split("_")
+        require(
+            spec["candidate"] == name and spec["family"] == family,
+            "preflight candidate config family/name differs",
+        )
+        bits = int(precision[1:])
+        model = files.check(selected["initial_model"])
+        export_path = files.check(selected["initial_export_audit"])
+        audit = json.loads(export_path.read_text())
+        require(
+            audit.get("serialization_audit_passed") is True
+            and audit.get("activation_bits") == bits
+            and audit.get("output", {}).get("sha256") == selected["initial_model"]["sha256"],
+            "initial native candidate bits/export/model ancestry differs",
+        )
+        bindings = admission_source_bindings(selected, spec, files, inputs["target"]["sha256"])
+        if not fixture and family != "eagle":
+            from w1a1_eagle.block_data import BlockDataset
+
+            dataset = BlockDataset(
+                spec["data"]["path"],
+                expected_sha256=spec["data"]["sha256"],
+                allow_synthetic=False,
+                verify_artifacts=False,
+                admission_path=selected["data_admission"]["path"],
+                admission_sha256=selected["data_admission"]["sha256"],
+            )
+            require(
+                dataset.manifest["family"] == family
+                and dataset.manifest["producer"]["target_sha256"] == inputs["target"]["sha256"],
+                "production block data/native source family/target differs",
+            )
+        source["candidate:" + name + ":data_admission"] = selected["data_admission"]
+        if family != "eagle":
+            source["candidate:" + name + ":data_manifest"] = {
+                key: spec["data"][key] for key in ("path", "sha256")
+            }
+        if spec.get("initialization"):
+            source["candidate:" + name + ":initializer"] = {
+                key: spec["initialization"][key] for key in ("path", "sha256")
+            }
+        native_script = (
+            ROOT
+            / "scripts"
+            / (
+                "check_eagle_binary_native.py"
+                if family == "eagle"
+                else "check_block_binary_native.py"
+            )
+        )
+        if family == "eagle":
+            smoke_config = directory / (name + "-native.json")
+            atomic_json(
+                smoke_config,
+                {
+                    "schema": "eagle_native_graph_smoke_config_v1",
+                    "inputs": {
+                        "binary": inputs["binary"],
+                        "model": selected["initial_model"],
+                        "target": inputs["target"],
+                        "export_audit": selected["initial_export_audit"],
+                        "train_prompts": inputs["eagle_smoke_prompts"],
+                        "train_capture": inputs["eagle_smoke_capture"],
+                        **{k: v for k, v in inputs.items() if k.startswith("runtime_library_")},
+                    },
+                    "activation_bits": bits,
+                    "gpu_uuid": descriptor["gpu_uuid"],
+                    "hardware": "rtx5080",
+                    "port": preflight.get("eagle_port", 18290),
+                    "context_tokens": preflight.get("context_tokens", 2048),
+                    "startup_wall_seconds": preflight.get("startup_wall_seconds", 300),
+                    "request_wall_seconds": preflight.get("request_wall_seconds", 120),
+                    "resource_policy": descriptor["resource_policy"],
+                    "environment": environment,
+                },
+            )
+            source[str(smoke_config)] = pin(smoke_config)
+            native_argv = [
+                sys.executable,
+                str(native_script),
+                "--config",
+                str(smoke_config),
+                "--receipt",
+                "{receipt}",
+            ]
+        else:
+            native_argv = [
+                sys.executable,
+                str(native_script),
+                "--binary",
+                inputs["block_native_binary"]["path"],
+                "--model",
+                str(model),
+                "--export",
+                str(export_path),
+                "--gpu-layers",
+                "999",
+                "--require-cuda",
+                "--target",
+                inputs["target"]["path"],
+                "--target-sha256",
+                inputs["target"]["sha256"],
+                "--receipt",
+                "{receipt}",
+            ]
+        candidates[name] = {
+            "family": family,
+            "final_bits": bits,
+            "config": selected["config"],
+            "model": selected["initial_model"],
+            "export": selected["initial_export_audit"],
+            "profile": selected["profile"],
+            "source_bindings": bindings,
+            "native": {
+                "producer": pin(native_script),
+                "argv": native_argv,
+                "wall_seconds": preflight.get("native_wall_seconds", 600),
+            },
+            "backward": {
+                "producer": pin(ROOT / "scripts/train_nine_model_qat.py"),
+                "argv": [
+                    sys.executable,
+                    str(ROOT / "scripts/train_nine_model_qat.py"),
+                    "--config",
+                    str(config_path),
+                    "--run-dir",
+                    "{run_dir}",
+                    "--bundle-sha256",
+                    "{bundle_sha256}",
+                    "--stage-name",
+                    name + "/preflight",
+                    "--completion-output",
+                    "{receipt}",
+                    "--allow-cuda",
+                    "--smoke-zero-updates",
+                ],
+                "wall_seconds": preflight.get("backward_wall_seconds", 1200),
+            },
+        }
+    portable = {}
+    for family in FAMILIES:
+        settings = preflight["portability"][family]
+        golden = files.check(settings["golden_manifest"])
+        manifest = json.loads(golden.read_text())
+        require(
+            manifest.get("schema") == "nine_model_train_capture_goldens_v1"
+            and manifest.get("family") == family
+            and manifest.get("target_sha256") == inputs["target"]["sha256"],
+            "native TRAIN golden family/target differs; speculative corpus cannot substitute",
+        )
+        script = (
+            ROOT
+            / "scripts"
+            / (
+                "check_eagle_capture_portability.py"
+                if family == "eagle"
+                else "check_block_capture_portability.py"
+            )
+        )
+        source[str(golden)] = settings["golden_manifest"]
+        argv = [
+            sys.executable,
+            str(script),
+            "--golden-manifest",
+            str(golden),
+            "--manifest-sha256",
+            settings["golden_manifest"]["sha256"],
+            "--binary",
+            inputs["teacher_binary"]["path"],
+            "--binary-sha256",
+            inputs["teacher_binary"]["sha256"],
+            "--target",
+            inputs["target"]["path"],
+            "--producer-source-revision",
+            revision,
+            "--output-root",
+            "{run_dir}/fresh-capture",
+            "--output",
+            "{receipt}",
+            "--expected-compute-capability",
+            "12",
+            "0",
+            "--gpu-layers",
+            "999",
+            "--max-tokens",
+            str(settings.get("max_tokens", 1024)),
+            "--max-cases",
+            "3",
+            "--timeout-seconds",
+            str(settings.get("timeout_seconds", 120)),
+        ]
+        for key, default in (
+            ("feature-atol", 0.002),
+            ("feature-rtol", 0.002),
+            ("logit-atol", 0.02),
+            ("logit-rtol", 0.002),
+        ):
+            argv.extend(["--" + key, str(settings.get(key.replace("-", "_"), default))])
+        portable[family] = {
+            "producer": pin(script),
+            "argv": argv,
+            "wall_seconds": settings.get("wall_seconds", 900),
+        }
+    for family, control in descriptor["controls"].items():
+        require(control.get("frozen_original") is True, "original Q4 control must remain frozen")
+        files.check(control["model"])
+    plan = {
+        "schema": "nine_model_sm120_plan_v1",
+        "artifact_kind": "fixture" if fixture else "production",
+        "source": source,
+        "training_source_files": training_source,
+        "backend_binary": inputs["backend_binary"],
+        "target": inputs["target"],
+        "controls": descriptor["controls"],
+        "candidates": candidates,
+        "portability": portable,
+        "resource_policy": descriptor["resource_policy"],
+        "environment": environment,
+    }
+    if api is None:
+        api = importlib.import_module("w1a1_eagle.nine_model_admission")
+    temporary = output.with_name(output.name + ".validation")
+    require(not temporary.exists(), "preserve previous plan validation publication")
+    atomic_json(temporary, plan)
+    try:
+        api.validate_plan(temporary, fixture=fixture)
+        temporary.replace(output)
+    except BaseException:
+        temporary.unlink(missing_ok=True)
+        raise
+    resolved = copy.deepcopy(descriptor)
+    resolved.setdefault("inputs", {})["admission_plan"] = pin(output)
+    resolved_path = directory / "resolved-inputs.json"
+    atomic_json(resolved_path, resolved)
+    return {
+        "schema": "nine_model_admission_plan_prepared_v1",
+        "plan": pin(output),
+        "resolved_inputs": pin(resolved_path),
+        "artifact_kind": plan["artifact_kind"],
+        "production_ready": False,
+        "model_loaded": False,
+        "gpu_queried": False,
+        "optimizer_updates": 0,
+    }
+
+
 def build(descriptor, output, *, inspect_draft=False):
     files = Files()
     pending = inspect_descriptor(descriptor, files)
@@ -569,7 +969,16 @@ if __name__ == "__main__":
     cli.add_argument("--output", type=Path)
     cli.add_argument("--inspect-draft", action="store_true")
     cli.add_argument("--materialize-configs", type=Path)
+    cli.add_argument("--materialize-admission-plan", type=Path)
     args = cli.parse_args()
+    if args.materialize_admission_plan is not None:
+        result = materialize_admission_plan(
+            json.loads(args.inputs.read_text()),
+            args.materialize_admission_plan,
+            inspect_draft=args.inspect_draft,
+        )
+        print(json.dumps(result, sort_keys=True))
+        raise SystemExit(0)
     if args.materialize_configs is not None:
         result = materialize_configs(json.loads(args.inputs.read_text()), args.materialize_configs)
         print(json.dumps(result, sort_keys=True))

@@ -24,13 +24,25 @@ model or touching a GPU. It cannot publish a production bundle:
 
 ```sh
 python3 scripts/prepare_nine_model_bundle.py --inputs resolved-inputs.json --materialize-configs selected-configs
-python3 scripts/prepare_nine_model_bundle.py --inputs selected-configs/resolved-inputs.json --inspect-draft
-python3 scripts/prepare_nine_model_bundle.py --inputs selected-configs/resolved-inputs.json --output frozen-bundle.json
+python3 scripts/prepare_nine_model_bundle.py --inputs selected-configs/resolved-inputs.json --materialize-admission-plan selected-configs/sm120-plan.json
+python3 scripts/prepare_nine_model_bundle.py --inputs selected-configs/sm120-plan.json-inputs/resolved-inputs.json --inspect-draft
+python3 scripts/prepare_nine_model_bundle.py --inputs selected-configs/sm120-plan.json-inputs/resolved-inputs.json --output frozen-bundle.json
 ```
 
 The production builder calls the actual training config parser and completed
 block-data admission API. It requires materialized model/data/calibration
 artifacts; it does not silently capture data or repeat an entire corpus audit.
+Admission-plan inputs additionally pin the actual backend-op test binary,
+block graph test binary, native teacher binary/source revision and three bounded
+original TRAIN golden manifests. EAGLE goldens use the three native taps and
+remain distinct from its original speculative/tree corpus. The plan generator
+invokes the real native/EAGLE/block/zero-update/portability CLIs; it constructs
+no model and accesses no GPU. Its block source bindings omit the eventual
+bundle hash to avoid a circular plan/bundle identity; admission later injects
+the external bundle hash. Emitted plans are execution requests, never readiness
+or training-admission receipts. Missing materialized source/data/model/golden
+inputs remain PENDING.
+
 It rejects unbound stage hooks. Training/export/evaluation commands invoke the
 implemented source APIs and are pinned with current source bytes.
 
