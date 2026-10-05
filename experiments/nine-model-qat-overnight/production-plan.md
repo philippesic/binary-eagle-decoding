@@ -409,3 +409,21 @@ dispatch/projection rejection tests remain intact. Actual native admission must
 still execute and prove all nine CUDA operators; generated tokens or newly
 visible messages alone cannot grant readiness. Controller02/failure artifacts
 remain preserved, and the source/QA/manifest must be repinned before retry.
+
+## Torch physical UUID representation correction
+
+Actual controller03 passed kernel, portability and all-nine typed native gates;
+its zero-update model/backward execution passed finite later gradients and full
+F32 moment reservation but the consumer refused the hardware UUID. Torch2.14
+reports the complete bare UUID `44ceb8b5-b67a-a317-fee3-f01c9201994e`; the actual
+NVIDIA observer/lease reports `GPU-44ceb8b5-b67a-a317-fee3-f01c9201994e`.
+The producer now validates a complete8-4-4-4-12 hexadecimal UUID and emits its
+canonical NVIDIA `GPU-` representation. The live typed training admission uses
+the same conversion on freshly queried device properties. Strict stored-record
+equality is unchanged: another physical UUID, an incomplete/MIG/ordinal value
+or an old bare receipt against canonical expected identity still refuses.
+No old receipt is edited or promoted; root's in-memory normalization was a
+diagnostic only. Fresh source/QA/manifest and actual backward admission are
+required before updates. Four focused tests and independent QA/Ruff/format/diff
+checks pass for producer/live-query normalization and unchanged mismatch refusal;
+no device query or GPU execution occurred in these mocked property tests.

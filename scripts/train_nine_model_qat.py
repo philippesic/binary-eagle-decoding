@@ -14,6 +14,7 @@ import contextlib
 import importlib
 import json
 import math
+import re
 import signal
 import sys
 import time
@@ -186,6 +187,17 @@ def require_admission(path, bundle_sha, config_sha, *, candidate=None, gpu_uuid=
     return record
 
 
+def canonical_gpu_uuid(value):
+    """Canonical physical NVIDIA UUID from a complete Torch/NVML UUID string."""
+    match = re.fullmatch(
+        r"(?:GPU-)?([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})",
+        str(value),
+    )
+    if match is None:
+        raise ValueError("full physical NVIDIA GPU UUID required")
+    return "GPU-" + match[1].lower()
+
+
 def configure_cuda(*, zero_updates):
     torch.set_float32_matmul_precision("highest")
     torch.backends.cuda.matmul.allow_tf32 = False
@@ -199,7 +211,7 @@ def configure_cuda(*, zero_updates):
     torch.cuda.reset_peak_memory_stats("cuda:0")
     return {
         "device_name": props.name,
-        "gpu_uuid": str(props.uuid),
+        "gpu_uuid": canonical_gpu_uuid(props.uuid),
         "compute_capability": capability,
         "torch_version": torch.__version__,
         "cuda_version": torch.version.cuda,

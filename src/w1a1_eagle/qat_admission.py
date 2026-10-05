@@ -64,7 +64,7 @@ class VerifiedTrainingAdmission:
             self.bundle_sha256,
             self.config_sha256,
             candidate=self.candidate,
-            gpu_uuid=str(props.uuid),
+            gpu_uuid=api.canonical_gpu_uuid(props.uuid),
         )
         if [props.major, props.minor] != [12, 0]:
             raise ValueError("current training admission needs actual SM120")
