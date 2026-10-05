@@ -1200,3 +1200,121 @@ via app after pushed ancestry verification; source/runtime tree can retire after
 integration push and preserved QA verification. Root remains sole GPU operator,
 SAME30-minute heartbeat/transport; healthy A8 and watcher stay running. Full
 six+three Goal ACTIVE, actual training/data/controls/native evaluation incomplete.
+
+## Safe supervision rotation checkpoint — October 5, 07:45 PDT
+
+Same unfinished human-authorized objective: six EAGLE/DSpark/DFlash W1A8/W1A1
+trained candidates, three original Q4 controls, exact original TRAIN ancestry,
+F16 target/verifier/KV, held-out evaluation, genuine production preparation and
+fresh SM120 admission, sustained QAT and automatic resource-safe native export/
+comparison. Human asked healthy QAT to continue into morning with30-minute
+monitoring/repair. Do not start a new research goal or narrow this one.
+
+All bounded workers/QA finished; source through1637cbc pushed. Temporary runtime
+source tree retired after original ancestry/QA preservation, heldout managed tree
+archived through app. Only root's temporary coordination tree remains to retire
+after this checkpoint push. No worker/process/GPU operator transfers. Rotate
+long supervision at this completed-source milestone under AGENT_OPERATIONS;
+current session hook counter is absent, so no compaction count is asserted.
+
+### Exact continuing jobs
+
+Fresh14:44:27UTC snapshot: 109,414 updates/16,272.623 trainerseconds,
+1,343 unique TRAIN prompts/521,509 supervised rows,18finite gradients/loss0.00493544.
+Heartbeat0.1139s, GPUfree8,161,067,008B, hostavailable17,084,534,784B,
+diskfree196,452,511,744B. Committed checkpoint109,250 SHA
+9c3e0179997992996ad10f9a26fb86bd3e6d92c0745b9e18fd4320f112a03d45 is
+manifest-declared, not newly byte-rehashed. No quality or throughput claim.
+All five exact kernel identities and both running supervisors verified. Proof
+`results/nine-model-qat-overnight/rotation-health-20261005-0745.json`, SHA
+2f73c2248d711ba700decae7c40b026c41d0f9352360103b0832031d17d3b07a.
+
+Boot `517c4a36-e475-4a5f-9fa6-65de57edc6fe`.
+Primary supervisor55097/birth12953909, controller55098/birth12953914,
+trainer55398/birth12966638/PGID55398; each has dedicated group equal PID.
+Run `eagle-a8-qat-overnight-20261005-04`, checkout
+`/home/philip/binary-eagle-decoding/runs/checkouts/nine-model-qat-overnight-5f53740`.
+Parent30a8dc7ee6bc8564471e8b176aeb1c5b8aef860c/nativecc9cab3c64f61580cf63e5ef050b075b11cd1fb9
+unchanged. Linux tmux socket `binary-eagle-runtime`, session
+`root-eagle-a8-qat-overnight-20261005-04`. Keep86,400 cumulative trainerseconds,
+108,000 outerwallseconds, no steps/tokens/epochs cap, checkpoint250/keep3,
+standalone deferred evaluation. Roughly19.5trainerhours remain; not a wall ETA.
+STOP `<checkout>/runs/eagle-a8-qat-overnight-20261005-04/lane/STOP` only for
+human stop/pause or concrete failure. Never stop for morning/chat/rotation.
+
+Passive endpoint `eagle-a8-endpoint-watch-20261005-01`: supervisor56606/
+birth13576753, controller56611/birth13576769, same boot/dedicated groups.
+Checkout `/home/philip/binary-eagle-decoding/runs/checkouts/nine-model-endpoint-20261005-c2544aa`,
+parentc2544aa7928b0d0c454099a56ae912262c6b0ab5/native sourceecff6d4;
+actual evaluator/serializer runtime deliberately original30a/cc9. Session
+`root-eagle-a8-endpoint-watch-20261005-01`, same socket.
+Plan9f989383232d2e257d04d5bcaab08113f5c0333b368581d770d6a75a9e34a7cb.
+Waiting_for_natural_endpoint/gpu_queriedfalse/training_changedfalse. It waits
+for exact natural positive checkpoint/owned release, then CPUexport600s and
+originalQ4/target-only dev comparison1200s under typed fresh continuations.
+24 prior unsealeddev prompts/5cleanreps/2warmups/128outputs/F16KV; diagnostics
+separate from timings. Wait111600s; startup leases immutable. STOP
+`<endpoint checkout>/runs/eagle-a8-endpoint-watch-20261005-01/endpoint/STOP`.
+
+Sole existing SSH transport MCP$258/@287/%289 idle, no outstanding command.
+Predecessor01a10c02-29f2-7d80-9c4f-fbf746343ff6 owns it until machine-local
+`runs/nine-model-qat-overnight/monitor-registration.json` explicitly transfers
+owner_thread/operator. Successor first reads only local records; no remote
+command or durable shared edit before that transfer. SAME heartbeat
+`nine-model-overnight-qat-monitor` must be retargeted, never duplicated. Successor
+creates its own native Goal with identical objective, claims sole operator and
+publishes acknowledgment after exact live identities/monitor verification.
+Predecessor makes no remote calls after dispatch and retires after acknowledgment.
+Before any reconnect read `~/.config/binary-eagle-decoding/hosts.toml`. SSH/SCP
+only tmux MCP; no2080 operation or flag write. Observation timeout isn't failure.
+Max2automatic retries/incident, preserve raw failures; exact committed optimizer/
+RNG/cursor/source/paid budget resume only after owned release. Use project venv
+`/home/philip/binary-eagle-decoding/.venv/bin/python`; metadata CUDAhidden.
+
+### New source and exact next work
+
+Integrated source/report commits: A1 physical golden reuse1ca527a; depth options
+135c0b0; bounded block checkpoint retention4f45f74; A1 handoffef1aaef; staged
+CPUexport/collection64f430e; final opaque admissionc479658; runtime1637cbc.
+Root29/owner29/QA29 runtime/collection/heldout PASS, exact source broad259OK/
+5device skips. New code is not installed into running sources. Reports under
+experiments/nine-model-qat-overnight and ignored QA/real metadata proofs retained.
+
+A1 authentic CPU calibration is complete, actual actor/export/fullbind/admission
+stillPENDING. Packet `data/nine-model-overnight/eagle-direct-a1-packet-20261005-01`;
+historical generation/replay link65b1d0a4a3a0234f41dfe149a9ecc2601a913b916d309f0dd2ff1463173623f7
+validated all original producers/9raw files and accepted byc254 consumer. Do not
+regenerate or relabel old receipts. Existing source-pinned initial_prepare/
+initial_export commands require originalc254 producer, train SHA
+f1437b4e588dbfe3672a795e064fc7027730617ddb2c687d6af417941280834d;
+current-main trainer has changed and cannot replace that unchanged request.
+Handoff root `data/nine-model-overnight/eagle-direct-a1-handoff-20261005-01`,
+plan82de5cfbd34ee781edc2d8dd5c9230d930474c4eed73b09b6ec35099a8be5298,
+planner checkout559a317;230original source pins, build/inspectPENDING/noexecution.
+Pending-* output paths are placeholders, not actual typed runtime contracts.
+
+Priority: preserve healthy run and natural watcher; after their genuine release
+use source-pinned A1 zeroactor/export/bind/currentQA/freshSM120/fullmoment-memory
+admission, freeze relevant lane and start authorized QAT plus automatic endpoint.
+Do not await a custom sequencer or all six initial models before a ready lane.
+Do not fake CUDA from CPU/source tests or introduce final-quality prelaunch gates.
+
+Block coverage/conditioning decision remains pending; question shown in this
+chat05:33PDT (450prompts×128 captured-prefix fullL1;750×128;450×128 live-prefix).
+No human answer recorded. Detailed immutable options/costs inDECISIONS/reports;
+don't infer approval from elapsed time. Whole-context features/full-vocab F32
+indexed teachers preserve dense computation; actual newecffSM120 build/capture/
+model fits/admissions stillPENDING, no hardCE substitution for DSpark. Original
+DSpark/DFlashQ4 bytes absent; preserve authentic hashes and don't query2080 or
+regenerate mislabeled controls. Block retention capability is opt-in; actual
+whole-run disk/anchor/writer policy remains to select before long block QAT.
+
+Collection CPUexport/import/runtime and sealed-final metadata source now exist,
+but actual six endpoints/3controls/producer censuses/standing held-out scope/
+selected policy/current hardware/dispatch/release proof remain missing. Import
+original lane hashes; never rewrite to aggregate hash or repeat paid training.
+Final authority is separate from later agent-frozen scope; no sealed prompt
+bytes opened. Runtime cold startup validates twice (parent+child); strict300s
+continuation may expire and must fail closed, not disable freshness. Measure
+actual cost after readiness. Avoid repeated completed tests/corpus audits and
+unnecessary source expansion while waiting. Fullgoal ACTIVE/unfinished.

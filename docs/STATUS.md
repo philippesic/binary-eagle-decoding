@@ -115,6 +115,12 @@ checks OK/5existing skips. Actual collection/controls/producers/hardware/held-ou
 readiness remains PENDING. All source workers complete; running QAT and watcher
 remain unchanged under the existing sole operator/monitor.
 
+**07:45 PDT safe supervision checkpoint:** all bounded source workers finished
+and retired; fresh exact jobs healthy109,414/checkpoint109,250 at16,272.62trainer
+seconds. Running30a/cc9 and passive endpoint unchanged. The latest goal checkpoint
+contains all source/runtime/data hashes, live handles/STOP procedures and next
+actions for sole-operator context rotation with the SAME monitor. FullgoalACTIVE.
+
 ## Historical preparation checkpoint — October 4, 2026
 
 The human requested an independent Codex task and implementation/test team to
