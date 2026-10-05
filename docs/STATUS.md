@@ -13,16 +13,16 @@ native Goal carrying the full unfinished nine-model objective. RTX2080Ti
 remains outside this team's scope.
 
 [Active overnight goal](goals/nine-model-qat-overnight.md) records sole owner
-`01a10a5b-4993-7762-af8a-f173c0219394`, one Luna GPU operator, production
+`01a10a5b-4993-7762-af8a-f173c0219394`, root as sole GPU operator, production
 packet feature owner and independent QA. First ready calibratedfixedA8 lane
 is prioritized with delegated24h cumulativetrainerallocation and frequent
 checkpoints; remaining candidates queue without premature readiness claims.
 30-minute heartbeat `nine-model-overnight-qat-monitor` is ACTIVE in this chat.
 **QAT is actively running onRTX5080/SM120**: calibrated fixed EAGLE W1A8,
-1200updates with committed1000 checkpoint; all required fresh admission/source/
+2838updates with SHA-verified2750 checkpoint; all required fresh admission/source/
 device gates PASS. Finite18selected gradients, actual sign/scale movement and
-cache/batchedhead execution;8.16GBGPUfree/17.56GBhostavailable. ActualTRAIN
-coverage15prompts/5824rows at170.21trainerseconds; no quality/win claim.
+cache/batchedhead execution;8.16GBGPUfree/17.22GBhostavailable. ActualTRAIN
+coverage35prompts/13552rows at418.39trainerseconds; no quality/win claim.
 
 Run eagle-a8-qat-overnight-20261005-04; supervisor55097/controller55098/trainer
 55398. Root is sole remote operator.24h cumulative allocation/no smaller cap,

@@ -28,9 +28,10 @@ DECISIONS and integration in isolated overnight-coordination tree.
 
 | Worker | Ownership | Live status |
 |---|---|---|
-| `/root/overnight_5080_operator` Luna high | sole remote/5080 operator; operator.md and ignored exact run/transport ledger | fresh read-only identity/resource/source/artifact inventory dispatched |
-| `/root/overnight_bundle_owner` Sol high | staged production data/config/bundle/admission/launcher integration, production-plan.md | source plan/integration; no heavy execution |
-| `/root/overnight_independent_qa` Luna high | independent source/packet/failure checks and qa.md; no SSH/GPU | reviewing true first-lane admission requirements |
+| Root coordinator | sole remote/5080 operator, durable status and exact live registration | healthy admitted EAGLE A8 QAT running |
+| `/root/overnight_5080_operator` Luna high | prior remote operator; preserved operator report | interrupted after model capacity failures; no remote commands authorized |
+| `/root/overnight_bundle_owner` Sol high | staged production bundle and narrow source repairs | completed/published; no remote ownership |
+| `/root/overnight_independent_qa` Luna high | independent source/packet/failure checks and qa.md; no SSH/GPU | source/portable packet and initial live metadata review complete |
 | `/root/mac_feasibility_advisor` Astra medium | focused recipe/cap/first-lane advice | completed read-only advice; no owned job |
 
 Delegated operational settings, selected by coordinator under latest goahead:
@@ -91,14 +92,18 @@ chat turns and ownership rotation. Human pause/stop takes priority.
 
 ## Current evidence and next action
 
-Source main 8442d84 / native 624f50e74 were published; all previous scoped CPU
-evidence/immutable 51-pin packet and rawartifacts are preserved. CUDA/prelaunch
-production readiness remains unproved, zero new real-model updates. Old isolated
-remote clone and dependencysetup are historical; operator revalidates and stages
-fresh immutable current source. Next: freshinventory, productiondata availability,
-stagedlane integration/review and actual source-bound preflight, then sustained
-QAT. No successful launch or morning-active guarantee is claimed before its
-actual process / positive updates / durable checkpoint evidence.
+Calibrated EAGLE W1A8 QAT is admitted and actively running on RTX5080/SM120.
+All fresh receipt gates and strict source/device checks passed. It has passed
+1200 optimizer updates with a committed1000 checkpoint, finite gradients and
+actual cache/head execution. Root owns the exact live supervisor/controller/
+trainer and transport recorded in the latest checkpoint below and ignored
+monitor registration. The30-minute heartbeat is ACTIVE; preserve healthy
+24h training across morning, idle chat and monitor ticks.
+
+Other five candidates and final nine-model export/evaluation remain unfinished.
+Continue quiet healthchecks; repair concrete failures from exact committed
+state only after owned release. Do not mutate the running source/config/lane/
+lease or stop it to sample another lane. Dated sections below preserve history.
 
 
 ## Production source and durability milestone — October 5, 00:01 PDT
@@ -393,3 +398,18 @@ needed, then verify group/context release. Healthy source/config/lane/lease must
 remain immutable. Otherfive candidate preparation, original blockQ4controls and
 automatic resource-safe endpoint export/evaluation remain unfinished; never stop
 this healthy lane to sample them. Fullnine-model native Goal remainsACTIVE.
+
+
+### Final positive health checkpoint — October 5, 03:20 PDT
+
+Independent bounded initial receipt QA found no internal contradictions;
+its scope is the earlier831/750 snapshot. Root later collected direct current
+positive-live-health.json SHA33420eeb1d269763ee17a243b1ffbde3e28c4f4833dfd06f83cae67f1c46bd77
+with2838updates/418.39trainerseconds,35prompts/13552unique supervised rows;
+checkpoint2750 SHA98344bddaf2c736d749c6e3759c323726237d626178946238a67e35fecc75a01
+verified by reading full resume.pt bytes. Its manifest optimizer_rng_cursor_exact
+is explicitly true, all effective caps/cadence are unchanged. Finite18grads,
+cache/headobserved; CUDAfree8,163,164,160B, hostavailable17,222,848,512B,
+diskfree197,499,883,520B. Supervisor/controller/trainer identities and immutable
+execution source/lane unchanged. No stop, restart, configuration mutation or
+quality claim. Source/status checkpoint is published; heartbeat ACTIVE/30min.
