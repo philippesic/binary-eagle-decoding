@@ -1169,3 +1169,43 @@ final quality results and trained exports do not gate first launch. Serious
 eligible data/calibration and fresh hardware proof remain prerequisites. The
 old local EAGLE diagnostic and block nine-chain pilot do not become production
 ready by authorization alone. See the [active goal](goals/nine-model-qat-overnight.md).
+
+
+## Staged endpoint defaults and block storage evidence — October 5, 2026
+
+Healthy EAGLE A8 QAT remains frozen and uninterrupted. The active full goal
+authorizes automatic resource-safe endpoint export/evaluation; coordinator
+selects the following bounded implementation settings under that delegation,
+with human_selected=false. These are not exact values directly stated by the
+human and do not select a winning recipe or new training exposure.
+
+- EAGLE-only development endpoint: reuse original fixed24 unsealed development
+  prompts SHA131a3db7958ff6aa818b23019297654507d5b80bed3c298349417b7e3b2ba081,
+  eight per prose/code/reasoning from authenticated original corpus split.
+- Five paired clean timing repetitions, two warmups per fresh cell; trained
+  EAGLE, immutable original Q4_0EAGLE(primary) and target-only. Context2048,
+  batch32/microbatch32/max128outputs/seed42/greedy/thinkingoff/draft5/pmin0/
+  target+KV F16. Actual rawcounts, latency/tokens/sec and target-token parity
+  remain mandatory; no online capacity claim.
+- CPU export wall cap600s, native evaluation1200s, passive wait111600s (31h
+  covers current30h trainer outer cap). Detailed typed dispatch/round/memory
+  diagnostics separate from clean timing. Clean verbosity3/diagnostic4.
+- This additive lane policy leaves the proposed10-repeat/14400s full-six/
+  three-control protocol unselected. Actual endpoint source/QA/provenance
+  wrappers and fresh post-terminal ownership/release/continuation still gate
+  execution; no current evaluation/GPUsidejob is launched by this selection.
+
+Block storage: all-row F32 teacher+five-tap features cost658944B/row (~2.57TB
+for3.9M). Exact indexed output can retain only already-selected anchor rows
+after unchanged dense native computation; complete context remains retained.
+Features alone≈199.7GB exceed/nearlyconsume current197GBfree before teachers/
+checkpoints/reserves. Current-prefix live teacher changes conditioning/exposure
+and needs separate numerical/ancestry/resource admission; it is not a storage-only
+replacement. No hardCE substitution or teacher/features quantization is selected.
+
+An explicit serious balanced whole-chain block exposure/storage plan or exact
+shard lifecycle remains to be selected from measured/costed source data. Arbitrary
+context windows and removing anchors are scientific changes, not disk cleanups.
+Original DSpark/DFlash Q4files remain unavailable to this team; keep historical
+hashes/receipts and retrieve original bytes only through later authorized access.
+No2080query or regeneration is authorized here.

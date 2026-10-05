@@ -608,6 +608,24 @@ additional proof protocols or redoing completed audit work.
 - Evidence: list_agents showed QA completed while root waited for review.
 - Agent contribution: root assumed queued review messages restarted QA, adding
   about two minutes to the launch critical path. No user error.
-- Resolution: followup_task explicitly restarted the scoped review.
+- Resolution: followup_task explicitly restarted the scoped review. The same
+  queued-message mistake later occurred in the data owner A1 assignment; root
+  checked completed status and restarted QA before claiming it was underway.
 - Lesson: use followup_task for a new assignment to an idle/completed worker;
   reserve send_message for updates to an already-running assignment.
+
+
+### 2026-10-05: Keep native trace logging out of clean timing
+
+- Context: root asked the staged endpoint owner to use verbosity4 for both
+  clean and diagnostic native runs, seeking GGML INFO loader/dispatch proof.
+- Evidence: common logging maps native GGML INFO to4, but server/speculative
+  TRACE4 also emits hot-path messages. Independent QA flagged timing contamination;
+  root inspected LOG_TRC/SRV_TRC/SLT_TRC source and accepted the correction.
+- Agent contribution: root assumed4 exposed only startup/one-time messages;
+  that assumption was too broad. No user error or running experiment change.
+- Resolution: staged endpoint uses clean3, diagnostic4 with detailed round/
+  dispatch/memory sampling separate. Matching frozen artifacts/commands/env
+  and mandatory greedy parity bind diagnostic precision proof to clean runs.
+- Lesson: inspect every logging category enabled by a numeric threshold before
+  calling a timing pass uninstrumented; preserve explicit proof scope.
