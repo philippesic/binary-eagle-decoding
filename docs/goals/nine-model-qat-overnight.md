@@ -1095,3 +1095,32 @@ SHAc2280ef12afaea531507f102f9ae6fe858c73e70073850d3953282cb5928b079.
 GoalACTIVE/fullsix+three; this turn progresses source capability and verifies
 live waiting. Keep original86,400trainerseconds, SAME30-minute monitor/sole
 transport. Next check approximately07:19PDT. Block scientific answer pending.
+
+## Runtime and sealed-heldout source assignments — October 5, 07:09 PDT
+
+Previous turn progressed staged export/collection source integration (64f430e).
+This continuation read current source/state and verified all five exact live
+kernel identities at14:04:50UTC. No job, budget, source, lease or GPU use changed.
+
+Two bounded source owners work independently while healthy QAT continues:
+`/root/collection_runtime_owner` owns evaluator plus new collection runtime
+controller/module/tests/report in `/Users/pippo/github/binary-eagle-collection-runtime`,
+branch `collection-runtime-source`. It must freeze new dispatcher source,
+preserve old individual lane hashes and same-bundle path, reuse native loop,
+and require actual shared lock, live parent/continuation, fresh collection-bound
+lease/device/source/pause checks and per-cell process/context/resource release.
+No runtime action, actual models or remote/GPU authority is delegated.
+`/root/heldout_admission_owner` owns collection-module final admission extension,
+new metadata helper/tests/report in managed temporary worktree
+`/Users/pippo/.codex/worktrees/heldout-admission/binary-eagle-decoding`.
+It audits genuine opaque corpus/index schemas and binds final row scope,
+ID/group/content/source disjointness, standing authorization and all six frozen
+lane/config/export identities. Existing final_set_authorized boolean alone is
+insufficient selection evidence. No real sealed prompt bytes, actual captures,
+models or GPU are accessed; missing authentic evidence remains PENDING.
+
+Owners coordinate shared context APIs; root retains all durable docs and sole
+transport/operator. No protocol, final allowance, recipe or scientific exposure
+is selected. Full goal stays ACTIVE and unchanged; next approximately30-minute
+healthcheck at07:19PDT. Actual six trained endpoints, original block controls,
+runtime admission and native/final evaluation remain unfinished.

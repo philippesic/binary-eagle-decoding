@@ -98,6 +98,12 @@ final sealed-heldout import and real endpoints/controls remain PENDING. Source
 workers complete; healthy QAT87,249/checkpoint87,000 and passive watcher continue
 unchanged. Full GoalACTIVE; no source/CPU test implies CUDA or quality results.
 
+**07:09 PDT remaining source dependencies:** two bounded CPU/source owners wire
+collection runtime lifecycle and authenticated opaque final-heldout admission.
+Neither may access real sealed messages/models/GPU or change running jobs.
+Healthy QAT and the passive endpoint continue under sole root supervision;
+actual collection/native readiness remains PENDING.
+
 ## Historical preparation checkpoint — October 4, 2026
 
 The human requested an independent Codex task and implementation/test team to
