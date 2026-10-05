@@ -292,3 +292,21 @@ Controller naturally exited1, allfour owned phase groups/identities are absent,
 cleanup/resource return PASS with no DXG holders/GPUbaseline. Zero QAT updates.
 Root keeps sole5080 operation and monitor ACTIVE; no source/data/math gate waived.
 Next: publish reviewed logging fix, repin versioned ledger/lane/lease and retry.
+
+
+## Actual all-nine native dispatch PASS — October 5, 03:00 PDT
+
+Reviewed logging-only repair ea1b7d7 and QA9dd95a1 are published. Frozen
+execution source b5d621b30ef5da461de30903ad93f76fae1fa4ee/nativecc9, unchanged
+model/data/config, current QA ledgerb1736b3d... with53sourcepins. New plan
+c246a665..., resolved-inputsac70a21f..., lane3b161201... preserve prior packets.
+Fresh sole-owner lease03 and resource floors passed; supervisor54586/child54587
+are live under Linux tmux binary-eagle-runtime/root-eagle-a8-qat-overnight-
+20261005-03, project run eagle-a8-qat-overnight-20261005-03. Actual native smoke
+now PASS with exact all-nine typed CUDA projection dispatch; capture portability
+PASS. Attempt9f963ca6aa524f95982765c453a5a8ce is executing remaining backward/
+model/memory/timing/save-resume admission. No positive optimizer update yet.
+Root retains sole remote operation and healthy phase is uninterrupted. Exact
+run registration updated;30-minute heartbeat ACTIVE. Next: actual admission
+PASS, positive QAT updates and committed250-update checkpoint before reporting
+training active. Do not change any live source, config, lane or lease bytes.
