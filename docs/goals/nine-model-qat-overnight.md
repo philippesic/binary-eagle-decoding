@@ -732,3 +732,17 @@ nativeecff and current main gitlink remain intact; no remote running source
 was touched. Older owned completed worktrees listed above remain for successor
 cleanup only after their ignored evidence and integration ancestry are checked.
 All worker outputs are finished; no live worker needs transfer.
+
+### Successor dispatch and exclusive transfer — October 5, 05:22 PDT
+
+Fresh local successor `01a10c02-29f2-7d80-9c4f-fbf746343ff6`,
+**Continue nine-model overnight QAT**, is dispatched with this checkpoint.
+Predecessor `01a10a5b-4993-7762-af8a-f173c0219394` issues no further remote
+commands after dispatch. The SAME heartbeat is retargeted to successor and
+machine-local monitor registration owner/operator updated before successor
+may begin remote actions. Successor first verifies those exact transfer fields,
+claims the unchanged unfinished objective/native Goal and publishes ownership
+acknowledgment. No worker, source, budget, model or GPU lifecycle changes.
+Existing sole transport and both detached healthy jobs transfer intact.
+Predecessor stops after bounded acknowledgment verification; no duplicate
+ownership, monitor or operator remains authorized.

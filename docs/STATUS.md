@@ -13,7 +13,7 @@ native Goal carrying the full unfinished nine-model objective. RTX2080Ti
 remains outside this team's scope.
 
 [Active overnight goal](goals/nine-model-qat-overnight.md) records sole owner
-`01a10a5b-4993-7762-af8a-f173c0219394`, root as sole GPU operator, production
+`01a10c02-29f2-7d80-9c4f-fbf746343ff6`, successor as sole GPU operator, production
 packet feature owner and independent QA. First ready calibratedfixedA8 lane
 is prioritized with delegated24h cumulativetrainerallocation and frequent
 checkpoints; remaining candidates queue without premature readiness claims.
