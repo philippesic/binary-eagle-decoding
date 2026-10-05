@@ -279,3 +279,33 @@ Raw 6-test output is retained under ignored
 `/private/tmp/nine-model-qat-20261004/overnight-qa/results/nine-model-qat-overnight/final-packet-lifecycle-tests.log`.
 The lifecycle fix is integrated in main at `e00c07395f6f76f2eef3b3f40beb051b60895e50`;
 main's helper, test and plan SHA256 values match the tested files above.
+
+## Canonical fusion report schema correction
+
+Operator attempt 01 reached the EAGLE packet helper and exited before packet
+publication with a `KeyError` because the helper invented `orientation_rescue`
+and `coordinate_flips` report keys. The producer serializes
+`dataclasses.asdict(FusionFitConfig)`, whose actual fields are
+`zero_scale_orientation_rescue`, `max_coordinate_flips_per_row`, `max_seconds`,
+`latent_initialization`, `reference_kind`, and `activation_bits`. Bundle owner
+fixed the helper to require the canonical field inventory, instantiate the real
+`FusionFitConfig`, verify the actual A8/fixed-reference/no-rescue/zero-flip
+contract and initializer policy/reference joins, and reject nonempty fit events.
+The test fixture now serializes the actual producer dataclass and has negative
+cases for altered bits, policy, reference, rescue, coordinate flips and fit
+events. This preserves the calibration math and admission scope.
+
+Independent focused validation at commit
+`0daff81f5c34fddbe46f9b9e5a08f4df531d2113` passed **8 tests**:
+
+```sh
+PYTHONPATH=src:scripts:tests python3 -m unittest test_eagle_lane_packet -v
+```
+
+SHA256: helper `334d7f2742bcb85b3a23fb5ed6b2dd5b4c628deacfbea31e600ef07d5336c06c`;
+test `e3dac23139fbaed53a930113ac1ab8dda909326704ca862107bbfdf3f5332d0a`.
+Raw output is under ignored
+`/private/tmp/nine-model-qat-20261004/overnight-qa/results/nine-model-qat-overnight/final-packet-schema-tests.log`.
+This is a source/schema test only; attempt 01 was preserved as failed evidence,
+and no model/data/calibration rerun or GPU operation occurred during QA. At this
+checkpoint the canonical-field fix was not yet in main.
