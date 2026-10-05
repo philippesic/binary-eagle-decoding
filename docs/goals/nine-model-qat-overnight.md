@@ -564,3 +564,163 @@ branches after ownedsourceequality/ancestry-preservingmerge/push. Six rawQAlogs
 plusCMakeCache/build.ninja preserved in ignored results/nine-model-qat-overnight/
 indexed-storage-preserved; CPUbuild/tmp/binary-eagle-indexed-native-build remains,
 publicnativebranch reachable. Existing otherteamtrees/untrackedfiles untouched.
+
+## Safe supervision rotation checkpoint — October 5, 05:15 PDT
+
+Objective remains unfinished: all six EAGLE/DSpark/DFlash W1A8/W1A1 candidates,
+the three original Q4 controls and automatic admitted checkpoint/export/native
+evaluation. Human explicitly authorized fully available RTX5080, relevant QAT,
+approximately 30-minute monitoring and repair, and healthy training continuing
+overnight into morning. No RTX2080Ti operation is authorized for this team.
+After two compactions, rotate coordination at this safe boundary; do not stop
+or replace healthy training. The successor must create its own native Goal
+from this same objective, claim exclusive ownership and retarget the SAME
+existing heartbeat, rather than create another monitor or GPU operator.
+
+### Current exact live jobs and immutable execution
+
+At 12:14:24 UTC, calibrated fixed EAGLE A8 is running 48,909 optimizer updates,
+7,269.949 trainer seconds, 604 unique TRAIN prompts / 233,341 supervised rows.
+Checkpoint step48,750 declared SHA
+`c849efd550108d3d52377a553a27d0268a972e0bed43ce9a04819dd667934aa7`.
+This newest hash is declared by the committed manifest, not newly byte-rehashed.
+Finite loss4.200949/18 finite gradient tensors, heartbeat age0.0099s,
+GPUfree8,161,067,008B, hostavailable17,101,037,568B, diskfree196,552,118,272B.
+Actual trainer retains cache/batched head; target/verifier/KV stays F16.
+No native quality comparison has executed. Eligible source remains the original
+10k TRAIN corpus; observed exposure is not a completed corpus pass.
+
+At 12:13:53 UTC, all five exact kernel processes are current and nonzombie:
+supervisor55097/birth12953909, controller55098/birth12953914,
+trainer55398/birth12966638; passive watcher56606/birth13576753 and
+56611/birth13576769. Boot `517c4a36-e475-4a5f-9fa6-65de57edc6fe`.
+Training run `eagle-a8-qat-overnight-20261005-04`, PGID55398;
+source30a8dc7ee6bc8564471e8b176aeb1c5b8aef860c/nativecc9cab3c64f61580cf63e5ef050b075b11cd1fb9.
+Checkout `/home/philip/binary-eagle-decoding/runs/checkouts/nine-model-qat-overnight-5f53740`.
+Linux tmux socket `binary-eagle-runtime`, session `root-eagle-a8-qat-overnight-20261005-04`.
+Keep 86,400 cumulative trainer seconds, no steps/tokens/epochs cap,
+108,000 outer seconds, checkpoint250/keep3 and standalone endpoint evaluation.
+Healthy run has roughly22 trainer hours remaining at this snapshot; wall-clock
+completion is not exact because checkpoint/I/O time adds overhead.
+STOP only if authorized or a concrete failure requires it:
+`<checkout>/runs/eagle-a8-qat-overnight-20261005-04/lane/STOP`.
+
+Passive endpoint remains `waiting_for_natural_endpoint`, GPUqueryfalse,
+trainingchangedfalse. Separate clean checkout
+`/home/philip/binary-eagle-decoding/runs/checkouts/nine-model-endpoint-20261005-c2544aa`,
+sourcec2544aa7928b0d0c454099a56ae912262c6b0ab5, native sourceecff6d4 but
+actual serializer/native runtime intentionally frozen to original30a/cc9.
+Linux tmux session `root-eagle-a8-endpoint-watch-20261005-01`, same socket.
+Frozen plan9f989383... and protocol/policy/gates recorded above; actual eval
+PENDING. Watcher STOP is `<endpoint checkout>/runs/eagle-a8-endpoint-watch-20261005-01/endpoint/STOP`.
+Its separate immutable stage continuations follow natural budget completion,
+exact committed checkpoint and owned release; they never revise startup leases.
+
+Root owns the sole existing SSH transport MCP$258/@287/%289; last command
+completed, no dependent command outstanding. All SSH/SCP remains tmux-MCP only.
+Before a new connection read `~/.config/binary-eagle-decoding/hosts.toml`;
+never guess an address. Do not hand remote operation back to errored Luna
+`/root/overnight_5080_operator`, whose authority remains revoked.
+Remote imports need `/home/philip/binary-eagle-decoding/.venv/bin/python`;
+CPU metadata imports require CUDA_VISIBLE_DEVICES empty. Missing transport
+output never proves job failure. Read exact state/process birthticks before
+repair; max two automatic retries per incident, exact committed RNG/optimizer/
+cursor/source/budget resume only after owned context/group release.
+
+### Integrated source and completed assignments
+
+Source main wasf6671e3 at the start of this checkpoint; published block adapter
+879d287 was reviewed and cherry-picked834d9af, then its source branch ancestry
+preserved with an ours merge after exact owned-file review. New source only:
+`scripts/prepare_block_lane_packet.py`, `tests/test_block_lane_packet.py`,
+`experiments/nine-model-qat-overnight/block-lane-packet.md`.
+Owner/independent QA69 CPU/source cases passed, four optional native skips.
+Root integration rerun12/12 passed. First root invocation omitted gguf-py from
+PYTHONPATH and failed import before tests; rerun included original main's
+`third_party/llama.cpp/gguf-py` and passed. No CUDA/source readiness inferred.
+Seven QA logs preserved under ignored
+`results/nine-model-qat-overnight/block-lane-packet-preserved/`.
+Block owner and its QA are complete with no processes; worktree
+`/tmp/binary-eagle-block-lane-packet` is clean and can be retired after push.
+Adapter binds real block checkpoint/reference/fit/export schemas and requires
+explicit released same-runtime CUDA export; never rewrite CUDA headers to CPU.
+All real block production inputs/coverage/actor/native admission remain pending.
+
+Completed bundle owner diagnosed A1 historical-golden adoption read-only.
+Independent endpoint QA and indexed-storage advisor are complete. The former
+operator is errored/interrupted and must not run remote commands. Only capture
+cost report owner remains live temporarily and must finish/checkpoint before
+dispatching the successor; record its final commit below.
+Other owned completed trees are preserved: overnight-bundle7c0fbc3,
+overnight-artifact-guard6c3449f, overnight-qa0d76ce9,
+overnight-eagle-data8e05091, overnight-operator09488bd. Review published ancestry
+and preserve ignored evidence before retiring; unrelated trees/untracked
+overnight20261002 research must remain intact.
+
+### A1 actual metadata packet and exact next actions
+
+Authentic CPU-only direct-A1 calibration completed as recorded above; raw input
+and selected row evidence match A8 exactly, but A1 initializer is its own output.
+New actual packet path
+`/home/philip/binary-eagle-decoding/data/nine-model-overnight/eagle-direct-a1-packet-20261005-01`.
+Initial requestSHA1ec799438ce9fc696366f18b305a7be05160ccff9439a4864f3996f364d04405;
+continuous configSHAc0c116949e91c061724aea88b67fac82be8c63657a5cf2ee2d9097806103ee1f.
+Generation requests exact same bytes as A8, SHAea1e99933865e04610f7b86c970ec5a50a3d301d908d519db33e6e54a37a2728;
+native source-joins unchanged. No A1 model/GPU stage has started.
+
+CurrentC254 metadata replay attempt correctly refused the old capture-client
+producer mismatch BEFORE publishing replay requests/link. Current clientSHA
+865e61948cbcf25c2df17d218842b332015668cf25cf47a69404cff1c35793c3;
+original30a clientSHA8a43ee3f6f472184b1b229e1c556ae65d45e8fa76fa26c9dc058209ddbb1c052.
+Root confirmed original old-client file and all three original generation
+receipts have the latter SHA. Do not weaken this gate or relabel receipts.
+Source-supported no-edit route: first confirm ORIGINAL REPLAY receipt producer
+also exactly matches oldclient and all original files/ordered tokens/taps/history/
+ancestry/runtime pins. Then run ORIGINAL30a helper's metadata-only
+`replay --packet <newA1packet> --receipts <oldcheckout>/runs/eagle-native-generations-20261005-01/stdout.log`.
+It writes a new link honestly pinned to old producer/source; compare its
+requests against original A8 exact requests. Later CURRENT A1 bind accepts
+historically pinned matching generation/replay via link.native. Original replay
+log is `<oldcheckout>/runs/eagle-native-replays-20261005-01/stdout.log`.
+If any predicate/file differs, leave physical goldens pending until safe GPU
+release. A1 zero-update model preparation, all-nine export, independent packet
+QA and fresh SM120 actual-model/native admission remain mandatory regardless
+of possible target-only golden reuse. Do not stop A8 to perform these.
+
+### Unresolved research choices and successor priorities
+
+Full block corpus cannot fit: full-context F32 features alone are199.68GB,
+before logits/checkpoints/reserves. Indexed full-vocabulary F32 storage source
+is integrated/nativeecff published, but actual new SM120 binary/capture remains
+PENDING and must use new native/client/source pins. Actual capture cannot run
+alongside healthy A8. Balanced original TRAIN complete-chain subsets have
+concrete cost proposals; no subset or exposure was selected by the human.
+DSpark exact full-L1/static captured-prefix versus live current-prefix remains
+a scientific choice; never silently substitute hard CE or crop context.
+Existing block checkpoint saver retains every generation; separate bounded
+retention/disk planning is required rather than assuming EAGLE keep3 behavior.
+Original DSpark/DFlash Q4 artifacts are still absent from local/5080; preserve
+exact original hashes and do not query2080/regenerate mislabeled controls.
+
+Successor: claim one sole operator + SAME30-minute heartbeat; keep current QAT
+and passive watcher intact; finish bounded A1 metadata adoption diagnosis;
+prepare reviewable block exposure/storage/retention and objective options;
+only after natural owned release perform remaining actual-model/capture/native
+admissions and queue relevant candidate QAT. Record meaningful progress; stay
+quiet while healthy status is unchanged. Goal stays ACTIVE, unfinished.
+
+Capture-cost owner finished with clean published-source commit `ea9b850`,
+integrated `4104349` plus ancestry-preserving merge. Report
+`experiments/nine-model-qat-overnight/block-capture-options.md` records actual
+1,000 original source joins, 985 eligible unique prompts (343/310/332 domains),
+real 150 or250 TRAIN/domain plus32 fit/16 validation/domain quotas. Indexed
+exact-soft conservative prelaunch footprints64.283/77.745GiB include shared
+raw payloads, both zero-copy family imports and all protected-model preparation
+allowances. Maximum TRAIN labels/pass12,600/21,000, no seriousness/convergence
+claim or selected exposure. Current block checkpoint retention is unbounded;
+progressed resume raw4,877,680,640B each. No invented capture rate or ETA.
+Ignored four proposals/index/evidence are preserved in primary main under
+`results/nine-model-qat-overnight/block-capture-options-20261005/`;
+indexSHA37d7ea82d3c404260b01e12b55a713b45fe1005dc7e2fe8c1fa19d15e13bd0b1.
+All subagents are now complete/errored, no live worker transfers or GPU sidejobs.
+Only detached primary QAT/passive watcher and sole idle transport transfer.
