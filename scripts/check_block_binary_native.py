@@ -95,6 +95,21 @@ def check(
         or observed.get("noise_input_positions") != list(range(3, 10))
     ):
         raise ValueError("native author anchor/MASK noise block mismatch")
+    if target is not None:
+        binding = observed.get("target_binding", {})
+        tensors = {tensor.name: tensor for tensor in model_metadata.tensors}
+        if (
+            observed.get("paired_target_geometry_checked") is not True
+            or binding.get("private_embedding_and_head_distinct_from_target") is not True
+            or binding.get("embedding_shape") != tensors["token_embd.weight"].shape.tolist()
+            or binding.get("head_shape") != tensors["output.weight"].shape.tolist()
+            or binding.get("draft_embedding_type")
+            != tensors["token_embd.weight"].tensor_type.name.lower()
+            or binding.get("draft_head_type") != tensors["output.weight"].tensor_type.name.lower()
+            or binding.get("ordered_native_target_taps")
+            != model_metadata.fields["dflash.target_layers"].contents()
+        ):
+            raise ValueError("paired immutable target/private storage binding mismatch")
     nodes = observed.get("nodes", [])
     if len(nodes) != len(expected) or {node.get("packed") for node in nodes} != expected:
         raise ValueError("native selected operator coverage mismatch")
