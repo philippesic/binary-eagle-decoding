@@ -76,7 +76,7 @@ from the shared registry in AGENT_OPERATIONS; never persist IPs here or guess.
 ## Ownership and durable record
 
 Sole preparation coordinator is `01a10a5b-4993-7762-af8a-f173c0219394`,
-claimed October 4, 21:43 PDT from published rotation handoff `2247643`. Previous
+claimed October 4, 21:40 PDT from published rotation handoff `2247643`. Previous
 coordinator `01a10903-1c7a-71b1-abb1-0de3ecc046b8` may stop safely. Parent
 recap/research chat is a launcher only and will stop editing these records after
 dispatch. Do not reuse the completed A8 team's ownership or restart its monitors.
@@ -900,7 +900,7 @@ successor read-only verification and ownership acknowledgment. No native Goal
 is marked complete merely to rotate; durable objective remains unfinished.
 
 
-## Successor ownership verified — October 4, 21:43 PDT / October 5, 04:43 UTC
+## Successor ownership verified — October 4, 21:40 PDT / October 5, 04:40 UTC
 
 Successor `01a10a5b-4993-7762-af8a-f173c0219394` acknowledges exclusive
 coordination from `2247643` and continues the full unchanged unfinished
@@ -942,3 +942,43 @@ continuous EAGLE provider payloads, portability inputs and fresh authorized
 SM120 checks remain external dependencies. Do not invent training/tests or
 claim completion. A genuine impasse must follow the native Goal's consecutive
 turn audit rule; ownership progress alone is not goal completion or blockade.
+
+
+## Mac feasibility audit 1 — October 4, 21:41 PDT / October 5, 04:41 UTC
+
+Ownership acknowledgment `cb16cd6` is integrated and pushed. Its clean isolated
+worktree and branch were removed after publication; the source/native/packet/
+raw evidence and unrelated worktrees/untracked groups are unchanged. The local
+RTX5080 pause was read back true with the original timestamp. No remote action,
+new test, model load, optimizer update, data capture or evaluation occurred.
+
+A bounded read-only Astra-medium advisor `/root/mac_feasibility_advisor`
+completed a feasibility review of this goal, the completion audit and draft
+packet. It found no concrete independent Mac deliverable still justified. The
+last identified CPU gap, EAGLE direct composition/backward/serialization, is
+complete. Resume/stage/lifecycle fixtures and scoped block CPU checks already
+exist. Another unselected packet or additional component/full-L1 diagnostics
+would not resolve a specified remaining defect or human choice. No workers
+remain running. The coordinator accepts this evidence-based assessment.
+
+**Genuine impasse observation 1 for this successor:** the unchanged objective
+cannot advance meaningfully within current Mac-only authorization without:
+
+- Human block-coverage, A1-path, exposure/training/evaluation and resource caps.
+- Selected serious production data/calibration, original frozen block Q4 files,
+  continuous EAGLE provider payloads and production portability inputs.
+- Renewed explicit hardware authorization and fresh SM120 model/full-moment
+  memory/resource-release evidence. Both remote hosts remain off limits.
+- Authentic resolution of the local EAGLE diagnostic's four identity/numeric/
+  mask/completeness admission gates; existing component passes do not confer
+  training eligibility.
+
+Native Goal remains ACTIVE and unfinished: the three-consecutive-goal-turn
+blocked threshold is not yet satisfied. This handoff turn and advisory review
+count as one observation, not multiple turns. No new question, decision, GPU
+permission, budget or timer is inferred. Pending human choices remain as
+recorded in DECISIONS and the previous question. On the next goal turn, audit
+only whether a human response or external-state change enables meaningful
+work; avoid repeated tests, broad source scans or idle diagnostics. If this
+same condition persists through three consecutive goal turns, mark the native
+Goal blocked, preserving the full objective and explicit next requirements.
