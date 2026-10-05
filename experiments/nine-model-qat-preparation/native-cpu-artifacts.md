@@ -111,7 +111,7 @@ separate. No failed gate was waived or original weight modified.
 
 | Profile/requirement | Evidence and status |
 |---|---|
-| `ffn15`, A1/A8, both families | PASS CPU toy loader/export/graph contracts; actual full-source F15-only graph **PENDING**, CUDA/hardware **PENDING**. |
+| `ffn15`, A1/A8, both families | PASS CPU toy contracts and four actual full-source fifteen-projection export/load/graphs in the follow-up below; CUDA/hardware **PENDING**. |
 | `ffn15_fusion`, A1/A8, both families | PASS actual original source/private-copy/export and CPU sixteen-projection graphs above; CUDA/hardware **PENDING**. |
 | Paired target ownership | PASS representative actual DSpark A8 CPU co-load; other actual paired profiles/hardware **PENDING**. |
 | Calibrated/trained models, production data, quality/throughput | **PENDING**; these prototypes prove none of those outcomes. |
@@ -123,3 +123,44 @@ No all-profile or percentage readiness claim follows from test counts.
 Machine-readable checkpoint:
 `models/nine-model-original-snapshots/actual-cpu-summary.json`, SHA256
 `d484a70ab08e3f9a397725bd6edf175d6a66a8a4616c5b27f55c0023575d2628`.
+
+
+## FFN15-only follow-up — same Mac, source and invariants
+
+The four previously pending actual `ffn15` cells now pass. This follow-up reused
+the verified bases and original BF16-derived FFN latent/meanabs arrays; only a
+fifteen-projection NPZ subset was written. The FC16 suites were not repeated.
+Source/graph helper stayed native `624f50e74`; binary SHA256 is
+`e0c0acf4c8de3016195b132583926a5f3c31a5b2f496aee9ff0fb1fd1f5b766d`.
+
+`untrained-ffn15-smoke/` holds distinct manifests/exports/proofs. Every other
+base tensor retains bytes/type. In particular FC remains dense **BF16**, raw
+SHA256 DSpark `a58762db0ffb08c8727b4999362610491e5dac51baa64e127a41750f2ffab9e3`,
+DFlash `691b5fc198e4b1423bcac97bea90f4388b38a02f7b5d9c2afb50f452c403ade6`.
+
+| Cell | FFN15 prototype GGUF SHA256 | CPU graph receipt SHA256 |
+|---|---|---|
+| DSpark A1 | `20c2a388eb94d77acb8a7e7490922020693540187b9fd45a75508453d22f6e64` | `756cb57d1d130b0c5e8f4b8406b680d9ea3c840e8e843afc6d3e01e28f6311b7` |
+| DSpark A8 | `3ef4d9ce7d17ab450db0631cb2cf7a1f44291c1eb27cdbe925ac079efa974201` | `227f14fa4657da3221423ad8a985440b9b29f5ad5b520df4160a430349647598` |
+| DFlash A1 | `73e7dc98e7a2e87d498754d98bd0c7a8a30c446b350a43b6e6e6fa8adf012e20` | `891043807c7362755dae856c6846a41f2e72e343dadd36360f1348e3196b9c0f` |
+| DFlash A8 | `e16814bc452b40f98aef9dd67276bea4cecf55e092cc571f8e42ecbbff0987ad` | `715c7c058368381e10db0bab63d36ffe84e1ce3fa1ca8dab98bb96aed835e6bd` |
+
+Each actual load/injection/intact-seven-slot graph observes **exactly fifteen**
+selected I32/W1 projections with correct bits, CPU buffers, mask151669, the same
+anchor/noise IDs/positions and finite full-vocabulary logits. FC is outside W1
+coverage; there is no selected FFN dense fallback. All four remain untrained,
+uncalibrated prototypes: zero optimizer updates and no quality/timing evaluation.
+
+Six sequential jobs used the existing 8 GiB RSS/timeout guards. Maximum sampled
+process-group RSS was `6,914,867,200` bytes for export and `2,292,187,136` for graph;
+maximum kernel child export peak was `6,932,791,296`. Every run exited0, recorded
+its owned group empty and retained exact command/resource receipts under the
+existing ignored run directory (`*-ffn15-export`, `*-ffn15-w1a{1,8}-graph`).
+The CPU heavy slot was explicitly released; no further model runs were started.
+No original or failed artifact was changed and no deployment source edit occurred.
+
+Separate machine-readable checkpoint, leaving the FC16 summary intact:
+`models/nine-model-original-snapshots/actual-cpu-ffn15-summary.json`, SHA256
+`5868db9d37ed55168150c9ef516ee74b530df72ca56d27f47b277643113cdbc6`.
+CUDA/runtime/memory, production calibration/data/QAT and quality/throughput stay
+PENDING. Locally absent original frozen Q4 files are still not substituted.
