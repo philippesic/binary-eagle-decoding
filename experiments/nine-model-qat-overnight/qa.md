@@ -542,3 +542,33 @@ source/fixture QA only. Execution policy inputs remain subject to explicit
 selection and independent QA; actual Q4/development evaluation, fresh resource
 admission and all other campaign outcomes remain PENDING. The live EAGLE trainer
 was not touched.
+
+## Read-only artifact atime guard
+
+The shared `Files.check` path now tolerates only access-time changes caused by
+reading a pinned artifact. Commit `6c3449fa97d37e0e98ac218451b35a8ecaa6766e`
+keeps SHA256 verification and pins device, inode, size, mode, owner, group,
+link-count, mtime and ctime before/after reads and across cached checks. A
+changed path/SHA identity, in-place byte change, metadata mutation, replacement,
+link change or mutation during hashing still refuses without poisoning the
+cache. The privileged DXG observer uses the same fingerprint, so its own read
+no longer fails only because atime advanced; its helper hash and all existing
+UID/namespace/protocol/release checks remain intact.
+
+Focused validation passed **27 tests**: 11 artifact-file tests, 7 DXG-observer
+tests, and 9 endpoint tests against the changed shared guard. The exact command
+was:
+
+```sh
+PYTHONPATH=src:scripts:tests \
+  /Users/pippo/github/binary-eagle-decoding/.venv/bin/python \
+  -m unittest test_nine_model_files test_read_only_dxg_census test_nine_model_lane_endpoint -v
+```
+
+`ruff check`, `ruff format --check`, and `git diff --check` passed. Changed
+artifact guard source SHA256 is
+`a27e9121261938175d88fb78651b2f02fa0a641d4b5afccc2197e561399979af`; file tests
+`323236a61ea3b735fa16d38f23d120c4afa7ca0ecb9355c995dbcbe12268dcab`. The same
+run revalidated read-only DXG hash/permission tests and endpoint fixtures; it
+made no remote call or GPU query. This is a source identity fix only, not a new
+admission, endpoint run, or model readiness claim.
