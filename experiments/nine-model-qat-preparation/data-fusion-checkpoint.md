@@ -73,3 +73,36 @@ quality/performance evaluation remain pending. Existing Q4 controls and EAGLE
 speculative/tree corpora are preserved. New target-only golden prefixes do not
 relabel or replace those corpora. No CPU/fixture result grants SM120 memory,
 convergence or throughput readiness.
+
+## Mac-only continuation and finite A8 contract
+
+The human paused all RTX5080 usage after the development opening. Root owns the
+pause and sole operator cleanup; this package performs no remote operation.
+Actual pilot captures remain PENDING. Existing code is integrated through main
+`658bead`; local source and saved-artifact checks continue within the same goal.
+
+All four actual fixed-half EAGLE NPZ files passed the integrated
+`qat_initialization.apply_binary_initialization` consumer on Mac at main
+`658bead`: exact F32 scales and latent values, reference SHA `9b24af26…`, zero
+optimizer updates. Original unit magnitudes refused the preserved-reference
+policy and passed only the explicit unit probe. This was actual saved projection
+artifact integration, with no model forward/backward or CUDA operation. Maximum
+RSS was 668,663,808 bytes. Detailed evidence remains outside Git in
+`results/nine-model-qat-preparation/calibration-initialization-integration-mac-20261004.json`.
+
+Root approved a narrow fixed-A8 finite reciprocal correction shared with native
+and training owners. Prepared fitter arithmetic is now
+`fixed_w1a8_finite_reciprocal_v2`: bitwise F32 absolute maximum; finite F32 inverse
+and multiply/RNE unchanged; reciprocal overflow uses
+`double(x)/double(absmax)*127`, casts normalized values to F32, then rounds
+nearest-even and clamps. This matches the specified CPU/native CUDA expression;
+the new actual CUDA execution check is still PENDING while paused. Half-tie,
+max-subnormal, signed-zero and normal-domain source-oracle tests pass locally.
+
+The independently hash-joined original operand archive (`04ad9777…`) supplied
+all 384 saved TRAIN rows/2,949,120 values for a bounded CPU compatibility check:
+**zero changed codes and zero changed token-scale bits** versus the historical
+fixed-A8 quantizer. No fitting or model execution was repeated, and old unit/
+fixed-half NPZ files, reports and their source tags remain unchanged. The new
+fitter source tag/hash is separately recorded in ignored
+`fixed-a8-v2-saved-normal-domain-mac-20261004.json` (270,499,840-byte maximum RSS).
