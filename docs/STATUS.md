@@ -19,10 +19,10 @@ is prioritized with delegated24h cumulativetrainerallocation and frequent
 checkpoints; remaining candidates queue without premature readiness claims.
 30-minute heartbeat `nine-model-overnight-qat-monitor` is ACTIVE in this chat.
 **QAT is actively running onRTX5080/SM120**: calibrated fixed EAGLE W1A8,
-2838updates with SHA-verified2750 checkpoint; all required fresh admission/source/
+41765updates with committed41750 checkpoint; all required fresh admission/source/
 device gates PASS. Finite18selected gradients, actual sign/scale movement and
-cache/batchedhead execution;8.16GBGPUfree/17.22GBhostavailable. ActualTRAIN
-coverage35prompts/13552rows at418.39trainerseconds; no quality/win claim.
+cache/batchedhead execution;8.16GBGPUfree/16.79GBhostavailable. ActualTRAIN
+coverage512prompts/199236rows at6212.49trainerseconds; no quality/win claim.
 
 Run eagle-a8-qat-overnight-20261005-04; supervisor55097/controller55098/trainer
 55398. Root is sole remote operator.24h cumulative allocation/no smaller cap,
@@ -34,6 +34,10 @@ calibration completed1536fit/768validation rows without interrupting A8. Actual
 A1 actor/export/SM120 admission remainsPENDING.
 Latest live handles and source/checkpoint proof are in the linked goal and
 ignored monitor registration. All previous failed attempts are retained.
+Separate passiveendpoint watcher56606/56611 is armed on frozenplan9f989383...;
+waits for naturalbudgetcompletion/exactcheckpoint/ownedrelease beforeCPUexport
+and originalQ4/target-only development comparison. No newGPUsidejob; healthy
+trainer remains untouched. Source/packetQA passed, actualevaluation PENDING.
 
 ## Historical preparation checkpoint — October 4, 2026
 

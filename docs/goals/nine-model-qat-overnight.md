@@ -94,7 +94,7 @@ chat turns and ownership rotation. Human pause/stop takes priority.
 
 Calibrated EAGLE W1A8 QAT is admitted and actively running on RTX5080/SM120.
 All fresh receipt gates and strict source/device checks passed. It has passed
-2838 optimizer updates with a SHA-verified2750 checkpoint, finite gradients and
+41765 optimizer updates with a committed41750 checkpoint (earlier2750 bytes SHA-verified), finite gradients and
 actual cache/head execution. Root owns the exact live supervisor/controller/
 trainer and transport recorded in the latest checkpoint below and ignored
 monitor registration. The30-minute heartbeat is ACTIVE; preserve healthy
@@ -504,3 +504,63 @@ Detailed contract, costs, tests, raw QA log locations and integration needs:
 and integrate published coherent source; future real indexed capture needs new
 source/client/runtime pins and coordinated resource admission. Healthy5080 QAT
 continues independently under its frozen existing source/config/lane.
+
+
+## Passive endpoint armed; QAT healthy — October 5, 04:57 PDT
+
+Current exact trainer55398/boot517c4a36.../birth12966638 remains live. A8running
+41765updates/6212.49trainerseconds with checkpoint41750cfe9c20f...,512TRAIN
+prompts/199236rows. Finite18gradients, CUDAfree8,161,067,008B, hostavailable
+16,787,771,392B, diskfree197,025,316,864B. Only DXGholder is continuingtrainer;
+no extra GPUmodel/capture/evaluation executed. Training source30a/nativecc9,
+config/lane/budget/data unchanged.30-minute heartbeat remainsACTIVE.
+
+Endpointsource00397df/sourceQA a16c0d3; true stale-atime guardfixdf00b51/QA
+c2544aa acceptedrealaccess-only changes while strictSHA/mtime/ctime/inode/
+size/mode/UID/GID/nlink remains. Real Linux synthetic unchangedbytes repro old
+guardFAILED onlyatime; newguard pluscachedcheckPASS on actualWSL, no source/data
+mutation. Endpoint runs from a SEPARATE cleanc2544aa checkout at
+/home/philip/binary-eagle-decoding/runs/checkouts/nine-model-endpoint-20261005-c2544aa;
+its native SOURCE isecff, actual evaluator/serializer runtime remains pinned
+originalcc9/old30a. Newindexednative/code never replaces livebinary/source.
+
+Concrete actual wrapper/protocol/policy packet: data/nine-model-overnight/
+eagle-a8-endpoint-20261005-01. OriginalQ4_0EAGLE2db40... joined immutable09e8
+config/bdfaready/f45e historicalnative timing. Prior24 unsealeddev131a...
+revalidated against original10000TRAIN/1002development indices: eight each
+code/prose/reasoning, originaldevmembership and noTRAIN ID/group/contentoverlap;
+no sealedfinal bytesopened. Fulltraining sourcebinding staysremote unchanged;
+boundedmetadata proxy1fff3124...40415B summarizes itscanonicalb1a9SHA.
+Independent actualpacketQA4765ed7c.../230sourcepinsPASS; GPUoutcomes stayPENDING.
+Rootselectedprotocol/policy398a6e28.../358452f1... uses5cleanreps/2warmups/24dev/
+128outputs/ctx2048/batch32/seed42/draft5/F16KV,600CPUexport/1200nativeeval/
+111600passivewait. Provenance is delegatedoperational/human_selected=false;
+whole6/3 proposed10repeat budget remainsunselected.
+
+Frozenendpointplan9f989383232d2e257d04d5bcaab08113f5c0333b368581d770d6a75a9e34a7cb.
+Supervisedpassive watcher eagle-a8-endpoint-watch-20261005-01 is LIVE in
+binary-eagle-runtime/root-eagle-a8-endpoint-watch-20261005-01: supervisor56606/
+birth13576753,controller56611/birth13576769,currentbootunchanged. Itsstate is
+waiting_for_natural_endpoint/gpu_queried=false/training_changed=false. It holds
+noGPUlock whilewaiting and never writes oldtrainerSTOP/config/source. After
+matchingapprovedbudgetcomplete/positiveexactcheckpoint/allownedrelease and
+strictemptyforeignCUDA+DXG/floors/currentboot/device/sharedGPUflock, it issues
+separateimmutable <=300s typed continuations forCPUexport thennativeeval under
+standingauthorization; new_human_announcement=false. Originalleases stayunchanged.
+Detailednativeproof/round/memory diagnostics run outsideclean timings (clean3/
+diagnostic4); exactsameartifacts and target/Q4greedyparity aremandatory. No whole
+campaigncompleted claim. Livewaitreceipt b570a3be... retained in watcher rundir.
+
+Root is soleoperator MCP$258/@287/%289. Exact primary+watcherhandles/source/
+plan/policy/STOP paths andcompletedCPU A1job are in monitor-registration.json.
+Healthy training continues throughmorning and naturalcap; no evaluation yet.
+NativeGoal remainsACTIVE/fullsix+three scope unfinished. Currentlocalworker
+/root/block_sparse_teacher_owner owns NEW blockpacketadapter source/tests/report
+in /tmp/binary-eagle-block-lane-packet (actual productioncapture/coverage/
+calibration/actor/GPU stillPENDING). No other worker hasremoteauthority.
+
+Retired fullyintegrated newremaining-inputs and OLD indexed-teacher worktrees/
+branches after ownedsourceequality/ancestry-preservingmerge/push. Six rawQAlogs
+plusCMakeCache/build.ninja preserved in ignored results/nine-model-qat-overnight/
+indexed-storage-preserved; CPUbuild/tmp/binary-eagle-indexed-native-build remains,
+publicnativebranch reachable. Existing otherteamtrees/untrackedfiles untouched.
