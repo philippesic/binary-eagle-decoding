@@ -146,17 +146,30 @@ def kernel_summary(output):
 
 def native_summary(record, candidate):
     family = candidate["family"]
+    audit = json.loads(Path(candidate["export"]["path"]).read_text())
+    expected_names = {base + ".w1a1_packed" for base in audit["projections"]}
     require(record.get("optimizer_updates") == 0, "native probe updated optimizer")
     require(
         record.get("model_sha256") == candidate["model"]["sha256"], "native probe model differs"
     )
     if family == "eagle":
+        observed = record.get("observed_dispatch", {})
         require(
             record.get("schema") == "eagle_native_graph_smoke_v1"
             and record.get("status") == "PASS"
             and record.get("cuda_dispatch_observed") is True
             and record.get("selected_projection_count") == 9,
             "EAGLE native gate incomplete",
+        )
+        require(
+            observed.get("schema") == "nine_model_observed_w1_dispatch_v1"
+            and observed.get("status") == "PASS"
+            and observed.get("actual_cuda_operations") is True
+            and observed.get("activation_bits") == candidate["final_bits"]
+            and observed.get("selected_projection_count") == 9
+            and len(observed.get("packed_names", [])) == 9
+            and set(observed["packed_names"]) == expected_names,
+            "exact EAGLE per-projection CUDA execution proof absent",
         )
     else:
         require(
@@ -170,7 +183,7 @@ def native_summary(record, candidate):
         nodes = record.get("nodes", [])
         expected = 16 if record.get("profile") == "ffn15_fusion" else 15
         require(
-            len(nodes) == expected and len({n.get("packed") for n in nodes}) == expected,
+            len(nodes) == expected and {n.get("packed") for n in nodes} == expected_names,
             "selected native node coverage incomplete",
         )
         require(
@@ -252,6 +265,10 @@ def backward_summary(record, candidate, bundle_hash, *, fixture=False, gpu_uuid=
             {str(item["activation_bits"]): item["execution"] for item in details}
             if isinstance(details, list)
             else {str(bits): details[f"A{bits}"]["execution"] for bits in expected_bits}
+        )
+        require(
+            set(paths) == {str(b) for b in expected_bits},
+            "EAGLE executed path evidence misses a selected precision stage",
         )
         return paths
     return {}

@@ -96,11 +96,22 @@ class Runner:
                     "optimizer_updates": 0,
                 }
                 if family == "eagle":
+                    audit = json.loads(Path(c["export"]["path"]).read_text())
                     record.update(
                         schema="eagle_native_graph_smoke_v1",
                         status="PASS",
                         cuda_dispatch_observed=True,
                         selected_projection_count=9,
+                        observed_dispatch={
+                            "schema": "nine_model_observed_w1_dispatch_v1",
+                            "status": "PASS",
+                            "actual_cuda_operations": True,
+                            "activation_bits": c["final_bits"],
+                            "selected_projection_count": 9,
+                            "packed_names": sorted(
+                                base + ".w1a1_packed" for base in audit["projections"]
+                            ),
+                        },
                     )
                 else:
                     record.update(
@@ -170,7 +181,7 @@ class AdmissionTests(unittest.TestCase):
             "native": {"producer": locator, "argv": ["fixture"], "wall_seconds": 1},
             "backward": {"producer": locator, "argv": ["fixture"], "wall_seconds": 1},
         }
-        return {
+        plan = {
             "source": {"fixture": locator},
             "training_source_files": {"fixture": locator["sha256"]},
             "backend_binary": locator,
@@ -192,6 +203,33 @@ class AdmissionTests(unittest.TestCase):
                 for f in ("eagle", "dspark", "dflash")
             },
         }
+        for family in ("eagle", "dspark", "dflash"):
+            bases = (
+                [
+                    "fc",
+                    "output",
+                    *(
+                        "blk.0." + name
+                        for name in (
+                            "attn_q",
+                            "attn_k",
+                            "attn_v",
+                            "attn_output",
+                            "ffn_gate",
+                            "ffn_up",
+                            "ffn_down",
+                        )
+                    ),
+                ]
+                if family == "eagle"
+                else [f"blk.{i}" for i in range(15)]
+            )
+            audit = root / (family + "-export.json")
+            atomic_json(audit, {"projections": {name: {"shape": [32, 32]} for name in bases}})
+            for name, c in plan["candidates"].items():
+                if name.startswith(family + "_"):
+                    c["export"] = {"path": str(audit), "sha256": sha256(audit)}
+        return plan
 
     def test_full_six_candidate_chain_emits_only_fixture_admissions(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -338,7 +376,7 @@ class AdmissionTests(unittest.TestCase):
             plan = self.fixture(root)
             (root / "input").write_text(json.dumps({"precision_stage": "direct"}))
             for c in plan["candidates"].values():
-                for key in ("config", "model", "export"):
+                for key in ("config", "model"):
                     c[key]["sha256"] = sha256(root / "input")
             for record in (plan["source"]["fixture"], plan["backend_binary"], plan["target"]):
                 record["sha256"] = sha256(root / "input")
