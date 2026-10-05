@@ -972,3 +972,43 @@ later required action under standing authorization after natural GPUrelease.
 Worker has no remote/GPU authority or durable-doc ownership. Root remains sole
 operator; block exposure/conditioning response stays pending. Fullsix+three Goal
 ACTIVE, unchanged healthy A8 allocation and passive watcher preserved.
+
+## Real A1 handoff and scheduled health — October 5, 06:18 PDT
+
+Owner2b92646 reviewed/cherry-picked2971107; exact3-file equality and ancestry
+preserved559a317. Owner20/independent20/root20 model-free Mac CPUchecks PASS;
+Ruffcheck/format/diffPASS. Worker/QA complete, no processes or GPUauthority.
+Merged worktree/branch may retire after preserved proof/publication verification.
+
+Separate planner checkout
+`/home/philip/binary-eagle-decoding/runs/checkouts/nine-model-a1-handoff-20261005-559a317`,
+HEAD559a317d93546003d44aee531011cac824679470, built/inspected actual metadata with
+CUDAhidden/twoCPUthreads exit0/PENDING,230 originalc254Python/Git source pins.
+Real root `data/nine-model-overnight/eagle-direct-a1-handoff-20261005-01`:
+planSHA82de5cfbd34ee781edc2d8dd5c9230d930474c4eed73b09b6ec35099a8be5298;
+inputsSHAad3ae55e858b54106620d5542b918584d5f83c8105fac89fbf0be041bca6f980.
+Executionfalse/production_readyfalse, all runtime stages PENDING; pending-* output
+paths are placeholders for later actual typed contracts. No models/raw payloads,
+GPU query/context, stage job, watcher, source or lease changed.
+[Report](../../experiments/nine-model-qat-overnight/a1-handoff-plan.md) records
+exact QA/execution evidence hashes. Sole coordinator may advance existing CLIs
+autonomously after natural A8 endpoint/owned release and fresh per-stage admission;
+a custom sequencer is not an additional launch prerequisite.
+
+Scheduled30-minute check13:18:23UTC: exact five boot/birth identities and both
+running supervisors verified; training source still30a/nativecc9 after metadata
+Git operations. Healthy74,590updates/11,108.349trainerseconds,916TRAINprompts/
+355,367rows,18finitegradients/loss0.402150, heartbeat0.0554s.
+GPUfree8,161,067,008B, hostavailable17,083,289,600B, diskfree196,496,875,520B.
+Manifest-declared checkpoint74,500SHA
+4c8d1d5dc676184eb4202a79e9aaec397430c7095e68f6968cc37a25b09a3c59, not
+byte-rehashed. Watcher stillwaiting_for_natural_endpoint/gpu_queriedfalse/
+training_changedfalse. Coherent local proof
+`results/nine-model-qat-overnight/health-0618-20261005.json`, SHA
+5a9c27ea06c32e8aef9afad6009d56303a2807731a503a8b870a4591375eaea4.
+
+This continuation was progress (real pinned handoff/source/tests) plus verified
+waiting on live jobs. Fullsix+three GoalACTIVE; actual remaining model/capture/
+admission/QAT/comparisons unfinished, block scientific choice pending. Keep
+healthy A8 through86,400trainerseconds and current passive watcher unchanged;
+next approximately30-minute check around06:48PDT. No quality/win claim.

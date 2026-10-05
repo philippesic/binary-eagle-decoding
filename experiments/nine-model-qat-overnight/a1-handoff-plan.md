@@ -118,3 +118,29 @@ fresh SM120 admission, long QAT and endpoint remain unfinished. A staged sequenc
 that resolves fresh output pins, issues adjacent leases, holds the GPU flock and
 advances existing supervised CLI stages remains an explicit implementation gap.
 Healthy A8 and passive endpoint continue unchanged under root ownership.
+
+## Actual metadata materialization — October 5, 06:18 PDT
+
+Owner2b92646 reviewed/cherry-picked2971107, ancestry preserved559a317. Root20
+checks passed in1.687s; owner/independent20 checks PASS. QA SHA
+9e7266c2e58ce243617debb04926fa0f763cf4b384a7d18577b029c77d20a600 preserved in
+primary ignored results. Actual stdlib build/inspect on the RTX5080 host with
+CUDAhidden/twoCPUthreads both exited0/PENDING.230 originalc254Python/Git source
+pins and real packet/receipt/upstream plan joins verified; no model/raw payload,
+GPU query/context, stage command, lease or running source change.
+
+Remote root:
+`/home/philip/binary-eagle-decoding/data/nine-model-overnight/eagle-direct-a1-handoff-20261005-01`.
+PlanSHA82de5cfbd34ee781edc2d8dd5c9230d930474c4eed73b09b6ec35099a8be5298;
+inputsSHAad3ae55e858b54106620d5542b918584d5f83c8105fac89fbf0be041bca6f980.
+Build/inspect logs retained there. Local ignored execution evidence
+`results/nine-model-qat-overnight/a1-handoff-materialization-20261005.json`, SHA
+a3ef7136b501504e5a57efbda7fd113c467ce5d3910446cfb9a12a6132de0ea4.
+
+Three known output names use real packet paths; other `pending-*.json` paths
+are explicit placeholders to refreeze against later actual runtime contracts.
+Parent still runs, so no terminal snapshot supplied. The sole coordinator may
+advance existing source-pinned supervised CLIs after natural release/admission
+under standing authority; a custom serial driver is an optional automation
+enhancement, not a new launch prerequisite. All actual A1 runtime stages remain
+unfinished; current A8 automatic endpoint remains armed unchanged.
