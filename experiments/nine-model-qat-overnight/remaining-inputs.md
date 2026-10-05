@@ -197,3 +197,47 @@ campaign budget, whereas staged lanes accept truthful delegated provenance.
 Final full-campaign packaging needs the same truthful authorization treatment or
 an actual directly selected full budget; this is source integration, not grounds
 for labeling delegated numbers human-selected.
+
+## Follow-on direct-A1 packet implementation
+
+The coordinator assigned safe task1 above to this owner after the report was
+committed. `prepare_eagle_lane_packet.py prepare` now accepts explicit
+`--activation-bits {8,1}` with A8 as the unchanged default. Direct A1 derives
+`eagle_a1` budget/config entries, `direct_a1` profile, fixed/reference arithmetic,
+XOR/POPCOUNT native dispatch marker, A1 zero-checkpoint member paths and
+`initial-calibrated-a1.gguf` output. A8 retains its existing filenames, profile,
+limits, native markers and operational behavior. Neither path starts a model or
+training merely by preparing metadata.
+
+Initial export binding derives precision from the pinned source configuration
+and requires its continuous config, initializer bits, selected packet
+candidate/config locator, zero-update receipt stage, checkpoint lane and native
+export audit to agree. Bind updates only that selected candidate. An A8 fit,
+receipt, checkpoint lane or audit cannot be silently relabeled as A1.
+The original all-three-domain/source/authorization/step-zero/protected-export
+joins remain required, and no trainer math was changed.
+
+Usage when a genuine independent production A1 initializer is available:
+
+```sh
+python scripts/prepare_eagle_lane_packet.py prepare --activation-bits 1 \
+  --runtime CURRENT_RUNTIME_JSON --runtime-sha256 CURRENT_RUNTIME_SHA256 \
+  --prepared-run-dir ORIGINAL_COMPLETED_PREPARATION \
+  --initializer-dir AUTHENTIC_A1_INITIALIZER \
+  --authorization IMMUTABLE_AUTHORIZATION --output NEW_A1_PACKET
+```
+
+Uppercase values are pending explicit artifact locators, not manufactured
+readiness. The helper plans a candidate-local24h/30h training/outer-wall
+allocation with copied delegated authorization; the coordinator must freeze
+the actual later lane before execution. The current live A8 packet/config is
+untouched and should not be rebound to this changed source.
+
+Thirteen focused packet tests pass on Mac. New regressions cover direct-A1
+configuration/budget/export/dispatch, refusal of A8 calibration as A1, refusal
+of A8 receipt/lane/audit at A1 bind, and complete prepare-to-bind preservation
+for both A8/A1. Existing source/corpus/probe/ancestry/checkpoint/no-overwrite
+refusals still pass. Changed-file Ruff/format and CLI help pass. Tests use
+explicit metadata/tensor fixtures and grant no production hardware readiness.
+Independent source QA is reviewing the implementation. Authentic A1 calibration,
+initialized actor and SM120 admission remain PENDING.

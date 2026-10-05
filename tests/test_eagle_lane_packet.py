@@ -24,7 +24,7 @@ def write(path, value):
 
 
 class PacketTests(unittest.TestCase):
-    def fixture(self, root):
+    def fixture(self, root, *, bits=8):
         prepared, initializer = root / "prepared", root / "initializer"
         common = {"target_gguf": "a" * 64, "base_draft_gguf": "b" * 64}
         source = {"common_source_sha256": common}
@@ -79,7 +79,7 @@ class PacketTests(unittest.TestCase):
         write(prepared / "resolved_config.json", original)
         init = write(initializer / "initializer.npz", {"fixture": "never model-loaded"})
         init.update(
-            activation_bits=8,
+            activation_bits=bits,
             encoding="policy_latents",
             latent_initialization={
                 "policy": "preserve_reference_magnitudes",
@@ -94,7 +94,7 @@ class PacketTests(unittest.TestCase):
             "prepared_ready_sha256": ready["sha256"],
             "authenticated_full_source": source,
             "fit_config": asdict(
-                FusionFitConfig(8, False, 0, 300, reference_kind="eagle_fixed_reference_0.5")
+                FusionFitConfig(bits, False, 0, 300, reference_kind="eagle_fixed_reference_0.5")
             ),
             "fit": {"events": []},
             "selected_prompts": selected,
@@ -131,6 +131,7 @@ class PacketTests(unittest.TestCase):
                 initializer_dir=initializer,
                 authorization=authorization,
                 output=root / "packet",
+                **({"activation_bits": bits} if bits != 8 else {}),
             ),
             ready["sha256"],
             original,
@@ -182,6 +183,83 @@ class PacketTests(unittest.TestCase):
             self.assertIn(request["sha256"], commands["initial_prepare"])
             self.assertIn("--prepare-only", commands["initial_prepare"])
             self.assertIn("544", commands["native_generation"])
+
+    def test_direct_a1_packet_uses_a1_config_budget_checkpoint_export_and_native_dispatch(self):
+        with tempfile.TemporaryDirectory() as temp:
+            args, ready, _ = self.fixture(Path(temp).resolve(), bits=1)
+            with patch.object(packet, "READY_SHA", ready):
+                packet.prepare(args)
+            descriptor = json.loads((args.output / "configs/resolved-inputs.json").read_text())
+            self.assertEqual(set(descriptor["candidates"]), {"eagle_a1"})
+            selected = descriptor["candidates"]["eagle_a1"]
+            self.assertEqual(selected["profile"], "direct_a1")
+            self.assertIn("CUDA packed W1A1 XOR/POPCOUNT dispatch", selected["native_markers"])
+            self.assertNotIn("CUDA packed W1A8 INT8 dispatch", selected["native_markers"])
+            import train_continuous_w1ax as training_api
+
+            _, effective = training_api.load_config(
+                args.output / "configs/eagle_a1-continuous.json"
+            )
+            self.assertEqual(effective.activation_bits, (1,))
+            self.assertEqual(effective.activation_quantization, "fixed")
+            self.assertEqual(effective.a1_computation, "reference")
+            self.assertEqual(effective.max_seconds, 86400)
+            budget = json.loads((args.output / "budget.json").read_text())
+            self.assertEqual(set(budget["candidates"]), {"eagle_a1"})
+            self.assertFalse(budget["human_selected"])
+            commands = json.loads((args.output / "commands.json").read_text())
+            self.assertIn("eagle_a1/initial-prepare", commands["initial_prepare"])
+            self.assertIn(str(args.output / "configs/eagle_a1.json"), commands["initial_prepare"])
+            self.assertTrue(
+                any(value.endswith("/A1/joint.npz") for value in commands["initial_export"])
+            )
+            self.assertIn(
+                str(args.output / "initial-calibrated-a1.gguf"), commands["initial_export"]
+            )
+            bound, runtime, *_ = self.initial_export_fixture(args)
+            with patch.object(packet, "READY_SHA", ready):
+                packet.initial_export_join(bound, packet.Files(), runtime)
+            self.assertFalse((args.output / "production-inputs.json").exists())
+
+    def test_explicit_a1_refuses_a8_fit_before_packet_publication(self):
+        with tempfile.TemporaryDirectory() as temp:
+            args, ready, _ = self.fixture(Path(temp))
+            args.activation_bits = 1
+            with (
+                patch.object(packet, "READY_SHA", ready),
+                self.assertRaisesRegex(ValueError, "fixed A1 scale-only"),
+            ):
+                packet.prepare(args)
+            self.assertFalse(args.output.exists())
+
+    def test_a1_initial_join_refuses_a8_receipt_lane_and_native_export(self):
+        import copy
+
+        with tempfile.TemporaryDirectory() as temp:
+            args, ready, _ = self.fixture(Path(temp).resolve(), bits=1)
+            with patch.object(packet, "READY_SHA", ready):
+                packet.prepare(args)
+            bound, runtime, receipt_path, receipt, checkpoint, outer, audit_path, audit = (
+                self.initial_export_fixture(args)
+            )
+            with patch.object(packet, "READY_SHA", ready):
+                for substitution in ("stage", "lane", "audit"):
+                    changed_receipt, changed_outer, changed_audit = (
+                        copy.deepcopy(receipt),
+                        copy.deepcopy(outer),
+                        copy.deepcopy(audit),
+                    )
+                    if substitution == "stage":
+                        changed_receipt["stage"] = "eagle_a8/initial-prepare"
+                    elif substitution == "lane":
+                        changed_outer["exports"] = {"A8": outer["exports"]["A1"]}
+                    else:
+                        changed_audit["activation_bits"] = 8
+                    write(receipt_path, changed_receipt)
+                    write(checkpoint / "manifest.json", changed_outer)
+                    write(audit_path, changed_audit)
+                    with self.subTest(substitution=substitution), self.assertRaises(ValueError):
+                        packet.initial_export_join(bound, packet.Files(), runtime)
 
     def test_wrong_initializer_corpus_pin_refuses_before_publication(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -259,14 +337,16 @@ class PacketTests(unittest.TestCase):
                 packet.exact_replay_join(rows, requests)
 
     def initial_export_fixture(self, args):
+        bits = getattr(args, "activation_bits", 8)
+        candidate, lane = f"eagle_a{bits}", f"A{bits}"
         runtime = json.loads(args.runtime.read_text())
         report = json.loads((args.initializer_dir / "report.json").read_text())
         checkpoint = (
             args.output / "initial-prepare/checkpoints/step-000000000000-e000000-r000000000000"
         )
         resume = write(checkpoint / "resume.pt", {"fixture": "no model"})
-        joint = write(checkpoint / "A8/joint.npz", {"fixture": "no tensors"})
-        joint_manifest = write(checkpoint / "A8/joint.json", {"fixture": "no tensors"})
+        joint = write(checkpoint / f"{lane}/joint.npz", {"fixture": "no tensors"})
+        joint_manifest = write(checkpoint / f"{lane}/joint.json", {"fixture": "no tensors"})
         outer = {
             "step": 0,
             "epoch": 0,
@@ -275,7 +355,7 @@ class PacketTests(unittest.TestCase):
             "optimizer_rng_cursor_exact": True,
             "source_sha256": report["source_sha256"],
             "exports": {
-                "A8": {"joint.npz": joint["sha256"], "joint.json": joint_manifest["sha256"]}
+                lane: {"joint.npz": joint["sha256"], "joint.json": joint_manifest["sha256"]}
             },
         }
         write(checkpoint / "manifest.json", outer)
@@ -285,7 +365,7 @@ class PacketTests(unittest.TestCase):
             "schema": "nine_model_preparation_v1",
             "status": "PASS",
             "artifact_kind": "production",
-            "stage": "eagle_a8/initial-prepare",
+            "stage": f"{candidate}/initial-prepare",
             "optimizer_updates": 0,
             "bundle_sha256": packet.builder.sha256(request_path),
             "config_sha256": request["config"]["sha256"],
@@ -297,7 +377,7 @@ class PacketTests(unittest.TestCase):
         model = write(args.output / "initial.gguf", {"fixture": "not native"})
         audit = {
             "serialization_audit_passed": True,
-            "activation_bits": 8,
+            "activation_bits": bits,
             "projections": {str(i): {} for i in range(9)},
             "base_gguf": runtime["base_model"],
             "output": model,
@@ -344,10 +424,15 @@ class PacketTests(unittest.TestCase):
                         packet.initial_export_join(bind_args, packet.Files(), runtime)
 
     def test_prepare_to_first_bind_preserves_source_joins_and_repeat_refuses_overwrite(self):
+        for bits in (8, 1):
+            with self.subTest(bits=bits):
+                self.assert_prepare_to_bind(bits)
+
+    def assert_prepare_to_bind(self, bits):
         import numpy as np
 
         with tempfile.TemporaryDirectory() as temp:
-            args, ready, _ = self.fixture(Path(temp).resolve())
+            args, ready, _ = self.fixture(Path(temp).resolve(), bits=bits)
             with patch.object(packet, "READY_SHA", ready):
                 packet.prepare(args)
             bound, runtime, *_ = self.initial_export_fixture(args)
@@ -435,7 +520,13 @@ class PacketTests(unittest.TestCase):
             with patch.object(packet, "READY_SHA", ready):
                 packet.bind(bound)
                 self.assertEqual(joins_path.read_bytes(), original_joins)
-                self.assertTrue((args.output / "production-inputs.json").is_file())
+                descriptor = json.loads((args.output / "production-inputs.json").read_text())
+                candidate = f"eagle_a{bits}"
+                self.assertEqual(set(descriptor["candidates"]), {candidate})
+                self.assertEqual(
+                    descriptor["candidates"][candidate]["initial_model"],
+                    packet.builder.pin(bound.initial_model),
+                )
                 before = {
                     path: path.read_bytes() for path in args.output.rglob("*") if path.is_file()
                 }

@@ -49,6 +49,10 @@ def publish_jsonl(path, rows):
 
 
 def prepare(args):
+    bits = getattr(args, "activation_bits", 8)
+    require(type(bits) is int and bits in (8, 1), "direct EAGLE activation bits must be 8 or 1")
+    candidate = f"eagle_a{bits}"
+    lane = f"A{bits}"
     files = Files()
     runtime = read(files, args.runtime, args.runtime_sha256)
     require(runtime.get("schema") == "eagle_lane_packet_runtime_v1", "runtime descriptor differs")
@@ -93,7 +97,7 @@ def prepare(args):
     )
     fit_config = FusionFitConfig(**report["fit_config"])
     require(
-        initializer["activation_bits"] == fit_config.activation_bits == 8
+        initializer["activation_bits"] == fit_config.activation_bits == bits
         and fit_config.zero_scale_orientation_rescue is False
         and fit_config.max_coordinate_flips_per_row == 0
         and fit_config.latent_initialization == "preserve_reference_magnitudes"
@@ -101,7 +105,7 @@ def prepare(args):
         and report["fit"]["events"] == []
         and initializer["latent_initialization"]["policy"] == fit_config.latent_initialization
         and initializer["latent_initialization"]["reference_kind"] == fit_config.reference_kind,
-        "fixed A8 scale-only initialization required",
+        f"fixed A{bits} scale-only initialization required",
     )
     files.check({key: initializer[key] for key in ("path", "sha256")})
     args.output.mkdir(parents=True)
@@ -116,7 +120,7 @@ def prepare(args):
             "record": builder.pin(authorization),
         },
         "candidates": {
-            "eagle_a8": {
+            candidate: {
                 "training_limits": {
                     "max_steps": None,
                     "max_tokens": None,
@@ -152,8 +156,8 @@ def prepare(args):
         "schema": "nine_model_lane_inputs_v1",
         "budget": builder.pin(args.output / "budget.json"),
         "candidates": {
-            "eagle_a8": {
-                "profile": "fixed_reference",
+            candidate: {
+                "profile": "fixed_reference" if bits == 8 else "direct_a1",
                 "initialization": initializer,
                 "fusion_calibration": {key: initializer[key] for key in ("path", "sha256")},
                 "base_model": runtime["base_model"],
@@ -163,7 +167,9 @@ def prepare(args):
                 "deployment_coverage": {"profile": "all9"},
                 "native_markers": [
                     "EAGLE3 W1A1 active groups: fusion,attention,ffn,head (9 tensors)",
-                    "CUDA packed W1A8 INT8 dispatch",
+                    "CUDA packed W1A8 INT8 dispatch"
+                    if bits == 8
+                    else "CUDA packed W1A1 XOR/POPCOUNT dispatch",
                 ],
             }
         },
@@ -184,8 +190,8 @@ def prepare(args):
         {
             "schema": "eagle_lane_selected_controls_v1",
             "evidence_scope": "source configuration; actual admission/training pending",
-            "config": builder.pin(args.output / "configs/eagle_a8.json"),
-            "continuous_config": builder.pin(args.output / "configs/eagle_a8-continuous.json"),
+            "config": builder.pin(args.output / f"configs/{candidate}.json"),
+            "continuous_config": builder.pin(args.output / f"configs/{candidate}-continuous.json"),
             "full_training_source": ready["teacher_coverage"]["source"],
             "training_iterator": "PreparedProvider.rounds, all original shards in ordinal order",
             "within_shard_order": "sorted (prompt_id, round_index) anchors; full prompt chains",
@@ -273,7 +279,7 @@ def prepare(args):
         args.output / "initial-preparation-request.json",
         {
             "schema": "eagle_lane_initial_preparation_v1",
-            "config": builder.pin(args.output / "configs/eagle_a8.json"),
+            "config": builder.pin(args.output / f"configs/{candidate}.json"),
             "source": builder.pin(ROOT / "scripts/train_nine_model_qat.py"),
             "initializer_report": builder.pin(args.initializer_dir / "report.json"),
             "optimizer_updates": 0,
@@ -281,7 +287,7 @@ def prepare(args):
     )
     request_pin = builder.pin(args.output / "initial-preparation-request.json")
     initial = args.output / "initial-prepare"
-    checkpoint = initial / "checkpoints/step-000000000000-e000000-r000000000000/A8"
+    checkpoint = initial / f"checkpoints/step-000000000000-e000000-r000000000000/{lane}"
     teacher = runtime["inputs"]["teacher_binary"]["path"]
     target = runtime["inputs"]["target"]
     capture_arguments = [
@@ -314,13 +320,13 @@ def prepare(args):
             sys.executable,
             str(ROOT / "scripts/train_nine_model_qat.py"),
             "--config",
-            str(args.output / "configs/eagle_a8.json"),
+            str(args.output / f"configs/{candidate}.json"),
             "--run-dir",
             str(initial),
             "--bundle-sha256",
             request_pin["sha256"],
             "--stage-name",
-            "eagle_a8/initial-prepare",
+            f"{candidate}/initial-prepare",
             "--completion-output",
             str(args.output / "initial-prepare-receipt.json"),
             "--allow-cuda",
@@ -336,7 +342,7 @@ def prepare(args):
             "--manifest",
             str(checkpoint / "joint.json"),
             "--output",
-            str(args.output / "initial-calibrated-a8.gguf"),
+            str(args.output / f"initial-calibrated-a{bits}.gguf"),
             "--audit",
             str(args.output / "initial-export-audit.json"),
         ],
@@ -470,13 +476,30 @@ def exact_replay_join(receipts, requests):
 def initial_export_join(args, files, runtime):
     request_path = args.packet / "initial-preparation-request.json"
     request = read(files, request_path)
+    spec = read(files, request["config"]["path"], request["config"]["sha256"])
+    candidate = spec.get("candidate")
+    require(
+        spec.get("family") == "eagle" and candidate in ("eagle_a8", "eagle_a1"),
+        "initial request must select a direct EAGLE candidate",
+    )
+    bits = 8 if candidate == "eagle_a8" else 1
+    lane = f"A{bits}"
+    continuous = read(files, spec["eagle_config"]["path"], spec["eagle_config"]["sha256"])
+    descriptor = read(files, args.packet / "configs/resolved-inputs.json")
+    require(
+        set(descriptor["candidates"]) == {candidate}
+        and descriptor["candidates"][candidate]["config"] == request["config"]
+        and continuous["training"]["activation_bits"] == [bits]
+        and spec["initialization"]["activation_bits"] == bits,
+        "initial request/config/descriptor precision differs",
+    )
     receipt = read(files, args.packet / "initial-prepare-receipt.json")
     require(
         receipt.get("schema") == "nine_model_preparation_v1"
         and receipt.get("status") == "PASS"
         and receipt.get("optimizer_updates") == 0
         and receipt.get("artifact_kind") == "production"
-        and receipt.get("stage") == "eagle_a8/initial-prepare"
+        and receipt.get("stage") == f"{candidate}/initial-prepare"
         and receipt.get("bundle_sha256") == builder.sha256(request_path)
         and receipt.get("config_sha256") == request["config"]["sha256"],
         "initial prepare request/config/zero-update receipt differs",
@@ -485,7 +508,6 @@ def initial_export_join(args, files, runtime):
     initializer_report = read(
         files, request["initializer_report"]["path"], request["initializer_report"]["sha256"]
     )
-    spec = read(files, request["config"]["path"], request["config"]["sha256"])
     require(
         spec["initialization"] == initializer_report["initializer"]
         and spec["prepared"]["ready_sha256"]
@@ -521,14 +543,14 @@ def initial_export_join(args, files, runtime):
     )
     require(
         outer.get("step") == outer.get("epoch") == outer.get("cursor") == 0
-        and set(outer["exports"]) == {"A8"}
+        and set(outer["exports"]) == {lane}
         and outer["sha256"] == receipt["checkpoint"]["sha256"]
         and outer.get("optimizer_rng_cursor_exact") is True,
         "initial outer checkpoint state differs",
     )
     joint = {
-        name: {"path": str(checkpoint.parent / "A8" / name), "sha256": digest}
-        for name, digest in outer["exports"]["A8"].items()
+        name: {"path": str(checkpoint.parent / lane / name), "sha256": digest}
+        for name, digest in outer["exports"][lane].items()
     }
     require(set(joint) == {"joint.npz", "joint.json"}, "initial projection publication differs")
     for locator in joint.values():
@@ -536,7 +558,7 @@ def initial_export_join(args, files, runtime):
     audit = read(files, args.export_audit)
     require(
         audit.get("serialization_audit_passed") is True
-        and audit.get("activation_bits") == 8
+        and audit.get("activation_bits") == bits
         and len(audit.get("projections", {})) == 9
         and audit.get("base_gguf") == runtime["base_model"]
         and audit.get("output") == builder.pin(args.initial_model)
@@ -559,7 +581,8 @@ def bind(args):
     files = Files()
     joins = read(files, args.packet / "golden-source-joins.json")
     runtime = joins["runtime"]
-    initial_export_join(args, files, runtime)
+    initial_receipt = initial_export_join(args, files, runtime)
+    candidate = initial_receipt["stage"].split("/")[0]
     receipts = [json.loads(line) for line in args.receipts.read_text().splitlines() if line.strip()]
     require(len(receipts) == 3, "three replay goldens required")
     link = read(files, args.packet / "generation-replay-link.json", args.generation_link_sha256)
@@ -655,7 +678,7 @@ def bind(args):
         },
     )
     descriptor = read(files, args.packet / "configs/resolved-inputs.json")
-    descriptor["candidates"]["eagle_a8"].update(
+    descriptor["candidates"][candidate].update(
         initial_model=builder.pin(args.initial_model),
         initial_export_audit=builder.pin(args.export_audit),
     )
@@ -700,6 +723,7 @@ def main():
     for name in ("runtime", "prepared-run-dir", "initializer-dir", "authorization", "output"):
         config.add_argument("--" + name, type=Path, required=True)
     config.add_argument("--runtime-sha256", required=True)
+    config.add_argument("--activation-bits", type=int, choices=(8, 1), default=8)
     for mode in ("replay", "bind"):
         command = sub.add_parser(mode)
         command.add_argument("--packet", type=Path, required=True)
