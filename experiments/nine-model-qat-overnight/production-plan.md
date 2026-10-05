@@ -272,3 +272,52 @@ then check revision metadata and official module imports without model loading.
 Record loaded module paths/hashes and package versions. Do not replace this
 official loader with the private leaf namespace from the Mac diagnostic or
 forge distribution metadata; neither establishes production model ancestry.
+
+## Bounded initial all-nine SM120 phase plan
+
+Root approved these bounds in principle; actual command/config binding and a
+separate final GO remain required. This is not hardware admission. The
+operator's actual runtime/packet supplies the source-bound argv and final pins.
+Current published native is `cc9cab3c64f61580cf63e5ef050b075b11cd1fb9`; its bool
+metadata loader link repair leaves training arithmetic unchanged. Actual native
+build/library/header/flags pins belong to the operator's runtime JSON. Official
+AngelSlim0358 public loader imports and Transformers4.57.6 were verified by the
+operator without loading a model; actual model execution remains a separate gate.
+
+Run only `commands.json.initial_prepare`, under a distinct detached remote_job,
+after the heavy compiler/initializer groups have exited and fresh resources are
+verified. Proposed bounds: 1,800 seconds whole phase, cgroup MemoryMax16GiB and
+MemorySwapMax2GiB within the observed20GiB WSL cap, no concurrent heavy phase,
+and at least8GiB free disk. Before frozen CPU target/drafter construction, source
+requires MemAvailable at least14GiB (12GiB additional plus2GiB retained floor).
+Subsequent source gates retain2GiB host available,1GiB whole-GPU free and the
+selected continuous config's12GiB reserved CUDA ceiling. If actual packet
+settings differ, review before GO rather than weakening a gate during execution.
+Root-selected return policy is2GiB host/1GiB GPU floors and512MiB host/128MiB GPU
+return tolerances. Exact owned process/group/CUDA/DXG release is still mandatory;
+these explicit operational tolerances are not historical production evidence.
+
+Nine source projection shapes contain218,234,880 latent elements plus65,280 row
+scales:218,300,160 selected trainable F32 parameters. One master's arrays cost
+873,200,640 bytes; gradients cost the same; two scratch F32 Adam moment shapes
+cost1,746,401,280 bytes. The subtotal is3,492,802,560 bytes (3.253GiB), excluding
+frozen embedding/norms, graphs, sign temporaries, cache/head activations, context,
+allocator fragmentation and checkpoint host staging. These are source arithmetic
+estimates, not measured capacity or GPU performance. `smoke_with_training_memory`
+holds both scratch moment shapes through actual model forward/backward, attaches
+zero optimizer moments, then releases them; this must actually pass on SM120.
+
+Acceptance evidence before native export is the exact actual zero-update
+preparation receipt joined to its request/config/source, `effective-config.json`
+with all nine parameter families and fixed-A8/cache/head settings, and
+`dual_smoke.json` with finite loss/nonzero selected gradients, later-state/K/V
+gradients, actual cache calls/effective batched head and gradient-resident resource
+peaks. All counters and optimizer state remain zero; the final checkpoint's
+step/epoch/cursor are zero and its all-nine NPZ/manifest includes the calibrated
+FC initializer. Native export then validates original F16 base/protected norms/
+d2t and packed projections against those exact checkpoint files. Record actual
+host/device peaks, wall time, process identities and group/context release; no
+successful preparation or full-moment capacity is inferred from startup/source
+alone. This phase establishes initialization/serialization evidence; the frozen
+lane's fresh native/kernel/portability/current-package admission remains required
+before real optimizer updates.
