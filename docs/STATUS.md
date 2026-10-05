@@ -13,7 +13,7 @@ native Goal carrying the full unfinished nine-model objective. RTX2080Ti
 remains outside this team's scope.
 
 [Active overnight goal](goals/nine-model-qat-overnight.md) records sole owner
-`01a10c02-29f2-7d80-9c4f-fbf746343ff6`, successor as sole GPU operator.
+`01a10c8a-22bb-7380-9a8c-d9802a51b679`, new successor as sole GPU operator.
 All transferred bounded workers are complete. First ready calibratedfixedA8 lane
 is prioritized with delegated24h cumulativetrainerallocation and frequent
 checkpoints; remaining candidates queue without premature readiness claims.
@@ -120,6 +120,11 @@ and retired; fresh exact jobs healthy109,414/checkpoint109,250 at16,272.62traine
 seconds. Running30a/cc9 and passive endpoint unchanged. The latest goal checkpoint
 contains all source/runtime/data hashes, live handles/STOP procedures and next
 actions for sole-operator context rotation with the SAME monitor. FullgoalACTIVE.
+
+**07:50 PDT exclusive transfer:** fresh successor chat owns the same unfinished
+goal after explicit local registration transfer and SAME heartbeat retarget.
+Predecessor makes no remote calls after dispatch; healthy trainer/watcher are
+unchanged. Successor will verify jobs and publish ownership acknowledgment.
 
 ## Historical preparation checkpoint — October 4, 2026
 

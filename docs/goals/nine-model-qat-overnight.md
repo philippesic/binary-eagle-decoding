@@ -1318,3 +1318,17 @@ bytes opened. Runtime cold startup validates twice (parent+child); strict300s
 continuation may expire and must fail closed, not disable freshness. Measure
 actual cost after readiness. Avoid repeated completed tests/corpus audits and
 unnecessary source expansion while waiting. Fullgoal ACTIVE/unfinished.
+
+### Successor dispatched and exclusive transfer — October 5, 07:50 PDT
+
+Fresh successor `01a10c8a-22bb-7380-9a8c-d9802a51b679`,
+**Continue RTX5080 overnight QAT supervision**, receives the same full objective,
+safe checkpoint and unchanged live jobs. Predecessor
+`01a10c02-29f2-7d80-9c4f-fbf746343ff6` issues no further remote commands after
+dispatch. SAME heartbeat is retargeted ACTIVE to the successor, then local
+registration explicitly transfers owner/operator. Only after those exact fields
+match may successor issue remote calls or durable shared edits. It creates its
+native Goal from the unchanged objective, verifies current jobs/monitor read-only,
+claims sole operator and publishes ownership acknowledgment. Predecessor stops
+after bounded acknowledgment verification. No source, GPU lifecycle, model,
+budget, experimental scope or startup lease changes and no live worker transfer.
