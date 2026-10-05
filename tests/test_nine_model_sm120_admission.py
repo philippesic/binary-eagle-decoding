@@ -2,6 +2,7 @@
 
 import copy
 import json
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -33,6 +34,11 @@ def kernel_log():
 class Resources:
     def __init__(self):
         self.fail = False
+        self.release_calls = 0
+
+    def require_released(self, groups, identities):
+        self.release_calls += 1
+        return {"fixture_owned_process_groups_absent": True}
 
     def snapshot(self):
         return {
@@ -48,6 +54,8 @@ class Runner:
     def __init__(self, plan, *, fail_native=False, update=False):
         self.plan, self.fail_native, self.update = plan, fail_native, update
         self.events = []
+        self.process_groups = []
+        self.process_identities = []
 
     def run(self, argv, *, directory, **_):
         self.events.append(str(directory))
@@ -321,6 +329,80 @@ class AdmissionTests(unittest.TestCase):
             record["nodes"][0]["output_buffer"] = "CUDA_Host"
             with self.assertRaises(ValueError):
                 native_summary(record, plan["candidates"]["dspark_a8"])
+
+    def test_source_join_exact_python_execution_and_phase_validation(self):
+        from w1a1_eagle.nine_model_admission import NATIVE, PORTABILITY, TRAINER
+
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp).resolve()
+            plan = self.fixture(root)
+            (root / "input").write_text(json.dumps({"precision_stage": "direct"}))
+            for c in plan["candidates"].values():
+                for key in ("config", "model", "export"):
+                    c[key]["sha256"] = sha256(root / "input")
+            for record in (plan["source"]["fixture"], plan["backend_binary"], plan["target"]):
+                record["sha256"] = sha256(root / "input")
+            plan["training_source_files"]["fixture"] = sha256(root / "input")
+            python = Path(sys.executable).resolve()
+            plan.update(
+                schema="nine_model_sm120_plan_v1",
+                artifact_kind="fixture",
+                python={"path": str(python), "sha256": sha256(python)},
+                python_invocation=sys.executable,
+            )
+            for name in {TRAINER, *NATIVE.values(), *PORTABILITY.values()}:
+                path = root / name
+                path.write_text("# fixture producer\n")
+                plan["source"]["scripts/" + name] = {"path": str(path), "sha256": sha256(path)}
+            for c in plan["candidates"].values():
+                for role, script in (("native", NATIVE[c["family"]]), ("backward", TRAINER)):
+                    producer = plan["source"]["scripts/" + script]
+                    c[role]["producer"] = producer
+                    c[role]["argv"] = [sys.executable, producer["path"], "--smoke-zero-updates"]
+            for family, command in plan["portability"].items():
+                producer = plan["source"]["scripts/" + PORTABILITY[family]]
+                command.update(producer=producer, argv=[sys.executable, producer["path"]])
+            path = root / "plan.json"
+            atomic_json(path, plan)
+            validate_plan(path, fixture=True)
+            for mutation in ("unused_script", "decoy", "stage"):
+                invalid = copy.deepcopy(plan)
+                command = invalid["candidates"]["dspark_a1"]["backward"]
+                if mutation == "unused_script":
+                    command["argv"] = [
+                        sys.executable,
+                        "-c",
+                        "pass",
+                        command["producer"]["path"],
+                        "--smoke-zero-updates",
+                    ]
+                elif mutation == "decoy":
+                    decoy = root / "elsewhere" / TRAINER
+                    decoy.parent.mkdir()
+                    decoy.write_text("# decoy\n")
+                    command["producer"] = {"path": str(decoy), "sha256": sha256(decoy)}
+                    command["argv"][1] = str(decoy)
+                else:
+                    invalid["candidates"]["dspark_a1"]["precision_stage"] = "a8_to_a1"
+                atomic_json(path, invalid)
+                with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                    validate_plan(path, fixture=True)
+
+    def test_owned_context_release_failure_cannot_publish_admission(self):
+        class NotReleased(Resources):
+            def require_released(self, groups, identities):
+                raise ValueError("owned CUDA context survives")
+
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp).resolve()
+            plan = self.fixture(root)
+            with self.assertRaisesRegex(ValueError, "survives"):
+                Admission(
+                    plan, Files(), Runner(plan), NotReleased(), "a" * 64, root / "run", fixture=True
+                ).execute(root / "result.json")
+            self.assertFalse((root / "result.json").exists())
+            state = json.loads((root / "run/state.json").read_text())
+            self.assertEqual(state["cleanup_failure"]["reason"], "owned CUDA context survives")
 
 
 if __name__ == "__main__":

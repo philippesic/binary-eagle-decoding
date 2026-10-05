@@ -52,6 +52,12 @@ def validate_plan(path, *, fixture=False):
         files.check(record)
     files.check(plan["backend_binary"])
     files.check(plan["target"])
+    interpreter = files.check(plan["python"])
+    invocation = Path(plan.get("python_invocation", ""))
+    require(
+        invocation.is_absolute() and invocation.resolve() == interpreter,
+        "declared Python invocation does not resolve to pinned interpreter",
+    )
     require(plan.get("training_source_files"), "training implementation identity absent")
     for name, digest in plan["training_source_files"].items():
         require(
@@ -82,20 +88,26 @@ def validate_plan(path, *, fixture=False):
             "admission plan cannot contain a circular bundle hash",
         )
         for role, script in (("native", NATIVE[family]), ("backward", TRAINER)):
-            validate_command(candidate[role], files, script)
+            validate_command(candidate[role], files, script, plan)
     for family, spec in plan["portability"].items():
-        validate_command(spec, files, PORTABILITY[family])
+        validate_command(spec, files, PORTABILITY[family], plan)
     return plan, files
 
 
-def validate_command(spec, files, script):
+def validate_command(spec, files, script, plan):
     path = files.check(spec["producer"])
     require(path.name == script, f"concrete producer required: {script}")
+    require(
+        spec["producer"] == plan["source"].get("scripts/" + script),
+        "producer does not join current source inventory",
+    )
     require(
         isinstance(spec.get("argv"), list)
         and spec["argv"]
         and all(isinstance(x, str) and x for x in spec["argv"])
-        and str(path) in spec["argv"],
+        and len(spec["argv"]) >= 2
+        and spec["argv"][0] == plan["python_invocation"]
+        and spec["argv"][1] == str(path),
         "producer command not bound",
     )
     require(
@@ -289,6 +301,16 @@ class Admission:
         self.bundle_hash, self.run = bundle_hash, Path(run_dir).resolve()
         self.fixture = fixture
 
+    def release(self, baseline):
+        report = self.resources.require_released(
+            self.runner.process_groups, self.runner.process_identities
+        )
+        resource_gate(self.resources.snapshot(), baseline, self.plan["resource_policy"])
+        atomic_json(
+            self.run / ("release-" + str(len(self.runner.process_groups)) + ".json"), report
+        )
+        return report
+
     def command(self, name, spec, **values):
         self.files.check(spec["producer"])
         directory = self.run / name
@@ -335,7 +357,7 @@ class Admission:
             kernel_log = kernel_dir / "stdout.log"
             kernel = kernel_summary(kernel_log.read_text())
             kernel_evidence = {"path": str(kernel_log), "sha256": sha256(kernel_log)}
-            resource_gate(self.resources.snapshot(), baseline, self.plan["resource_policy"])
+            self.release(baseline)
             portable = {}
             for family, spec in self.plan["portability"].items():
                 record, evidence = self.command(family + "/portability", spec)
@@ -343,12 +365,12 @@ class Admission:
                     record, family, self.plan["target"]["sha256"], fixture=self.fixture
                 )
                 portable[family] = evidence
-                resource_gate(self.resources.snapshot(), baseline, self.plan["resource_policy"])
+                self.release(baseline)
             admitted = {}
             for name, candidate in self.plan["candidates"].items():
                 native, native_evidence = self.command(name + "/native", candidate["native"])
                 native_summary(native, candidate)
-                resource_gate(self.resources.snapshot(), baseline, self.plan["resource_policy"])
+                self.release(baseline)
                 smoke, backward_evidence = self.command(name + "/backward", candidate["backward"])
                 paths = backward_summary(
                     smoke,
@@ -357,7 +379,7 @@ class Admission:
                     fixture=self.fixture,
                     gpu_uuid=baseline["gpu_uuid"],
                 )
-                resource_gate(self.resources.snapshot(), baseline, self.plan["resource_policy"])
+                self.release(baseline)
                 record = {
                     "schema": "nine_model_training_admission_v1",
                     "status": "PASS",
@@ -413,6 +435,12 @@ class Admission:
             state.update(
                 status="failed", failure={"type": type(error).__name__, "reason": str(error)}
             )
+            try:
+                state["owned_release"] = self.resources.require_released(
+                    self.runner.process_groups, self.runner.process_identities
+                )
+            except BaseException as cleanup:
+                state["cleanup_failure"] = {"type": type(cleanup).__name__, "reason": str(cleanup)}
             raise
         finally:
             atomic_json(self.run / "state.json", state)
