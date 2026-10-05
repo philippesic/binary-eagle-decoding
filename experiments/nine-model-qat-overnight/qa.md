@@ -475,3 +475,25 @@ hashes: helper
 `8ea3ed6d70a039edd83f0549b110286451385aff7e9538a03531af833315e414`. These are
 source fixtures only; actual A1 calibration, CUDA admission, and training
 remain PENDING.
+
+## Direct A1 CPU initializer metadata review
+
+Read-only review of ignored metadata receipt
+`results/nine-model-qat-overnight/eagle-a1-initializer-bounded-metadata.json`
+matched SHA256 `671f4e854dfc8f48696b339ddd76eea200a1c9f40e33390ee9e9bc101ad524b4`
+and size 3,453 bytes. Its fields consistently describe CPU-only calibration:
+`CUDA_VISIBLE_DEVICES` is empty, execution device is CPU, no model actor is
+loaded, optimizer update count is zero, the A1 fixed-reference fit uses
+preserve-reference magnitudes at 0.5 with no orientation rescue/flips/events,
+and the GPU preflight remains PENDING. Fit and validation totals reconcile to
+1,536 and 768 rows, with 512/256 rows per prose, code and reasoning domain.
+The row-evidence hash matches the previously reviewed A8 sample selection.
+The only DXG holder recorded is the continuing A8 trainer PID 55398 with the
+same boot identity; A1 cleanup records no owned CPU group members and no
+supervisor.
+
+Reported A1 fusion-coordinate validation RSE is 0.676–0.697 and the receipt
+explicitly limits it to coordinates, not native acceptance or throughput. This
+is calibration metadata only; it does not establish A1 export, CUDA admission,
+training readiness, or model quality. No remote call, GPU query, or test run was
+performed for this metadata review.
