@@ -144,3 +144,51 @@ remain pending. Independent review found no staged-path blocker in these
 surfaces. Full actual-model/native/device admission, positive training,
 checkpoint continuity, automatic export/evaluation and overall campaign
 completion remain outside this CPU QA result.
+
+## EAGLE packet helper QA (source commit `4a808b5`)
+
+The metadata-only helper and focused tests were reviewed at final author commit
+`4a808b5b8600b74a8201d92272a898e8cd9bb206` in
+`/private/tmp/nine-model-qat-20261004/overnight-bundle`, based on `5f53740`.
+At review time it had not yet been integrated into main. SHA256 of the final
+files tested:
+
+| Path | SHA256 |
+| --- | --- |
+| `scripts/prepare_eagle_lane_packet.py` | `c7fa42a5a6fb88d83b9f654bef9bcdc6589c5a640b2a682e6a88aeceb582db73` |
+| `tests/test_eagle_lane_packet.py` | `48f172f2646d9c528002b2670549d7bbb20d6145aa35cb98416a8cd5fd378e9a` |
+| `scripts/prepare_nine_model_bundle.py` | `33c6198daafcb91684279803e570131c639c1b2c14a66b40816f0ba319678bf9` |
+| `scripts/train_nine_model_qat.py` | `14964516d085adc1b95125c5d47beb326acac6f02a25dea0e0d98dc06d037d69` |
+| `experiments/nine-model-qat-overnight/production-plan.md` | `2ab8d660b7325432099e096a0d1483bc780d6d9f12e33544162608021b111eae` |
+
+Final focused test command, run from
+`/private/tmp/nine-model-qat-20261004/overnight-bundle` on macOS ARM64 with
+Python 3.11.3 and Torch 2.8.0:
+
+```sh
+PYTHONPATH=src:scripts:tests python3 -m unittest test_eagle_lane_packet -v
+```
+
+Result: **PASS, 5 tests**. Raw output is retained in ignored
+`/private/tmp/nine-model-qat-20261004/overnight-qa/results/nine-model-qat-overnight/final-packet-tests.log`.
+
+The reviewed source binds exact original `preparation-ready.json` and its
+10,000 TRAIN prompt / 3,899,930 supervised-row counts to the initializer report,
+original resolved-config SHA and prepared-run directory. It freezes the
+24-hour cumulative/30-hour outer budget with human-delegated provenance, the
+original config's full data iterator and current cache/head request, with
+optimization/readiness claims still pending fresh admission. Binding requires
+the actual zero-update preparation receipt, exact config/request/source hashes,
+step-zero outer checkpoint and all-nine A8 joint exports, then joins those
+bytes to the F16 base, exported model and nine-projection serializer audit.
+Generation requests select original TRAIN prompts from each domain. The replay
+link pins native generated parents and requests; bind requires an external link
+SHA and exact per-domain tokens, chain ancestry, and decode history in native
+replay receipts before validating the three goldens.
+
+This proves metadata/source contract behavior only. No actual initializer or
+initial model artifact was ingested by QA, and no CUDA/GPU query, remote call,
+model load, capture, training, or evaluation occurred. I requested the bounded
+attempt-04 report/member/source hashes and selection summary through the sole
+operator; raw weights and full corpus are excluded. Actual production evidence
+and fresh SM120 admission remain pending independently.
