@@ -1,0 +1,23 @@
+{
+  "schema": "nine_model_native_protocol_v1",
+  "split": "development",
+  "repetitions": 5,
+  "warmups_per_cell": 2,
+  "context_tokens": 2048,
+  "batch_tokens": 32,
+  "microbatch_tokens": 32,
+  "max_output_tokens": 128,
+  "seed": 42,
+  "draft_lengths": { "eagle": 5 },
+  "port": 18290,
+  "startup_wall_seconds": 300,
+  "evaluation_wall_seconds": 1200,
+  "diagnostic_pass_separate_from_timing": true,
+  "final_set_sealed": true,
+  "selection_status": "SELECTED_operational_under_overnight_delegation",
+  "clean_log_verbosity": 3,
+  "diagnostic_log_verbosity": 4,
+  "native_execution_proof_scope": "matching fresh diagnostic pass only",
+  "memory_sample_seconds": 1.0,
+  "memory_max_samples_per_cell": 1200
+}
