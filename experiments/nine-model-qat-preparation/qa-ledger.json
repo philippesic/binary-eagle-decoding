@@ -12,10 +12,10 @@
     "pipeline_worktree_dirty": true,
     "coordination": "ca2b1c515c12",
     "qa_base": "da097e5",
-    "note": "All declared source_files SHA256 values match integrated main e9107d68409bab767056d8a09626439940e74404. CPU development controller and library-closure checks are source-bound; they do not satisfy production data, calibration, initial-export, native-quality, CUDA, or SM120 readiness gates.",
-    "main_source_snapshot": "8bdf8d9",
+    "note": "All declared source_files SHA256 values match integrated main 1a5406bd7a257859382f5a9eecffdbe7029a8e19. The development_CPU description/device and transitive system Metal scope fixes are pinned; source-bound CPU evidence remains separate from production data, CUDA, SM120, and quality.",
+    "main_source_snapshot": "1a5406b",
     "source_map_refresh_pending": false,
-    "integrated_main": "e9107d68409bab767056d8a09626439940e74404"
+    "integrated_main": "1a5406bd7a257859382f5a9eecffdbe7029a8e19"
   },
   "source_files": {
     "scripts/export_block_binary.py": "8589392470540e8e12271fdaa52b7407a3a943901c1952b7d7c5f6e9599f8967",
@@ -31,7 +31,7 @@
     "tests/test_block_data.py": "c755329f26280192e1511e460d4399f1cb2024d1836ddf489446de90386258cd",
     "tests/test_block_fusion.py": "6aca759b331a821af3afbec93a6bb1e634ddfdb261141bc5bf86dd4beccf1fa6",
     "tests/test_block_capture_portability.py": "c21d44f75e17333f2c0cd22f963c99bfcd2710dbac85fe7d714806d8fc034187",
-    "scripts/capture_nine_model_train_data.py": "76a2e0cfd7401a5748cf7ab3572c016ab5049ce6b83fd8ef604b0782386c597d",
+    "scripts/capture_nine_model_train_data.py": "23cfd07215848e0e0ec0bb1e51aa9044189bf912501972b53666bed3d9add371",
     "tests/test_nine_model_train_capture.py": "0ca656caafed3616385c05433562a8f16d4c56459d38c1b637f489b6c155e78c",
     "src/w1a1_eagle/block_qat.py": "98adfc8c3704a5c845c4b75995b2263c0b5627b2f2dfe2f8d469d7c36822147b",
     "src/w1a1_eagle/block_training.py": "89e6f095464a44b8ce5ad12eb413655ba3db12451b3cc429e30cf9d20e6f1363",
@@ -65,7 +65,7 @@
     "tests/test_nine_model_failure_paths.py": "2ee894be7ab04eb0f2dfbdf8526d6910399524e10e904786d2b6092a1c1ec79c",
     "tests/test_nine_model_calibration_artifact.py": "7634905c01e58c453e4dcead28eb8b9c3af43e793306ce44562cc8aaa9fef99a",
     "tests/test_nine_model_admission_contracts.py": "70a083e20e6831131bb8ec9c169557c1414283887ebbcf4a14de7cce620287d2",
-    "tests/test_nine_model_cpu_capture.py": "b7ac0139148fbc6c1e3c3711432a4c773913a4503bea9dcff358104e0c38fd5d",
+    "tests/test_nine_model_cpu_capture.py": "c11eb718ea0678f2b68aebf374830170ac7d618a241eba736da6704ac37f6931",
     "scripts/check_block_qat_cpu_model.py": "8545534722612dd880250a3f8d6467d168d5db60ea0a2a9c30eb22f266e603ca"
   },
   "hardware": {
@@ -2002,7 +2002,7 @@
     "quality, acceptance and throughput conclusions"
   ],
   "final_qa_refresh": {
-    "integrated_main": "e9107d68409bab767056d8a09626439940e74404",
+    "integrated_main": "1a5406bd7a257859382f5a9eecffdbe7029a8e19",
     "hardware": "Apple M3 Max CPU; macOS; CUDA unavailable; no GPU query or remote activity",
     "python": "3.11.15 from /Users/pippo/github/binary-eagle-decoding/.venv/bin/python",
     "torch": "2.14.0",
@@ -2015,7 +2015,8 @@
         "result": "6 tests PASS",
         "raw_path": "runs/nine-model-qa-baseline/prelaunch-ledger-final.txt",
         "sha256": "832873fea55795d617e3d60584d80ad9330cb8a70a9b83b98fbf616f3db2124d",
-        "cleanup": "Temporary directory fixtures self-cleaned; no persistent process or hardware resources used."
+        "cleanup": "Temporary directory fixtures self-cleaned; no persistent process or hardware resources used.",
+        "source_revision": "e9107d68409bab767056d8a09626439940e74404"
       },
       {
         "name": "integrated_development_CPU_capture_refusal_and_cleanup_fixtures",
@@ -2023,7 +2024,8 @@
         "result": "14 tests PASS, including interrupted blocked producer close and monitor-thread join",
         "raw_path": "runs/nine-model-qa-baseline/cpu_capture_pilot_final.txt",
         "sha256": "f470c069aaaaa55f6db0fa2dd3d48403f6e5a9d8cd0dc0509817294a101eeda8",
-        "cleanup": "Injected producers and temporary paths closed/removed; no actual capture or model load started."
+        "cleanup": "Injected producers and temporary paths closed/removed; no actual capture or model load started.",
+        "source_revision": "e9107d68409bab767056d8a09626439940e74404"
       },
       {
         "name": "integrated_production_capture_scope_regressions",
@@ -2031,15 +2033,82 @@
         "result": "19 tests PASS using synthetic fixtures",
         "raw_path": "runs/nine-model-qa-baseline/prod_capture_final.txt",
         "sha256": "9391f8c37238565571d864e7930c734f56bdca16db8857085450e5d95331b44c",
-        "cleanup": "Temporary fixture data removed; no production corpus scan or native capture started."
+        "cleanup": "Temporary fixture data removed; no production corpus scan or native capture started.",
+        "source_revision": "e9107d68409bab767056d8a09626439940e74404"
       },
       {
         "name": "QA-owned lint_and_format",
         "command": "/Users/pippo/github/binary-eagle-decoding/.venv/bin/ruff check tests/test_nine_model_prelaunch_ledger_contracts.py && /Users/pippo/github/binary-eagle-decoding/.venv/bin/ruff format --check tests/test_nine_model_prelaunch_ledger_contracts.py",
         "result": "PASS; clean and already formatted",
-        "cleanup": "Read-only checks; no process or resource state changed."
+        "cleanup": "Read-only checks; no process or resource state changed.",
+        "source_revision": "e9107d68409bab767056d8a09626439940e74404"
+      },
+      {
+        "name": "independent_attempt_01_actual_receipt_CPU_guard_and_dyld_metadata_review",
+        "command": "NINE_MODEL_CODE_ROOT=/Users/pippo/github/binary-eagle-decoding NINE_MODEL_CPU_CAPTURE_SCRIPT=/Users/pippo/github/binary-eagle-decoding/scripts/capture_nine_model_train_data.py PYTHONPATH=/Users/pippo/github/binary-eagle-decoding/src:/Users/pippo/github/binary-eagle-decoding/scripts /Users/pippo/github/binary-eagle-decoding/.venv/bin/python -m unittest tests.test_nine_model_prelaunch_ledger_contracts.PrelaunchLedgerContracts.test_preserved_cpu_attempt_receipt_requires_one_exact_registered_device tests.test_nine_model_prelaunch_ledger_contracts.PrelaunchLedgerContracts.test_attempt_01_dyld_closure_matches_four_pins_and_records_system_metal -v",
+        "source_revision": "1a5406bd7a257859382f5a9eecffdbe7029a8e19",
+        "result": "2 tests PASS: preserved Apple M3 Max receipt accepted only as exact single registered CPU; duplicate/mixed device lists and extra GGML Metal dylib rejected; exact four pinned project dylibs resolved and matched to DYLD entries; passive system Metal presence recorded; Mac runtime mapping remains unchecked.",
+        "raw_path": "runs/nine-model-qa-baseline/actual-cpu-attempt01-guard-audit.txt",
+        "sha256": "ae01e57d3e42cdc68bfdafbd66fec2185eedb4062c81aa463d329a2ff7f8a088",
+        "artifact_paths": [
+          "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-01/native/4b6db6afd87b43b39693b957cf56cdea/receipt.json",
+          "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-01/native/producer-cb97282110964487bfa440391b9f5837.log",
+          "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-plan-20261004-01/cpu-build.json",
+          "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-plan-20261004-01/otool-links.txt"
+        ],
+        "cleanup": "Raw native receipt and DYLD log preserved unchanged. Test-only sparse placeholder files and hostile DYLD log were created in TemporaryDirectory and removed automatically. No tensor arrays or model weights read; no producer started."
+      },
+      {
+        "name": "final_independent_prelaunch_and_attempt01_scope_suite",
+        "command": "NINE_MODEL_CODE_ROOT=/Users/pippo/github/binary-eagle-decoding NINE_MODEL_CPU_CAPTURE_SCRIPT=/Users/pippo/github/binary-eagle-decoding/scripts/capture_nine_model_train_data.py PYTHONPATH=/Users/pippo/github/binary-eagle-decoding/src:/Users/pippo/github/binary-eagle-decoding/scripts /Users/pippo/github/binary-eagle-decoding/.venv/bin/python -m unittest discover -s tests -p 'test_nine_model_prelaunch_ledger_contracts.py' -v",
+        "source_revision": "1a5406bd7a257859382f5a9eecffdbe7029a8e19",
+        "result": "8 tests PASS, including current pending-ledger checks and the preserved actual CPU receipt/DYLD checks.",
+        "raw_path": "runs/nine-model-qa-baseline/prelaunch-ledger-integrated-final.txt",
+        "sha256": "b9722e8389c898cba2075ae3237662364367349cb83cde5089765a41a3c1c674",
+        "cleanup": "All fixture directories were temporary and removed. Preserved attempt-01 receipts and DYLD evidence were read-only; sparse placeholder tensor files were temporary. No capture or model process launched."
       }
     ],
-    "readiness": "Every aggregate and prelaunch profile remains PENDING. CPU tests and source-bound CPU zero-update evidence establish neither production TRAIN readiness nor CUDA/SM120 readiness."
-  }
+    "readiness": "Every aggregate and prelaunch profile remains PENDING. CPU tests and source-bound CPU zero-update evidence establish neither production TRAIN readiness nor CUDA/SM120 readiness.",
+    "source_files_verified": 49,
+    "source_files_pending": []
+  },
+  "external_development_cpu_attempts": [
+    {
+      "attempt": "development-cpu-pilot-capture-20261004-01",
+      "status": "FAIL (preserved; not readiness evidence)",
+      "artifact_kind": "development_CPU",
+      "scope": "53 captured rows with CPU native outputs; rejected by pre-fix device-name validation and missing current prefix-contract metadata; not a production capture/admission",
+      "source_at_attempt": "orchestrator source SHA256 76a2e0cfd7401a5748cf7ab3572c016ab5049ce6b83fd8ef604b0782386c597d; native llama.cpp 624f50e74f51b6af93bf6b879f84703e726df172",
+      "hardware_receipt": {
+        "name": "Apple M3 Max",
+        "gpu_layers": 0,
+        "result_buffers": [
+          "CPU"
+        ],
+        "target_storage_buffers": {
+          "CPU_Mapped": 398
+        }
+      },
+      "producer": {
+        "pid": 96621,
+        "returncode": 0,
+        "elapsed_wall_seconds": 13.77609070809558,
+        "rows": 53
+      },
+      "failure_report": {
+        "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-01/capture-report.json",
+        "sha256": "e3b038d2d5f339e28afea9cf1670bfeb9a9d872d8b3288bbc6f9b39537d46126"
+      },
+      "runtime_supplement": {
+        "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-01/cpu-runtime-supplement.json",
+        "sha256": "425b5747b5f6f527ff3bf491e028886eeb9277b4e775daf2ad32114206a81d4a",
+        "meaning": "exact four pinned project libraries appeared in DYLD paths; system Metal.framework was transitively loaded and recorded; CPU-only GGML/model execution scope; Linux runtime mapping unchecked"
+      },
+      "native_receipt": {
+        "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-01/native/4b6db6afd87b43b39693b957cf56cdea/receipt.json",
+        "sha256": "8108916668b2534262416c0afd3f683bbccef60f53b2c4c497c012a8d3adc32c"
+      },
+      "readiness_effect": "none; all production data/calibration/prelaunch/campaign and CUDA/SM120 gates remain PENDING"
+    }
+  ]
 }

@@ -5,8 +5,10 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import math
 import os
 import tempfile
+import types
 import unittest
 from pathlib import Path
 
@@ -15,6 +17,20 @@ CODE_ROOT = Path(os.environ.get("NINE_MODEL_CODE_ROOT", ROOT)).resolve()
 CPU_CAPTURE_PATH = Path(
     os.environ.get(
         "NINE_MODEL_CPU_CAPTURE_SCRIPT", CODE_ROOT / "scripts/capture_nine_model_train_data.py"
+    )
+).resolve()
+ACTUAL_CPU_CAPTURE = Path(
+    os.environ.get(
+        "NINE_MODEL_ACTUAL_CPU_CAPTURE",
+        "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/"
+        "development-cpu-pilot-capture-20261004-01",
+    )
+).resolve()
+ACTUAL_CPU_PLAN = Path(
+    os.environ.get(
+        "NINE_MODEL_ACTUAL_CPU_PLAN",
+        "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/"
+        "development-cpu-pilot-plan-20261004-01",
     )
 ).resolve()
 spec = importlib.util.spec_from_file_location(
@@ -241,6 +257,84 @@ class PrelaunchLedgerContracts(unittest.TestCase):
             )()
             with self.assertRaises(ValueError):
                 cpu_capture.cpu_loaded_library_proof(teacher, build)
+
+    def test_preserved_cpu_attempt_receipt_requires_one_exact_registered_device(self):
+        receipt_path = ACTUAL_CPU_CAPTURE / "native/4b6db6afd87b43b39693b957cf56cdea/receipt.json"
+        plan_path = ACTUAL_CPU_PLAN / "plan.json"
+        if not receipt_path.is_file() or not plan_path.is_file():
+            self.skipTest("preserved development_CPU attempt 01 is unavailable")
+        receipt = json.loads(receipt_path.read_text())
+        plan = json.loads(plan_path.read_text())
+        self.assertEqual(receipt["hardware"], ["Apple M3 Max"])
+        self.assertEqual(receipt["gpu_layers"], 0)
+        self.assertEqual(receipt["executed_result_buffers"], ["CPU"])
+        self.assertEqual(set(receipt["target_storage_buffers"]), {"CPU_Mapped"})
+        # Attempt 01 predates the current prefix-contract label. Adapt only this
+        # unrelated label so this test reaches the CPU device-list guard.
+        receipt["prefix_contract"] = "teacher_forced_exact_caller_token_ids"
+        with tempfile.TemporaryDirectory() as folder:
+            for name, descriptor in receipt["files"].items():
+                path = Path(folder) / f"{name}.f32"
+                with path.open("wb") as stream:
+                    stream.truncate(math.prod(descriptor["shape"]) * 4)
+                descriptor["path"] = str(path)
+                descriptor["sha256"] = cpu_capture.file_sha256(path)
+            device = {"name": "Apple M3 Max", "backend": "CPU", "compute_capability": None}
+            cpu_capture.validate_replay(
+                receipt,
+                receipt["tokens"],
+                receipt["tap_ids"],
+                plan["native"],
+                device,
+                execution_profile="development_CPU",
+            )
+            for bad_hardware in (["Apple M3 Max", "Apple M3 Max"], ["Apple M3 Max", "CPU"]):
+                mixed = json.loads(json.dumps(receipt))
+                mixed["hardware"] = bad_hardware
+                with self.assertRaises(ValueError):
+                    cpu_capture.validate_replay(
+                        mixed,
+                        mixed["tokens"],
+                        mixed["tap_ids"],
+                        plan["native"],
+                        device,
+                        execution_profile="development_CPU",
+                    )
+
+    def test_attempt_01_dyld_closure_matches_four_pins_and_records_system_metal(self):
+        plan_path = ACTUAL_CPU_PLAN / "plan.json"
+        proof_path = ACTUAL_CPU_PLAN / "cpu-build.json"
+        log_path = ACTUAL_CPU_CAPTURE / "native/producer-cb97282110964487bfa440391b9f5837.log"
+        if not all(path.is_file() for path in (plan_path, proof_path, log_path)):
+            self.skipTest("preserved development_CPU attempt 01 runtime proof is unavailable")
+        plan = json.loads(plan_path.read_text())
+        proof_record = {"path": str(proof_path), "sha256": cpu_capture.file_sha256(proof_path)}
+        build = cpu_capture.validate_cpu_build(proof_record, plan["native"], ACTUAL_CPU_PLAN)
+        teacher = types.SimpleNamespace(
+            log=types.SimpleNamespace(name=str(log_path)),
+            process=types.SimpleNamespace(pid=96621),
+        )
+        runtime = cpu_capture.cpu_loaded_library_proof(teacher, build)
+        self.assertTrue(runtime["actual_dyld_paths_checked"])
+        self.assertFalse(runtime["actual_linux_mapping_checked"])
+        self.assertEqual(
+            {Path(item["path"]).name.split(".")[0] for item in runtime["libraries"]},
+            {"libllama", "libggml", "libggml-cpu", "libggml-base"},
+        )
+        self.assertTrue(runtime["observed_system_metal_framework"])
+        with self.assertRaises(ValueError):
+            cpu_capture.require_cpu_project_libraries("/private/build/libggml-metal.dylib")
+        with tempfile.TemporaryDirectory() as folder:
+            hostile_log = Path(folder) / "qa-extra-ggml-dyld.log"
+            hostile_log.write_text(
+                log_path.read_text() + "\ndyld[96621]: /private/build/libggml-metal.0.dylib\n"
+            )
+            hostile = types.SimpleNamespace(
+                log=types.SimpleNamespace(name=str(hostile_log)),
+                process=types.SimpleNamespace(pid=96621),
+            )
+            with self.assertRaises(ValueError):
+                cpu_capture.cpu_loaded_library_proof(hostile, build)
 
 
 if __name__ == "__main__":
