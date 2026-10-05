@@ -214,3 +214,43 @@ continuation of reviewed CPUexport (8GiB/600s) and sequential actualthree-domain
 GPUgeneration/replay (600s each) with exact source/target/F16KV/partitionjoins.
 Only after actual artifactQA/packetbinding and all seven fresh admission gates
 may sustainedQATstart. Monitor staysACTIVE and healthy phases survive turns.
+
+
+## Root sole-operator transfer and actual exports/goldens — October 5
+
+The Luna operator twice errored at model capacity. Root interrupted its
+already-errored agent and took exclusive tmux/RTX5080 execution ownership.
+`/root/overnight_5080_operator` must issue no remote command until explicit
+transfer back; no second operator is created. Current operator is coordinator
+01a10a5b-4993-7762-af8a-f173c0219394, using existing MCP$258/@287/%289.
+Healthy detached export was not stopped: it naturally finishedexit0 in10s
+at08:40:42.996461UTC; oldgroups52768/52770 absent. Root read authoritative
+state/process/tmux before continuing; no job was restarted from agent failure.
+
+Allnine initialserialization audit PASS, five protected norm/d2t tensors,
+modelSHAb2f6dddcf2eaad503a52523ed6e02061c388c3c92aa60241e212aab49611aee8.
+FC latent4dd2... andscale6057... exactly join actual initializer. Mmap checkpoint
+audit52688/52690 exited0 and proves optimizerstate entries0, no tensors, two
+paramgroups, step/epoch/cursor0. CUDA initialsmoke loss7.19057, laterstate/K/V
+grads0.181903/0.109466/0.047944, allnine sign/scale gradients enforced finite/
+nonzero; cachecalls1/chunk64, head effectivebatched true. During scratch fullF32
+moment reservation, GPUallocated4.395GB/peakreserved5.461GB, RSS3.620GB;
+218,300,160 selectedF32 parameters imply1,746,401,280 scratchmomentbytes.
+Actual source/receipts and allocator peak support preparation, not QAT quality.
+
+Root executed the already-reviewed actualthree-domain nativegeneration/replay
+chain, supervised sequentially under12GiB/2GiBswap/600s phase caps. Generation
+52867/52872 and replay52968/52973 each finishedexit0 in15s; lastend08:50:46UTC,
+GPU returned baseline2714MiB used/13264MiB free/0%. Generation link SHA
+c7cafa89bfeb9f446535cfdc9f0095dd4683507c4d5384c45e195fa2cabecb1c.
+No held-out/quality evaluation or optimizer update occurred.
+
+Two bounded metadata-only QA receipts are ignored in main results: initial/
+export536a50b4...18031B and nativegoldens2300e719...41153B. No rawweights,
+activations, logits, token/message/decode payload or fullcorpus copied; large
+shard inventories replaced by counts/hashes. Exact generated-prefix/history
+ancestry stays verified remotely by helper and will be revalidated at bind.
+Independent QA prepares selected portable/prelaunch ledger with otherfive and
+wholecampaign PENDING; freshphysical seven-gate Admission remains unexecuted.
+Next: bind actualpacket, freeze selectedlane, execute freshadmission and start
+positive-update sustainedQAT. Monitor staysACTIVE, ownregistration is current.
