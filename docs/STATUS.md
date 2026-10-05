@@ -17,12 +17,12 @@ remains outside this team's scope.
 All transferred bounded workers are complete. First ready calibratedfixedA8 lane
 is prioritized with delegated24h cumulativetrainerallocation and frequent
 checkpoints; remaining candidates queue without premature readiness claims.
-30-minute heartbeat `nine-model-overnight-qat-monitor` is ACTIVE in this chat.
+30-minute heartbeat `nine-model-overnight-qat-monitor` is ACTIVE in the successor chat.
 **QAT is actively running onRTX5080/SM120**: calibrated fixed EAGLE W1A8,
-99482updates with committed99250 checkpoint; all required fresh admission/source/
+112372updates with committed112250 checkpoint; all required fresh admission/source/
 device gates PASS. Finite18selected gradients, actual sign/scale movement and
-cache/batchedhead execution;8.16GBGPUfree/17.10GBhostavailable. ActualTRAIN
-coverage1223prompts/473899rows at14793.60trainerseconds; no quality/win claim.
+cache/batchedhead execution;8.16GBGPUfree/17.06GBhostavailable. ActualTRAIN
+coverage1379prompts/535519rows at16719.78trainerseconds; no quality/win claim.
 
 Run eagle-a8-qat-overnight-20261005-04; supervisor55097/controller55098/trainer
 55398. Root is sole remote operator.24h cumulative allocation/no smaller cap,
@@ -120,6 +120,14 @@ and retired; fresh exact jobs healthy109,414/checkpoint109,250 at16,272.62traine
 seconds. Running30a/cc9 and passive endpoint unchanged. The latest goal checkpoint
 contains all source/runtime/data hashes, live handles/STOP procedures and next
 actions for sole-operator context rotation with the SAME monitor. FullgoalACTIVE.
+
+**07:52 PDT successor ownership acknowledged:** owner/operator and SAME ACTIVE
+heartbeat target match `01a10c8a-22bb-7380-9a8c-d9802a51b679`; successor native
+Goal is ACTIVE with the unchanged full objective. Five exact boot/birth/PGID
+identities, both supervisors, frozen30a/cc9 clean source and endpoint plan verified
+read-only. Healthy QAT112372/checkpoint112250 and passive watcher continue.
+Predecessor may retire; A1 actual actor/export/admission and remaining campaign
+are pending. See the latest ownership acknowledgment in the linked goal.
 
 **07:50 PDT exclusive transfer:** fresh successor chat owns the same unfinished
 goal after explicit local registration transfer and SAME heartbeat retarget.

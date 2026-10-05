@@ -23,8 +23,9 @@ RTX2080Ti is outside this team's scope; do not query/control its flags.
 
 ## Ownership and operational selections
 
-Coordinator `01a10a5b-4993-7762-af8a-f173c0219394` owns STATUS, both goal records,
-DECISIONS and integration in isolated overnight-coordination tree.
+Current coordinator `01a10c8a-22bb-7380-9a8c-d9802a51b679` owns STATUS, active
+goal, DECISIONS, integration and sole RTX5080 remote operation. Dated sections
+below preserve earlier coordinators and completed worker assignments.
 
 | Worker | Ownership | Live status |
 |---|---|---|
@@ -1332,3 +1333,41 @@ native Goal from the unchanged objective, verifies current jobs/monitor read-onl
 claims sole operator and publishes ownership acknowledgment. Predecessor stops
 after bounded acknowledgment verification. No source, GPU lifecycle, model,
 budget, experimental scope or startup lease changes and no live worker transfer.
+
+## Successor ownership acknowledged — October 5, 07:52 PDT
+
+Successor `01a10c8a-22bb-7380-9a8c-d9802a51b679` read AGENTS, STATUS,
+AGENT_OPERATIONS, the latest rotation checkpoint and relevant DECISIONS/lessons.
+Machine-local registration explicitly transfers owner/operator with predecessor
+remote authority false, no live workers and unchanged remote jobs; source
+transfer4bf47e1 is pushed. SAME heartbeat `nine-model-overnight-qat-monitor`
+is ACTIVE and targets this exact successor, verified from saved configuration
+and automation view. Successor's own native Goal is ACTIVE with the unchanged
+six-candidate/three-original-Q4 preparation/training/evaluation objective.
+
+Read-only transferred MCP$258/@287/%289 check at14:51:54UTC confirms boot
+517c4a36-e475-4a5f-9fa6-65de57edc6fe and all five nonzombie PID/birth/PGID
+identities:55097/12953909,55098/12953914,55398/12966638,
+56606/13576753,56611/13576769; PGID equals PID for each. Both supervisors
+remain running/no received signal. Training checkout clean30a8dc7/nativecc9cab3
+and endpoint plan rehash9f989383... match. Passive watcher remains
+waiting_for_natural_endpoint/gpu_queried=false/training_changed=false.
+No source/config/lane/lease/budget or process was modified by this check.
+
+Actual QAT112,372updates/16,719.782 cumulative trainerseconds,
+1,379unique TRAIN prompts/535,519supervised rows,18finite gradients/loss3.963939.
+Heartbeat0.027s, GPUfree8,161,067,008B, hostavailable17,056,591,872B,
+diskfree196,445,130,752B. Committed checkpoint112,250 SHA
+c21a4a4247b6bdcb678e45ed840dca4fba34e2f8fffa5dd1c3274bc599462aa6
+is manifest-declared, not newly byte-rehashed. Local proof
+`results/nine-model-qat-overnight/successor-health-20261005-0752.json`, SHA
+e731132f56ce763112e6236c93a26331147491f1218e1491e7847c5449f91d51.
+No quality, acceptance or throughput claim; native endpoint evaluation is pending.
+
+Keep the healthy86,400trainersecond allocation/108,000outerwall/checkpoint250/
+keep3/no step-token-epoch cap unchanged and monitor approximately every30minutes.
+After natural trainer and endpoint release prioritize originalc254-pinned A1
+actor/export/fullbind/currentQA/freshSM120 backward/fullmoment/native admission,
+then admitted QAT plus automatic endpoint. Remaining block scientific choices,
+authentic controls and real final inputs stay pending as recorded above.
+Predecessor may retire; successor alone owns remote/durable goal operation.
