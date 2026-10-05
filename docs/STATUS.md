@@ -18,14 +18,19 @@ packet feature owner and independent QA. First ready calibratedfixedA8 lane
 is prioritized with delegated24h cumulativetrainerallocation and frequent
 checkpoints; remaining candidates queue without premature readiness claims.
 30-minute heartbeat `nine-model-overnight-qat-monitor` is ACTIVE in this chat.
-Production calibration, zero-update CUDA preparation/export, native generation/
-replay,272 CUDA kernel checks, portability and exact all-nine native dispatch pass.
-Actual model/backward/fullF32moment receipt also passes; controller03 refuses
-Torch bareUUID versus NVIDIA GPU-prefixed UUID metadata. Strict canonical-format
-repair is underway in producer and live-query paths; no device gate waived.
-All owned phases released; QAT updates remain zero. Root is sole remote operator,
-30-minute heartbeat ACTIVE; fresh source-bound admission and sustained QAT next.
-Healthy runs continue into morning under the24h operational allocation.
+**QAT is actively running onRTX5080/SM120**: calibrated fixed EAGLE W1A8,
+1200updates with committed1000 checkpoint; all required fresh admission/source/
+device gates PASS. Finite18selected gradients, actual sign/scale movement and
+cache/batchedhead execution;8.16GBGPUfree/17.56GBhostavailable. ActualTRAIN
+coverage15prompts/5824rows at170.21trainerseconds; no quality/win claim.
+
+Run eagle-a8-qat-overnight-20261005-04; supervisor55097/controller55098/trainer
+55398. Root is sole remote operator.24h cumulative allocation/no smaller cap,
+checkpoints250/keep3;30-minute heartbeat ACTIVE. Actual run passed1000 without
+periodic evaluation stop. Keep healthy training active into morning; remaining
+five candidates/fullnine-model endpoint preparation/evaluation stay unfinished.
+Latest live handles and source/checkpoint proof are in the linked goal and
+ignored monitor registration. All previous failed attempts are retained.
 
 ## Historical preparation checkpoint — October 4, 2026
 

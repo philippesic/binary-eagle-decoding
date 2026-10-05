@@ -345,3 +345,51 @@ soleoperator MCP$258/@287/%289; no new2080 access. Monitor ACTIVE/30min.
 No positive update/committed checkpoint yet; sustained24h trainer starts
 automatically after all seven fresh gates PASS. Do not change live source,
 config, lane or availability lease bytes.
+
+
+## QAT ACTIVE with positive checkpoints — October 5, 03:17 PDT
+
+All required fresh receipt gates (kernel, capture_portability, model, backward,
+memory, resources) and exact source/device admission PASS. AdmissionSHA
+7ca57fe1a631d8b521c4a00812d94dcbd1479f1f9af892a6ef7f7b0496183237.
+Calibrated fixed EAGLE W1A8 QAT is actually running onRTX5080/SM120. Target/
+verifier/KV F16 unchanged; F32student masters/moments, TF32off. Full10k original
+TRAIN corpus remains eligible; actualcoverage is reported below, no fullpass claim.
+
+Run eagle-a8-qat-overnight-20261005-04, supervisor55097/controller55098/trainer
+55398/PGID55398/startticks12966638, currentboot517c4a36-e475-4a5f-9fa6-65de57edc6fe.
+Socketbinary-eagle-runtime/sessionroot-eagle-a8-qat-overnight-20261005-04 remains
+live; root is sole5080operator usingMCP$258/@287/%289. Frozen execution parent
+30a8dc7ee6bc8564471e8b176aeb1c5b8aef860c/nativecc9; lane271c7171..., config
+cd3eb841..., continuous4b7dbcbc..., data sourcebindingb1a9f991... unchanged.
+
+Live proof:350positiveupdates/checkpoint250 first observed; later823/831updates
+with SHA-verified checkpoint750bbd2fe2f203704be83714f54e2e367990544c39129bf7ee7b03af5db1ec5fc89.
+Latest bounded readback1200updates/170.21trainerseconds,15prompts/5824unique
+supervised rows/presentedtokens; checkpoint1000 SHA2a9ff0e4b6dfba3f73ccda4fe4255591454836bb29e65cbd3eb76728ba2723b3
+records optimizer_rng_cursor_exact=true and runtime/source. Finite18selected
+gradienttensors, scale movement and4181cumulative signflips; cache1/chunk64/
+headbatched observed. Loss varies byTRAIN round; no nativequality/throughput win
+claim. GPUfree8,163,164,160B, peakreserved7,428,112,384B, hostavailable
+17,555,496,960B, diskfree197,504,147,456B. Budget activeattempt reserves86400s;
+settled training_seconds0 while live elapsed170.21s is expected deferredcharge.
+
+Effectiveconfig confirms max_seconds86400, no maxsteps/tokens/epochs, checkpoint
+every250/keep3, standalone development and development_every9223372036854775807.
+Healthy run actually crossed1000 without periodic development stop. Do not
+interrupt it for a monitoring tick, morning, another lane or an idle agent.
+30-minute heartbeat remainsACTIVE; initial live-health receipt6242B SHA
+7c1a55ae904120411a3767978cd692c23a6049eae46689059fc5a67a9112c4fd preserved
+remotely and ignored localresults/nine-model-qat-overnight/initial-live-health-5080.json.
+IndependentQA is checking that bounded metadata; sourceQA/productionadmission
+already passed before launch. Exact live handles/checkpoint/source/policy in
+ignored runs/nine-model-qat-overnight/monitor-registration.json.
+
+Next: quiet30-minute healthchecks of exact identities, finite progress, fresh
+committed checkpoints/resources/accounting; repair concrete failures with max2
+retries per incident from exact committed state after owned release. Human pause
+takes priority; STOP path is runs/<run>/lane/STOP or signal exact supervisor if
+needed, then verify group/context release. Healthy source/config/lane/lease must
+remain immutable. Otherfive candidate preparation, original blockQ4controls and
+automatic resource-safe endpoint export/evaluation remain unfinished; never stop
+this healthy lane to sample them. Fullnine-model native Goal remainsACTIVE.
