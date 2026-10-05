@@ -68,6 +68,11 @@ def validate_plan(path, *, fixture=False):
         )
         for key in ("config", "model", "export"):
             files.check(candidate[key])
+        config = json.loads(Path(candidate["config"]["path"]).read_text())
+        require(
+            candidate.get("precision_stage", "direct") == config.get("precision_stage", "direct"),
+            "admission precision stage differs from pinned training config",
+        )
         require(
             isinstance(candidate.get("source_bindings"), dict) and candidate["source_bindings"],
             "actual training source bindings absent",
