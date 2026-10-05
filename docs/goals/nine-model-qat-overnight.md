@@ -95,7 +95,7 @@ chat turns and ownership rotation. Human pause/stop takes priority.
 
 Calibrated EAGLE W1A8 QAT is admitted and actively running on RTX5080/SM120.
 All fresh receipt gates and strict source/device checks passed. It has passed
-293949 optimizer updates with a committed293750 checkpoint (earlier2750 bytes SHA-verified), finite gradients and
+305968 optimizer updates with a committed305750 checkpoint (earlier2750 bytes SHA-verified), finite gradients and
 actual cache/head execution. Root owns the exact live supervisor/controller/
 trainer and transport recorded in the latest checkpoint below and ignored
 monitor registration. The30-minute heartbeat is ACTIVE; preserve healthy
@@ -1824,5 +1824,33 @@ not quality inference. Full GoalACTIVE/unfinished; about11.72trainerhours remain
 no wall ETA. Next around16:00PDT. Current calibrated native acceptance PENDING;
 originalsource-pinned A1 queues after natural trainer AND endpoint release.
 Remaining model/device/controls/held-out gates and09:25human inputs stay pending.
+
+## Scheduled verified training wait — October 5, 16:00 PDT
+
+Previous turn was progress plus verified waiting. Corrected journal ordering:
+repeated patch context had inserted15:30before14:59. Both complete section bodies
+were preserved byte-for-byte; unique append marker now keeps future observations
+at the end. No runtime/data/recipe change. Actual23:00:22UTC root remote read-only
+healthcheck PASS: same five boot/birth/PGID identities, both running/no-signal
+supervisors, clean30a/cc9 and frozen endpoint plan rehash. QAT305,968updates/
+46,027.9571trainerseconds,3,752TRAINprompts/1,455,329distinct supervised rows,
+18finitegradients/finite loss2.435086,heartbeat0.0974s. Resources/checkpoint
+freshness PASS:GPUfree8,161,067,008B,hostavailable18,102,026,240B,
+diskfree196,148,498,432B. Watcher passive waiting_for_natural_endpoint,
+GPUqueriedfalse/trainingchangedfalse. No repair/new job/runtime source/config/
+lease/budget/process change. Local ownership checks settle successfully before
+remote calls; pending local observations cannot authorize a new remote command.
+
+Checkpoint305,750 SHA
+23096bd1677bffd146c54de49292f615e0e36e9f1ce79bd2daf57b3cacca660a
+is manifest-declared, not newly byte-rehashed. Ignored proof
+`results/nine-model-qat-overnight/health-20261005-1600.json`, SHA
+d03048439cea6a0f9f3346a829469d5a35e9c226a54c2ae889b71a878161bc36;
+adjacent raw command/result/capture preserved. Sole owner/operator/SAME ACTIVE
+monitor verified. Full GoalACTIVE/unfinished; healthy86,400trainersecond budget
+unchanged/about11.21trainerhours remain/no wall ETA. Next around16:30PDT.
+Current calibrated native acceptance PENDING; A1 queues after natural trainer
+AND endpoint release. Other model/device/controls/held-out gates and09:25human
+inputs stay pending; no quality conclusion follows from training telemetry.
 
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->
