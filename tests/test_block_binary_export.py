@@ -27,6 +27,7 @@ class BlockExportTests(unittest.TestCase):
         writer.add_block_size(7)
         writer.add_target_layers([2, 10, 18, 26, 34])
         writer.add_sample_from_anchor(True)
+        writer.add_mask_token_id(1)
         writer.add_embedding_length(32)
         writer.add_feed_forward_length(64)
         writer.add_head_count(4)
@@ -192,6 +193,7 @@ class BlockExportTests(unittest.TestCase):
                 ({"dflash.w1ax.activation_bits": 4}, None),
                 ({"dflash.w1ax.profile": "head"}, None),
                 ({"dflash.block_size": 8}, None),
+                ({"tokenizer.ggml.mask_token_id": 999}, None),
                 ({"dflash.sample_from_anchor": False}, None),
                 ({"dflash.w1ax.tensors": ["fc.weight"]}, None),
                 ({}, "blk.0.ffn_up.weight"),
