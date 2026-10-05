@@ -277,3 +277,5 @@ Tested source hashes:
 
 Raw 6-test output is retained under ignored
 `/private/tmp/nine-model-qat-20261004/overnight-qa/results/nine-model-qat-overnight/final-packet-lifecycle-tests.log`.
+The lifecycle fix is integrated in main at `e00c07395f6f76f2eef3b3f40beb051b60895e50`;
+main's helper, test and plan SHA256 values match the tested files above.
