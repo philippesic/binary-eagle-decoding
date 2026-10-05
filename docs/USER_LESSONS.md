@@ -21,6 +21,26 @@ evidence changes the lesson.
 
 ## Lessons
 
+### 2026-10-05: Separate standing authority from later artifact scope
+
+- Context: Agents added sealed-final admission for independently trained lanes.
+- Evidence: The first proposal required the pinned human instruction to contain
+  the exact future row/model scope. Those model hashes do not exist when the
+  human authorizes the work. Root clarified that genuine standing authorization
+  and the later agent-frozen selection should be separate, linked records.
+- Status: Resolved agent design overrestriction; no user mistake. Whether the
+  existing overnight instruction authorizes sealed-final use remains unproven.
+- Agent contribution: Root's assignment requested exact scope/authority joins
+  without explicitly separating when each becomes available. QA correctly
+  rejected an arbitrary hashed record as authorization; the proposed remedy
+  unnecessarily tied human wording to future hashes. The owner revised it.
+- Practical lesson: Preserve genuine instruction provenance and its semantic
+  scope; bind exact rows/model hashes in an agent-selected attestation after
+  freeze. Do not relabel that choice human-selected or require special wording
+  for hashes the human could not know. Missing genuine authority remains pending.
+- Resolution: Published 55466f8 separates unchanged standing authority from
+  agent_selected/human_selected=false scope and tests sealing/disjointness.
+
 ### 2026-10-04: Name exact manifest artifacts
 
 - Context: Candidate A8 checkpoint15,000 was archived and natively evaluated.

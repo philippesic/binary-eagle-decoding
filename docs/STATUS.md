@@ -19,10 +19,10 @@ is prioritized with delegated24h cumulativetrainerallocation and frequent
 checkpoints; remaining candidates queue without premature readiness claims.
 30-minute heartbeat `nine-model-overnight-qat-monitor` is ACTIVE in this chat.
 **QAT is actively running onRTX5080/SM120**: calibrated fixed EAGLE W1A8,
-87249updates with committed87000 checkpoint; all required fresh admission/source/
+99482updates with committed99250 checkpoint; all required fresh admission/source/
 device gates PASS. Finite18selected gradients, actual sign/scale movement and
 cache/batchedhead execution;8.16GBGPUfree/17.10GBhostavailable. ActualTRAIN
-coverage1072prompts/415474rows at12977.18trainerseconds; no quality/win claim.
+coverage1223prompts/473899rows at14793.60trainerseconds; no quality/win claim.
 
 Run eagle-a8-qat-overnight-20261005-04; supervisor55097/controller55098/trainer
 55398. Root is sole remote operator.24h cumulative allocation/no smaller cap,
@@ -103,6 +103,11 @@ collection runtime lifecycle and authenticated opaque final-heldout admission.
 Neither may access real sealed messages/models/GPU or change running jobs.
 Healthy QAT and the passive endpoint continue under sole root supervision;
 actual collection/native readiness remains PENDING.
+
+**07:29 PDT final admission source:** 15 opaque-metadata integration checks PASS;
+real sealed authority/indexes/model endpoints remain PENDING and no prompt bytes
+were opened. Runtime owner continues source-only QA. Scheduled GPU check confirms
+healthy99,482/checkpoint99,250 and unchanged watcher/source; full Goal ACTIVE.
 
 ## Historical preparation checkpoint — October 4, 2026
 

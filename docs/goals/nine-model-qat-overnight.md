@@ -1124,3 +1124,41 @@ transport/operator. No protocol, final allowance, recipe or scientific exposure
 is selected. Full goal stays ACTIVE and unchanged; next approximately30-minute
 healthcheck at07:19PDT. Actual six trained endpoints, original block controls,
 runtime admission and native/final evaluation remain unfinished.
+
+## Sealed-final admission source reviewed — October 5, 07:29 PDT
+
+Owner/independent QA completed published 55466f8 (agent/heldout-admission).
+Reviewed/cherry-picked 2174821; exact five-file equality verified and original
+branch ancestry preserved. Root's 15 combined collection/final-admission checks
+passed in 0.642s; owner/QA also 15 PASS, Ruff/format/diff PASS. Fixtures are
+model-free Mac CPU/opaque metadata, not production source or final authority.
+Preparation/import spies confirm both TRAIN and final prompt files stay closed.
+
+Final admission now binds original whole-shard opaque index/manifest, actual
+per-lane TRAIN membership and ID/group/content/source-row disjointness, all six
+frozen lane/config/export/model origins, exact protocol/target/prompts and genuine
+standing evaluation authority. Agent-selected exact scope is separately labeled
+human_selected=false; the human need not know future hashes. A boolean or the
+overnight GPU-only instruction alone cannot assert sealed-final authority.
+Current real final evidence remains PENDING. See heldout-admission report and
+USER_LESSONS clarification of authority versus later scope. No real final bytes,
+TRAIN captures, models, GPU or remote operations were performed by this owner.
+
+The runtime owner remains active on separate evaluator/controller files. It
+shares the native loop, validates heavy serialized joins once, checks immutable
+file fingerprints later and issues fresh typed per-cell continuations after
+actual release under the same owner/standing authorization. Final QA is adding
+all export-producer jobs, including the separate A8 watcher, to upstream release
+censuses. Actual runtime inputs/proofs remain absent; no dispatch-ready claim.
+
+Scheduled live check 14:19:48 UTC: both supervisors and all five exact boot/birth
+identities match, frozen source30a/nativecc9 unchanged. Healthy 99,482 updates,
+14,793.599 trainer seconds, 1,223 unique TRAIN prompts/473,899 rows; 18 finite
+gradients/loss4.56810, heartbeat0.0666s. GPUfree8,161,067,008B,
+hostavailable17,073,430,528B, diskfree196,460,466,176B. Checkpoint99,250 SHA
+af6526d80ea7dbe03bc487f1509bee1b95f873b391736e5d7f17f99c599daaae is
+manifest-declared, not byte-rehashed. Watcher still waiting/gpu_queriedfalse/
+training_changedfalse. Coherent ignored proof health-0719-20261005.json SHA
+abc9a4e99b28a22518cc9c0402a049d18af022072acbd311caeb1568c99e6329.
+Goal ACTIVE/fullsix+three; next scheduled check around07:50PDT. Scientific block
+choice and real controls/actors/endpoints/native admissions remain pending.
