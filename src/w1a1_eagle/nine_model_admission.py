@@ -38,13 +38,19 @@ def validate_plan(path, *, fixture=False):
     plan = json.loads(Path(path).read_text())
     kind = "fixture" if fixture else "production"
     require(
-        plan.get("schema") == "nine_model_sm120_plan_v1" and plan.get("artifact_kind") == kind,
+        plan.get("schema") in {"nine_model_sm120_plan_v1", "nine_model_lane_sm120_plan_v1"}
+        and plan.get("artifact_kind") == kind,
         "admission plan provenance differs",
     )
-    require(set(plan.get("candidates", {})) == set(CANDIDATES), "six candidate admissions required")
+    names = set(plan.get("candidates", {}))
+    staged = plan.get("schema") == "nine_model_lane_sm120_plan_v1"
     require(
-        set(plan.get("portability", {})) == {"eagle", "dspark", "dflash"},
-        "three family capture-portability checks required",
+        (len(names) == 1 and names <= set(CANDIDATES)) if staged else names == set(CANDIDATES),
+        "one known staged candidate required" if staged else "six candidate admissions required",
+    )
+    require(
+        set(plan.get("portability", {})) == {name.split("_")[0] for name in names},
+        "selected family capture-portability checks required",
     )
     files = Files()
     require(plan.get("source"), "admission source inventory absent")

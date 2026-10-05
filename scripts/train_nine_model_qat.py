@@ -131,6 +131,9 @@ def training_source_identity():
         "src/w1a1_eagle/qat_initialization.py",
         "src/w1a1_eagle/qat_admission.py",
         "src/w1a1_eagle/qat_curriculum_runner.py",
+        "src/w1a1_eagle/continuous_resources.py",
+        "src/w1a1_eagle/continuous_runtime.py",
+        "src/w1a1_eagle/nine_model_admission.py",
     ]
     from w1a1_eagle.continuous_runtime import ADMISSION_FILES, MATH_FILES
 

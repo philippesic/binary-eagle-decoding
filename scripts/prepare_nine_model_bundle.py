@@ -54,6 +54,35 @@ CRITICAL_SOURCE = (
 )
 
 
+def selected_candidates(descriptor):
+    if descriptor.get("schema") != "nine_model_lane_inputs_v1":
+        return CANDIDATES
+    names = tuple(descriptor.get("candidates", {}))
+    require(
+        len(names) == 1 and set(names) <= set(CANDIDATES), "one known staged candidate required"
+    )
+    return names
+
+
+def selected_budget(budget, names, *, staged=False):
+    if not staged:
+        require(budget.get("human_selected") is True, "human-selected allocation required")
+    else:
+        provenance = budget.get("authorization", {})
+        require(
+            budget.get("human_selected") is False
+            and provenance.get("kind") == "human_delegated_operational_settings"
+            and isinstance(provenance.get("instruction"), str)
+            and bool(provenance["instruction"].strip())
+            and isinstance(provenance.get("record"), dict),
+            "staged operational allocation needs explicit delegated provenance",
+        )
+        Files().check(provenance["record"])
+    require(
+        set(budget.get("candidates", {})) == set(names), "selected candidate allocation differs"
+    )
+
+
 def pin(path):
     path = Path(path).resolve()
     return {"path": str(path), "sha256": sha256(path)}
@@ -72,10 +101,10 @@ def actual_evidence_scope(scope):
     return any(token in {"actual", "real", "native", "production"} for token in tokens)
 
 
-def ledger_pending(ledger):
+def ledger_pending(ledger, profiles=CELLS):
     pending = []
     require(ledger.get("schema") == "nine_model_qa_ledger_v1", "independent QA schema differs")
-    for profile in CELLS:
+    for profile in profiles:
         record = ledger.get("profiles", {}).get(profile, {})
         if record.get("prelaunch_status") != "PASS":
             pending.append(profile + ": prelaunch production dependencies PENDING")
@@ -166,18 +195,15 @@ def materialize_configs(descriptor, directory, *, source_validate=True):
     """
     files = Files()
     budget = json.loads(files.check(descriptor["budget"]).read_text())
-    require(
-        budget.get("human_selected") is True
-        and set(budget.get("candidates", {})) == set(CANDIDATES),
-        "human-selected six-candidate allocation required for source configs",
-    )
+    names = selected_candidates(descriptor)
+    selected_budget(budget, names, staged=descriptor.get("schema") == "nine_model_lane_inputs_v1")
     directory = Path(directory).resolve()
     require(not directory.exists(), "config publication already exists")
     directory.mkdir(parents=True)
     resolved = copy.deepcopy(descriptor)
     trainer = importlib.import_module("train_nine_model_qat") if source_validate else None
     configs = {}
-    for name in CANDIDATES:
+    for name in names:
         selected = resolved["candidates"][name]
         family, precision = name.split("_")
         bits = 8 if precision == "a8" else 1
@@ -317,12 +343,19 @@ def materialize_configs(descriptor, directory, *, source_validate=True):
 
 def inspect_admission_inputs(descriptor):
     pending = []
-    for role in ("backend_binary", "block_native_binary", "teacher_binary", "binary", "target"):
+    names = selected_candidates(descriptor)
+    families = {name.split("_")[0] for name in names}
+    roles = {"backend_binary", "teacher_binary", "target"}
+    if families - {"eagle"}:
+        roles.add("block_native_binary")
+    if "eagle" in families:
+        roles.add("binary")
+    for role in sorted(roles):
         if role not in descriptor.get("inputs", {}):
             pending.append("missing actual admission binary/target: " + role)
     if not descriptor.get("preflight", {}).get("native_source_revision"):
         pending.append("missing actual native producer source revision")
-    for family in FAMILIES:
+    for family in sorted(families):
         if (
             not descriptor.get("preflight", {})
             .get("portability", {})
@@ -330,14 +363,18 @@ def inspect_admission_inputs(descriptor):
             .get("golden_manifest")
         ):
             pending.append(family + ": bounded native TRAIN golden manifest PENDING")
-    for role in ("eagle_smoke_prompts", "eagle_smoke_capture"):
+    for role in ("eagle_smoke_prompts", "eagle_smoke_capture") if "eagle" in families else ():
         if role not in descriptor.get("inputs", {}):
             pending.append("missing authenticated EAGLE TRAIN native smoke input: " + role)
-    for name in CANDIDATES:
+    for name in names:
         for role in ("config", "initial_model", "initial_export_audit", "data_admission"):
             if role not in descriptor.get("candidates", {}).get(name, {}):
                 pending.append(name + ": " + role + " PENDING")
-    for role in ("resource_policy", "gpu_uuid", "controls"):
+    for role in (
+        "resource_policy",
+        "gpu_uuid",
+        *(() if descriptor.get("schema") == "nine_model_lane_inputs_v1" else ("controls",)),
+    ):
         if role not in descriptor:
             pending.append("missing actual admission binding: " + role)
     return sorted(pending)
@@ -410,6 +447,8 @@ def materialize_admission_plan(descriptor, output, *, fixture=False, inspect_dra
     require(not output.exists(), "preserve existing frozen admission plan")
     files = Files()
     inputs = descriptor["inputs"]
+    names = selected_candidates(descriptor)
+    families = tuple(sorted({name.split("_")[0] for name in names}))
     for name in (
         "backend_binary",
         "block_native_binary",
@@ -419,12 +458,13 @@ def materialize_admission_plan(descriptor, output, *, fixture=False, inspect_dra
         "eagle_smoke_prompts",
         "eagle_smoke_capture",
     ):
-        files.check(inputs[name])
+        if name in inputs:
+            files.check(inputs[name])
     preflight = descriptor["preflight"]
     if not fixture:
         from check_block_capture_portability import NativeCaptureGoldens
 
-        for family in FAMILIES:
+        for family in families:
             record = preflight["portability"][family]["golden_manifest"]
             NativeCaptureGoldens(files.check(record), expected_sha256=record["sha256"])
 
@@ -465,7 +505,7 @@ def materialize_admission_plan(descriptor, output, *, fixture=False, inspect_dra
     )
     environment["CUDA_VISIBLE_DEVICES"] = descriptor["gpu_uuid"]
     candidates = {}
-    for name in CANDIDATES:
+    for name in names:
         selected = descriptor["candidates"][name]
         config_path = files.check(selected["config"])
         spec = trainer.load_spec(config_path)
@@ -610,7 +650,7 @@ def materialize_admission_plan(descriptor, output, *, fixture=False, inspect_dra
             },
         }
     portable = {}
-    for family in FAMILIES:
+    for family in families:
         settings = preflight["portability"][family]
         golden = files.check(settings["golden_manifest"])
         manifest = json.loads(golden.read_text())
@@ -673,17 +713,20 @@ def materialize_admission_plan(descriptor, output, *, fixture=False, inspect_dra
             "argv": argv,
             "wall_seconds": settings.get("wall_seconds", 900),
         }
-    require(
-        set(descriptor["controls"]) == set(FAMILIES),
-        "three immutable original Q4 controls required",
-    )
-    for family, control in descriptor["controls"].items():
+    if descriptor.get("schema") != "nine_model_lane_inputs_v1":
+        require(
+            set(descriptor["controls"]) == set(FAMILIES),
+            "three immutable original Q4 controls required",
+        )
+    for family, control in descriptor.get("controls", {}).items():
         require(control.get("frozen_original") is True, "original Q4 control must remain frozen")
         files.check(control["model"])
     python = pin(sys.executable)
     source["runtime:python"] = python
     plan = {
-        "schema": "nine_model_sm120_plan_v1",
+        "schema": "nine_model_lane_sm120_plan_v1"
+        if descriptor.get("schema") == "nine_model_lane_inputs_v1"
+        else "nine_model_sm120_plan_v1",
         "python": python,
         "python_invocation": sys.executable,
         "artifact_kind": "fixture" if fixture else "production",
@@ -691,7 +734,7 @@ def materialize_admission_plan(descriptor, output, *, fixture=False, inspect_dra
         "training_source_files": training_source,
         "backend_binary": inputs["backend_binary"],
         "target": inputs["target"],
-        "controls": descriptor["controls"],
+        "controls": descriptor.get("controls", {}),
         "candidates": candidates,
         "portability": portable,
         "resource_policy": descriptor["resource_policy"],
