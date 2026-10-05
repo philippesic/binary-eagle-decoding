@@ -2,6 +2,7 @@ import importlib.util
 import sys
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location(
@@ -21,6 +22,60 @@ def record(domain, number, **extra):
         "content_sha256": f"{number:064x}",
         **extra,
     }
+
+
+def native_round_fixture(kinds):
+    from w1a1_eagle.recurrent_trace import LABEL_SOURCE, RoundAnchor
+
+    anchors, rows = {}, {}
+    for number, kind in enumerate(kinds):
+        prefix = (0, 1, *([3] * number))
+        key = ("train-a", number)
+        anchors[key] = RoundAnchor("train-a", "train", number, prefix, 3)
+        row = {
+            "prompt_id": "train-a",
+            "split": "train",
+            "round_index": number,
+            "depth": 0,
+            "parent_position": len(prefix) - 1,
+            "input_position": len(prefix),
+            "label_position": len(prefix) + 1,
+            "verifier_row": 0,
+            "prefix_token_ids": [*prefix, 3],
+            "input_token_id": 3,
+            "alignment_valid": True,
+            "is_bonus": False,
+            "valid": True,
+            "verifier_reached": True,
+            "invalid_reason": None,
+            "label_source": LABEL_SOURCE,
+            "verifier_token_id": 4,
+            "proposed_token_id": 6,
+            "label_supported": True,
+        }
+        if kind == "terminal":
+            row.update(
+                valid=False,
+                verifier_reached=False,
+                invalid_reason="eos",
+                verifier_token_id=None,
+                proposed_token_id=None,
+                label_supported=False,
+            )
+        elif kind == "unsupported":
+            row.update(verifier_token_id=7, label_supported=False)
+        elif kind == "corrupt":
+            row.update(label_position=len(prefix) + 2)
+        rows[key] = (row,)
+    return SimpleNamespace(
+        capture=SimpleNamespace(anchors=anchors, rows=rows),
+        d2t_offsets=(2, 3, 3),
+        target_vocab_size=8,
+        draft_vocab_size=3,
+        allowed_prompt_ids={"train-a"},
+        split="train",
+        max_depth=5,
+    )
 
 
 class ProductionInitializerTests(unittest.TestCase):
@@ -62,6 +117,23 @@ class ProductionInitializerTests(unittest.TestCase):
             helper.select_prompts([{"id": "prose:1", "domain": "prose"}], 1, 1)
         with self.assertRaisesRegex(ValueError, "quotas"):
             helper.select_prompts([], 0, 1)
+
+    def test_terminal_longest_round_selects_longest_admitted_earlier_round(self):
+        child = native_round_fixture(["supported", "supported", "terminal"])
+        key, audit, skipped = helper.longest_eligible_round(child, "train-a")
+        self.assertEqual(key, ("train-a", 1))
+        self.assertEqual(audit.ce_mask, (True,))
+        self.assertEqual(skipped, [2])
+
+    def test_no_admitted_round_refuses_instead_of_borrowing_terminal_or_unmapped_label(self):
+        child = native_round_fixture(["unsupported", "terminal"])
+        with self.assertRaisesRegex(ValueError, "no admitted-label round: train-a"):
+            helper.longest_eligible_round(child, "train-a")
+
+    def test_corrupt_longer_round_is_not_silently_skipped(self):
+        child = native_round_fixture(["supported", "corrupt"])
+        with self.assertRaisesRegex(ValueError, "alignment mismatch"):
+            helper.longest_eligible_round(child, "train-a")
 
     def test_scale_only_preserves_half_magnitude_even_negative_correlation(self):
         import numpy as np
