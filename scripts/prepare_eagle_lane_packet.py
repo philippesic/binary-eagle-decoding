@@ -24,6 +24,7 @@ from w1a1_eagle.nine_model_pipeline import Files, atomic_json, require  # noqa: 
 
 READY_SHA = "bdfa56f8b10e44e82a6d807a71f32d68c39143af7094e6f8f0da63504d41a498"
 DOMAINS = ("prose", "code", "reasoning")
+FINAL_ONLY_DEVELOPMENT_EVERY = 2**63 - 1
 
 
 def read(files, path, expected=None):
@@ -110,6 +111,7 @@ def prepare(args):
     template["training"].update(
         checkpoint_every=250,
         keep_checkpoints=3,
+        development_every=FINAL_ONLY_DEVELOPMENT_EVERY,
         activation_quantization="fixed",
         a1_computation="reference",
         binary_optimization=None,
@@ -172,6 +174,7 @@ def prepare(args):
             "checkpoint_every": 250,
             "keep_checkpoints": 3,
             "development_lifecycle": "standalone",
+            "development_every": FINAL_ONLY_DEVELOPMENT_EVERY,
             "cache_head": "requested; current admitted execution required before updates",
             "final_quality_claim": False,
         },

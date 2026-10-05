@@ -238,6 +238,14 @@ Zero-update smoke executes cache/head requests without requiring an existing
 optimization receipt, so admission is not circular. Production `run()` then
 requires current typed admission whose observed execution paths match the
 selected fixed recipe. No historical readiness or silent fallback is used.
+Periodic standalone development is explicitly deferred with
+`development_every=9223372036854775807`; the inherited 1,000-update boundary
+otherwise returns from the trainer and stops a healthy lane. Checkpoint cadence
+remains 250, the 86,400-second training cap remains exact, and the existing final
+standalone evaluation request still publishes at the successful cap. A focused
+tiny CPU regression crosses update 1,000 with two actual updates and proves the
+trainer reaches its fixture cap and emits the final request; it is control-flow
+evidence, not an RTX5080 performance or production-training result.
 The frozen admission source inventory retains the externally pinned generation
 link, raw parent receipt log, exact replay requests and original prompt joins,
 plus the initial request, actual zero-update receipt and outer checkpoint

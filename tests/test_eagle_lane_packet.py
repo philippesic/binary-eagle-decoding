@@ -139,6 +139,18 @@ class PacketTests(unittest.TestCase):
             self.assertTrue(template["training"]["optimize_cache"])
             self.assertTrue(template["training"]["optimize_head"])
             self.assertEqual(template["training"]["checkpoint_every"], 250)
+            self.assertEqual(template["training"]["development_every"], 2**63 - 1)
+            import train_continuous_w1ax as training_api
+
+            _, effective = training_api.load_config(
+                args.output / "configs/eagle_a8-continuous.json"
+            )
+            self.assertEqual(effective.development_every, 2**63 - 1)
+            self.assertEqual(effective.development_lifecycle, "standalone")
+            self.assertEqual(effective.max_seconds, 86400)
+            self.assertIsNone(effective.max_steps)
+            self.assertIsNone(effective.max_tokens)
+            self.assertIsNone(effective.max_epochs)
             budget = json.loads((args.output / "budget.json").read_text())
             self.assertFalse(budget["human_selected"])
             self.assertEqual(
@@ -299,6 +311,30 @@ class PacketTests(unittest.TestCase):
             self.assertEqual(
                 plan["source"]["artifact:preparation_provenance:generation_link"], preparation
             )
+
+    def test_final_only_development_crosses_old_1000_boundary_and_preserves_final_request(self):
+        from dataclasses import replace
+
+        from test_continuous_qat import config, make
+
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            cfg = replace(
+                config(max_steps=1001, activation_bits=(8,), development_lifecycle="standalone"),
+                development_every=packet.FINAL_ONLY_DEVELOPMENT_EVERY,
+                checkpoint_every=packet.FINAL_ONLY_DEVELOPMENT_EVERY,
+            )
+            # A tiny CPU control-path fixture crosses the old boundary with two
+            # real updates; the production packet retains its time-only cap.
+            trainer = make(root, cfg)
+            trainer.step = 999
+            trainer.run(require_smoke=False)
+            self.assertEqual(trainer.step, 1001)
+            request = json.loads((root / "development-request.json").read_text())
+            self.assertTrue(request["final_training_complete"])
+            self.assertEqual(request["checkpoint"]["step"], 1001)
+            status = json.loads((root / "status.json").read_text())
+            self.assertTrue(status["final_training_complete"])
 
 
 if __name__ == "__main__":
