@@ -2,7 +2,9 @@
 
 Native tap IDs refer to layer *inputs*, not author hidden-state output IDs.
 Artifacts are uncompressed NPY arrays outside Git; full-vocabulary logits are
-memory mapped and only one block's rows are copied. This module never captures
+memory mapped and only one block's rows are copied. Optional logits_indices bind
+stored rows to absolute native positions; dense chain storage remains the default.
+This module never captures
 teachers, promotes held-out data, or substitutes top-k teachers.
 """
 
@@ -23,6 +25,36 @@ DOMAINS = ("prose", "code", "reasoning")
 SPLITS = ("train", "calibration_fit", "calibration_validation")
 REPLAY_PREFIX_CONTRACT = "teacher_forced_exact_caller_token_ids"
 GENERATED_PREFIX_CONTRACT = "native_tokenized_prompt_then_target_only_greedy"
+
+
+BLOCK_LOGITS_SELECTION = {"kind": "block_anchors", "stride": 7, "horizon": 7}
+
+
+def block_teacher_indices(anchors):
+    """Sorted absolute union of ALL seven potentially eligible rows per anchor."""
+    return sorted({row for anchor in anchors for row in range(anchor, anchor + 7)})
+
+
+def generated_block_anchors(prompt_length, token_count):
+    """The existing complete-horizon policy, including its final boundary."""
+    if (
+        type(prompt_length) is not int
+        or type(token_count) is not int
+        or not 1 <= prompt_length <= token_count
+    ):
+        raise ValueError("invalid exact prompt/token boundary")
+    return list(range(prompt_length - 1, token_count - 7, 7))
+
+
+def validate_logits_indices(indices, token_count, *, expected=None):
+    if (
+        not isinstance(indices, list)
+        or any(type(row) is not int or not 0 <= row < token_count for row in indices)
+        or indices != sorted(set(indices))
+        or (expected is not None and indices != expected)
+    ):
+        raise ValueError("indexed teacher logit positions must match sorted unique exact row map")
+    return indices
 
 
 def file_sha256(path: Path) -> str:
@@ -237,13 +269,31 @@ def validate_native_receipt(native, chain, tokens, producer, vocab_size, target_
     ):
         raise ValueError("native replay prefix contract differs")
     validate_decode_history(native.get("decode_history"), len(tokens))
+    indices = chain.get("logits_indices")
+    if indices is not None:
+        validate_logits_indices(
+            indices, len(tokens), expected=block_teacher_indices(chain["anchors"])
+        )
+        validate_logits_indices(native.get("logits_indices"), len(tokens), expected=indices)
+        if native.get("logits_mode") != "indexed":
+            raise ValueError("indexed teacher row map differs from exact native source")
+        if native.get("logits_selection") is not None and (
+            native.get("logits_selection") != BLOCK_LOGITS_SELECTION
+            or indices
+            != block_teacher_indices(generated_block_anchors(chain["prompt_length"], len(tokens)))
+        ):
+            raise ValueError("indexed generated selection differs from exact anchors")
     files = native.get("files", {})
     for name in ("features", "logits"):
         array = chain[name]
         if array is None:
             continue  # hard CE may deliberately omit an otherwise retained logit file
         record = files.get(name, {})
-        shape = [len(tokens), 5, target_width] if name == "features" else [len(tokens), vocab_size]
+        shape = (
+            [len(tokens), 5, target_width]
+            if name == "features"
+            else [len(indices) if indices is not None else len(tokens), vocab_size]
+        )
         if (
             record.get("sha256") != array["sha256"]
             or record.get("shape") != shape
@@ -251,7 +301,8 @@ def validate_native_receipt(native, chain, tokens, producer, vocab_size, target_
         ):
             raise ValueError("native producer feature/full-vocabulary logit artifact differs")
         if name == "logits" and (
-            native.get("logits_mode") != "all" or native.get("logits_shape") != shape
+            native.get("logits_mode") != ("indexed" if indices is not None else "all")
+            or native.get("logits_shape") != shape
         ):
             raise ValueError("last-only teacher cannot supply a whole chain soft objective")
 
@@ -381,6 +432,8 @@ def import_capture_plan(
             if total_bytes > max_capture_bytes:
                 raise MemoryError("native retained capture bytes exceed import bound")
             chain[name] = record | {"path": str(path)}
+        if source["include_logits"] and native.get("logits_mode") == "indexed":
+            chain["logits_indices"] = native.get("logits_indices")
         chain["native_receipt"] = {"path": str(native_path), "sha256": file_sha256(native_path)}
         validate_native_receipt(
             native, chain, tokens, producer, plan["vocab_size"], plan["target_width"]
@@ -401,6 +454,8 @@ def import_capture_plan(
             "prompt_length": chain["prompt_length"],
             "native_receipt_sha256": chain["native_receipt"]["sha256"],
         }
+        if "logits_indices" in chain:
+            receipt_chains[cid]["logits_indices"] = chain["logits_indices"]
     receipt = {
         "schema": "block_target_capture_receipt_v1",
         "producer": producer,
@@ -634,7 +689,7 @@ class BlockDataset:
                 "native_receipt",
             }
             if (
-                set(chain) != keys
+                set(chain) not in (keys, keys | {"logits_indices"})
                 or not isinstance(chain["chain_id"], str)
                 or not chain["chain_id"]
             ):
@@ -674,7 +729,15 @@ class BlockDataset:
                 raise ValueError("target tokens outside full vocabulary")
             if features.shape != (len(tokens), 5, self.target_width):
                 raise ValueError("five-tap feature shape differs from captured token sequence")
-            if logits is not None and logits.shape != (len(tokens), self.vocab_size):
+            indices = chain.get("logits_indices")
+            if "logits_indices" in chain:
+                if logits is None or indices is None:
+                    raise ValueError("indexed teacher requires an explicit row map and logits")
+                validate_logits_indices(indices, len(tokens))
+            if logits is not None and logits.shape != (
+                len(indices) if indices is not None else len(tokens),
+                self.vocab_size,
+            ):
                 raise ValueError("exact full-vocabulary teacher logits required")
             if not 1 <= _positive(chain["prompt_length"], "prompt_length") < len(tokens):
                 raise ValueError("prompt boundary outside captured chain")
@@ -688,6 +751,16 @@ class BlockDataset:
                 or anchors[-1] + 7 >= len(tokens)
             ):
                 raise ValueError("chronological anchors lack complete teacher horizon")
+            if indices is not None:
+                validate_logits_indices(
+                    indices, len(tokens), expected=block_teacher_indices(anchors)
+                )
+            if indices is not None:
+                validate_logits_indices(
+                    receipt.get("chains", {}).get(cid, {}).get("logits_indices"),
+                    len(tokens),
+                    expected=indices,
+                )
             if receipt.get("chains", {}).get(cid) != {
                 "tokens_sha256": chain["tokens"]["sha256"],
                 "features_sha256": chain["features"]["sha256"],
@@ -698,7 +771,7 @@ class BlockDataset:
                 "native_receipt_sha256": None
                 if chain["native_receipt"] is None
                 else chain["native_receipt"]["sha256"],
-            }:
+            } | ({"logits_indices": indices} if indices is not None else {}):
                 raise ValueError("chain artifacts/prompt boundary differ from producer receipt")
             if producer["kind"] == "native_target_only":
                 if chain["native_receipt"] is None:
@@ -796,7 +869,14 @@ class BlockDataset:
             if 7 * self.vocab_size * 4 > self.max_teacher_bytes:
                 raise MemoryError("per-block full-vocabulary teacher exceeds declared bound")
             teacher = np.zeros((7, self.vocab_size), dtype=np.float32)
-            teacher[begin:] = logits[anchor : anchor + 7 - begin]
+            indices = chain.get("logits_indices")
+            if indices is None:
+                teacher[begin:] = logits[anchor : anchor + 7 - begin]
+            else:
+                # Admission proves complete coverage of absolute positions.
+                offsets = np.searchsorted(indices, np.arange(anchor, anchor + 7 - begin))
+                for slot, offset in enumerate(offsets, start=begin):
+                    teacher[slot] = logits[offset]
             if not np.isfinite(teacher).all():
                 raise ValueError("consumed full-vocabulary teacher nonfinite")
         prefix = tuple(int(t) for t in tokens[: anchor + 1])

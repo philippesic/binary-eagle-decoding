@@ -30,13 +30,17 @@ sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from w1a1_eagle.block_data import (  # noqa: E402
+    BLOCK_LOGITS_SELECTION,
     DOMAINS,
     GENERATED_PREFIX_CONTRACT,
     REPLAY_PREFIX_CONTRACT,
     SPLITS,
     TAPS,
+    block_teacher_indices,
     file_sha256,
+    generated_block_anchors,
     import_capture_plan,
+    validate_logits_indices,
     validate_native_generation,
 )
 
@@ -124,7 +128,7 @@ def prepare_plan(plan_path, expected_sha256, *, execution_profile="production_CU
     if cpu:
         fields |= {"execution_profile", "cpu_build"}
     if (
-        set(plan) != fields
+        set(plan) not in (fields, fields | {"teacher_logits_layout"})
         or plan["schema"] != "nine_model_train_capture_plan_v1"
         or (cpu and plan["execution_profile"] != "development_CPU")
     ):
@@ -133,6 +137,11 @@ def prepare_plan(plan_path, expected_sha256, *, execution_profile="production_CU
         raise ValueError("explicit raw_text or native_chat input mode required")
     if plan["objective"] not in ("hard_ce", "exact_soft"):
         raise ValueError("only hard_ce or bounded full-vocabulary exact_soft supported")
+    layout = plan.get("teacher_logits_layout", "dense")
+    if layout not in ("dense", "indexed") or (
+        layout == "indexed" and plan["objective"] != "exact_soft"
+    ):
+        raise ValueError("indexed teacher layout requires exact_soft objective")
     vocab = positive(plan["vocab_size"], "vocab_size")
     width = positive(plan["target_width"], "target_width")
     if type(plan["mask_token_id"]) is not int or not 0 <= plan["mask_token_id"] < vocab:
@@ -345,11 +354,33 @@ def prepare_plan(plan_path, expected_sha256, *, execution_profile="production_CU
     if any(min(c.values()) < 1 or len(set(c.values())) != 1 for c in counts.values()):
         raise ValueError("each TRAIN-derived role requires all three domains with balanced counts")
     # Hard CE omits block logits; every EAGLE portability golden retains final full logits.
-    block_row_bytes = 4 * (5 * width + (vocab if plan["objective"] == "exact_soft" else 0))
-    request_bytes = caps["max_tokens_per_chain"] * block_row_bytes
+    feature_bytes = caps["max_tokens_per_chain"] * 4 * 5 * width
+    retained_teacher_rows = (
+        (
+            len(block_teacher_indices(generated_block_anchors(1, 1 + generation["max_new_tokens"])))
+            if layout == "indexed"
+            else caps["max_tokens_per_chain"]
+        )
+        if plan["objective"] == "exact_soft"
+        else 0
+    )
+    # Native generated indexed writes candidate rows then truncates an incomplete horizon.
+    # Include that temporary peak in caps; retained rows use the exact existing anchors.
+    peak_teacher_rows = (
+        generation["max_new_tokens"] + 1 if layout == "indexed" else retained_teacher_rows
+    )
+    request_bytes = feature_bytes + peak_teacher_rows * vocab * 4
     golden_bytes = 4 * (caps["max_eagle_golden_tokens"] * 8 * width + 2 * vocab)
     # Metadata/headroom is explicit rather than omitted from the retention budget.
-    bound = len(records) * (request_bytes + 65536) + 3 * (golden_bytes + 65536) + source_bytes
+    # Seven persisted map copies: three native/client/external receipts and
+    # manifest/producer-receipt pairs for both block families. Absolute indices
+    # are below 32768; 16 bytes/entry covers every current JSON indentation.
+    index_map_metadata_bytes = 7 * (64 + 16 * retained_teacher_rows) if layout == "indexed" else 0
+    bound = (
+        len(records) * (request_bytes + 65536 + index_map_metadata_bytes)
+        + 3 * (golden_bytes + 65536)
+        + source_bytes
+    )
     largest_request = max(request_bytes, 4 * (caps["max_eagle_golden_tokens"] * 5 * width + vocab))
     if largest_request > caps["max_request_bytes"] or largest_request > caps["max_shard_bytes"]:
         raise MemoryError("declared request/shard storage bound cannot hold worst-case capture")
@@ -372,6 +403,16 @@ def prepare_plan(plan_path, expected_sha256, *, execution_profile="production_CU
             "max_new_tokens": generation["max_new_tokens"],
             "max_capture_bytes": bound,
             "max_block_request_bytes": request_bytes,
+            "teacher_logits_layout": layout,
+            "max_block_feature_bytes": feature_bytes,
+            "max_block_retained_teacher_rows": retained_teacher_rows,
+            "max_block_peak_teacher_rows": peak_teacher_rows,
+            "max_block_retained_teacher_bytes": retained_teacher_rows * vocab * 4,
+            "max_block_index_map_metadata_bytes": index_map_metadata_bytes,
+            "max_block_retained_bytes": feature_bytes + retained_teacher_rows * vocab * 4,
+            "max_selected_teacher_rows": len(records) * retained_teacher_rows,
+            "context_policy": "all_native_features_and_tokens_retained",
+            "storage_scope": "selected pinned plan only; no full corpus fit claim",
             "max_paired_golden_bytes": golden_bytes,
             "max_wall_seconds": caps["total_timeout_seconds"],
             "full_vocab_teacher": plan["objective"] == "exact_soft",
@@ -823,7 +864,9 @@ def run_capture(
                 max_prompt_tokens=caps["max_prompt_tokens"],
                 template_mode=plan["input_mode"],
                 tap_ids=TAPS,
-                logits_mode="all" if plan["objective"] == "exact_soft" else "none",
+                logits_mode=("indexed" if plan.get("teacher_logits_layout") == "indexed" else "all")
+                if plan["objective"] == "exact_soft"
+                else "none",
                 chain_ancestry=ancestry,
             )
             validate_generated(receipt, r, plan, device, execution_profile=execution_profile)
@@ -836,7 +879,7 @@ def run_capture(
                 raise MemoryError("actual native request/shard bytes exceed explicit bound")
             receipt_pin = write_json(output / "receipts" / f"{len(chains):06d}-block.json", receipt)
             tokens, length = receipt["tokens"], receipt["prompt_length"]
-            anchors = list(range(length - 1, len(tokens) - 7, 7))
+            anchors = generated_block_anchors(length, len(tokens))
             if not anchors:
                 raise ValueError("native generated chain has no complete seven-slot author horizon")
             chains.append(
@@ -1096,7 +1139,7 @@ def _validate_capture(
         raise ValueError("native receipt lacks exact target/prefix/taps/actual CUDA producer proof")
     mode = receipt.get("logits_mode")
     wanted = {"features"} if mode == "none" else {"features", "logits"}
-    if mode not in ("none", "last", "all") or set(receipt.get("files", {})) != wanted:
+    if mode not in ("none", "last", "all", "indexed") or set(receipt.get("files", {})) != wanted:
         raise ValueError("native feature/full-vocabulary file inventory differs")
     if receipt.get("features_shape", [])[:2] != [len(tokens), len(taps)]:
         raise ValueError("native replay feature shape differs from exact prefix")
@@ -1147,11 +1190,26 @@ def validate_generated(receipt, record, plan, device, *, execution_profile="prod
         tokenizer_metadata_sha256=plan["native"]["tokenizer_metadata_sha256"],
         chat_template_sha256=plan["native"]["chat_template_sha256"],
     )
-    mode = "all" if plan["objective"] == "exact_soft" else "none"
+    mode = (
+        ("indexed" if plan.get("teacher_logits_layout") == "indexed" else "all")
+        if plan["objective"] == "exact_soft"
+        else "none"
+    )
+    if mode == "indexed":
+        expected = block_teacher_indices(
+            generated_block_anchors(receipt["prompt_length"], len(tokens))
+        )
+        validate_logits_indices(receipt.get("logits_indices"), len(tokens), expected=expected)
+        if receipt.get("logits_selection") != BLOCK_LOGITS_SELECTION:
+            raise ValueError("generated indexed logit selection differs from issued block policy")
     if (
         receipt.get("features_shape") != [len(tokens), 5, plan["target_width"]]
         or receipt.get("logits_mode") != mode
-        or receipt.get("logits_shape") != [len(tokens) if mode == "all" else 0, plan["vocab_size"]]
+        or receipt.get("logits_shape")
+        != [
+            len(tokens) if mode == "all" else len(expected) if mode == "indexed" else 0,
+            plan["vocab_size"],
+        ]
     ):
         raise ValueError("generated native feature/full-vocabulary shape differs")
     # Native helper must bind its actual tokenizer, model template and generation history.
