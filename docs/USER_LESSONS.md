@@ -649,3 +649,20 @@ additional proof protocols or redoing completed audit work.
   and mandatory greedy parity bind diagnostic precision proof to clean runs.
 - Lesson: inspect every logging category enabled by a numeric threshold before
   calling a timing pass uninstrumented; preserve explicit proof scope.
+
+### 2026-10-05: Distinguish training budget start from supervisor launch
+
+- Context: human asked when pure A8QAT began. The goal described its24h trainer
+  allocation as "from launch", creating a potential clock ambiguity.
+- Evidence: original supervisor launched03:09:41PDT; actual budget/optimization
+  loop began03:13:14.856PDT. At13:05, its live budget measured9h51m58s. Frozen
+  source excludes startup/preflight and includes normal loop/checkpoint overhead.
+- Status/contribution: confirmed agent wording and observation-check mistakes,
+  no user error or experiment failure. Root's first read-only query also compared
+  a serialized process-birth string with an integer, causing a false assertion.
+  Source-schema inspection and normalized live /proc comparison corrected it;
+  no job restart, source/config change or extra charge followed.
+- Lesson: answer duration questions from the actual budget ledger and name the
+  clock domain. Keep supervisor start separate, preserve serialized identity
+  types when joining /proc evidence, and re-observe a failed query before making
+  any claim about trainer failure. Initial goal wording is corrected in place.

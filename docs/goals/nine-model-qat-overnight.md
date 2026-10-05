@@ -42,8 +42,8 @@ calibrated EAGLE A8 if original continuous provider/calibration are eligible;
 otherwise first production-ready block A8. Queue direct A1 next. Serialize GPU
 trainers; do not interrupt a healthy lane simply to sample all six overnight.
 
-First lane receives86,400 cumulative trainer-accounted seconds (24 hours from
-launch), no smaller step/token/epoch stop. This is an operational allocation
+First lane receives86,400 cumulative trainer-accounted seconds (24 hours of
+training-loop time), no smaller step/token/epoch stop. This is an operational allocation
 under delegated authority, not an exact number specified by human, and not
 a convergence guarantee. Retain failed/recovery charges; do not reset accounting
 or mutate a live source/config binding. Review any extension before cap; no
@@ -1670,3 +1670,31 @@ allocation unchanged/about14.33trainerhours remain/no wall ETA. Next around13:23
 Current calibrated acceptance remains PENDING; historical values from human
 check-in are separate. A1 queues after natural trainer AND endpoint release;
 remaining model/device/controls/held-out gates and09:25human inputs stay pending.
+
+## Exact pure-QAT clock; human check-in — October 5, 13:05 PDT
+
+Human asked how long pureA8QAT has run and when it started. Read actual original
+`lane/training/budget-used.json` and frozen30a budget source: ContinuousTrainer
+begins budget after startup/smoke/readiness, directly before optimization loop;
+normal checkpoint/loop overhead is counted, standalone evaluation/startup excluded.
+The current active attempt began Unix1791195194.855674 =October5,10:13:14.855674UTC
+=03:13:14.855674PDT. Supervisor launched10:09:41.779677UTC (03:09:41.779677PDT),
+which is not the pure-QAT start. Corrected initial durable wording from "24hours
+from launch" to24hours of trainer-accounted loop time; allocation stays86,400.
+
+At20:05:13.243451UTC (13:05PDT), live budget elapsed35,518.3878seconds =9h51m58s;
+status snapshot35,518.2753seconds/236,737updates, running. Prior charged training
+seconds0.0, reserved86,400; original trainer55398/birth12966638 and boot unchanged.
+Read-only timing query initially compared the ledger's birth string with an int,
+causing a caller-only assertion. Declared source schema confirmed string;
+normalized comparison plus fresh /proc check PASS. Raw query failure retained;
+no trainer repair/restart/change or budget charge was inferred from observation.
+
+Ignored exact timing proof
+`results/nine-model-qat-overnight/pure-qat-clock-20261005-1305.json`, SHA
+60d08afbd9d154b4aff07e2e8b2ddd44215bf4374774f80657d7df1dad4119f6;
+adjacent raw failed/corrected queries retained. This narrow clock observation
+does not replace the12:53full resource/identity/source health receipt. Timing
+helper's20:23:34UTC deadline remains unchanged. Human received exact start and
+about9h52elapsed answer. Full Goal ACTIVE; healthy original allocation/endpoint/
+source/config/lifecycle preserved; remaining candidate/evaluation gates pending.

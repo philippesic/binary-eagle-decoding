@@ -201,6 +201,12 @@ Exact five handles/supervisors/clean30a-cc9 source/plan unchanged; resources and
 checkpoint freshness pass. Healthy trainer/passive watcher continue; no repair/
 new job. Full Goal ACTIVE; current native acceptance pending; next around13:23PDT.
 
+**13:05 PDT exact QAT clock:** actual training budget began October5,03:13:14.856
+PDT (10:13:14.856UTC), after supervisor/preflight launch03:09:41.780PDT.
+Live original trainer55398 at236737updates has35518.39trainerseconds (9h51m58s),
+zero prior charged attempts. Startup/preflight excluded; checkpoint overhead
+counted. Healthy training and13:23scheduled check remain unchanged; full GoalACTIVE.
+
 **07:50 PDT exclusive transfer:** fresh successor chat owns the same unfinished
 goal after explicit local registration transfer and SAME heartbeat retarget.
 Predecessor makes no remote calls after dispatch; healthy trainer/watcher are
