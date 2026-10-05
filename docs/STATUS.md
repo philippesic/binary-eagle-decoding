@@ -19,10 +19,10 @@ is prioritized with delegated24h cumulativetrainerallocation and frequent
 checkpoints; remaining candidates queue without premature readiness claims.
 30-minute heartbeat `nine-model-overnight-qat-monitor` is ACTIVE in the successor chat.
 **QAT is actively running onRTX5080/SM120**: calibrated fixed EAGLE W1A8,
-207681updates with committed207500 checkpoint; all required fresh admission/source/
+219828updates with committed219750 checkpoint; all required fresh admission/source/
 device gates PASS. Finite18selected gradients, actual sign/scale movement and
-cache/batchedhead execution;8.16GBGPUfree/18.08GBhostavailable. ActualTRAIN
-coverage2543prompts/988326rows at31143.66trainerseconds; no quality/win claim.
+cache/batchedhead execution;8.16GBGPUfree/18.07GBhostavailable. ActualTRAIN
+coverage2689prompts/1046108rows at32978.63trainerseconds; no quality/win claim.
 
 Run eagle-a8-qat-overnight-20261005-04; supervisor55097/controller55098/trainer
 55398. Root is sole remote operator.24h cumulative allocation/no smaller cap,
@@ -179,6 +179,14 @@ no repair/new job. Full Goal ACTIVE; pending inputs unchanged; next around11:52P
 Five exact identities/supervisors/clean30a-cc9 source/endpoint plan unchanged;
 resources and checkpoint freshness pass. Healthy trainer/passive watcher continue,
 no repair/new job. Full Goal ACTIVE; pending inputs unchanged; next around12:22PDT.
+
+**12:22 PDT million-row TRAIN milestone:**219828updates/checkpoint219750,
+32978.63trainerseconds,2689TRAINprompts/1046108distinct supervised rows.
+Scheduled health PASS; five exact handles/supervisors/clean30a-cc9 source/plan
+unchanged,18finitegradients/finite loss, resources/checkpoint freshness pass.
+Bounded Luna timing assistant manages local waits only; root remains sole remote
+operator and SAME monitor unchanged. Healthy trainer/passive watcher continue;
+full Goal ACTIVE, quality/evaluation pending. Next check around12:53PDT.
 
 **07:50 PDT exclusive transfer:** fresh successor chat owns the same unfinished
 goal after explicit local registration transfer and SAME heartbeat retarget.
