@@ -1148,21 +1148,24 @@ human chooses those inputs and reopens the host; no further source integration
 or redundant permission is intended at that boundary.
 
 
-## Delegated RTX5080 overnight execution — October4,23:41PDT
+## Delegated RTX5080 overnight execution — October 4, 23:41 PDT
 
-Human explicitly reopened5080, authorized relevantQAT afterpreflight and
-requested30-minute monitoring/repair withhealthyQATcontinuingthroughmorning.
-This replaces preparation-only/Mac-only limits. Coordinator records operational
-choices under this delegation: calibratedfixedA8/directA1, blockffn15_fusion,
-probesOFF/reference/private precision retained; firstproductionadmittedA8lane
-preferredEAGLE, thenremaininglanes, serializedGPU. Firstlane24h cumulative
-trainerallocation86400seconds, no smaller exposurestop, checkpoint250updates
-initially withactualintervalcheck. Numbers are agent-selectedoperationalsettings,
-not directhumanexact numericchoices or evidenceofwinningrecipe. Fullobjective
-remains6candidates+3originalQ4; budgetmetadata must preserveauthorizationprovenance.
+Human explicitly reopened RTX5080, authorized relevant QAT after preflight,
+and requested 30-minute monitoring/repair with healthy QAT continuing through
+morning. This replaces the preparation-only and Mac-only limits.
 
-Stagedlaneadmission preserves allseven source/resource/kernel/model/backward/
-memory/portability gates; unavailablelaterfamilies remainPENDING. Finalquality
-results/trainedexports do not gatefirstlaunch. Seriouseligibledata/calibration
-andfreshhardwareproof remaintrue prerequisites; oldlocalEAGLEdiagnostic and
-blocknine-chainpilot do not becomeproductionready by goahead. Seeactivegoal.
+Coordinator selects operational defaults under this delegation: calibrated
+fixed A8 / direct A1, block `ffn15_fusion`, experimental probes off, reference
+magnitudes and private precision retained. Prefer the first production-admitted
+EAGLE A8 lane, then remaining lanes, with serialized GPU use. First lane gets
+24 cumulative trainer hours (86,400 seconds) without a smaller exposure stop.
+Checkpoint every 250 updates initially and verify the actual interval. These
+are agent-selected settings, not exact numeric choices stated by the human or
+evidence of a winning recipe. Budget metadata must preserve that provenance.
+
+Staged lane admission preserves all seven source/resource/kernel/model/
+backward/memory/portability gates. Unavailable later families stay PENDING;
+final quality results and trained exports do not gate first launch. Serious
+eligible data/calibration and fresh hardware proof remain prerequisites. The
+old local EAGLE diagnostic and block nine-chain pilot do not become production
+ready by authorization alone. See the [active goal](goals/nine-model-qat-overnight.md).
