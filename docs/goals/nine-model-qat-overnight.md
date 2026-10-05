@@ -746,3 +746,41 @@ acknowledgment. No worker, source, budget, model or GPU lifecycle changes.
 Existing sole transport and both detached healthy jobs transfer intact.
 Predecessor stops after bounded acknowledgment verification; no duplicate
 ownership, monitor or operator remains authorized.
+
+## Successor ownership acknowledged — October 5, 05:23 PDT
+
+Successor `01a10c02-29f2-7d80-9c4f-fbf746343ff6` has read AGENTS, STATUS,
+this rotation checkpoint and AGENT_OPERATIONS. Machine-local registration says
+`authorized_successor_exclusive` with predecessor remote authority false and no
+live workers transferred. SAME heartbeat `nine-model-overnight-qat-monitor` is
+ACTIVE and targets this exact successor. Its native Goal is ACTIVE with the
+unchanged six EAGLE/DSpark/DFlash A8/A1 candidates, three original Q4 controls,
+exact original TRAIN ancestry, F16 target/verifier/KV and held-out evaluation.
+No new monitor or GPU operator was created.
+
+Read-only remote checks through the transferred sole MCP $258/@287/%289 confirm
+boot `517c4a36-e475-4a5f-9fa6-65de57edc6fe` and all five nonzombie process birthticks
+listed in the prior checkpoint. Primary supervisor55097/controller55098/trainer
+55398 and watcher56606/56611 remain live. Both supervisor states are running
+with no received signal. Actual training checkout remains30a8dc7/nativecc9cab3;
+endpoint plan rehash matches9f989383232d2e257d04d5bcaab08113f5c0333b368581d770d6a75a9e34a7cb.
+Passive watcher is waiting_for_natural_endpoint, gpu_queried=false,
+training_changed=false. No process, source, data, config, lease or budget changed.
+
+At approximately12:22UTC, actual QAT advanced to52,202 updates/7,762.013 cumulative
+trainer seconds,645 unique TRAIN prompts/249,114 supervised rows. Committed
+checkpoint52,000 SHA `4f08300d75fae1e4b45e08dbea8ddce26449b49139b2b76f8abcd60b4f458d40`
+is manifest-declared, not newly byte-rehashed. Prior snapshot51,999 showed18 finite
+gradient tensors/loss4.753882, GPUfree8,161,067,008B, hostavailable17,087,463,424B,
+diskfree196,553,015,296B; latest heartbeat age0.037s. Healthy QAT continues through
+its unchanged86,400 trainer-second natural allocation into morning. No quality
+or throughput result has executed or is claimed.
+
+Next: exact original generation AND replay producer/file validation for truthful
+A1 metadata adoption, while retaining actor/export/fresh SM120 admission PENDING
+until natural owned GPU release. Prepare block coverage/storage/objective/retention
+options without selecting the human's scientific exposure or replacing absent
+authentic block Q4 controls. Approximately30-minute healthchecks and max two
+exact-state repairs per incident remain authorized. RTX2080Ti stays out of scope.
+Predecessor may retire after this published acknowledgment; only successor owns
+remote operation and durable goal updates.

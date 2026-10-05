@@ -13,16 +13,16 @@ native Goal carrying the full unfinished nine-model objective. RTX2080Ti
 remains outside this team's scope.
 
 [Active overnight goal](goals/nine-model-qat-overnight.md) records sole owner
-`01a10c02-29f2-7d80-9c4f-fbf746343ff6`, successor as sole GPU operator, production
-packet feature owner and independent QA. First ready calibratedfixedA8 lane
+`01a10c02-29f2-7d80-9c4f-fbf746343ff6`, successor as sole GPU operator.
+All transferred bounded workers are complete. First ready calibratedfixedA8 lane
 is prioritized with delegated24h cumulativetrainerallocation and frequent
 checkpoints; remaining candidates queue without premature readiness claims.
 30-minute heartbeat `nine-model-overnight-qat-monitor` is ACTIVE in this chat.
 **QAT is actively running onRTX5080/SM120**: calibrated fixed EAGLE W1A8,
-48909updates with committed48750 checkpoint; all required fresh admission/source/
+52202updates with committed52000 checkpoint; all required fresh admission/source/
 device gates PASS. Finite18selected gradients, actual sign/scale movement and
 cache/batchedhead execution;8.16GBGPUfree/17.10GBhostavailable. ActualTRAIN
-coverage604prompts/233341rows at7269.95trainerseconds; no quality/win claim.
+coverage645prompts/249114rows at7762.01trainerseconds; no quality/win claim.
 
 Run eagle-a8-qat-overnight-20261005-04; supervisor55097/controller55098/trainer
 55398. Root is sole remote operator.24h cumulative allocation/no smaller cap,
@@ -45,6 +45,13 @@ actual remaining-five CUDA admissions and scientific block exposure selection
 stay pending. See the latest rotation checkpoint in the active goal for exact
 live jobs, source/test commits, A1 historical-producer reuse and next actions.
 Healthy QAT and the passive endpoint continue during coordinator rotation.
+
+**05:23 PDT successor ownership acknowledged:** exact local owner/operator and
+SAME ACTIVE heartbeat target verified. Successor native Goal is ACTIVE with the
+unchanged six-candidate/three-original-Q4 objective. All five boot/birth identities,
+both running supervisors, frozen30a/cc9 training source and endpoint plan verified
+read-only; healthy training continues. Predecessor remote authority is revoked.
+See the [ownership acknowledgment](goals/nine-model-qat-overnight.md#successor-ownership-acknowledged--october-5-0523-pdt).
 
 ## Historical preparation checkpoint — October 4, 2026
 
