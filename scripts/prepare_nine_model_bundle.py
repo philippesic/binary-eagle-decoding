@@ -28,7 +28,16 @@ from w1a1_eagle.nine_model_pipeline import (  # noqa: E402
     validate_bundle,
 )
 
-PORTABLE = ("source", "data", "ownership", "hard_forward", "resume", "export", "lifecycle")
+PORTABLE = (
+    "source",
+    "data",
+    "calibration_initialization",
+    "ownership",
+    "hard_forward",
+    "resume",
+    "initial_export",
+    "lifecycle",
+)
 CRITICAL_SOURCE = (
     "src/w1a1_eagle/nine_model_pipeline.py",
     "src/w1a1_eagle/block_qat.py",
@@ -54,18 +63,23 @@ def ledger_pending(ledger):
     require(ledger.get("schema") == "nine_model_qa_ledger_v1", "independent QA schema differs")
     for profile in CELLS:
         record = ledger.get("profiles", {}).get(profile, {})
-        if record.get("status") != "PASS":
-            pending.append(profile + ": profile production dependencies PENDING")
+        if record.get("prelaunch_status") != "PASS":
+            pending.append(profile + ": prelaunch production dependencies PENDING")
         if profile.endswith("q4"):
-            required = ("source", "export")
+            required = ("source", "initial_export")
         else:
             required = PORTABLE
         for name in required:
-            requirement = record.get("requirements", {}).get(name, {})
+            requirement = record.get("prelaunch_requirements", {}).get(name, {})
             if requirement.get("status") != "PASS":
                 pending.append(profile + ": " + name + " PENDING")
                 continue
-            if name in {"data", "hard_forward", "export"} and not any(
+            if name in {
+                "data",
+                "calibration_initialization",
+                "hard_forward",
+                "initial_export",
+            } and not any(
                 e.get("scope") not in {None, "cpu_synthetic"}
                 for e in requirement.get("evidence", [])
             ):

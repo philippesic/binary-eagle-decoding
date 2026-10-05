@@ -14,7 +14,7 @@ and `sha256`. Required fields are:
 | `inputs` | Immutable target, native binary and runtime libraries, protocol, prompt locator, and actual SM120 admission plan |
 | `controls` | `eagle`, `dspark`, `dflash`: original Q4 model locator, `frozen_original: true`, explicit deployment coverage/exceptions |
 | `candidates` | Six `<family>_a8/a1` records: actual training config, base model, initial calibrated GGUF and serialization audit, fusion calibration, completed data admission, profile, deployment coverage, actual loader/CUDA marker contract |
-| `qa_ledger` | Independent `nine_model_qa_ledger_v1` locator; all portable requirements PASS with production evidence, current critical `source_files` hashes; fresh SM120 remains separately PENDING |
+| `qa_ledger` | Independent `nine_model_qa_ledger_v1` locator; explicit `prelaunch_status`/`prelaunch_requirements` PASS with production evidence and current `source_files` hashes; aggregate training/quality outcomes and fresh SM120 remain separately PENDING |
 | `budget` | `nine_model_selected_budget_v1` locator with `human_selected: true`, six explicit training limits and train/export wall caps, admission/evaluation wall caps |
 | `resource_policy` | Host/GPU free floors and return tolerances, all expressed in bytes |
 | `gpu_uuid`, `gpu_control_path` | Actual selected device identity and shared machine-local pause registry path |
@@ -28,6 +28,13 @@ python3 scripts/prepare_nine_model_bundle.py --inputs selected-configs/resolved-
 python3 scripts/prepare_nine_model_bundle.py --inputs selected-configs/sm120-plan.json-inputs/resolved-inputs.json --inspect-draft
 python3 scripts/prepare_nine_model_bundle.py --inputs selected-configs/sm120-plan.json-inputs/resolved-inputs.json --output frozen-bundle.json
 ```
+
+Prelaunch QA gates source, actual data, calibrated initialization, parameter
+ownership, hard forward, exact resume, initial deployment export and lifecycle
+contracts. Trained checkpoints, final post-QAT exports and measured quality are
+later campaign outcomes; they cannot be prerequisites for the first launch.
+An absent prelaunch status remains PENDING even if an aggregate status says
+PASS. Fresh SM120 execution is performed by the frozen runtime gate.
 
 The production builder calls the actual training config parser and completed
 block-data admission API. It requires materialized model/data/calibration

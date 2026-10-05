@@ -46,8 +46,9 @@ class BuilderTests(unittest.TestCase):
         ledger = {"schema": "nine_model_qa_ledger_v1", "profiles": {}}
         for cell in CELLS:
             ledger["profiles"][cell] = {
-                "status": "PASS",
-                "requirements": {
+                "status": "PENDING",
+                "prelaunch_status": "PASS",
+                "prelaunch_requirements": {
                     name: {"status": "PASS", "evidence": [{"scope": "cpu_synthetic"}]}
                     for name in builder.PORTABLE
                 },
@@ -55,7 +56,7 @@ class BuilderTests(unittest.TestCase):
         pending = builder.ledger_pending(ledger)
         self.assertIn("dspark_a8: data has only synthetic/unscoped evidence", pending)
         self.assertIn("eagle_a1: hard_forward has only synthetic/unscoped evidence", pending)
-        self.assertIn("dflash_q4: export has only synthetic/unscoped evidence", pending)
+        self.assertIn("dflash_q4: initial_export has only synthetic/unscoped evidence", pending)
 
     def test_fresh_sm120_pending_stays_separate_from_portable_ledger(self):
         ledger = {
@@ -63,8 +64,11 @@ class BuilderTests(unittest.TestCase):
             "fresh_sm120": {"status": "PENDING"},
             "profiles": {
                 cell: {
-                    "status": "PASS",
-                    "requirements": {
+                    "status": "PENDING",
+                    "training": "PENDING",
+                    "quality_evaluation": "PENDING",
+                    "prelaunch_status": "PASS",
+                    "prelaunch_requirements": {
                         name: {"status": "PASS", "evidence": [{"scope": "native_real_model_sm75"}]}
                         for name in builder.PORTABLE
                     },
@@ -73,6 +77,53 @@ class BuilderTests(unittest.TestCase):
             },
         }
         self.assertEqual(builder.ledger_pending(ledger), [])
+
+    def test_aggregate_pass_cannot_replace_explicit_prelaunch_contract(self):
+        ledger = {
+            "schema": "nine_model_qa_ledger_v1",
+            "profiles": {
+                cell: {
+                    "status": "PASS",
+                    "requirements": {
+                        name: {
+                            "status": "PASS",
+                            "evidence": [{"scope": "actual_native_initializer"}],
+                        }
+                        for name in builder.PORTABLE
+                    },
+                }
+                for cell in CELLS
+            },
+        }
+        pending = builder.ledger_pending(ledger)
+        self.assertIn("eagle_a8: prelaunch production dependencies PENDING", pending)
+        self.assertIn("eagle_a8: initial_export PENDING", pending)
+
+    def test_missing_data_or_calibration_still_refuses_prelaunch_pass(self):
+        ledger = {
+            "schema": "nine_model_qa_ledger_v1",
+            "profiles": {
+                cell: {
+                    "status": "PENDING",
+                    "prelaunch_status": "PASS",
+                    "prelaunch_requirements": {
+                        name: {
+                            "status": "PASS",
+                            "evidence": [{"scope": "actual_native_initializer"}],
+                        }
+                        for name in builder.PORTABLE
+                    },
+                }
+                for cell in CELLS
+            },
+        }
+        ledger["profiles"]["dspark_a8"]["prelaunch_requirements"]["data"]["status"] = "PENDING"
+        ledger["profiles"]["eagle_a1"]["prelaunch_requirements"]["calibration_initialization"][
+            "status"
+        ] = "PENDING"
+        pending = builder.ledger_pending(ledger)
+        self.assertIn("dspark_a8: data PENDING", pending)
+        self.assertIn("eagle_a1: calibration_initialization PENDING", pending)
 
     def test_all_declared_source_files_must_match_not_only_minimum_list(self):
         path = "src/w1a1_eagle/nine_model_report.py"

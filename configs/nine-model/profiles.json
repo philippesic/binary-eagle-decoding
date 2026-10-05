@@ -3,14 +3,112 @@
   "artifact_kind": "source_profile_declarations",
   "preparation_complete": false,
   "profiles": {
-    "fixed_reference": {"activation_bits": 8, "optimizer": "adamw", "activation_quantization": "fixed", "default": true},
-    "direct_a1": {"activation_bits": 1, "optimizer": "adamw", "activation_quantization": "fixed", "default": false},
-    "a8_to_a1_reset": {"activation_bits": [8, 1], "optimizer_transition": "explicit_reset", "source_cost_charged": true, "default": false}
+    "fixed_reference": {
+      "activation_bits": 8,
+      "optimizer": "adamw",
+      "activation_quantization": "fixed",
+      "default": true
+    },
+    "direct_a1": {
+      "activation_bits": 1,
+      "optimizer": "adamw",
+      "activation_quantization": "fixed",
+      "default": false
+    },
+    "a8_to_a1_reset": {
+      "activation_bits": [
+        8,
+        1
+      ],
+      "optimizer_transition": "explicit_reset",
+      "source_cost_charged": true,
+      "default": false
+    }
   },
   "coverage_requires_human_selection": true,
-  "block_coverage_options": ["ffn15", "ffn15_fusion"],
-  "normal_precision_exceptions": ["private_embedding", "private_full_vocabulary_head", "attention", "DSpark_Markov", "norms"],
-  "off_by_default_probes": ["learned_a1_threshold", "early_position_weighting", "fused_adamw", "grouped_attention", "own_prefix_refresh", "fusion_bias", "fusion_rank_one", "static_confidence"],
-  "excluded_initial_campaign": ["bop", "learned_q1_0", "a4_ladder", "ternary", "head_factorization", "broad_mixed_precision_search"],
-  "pending_dependencies": ["materialized_full_five_tap_block_train_data", "selected_recipe_budget_coverage", "actual_model_cpu_SM75_contract_evidence", "production_fresh_SM120_admission_producer", "frozen_source_and_artifact_bundle"]
+  "block_coverage_options": [
+    "ffn15",
+    "ffn15_fusion"
+  ],
+  "normal_precision_exceptions": [
+    "private_embedding",
+    "private_full_vocabulary_head",
+    "attention",
+    "DSpark_Markov",
+    "norms"
+  ],
+  "off_by_default_probes": [
+    "learned_a1_threshold",
+    "early_position_weighting",
+    "fused_adamw",
+    "own_prefix_refresh",
+    "fusion_bias",
+    "fusion_rank_one",
+    "static_confidence"
+  ],
+  "excluded_initial_campaign": [
+    "bop",
+    "learned_q1_0",
+    "a4_ladder",
+    "ternary",
+    "head_factorization",
+    "broad_mixed_precision_search"
+  ],
+  "pending_dependencies": [
+    "materialized_authenticated_five_tap_full_vocabulary_block_TRAIN_data_and_current_host_admissions",
+    "all_domain_selected_calibration_at_deployed_arithmetic",
+    "original_frozen_dspark_dflash_Q4_artifacts",
+    "human_selected_recipe_budget_coverage_and_final_precision_quotas",
+    "resolved_six_actual_training_configs_and_calibrated_initial_native_exports",
+    "bounded_original_TRAIN_SM120_portability_goldens_and_fresh_authorized_execution",
+    "actual_SM120_kernel_model_backward_full_moment_memory_and_process_context_release_evidence",
+    "separate_SM75_execution_track",
+    "frozen_source_and_artifact_bundle_with_current_independent_QA_ledger"
+  ],
+  "core_supported_features": {
+    "grouped_block_attention": {
+      "source_contract": "PASS",
+      "actual_model_cpu_zero_update": "PASS",
+      "families": [
+        "dspark",
+        "dflash"
+      ],
+      "cuda_memory_and_measured_speed": "PENDING",
+      "note": "Core GQA implementation; measured optimizer/attention benefit is separate from source support."
+    }
+  },
+  "evidence_status": {
+    "actual_model_cpu_ffn15_fusion": {
+      "status": "PASS",
+      "cells": [
+        "dspark_a8",
+        "dspark_a1",
+        "dflash_a8",
+        "dflash_a1"
+      ],
+      "hardware": "Apple M3 Max CPU, no CUDA/Metal",
+      "optimizer_updates": 0,
+      "data_scope": "synthetic inputs, actual released model values",
+      "native_artifacts": "models/nine-model-original-snapshots/actual-cpu-summary.json",
+      "training_artifacts": "results/nine-model-qat-preparation/actual-cpu-training/",
+      "excludes": [
+        "production TRAIN capture",
+        "calibrated or trained candidate quality",
+        "SM75/SM120 execution/memory/throughput"
+      ]
+    },
+    "fresh_sm120_admission_producer": {
+      "source": "PASS",
+      "actual_execution": "PENDING",
+      "reason": "Implemented actual CLI plan, paused GPU; no source integration missing"
+    },
+    "sm75": {
+      "status": "PENDING",
+      "scope": "Separate device track; CPU/SM120 evidence cannot certify SM75."
+    },
+    "frozen_block_q4_controls": {
+      "status": "PENDING",
+      "reason": "Original remote frozen DSpark/DFlash Q4 controls are missing locally; fresh BF16 bases and untrained W1 prototypes do not replace them."
+    }
+  }
 }
