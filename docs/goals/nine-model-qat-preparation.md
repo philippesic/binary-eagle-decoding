@@ -551,3 +551,55 @@ Root reviewed all source; no target has loaded yet. Data must run real plan-only
 inspection on publishedmain and report exact argv/cost/resource snapshot before
 root heavy-slot GO. Once approved, update progress/cleanup/artifact pins and fit
 bounded actual A8/A1 block FCs only after producer close. GPU pause stays in force.
+
+
+## Actual CPU capture failures and bounded continuation
+
+Main `4ced768`/native624 published; latest independent QA fcd216c integrated,
+49 source pins verified for source1a5406b, all nine aggregate/prelaunch statuses
+PENDING. Root42 capture/prelaunch fixtures PASS. Subsequent source correction
+is being developed in the data owner's isolated worktree; final packet pins
+must refresh after it lands. No GPU/SSH or real optimizer/quality work occurred.
+
+Attempt01 was root-authorized once, controllerPID/PGID96595, teacher96621,
+local exec72300. Authentic first prose TRAIN chain has53 rows (21 native prompt,
+32 greedy), five taps/full151936 logits/F16 target+KV/ngl0. It failed CPU hardware
+name validation: native hardware list is description-only ['Apple M3 Max'], while
+fixtures incorrectly assumed CPU prefix. Teacher closed/reapedexit0, controller
+exit1, no owned process remained. Elapsed13.776090708seconds, peak sampled
+parent+producerRSS8,561,328,128 bytes, minimum available20,510,392,320 bytes;
+35,416,387 retained bytes. Original FAIL report/raws are unchanged under
+`results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-01/`.
+
+Fixes c8ff0ac/1a5406b require exactly the queried CPU description, retain exact
+CPU project-library/registered-device/buffer/build proofs, and record passive
+transitive system Metal.framework from Apple's CPU framework stack separately.
+Root/Astra rejected a blanket system-library policy; no model GGML GPU backend
+is compiled/loaded/registered. Mac Linux mapping remains unchecked. Independent
+QA actual wrapper receipt/DYLD metadata audit8/8 PASS; firstFAIL not upgraded.
+Read-only supplemental runtime audit at attempt01/cpu-runtime-supplement.json
+records exact four libraries, source624 and passive framework scope.
+
+Retry02 was explicitly reviewed/root-GO, plan
+`3968920825056028baf4362f178d745e4d065afd41f8e57fd0a0a646918ba555`, CLI
+`23cfd07215848e0e0ec0bb1e51aa9044189bf912501972b53666bed3d9add371`, source1a5406b.
+Its wallcap1786 charged attempt01 within original1800s; all other9+6/memory/disk
+bounds unchanged. Local exec50742/controllerPID+PGID98616/teacher98663; adjacent
+available15,319,728,128 bytes exceeded12GiB pre-floor. Authentic first53-row chain
+then failed 'native replay prefix contract differs'. Elapsed32.369236750seconds;
+peakRSS8,562,802,688/minavailable15,072,706,560/retained35,416,605 bytes. Controller
+exit1, teacher closed/reapedexit0; no owned process remained. Preserve FAIL and
+receipt at attempt02/native/926e202070584eaa839b45f9e47d8b39/receipt.json.
+
+Concrete shared CPU/CUDA source bug: validate_generated invokes replay validator,
+which only accepts teacher_forced_exact_caller_token_ids; actual native-generated
+receipts use native_tokenized_prompt_then_target_only_greedy. block_data importer
+also only accepts replay. Synthetic generation fixtures used the wrong replay tag
+and hid the incompatibility. Data owns explicit generated-vs-replay validation,
+including actual prompt/tokenizer/template/greedy/decode-history/ancestry joins;
+no receipt relabel or blanket OR. QA is auditing preserved actual01/02 metadata
+through remaining importer boundaries before another actual model launch.
+Remaining original cumulative CPU capture budget≤1753seconds after46.145327458s
+charged execution; no automatic retry or fitting started. Source/tests/independent
+actual-receipt audit and root plan review are required before proposed03. Final
+QA/source/packet pinning deferred accordingly; both failures stay visible.

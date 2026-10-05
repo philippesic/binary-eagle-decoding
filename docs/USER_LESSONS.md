@@ -518,3 +518,23 @@ additional proof protocols or redoing completed audit work.
   and fresh device checks at launch; do not require post-training outcomes before
   the first training run. Known synthetic scope variants must not grant actual
   prelaunch evidence merely because their string differs from `cpu_synthetic`.
+
+
+## Bind fixtures to the actual producer protocol
+
+- Context: October4 Mac-only nine-model data preparation. Two bounded target-only
+  CPU attempts produced authentic53-row chains then failed receipt guards.
+- Evidence: native hardware is a device description, not a CPU-prefixed string;
+  generated capture has a different prefix contract from replay. Controller and
+  importer reused replay-only validation; synthetic generation fixtures used
+  replay tags and masked the mistake. Both failures remain unchanged and closed.
+- Agent contribution: authors and reviewers accepted internally consistent mocks
+  without auditing the native generator's actual metadata across the importer.
+  Root's completed-worker send_message also delayed a required native pin packet;
+  followup_task was needed to start that worker's bounded read-only turn.
+- Practical lesson: test generation and replay as distinct interfaces against an
+  actual source/receipt sample before repeating model loads. Check registered
+  device/buffer/build semantics, not incidental name prefixes. A passive Apple
+  system Metal dependency is distinct from a registered GGML model GPU backend.
+  Use followup_task for work assigned to an idle/completed agent. These are agent
+  coordination/implementation errors, not user mistakes.
