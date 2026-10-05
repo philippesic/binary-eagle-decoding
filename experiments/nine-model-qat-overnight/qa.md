@@ -497,3 +497,48 @@ explicitly limits it to coordinates, not native acceptance or throughput. This
 is calibration metadata only; it does not establish A1 export, CUDA admission,
 training readiness, or model quality. No remote call, GPU query, or test run was
 performed for this metadata review.
+
+## Additive original-Q4 endpoint automation source QA
+
+Reviewed the staged endpoint builder/runner without any remote, GPU, model, or
+live-trainer operation. The endpoint freezes an EAGLE-only candidate and exact
+original training lane/source/config, then accepts only its matching successful
+natural positive-budget receipt and source-bound exact checkpoint/export. It
+checks the actual trainer contract (`nine_model_stage_receipt_v1`, approved
+budget completion, counters/hardware, `continuous_joint_w1ax_v1`, integer
+epoch/cursor, optimizer/RNG/cursor exactness, and A8/A1 joint-export manifest).
+The original Q4_0 model/provenance and prior unsealed development prompt/corpus
+separation are pinned; no all-candidate or full-campaign completion is emitted.
+
+The passive wait path does not issue STOP, query GPU resources, or acquire the
+shared GPU lock while the original trainer remains live. After natural terminal
+completion it requires owned process/CUDA release, empty foreign CUDA/DXG
+censuses, matching current device/boot, resource return, unpaused control and an
+actually held shared lock. Export and evaluation each require a new short-lived
+stage continuation tied to the unchanged startup lease, standing authorization,
+terminal receipt/checkpoint, live parent identity and stage. It records no new
+human announcement. Clean paired timing uses log level 3 and excludes round,
+typed-kernel and sampled-memory instrumentation; a separate diagnostic pass at
+level 4 checks all-nine native loader/dispatch and round/memory telemetry.
+The matched report uses original Q4_0 as primary baseline, target-only verifier
+parity, and keeps `campaign_complete=false`.
+
+The endpoint-specific suite passed **9/9** on the reviewed source:
+
+```sh
+PYTHONPATH=src:scripts:tests \
+  /Users/pippo/github/binary-eagle-decoding/.venv/bin/python \
+  -m unittest test_nine_model_lane_endpoint -v
+```
+
+`ruff check`, `ruff format --check`, and `git diff --check` passed. Tested file
+SHA256 values: `prepare_nine_model_lane_endpoint.py`
+`653207ae79fca547398cf002a6924edc15531d2c1f8d5cf105a8e0f10e13c230`,
+`run_nine_model_lane_endpoint.py`
+`a5dede3fdbd088726fe8d2a9a8f5c418dc2ebcce1fe28111f35520e14c685e44`, and
+`test_nine_model_lane_endpoint.py`
+`1ed19d7290549ce1baa2840989e6b7a46099d299b5535634718bddd8deae77a3`. This is
+source/fixture QA only. Execution policy inputs remain subject to explicit
+selection and independent QA; actual Q4/development evaluation, fresh resource
+admission and all other campaign outcomes remain PENDING. The live EAGLE trainer
+was not touched.
