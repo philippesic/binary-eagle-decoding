@@ -283,11 +283,35 @@ untouched.
 ## Remaining pre-QAT gates
 
 This is a successful native compile/link preflight, not runtime admission.
-Still required are the source-bound runtime JSON packet with actual build and
-calibration pins, an authenticated candidate export from the sparse
-initializer, native target/drafter acceptance and memory checks, the selected
-Q4_0 comparator/control set for all requested model families, and an
-independent review of those admission artifacts. AngelSlim package preflight
+Runtime descriptor is now staged at
+`data/nine-model-overnight/eagle-fixed-a8-runtime-20261005.json`, SHA256
+`e48896b8b28245ee87d261c94d05eb7f0d213989a3aba9415686df14ff487d5c`. It pins
+base EAGLE F16 GGUF `models/gguf/Qwen3-4B-eagle3-f16.gguf`
+(`c1f895a130b64cd3d5a97fba7aa7605dc7fe3a389dd6d48e6751128614ee76d1`) and
+target F16 GGUF `models/gguf/Qwen3-4B-f16.gguf`
+(`05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a`), six
+build targets, and all ten project-built dynamic libraries. Its separate build
+provenance report is
+`runs/checkouts/nine-model-qat-overnight-5f53740/runs/native624-sm120-build-20261005-04/build-provenance.json`,
+SHA256 `1f08204494b2402b37fec88611761ccd359d12436108566743af2bdbb6b53763`;
+the compile-flags report SHA is
+`4af73d76ef7e5f98808dfb8bf6096a79a04b3485abf983a31aa638a3e77a82f8`. A
+metadata-only manifest hashes all 2,109 CUDA compatibility include files at
+`runs/checkouts/nine-model-qat-overnight-5f53740/runs/native624-sm120-build-20261005-04/cuda-glibc-compat-include-manifest.json`, SHA256
+`277f7cec348f021e2e8ad9bfc8b3b0237ec4b4de76966b0dbd322fa9dbd6a5a9`; the
+existing header patch manifest is also pinned. The authorized control JSON has
+`rtx5080.pause_requested=false`, SHA256
+`8c28c888cb5103c9442c99beda63404216f97969b44d76dacccc97922901589d`. The
+runtime descriptor records delegated floors 2 GiB host / 1 GiB GPU and return
+tolerances 512 MiB host / 128 MiB GPU; it pins CUDA visibility to the actual RTX5080
+UUID and records the current empty `LD_LIBRARY_PATH`. This is metadata only,
+not runtime admission.
+
+Still required are the source-bound all-nine zero-update preparation/export,
+native three-domain generation/replay, fresh native target/drafter acceptance
+and memory checks, selected Q4_0 comparators for all requested model families,
+and independent review of those admission artifacts before production training.
+AngelSlim package preflight
 has passed read-only: the existing locked environment reports version0.5.0
 with `direct_url.json` Git commit
 `0358da9c651e6a7d7ccafea26ced4b9c98d11681`; the production Eagle3Config,
@@ -296,15 +320,32 @@ ROPE imports succeeded with CUDA hidden. Transformers is4.57.6 and its default
 RoPE entry exists. No model/device load occurred. No QAT or model-quality
 evaluation has started; RTX2080Ti remains unused.
 
-The metadata-only source packet prepare was authorized and attempted as
-`eagle-packet-metadata-20261005-01` with CUDA hidden and a 2GiB memory cap. It
-exited1 at08:14:18Z before creating an output directory, leaving its exact
-command and traceback in the ignored supervisor run directory. The production
-initializer report SHA remains unchanged; its safe `fit_config` scalar fields
-are `activation_bits=8`, `latent_initialization=preserve_reference_magnitudes`,
-`max_coordinate_flips_per_row=0`, `max_seconds=300.0`,
-`reference_kind=eagle_fixed_reference_0.5`, and
-`zero_scale_orientation_rescue=false`. The packet helper currently requests
-`orientation_rescue`, so its schema join needs an owner-reviewed compatibility
-fix mapping the existing field. This failure did not read prompt content,
-instantiate a model, allocate CUDA, or modify the completed initializer.
+The first metadata-only packet attempt,
+`eagle-packet-metadata-20261005-01`, exited1 at08:14:18Z before creating an
+output directory. The helper expected `fit_config.orientation_rescue` while the
+production report uses `zero_scale_orientation_rescue` and canonical
+`FusionFitConfig` field names. Root published owner-reviewed source fix9ed0352
+in parent2420615; independent packet tests passed on the real dataclass schema
+and event guard. No calibration input or report was changed.
+
+The single authorized retry, `eagle-packet-metadata-20261005-02`, ran from clean
+parent2420615 / nativecc9 with CUDA hidden and a2GiB cgroup, then exited0 at
+08:23:12.581915Z. The packet is
+`/home/philip/binary-eagle-decoding/data/nine-model-overnight/eagle-fixed-a8-packet-20261005-02`.
+Its initial EAGLE A8 config SHA is
+`cd3eb841cf06d58b1d601f9bcde6f9abd3285eb479d471c58af120997dcc4784`, continuous
+config SHA `4b7dbcbcd155cf5b2cee610204fd2fd6361a4a1bc9003f38f1c7868d9f4866c7`,
+and emitted commands SHA
+`667d4d15c968176b0a3f68aa76aa0a8d98ca5db028433a61eab99e7ef8758aa7`. The
+zero-update request SHA is `158a2f61f00aa68b68d99a00cca5738b780b8e6c0a367a6dbf417ab1f8c2d961`;
+three-domain generation requests SHA is
+`ea1e99933865e04610f7b86c970ec5a50a3d301d908d519db33e6e54a37a2728` (prompt
+content remains in the remote ignored packet). The packet copies the immutable
+human authorization SHA `1bf81941834d3c48f624d357570885034736ac8ba6ad47d32d08fbe6d6e1a49f`
+and explicitly marks production readiness false. Budget:86,400 cumulative
+training seconds,108,000 wall seconds, no step/token/epoch cap, checkpoint every
+250 updates, keep three, deferred development. It emitted initial prepare,
+nine-projection export, native generation, and replay argv, all bound to the
+current source and original prepared TRAIN corpus. They have not been executed.
+No model/GPU allocation occurred; supervisor52239/child52241 and Linux tmux
+session are absent, and RTX5080 returned to2,714MiB used /0%.
