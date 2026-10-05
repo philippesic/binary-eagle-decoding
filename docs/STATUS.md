@@ -19,10 +19,10 @@ is prioritized with delegated24h cumulativetrainerallocation and frequent
 checkpoints; remaining candidates queue without premature readiness claims.
 30-minute heartbeat `nine-model-overnight-qat-monitor` is ACTIVE in the successor chat.
 **QAT is actively running onRTX5080/SM120**: calibrated fixed EAGLE W1A8,
-256760updates with committed256750 checkpoint; all required fresh admission/source/
+268805updates with committed268750 checkpoint; all required fresh admission/source/
 device gates PASS. Finite18selected gradients, actual sign/scale movement and
-cache/batchedhead execution;8.16GBGPUfree/18.15GBhostavailable. ActualTRAIN
-coverage3149prompts/1221726rows at38574.30trainerseconds; no quality/win claim.
+cache/batchedhead execution;8.16GBGPUfree/18.07GBhostavailable. ActualTRAIN
+coverage3296prompts/1278762rows at40413.64trainerseconds; no quality/win claim.
 
 Run eagle-a8-qat-overnight-20261005-04; supervisor55097/controller55098/trainer
 55398. Root is sole remote operator.24h cumulative allocation/no smaller cap,
@@ -218,6 +218,13 @@ no repair/new job. Full GoalACTIVE; current native acceptance pending; next13:54
 Same five exact handles/supervisors/clean30a-cc9 source/endpoint plan unchanged;
 resources and checkpoint freshness pass. Healthy trainer/passive watcher continue,
 no repair/new job. Full GoalACTIVE; current native acceptance pending; next14:26PDT.
+
+**14:26 PDT scheduled health PASS:**268805updates/checkpoint268750,
+40413.64trainerseconds,3296TRAINprompts/1278762rows,18finitegradients/finite loss.
+Same five exact handles/supervisors/clean30a-cc9 source/endpoint plan unchanged;
+resources/checkpoint freshness pass. Timing helper completed; root now awaits
+local deadlines directly, sole remote ownership/SAME monitor unchanged. Healthy
+trainer/passive watcher continue; full GoalACTIVE; next14:57PDT, acceptance pending.
 
 **07:50 PDT exclusive transfer:** fresh successor chat owns the same unfinished
 goal after explicit local registration transfer and SAME heartbeat retarget.
