@@ -1112,8 +1112,10 @@ def _validate_capture(
 
 
 def validate_replay(receipt, tokens, taps, native, device, *, execution_profile="production_CUDA"):
-    if receipt.get("prefix_contract") != REPLAY_PREFIX_CONTRACT or any(
-        k in receipt for k in ("generation", "prompt", "prompt_source_sha256")
+    if (
+        receipt.get("prefix_contract") != REPLAY_PREFIX_CONTRACT
+        or any(k in receipt for k in ("generation", "prompt", "prompt_source_sha256"))
+        or receipt.get("prefix_freshness") != "caller_current_student_prefix"
     ):
         raise ValueError("native replay prefix contract differs")
     _validate_capture(receipt, tokens, taps, native, device, execution_profile=execution_profile)

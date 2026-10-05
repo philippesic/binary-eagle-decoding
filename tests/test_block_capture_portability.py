@@ -111,6 +111,7 @@ class PortabilityTests(unittest.TestCase):
                     "producer_source_revision": "a" * 40,
                     "teacher_context_reset_between_requests": True,
                     "prefix_contract": "teacher_forced_exact_caller_token_ids",
+                    "prefix_freshness": "caller_current_student_prefix",
                     "tap_ids": list(taps),
                     "gpu_layers": 999,
                     "hardware": [owner.device["name"]],
@@ -279,6 +280,47 @@ class PortabilityTests(unittest.TestCase):
         path.write_text(json.dumps(manifest))
         with self.assertRaisesRegex(ValueError, "provenance"):
             gate.NativeCaptureGoldens(path, expected_sha256=file_sha256(path))
+
+    def test_generated_metadata_and_bad_freshness_cannot_be_relabelled_golden(self):
+        path = self.eagle_goldens()
+        manifest = json.loads(path.read_text())
+        record = manifest["cases"][0]["native_receipt"]
+        receipt_path = Path(record["path"])
+        original = json.loads(receipt_path.read_text())
+        # The valid fixture mirrors NativeTeacher.capture_prefix, with no generation
+        # payload and caller_current_student_prefix freshness.
+        gate.NativeCaptureGoldens(path, expected_sha256=file_sha256(path))
+        for field, value in (
+            ("prefix_freshness", "native_generated_chain"),
+            ("prefix_freshness", None),
+            ("generation", {}),
+            ("prompt", {}),
+            ("prompt_source_sha256", "e" * 64),
+        ):
+            receipt_path.write_text(json.dumps(original | {field: value}))
+            record["sha256"] = file_sha256(receipt_path)
+            path.write_text(json.dumps(manifest))
+            with self.assertRaisesRegex(ValueError, "provenance"):
+                gate.NativeCaptureGoldens(path, expected_sha256=file_sha256(path))
+
+    def test_runtime_replay_rejects_generated_metadata_and_bad_freshness(self):
+        receipt = dict(
+            next(iter(self.dataset.native_receipts.values())),
+            gpu_layers=999,
+            executed_result_buffers=["CUDA0"],
+            target_storage_buffers={"CUDA0": 1},
+            hardware=[self.device["name"]],
+        )
+        kwargs = {"binary_sha256": file_sha256(self.binary), "source_revision": "a" * 40}
+        gate.check_producer(receipt, self.dataset, self.device, **kwargs)
+        for field, value in (
+            ("prefix_freshness", "native_generated_chain"),
+            ("generation", {}),
+            ("prompt", {}),
+            ("prompt_source_sha256", "e" * 64),
+        ):
+            with self.assertRaisesRegex(ValueError, "producer lacks"):
+                gate.check_producer(receipt | {field: value}, self.dataset, self.device, **kwargs)
 
     def test_new_golden_storage_budget_refuses(self):
         path = self.eagle_goldens()

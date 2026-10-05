@@ -54,6 +54,7 @@ class SyntheticNativeTeacher:
             "optimizer_updates": 0,
             "teacher_context_reset_between_requests": True,
             "prefix_contract": "teacher_forced_exact_caller_token_ids",
+            "prefix_freshness": "caller_current_student_prefix",
             "kv_type": "F16",
             "target_precision": "F16",
             "tap_ids": list(taps),

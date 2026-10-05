@@ -152,6 +152,8 @@ class NativeCaptureGoldens:
                 or native.get("tap_ids") != list(self.tap_ids)
                 or native.get("teacher_context_reset_between_requests") is not True
                 or native.get("prefix_contract") != "teacher_forced_exact_caller_token_ids"
+                or native.get("prefix_freshness") != "caller_current_student_prefix"
+                or any(k in native for k in ("generation", "prompt", "prompt_source_sha256"))
                 or not execution
                 or not all(isinstance(n, str) and re.fullmatch(r"CUDA[0-9]+", n) for n in execution)
             ):
@@ -340,6 +342,8 @@ def check_producer(receipt, dataset, device, *, binary_sha256, source_revision):
         or receipt.get("producer_source_revision") != source_revision
         or receipt.get("teacher_context_reset_between_requests") is not True
         or receipt.get("prefix_contract") != "teacher_forced_exact_caller_token_ids"
+        or receipt.get("prefix_freshness") != "caller_current_student_prefix"
+        or any(k in receipt for k in ("generation", "prompt", "prompt_source_sha256"))
         or receipt.get("tap_ids") != list(getattr(dataset, "tap_ids", TAPS))
         or receipt.get("gpu_layers", 0) <= 0
         or not execution
