@@ -58,7 +58,7 @@
     "src/w1a1_eagle/nine_model_admission.py": "9f5eb68a52429a0a221997e88eecb4d494c56d04eec513291a06c084111c1c05",
     "scripts/admit_nine_model_sm120.py": "1aa01bbf50167ad2fbfe454d460ca897b7dfca5879de02d0829eaa13bf09ca7e",
     "tests/test_nine_model_sm120_admission.py": "32c6e60785613a432d825caba7afd2a0e9f98d87562810e82e8690b15f9a76b7",
-    "tests/test_nine_model_contracts.py": "9a4a812de612d4f1ed08e7c384388595b04aff300427d74a399650666ba4c613",
+    "tests/test_nine_model_contracts.py": "d50f199539cc705617d731a8ec150ac779c14804c4be4e4fbea8d7f4640345f8",
     "tests/test_nine_model_failure_paths.py": "2ee894be7ab04eb0f2dfbdf8526d6910399524e10e904786d2b6092a1c1ec79c",
     "tests/test_nine_model_calibration_artifact.py": "7634905c01e58c453e4dcead28eb8b9c3af43e793306ce44562cc8aaa9fef99a",
     "tests/test_nine_model_admission_contracts.py": "70a083e20e6831131bb8ec9c169557c1414283887ebbcf4a14de7cce620287d2"
@@ -908,5 +908,25 @@
     "ruff": "PASS",
     "format": "PASS",
     "production_readiness": "PENDING"
+  },
+  "numeric_contract_revision": {
+    "algorithm": "fixed_w1a8_finite_reciprocal_v2",
+    "source_revision": "3834996",
+    "independent_suite": {
+      "count": 15,
+      "passed": 15,
+      "raw_path": "runs/nine-model-qa-baseline/qa-contracts-finite-reciprocal-revision.txt",
+      "sha256": "0370579400a052fb0b125796f4f322c1d60b11ca16c3695778b59d32f6023f21"
+    },
+    "test_source_sha256": "d50f199539cc705617d731a8ec150ac779c14804c4be4e4fbea8d7f4640345f8",
+    "ruff": "PASS",
+    "format": "PASS",
+    "disposition": "finite reciprocal overflow uses independent F64 normalized oracle; NaN and \u00b1Inf remain rejected; no readiness claim",
+    "owner_fusion_suite": {
+      "count": 11,
+      "passed": 11,
+      "raw_path": "runs/nine-model-qa-baseline/owner-block-fusion-suite.txt",
+      "sha256": "d848fa839030aedafa2d053a4ead27aab5e86800f0ae58c454752c0850ec340f"
+    }
   }
 }

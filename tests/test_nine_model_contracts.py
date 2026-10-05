@@ -164,6 +164,24 @@ def _arithmetic_oracle(raw: np.ndarray, signs: np.ndarray, scales: np.ndarray, b
     return codes, beta, output.astype(np.float32)
 
 
+def _a8_finite_reciprocal_overflow_oracle(raw: np.ndarray):
+    """Scalar oracle for v2's finite reciprocal-overflow normalization path."""
+    codes = np.empty(raw.shape, dtype=np.int16)
+    beta = np.empty((len(raw),), dtype=np.float32)
+    denominator = float(np.float32(127))
+    for row_index, row in enumerate(raw):
+        peak = max(abs(float(value)) for value in row)
+        beta[row_index] = np.float32(peak / denominator)
+        if peak == 0:
+            codes[row_index].fill(0)
+            continue
+        normalized = np.asarray(
+            [np.float32((float(value) / peak) * 127.0) for value in row], dtype=np.float32
+        )
+        codes[row_index] = np.clip(np.rint(normalized), -127, 127).astype(np.int16)
+    return codes, beta
+
+
 def _model_fixture(*, bits: int = 8, profile: str = "ffn15_fusion"):
     config = BlockQATConfig(
         "dspark",
@@ -387,11 +405,24 @@ class FusionArithmeticContractTests(unittest.TestCase):
     def test_invalid_fusion_values_and_profiles_refuse(self):
         with self.assertRaises(ValueError):
             FusionFitConfig(4)
-        with self.assertRaises(ValueError):
-            quantize(np.asarray([[np.nan]], dtype=np.float32), 8)
-        with np.errstate(over="ignore"):
-            with self.assertRaisesRegex(ValueError, "overflow"):
-                quantize(np.full((1, 4), 1e-40, dtype=np.float32), 8)
+        for invalid in (np.nan, np.inf, -np.inf):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                quantize(np.asarray([[invalid]], dtype=np.float32), 8)
+
+    def test_tiny_a8_finite_reciprocal_overflow_matches_scalar_oracle(self):
+        raw = np.array(
+            [
+                [1, 3, 254, 0x80000003, 0x80000000],
+                [0x007FFFFF, 0x807FFFFF, 0, 0, 0],
+            ],
+            dtype=np.uint32,
+        ).view(np.float32)
+        expected_codes, expected_beta = _a8_finite_reciprocal_overflow_oracle(raw)
+        actual_codes, actual_beta = quantize(raw, 8)
+        np.testing.assert_array_equal(actual_codes, expected_codes)
+        np.testing.assert_array_equal(actual_beta.view(np.uint32), expected_beta.view(np.uint32))
+        np.testing.assert_array_equal(actual_codes[0], [0, 2, 127, -2, 0])
+        np.testing.assert_array_equal(actual_codes[1], [127, -127, 0, 0, 0])
 
 
 class BlockQATContractTests(unittest.TestCase):
