@@ -784,3 +784,32 @@ authentic block Q4 controls. Approximately30-minute healthchecks and max two
 exact-state repairs per incident remain authorized. RTX2080Ti stays out of scope.
 Predecessor may retire after this published acknowledgment; only successor owns
 remote operation and durable goal updates.
+
+## Exact A1 historical goldens linked — October 5, 05:28 PDT
+
+Previous goal turn was progress: sole ownership was claimed, exact live handles
+verified, SAME monitor retarget verified and checkpoint50e6e38 pushed. This turn
+completed the next bounded A1 metadata action. Original generation AND replay
+producer/client/source/runtime/tokens/taps/history/ancestry checked; all nine
+raw payload files rehashed. Original30a helper published A1 replay requests and
+truthful historical link; requests are byte-identical to A8. Currentc2544aa
+consumer accepted the three historical physical replays using link.native;
+no source gate was weakened or producer relabeled. CUDA_VISIBLE_DEVICES empty,
+two CPU threads; no target or A1 model/GPU operation.
+
+A1 linkSHA65b1d0a4a3a0234f41dfe149a9ecc2601a913b916d309f0dd2ff1463173623f7;
+requestsSHA167c9e188510f5c30f267046837d947d915312a37f7d9dd8118af1709d668965.
+[Exact report](../../experiments/nine-model-qat-overnight/a1-historical-golden-reuse.md)
+records original log/client identities and preserved ignored execution evidence.
+Actual A1 actor/export/fullbind/QA/fresh SM120 admission remains PENDING until
+natural owned GPU release; healthy A8 and passive endpoint remain unchanged.
+
+Two bounded CPU/source workers dispatched under AGENTS delegation:
+`/root/block_retention_owner` owns opt-in bounded verified block checkpoint
+retention/source/tests/report in isolated branchfeat/block-checkpoint-retention,
+worktree `/Users/pippo/github/binary-eagle-block-retention`.
+`/root/block_exposure_advisor` owns new reviewable continuation-depth/exposure
+cost report, with genuine source selections and unchanged full-context/indexed
+teachers. Neither has remote/GPU authority or writes goal/STATUS/DECISIONS.
+Root remains sole remote operator. No block exposure/objective/retention policy
+or original missing Q4 replacement is selected by these assignments.

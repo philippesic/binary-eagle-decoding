@@ -53,6 +53,13 @@ both running supervisors, frozen30a/cc9 training source and endpoint plan verifi
 read-only; healthy training continues. Predecessor remote authority is revoked.
 See the [ownership acknowledgment](goals/nine-model-qat-overnight.md#successor-ownership-acknowledged--october-5-0523-pdt).
 
+**05:28 PDT A1 metadata progress:** original generation/replay producers and nine
+raw payloads verified; exact historical link published and accepted by current
+consumer. A1 actual actor/export/fullbind/fresh SM120 admission remains PENDING
+after natural GPU release. Two CPU/source workers prepare bounded block
+checkpoint retention and serious continuation-depth/exposure options. Healthy
+A8 and the passive watcher continue unchanged; root remains sole GPU operator.
+
 ## Historical preparation checkpoint — October 4, 2026
 
 The human requested an independent Codex task and implementation/test team to
