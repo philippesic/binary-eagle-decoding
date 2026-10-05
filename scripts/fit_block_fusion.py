@@ -28,6 +28,7 @@ from w1a1_eagle.block_fusion import (  # noqa: E402
     project,
     quantize,
     rms_norm_reference,
+    validate_norm_descriptor,
 )
 
 
@@ -74,6 +75,8 @@ def main():
     parser.add_argument("--weights-sha256", required=True)
     parser.add_argument("--norm", type=Path, required=True)
     parser.add_argument("--norm-sha256", required=True)
+    parser.add_argument("--norm-metadata", type=Path, required=True)
+    parser.add_argument("--norm-metadata-sha256", required=True)
     parser.add_argument("--norm-epsilon", type=float, required=True)
     parser.add_argument("--activation-bits", type=int, choices=(1, 8), required=True)
     parser.add_argument("--orientation-rescue", action="store_true")
@@ -104,6 +107,16 @@ def main():
     for path, pin in ((args.weights, args.weights_sha256), (args.norm, args.norm_sha256)):
         if file_sha256(path) != pin:
             raise ValueError("original fusion/norm source differs from external pin")
+    if file_sha256(args.norm_metadata) != args.norm_metadata_sha256:
+        raise ValueError("original model norm metadata differs from external pin")
+    reference = json.loads(args.norm_metadata.read_text())
+    args.norm_epsilon = validate_norm_descriptor(
+        reference,
+        family=dataset.manifest["family"],
+        weights_sha256=args.weights_sha256,
+        norm_sha256=args.norm_sha256,
+        supplied_epsilon=args.norm_epsilon,
+    )
     weight = np.load(args.weights, mmap_mode="r", allow_pickle=False)
     norm = np.load(args.norm, mmap_mode="r", allow_pickle=False)
     if (
@@ -112,6 +125,8 @@ def main():
         or weight.shape[1] != 5 * dataset.target_width
         or norm.dtype != np.float32
         or norm.shape != (len(weight),)
+        or reference["fc_source"]["shape"] != list(weight.shape)
+        or reference["norm_source"]["shape"] != list(norm.shape)
     ):
         raise ValueError("original fusion/norm projection shape/type differs")
     # Deliberately conservative workspace bound including design/sign/teacher
@@ -154,6 +169,9 @@ def main():
         "data_sha256": dataset.sha256,
         "weights_sha256": args.weights_sha256,
         "norm_sha256": args.norm_sha256,
+        "reference_metadata_sha256": args.norm_metadata_sha256,
+        "original_model_sha256": reference["model_sha256"],
+        "norm_epsilon_f32_bits": reference["epsilon_f32_bits"],
         "norm_epsilon": args.norm_epsilon,
         "producer_hardware": dataset.manifest["producer"]["hardware"],
         "calibration_hardware": "CPU NumPy F32 product; native execution pending",

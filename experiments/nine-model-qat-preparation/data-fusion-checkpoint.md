@@ -106,3 +106,25 @@ fixed-A8 quantizer. No fitting or model execution was repeated, and old unit/
 fixed-half NPZ files, reports and their source tags remain unchanged. The new
 fitter source tag/hash is separately recorded in ignored
 `fixed-a8-v2-saved-normal-domain-mac-20261004.json` (270,499,840-byte maximum RSS).
+
+Root also approved a narrow model-bound post-norm reference adapter.
+`scripts/extract_block_fusion_reference.py` hashes an original dense full-
+vocabulary block GGUF once, uses the existing bounded streaming header parser,
+and extracts only FC/gamma F32 NPY files plus `block_fusion_reference_v1` metadata.
+Tokenizer arrays are skipped rather than expanded. Source model/FC/gamma
+payloads and extracted files are SHA-bound; the native norm scalar must be an
+actual GGUF FLOAT32 with its exact canonical bits recorded. Existing binary,
+pruned, scaled/biased fusion, unsupported tensor formats and insufficient array
+bounds refuse explicitly. This is an original-model reference extractor, not a
+full model-readiness check.
+
+`fit_block_fusion.py` now requires the pinned `--norm-metadata` descriptor and
+checks supplied epsilon by exact F32 bits, plus family/weight/gamma/shape joins.
+No broad tolerance is used; different double spellings that round to the same
+native F32 value are identical. Per-precision fitting reads the extracted NPY/
+descriptor rather than rescanning the original GGUF. Historical EAGLE reports
+remain untouched. Eight CPU tests use actual small synthetic GGUF payloads to
+exercise round-trip, one-ULP mismatch, wrong source/gamma/family/pruned models,
+scalar type/range, extraction caps and overwrite refusal. Actual block-model
+reference extraction/fitting remains PENDING local artifacts or later authorized
+operator access. No remote operation or model context was used.
