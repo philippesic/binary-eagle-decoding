@@ -54,9 +54,35 @@ class BuilderTests(unittest.TestCase):
                 },
             }
         pending = builder.ledger_pending(ledger)
-        self.assertIn("dspark_a8: data has only synthetic/unscoped evidence", pending)
-        self.assertIn("eagle_a1: hard_forward has only synthetic/unscoped evidence", pending)
-        self.assertIn("dflash_q4: initial_export has only synthetic/unscoped evidence", pending)
+        self.assertIn("dspark_a8: data lacks explicit actual production evidence scope", pending)
+        self.assertIn(
+            "eagle_a1: hard_forward lacks explicit actual production evidence scope", pending
+        )
+        self.assertIn(
+            "dflash_q4: initial_export lacks explicit actual production evidence scope", pending
+        )
+
+    def test_current_synthetic_scope_variants_and_empty_scopes_cannot_grant_prelaunch(self):
+        for scope in (
+            "cpu_synthetic_qat_and_native_graph",
+            "native_cpu_synthetic_15_ffn_plus_optional_fusion",
+            "",
+            "   ",
+            "native_mock",
+            "actual_fixture",
+            "toy_model",
+            None,
+            "source_only",
+        ):
+            with self.subTest(scope=scope):
+                self.assertFalse(builder.actual_evidence_scope(scope))
+        for scope in (
+            "actual_model_cpu_native_TRAIN",
+            "native_real_model_sm75",
+            "production_initial_export",
+            "actual_calibrated_initializer",
+        ):
+            self.assertTrue(builder.actual_evidence_scope(scope))
 
     def test_fresh_sm120_pending_stays_separate_from_portable_ledger(self):
         ledger = {

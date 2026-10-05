@@ -11,6 +11,7 @@ import argparse
 import copy
 import importlib
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -58,6 +59,19 @@ def pin(path):
     return {"path": str(path), "sha256": sha256(path)}
 
 
+def actual_evidence_scope(scope):
+    """Only explicit actual evidence can satisfy production prelaunch gates."""
+    if not isinstance(scope, str) or not scope.strip():
+        return False
+    tokens = re.findall(r"[a-z0-9]+", scope.lower())
+    if any(
+        any(marker in token for marker in ("synthetic", "fixture", "mock", "toy"))
+        for token in tokens
+    ):
+        return False
+    return any(token in {"actual", "real", "native", "production"} for token in tokens)
+
+
 def ledger_pending(ledger):
     pending = []
     require(ledger.get("schema") == "nine_model_qa_ledger_v1", "independent QA schema differs")
@@ -80,10 +94,11 @@ def ledger_pending(ledger):
                 "hard_forward",
                 "initial_export",
             } and not any(
-                e.get("scope") not in {None, "cpu_synthetic"}
-                for e in requirement.get("evidence", [])
+                actual_evidence_scope(e.get("scope")) for e in requirement.get("evidence", [])
             ):
-                pending.append(profile + ": " + name + " has only synthetic/unscoped evidence")
+                pending.append(
+                    profile + ": " + name + " lacks explicit actual production evidence scope"
+                )
     return pending
 
 
