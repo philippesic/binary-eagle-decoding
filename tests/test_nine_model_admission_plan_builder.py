@@ -1,6 +1,5 @@
 """Actual source CLI plan construction; fixtures never admit production training."""
 
-import importlib.util
 import json
 import subprocess
 import sys
@@ -18,17 +17,9 @@ builder = fixtures.builder
 
 
 def api():
-    path = ROOT / "src/w1a1_eagle/nine_model_admission.py"
-    if not path.is_file():
-        path = Path(
-            "/private/tmp/nine-model-qat-20261004/coordination/src/w1a1_eagle/nine_model_admission.py"
-        )
-    if not path.is_file():
-        raise unittest.SkipTest("actual admission source integration PENDING")
-    spec = importlib.util.spec_from_file_location("w1a1_eagle.plan_builder_test_api", path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    from w1a1_eagle import nine_model_admission
+
+    return nine_model_admission
 
 
 def pin(path):
