@@ -21,7 +21,7 @@ class CpuTeacher(fixtures.SyntheticNativeTeacher):
     def make(self, tokens, taps, mode, ancestry):
         result = super().make(tokens, taps, mode, ancestry)
         result.update(
-            hardware=["CPU: fixture CPU"],
+            hardware=["fixture CPU"],
             executed_result_buffers=["CPU"],
             target_storage_buffers={"CPU": 1},
             gpu_layers=0,
@@ -136,6 +136,23 @@ class CpuCaptureTests(unittest.TestCase):
                 return result
 
         result = self.run_(teacher=GpuResult)
+        self.assertEqual(result["status"], "FAIL")
+        self.assertTrue(result["producer_closed"])
+
+    def test_cpu_registered_description_is_native_api_not_invented_prefix(self):
+        result = self.run_()
+        self.assertEqual(result["status"], "PASS", result["failure"])
+        receipt = json.loads(next((self.root / "output/receipts").glob("*-block.json")).read_text())
+        self.assertEqual(receipt["hardware"], ["fixture CPU"])
+
+    def test_mixed_or_duplicate_registered_devices_refuse_cpu_profile(self):
+        class MixedDevices(CpuTeacher):
+            def make(self, *args):
+                result = super().make(*args)
+                result["hardware"] = ["fixture CPU", "fixture CPU"]
+                return result
+
+        result = self.run_(teacher=MixedDevices)
         self.assertEqual(result["status"], "FAIL")
         self.assertTrue(result["producer_closed"])
 
