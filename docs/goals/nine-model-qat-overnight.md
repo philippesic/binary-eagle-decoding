@@ -1012,3 +1012,38 @@ waiting on live jobs. Fullsix+three GoalACTIVE; actual remaining model/capture/
 admission/QAT/comparisons unfinished, block scientific choice pending. Keep
 healthy A8 through86,400trainerseconds and current passive watcher unchanged;
 next approximately30-minute check around06:48PDT. No quality/win claim.
+
+## Staged final-comparison source audit — October 5, 06:43 PDT
+
+Previous continuation was progress (real A1 handoff/source/tests). This turn
+confirmed all five exact live kernel identities at13:31UTC; healthy jobs remain
+unchanged. No restart or extra GPU action. Next full healthcheck around06:48PDT.
+
+Concrete source gap: full `export_nine_model_candidate.py` and
+`evaluate_nine_model_native.py` require a single global bundle hash on all six
+training/export receipts. The current positive A8 lane and later staged lanes
+have individual original hashes; their authentic results must be retained,
+without rewriting provenance or repeating paid training to fit that interface.
+Existing same-bundle campaign remains valid for its original schema.
+
+Two independent bounded CPU/source workers now active:
+`/root/staged_export_owner`, worktree `/Users/pippo/github/binary-eagle-staged-export`,
+branchfeat/staged-lane-export, owns NEWsingle-lane CPUexport adapter/tests/report
+for all six families/precisions, matching existing EAGLE endpoint export schema
+with original frozenlane/train/audit/serializer links. Actual export requires
+runtime release and CPUresource callbacks before/after serialization; JSON
+alone cannot grant production release or launch. No existing source files owned.
+`/root/collection_owner`, worktree `/Users/pippo/github/bed-endpoint-collection`,
+branchendpoint-collection, owns new strict original-endpoint collection contract/
+builder/tests/report and bounded evaluator import/inspection route, sharing
+existing native argv/loop where possible. Original same-bundle validation stays
+strict. Missing fresh collection-bound runtime lease/lock/controller/admission/
+release is explicitly PENDING; metadata/fixtures do not imply dispatch readiness.
+Owners coordinate receipt fields directly and may use independent Luna QA.
+
+Neither worker has remote/GPU/actual-model/data access or policy/budget authority;
+root retains sole transport/operator and durable docs. No new watcher/job,
+sourcepin relabel, capture/control regeneration, sealed evaluation, source/math/
+sampler/head/cache change or quality gate. Block scientific answer remains
+pending, authentic DSpark/DFlash Q4 still absent. The active fullsix+three goal
+remains unchanged; these source gaps must not be hidden by narrower completion.

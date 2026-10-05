@@ -84,6 +84,13 @@ admission/launch remain PENDING; this metadata executes nothing. Scheduled live
 check confirms healthy74,590updates, unchanged30a/cc9 and five exact identities.
 Passive endpoint waits unchanged; all current workers complete. Full goalACTIVE.
 
+**06:43 PDT final-comparison source work:** audit found the common-bundle
+export/evaluator cannot directly import separately hashed staged endpoints.
+Two bounded CPU/source owners implement original-receipt-preserving staged
+export and strict collection validation. Existing running source/jobs stay
+unchanged; actual runtime execution/admission remains pending and root is sole
+GPU operator. No trained receipt is relabeled or training repeated.
+
 ## Historical preparation checkpoint — October 4, 2026
 
 The human requested an independent Codex task and implementation/test team to
