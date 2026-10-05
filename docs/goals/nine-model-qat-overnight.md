@@ -328,3 +328,20 @@ Feature/QA own strict canonical producer+live-query normalization in
 train_nine_model_qat.py and qat_admission.py. Keep exact consumer device equality,
 full validatedUUID and source/config gates; new source/QA/lane/lease reruns actual
 backward before updates. Root soleoperator/30-minute heartbeat unchanged.
+
+
+## Current-source final admission04 — October 5, 03:11 PDT
+
+UUID producer/live-query fix30a8dc7 and independent QA1933a6b are published.
+Strict fullUUID normalization only; exact stored receipt/source/device checks
+stay intact. Execution source30a8dc7ee6bc8564471e8b176aeb1c5b8aef860c/nativecc9
+is frozen on5080. Current53-pin selected QAv4a4b6630a..., plan451d7868...,
+resolved-inputs0b42826d..., lane271c7171...; original/failures preserved.
+New fresh lease04 and19.9GBhost/13.9GBGPU floor passed. Supervisor55097/child
+55098 run eagle-a8-qat-overnight-20261005-04 in socketbinary-eagle-runtime/session
+root-eagle-a8-qat-overnight-20261005-04, attempt38f7bece56de4179a6c1a0e21ca96579.
+Actual admission is executing backward after kernel/portability/native. Root
+soleoperator MCP$258/@287/%289; no new2080 access. Monitor ACTIVE/30min.
+No positive update/committed checkpoint yet; sustained24h trainer starts
+automatically after all seven fresh gates PASS. Do not change live source,
+config, lane or availability lease bytes.
