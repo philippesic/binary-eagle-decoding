@@ -84,10 +84,29 @@ def atomic_json(path, value):
 
 
 class Files:
-    """Hash once per in-process inode identity; never persist stat-only trust."""
+    """Hash once per immutable locator identity; never persist stat-only trust.
+
+    File reads may update access time. Content/storage/permission timestamps
+    remain strict, including across cached checks of the same frozen locator.
+    """
 
     def __init__(self):
         self.cache = set()
+        self.identities = {}
+
+    @staticmethod
+    def fingerprint(stat):
+        return (
+            stat.st_dev,
+            stat.st_ino,
+            stat.st_size,
+            stat.st_mode,
+            stat.st_uid,
+            stat.st_gid,
+            stat.st_nlink,
+            stat.st_mtime_ns,
+            stat.st_ctime_ns,
+        )
 
     def opaque(self, record):
         require(
@@ -104,20 +123,23 @@ class Files:
 
     def check(self, record):
         path = self.opaque(record)
-        stat = path.stat()
-        key = (
-            str(path),
-            record["sha256"],
-            stat.st_dev,
-            stat.st_ino,
-            stat.st_size,
-            stat.st_mtime_ns,
-            stat.st_ctime_ns,
-        )
+        before = self.fingerprint(path.stat())
+        binding = (str(path), record["sha256"])
+        previous = self.identities.get(binding)
+        require(previous is None or before == previous, f"artifact identity changed: {path}")
+        key = (*binding, *before)
         if key not in self.cache:
             require(sha256(path) == record["sha256"], f"artifact changed: {path}")
-            require(path.stat() == stat, f"artifact changed during hash: {path}")
+            require(
+                self.fingerprint(path.stat()) == before, f"artifact changed during hash: {path}"
+            )
             self.cache.add(key)
+            self.identities[binding] = before
+        else:
+            require(
+                self.fingerprint(path.stat()) == before,
+                f"artifact changed during cache check: {path}",
+            )
         return path
 
 
@@ -432,9 +454,10 @@ def _scan_dxg_holders(proc_root):
 def _privileged_dxg_holders():
     """One fixed, hash-bound, stdlib-only read observer; never elevate a trainer."""
     helper = Path(__file__).resolve().parents[2] / "scripts/read_only_dxg_census.py"
+    before = Files.fingerprint(helper.stat())
     expected = sha256(helper)
-    before = helper.stat()
     try:
+        require(Files.fingerprint(helper.stat()) == before, "DXG observer source changed")
         require(
             os.environ.get("WSL_DISTRO_NAME") == "Ubuntu",
             "fixed Ubuntu observer requires current Ubuntu namespace",
@@ -466,7 +489,8 @@ def _privileged_dxg_holders():
             env=environment,
         )
         require(
-            helper.stat() == before and sha256(helper) == expected, "DXG observer source changed"
+            sha256(helper) == expected and Files.fingerprint(helper.stat()) == before,
+            "DXG observer source changed",
         )
         record = json.loads(result.stdout)
         boot = Path("/proc/sys/kernel/random/boot_id").read_text().strip()
