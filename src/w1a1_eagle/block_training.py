@@ -188,18 +188,189 @@ def _runtime(model):
     return result
 
 
-def save_block_checkpoint(model, optimizer, cursor, source, directory):
+@dataclass(frozen=True)
+class BlockCheckpointRetention:
+    """Opt-in publication-peak limits, including protected/foreign payloads.
+
+    keep_recent is a required rolling window; limits must admit that window
+    plus every protected checkpoint and the next writer before any pruning.
+    Failed step-*.tmp staging also consumes the limits. Receipts, exports and
+    teacher captures need separate whole-run disk admission. Count admission
+    precedes staging, and each serialization write is bounded by remaining bytes.
+    """
+
+    keep_recent: int
+    max_checkpoints: int
+    max_bytes: int
+
+    def __post_init__(self):
+        for name in ("keep_recent", "max_checkpoints", "max_bytes"):
+            if type(getattr(self, name)) is not int or getattr(self, name) < 1:
+                raise ValueError("checkpoint retention limits must be positive integers")
+        if self.max_checkpoints < self.keep_recent:
+            raise ValueError("checkpoint retention count cannot admit recent window")
+
+
+_PROTECTIONS = {"initial", "transition_source", "transition_destination", "endpoint", "stop"}
+
+
+def _checkpoint_name(cursor):
+    return (
+        f"step-{cursor.step:012d}-e{cursor.epoch:06d}-b{cursor.block_index:012d}"
+        f"-{cursor.stage}-t{int(cursor.elapsed_seconds * 1e6):016d}.pt"
+    )
+
+
+def _retention_family(payload):
+    # The one declared A8 -> A1 transition shares ownership; other scientific
+    # config changes, source/data or arithmetic changes do not.
+    contract = copy.deepcopy(payload["contract"])
+    contract["config"].pop("activation_bits")
+    return _digest(
+        {"contract": contract, "source": payload["source"], "runtime": payload["runtime"]}
+    )
+
+
+def _owned_checkpoint(path, family):
+    """Return a verified pruning receipt, or treat the artifact as foreign."""
+    sidecar = path.with_suffix(".receipt.json")
+    try:
+        if (
+            path.is_symlink()
+            or not path.is_file()
+            or path.stat().st_nlink != 1
+            or sidecar.is_symlink()
+            or not sidecar.is_file()
+            or sidecar.stat().st_nlink != 1
+        ):
+            return None
+        value = json.loads(sidecar.read_text())
+        if set(value) != {
+            "schema",
+            "path",
+            "sha256",
+            "contract_sha256",
+            "source_sha256",
+            "cursor",
+            "committed",
+            "retention",
+        }:
+            return None
+        cursor = BlockCursor(**value["cursor"])
+        metadata = value["retention"]
+        if (
+            value["schema"] != "block_qat_checkpoint_v1"
+            or value["committed"] is not True
+            or value["path"] != str(path.absolute())
+            or path.name != _checkpoint_name(cursor)
+            or set(metadata) != {"family_sha256", "protected"}
+            or metadata["family_sha256"] != family
+            or not isinstance(metadata["protected"], list)
+            or any(reason not in _PROTECTIONS for reason in metadata["protected"])
+            or any(
+                not isinstance(value[key], str)
+                or len(value[key]) != 64
+                or any(c not in "0123456789abcdef" for c in value[key])
+                for key in ("sha256", "contract_sha256", "source_sha256")
+            )
+            or sha256(path) != value["sha256"]
+        ):
+            return None
+        return value
+    except (OSError, ValueError, TypeError, KeyError):
+        return None
+
+
+def _retention_inventory(directory, *, exclude=None):
+    sizes = {}
+    paths = set(directory.glob("*.pt")) | set(directory.glob("step-*.tmp"))
+    for path in paths - {exclude}:
+        if path.is_dir() and not path.is_symlink():
+            raise ValueError("checkpoint retention cannot account for payload directory")
+        sizes[path] = path.lstat().st_size
+    return sizes
+
+
+class _BoundedCheckpointWriter:
+    """Bound serializer writes/seek offsets without truncating failed evidence."""
+
+    def __init__(self, stream, max_bytes):
+        self.stream = stream
+        self.max_bytes = max_bytes
+        self.length = 0
+        self.exceeded = False
+
+    def write(self, value):
+        size = memoryview(value).nbytes
+        end = self.tell() + size
+        if end > self.max_bytes:
+            self.exceeded = True
+            raise ValueError("checkpoint retention cannot admit serialized payload bytes")
+        written = self.stream.write(value)
+        self.length = max(self.length, self.tell())
+        return written
+
+    def tell(self):
+        return self.stream.tell()
+
+    def seek(self, offset, whence=os.SEEK_SET):
+        bases = {os.SEEK_SET: 0, os.SEEK_CUR: self.tell(), os.SEEK_END: self.length}
+        if whence not in bases or not 0 <= bases[whence] + offset <= self.max_bytes:
+            self.exceeded = True
+            raise ValueError("checkpoint retention serialization seek exceeds byte bounds")
+        return self.stream.seek(bases[whence] + offset)
+
+    def flush(self):
+        return self.stream.flush()
+
+
+def _retention_plan(directory, receipt, size, policy):
+    """Admission before latest publication; unknown artifacts consume budget."""
+    family = receipt["retention"]["family_sha256"]
+    owned = {}
+    new = Path(receipt["path"])
+    sizes = _retention_inventory(directory, exclude=new.with_suffix(".tmp"))
+    for path in sizes:
+        value = _owned_checkpoint(path, family) if path.suffix == ".pt" else None
+        if value is not None:
+            owned[path] = value
+    sizes[new], owned[new] = size, receipt
+    ordered = sorted(
+        (path for path in owned if path != new),
+        key=lambda path: (owned[path]["cursor"]["step"], owned[path]["cursor"]["elapsed_seconds"]),
+    ) + [new]
+    keep = set(ordered[-policy.keep_recent :]) | {
+        path for path, value in owned.items() if value["retention"]["protected"]
+    }
+    prune = [path for path in ordered if path not in keep]
+    # The old exact-resume payload must coexist with the next writer. A cap
+    # that fits only after deleting old files is not sufficient admission.
+    if len(sizes) > policy.max_checkpoints or sum(sizes.values()) > policy.max_bytes:
+        raise ValueError(
+            "checkpoint retention limits cannot admit publication peak and preserved artifacts"
+        )
+    return [(path, owned[path]) for path in prune]
+
+
+def save_block_checkpoint(
+    model, optimizer, cursor, source, directory, *, retention=None, protect=()
+):
     validate_source(source)
     _validate_optimizer(
         model, optimizer, optimizer.state_dict(), expected_updates=cursor.stage_updates
     )
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
-    checkpoint = (
-        directory / f"step-{cursor.step:012d}-e{cursor.epoch:06d}-b{cursor.block_index:012d}"
-        f"-{cursor.stage}-t{int(cursor.elapsed_seconds * 1e6):016d}.pt"
-    )
-    if checkpoint.exists():
+    if retention is not None:
+        if not isinstance(retention, BlockCheckpointRetention):
+            raise ValueError("explicit BlockCheckpointRetention policy required")
+        if any(path.is_symlink() for path in (directory, *directory.parents)):
+            raise ValueError("checkpoint retention directory cannot traverse symlinks")
+        if any(reason not in _PROTECTIONS for reason in protect):
+            raise ValueError("unsupported checkpoint protection")
+        directory = directory.resolve(strict=True)
+    checkpoint = directory / _checkpoint_name(cursor)
+    if checkpoint.exists() or checkpoint.is_symlink():
         raise ValueError("checkpoint exists; exact recovery required")
     payload = {
         "schema": "block_qat_checkpoint_v1",
@@ -212,22 +383,112 @@ def save_block_checkpoint(model, optimizer, cursor, source, directory):
         "rng": rng_state(str(model.token_embd.device)),
     }
     temp = checkpoint.with_suffix(".tmp")
-    with temp.open("wb") as stream:
-        torch.save(payload, stream)
+    remaining_bytes = None
+    if retention is not None:
+        existing = _retention_inventory(directory)
+        remaining_bytes = retention.max_bytes - sum(existing.values())
+        if len(existing) + 1 > retention.max_checkpoints or remaining_bytes <= 0:
+            raise ValueError(
+                "checkpoint retention limits cannot admit publication peak before staging"
+            )
+    with temp.open("xb") as stream:
+        writer = (
+            _BoundedCheckpointWriter(stream, remaining_bytes) if retention is not None else stream
+        )
+        try:
+            torch.save(payload, writer)
+        except Exception as error:
+            # PyTorch's zip finalizer can mask the first write rejection with
+            # an offset error. Preserve the byte-cap reason without retrying.
+            if retention is not None and writer.exceeded:
+                raise ValueError(
+                    "checkpoint retention cannot admit serialized payload bytes"
+                ) from error
+            raise
         stream.flush()
         os.fsync(stream.fileno())
-    os.replace(temp, checkpoint)
     receipt = {
         "schema": payload["schema"],
         "path": str(checkpoint.resolve()),
-        "sha256": sha256(checkpoint),
+        "sha256": sha256(temp),
         "contract_sha256": _digest(payload["contract"]),
         "source_sha256": _digest(source),
         "cursor": json.loads(json.dumps(asdict(cursor))),
         "committed": True,
     }
-    atomic_json(directory / "latest.json", receipt)
+    prune = []
+    if retention is not None:
+        protected = set(protect)
+        if cursor.step == 0:
+            protected.add("initial")
+        if cursor.stage == "a1_final" and cursor.stage_updates == 0:
+            protected.add("transition_destination")
+        receipt["retention"] = {
+            "family_sha256": _retention_family(payload),
+            "protected": sorted(protected),
+        }
+        prune = _retention_plan(directory, receipt, temp.stat().st_size, retention)
+        for path in (directory / "latest.json", checkpoint.with_suffix(".receipt.json")):
+            pending = path.with_name(path.name + ".tmp")
+            if (
+                path.is_symlink()
+                or pending.exists()
+                or pending.is_symlink()
+                or (path != directory / "latest.json" and path.exists())
+            ):
+                raise ValueError("checkpoint publication path is unsafe or uncommitted")
+    os.replace(temp, checkpoint)
+    latest = directory / "latest.json"
+    atomic_json(latest, receipt)
+    if retention is not None:
+        # No pruning on failed publication, readback or payload verification.
+        if json.loads(latest.read_text()) != receipt or sha256(checkpoint) != receipt["sha256"]:
+            raise ValueError("checkpoint publication verification failed; retention forbidden")
+        sidecar = checkpoint.with_suffix(".receipt.json")
+        atomic_json(sidecar, receipt)
+        if _owned_checkpoint(checkpoint, receipt["retention"]["family_sha256"]) != receipt:
+            raise ValueError("checkpoint retention receipt verification failed")
+        for path, expected in prune:
+            # Single writer only. Revalidate immediately before deleting either
+            # artifact; malformed, changed, symlink and uncommitted files stay.
+            if _owned_checkpoint(path, receipt["retention"]["family_sha256"]) != expected:
+                raise ValueError("checkpoint retention candidate changed; pruning stopped")
+            path.unlink()
+            path.with_suffix(".receipt.json").unlink()
+        descriptor = os.open(directory, os.O_RDONLY)
+        try:
+            os.fsync(descriptor)
+        finally:
+            os.close(descriptor)
     return receipt
+
+
+def protect_block_checkpoint(receipt, reason):
+    """Pin a boundary already published at the exact same cursor, without rewrite."""
+    if reason not in _PROTECTIONS or "retention" not in receipt:
+        raise ValueError("owned retention checkpoint and supported protection required")
+    path = Path(receipt["path"])
+    if any(parent.is_symlink() for parent in (path.parent, *path.parents)):
+        raise ValueError("checkpoint protection directory cannot traverse symlinks")
+    family = receipt["retention"]["family_sha256"]
+    if _owned_checkpoint(path, family) != receipt:
+        raise ValueError("checkpoint protection requires verified ownership receipt")
+    latest = path.parent / "latest.json"
+    if latest.is_symlink() or json.loads(latest.read_text()) != receipt:
+        raise ValueError("checkpoint protection requires current committed latest")
+    value = copy.deepcopy(receipt)
+    value["retention"]["protected"] = sorted(set(value["retention"]["protected"]) | {reason})
+    # Protect sidecar first: publication failures can only retain more files.
+    sidecar = path.with_suffix(".receipt.json")
+    for candidate in (sidecar, latest):
+        pending = candidate.with_name(candidate.name + ".tmp")
+        if pending.exists() or pending.is_symlink():
+            raise ValueError("checkpoint protection publication path is uncommitted")
+    atomic_json(sidecar, value)
+    atomic_json(latest, value)
+    if _owned_checkpoint(path, family) != value or json.loads(latest.read_text()) != value:
+        raise ValueError("checkpoint protection publication verification failed")
+    return value
 
 
 def load_block_checkpoint(model, optimizer, source, receipt):
