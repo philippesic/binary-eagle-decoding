@@ -1,7 +1,7 @@
 # Block checkpoint retention capability — October 5, 2026
 
-Status: source implementation and CPU acceptance complete; review/integration
-pending. No live source, training packet, remote job, GPU, model or campaign
+Status: source implementation, independent CPU acceptance and root integration
+review complete. No live source, training packet, remote job, GPU, model or campaign
 retention/exposure choice changed. Root owns the active goal and its checkpoint.
 This closes the source capability gap described in `block-capture-options.md`;
 the historical unbounded saver observations in that report remain accurate.
@@ -140,3 +140,10 @@ integrate/push main, record the source/checks in the assigned active goal, and
 retire the merged worktree only after preserving any needed artifacts. Production
 policy selection and whole-run admission remain with root/user; no block launch
 is authorized by this capability report alone.
+
+Root integration: published owner85ed919 was reviewed and cherry-picked9463c66;
+all four owned files matched exactly before preserving original branch ancestry.
+Root reran all16 focused retention tests on the integrated source: PASS in1.444s.
+Full76 owner checks and independent16 Luna checks remain the aggregate evidence;
+no broader repeat was needed for this unchanged patch. Production policy, fresh
+whole-run resource/SM120 admission and block scientific choices remain PENDING.

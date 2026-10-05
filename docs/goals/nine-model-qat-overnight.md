@@ -869,3 +869,35 @@ detachedcc9, no local branch heads, only disposable GGUF bytecode cache and
 cc9 ancestry already retained in primary nativeecff. Its bounded retirement
 proof is preserved in ignored archive audit; force removal applied only to that
 reviewed parent tree. No native source/history or unpublished work was lost.
+
+## Block retention source integrated — October 5, 05:46 PDT
+
+Feature owner `/root/block_retention_owner` and its independent Luna QA are
+complete with no processes/GPU authority. Owner85ed919 published; reviewed and
+cherry-picked9463c66 with exact four-file source equality, then original branch
+ancestry preserved. Opt-in block-only policy declares keep_recent/max_checkpoints/
+max_bytes; count admission precedes staging and bounded writes/seeks enforce
+remaining serialization bytes. Latest/payload/sidecar verify before pruning;
+foreign/malformed/linked/uncommitted/failed artifacts stay and consume limits.
+Initial, both precision-transition sides, natural endpoints and STOP boundaries
+are protected with exact optimizer/RNG/cursor/source evidence. Default remains
+unbounded; no current packet or frozen remote source is modified.
+
+Owner76CPU checks and independent16focused QA passed; root16integration checks
+passed in1.444s. Ruffcheck/format/diffPASS. Applearm64/macOS/Python3.11.15/
+Torch2.14.0 tinyCPU models/files only; no CUDA/admission/acceptance/throughput
+claim. [Retention report](../../experiments/nine-model-qat-overnight/block-checkpoint-retention.md)
+includes policy/ownership/failure semantics and conservative5-slot direct versus
+7-slot A8→A1 publication peaks. Full-run models/teachers/exports/logs/cache and
+operating floors require separate disk admission; count limits are not a quota
+against concurrent external writers. Acceptance summary preserved under ignored
+`results/nine-model-qat-overnight/block-retention-20261005/acceptance.txt`.
+
+No actual retention or scientific exposure/conditioning policy selected. Human
+choice remains pending, and remaining block production capture/calibration/model/
+native admission plus original Q4 controls remain missing. A1 historical goldens
+are now honestly linked; its actor/export/SM120 waits for natural owned GPUrelease.
+Healthy A8 and passive endpoint continue under original30a/cc9 and existing budget.
+Goal remains ACTIVE/fullsix+three scope. All current bounded workers complete;
+retention worker tree/branch can retire after reviewed integration push and its
+ignored evidence preservation. Root keeps sole transport/30-minute monitor.

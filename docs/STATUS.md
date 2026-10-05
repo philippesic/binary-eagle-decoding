@@ -60,6 +60,12 @@ after natural GPU release. Two CPU/source workers prepare bounded block
 checkpoint retention and serious continuation-depth/exposure options. Healthy
 A8 and the passive watcher continue unchanged; root remains sole GPU operator.
 
+**05:46 PDT block storage preparation:** opt-in bounded checkpoint retention
+source reviewed/integrated;76owner/16independent/16root CPUchecks PASS. Actual
+policy and block exposure/conditioning remain pending; no remote running source
+changed. Deeper whole-chain source/cost options are published inDECISIONS. All
+bounded workers complete, raw evidence and original commit histories preserved.
+
 ## Historical preparation checkpoint — October 4, 2026
 
 The human requested an independent Codex task and implementation/test team to
