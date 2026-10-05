@@ -1,4 +1,11 @@
 {
+  "adjacent_memory": {
+    "host_available_bytes": 19845152768,
+    "host_total_bytes": 38654705664,
+    "psutil_module": "/Users/pippo/Library/Python/3.11/lib/python/site-packages/psutil/__init__.py",
+    "psutil_version": "7.2.2",
+    "timestamp_unix": 1791169266.183002
+  },
   "artifact_kind": "development_CPU",
   "base_commit": "9ac362a",
   "capture_report": {
@@ -10,7 +17,7 @@
       "activation_bits": 8,
       "argv": [
         "/Users/pippo/github/binary-eagle-decoding/.venv/bin/python",
-        "/private/tmp/nine-model-qat-20261004/training-cpu-integration/scripts/check_block_qat_cpu_model.py",
+        "/Users/pippo/github/binary-eagle-decoding/scripts/check_block_qat_cpu_model.py",
         "--family",
         "dspark",
         "--activation-bits",
@@ -101,6 +108,14 @@
           "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-03/dspark/manifest.json",
           "sha256": "77891f9b7027a38c6707ef0722e88e1376df826b382c652a269260676019bbd7"
         },
+        "fit_phase_report": {
+          "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-fusion-20261004/phase-report.json",
+          "sha256": "0aae6b5c0faafc4ba2f6d35edcd59db58a98db8c25c4a05e79f1a5224bc25d77"
+        },
+        "fit_report": {
+          "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-fusion-20261004/dspark-a8-scale-only/fit_report.json",
+          "sha256": "1c9ada7dfa9e5e61294fe01c41ae56999dd15eaeaf9670943bf241d20b3eb57e"
+        },
         "initialization": {
           "activation_bits": 8,
           "latent_initialization": {
@@ -176,7 +191,7 @@
           "target_sha256": "05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6"
         },
         "production_readiness": "PENDING",
-        "scope": "one original TRAIN block, captured-prefix hard CE or exact captured-prefix full L1; CPU development only",
+        "scope": "one original TRAIN block; full teacher is available/materialized when captured; hard CE uses labels only. Full-probability L1 is a separately selected objective; CPU development only",
         "target_sha256": "05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6",
         "teacher_logits_shape": [
           7,
@@ -202,7 +217,7 @@
       "activation_bits": 1,
       "argv": [
         "/Users/pippo/github/binary-eagle-decoding/.venv/bin/python",
-        "/private/tmp/nine-model-qat-20261004/training-cpu-integration/scripts/check_block_qat_cpu_model.py",
+        "/Users/pippo/github/binary-eagle-decoding/scripts/check_block_qat_cpu_model.py",
         "--family",
         "dspark",
         "--activation-bits",
@@ -293,6 +308,14 @@
           "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-03/dspark/manifest.json",
           "sha256": "77891f9b7027a38c6707ef0722e88e1376df826b382c652a269260676019bbd7"
         },
+        "fit_phase_report": {
+          "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-fusion-20261004/phase-report.json",
+          "sha256": "0aae6b5c0faafc4ba2f6d35edcd59db58a98db8c25c4a05e79f1a5224bc25d77"
+        },
+        "fit_report": {
+          "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-fusion-20261004/dspark-a1-scale-only/fit_report.json",
+          "sha256": "7e85fbface6a8c5ba9b218a592efadd0d391c38466717736ddb5cdd4123eb5db"
+        },
         "initialization": {
           "activation_bits": 1,
           "latent_initialization": {
@@ -368,7 +391,7 @@
           "target_sha256": "05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6"
         },
         "production_readiness": "PENDING",
-        "scope": "one original TRAIN block, captured-prefix hard CE or exact captured-prefix full L1; CPU development only",
+        "scope": "one original TRAIN block; full teacher is available/materialized when captured; hard CE uses labels only. Full-probability L1 is a separately selected objective; CPU development only",
         "target_sha256": "05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6",
         "teacher_logits_shape": [
           7,
@@ -394,7 +417,7 @@
       "activation_bits": 8,
       "argv": [
         "/Users/pippo/github/binary-eagle-decoding/.venv/bin/python",
-        "/private/tmp/nine-model-qat-20261004/training-cpu-integration/scripts/check_block_qat_cpu_model.py",
+        "/Users/pippo/github/binary-eagle-decoding/scripts/check_block_qat_cpu_model.py",
         "--family",
         "dflash",
         "--activation-bits",
@@ -485,6 +508,14 @@
           "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-03/dflash/manifest.json",
           "sha256": "54f1c2bef6b83c7cc2104c56055fa7fbc2a08cc9801b0cb5315f8d7bbbe06040"
         },
+        "fit_phase_report": {
+          "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-fusion-20261004/phase-report.json",
+          "sha256": "0aae6b5c0faafc4ba2f6d35edcd59db58a98db8c25c4a05e79f1a5224bc25d77"
+        },
+        "fit_report": {
+          "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-fusion-20261004/dflash-a8-scale-only/fit_report.json",
+          "sha256": "17487931f22c57241173d9ffc43a9c7db6810b02220d84f40578ead4c08cf9cd"
+        },
         "initialization": {
           "activation_bits": 8,
           "latent_initialization": {
@@ -560,7 +591,7 @@
           "target_sha256": "05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6"
         },
         "production_readiness": "PENDING",
-        "scope": "one original TRAIN block, captured-prefix hard CE or exact captured-prefix full L1; CPU development only",
+        "scope": "one original TRAIN block; full teacher is available/materialized when captured; hard CE uses labels only. Full-probability L1 is a separately selected objective; CPU development only",
         "target_sha256": "05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6",
         "teacher_logits_shape": [
           7,
@@ -586,7 +617,7 @@
       "activation_bits": 1,
       "argv": [
         "/Users/pippo/github/binary-eagle-decoding/.venv/bin/python",
-        "/private/tmp/nine-model-qat-20261004/training-cpu-integration/scripts/check_block_qat_cpu_model.py",
+        "/Users/pippo/github/binary-eagle-decoding/scripts/check_block_qat_cpu_model.py",
         "--family",
         "dflash",
         "--activation-bits",
@@ -677,6 +708,14 @@
           "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-03/dflash/manifest.json",
           "sha256": "54f1c2bef6b83c7cc2104c56055fa7fbc2a08cc9801b0cb5315f8d7bbbe06040"
         },
+        "fit_phase_report": {
+          "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-fusion-20261004/phase-report.json",
+          "sha256": "0aae6b5c0faafc4ba2f6d35edcd59db58a98db8c25c4a05e79f1a5224bc25d77"
+        },
+        "fit_report": {
+          "path": "/Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-preparation/development-cpu-pilot-fusion-20261004/dflash-a1-scale-only/fit_report.json",
+          "sha256": "bf8dfd5110dadbadd94f22adcb14e852d60a8edd732ffb21a626394f5a642569"
+        },
         "initialization": {
           "activation_bits": 1,
           "latent_initialization": {
@@ -752,7 +791,7 @@
           "target_sha256": "05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6"
         },
         "production_readiness": "PENDING",
-        "scope": "one original TRAIN block, captured-prefix hard CE or exact captured-prefix full L1; CPU development only",
+        "scope": "one original TRAIN block; full teacher is available/materialized when captured; hard CE uses labels only. Full-probability L1 is a separately selected objective; CPU development only",
         "target_sha256": "05a259dca043f1089ec94ace1edc2a0086e4264c805eee81f57cc57f2dc720a6",
         "teacher_logits_shape": [
           7,
@@ -776,7 +815,7 @@
     }
   ],
   "checks": {
-    "focused_unit_tests": "6 PASS; actual pinned data/FC artifacts read without model construction",
+    "focused_unit_tests": "7 PASS; actual four pinned data/FC artifacts and repinned provenance mismatch refusal; no released weights loaded",
     "ruff": "PASS"
   },
   "execution": {
@@ -799,12 +838,51 @@
       "dflash-a8",
       "dflash-a1"
     ],
-    "parameter_versions": "checked after initialization before/after backward"
+    "parameter_versions": "checked after initialization before/after backward",
+    "scope_loss": "hard CE uses actual captured labels; available full teacher is materialized but unused by loss; full-L1 run remains separate PENDING"
   },
+  "main_source_join": {
+    "scripts/check_block_qat_cpu_model.py": {
+      "equal": false,
+      "main_sha256": "2a4499e666800c0f9b13f480c610a293a35000a0101b171690ce3b0cc3457cd5",
+      "worktree_sha256": "f214dc39dcd3d98b356d6cbff790e3d7d7f5037e9a36cd8e89167bfa7ecb1419"
+    },
+    "scripts/train_nine_model_qat.py": {
+      "equal": true,
+      "main_sha256": "edf025d81694722fc56a730409d6fbcd9e8c333058517ab1a8be730634b2d9d8",
+      "worktree_sha256": "edf025d81694722fc56a730409d6fbcd9e8c333058517ab1a8be730634b2d9d8"
+    },
+    "src/w1a1_eagle/block_data.py": {
+      "equal": true,
+      "main_sha256": "b2062f4e2fded053cd4b6818dcb47bd59572957f5f09806408064d38e7e762ad",
+      "worktree_sha256": "b2062f4e2fded053cd4b6818dcb47bd59572957f5f09806408064d38e7e762ad"
+    },
+    "src/w1a1_eagle/block_qat.py": {
+      "equal": true,
+      "main_sha256": "98adfc8c3704a5c845c4b75995b2263c0b5627b2f2dfe2f8d469d7c36822147b",
+      "worktree_sha256": "98adfc8c3704a5c845c4b75995b2263c0b5627b2f2dfe2f8d469d7c36822147b"
+    },
+    "src/w1a1_eagle/block_training.py": {
+      "equal": true,
+      "main_sha256": "89e6f095464a44b8ce5ad12eb413655ba3db12451b3cc429e30cf9d20e6f1363",
+      "worktree_sha256": "89e6f095464a44b8ce5ad12eb413655ba3db12451b3cc429e30cf9d20e6f1363"
+    },
+    "src/w1a1_eagle/qat_initialization.py": {
+      "equal": true,
+      "main_sha256": "03f18cd02d646d9cc6c774f9747578a24f19485dadafeec2e55b4c0366f9baa2",
+      "worktree_sha256": "03f18cd02d646d9cc6c774f9747578a24f19485dadafeec2e55b4c0366f9baa2"
+    },
+    "src/w1a1_eagle/recurrent_qat.py": {
+      "equal": true,
+      "main_sha256": "ececcb925410bc9c77776b473e84d671d9e2da1a841a1b217caa68a0cafe7a12",
+      "worktree_sha256": "ececcb925410bc9c77776b473e84d671d9e2da1a841a1b217caa68a0cafe7a12"
+    }
+  },
+  "main_source_join_status": "6 shared core/launcher sources exact; guard awaits corrective integration before launch",
   "schema": "block_qat_actual_train_cpu_composition_plan_v1",
   "scope": "one authenticated original TRAIN block per actual model family/activation profile after sparse source-magnitude FC calibration; establishes composition only. No optimizer steps, GPU/SSH, quality/evaluation, campaign readiness or SM120 proof. Old synthetic reports remain immutable.",
   "source_files": {
-    "scripts/check_block_qat_cpu_model.py": "2a4499e666800c0f9b13f480c610a293a35000a0101b171690ce3b0cc3457cd5",
+    "scripts/check_block_qat_cpu_model.py": "f214dc39dcd3d98b356d6cbff790e3d7d7f5037e9a36cd8e89167bfa7ecb1419",
     "scripts/train_nine_model_qat.py": "edf025d81694722fc56a730409d6fbcd9e8c333058517ab1a8be730634b2d9d8",
     "src/w1a1_eagle/block_data.py": "b2062f4e2fded053cd4b6818dcb47bd59572957f5f09806408064d38e7e762ad",
     "src/w1a1_eagle/block_qat.py": "98adfc8c3704a5c845c4b75995b2263c0b5627b2f2dfe2f8d469d7c36822147b",

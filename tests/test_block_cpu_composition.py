@@ -1,6 +1,7 @@
 """Lightweight CPU guard tests; released-model launches require separate approval."""
 
 import hashlib
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -46,6 +47,11 @@ def args(family="dspark", **changes):
             data_admission_sha256=admission_sha,
             initialization_index=INDEX,
             initialization_index_sha256=INDEX_SHA,
+            base_sha256=(
+                "3685ea7785729b4d3e9de3939264c1c87eb98a2bf7935a8c838eccf36be9fd13"
+                if family == "dspark"
+                else "61b294dc798c507fdc4a87f397b4015a78b3cdd7edad1e940e683bba10fb5575"
+            ),
         )
         | changes
     )
@@ -100,6 +106,57 @@ class BlockCPUCompositionTests(unittest.TestCase):
         with patch("check_block_qat_cpu_model.calibration", return_value={}):
             with self.assertRaisesRegex(ValueError, "admission differs"):
                 input_contract(args(data_admission_sha256="0" * 64), BlockQATConfig("dspark", 8))
+
+    @unittest.skipUnless(INDEX.exists(), "actual pinned CPU artifacts not present")
+    def test_fit_capture_model_and_phase_join_refuse_repinned_mismatch(self):
+        for override in ({"data_sha256": "0" * 64}, {"base_sha256": "0" * 64}):
+            with patch("check_block_qat_cpu_model.calibration") as calibration_mock:
+                with self.assertRaisesRegex(ValueError, "provenance join"):
+                    input_contract(args(**override), BlockQATConfig("dspark", 8))
+                calibration_mock.assert_not_called()
+        index = json.loads(INDEX.read_text())
+        phase = json.loads(Path(index["phase_report"]["path"]).read_text())
+        fit = json.loads(Path(index["profiles"][0]["fit_report"]["path"]).read_text())
+        for altered in ({**phase, "status": "FAIL"}, {**phase, "fits": []}):
+            with patch("check_block_qat_cpu_model.pinned_json", side_effect=[altered, fit]):
+                with self.assertRaisesRegex(ValueError, "provenance join"):
+                    input_contract(args(), BlockQATConfig("dspark", 8))
+        with tempfile.TemporaryDirectory() as tmp:
+            changed = Path(tmp) / "index.json"
+            index["phase_report"]["sha256"] = "0" * 64
+            changed.write_text(json.dumps(index))
+            with self.assertRaisesRegex(ValueError, "provenance artifact"):
+                input_contract(
+                    args(initialization_index=changed, initialization_index_sha256=sha256(changed)),
+                    BlockQATConfig("dspark", 8),
+                )
+        # Every external pin is internally valid, yet the calibration belongs to
+        # another capture. Reject this semantic mismatch before loading arrays.
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            index = json.loads(INDEX.read_text())
+            fit["data_sha256"] = "0" * 64
+            fit_path = directory / "fit.json"
+            fit_path.write_text(json.dumps(fit))
+            descriptor = {"path": str(fit_path), "sha256": sha256(fit_path)}
+            index["profiles"][0]["fit_report"] = descriptor
+            phase = json.loads(Path(index["phase_report"]["path"]).read_text())
+            phase["fits"][0]["report"] = descriptor
+            phase_path = directory / "phase.json"
+            phase_path.write_text(json.dumps(phase))
+            index["phase_report"] = {"path": str(phase_path), "sha256": sha256(phase_path)}
+            index_path = directory / "index.json"
+            index_path.write_text(json.dumps(index))
+            with patch("check_block_qat_cpu_model.calibration") as calibration_mock:
+                with self.assertRaisesRegex(ValueError, "provenance join"):
+                    input_contract(
+                        args(
+                            initialization_index=index_path,
+                            initialization_index_sha256=sha256(index_path),
+                        ),
+                        BlockQATConfig("dspark", 8),
+                    )
+                calibration_mock.assert_not_called()
 
     def test_sparse_fit_artifact_actual_source_application_and_zero_update_smoke(self):
         for family in ("dspark", "dflash"):

@@ -12,6 +12,7 @@ import json
 import os
 import platform
 import resource
+import struct
 import subprocess
 import sys
 import threading
@@ -51,6 +52,15 @@ def memory(python, pid):
     )
 
 
+def pinned_json(locator):
+    if not isinstance(locator, dict) or set(locator) != {"path", "sha256"}:
+        raise ValueError("fit provenance requires exact path/SHA locator")
+    path = Path(locator["path"])
+    if sha256(path) != locator["sha256"]:
+        raise ValueError("fit provenance artifact differs from external SHA pin")
+    return json.loads(path.read_text())
+
+
 def input_contract(args, config):
     """Authenticate bounded current-host data/fit joins before loading model weights."""
     names = (
@@ -88,13 +98,70 @@ def input_contract(args, config):
     ]
     if len(profiles) != 1:
         raise ValueError("initialization index must select exactly one family/activation profile")
-    locator = profiles[0]["initialization"]
+    profile = profiles[0]
+    locator = profile["initialization"]
     if (
         locator.get("encoding", "policy_latents") != "policy_latents"
         or locator.get("latent_initialization", {}).get("policy") != "preserve_reference_magnitudes"
         or locator["latent_initialization"]["reference_kind"] != "block_source_weight_magnitudes"
     ):
         raise ValueError("CPU composition selects sparse FC reference-magnitude policy latents")
+    phase = pinned_json(index["phase_report"])
+    fit = pinned_json(profile["fit_report"])
+    phase_fits = [
+        record
+        for record in phase.get("fits", [])
+        if record.get("family") == config.family
+        and type(record.get("activation_bits")) is int
+        and record["activation_bits"] == config.activation_bits
+    ]
+    expected_cells = {(family, bits) for family in ("dspark", "dflash") for bits in (1, 8)}
+    phase_cells = [(r.get("family"), r.get("activation_bits")) for r in phase.get("fits", [])]
+    all_profiles = {(p["family"], p["activation_bits"]): p for p in index["profiles"]}
+    complete_phase = (
+        len(phase_cells) == 4
+        and set(phase_cells) == expected_cells
+        and len(index["profiles"]) == 4
+        and all(type(p["activation_bits"]) is int for p in index["profiles"])
+        and set(all_profiles) == expected_cells
+        and all(
+            type(record.get("activation_bits")) is int
+            and record.get("status") == "PASS"
+            and record.get("returncode") == 0
+            and record.get("reaped") is True
+            and record.get("report") == all_profiles[cell]["fit_report"]
+            for cell, record in zip(phase_cells, phase.get("fits", []), strict=True)
+        )
+    )
+    metadata = locator["latent_initialization"]
+    if (
+        phase.get("schema") != "nine_model_cpu_fusion_phase_receipt_v1"
+        or phase.get("artifact_kind") != "development_CPU"
+        or phase.get("status") != "PASS"
+        or phase.get("optimizer_updates") != 0
+        or phase.get("all_owned_fit_processes_reaped") is not True
+        or not complete_phase
+        or len(phase_fits) != 1
+        or phase_fits[0].get("status") != "PASS"
+        or phase_fits[0].get("returncode") != 0
+        or phase_fits[0].get("reaped") is not True
+        or phase_fits[0].get("report") != profile["fit_report"]
+        or profile.get("artifact_kind") != "development_CPU"
+        or fit.get("schema") != "block_fusion_fit_v1"
+        or fit.get("data_sha256") != args.data_sha256
+        or fit.get("original_model_sha256") != args.base_sha256
+        or fit.get("artifact_sha256") != locator["sha256"]
+        or fit.get("norm_epsilon_f32_bits")
+        != struct.unpack("<I", struct.pack("<f", config.norm_eps))[0]
+        or type(fit.get("config", {}).get("activation_bits")) is not int
+        or fit["config"]["activation_bits"] != config.activation_bits
+        or any(
+            fit.get("fit", {}).get("latent_initialization", {}).get(key) != value
+            for key, value in metadata.items()
+        )
+        or fit.get("fit", {}).get("arithmetic") != profile.get("arithmetic")
+    ):
+        raise ValueError("fit phase/data/model/artifact/policy provenance join differs")
     initializer = calibration(locator, config)
     dataset = BlockDataset(
         args.data_manifest,
@@ -130,6 +197,8 @@ def input_contract(args, config):
             "sha256": args.initialization_index_sha256,
         },
         "initialization": locator,
+        "fit_report": profile["fit_report"],
+        "fit_phase_report": index["phase_report"],
         "data_cursor": cursor.payload(),
         "next_data_cursor": next_cursor.payload(),
         "target_sha256": dataset.manifest["producer"]["target_sha256"],
@@ -142,7 +211,8 @@ def input_contract(args, config):
         "predecessor_ids": batch.predecessor_ids.tolist(),
         "teacher_prefix_sha256": list(batch.teacher_prefix_sha256),
         "scope": (
-            "one original TRAIN block, captured-prefix hard CE or exact captured-prefix full L1; "
+            "one original TRAIN block; full teacher is available/materialized when captured; "
+            "hard CE uses labels only. Full-probability L1 is a separately selected objective; "
             "CPU development only"
         ),
     }
