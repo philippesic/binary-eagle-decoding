@@ -61,3 +61,20 @@ All owned feature/QA/operator workers are checkpointed; merged temporary
 worktrees/branches are retired. Raw artifacts, CPU binaries/current and backed-up
 libraries, earlier failures and QA archives remain outside Git in main. Other
 teams’ worktrees and original untracked overnight files are untouched.
+
+## EAGLE supplement — October 5, 04:36 UTC
+
+Published `3ecb1c1`/`24a8a8a` diagnostic source and ancestry guard, `a90a9ff`
+actual report, `b8bbf88` independent QA. Both direct A8/A1 CPU cells passed
+18 selected finite/nonzero gradients, later-state/K/V gradients and nine packed
+projection serialization checks with zero optimizer updates/moments. PeakRSS
+5.80GB. Seven new focused tests and changed-file lint/format PASS. The complete
+local TRAIN diagnostic is preparation-only, training-ineligible; all four
+historical identity/numeric/mask/completeness gates remain unresolved. Original
+unmodified pinned AngelSlim leaf modules were loaded through a private namespace;
+this is not an official full-framework loader or warm-lifecycle admission.
+
+The new actual report and additive QA ledger are tracked; large NPZ/GGUF/raw
+artifacts stay under main's ignored results directory. Original 51-pin ledger
+and draft identities remain unchanged. This supplement does not freeze choices
+or production readiness. RTX5080 pause and Mac-only boundary persist.

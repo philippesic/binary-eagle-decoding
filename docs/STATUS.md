@@ -21,15 +21,27 @@ partitions, missing block capture artifacts and readiness evidence.
 Required output is a tested, frozen source/data/config/launch bundle with
 independent QA and truthful profile/hardware evidence, plus minimal fresh
 SM120 checks and automatic evaluation after committed training and cleanup.
-Source/reports are integrated/pushed through `b3d02b9`, native fork `624f50e74`.
+Source/reports are integrated/pushed through `b8bbf88`, native fork `624f50e74`.
 [Mac checkpoint](../experiments/nine-model-qat-preparation/mac-checkpoint-2026-10-04.md)
 and [inspectable draft packet](../experiments/nine-model-qat-preparation/pipeline-draft-packet.md)
 record actual CPU data/calibration/initialized-model/native export evidence.
 Nine authentic TRAIN chains/six physical CPU golden calls, four scale-only fits,
 four calibrated actual-model zero-update forward/backward cells and four native
 calibrated CPU exports/graphs passed. Prior failures are preserved and fixed.
-All owned groups are reaped; merged workers/worktrees are being retired with
+All owned groups are reaped; merged workers/worktrees are retired with
 raw artifacts and build/runtime/QA provenance preserved outside Git.
+
+Additional EAGLE direct A8/A1 CPU component diagnostics passed at `a90a9ff`;
+independent QA addendum `b8bbf88` verifies 18 finite/nonzero selected gradients,
+later-state/K/V gradients and nine-projection serialization. Zero optimizer
+updates/moments; maxRSS5.80GB. The original TRAIN diagnostic stays ineligible
+with four unresolved gates; this establishes neither warm/production admission
+nor a native calibrated trajectory. Seven focused tests and changed-file
+Ruff/format passed. See the latest rotation checkpoint in the goal file.
+
+After two compactions this coordinator is checkpointing a fresh successor.
+There are no live preparation workers or owned local/remote jobs to transfer;
+successor verification and exclusive ownership must precede further work.
 
 Final integrated source checks:172 campaign tests OK/five Linux/device skips,
 78 block tests PASS, changed-file Ruff/format PASS;51 independent source pins

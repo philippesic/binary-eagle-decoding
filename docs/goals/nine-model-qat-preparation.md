@@ -796,3 +796,104 @@ postinitparamversions. Diagnosticeligibilityfalse preserved; never feedineligibl
 bundle toContinuousTrainer/CurriculumRunner orclaimwarm/production readiness.
 No heavy EAGLErun has started. QAfocusedsource/scope review assigned. This is
 aligned additional required evidence, not a new goal or changed success target.
+
+## Safe rotation checkpoint — October 5, 04:36 UTC
+
+**Objective remains ACTIVE and unfinished:** implement and independently test
+the frozen nine-model QAT preparation bundle, native block binary paths,
+hard-forward training/data/fusion contracts, exact resume/export and resource-safe
+automatic native evaluation. Preserve RTX5080 pause; distinguish portable
+readiness from fresh SM120 admission. This continuation is PROGRESS, not
+completion or an impasse: the outstanding EAGLE diagnostic was completed.
+
+**Published work:** main `b8bbf88`; native fork/gitlink
+`624f50e74f51b6af93bf6b879f84703e726df172`, published on
+`origin/prep/nine-model-block-native` before parent integration. Latest commits:
+`853f33a` completion audit, `3ecb1c1` direct EAGLE diagnostic, `24a8a8a` capture
+ancestry/import paths, `a90a9ff` actual cells, `b8bbf88` independent QA. Earlier
+Mac checkpoint/draft reports preserve complete block/pipeline evidence.
+
+**New actual EAGLE evidence:** direct A8/A1 fresh actual source cells completed
+on Apple M3 Max CPU, using immutable original TRAIN diagnostic manifest
+`52a6f718922c15c46c7bfaa2a2754795322652f7a7ee0d975a21af19c2f51649`,
+original SF/config and git0358da9 unmodified AngelSlim leaf source. Source
+F16-to-F32 conversion is disclosed. Sparse FC scale-only controls retain ±0.5
+reference magnitude; no orientation rescue. All18 selected gradients finite and
+nonzero; later-state/K/V positive. Postinit versions unchanged, optimizerstep
+forbidden, zero updates/moments. Nine-projection serialization/protected norm
+and d2t exact checks passed; native graph admission remains FALSE. PeakRSS
+5,800,787,968 bytes, minimum available15,418,245,120 bytes. Master15683/PGIDs
+15685 and15772 exited and are absent; session2426 complete.
+
+Report `actual-eagle-direct-cpu-diagnostic-2026-10-04.json` SHA
+`8d260ec91369978a30221846778adbb92246f78b50873d625985675be23df28e`;
+plan SHA`4d96ed73038afdb1dbc11580eb8c1027eab331d09673ecdfa86ee12063db9238`;
+additive QA ledger SHA
+`ee17ad9e726dce503f1e535aa71ee709694ac52258bb2ebb81bc2175d60cf4d6`.
+Raw NPZ/GGUF/logs: main ignored
+`results/nine-model-qat-preparation/actual-eagle-direct-cpu-diagnostic-20261004`.
+Independent QA checked report/source/initializer/export joins, with checkpoint
+SHA compared report-to-manifest (not a fresh833MB rehash). The original four
+unresolved gates MUST remain: native_model_execution_identity,
+native_target_feature_numeric_parity, full_drafter_mask_position_and_kv_parity,
+initial_sample_terminal_emission_and_request_completeness. No ContinuousTrainer
+or CurriculumRunner/warm/production admission may consume this ineligible bundle.
+
+**Tests:** new seven `test_eagle_cpu_diagnostic` tests pass; changed-file Ruff
+and format pass. Earlier172 campaign OK/five Linux/device skips,78 block PASS,
+98 QAT/export regressions remain as scoped previously. Full-repo baseline12
+stopped-reference errors and1183 Ruff/73 format findings are preserved; no clean
+global-suite claim. Original51-pin QA ledger/draft unchanged, allnine
+aggregate/prelaunch statuses PENDING and six candidates UNSELECTED.
+
+**Live work and preserved state:** training, QA, native, pipeline, data-fusion,
+contracts-advisor and CUDA-operator workers completed; none owns a running job.
+All preparation model/process groups are terminal; no remote tmux job/transport
+is active. The only earlier remote dependency supervisor exited0 before pause.
+No remote query/staging/build/model/capture/training/evaluation since closure.
+Do not reopen either host. Local shared registry's RTX5080 pause remains true;
+old RTX2080Ti flag is not authorization or availability. New training/QA trees
+are retired after integration; root completion-audit tree is retiring after this
+checkpoint. Other teams' trees and the original untracked overnight20261002
+groups remain untouched. Original QA archive160files map SHA
+`54ebc2a2466bd4728d7174e374a28427374c9fe3aeab678a99f103b639ca70c3`;
+new QA had zero ignored files and its zero-file archive map SHA
+`476290c1bfc748b34b15512afb716d7517ad06b50d70891d8c6cac1d06f3477a`
+is at `runs/nine-model-qa-eagle-direct-cpu-diagnostic/archive-map.json`.
+CPU binaries/libs/provenance backups stay in
+`/private/tmp/nine-model-qat-20261004/native-build`; model/data/raw results stay
+ignored in main. Do not clean or delete them.
+
+**Unresolved human decisions:** the pending text question asks block coverage
+(FFN15 or FFN15 plus calibrated FC), A1 path (direct A1 or A8→A1 reset), and
+training/data-exposure/evaluation caps for six candidates. No answer received;
+never infer choices or renewed GPU authorization. Details/options in
+`docs/DECISIONS.md`. Serious production data/calibration, original frozen
+DSpark/DFlash Q4 files (remote-only), production portability inputs, and fresh
+authorized SM120/model/full-moment-memory/release checks remain missing. Original
+continuous EAGLE provider payloads are remote-only; metadata/sample operands
+cannot reconstruct valid continuous rounds. No real long QAT or evaluation has
+started. Q4_0 EAGLE remains primary success comparison.
+
+**Exact next actions for successor:**
+1. Read STATUS, this checkpoint and AGENT_OPERATIONS; verify main/native source,
+   preserved report/artifact paths and no owned live jobs using local evidence.
+   Verify shared pause locally without SSH. Acknowledge sole ownership in these
+   two records before making further implementation edits. Create/resume your
+   own native Goal from the unchanged objective; old chat Goal is not the record.
+2. Preserve original draft/QA identities and pending human choices. Consult
+   DECISIONS; resolve choices only from a human response. Do not restart
+   completed CPU checks merely to remain busy or expand into unrelated work.
+3. Once human/external inputs arrive, bind selected source/data/calibration/Q4/
+   configs into a genuine frozen production bundle and inspect it with the
+   existing pipeline; never treat current exit0/PENDING draft as launch-ready.
+4. Only after renewed GPU authorization, assign one operator through tmux MCP,
+   use the shared registry and perform fresh SM120 admission/lifecycle checks
+   before authorized training/evaluation. Preserve held-out/sealed final and
+   immutable target/KV precision. Record actual hardware/precision and all
+   process/context releases.
+
+This second-compaction checkpoint is the handoff to a fresh successor Codex task.
+Old coordinator01a10903-1c7a-71b1-abb1-0de3ecc046b8 will stop goal work after
+successor read-only verification and ownership acknowledgment. No native Goal
+is marked complete merely to rotate; durable objective remains unfinished.
