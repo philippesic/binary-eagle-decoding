@@ -94,7 +94,59 @@ def native_command(bundle, protocol, cell, model, port):
     ]
 
 
+def inspect_collection(args):
+    from w1a1_eagle.nine_model_endpoint_collection import (
+        evaluation_view,
+        inspection,
+        validate_collection,
+    )
+
+    require(
+        args.collection_sha256 and sha256(args.collection) == args.collection_sha256,
+        "collection SHA256 differs",
+    )
+    require(
+        not args.bundle and not args.bundle_sha256 and not args.evaluation_inputs,
+        "collection and same-bundle input routes cannot be mixed",
+    )
+    context = validate_collection(json.loads(args.collection.read_text()))
+    view, models = evaluation_view(context)
+    result = inspection(context)
+    result["collection_sha256"] = args.collection_sha256
+    # Reuse the existing native argument builder without opening prompts or CUDA.
+    lengths = context["protocol"].get("draft_lengths", {})
+    if all(family in lengths for family in ("eagle", "dspark", "dflash")):
+        result["native_argv"] = {
+            cell: native_command(
+                view, context["protocol"], cell, models.get(cell), context["protocol"]["port"]
+            )
+            for cell in (*CELLS, "target_only")
+        }
+    else:
+        result["runtime_pending"] = result["runtime_pending"] + [
+            "existing protocol lacks declared draft lengths for all families"
+        ]
+    return result
+
+
 def run(args):
+    if getattr(args, "collection", None):
+        result = inspect_collection(args)
+        require(
+            getattr(args, "inspect_collection", False),
+            "collection execution PENDING: fresh supervised collection lease/lock/"
+            "continuation/admission/release adapter required",
+        )
+        print(json.dumps(result, sort_keys=True))
+        return result
+    require(
+        args.bundle
+        and args.bundle_sha256
+        and args.evaluation_inputs
+        and args.run_dir
+        and args.completion_output,
+        "same-bundle evaluation inputs required",
+    )
     require(sha256(args.bundle) == args.bundle_sha256, "bundle differs")
     bundle, files = validate_bundle(args.bundle)
     inputs = json.loads(args.evaluation_inputs.read_text())
@@ -354,9 +406,12 @@ def run(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--bundle", type=Path, required=True)
-    parser.add_argument("--bundle-sha256", required=True)
-    parser.add_argument("--evaluation-inputs", type=Path, required=True)
-    parser.add_argument("--run-dir", type=Path, required=True)
-    parser.add_argument("--completion-output", type=Path, required=True)
+    parser.add_argument("--bundle", type=Path)
+    parser.add_argument("--bundle-sha256")
+    parser.add_argument("--evaluation-inputs", type=Path)
+    parser.add_argument("--run-dir", type=Path)
+    parser.add_argument("--completion-output", type=Path)
+    parser.add_argument("--collection", type=Path)
+    parser.add_argument("--collection-sha256")
+    parser.add_argument("--inspect-collection", action="store_true")
     run(parser.parse_args())
