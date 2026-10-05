@@ -1775,30 +1775,6 @@ Current calibrated native acceptance PENDING; A1 queues after natural trainer
 AND endpoint release. Remaining model/device/controls/held-out gates and09:25
 human inputs stay pending; no quality conclusion follows from training telemetry.
 
-## Half-allocation milestone; scheduled health — October 5, 15:30 PDT
-
-Previous turn was progress plus verified waiting. Root22:30:03UTC actual remote
-read-only healthcheck PASS: same five boot/birth/PGID identities, both running/
-no-signal supervisors, clean30a/cc9 and frozen endpoint plan rehash. QAT293,949
-updates/44,208.2468trainerseconds (51.17% of unchanged86,400allocation;12.28h),
-3,606TRAINprompts/1,398,215distinct supervised rows,18finitegradients/finite
-loss3.900766,heartbeat0.0300s. Resources/checkpoint freshness PASS:
-GPUfree8,161,067,008B,hostavailable18,142,261,248B,diskfree196,170,043,392B.
-Watcher still passive waiting_for_natural_endpoint/GPUqueriedfalse/training
-changedfalse. No repair/new job/runtime source/config/lease/budget/process change.
-
-Checkpoint293,750 SHA
-df3467065fa9dfe52d9f22f7616da0c090cdda5ae081afec1b08b64ad2d6b302
-is manifest-declared, not newly byte-rehashed. Ignored proof
-`results/nine-model-qat-overnight/health-20261005-1530.json`, SHA
-dcdaf41bc1ea47aaadde245587eaf2a3980a5abaa3d5450d374d69f22228c704;
-adjacent raw command/result/capture preserved. Sole owner/operator/SAME ACTIVE
-monitor verified. Half-allocation milestone notified with truthful exposure,
-not quality inference. Full GoalACTIVE/unfinished; about11.72trainerhours remain,
-no wall ETA. Next around16:00PDT. Current calibrated native acceptance PENDING;
-originalsource-pinned A1 queues after natural trainer AND endpoint release.
-Remaining model/device/controls/held-out gates and09:25human inputs stay pending.
-
 ## Scheduled verified training wait — October 5, 14:59 PDT
 
 Previous turn was progress plus verified waiting. After root's input-interruptible
@@ -1824,3 +1800,29 @@ unchanged/about12.22trainerhours remain/no wall ETA. Next around15:30PDT.
 Current calibrated acceptance PENDING; A1 queues after natural trainer AND
 endpoint release. Remaining model/device/controls/held-out gates and09:25
 human inputs stay pending; no quality conclusion follows from training telemetry.
+
+## Half-allocation milestone; scheduled health — October 5, 15:30 PDT
+
+Previous turn was progress plus verified waiting. Root22:30:03UTC actual remote
+read-only healthcheck PASS: same five boot/birth/PGID identities, both running/
+no-signal supervisors, clean30a/cc9 and frozen endpoint plan rehash. QAT293,949
+updates/44,208.2468trainerseconds (51.17% of unchanged86,400allocation;12.28h),
+3,606TRAINprompts/1,398,215distinct supervised rows,18finitegradients/finite
+loss3.900766,heartbeat0.0300s. Resources/checkpoint freshness PASS:
+GPUfree8,161,067,008B,hostavailable18,142,261,248B,diskfree196,170,043,392B.
+Watcher still passive waiting_for_natural_endpoint/GPUqueriedfalse/training
+changedfalse. No repair/new job/runtime source/config/lease/budget/process change.
+
+Checkpoint293,750 SHA
+df3467065fa9dfe52d9f22f7616da0c090cdda5ae081afec1b08b64ad2d6b302
+is manifest-declared, not newly byte-rehashed. Ignored proof
+`results/nine-model-qat-overnight/health-20261005-1530.json`, SHA
+dcdaf41bc1ea47aaadde245587eaf2a3980a5abaa3d5450d374d69f22228c704;
+adjacent raw command/result/capture preserved. Sole owner/operator/SAME ACTIVE
+monitor verified. Half-allocation milestone notified with truthful exposure,
+not quality inference. Full GoalACTIVE/unfinished; about11.72trainerhours remain,
+no wall ETA. Next around16:00PDT. Current calibrated native acceptance PENDING;
+originalsource-pinned A1 queues after natural trainer AND endpoint release.
+Remaining model/device/controls/held-out gates and09:25human inputs stay pending.
+
+<!-- APPEND_GOAL_CHECKPOINTS_HERE -->
