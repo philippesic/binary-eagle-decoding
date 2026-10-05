@@ -603,3 +603,43 @@ Remaining original cumulative CPU capture budget≤1753seconds after46.145327458
 charged execution; no automatic retry or fitting started. Source/tests/independent
 actual-receipt audit and root plan review are required before proposed03. Final
 QA/source/packet pinning deferred accordingly; both failures stay visible.
+
+
+## Generated/replay contract repair and attempt03 dispatched
+
+Main `4cba39c`/native624 published. Generated contract repair `a87b07d`
+(fe724ad) separates common CPU/CUDA capture file/source checks from actual
+native prompt/tokenizer/template/greedy generation identity. Importer persists
+runtime/client identity and validates rendered/source hashes, exact boundary,
+termination including EOG at the final permitted token, and raw-text no-template
+semantics. Goldens remain replay-only. Root72 focused source checks PASS; author
+and independent QA imported both preserved53-row receipts offline and loaded
+full-vocabulary7-row blocks with20×5×2560 contexts/7×151936 teachers. Raw feature/
+logit bytes are identical between attempts01/02. Original FAILs remain unchanged.
+
+QA caught a golden relabel loophole: NativeCaptureGoldens accepted generated
+metadata after tag/buffer rewrites. Fix `4cba39c` requires replay freshness
+caller_current_student_prefix and excludes generated prompt/generation fields in
+capture replay, loaded goldens and fresh producer checks. Root74 focused tests
+PASS; independent QA exact actual-receipt counterexample now rejects, positive
+actual generated/import paths still pass. No weights/model were loaded by audits.
+Final source/QA snapshot refresh must include changed block_data/capture/portability
+source; pipeline still defers final artifact packet until terminal data/fits.
+
+Root GO03 issued only after those offline/independent checks. Same9+6/caps;
+wall1753seconds charges46.145327 prior execution within original cumulative1800.
+Plan `ad3e70789ff232dc620bb2b581c48fbf234274f059355f9ca6c24ec8d60ab865` at
+`results/nine-model-qat-preparation/development-cpu-pilot-plan-20261004-03/plan.json`;
+CLI `d3e737f30d09bb80d4f0bd81569971bd602def5700a3db0e08c384962d37b5fd`.
+Refreshed plan-only inspection03-replay-fixed/cost
+`753750a84ccbb7e3c8d18fa4696bb362f62aa7947b4c06a9423e01fc7722bf85`.
+Source/hash/cap checked adjacently. Sole heavy owner `/root/data_fusion`:
+local exec1792/controllerPID+PGID1957; native child will share group. Adjacent
+available16,440,033,280 bytes>12GiB/ownerRSS204,242,944. Actual output
+`results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-03/`;
+progress.jsonl every15seconds, STOP at that output directory, SIGTERM to exact
+owned controller/group if necessary. Resource watcher monitors live≥4GiB,
+parent+native RSS≤12GiB, retained≤8GiB, timeout≤1753, prompt≤512/new≤32/chain≤544.
+No GPU/optimizer/quality or held-out work. At6.18seconds completed0/source audits,
+no other heavy owned job. Owner reports milestones and explicit close/reap;
+no automatic retry; fits require terminal producer cleanup and separate plan.
