@@ -901,3 +901,35 @@ Healthy A8 and passive endpoint continue under original30a/cc9 and existing budg
 Goal remains ACTIVE/fullsix+three scope. All current bounded workers complete;
 retention worker tree/branch can retire after reviewed integration push and its
 ignored evidence preservation. Root keeps sole transport/30-minute monitor.
+
+## Post-integration verified training wait — October 5, 05:47 PDT
+
+Main4f45f74 is pushed; all retained worker/integration histories reviewed and
+preserved. The retention feature tree/branch retired after ancestry verification,
+as did the three root integration trees; only this checkpoint's temporary root
+tree remains until publication. Needed actual metadata/QA/cost evidence is in
+ignored primary results. No live bounded worker remains or needs handoff.
+
+Read-only remote snapshot12:47:15UTC confirms all five exact boot/birth identities,
+frozen training parent30a8dc7/nativecc9cab3, running training and continued
+waiting_for_natural_endpoint/gpu_queried=false/training_changed=false watcher.
+QAT62,066updates/9,240.834trainerseconds,766TRAINprompts/295,967rows,18finite
+gradients/loss5.75620, heartbeat0.0149s; GPUfree8,161,067,008B,
+hostavailable17,100,918,784B, diskfree196,536,004,608B. Checkpoint62,000 SHA
+`3a344bfd6470ab9a5bc76886671ef295f75541eee134780fc5bc66fd7e7f021b`
+is manifest-declared, not byte-rehashed. Coherent metadata snapshot preserved
+`results/nine-model-qat-overnight/health-after-retention-20261005.json`, SHA
+`4edfec04200f532854cfc3d744351c0bf4b15e92ae3a2b796bac4d24abbec480`.
+Machine-local registration now holds the same coherent observation and exact
+A1 historical-link/retention/worker-completion facts.
+
+This continuation was progress: A1 historical physical golden reuse completed,
+depth alternatives and pending decisions published, retention source/tests
+integrated, old worker histories/raw evidence reconciled and safely retired.
+Now verified waiting on the already-running healthy exact trainer/watcher;
+no failure/repair, extra GPU job, packet/source/precision or budget changes.
+Human block exposure/conditioning response remains pending, not inferred.
+Remaining A1/block actors, captures, admissions, candidate QAT and final nine
+comparisons remain unfinished. Native Goal ACTIVE, SAME30-minute heartbeat ACTIVE.
+Continue read-only monitoring approximately every30minutes with existing sole
+transport, preserve healthy86,400trainersecond allocation and natural endpoint.
