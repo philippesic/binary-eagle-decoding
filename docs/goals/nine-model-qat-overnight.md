@@ -257,3 +257,22 @@ Independent QA prepares selected portable/prelaunch ledger with otherfive and
 wholecampaign PENDING; freshphysical seven-gate Admission remains unexecuted.
 Next: bind actualpacket, freeze selectedlane, execute freshadmission and start
 positive-update sustainedQAT. Monitor staysACTIVE, ownregistration is current.
+
+
+## Protected device observer repair — October 5, 02:42 PDT
+
+First final controller eagle-a8-qat-overnight-20261005-01 exited1 before any
+admission/kernel/model call: unprivileged global /proc FD census denied. No
+optimizer update occurred; supervisor53572/child53577 are absent. Original
+frozen lane60dfcda7 and all failure evidence remain preserved.
+
+Published19b63c2 includes reviewed observer22ec997: only the fixed read-only
+root census uses the Windows WSL bridge; trainers remain unprivileged. Seven
+independent observer checks and41 scoped author checks pass (two platform skips).
+Actual5080 helper reports UID0, complete/read-only, matching boot/PID namespace
+and no device holders. Actual LinuxResources snapshot now exits0 with13.9GB
+GPU free and19.8GB host available. Helper SHA4f91c975... and pipeline2c7b6896...
+are repinned before a versioned lane/plan and fresh lease. Initializer/model/
+export/native-golden bytes remain valid and are reused. Root retains exclusive
+MCP$258/@287/%289 operation; old Luna must issue no remote command. Next: fresh
+seven-gate admission then sustained24h QAT;30-minute heartbeat remains ACTIVE.
