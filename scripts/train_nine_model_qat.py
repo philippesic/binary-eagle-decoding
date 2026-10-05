@@ -37,10 +37,12 @@ from w1a1_eagle.block_qat import (  # noqa: E402
     block_train_step,
 )
 from w1a1_eagle.block_training import (  # noqa: E402
+    BlockCheckpointRetention,
     BlockCursor,
     export_block_checkpoint,
     load_block_checkpoint,
     load_block_gguf,
+    protect_block_checkpoint,
     save_block_checkpoint,
     transition_a8_to_a1,
 )
@@ -68,6 +70,17 @@ def load_spec(path):
         raise ValueError("production profiles require explicit cuda:0")
     if not isinstance(spec.get("candidate"), str) or not spec["candidate"]:
         raise ValueError("candidate name required")
+    if "checkpoint_retention" in spec:
+        if spec["family"] == "eagle":
+            raise ValueError("checkpoint_retention is supported only by the block saver")
+        policy = spec["checkpoint_retention"]
+        if not isinstance(policy, dict) or set(policy) != {
+            "keep_recent",
+            "max_checkpoints",
+            "max_bytes",
+        }:
+            raise ValueError("explicit checkpoint retention fields required")
+        BlockCheckpointRetention(**policy)
     if spec["family"] != "eagle":
         config = BlockQATConfig(**spec["qat"])
         if config.family != spec["family"]:
@@ -500,6 +513,23 @@ def run_block(args, spec, hardware):
     resources(spec, "before block loading")
     model, dataset, source = block_inputs(spec, args.bundle_sha256)
     optimizer = block_optimizer(model)
+    retention = (
+        BlockCheckpointRetention(**spec["checkpoint_retention"])
+        if "checkpoint_retention" in spec
+        else None
+    )
+
+    def checkpoint(*protections):
+        return save_block_checkpoint(
+            model,
+            optimizer,
+            cursor,
+            source,
+            args.run_dir / "checkpoints",
+            retention=retention,
+            protect=protections,
+        )
+
     cursor = BlockCursor(
         data_cursor=dataset.cursor(seed=model.config.seed).payload(),
         stage="a8_warm_start" if spec.get("precision_stage") == "a8_to_a1" else "direct",
@@ -573,9 +603,7 @@ def run_block(args, spec, hardware):
                 "resources": footprint,
             }
         if args.prepare_only:
-            committed = save_block_checkpoint(
-                model, optimizer, cursor, source, args.run_dir / "checkpoints"
-            )
+            committed = checkpoint("initial")
             return {
                 "schema": "nine_model_preparation_v1",
                 "status": "PASS",
@@ -608,13 +636,7 @@ def run_block(args, spec, hardware):
 
         for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP):
             previous_handlers[sig] = signal.signal(sig, stop)
-        latest = (
-            receipt
-            if args.resume
-            else save_block_checkpoint(
-                model, optimizer, cursor, source, args.run_dir / "checkpoints"
-            )
-        )
+        latest = receipt if args.resume else checkpoint("initial")
         unique = set(cursor.unique_blocks)
 
         def capped():
@@ -662,9 +684,7 @@ def run_block(args, spec, hardware):
                     data_cursor=next_data.payload(),
                 )
                 if cursor.stage == "a8_warm_start" and cursor.step >= spec["a8_warmup_steps"]:
-                    latest = save_block_checkpoint(
-                        model, optimizer, cursor, source, args.run_dir / "checkpoints"
-                    )
+                    latest = checkpoint("transition_source")
                     del optimizer
                     model, optimizer, transition = transition_a8_to_a1(
                         model, source_checkpoint_sha256=latest["sha256"], in_place=True
@@ -673,12 +693,12 @@ def run_block(args, spec, hardware):
                         cursor, stage="a1_final", stage_updates=0, stage_supervised_tokens=0
                     )
                     atomic_json(args.run_dir / "precision-transition.json", transition)
+                    if retention is not None:
+                        latest = checkpoint("transition_destination")
                     # Transition retains training source cost/cursor; its own exact
                     # checkpoints bind A1 and fresh moments from this point onward.
                 elif cursor.step % spec["checkpoint_every"] == 0:
-                    latest = save_block_checkpoint(
-                        model, optimizer, cursor, source, args.run_dir / "checkpoints"
-                    )
+                    latest = checkpoint()
                 atomic_json(
                     args.run_dir / "status.json",
                     {
@@ -691,9 +711,9 @@ def run_block(args, spec, hardware):
                 )
             cursor = replace(cursor, elapsed_seconds=budget.finish())
             if latest is None or latest["cursor"] != json.loads(json.dumps(asdict(cursor))):
-                latest = save_block_checkpoint(
-                    model, optimizer, cursor, source, args.run_dir / "checkpoints"
-                )
+                latest = checkpoint("stop" if stopped else "endpoint")
+            elif retention is not None:
+                latest = protect_block_checkpoint(latest, "stop" if stopped else "endpoint")
             if stopped:
                 atomic_json(
                     args.run_dir / "status.json",
