@@ -813,3 +813,19 @@ cost report, with genuine source selections and unchanged full-context/indexed
 teachers. Neither has remote/GPU authority or writes goal/STATUS/DECISIONS.
 Root remains sole remote operator. No block exposure/objective/retention policy
 or original missing Q4 replacement is selected by these assignments.
+
+## Block depth options reviewed — October 5, 05:33 PDT
+
+Advisor completed and pushed8fcde06; reviewed source-only report integrated
+with branch ancestry. Actual original1,000-row partition and module geometry
+cover six breadth/depth alternatives. Suggested review candidate150TRAIN/domain
+with128newtokens yields at most56,700 distinct TRAIN positions/pass,99.307GiB
+capture+protected models and195.434GiB under explicit illustrative checkpoint/
+endpoint/build/log/reserve policy.250/domain×128 gives94,500positions and
+130.447/226.574GiB. No exposure/conditioning/retention policy is selected;
+counts do not establish serious coverage or actual capacity/admission.
+Detailed choices entered inDECISIONS. Ignored exact selected+unselected ancestry,
+cost script and evidence are preserved in main; evidenceSHA
+7e50d79353de6714011d0150d5e7d0ada117e0968a30dcab665444db860dbbd6 verified.
+Advisor has no live jobs; report-only worktree can retire after integration push.
+Retention feature owner remains active and source-only. No remote/GPU sidejob.

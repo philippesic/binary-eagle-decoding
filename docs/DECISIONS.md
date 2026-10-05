@@ -1209,3 +1209,47 @@ context windows and removing anchors are scientific changes, not disk cleanups.
 Original DSpark/DFlash Q4files remain unavailable to this team; keep historical
 hashes/receipts and retrieve original bytes only through later authorized access.
 No2080query or regeneration is authorized here.
+
+## Pending block exposure and conditioning choice — October 5, 05:33 PDT
+
+The [depth/breadth report](../experiments/nine-model-qat-overnight/block-exposure-depth-options.md)
+extends the original exact balanced whole-chain TRAIN selections. No option is
+selected; healthy EAGLE A8 retains its frozen source/budget and GPU ownership.
+Actual indexed SM120 capture/build/actor admission and authentic block Q4 bytes
+are still missing. CPU/source representability does not satisfy admission.
+
+| Proposed TRAIN exposure | Maximum distinct labels/pass | Capture + protected artifacts | Illustrative complete footprint |
+|---|---:|---:|---:|
+| 150 prompts/domain,32-token continuations | 12,600 |64.283GiB|160.410GiB|
+| 150 prompts/domain,128-token continuations |56,700|99.307GiB|195.434GiB|
+| 250 prompts/domain,128-token continuations |94,500|130.447GiB|226.574GiB|
+| 150 prompts/domain,256-token continuations |113,400|146.005GiB|242.132GiB|
+
+All selections additionally reserve32fit/16validation prompts/domain, retain
+complete context features and every selected full-vocabulary F32 teacher row.
+Natural EOG and conditioning/loss masks lower realized labels; repeated epochs
+do not enlarge distinct exposure. These upper bounds establish neither serious
+coverage nor convergence. Broader750-prompt exposure and deeper450-prompt
+exposure answer different research questions. Approximately3.9M original EAGLE
+rows are a scale reference, not equivalent block labels.
+
+Illustrative complete footprint includes three progressed checkpoints per four
+block lanes plus one atomic writer, four trained native/projection endpoints,
+one temporary export,8GiB build/cache,2GiB logs and10GiB free reserve. It is an
+unselected gross footprint, not incremental bytes to add blindly to current
+free disk. Reconcile exact existing protected artifacts and select retention/
+archival before admission. Retention source implementation is independently
+in progress; no current runtime enforcement is inferred from this illustration.
+
+Suggested first review candidate is150/domain×128tokens using existing offline
+captured-prefix DSpark full-probability L1 and DFlash hard CE. This gives a more
+informative bounded block pilot than32tokens while keeping original context,
+objective and static-prefix semantics explicit; it is not yet an approved long
+training campaign. Live DSpark current-student-prefix full-L1 is a separate
+conditioning choice: target must be queried at each real current prefix under
+fresh coexistence/numeric/memory admission. Indexed offline distributions cannot
+replace those live queries. Source supports both routes; neither is selected.
+
+The human owns exposure/conditioning and sufficient training allocation.
+Continue independent retention/preparation and healthy EAGLE training while
+these choices are pending; do not manufacture missing Q4 controls or use2080.
