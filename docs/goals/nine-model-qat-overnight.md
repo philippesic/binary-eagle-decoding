@@ -1162,3 +1162,41 @@ training_changedfalse. Coherent ignored proof health-0719-20261005.json SHA
 abc9a4e99b28a22518cc9c0402a049d18af022072acbd311caeb1568c99e6329.
 Goal ACTIVE/fullsix+three; next scheduled check around07:50PDT. Scientific block
 choice and real controls/actors/endpoints/native admissions remain pending.
+
+## Collection runtime source integrated — October 5, 07:41 PDT
+
+Runtime owner/QA completed published 1ec127a8d25ee998b512fb144f49aaff908715d2.
+Reviewed/cherry-picked only that commit as8d580a5, after heldout2174821; exact
+four-file equality verified and full branch ancestry preserveda8a00c3. Root29
+combined runtime/collection/heldout checks PASS in2.265s. Owner29/independent29
+PASS; exact-commit broad259 tests in16.460s OK (254PASS/5existing device skips),
+Ruff/format/diff PASS. CPU/macOS fixtures and real local OS flock only, no actual
+native model, GPU, checkpoint or final prompt access. QA/failed fixture logs
+preserved in primary ignored collection-runtime-qa: qa.txt SHA
+fcf9f3babd42e1adc86922b996efa011e8e58097d343da41cfe9d434c9344eb1;
+committed-suite.log SHA0fa318cb285fd734cb0c67d6f3b43a6427bab3f2d170b5ab175832222a4b7144.
+
+New dispatcher freezes its own current source/Python and keeps original six
+lane/train/export origins separately. It requires dedicated supervised upstream
+groups/birth proof, all export-producer jobs (including the separate watcher),
+actual shared GPU lock/live owner, fresh plan-bound lease/typed continuations,
+same boot/UUID/SM120, pause/source guards and per-cell CUDA/group/resource release.
+It shares the existing native loop and preserves collection and original origins
+in report/receipt. Source authorization never comes from terminal JSON alone.
+Existing same-bundle validation/sampler/head/cache/math and live30a/cc9 unchanged.
+
+Real production readiness still needs all six natural positive committed trained
+exports, three original controls, authentic original producer/birth/census records,
+authorized fixed held-out scope, policy/native-marker contracts, fresh actual
+availability/model-load/dispatch/process/context/resource checks. No actual
+collection plan or GPU run was fabricated. Two heavy startup validation passes
+(controller+child) remain explicit; none repeats per cell/request or enters clean
+timing. Cold cost is unknown; strict300s child continuation can expire during
+validation and must fail closed with fresh retry after revalidation, never weaken
+expiry. This is an efficiency/admission limit to measure after genuine release.
+
+All bounded source workers now complete. Heldout managed worktree was archived
+via app after pushed ancestry verification; source/runtime tree can retire after
+integration push and preserved QA verification. Root remains sole GPU operator,
+SAME30-minute heartbeat/transport; healthy A8 and watcher stay running. Full
+six+three Goal ACTIVE, actual training/data/controls/native evaluation incomplete.

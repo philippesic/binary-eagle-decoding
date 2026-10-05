@@ -109,6 +109,12 @@ real sealed authority/indexes/model endpoints remain PENDING and no prompt bytes
 were opened. Runtime owner continues source-only QA. Scheduled GPU check confirms
 healthy99,482/checkpoint99,250 and unchanged watcher/source; full Goal ACTIVE.
 
+**07:41 PDT runtime source integrated:** new collection dispatcher and shared
+native-loop guards reviewed;29root/29owner/29independent checks PASS,259broader
+checks OK/5existing skips. Actual collection/controls/producers/hardware/held-out
+readiness remains PENDING. All source workers complete; running QAT and watcher
+remain unchanged under the existing sole operator/monitor.
+
 ## Historical preparation checkpoint — October 4, 2026
 
 The human requested an independent Codex task and implementation/test team to
