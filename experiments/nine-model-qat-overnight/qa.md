@@ -443,3 +443,35 @@ reinterpret previous hardware receipts. Fresh current-source backward/admission
 remains pending. The selected additive ledger v4 only refreshes these two source
 pins and the refresh manifest metadata; its aggregate readiness statuses remain
 unchanged.
+
+## Direct A1 EAGLE packet source QA
+
+The packet preparer now supports explicitly selected direct `eagle_a1` alongside
+the unchanged default `eagle_a8`. Independent review covered commits
+`41e1db0d338d4adf3ed0d565313584312f94be26` and
+`7d6542057f387a3363e326dddbdedc0a5a5eb84b`. The A1 branch binds the A1
+fixed-reference initializer/config and 24-hour time-only budget to the A1
+candidate, checkpoint lane, model filename, and native XOR/POPCOUNT marker.
+Bind derives the candidate from the pinned request config and checks the
+resolved descriptor's exact candidate/profile/initializer, then joins the
+matching zero-update receipt, complete source/calibration ancestry, step-zero
+A1 checkpoint, A1 export audit/base/model, and unchanged native TRAIN replay
+goldens. The final guard refuses a warm A8-to-A1 profile or a substituted
+initializer; wrong A8 fit, receipt lane, checkpoint lane, and export precision
+also refuse. The default A8 path remains bit-identical through the default
+`--activation-bits 8` choice and shared regression fixtures.
+
+The focused packet suite passed **14/14 tests**:
+
+```sh
+PYTHONPATH=src:scripts:tests \
+  /Users/pippo/github/binary-eagle-decoding/.venv/bin/python \
+  -m unittest test_eagle_lane_packet -v
+```
+
+`ruff check`, `ruff format --check`, and `git diff --check` passed. Final source
+hashes: helper
+`1d259a6b1696bee160269129b45592bf6e708a8ba8193defa65866ac8cf4f8df`, test
+`8ea3ed6d70a039edd83f0549b110286451385aff7e9538a03531af833315e414`. These are
+source fixtures only; actual A1 calibration, CUDA admission, and training
+remain PENDING.
