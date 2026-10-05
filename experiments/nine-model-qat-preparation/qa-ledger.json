@@ -60,7 +60,8 @@
     "tests/test_nine_model_sm120_admission.py": "32c6e60785613a432d825caba7afd2a0e9f98d87562810e82e8690b15f9a76b7",
     "tests/test_nine_model_contracts.py": "9a4a812de612d4f1ed08e7c384388595b04aff300427d74a399650666ba4c613",
     "tests/test_nine_model_failure_paths.py": "2ee894be7ab04eb0f2dfbdf8526d6910399524e10e904786d2b6092a1c1ec79c",
-    "tests/test_nine_model_calibration_artifact.py": "7634905c01e58c453e4dcead28eb8b9c3af43e793306ce44562cc8aaa9fef99a"
+    "tests/test_nine_model_calibration_artifact.py": "7634905c01e58c453e4dcead28eb8b9c3af43e793306ce44562cc8aaa9fef99a",
+    "tests/test_nine_model_admission_contracts.py": "70a083e20e6831131bb8ec9c169557c1414283887ebbcf4a14de7cce620287d2"
   },
   "hardware": {
     "host": "MacBook Pro Mac15,10, Apple M3 Max, 36 GB RAM",
@@ -880,5 +881,32 @@
       "raw_path": "runs/nine-model-qa-baseline/local-container-runtime-check.txt",
       "sha256": "e80ebfdb510f92a0a1a2071e806af9bf54c307918baa9b81af4ad07a6b743530"
     }
+  },
+  "independent_admission_integration": {
+    "revision": "d489c08",
+    "hardware": "Apple M3 Max CPU; no GPU or remote/device query",
+    "report": "runs/nine-model-qa-baseline/admission-integration-d489c08.txt",
+    "report_sha256": "3d999f79ee92cbeec21db9d3cb54d86ac3d88d994f68ce48639f8008de9e88f7",
+    "independent_contracts": {
+      "count": 8,
+      "passed": 8,
+      "raw_path": "runs/nine-model-qa-baseline/admission-contracts-main-d489c08.txt",
+      "sha256": "285accadbb1586671b330109aadf1b595a1a679fa02f515b7a4be7e15d63402b"
+    },
+    "plan_builder": {
+      "count": 4,
+      "passed": 4,
+      "raw_path": "runs/nine-model-qa-baseline/admission-plan-builder-main-d489c08.txt",
+      "sha256": "d2fe3c28d570adf597f051598b0d6249c96056dcdc11ff408ef8618bf05f7cb3"
+    },
+    "admission_fixture_suite": {
+      "count": 10,
+      "passed": 10,
+      "raw_path": "runs/nine-model-qa-baseline/admission-author-main-d489c08.txt",
+      "sha256": "4834d43f48e75d6e79a9812b887186dbad3f6a825a456a294d77c733474899f7"
+    },
+    "ruff": "PASS",
+    "format": "PASS",
+    "production_readiness": "PENDING"
   }
 }
