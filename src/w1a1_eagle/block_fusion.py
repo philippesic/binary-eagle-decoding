@@ -11,6 +11,7 @@ from __future__ import annotations
 import hashlib
 import time
 from dataclasses import dataclass
+from numbers import Real
 
 import numpy as np
 
@@ -18,6 +19,85 @@ ARITHMETIC = {
     8: "fixed_w1a8_finite_reciprocal_v2",
     1: "f64_meanabs_to_f32_zero_positive_sign_integer_dot_scale_f32_token_scale_f32",
 }
+
+
+def canonical_norm_epsilon(value):
+    """Native FLOAT32 scalar identity, without a broad numeric tolerance."""
+    if isinstance(value, (bool, np.bool_)) or not isinstance(value, Real):
+        raise ValueError("norm epsilon must be an actual numeric scalar")
+    with np.errstate(over="ignore", under="ignore"):
+        scalar = np.float32(value)
+    if not np.isfinite(scalar) or scalar <= 0:
+        raise ValueError("norm epsilon must remain finite positive after native F32 conversion")
+    return float(scalar)
+
+
+def norm_epsilon_bits(value):
+    return int(np.asarray(canonical_norm_epsilon(value), dtype="<f4").view("<u4"))
+
+
+def validate_norm_descriptor(metadata, *, family, weights_sha256, norm_sha256, supplied_epsilon):
+    """Join an externally pinned one-time GGUF extraction to fit diagnostics."""
+    keys = {
+        "schema",
+        "family",
+        "model_sha256",
+        "weights_sha256",
+        "norm_sha256",
+        "epsilon",
+        "epsilon_f32_bits",
+        "epsilon_source_key",
+        "fc_source",
+        "norm_source",
+    }
+    if (
+        not isinstance(metadata, dict)
+        or set(metadata) != keys
+        or metadata["schema"] != "block_fusion_reference_v1"
+    ):
+        raise ValueError("unsupported model-bound fusion reference descriptor")
+    if (
+        metadata["family"] != family
+        or metadata["weights_sha256"] != weights_sha256
+        or metadata["norm_sha256"] != norm_sha256
+        or metadata["epsilon_source_key"] != "dflash.attention.layer_norm_rms_epsilon"
+    ):
+        raise ValueError("fusion reference family/weight/gamma/scalar source differs")
+    for name in ("model_sha256", "weights_sha256", "norm_sha256"):
+        value = metadata[name]
+        if (
+            not isinstance(value, str)
+            or len(value) != 64
+            or any(c not in "0123456789abcdef" for c in value)
+        ):
+            raise ValueError("fusion reference source hashes required")
+    epsilon = canonical_norm_epsilon(metadata["epsilon"])
+    bits = norm_epsilon_bits(epsilon)
+    if type(metadata["epsilon_f32_bits"]) is not int or metadata["epsilon_f32_bits"] != bits:
+        raise ValueError("fusion reference epsilon FLOAT32 identity differs")
+    if norm_epsilon_bits(supplied_epsilon) != bits:
+        raise ValueError("supplied norm epsilon differs from original model FLOAT32 bits")
+    for key, tensor_name, rank in (
+        ("fc_source", "fc.weight", 2),
+        ("norm_source", "enc.output_norm.weight", 1),
+    ):
+        source = metadata[key]
+        if (
+            not isinstance(source, dict)
+            or set(source) != {"name", "shape", "kind", "payload_sha256"}
+            or source["name"] != tensor_name
+            or source["kind"] not in ("F16", "F32")
+            or not isinstance(source["shape"], list)
+            or len(source["shape"]) != rank
+            or any(type(n) is not int or n < 1 for n in source["shape"])
+            or not isinstance(source["payload_sha256"], str)
+            or len(source["payload_sha256"]) != 64
+            or any(c not in "0123456789abcdef" for c in source["payload_sha256"])
+        ):
+            raise ValueError("original fusion/norm tensor provenance differs")
+    if metadata["fc_source"]["shape"][0] != metadata["norm_source"]["shape"][0]:
+        raise ValueError("model fusion/norm dimensions differ")
+    return epsilon
 
 
 def quantize(raw, bits):
@@ -350,6 +430,7 @@ def diagnostics(prediction, teacher):
 def rms_norm_reference(raw, gamma, epsilon):
     """Portable F32 diagnostic; native norm reduction equivalence needs its gate."""
     x, g = np.asarray(raw), np.asarray(gamma)
+    epsilon = canonical_norm_epsilon(epsilon)
     if (
         x.dtype != np.float32
         or x.ndim != 2
