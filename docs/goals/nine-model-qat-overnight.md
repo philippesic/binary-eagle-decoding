@@ -724,3 +724,11 @@ Ignored four proposals/index/evidence are preserved in primary main under
 indexSHA37d7ea82d3c404260b01e12b55a713b45fe1005dc7e2fe8c1fa19d15e13bd0b1.
 All subagents are now complete/errored, no live worker transfers or GPU sidejobs.
 Only detached primary QAT/passive watcher and sole idle transport transfer.
+
+Root published all source/checkpoint through `47fa273` on main. The merged
+block-packet native/parent worktrees, capture-options worktree and coordination
+worktree/branches are retired after preserving QA/proposal evidence. Published
+nativeecff and current main gitlink remain intact; no remote running source
+was touched. Older owned completed worktrees listed above remain for successor
+cleanup only after their ignored evidence and integration ancestry are checked.
+All worker outputs are finished; no live worker needs transfer.
