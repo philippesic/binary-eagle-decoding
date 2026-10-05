@@ -354,3 +354,39 @@ validators, then proves a second bind preserves every file while refusing.
 Separate preexisting golden/manifest cases refuse without changing source joins.
 Three focused checks and independent QA/Ruff/format/diff checks pass. Synthetic
 test data provides no production hardware or readiness evidence.
+
+## WSL global device-holder observer correction
+
+The first actual final-controller attempt failed in the initial resource
+snapshot before admission/model/kernel/update execution: an unprivileged global
+`/proc/*/fd` census could not inspect root-owned PID1. Its failure remains
+preserved. Root's read-only probes found `sudo -n` unavailable but the fixed
+Ubuntu WSL root bridge usable. The corrected observer retains the ordinary
+unprivileged scan and uses the following fixed fallback only for PermissionError
+on the real `/proc`:
+
+```
+/mnt/c/Windows/System32/wsl.exe -d Ubuntu -u root -- /usr/bin/python3 -B -I FROZEN_CHECKOUT/scripts/read_only_dxg_census.py --expected-sha256 PINNED_HELPER_SHA
+```
+
+The helper is stdlib-only and reads only the fixed global `/proc` FD links/stat
+identities/boot marker. It accepts no command or proc-path selector, does not
+query a GPU API, load a model, write bytecode or run training. Parent invocation
+has closed stdin, a minimal environment (existing WSL_INTEROP retained only for
+the Windows bridge),15-second timeout and fixed Ubuntu/system interpreter; the
+helper has its own10-second deadline. Complete/readonly/UID0/source-SHA/current
+boot/PID-namespace proof and exact PID/start-tick/boot identities are validated.
+Missing permission/bridge/protocol/identity proof fails closed with release
+PENDING; it can never become an empty-holder success. Existing process/group,
+CUDA PID, exact DXG holder and memory-return gates remain intact. The entire
+controller/trainer stays unprivileged.
+
+Seven new local fixture tests pass for direct/global identity observation,
+fixed fallback argv, custom-path/distro refusal, malformed namespace/source/UID/
+holder proofs, denied/timeout bridge behavior and unchanged new-holder refusal.
+These tests invoke no privileged command or GPU. Actual fixed-helper bridge and
+snapshot/release proof on WSL is still required after source integration.
+Independent QA must repin changed `nine_model_pipeline.py` and the new
+`scripts/read_only_dxg_census.py` in the additive critical-source ledger, then
+freeze a new manifest before controller retry. Calibrated initialization,
+original training data, exported model and native goldens remain unchanged.

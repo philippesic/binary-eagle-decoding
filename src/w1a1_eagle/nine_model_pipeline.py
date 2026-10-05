@@ -407,7 +407,7 @@ def cleanup_descendants(identities):
     require(not any(identity_active(i) for i in identities), "owned descendant survived cleanup")
 
 
-def dxg_holders(proc_root=Path("/proc")):
+def _scan_dxg_holders(proc_root):
     """WSL device holders with kernel identities, including unlisted contexts."""
     holders = []
     require(proc_root.is_dir(), "Linux /proc context observer required")
@@ -426,9 +426,90 @@ def dxg_holders(proc_root=Path("/proc")):
                     break
         except FileNotFoundError:
             continue
-        except PermissionError as error:
-            raise ValueError("WSL /dev/dxg holder census denied; release PENDING") from error
     return sorted(holders, key=lambda x: x["pid"])
+
+
+def _privileged_dxg_holders():
+    """One fixed, hash-bound, stdlib-only read observer; never elevate a trainer."""
+    helper = Path(__file__).resolve().parents[2] / "scripts/read_only_dxg_census.py"
+    expected = sha256(helper)
+    before = helper.stat()
+    try:
+        require(
+            os.environ.get("WSL_DISTRO_NAME") == "Ubuntu",
+            "fixed Ubuntu observer requires current Ubuntu namespace",
+        )
+        environment = {"PATH": "/usr/sbin:/usr/bin:/sbin:/bin", "LANG": "C.UTF-8"}
+        if os.environ.get("WSL_INTEROP"):
+            environment["WSL_INTEROP"] = os.environ["WSL_INTEROP"]
+        result = subprocess.run(
+            [
+                "/mnt/c/Windows/System32/wsl.exe",
+                "-d",
+                "Ubuntu",
+                "-u",
+                "root",
+                "--",
+                "/usr/bin/python3",
+                "-B",
+                "-I",
+                str(helper),
+                "--expected-sha256",
+                expected,
+            ],
+            check=True,
+            stdin=subprocess.DEVNULL,
+            capture_output=True,
+            text=True,
+            timeout=15,
+            cwd="/",
+            env=environment,
+        )
+        require(
+            helper.stat() == before and sha256(helper) == expected, "DXG observer source changed"
+        )
+        record = json.loads(result.stdout)
+        boot = Path("/proc/sys/kernel/random/boot_id").read_text().strip()
+        require(
+            record.get("schema") == "nine_model_read_only_dxg_census_v1"
+            and record.get("complete") is True
+            and record.get("read_only") is True
+            and record.get("effective_uid") == 0
+            and record.get("proc_root") == "/proc"
+            and record.get("observer_source_sha256") == expected
+            and record.get("boot_id") == boot
+            and record.get("pid_namespace") == os.readlink("/proc/self/ns/pid")
+            and isinstance(record.get("holders"), list),
+            "privileged DXG census proof unavailable; release PENDING",
+        )
+        holders = record["holders"]
+        require(
+            all(
+                isinstance(item, dict)
+                and set(item) == {"pid", "start_ticks", "boot_id"}
+                and type(item["pid"]) is int
+                and item["pid"] > 0
+                and type(item["start_ticks"]) is int
+                and item["start_ticks"] >= 0
+                and item["boot_id"] == boot
+                for item in holders
+            )
+            and len({item["pid"] for item in holders}) == len(holders),
+            "privileged DXG holder identities invalid; release PENDING",
+        )
+        return sorted(holders, key=lambda x: x["pid"])
+    except (OSError, subprocess.SubprocessError, ValueError, TypeError, KeyError) as error:
+        raise ValueError("WSL /dev/dxg privileged census unavailable; release PENDING") from error
+
+
+def dxg_holders(proc_root=Path("/proc")):
+    """Complete global device census; permission gaps cannot masquerade as idle."""
+    try:
+        return _scan_dxg_holders(proc_root)
+    except PermissionError as error:
+        if proc_root != Path("/proc"):
+            raise ValueError("WSL /dev/dxg holder census denied; release PENDING") from error
+        return _privileged_dxg_holders()
 
 
 def group_members(pgid, proc_root=Path("/proc")):
