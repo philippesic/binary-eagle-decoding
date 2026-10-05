@@ -2,9 +2,8 @@
 
 This module keeps metadata as file ranges: tokenizer arrays are never expanded
 into Python strings or NumPy objects. Original KV records and nonfusion tensor
-payloads are copied and hashed in 1 MiB chunks. Only F32/F16/I32/I64 source tensors
-and BF16 source tensors plus the project's existing binary metadata are
-supported; other formats fail.
+payloads are copied and hashed in 1 MiB chunks. Only F32/F16/BF16/I32/I64 source
+tensors and the project's existing binary metadata are supported; other formats fail.
 """
 
 from __future__ import annotations
