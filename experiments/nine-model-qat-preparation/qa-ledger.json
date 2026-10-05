@@ -4,7 +4,7 @@
   "baseline_revision": "da097e5",
   "source_revision": {
     "native": "3d2b1f24b725",
-    "native_llama_cpp": "50ca2676fb6f",
+    "native_llama_cpp": "624f50e74f51b6af93bf6b879f84703e726df172",
     "data_fusion": "9883be35df78",
     "data_capture": "a1917d91bf98",
     "training": "8a16cea3404d",
@@ -12,56 +12,61 @@
     "pipeline_worktree_dirty": true,
     "coordination": "ca2b1c515c12",
     "qa_base": "da097e5",
-    "note": "Evidence uses exact named feature worktrees. Pipeline campaign/builder files had further uncommitted changes when QA captured the suite; source_files pins exact bytes. Refresh after their commit/integration before bundle freeze."
+    "note": "All declared source_files SHA256 values match integrated main e9107d68409bab767056d8a09626439940e74404. CPU development controller and library-closure checks are source-bound; they do not satisfy production data, calibration, initial-export, native-quality, CUDA, or SM120 readiness gates.",
+    "main_source_snapshot": "8bdf8d9",
+    "source_map_refresh_pending": false,
+    "integrated_main": "e9107d68409bab767056d8a09626439940e74404"
   },
   "source_files": {
-    "scripts/export_block_binary.py": "5817346b3cb54b86695afd271e55887b41fae3044587ebec4f42ab475b8fdd6d",
-    "scripts/check_block_binary_native.py": "cd0c976900a08491d233f5ff0269d6d56209adfabfd50d1c7be36f86591d2718",
+    "scripts/export_block_binary.py": "8589392470540e8e12271fdaa52b7407a3a943901c1952b7d7c5f6e9599f8967",
+    "scripts/check_block_binary_native.py": "8d3132a3253db6d6bb79dc3f262a32f69f0fb7f7704fce4151372744b14707a0",
     "scripts/capture_block_qat_teacher.py": "8a43ee3f6f472184b1b229e1c556ae65d45e8fa76fa26c9dc058209ddbb1c052",
     "scripts/export_recurrent_binary.py": "2232bf29d25324ca50e8b72e7308d8bb445485793c387fc2af155d4fbe081a2d",
-    "tests/test_block_binary_export.py": "44c83fe48fc728376363a01278a243dff0aa230f492eb3d75e98a5ce9ec2fb8b",
+    "tests/test_block_binary_export.py": "9b01dafd6efdcb22a47e4ce5feca0fff400585d8c22e0521c1fd2cdaf437dd71",
     "tests/test_block_teacher_capture.py": "dbbb19a774c64a3bb64429a49d20fdd1a9f20a41b7a6ebe7e6f3743543be4c80",
     "src/w1a1_eagle/block_data.py": "566a47e94315ae90504ab218d732047923299622c59143477abc1eb4a4e8693a",
-    "src/w1a1_eagle/block_fusion.py": "66b0c80f3b71c25540af57c4f0bd52b37f1bc2f2d23a1b3d41075dec75bb6b95",
-    "scripts/check_block_capture_portability.py": "7c2da3dd98d5e7c824e5fd4dbbc3457e781a0da87030ad0458d94140e1635be6",
+    "src/w1a1_eagle/block_fusion.py": "bd220ce919f7322d20d6c5c9163106c7df03b5ffe8b9a41c1d558a08aa01aa0e",
+    "scripts/check_block_capture_portability.py": "f36572f6ab672d8678051aad6124a7c13936ab8354e5ad56fab0ecfc83b50f8a",
     "scripts/check_eagle_capture_portability.py": "d3dbd74561d35ebcfc8b48b2b08b830873235c48ab5d76039d326995f3dd5611",
     "tests/test_block_data.py": "c755329f26280192e1511e460d4399f1cb2024d1836ddf489446de90386258cd",
-    "tests/test_block_fusion.py": "b1b0ab59e660d96ce9db47ab893419b4e1efa7a480055ce47bf7457e5b048a07",
-    "tests/test_block_capture_portability.py": "0f69015f6e19af9e159eb8cd0f64f2b7285f04cb632c8f5ff7391eeaef1bac19",
-    "scripts/capture_nine_model_train_data.py": "7657aeb70129f11ba7fd91a80c2e314960c65094f4a59eb74df2f10d774897f5",
+    "tests/test_block_fusion.py": "6aca759b331a821af3afbec93a6bb1e634ddfdb261141bc5bf86dd4beccf1fa6",
+    "tests/test_block_capture_portability.py": "c21d44f75e17333f2c0cd22f963c99bfcd2710dbac85fe7d714806d8fc034187",
+    "scripts/capture_nine_model_train_data.py": "76a2e0cfd7401a5748cf7ab3572c016ab5049ce6b83fd8ef604b0782386c597d",
     "tests/test_nine_model_train_capture.py": "0ca656caafed3616385c05433562a8f16d4c56459d38c1b637f489b6c155e78c",
-    "src/w1a1_eagle/block_qat.py": "5d1337dbb694195ee59b7e8b6dda35ff32c6c2a96b240d9641b8665a6f84990a",
-    "src/w1a1_eagle/block_training.py": "8a37b662869ce5397f2d52fd09af6a206cb099c92f8bfd99c4ddf8d0ca2402d6",
+    "src/w1a1_eagle/block_qat.py": "98adfc8c3704a5c845c4b75995b2263c0b5627b2f2dfe2f8d469d7c36822147b",
+    "src/w1a1_eagle/block_training.py": "89e6f095464a44b8ce5ad12eb413655ba3db12451b3cc429e30cf9d20e6f1363",
     "src/w1a1_eagle/qat_initialization.py": "03f18cd02d646d9cc6c774f9747578a24f19485dadafeec2e55b4c0366f9baa2",
     "src/w1a1_eagle/qat_admission.py": "0201041333673c11fd7c622f5ab2e518c37eb5eb99af2f98977ebc4c28cd9666",
-    "src/w1a1_eagle/continuous_qat.py": "855bd9900e708fdc8db2b3905805f71e4e656e22f1a93e3480a5d0e0667755d0",
+    "src/w1a1_eagle/continuous_qat.py": "cdc9a306b58c088328c2be2ee4ec829257477494370fecb63a9ce1128aac18d7",
     "src/w1a1_eagle/continuous_runtime.py": "4bc0c3112c04a7aac0f737ed8edb8eef83b7c3094d14e9a9d77e55b00f343f36",
     "src/w1a1_eagle/continuous_resources.py": "27156473a17a13c5f5df25cce92e0f975ed51cdd36625e6f78d30df0085c5a62",
     "src/w1a1_eagle/continuous_budget.py": "fb76233826723afe92e1105b36baad2bfc20ea119867c7043a83fae1f880bf31",
     "src/w1a1_eagle/qat_curriculum_runner.py": "172b2ae4219fd439a28718591b4ef32783d1849cd7717864095489fad1768640",
     "src/w1a1_eagle/qat_state.py": "ee37afc1d1c3b0cc7b61b1b854cfca6d2d46ff474615a3cfa01f5ddfa2673ad1",
-    "src/w1a1_eagle/recurrent_qat.py": "efddb420b69dfc587e94967151ba9fb7049fae5fa118775ea5a36ddac44a9e4f",
+    "src/w1a1_eagle/recurrent_qat.py": "ececcb925410bc9c77776b473e84d671d9e2da1a841a1b217caa68a0cafe7a12",
     "src/w1a1_eagle/recurrent_binary.py": "7624fa4486bcb130440cbc6b84c2463af01f0750e0145236063a125ab8b3de06",
-    "scripts/train_nine_model_qat.py": "4880748e87e79e0441a53c462c9da911b15887e063f924dd80f4ba51388c6784",
+    "scripts/train_nine_model_qat.py": "edf025d81694722fc56a730409d6fbcd9e8c333058517ab1a8be730634b2d9d8",
     "scripts/train_continuous_w1ax.py": "096ad1110e84b19250fdc737f520c0507fed1be2186321bf2e5102ae1a469572",
     "scripts/prepared_continuous_provider.py": "ae4f140aa8c3634c4b283f94be3c1c67506d64c856eb1aa1bf3b333efd619dc7",
     "scripts/train_prepared_continuous_w1ax.py": "74f2e8a9fc126019c3a91e20fd30ad5b72607478ae8554a13e135a63454902dd",
-    "tests/test_nine_model_training.py": "89def8c0e809fca81d8ff0de5103f7c4cf5dac7f0cb9b6c587bace40f2903c02",
-    "src/w1a1_eagle/nine_model_pipeline.py": "1fb17c7b3592b5c4348f21a6066b453800972978fd7db89db4d15be72b9ec1df",
+    "tests/test_nine_model_training.py": "903664b772d2e726b67c0558c9762e78ce1fe4666dc4c390f2796a239fb7b55e",
+    "src/w1a1_eagle/nine_model_pipeline.py": "fbf42c1eedcb76e5b373979af3d25f4f99bfbebe093a7ac1f1dbf056a00c1b4d",
     "src/w1a1_eagle/nine_model_report.py": "81bcffbb19c205c0b38cd48e2b605f7769d4278227c6750a2b432373b6536622",
     "scripts/run_nine_model_campaign.py": "901b01670b8ce2fa84595decf6594c1dd704ec1071ac79dd6251b5fd2dafcfbe",
     "scripts/evaluate_nine_model_native.py": "0128cdd757c682d7f09c3509cf14851a5deb996ab57447ccdb6e92af88896f4e",
-    "scripts/prepare_nine_model_bundle.py": "5815a2b1786ed47dff0fa89a334f7aad6dc6b4f5ec3c8eec9120a878118ac7de",
+    "scripts/prepare_nine_model_bundle.py": "5acb7caab75e313eabb707c6ee16d49a3be7fc90c063dbdc8b7be738253491dd",
     "scripts/export_nine_model_candidate.py": "3b2e7383bef3882bc99410091524c094783d5ad0826a9874e09b0f52f74d8ba2",
-    "tests/test_nine_model_pipeline.py": "4ed760032b1fbeb275f1dbe8299ce0f82a325dfe10c20ee361f45b7f9b21f920",
-    "tests/test_nine_model_bundle_builder.py": "6cb6e1fcedf211de531d78bfc8d80f1e4d6a93ef67ff07686a824a3c28ca318e",
-    "src/w1a1_eagle/nine_model_admission.py": "9f5eb68a52429a0a221997e88eecb4d494c56d04eec513291a06c084111c1c05",
-    "scripts/admit_nine_model_sm120.py": "1aa01bbf50167ad2fbfe454d460ca897b7dfca5879de02d0829eaa13bf09ca7e",
-    "tests/test_nine_model_sm120_admission.py": "32c6e60785613a432d825caba7afd2a0e9f98d87562810e82e8690b15f9a76b7",
+    "tests/test_nine_model_pipeline.py": "7c89bbd041364afebaa8cf70773b1a061fc7b505065f214873039f190e0f3a2c",
+    "tests/test_nine_model_bundle_builder.py": "74315d49d69bb3d7aaccfcb03796893abd32629317eb1e5f045ff3c7013d62e2",
+    "src/w1a1_eagle/nine_model_admission.py": "7cd1ca71687ea0c12814e028fb804fc1119580d195908a9d959a373365492b1f",
+    "scripts/admit_nine_model_sm120.py": "aaa240b18050c91d495d57c2dad9278e1d8d5beea7d6b60ed84020396692bc4b",
+    "tests/test_nine_model_sm120_admission.py": "29e6215417faff05df8f89d6b91d305291b2178d82f9e05fdd9d6d8c5957d19a",
     "tests/test_nine_model_contracts.py": "d50f199539cc705617d731a8ec150ac779c14804c4be4e4fbea8d7f4640345f8",
     "tests/test_nine_model_failure_paths.py": "2ee894be7ab04eb0f2dfbdf8526d6910399524e10e904786d2b6092a1c1ec79c",
     "tests/test_nine_model_calibration_artifact.py": "7634905c01e58c453e4dcead28eb8b9c3af43e793306ce44562cc8aaa9fef99a",
-    "tests/test_nine_model_admission_contracts.py": "70a083e20e6831131bb8ec9c169557c1414283887ebbcf4a14de7cce620287d2"
+    "tests/test_nine_model_admission_contracts.py": "70a083e20e6831131bb8ec9c169557c1414283887ebbcf4a14de7cce620287d2",
+    "tests/test_nine_model_cpu_capture.py": "b7ac0139148fbc6c1e3c3711432a4c773913a4503bea9dcff358104e0c38fd5d",
+    "scripts/check_block_qat_cpu_model.py": "8545534722612dd880250a3f8d6467d168d5db60ea0a2a9c30eb22f266e603ca"
   },
   "hardware": {
     "host": "MacBook Pro Mac15,10, Apple M3 Max, 36 GB RAM",
@@ -82,6 +87,18 @@
           "evidence": []
         },
         "export": {
+          "status": "PENDING",
+          "evidence": []
+        }
+      },
+      "prelaunch_status": "PENDING",
+      "prelaunch_pending_reason": "Original frozen Q4 model/export receipt and control binding are not locally available in this bundle.",
+      "prelaunch_requirements": {
+        "source": {
+          "status": "PENDING",
+          "evidence": []
+        },
+        "initial_export": {
           "status": "PENDING",
           "evidence": []
         }
@@ -186,6 +203,86 @@
           "status": "PENDING",
           "evidence": []
         }
+      },
+      "prelaunch_status": "PENDING",
+      "prelaunch_pending_reason": "Production TRAIN data/admission and model-bound calibration initialization are absent; selected initial export/config and campaign choices are not frozen.",
+      "prelaunch_requirements": {
+        "source": {
+          "status": "PENDING",
+          "evidence": []
+        },
+        "data": {
+          "status": "PENDING",
+          "evidence": [
+            {
+              "scope": "cpu_synthetic_capture_import_portability_fixtures_only",
+              "artifact_kind": "cpu_fixture",
+              "hardware": "Apple M3 Max CPU",
+              "raw_path": "runs/nine-model-qa-baseline/capture-author-final.txt",
+              "sha256": "816cb8ca78724c11bfda83b1e7b1039055f477789e0867dd8a9a91dcba888dbf",
+              "limit": "no complete authenticated production TRAIN capture/admission for these six candidate cells"
+            }
+          ]
+        },
+        "calibration_initialization": {
+          "status": "PENDING",
+          "evidence": [
+            {
+              "scope": "source_descriptor_and_partial_EAGLE_fit_only",
+              "artifact_kind": "limited_initializer_evidence",
+              "hardware": "Apple M3 Max CPU",
+              "raw_path": "experiments/nine-model-qat-preparation/eagle-fusion-cpu-20261004.md",
+              "limit": "EAGLE historical 256-fit/128-validation excludes code and has worse post-norm direction; block original FC/gamma extracted but production TRAIN fits absent"
+            }
+          ]
+        },
+        "ownership": {
+          "status": "PASS",
+          "evidence": [
+            {
+              "scope": "cpu_synthetic_EAGLE_QAT_parameter_ownership_contract",
+              "artifact_kind": "cpu_fixture",
+              "hardware": "Apple M3 Max CPU",
+              "raw_path": "runs/nine-model-qa-baseline/final-nine_model.txt",
+              "sha256": "0d0b5a6ad1dae55087d7c9a66d0fd577af2dbfb40515f2acfeec4d10df0a92d8",
+              "limit": "software ownership contract only; no current actual-model EAGLE CPU backward receipt"
+            }
+          ]
+        },
+        "hard_forward": {
+          "status": "PENDING",
+          "evidence": [],
+          "pending_reason": "No current hash-bound actual-model EAGLE backward receipt in this QA packet."
+        },
+        "resume": {
+          "status": "PASS",
+          "evidence": [
+            {
+              "scope": "cpu_fixture_exact_checkpoint_optimizer_rng_cursor_resume",
+              "artifact_kind": "cpu_fixture",
+              "hardware": "Apple M3 Max CPU",
+              "raw_path": "runs/nine-model-qa-baseline/final-nine_model.txt",
+              "sha256": "0d0b5a6ad1dae55087d7c9a66d0fd577af2dbfb40515f2acfeec4d10df0a92d8"
+            }
+          ]
+        },
+        "initial_export": {
+          "status": "PENDING",
+          "evidence": [],
+          "pending_reason": "No selected EAGLE profile initial native export/config is frozen."
+        },
+        "lifecycle": {
+          "status": "PASS",
+          "evidence": [
+            {
+              "scope": "cpu_fixture_campaign_success_STOP_failure_resume_export_eval_lifecycle",
+              "artifact_kind": "cpu_fixture",
+              "hardware": "Apple M3 Max CPU",
+              "raw_path": "runs/nine-model-qa-baseline/final-nine_model.txt",
+              "sha256": "0d0b5a6ad1dae55087d7c9a66d0fd577af2dbfb40515f2acfeec4d10df0a92d8"
+            }
+          ]
+        }
       }
     },
     "eagle_a1": {
@@ -282,6 +379,86 @@
           "status": "PENDING",
           "evidence": []
         }
+      },
+      "prelaunch_status": "PENDING",
+      "prelaunch_pending_reason": "Production TRAIN data/admission and model-bound calibration initialization are absent; selected initial export/config and campaign choices are not frozen.",
+      "prelaunch_requirements": {
+        "source": {
+          "status": "PENDING",
+          "evidence": []
+        },
+        "data": {
+          "status": "PENDING",
+          "evidence": [
+            {
+              "scope": "cpu_synthetic_capture_import_portability_fixtures_only",
+              "artifact_kind": "cpu_fixture",
+              "hardware": "Apple M3 Max CPU",
+              "raw_path": "runs/nine-model-qa-baseline/capture-author-final.txt",
+              "sha256": "816cb8ca78724c11bfda83b1e7b1039055f477789e0867dd8a9a91dcba888dbf",
+              "limit": "no complete authenticated production TRAIN capture/admission for these six candidate cells"
+            }
+          ]
+        },
+        "calibration_initialization": {
+          "status": "PENDING",
+          "evidence": [
+            {
+              "scope": "source_descriptor_and_partial_EAGLE_fit_only",
+              "artifact_kind": "limited_initializer_evidence",
+              "hardware": "Apple M3 Max CPU",
+              "raw_path": "experiments/nine-model-qat-preparation/eagle-fusion-cpu-20261004.md",
+              "limit": "EAGLE historical 256-fit/128-validation excludes code and has worse post-norm direction; block original FC/gamma extracted but production TRAIN fits absent"
+            }
+          ]
+        },
+        "ownership": {
+          "status": "PASS",
+          "evidence": [
+            {
+              "scope": "cpu_synthetic_EAGLE_QAT_parameter_ownership_contract",
+              "artifact_kind": "cpu_fixture",
+              "hardware": "Apple M3 Max CPU",
+              "raw_path": "runs/nine-model-qa-baseline/final-nine_model.txt",
+              "sha256": "0d0b5a6ad1dae55087d7c9a66d0fd577af2dbfb40515f2acfeec4d10df0a92d8",
+              "limit": "software ownership contract only; no current actual-model EAGLE CPU backward receipt"
+            }
+          ]
+        },
+        "hard_forward": {
+          "status": "PENDING",
+          "evidence": [],
+          "pending_reason": "No current hash-bound actual-model EAGLE backward receipt in this QA packet."
+        },
+        "resume": {
+          "status": "PASS",
+          "evidence": [
+            {
+              "scope": "cpu_fixture_exact_checkpoint_optimizer_rng_cursor_resume",
+              "artifact_kind": "cpu_fixture",
+              "hardware": "Apple M3 Max CPU",
+              "raw_path": "runs/nine-model-qa-baseline/final-nine_model.txt",
+              "sha256": "0d0b5a6ad1dae55087d7c9a66d0fd577af2dbfb40515f2acfeec4d10df0a92d8"
+            }
+          ]
+        },
+        "initial_export": {
+          "status": "PENDING",
+          "evidence": [],
+          "pending_reason": "No selected EAGLE profile initial native export/config is frozen."
+        },
+        "lifecycle": {
+          "status": "PASS",
+          "evidence": [
+            {
+              "scope": "cpu_fixture_campaign_success_STOP_failure_resume_export_eval_lifecycle",
+              "artifact_kind": "cpu_fixture",
+              "hardware": "Apple M3 Max CPU",
+              "raw_path": "runs/nine-model-qa-baseline/final-nine_model.txt",
+              "sha256": "0d0b5a6ad1dae55087d7c9a66d0fd577af2dbfb40515f2acfeec4d10df0a92d8"
+            }
+          ]
+        }
       }
     },
     "dspark_q4": {
@@ -294,6 +471,18 @@
           "evidence": []
         },
         "export": {
+          "status": "PENDING",
+          "evidence": []
+        }
+      },
+      "prelaunch_status": "PENDING",
+      "prelaunch_pending_reason": "Original frozen Q4 model/export receipt and control binding are not locally available in this bundle.",
+      "prelaunch_requirements": {
+        "source": {
+          "status": "PENDING",
+          "evidence": []
+        },
+        "initial_export": {
           "status": "PENDING",
           "evidence": []
         }
@@ -392,6 +581,220 @@
           "status": "PENDING",
           "evidence": []
         }
+      },
+      "prelaunch_status": "PENDING",
+      "prelaunch_pending_reason": "Production TRAIN data/admission and model-bound calibration initialization are absent; selected initial export/config and campaign choices are not frozen.",
+      "prelaunch_requirements": {
+        "source": {
+          "status": "PASS",
+          "evidence": [
+            {
+              "scope": "actual_original_source_model_identity_CPU_export_chain",
+              "artifact_kind": "development_source_model",
+              "hardware": "Apple M3 Max CPU metadata/receipt audit; no source model bytes loaded by QA",
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source identity is joined; selected production profile/config and data admission remain unbound"
+            }
+          ]
+        },
+        "data": {
+          "status": "PENDING",
+          "evidence": [
+            {
+              "scope": "cpu_synthetic_capture_import_portability_fixtures_only",
+              "artifact_kind": "cpu_fixture",
+              "hardware": "Apple M3 Max CPU",
+              "raw_path": "runs/nine-model-qa-baseline/capture-author-final.txt",
+              "sha256": "816cb8ca78724c11bfda83b1e7b1039055f477789e0867dd8a9a91dcba888dbf",
+              "limit": "no complete authenticated production TRAIN capture/admission for these six candidate cells"
+            }
+          ]
+        },
+        "calibration_initialization": {
+          "status": "PENDING",
+          "evidence": [
+            {
+              "scope": "source_descriptor_and_partial_EAGLE_fit_only",
+              "artifact_kind": "limited_initializer_evidence",
+              "hardware": "Apple M3 Max CPU",
+              "raw_path": "experiments/nine-model-qat-preparation/eagle-fusion-cpu-20261004.md",
+              "limit": "EAGLE historical 256-fit/128-validation excludes code and has worse post-norm direction; block original FC/gamma extracted but production TRAIN fits absent"
+            }
+          ]
+        },
+        "ownership": {
+          "status": "PASS",
+          "evidence": [
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dspark",
+              "activation_bits": 8,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            },
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dspark",
+              "activation_bits": 1,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            },
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dflash",
+              "activation_bits": 8,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            },
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dflash",
+              "activation_bits": 1,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            }
+          ]
+        },
+        "hard_forward": {
+          "status": "PASS",
+          "evidence": [
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dspark",
+              "activation_bits": 8,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            },
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dspark",
+              "activation_bits": 1,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            },
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dflash",
+              "activation_bits": 8,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            },
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dflash",
+              "activation_bits": 1,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            }
+          ]
+        },
+        "resume": {
+          "status": "PASS",
+          "evidence": [
+            {
+              "scope": "cpu_fixture_exact_checkpoint_optimizer_rng_cursor_resume",
+              "artifact_kind": "cpu_fixture",
+              "hardware": "Apple M3 Max CPU",
+              "raw_path": "runs/nine-model-qa-baseline/final-nine_model.txt",
+              "sha256": "0d0b5a6ad1dae55087d7c9a66d0fd577af2dbfb40515f2acfeec4d10df0a92d8"
+            }
+          ]
+        },
+        "initial_export": {
+          "status": "PENDING",
+          "evidence": [
+            {
+              "scope": "actual_untrained_native_CPU_prototype_export_and_graph",
+              "artifact_kind": "untrained_source_prototype",
+              "family": "dspark",
+              "activation_bits": 8,
+              "profile": "ffn15 and ffn15_fusion CPU prototypes separately documented",
+              "hardware": "Apple M3 Max CPU",
+              "optimizer_updates": 0,
+              "raw_path": "experiments/nine-model-qat-preparation/native-cpu-artifacts.md",
+              "limit": "not a selected candidate initial export, trained checkpoint, final export, CUDA graph, or quality/throughput result"
+            },
+            {
+              "scope": "actual_untrained_native_CPU_prototype_export_and_graph",
+              "artifact_kind": "untrained_source_prototype",
+              "family": "dspark",
+              "activation_bits": 1,
+              "profile": "ffn15 and ffn15_fusion CPU prototypes separately documented",
+              "hardware": "Apple M3 Max CPU",
+              "optimizer_updates": 0,
+              "raw_path": "experiments/nine-model-qat-preparation/native-cpu-artifacts.md",
+              "limit": "not a selected candidate initial export, trained checkpoint, final export, CUDA graph, or quality/throughput result"
+            },
+            {
+              "scope": "actual_untrained_native_CPU_prototype_export_and_graph",
+              "artifact_kind": "untrained_source_prototype",
+              "family": "dflash",
+              "activation_bits": 8,
+              "profile": "ffn15 and ffn15_fusion CPU prototypes separately documented",
+              "hardware": "Apple M3 Max CPU",
+              "optimizer_updates": 0,
+              "raw_path": "experiments/nine-model-qat-preparation/native-cpu-artifacts.md",
+              "limit": "not a selected candidate initial export, trained checkpoint, final export, CUDA graph, or quality/throughput result"
+            },
+            {
+              "scope": "actual_untrained_native_CPU_prototype_export_and_graph",
+              "artifact_kind": "untrained_source_prototype",
+              "family": "dflash",
+              "activation_bits": 1,
+              "profile": "ffn15 and ffn15_fusion CPU prototypes separately documented",
+              "hardware": "Apple M3 Max CPU",
+              "optimizer_updates": 0,
+              "raw_path": "experiments/nine-model-qat-preparation/native-cpu-artifacts.md",
+              "limit": "not a selected candidate initial export, trained checkpoint, final export, CUDA graph, or quality/throughput result"
+            }
+          ],
+          "pending_reason": "The source-derived untrained CPU prototype exports are not bound as the selected profile initial export in resolved configs."
+        },
+        "lifecycle": {
+          "status": "PASS",
+          "evidence": [
+            {
+              "scope": "cpu_fixture_campaign_success_STOP_failure_resume_export_eval_lifecycle",
+              "artifact_kind": "cpu_fixture",
+              "hardware": "Apple M3 Max CPU",
+              "raw_path": "runs/nine-model-qa-baseline/final-nine_model.txt",
+              "sha256": "0d0b5a6ad1dae55087d7c9a66d0fd577af2dbfb40515f2acfeec4d10df0a92d8"
+            }
+          ]
+        }
       }
     },
     "dspark_a1": {
@@ -481,6 +884,220 @@
           "status": "PENDING",
           "evidence": []
         }
+      },
+      "prelaunch_status": "PENDING",
+      "prelaunch_pending_reason": "Production TRAIN data/admission and model-bound calibration initialization are absent; selected initial export/config and campaign choices are not frozen.",
+      "prelaunch_requirements": {
+        "source": {
+          "status": "PASS",
+          "evidence": [
+            {
+              "scope": "actual_original_source_model_identity_CPU_export_chain",
+              "artifact_kind": "development_source_model",
+              "hardware": "Apple M3 Max CPU metadata/receipt audit; no source model bytes loaded by QA",
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source identity is joined; selected production profile/config and data admission remain unbound"
+            }
+          ]
+        },
+        "data": {
+          "status": "PENDING",
+          "evidence": [
+            {
+              "scope": "cpu_synthetic_capture_import_portability_fixtures_only",
+              "artifact_kind": "cpu_fixture",
+              "hardware": "Apple M3 Max CPU",
+              "raw_path": "runs/nine-model-qa-baseline/capture-author-final.txt",
+              "sha256": "816cb8ca78724c11bfda83b1e7b1039055f477789e0867dd8a9a91dcba888dbf",
+              "limit": "no complete authenticated production TRAIN capture/admission for these six candidate cells"
+            }
+          ]
+        },
+        "calibration_initialization": {
+          "status": "PENDING",
+          "evidence": [
+            {
+              "scope": "source_descriptor_and_partial_EAGLE_fit_only",
+              "artifact_kind": "limited_initializer_evidence",
+              "hardware": "Apple M3 Max CPU",
+              "raw_path": "experiments/nine-model-qat-preparation/eagle-fusion-cpu-20261004.md",
+              "limit": "EAGLE historical 256-fit/128-validation excludes code and has worse post-norm direction; block original FC/gamma extracted but production TRAIN fits absent"
+            }
+          ]
+        },
+        "ownership": {
+          "status": "PASS",
+          "evidence": [
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dspark",
+              "activation_bits": 8,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            },
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dspark",
+              "activation_bits": 1,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            },
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dflash",
+              "activation_bits": 8,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            },
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dflash",
+              "activation_bits": 1,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            }
+          ]
+        },
+        "hard_forward": {
+          "status": "PASS",
+          "evidence": [
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dspark",
+              "activation_bits": 8,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            },
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dspark",
+              "activation_bits": 1,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            },
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dflash",
+              "activation_bits": 8,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            },
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dflash",
+              "activation_bits": 1,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            }
+          ]
+        },
+        "resume": {
+          "status": "PASS",
+          "evidence": [
+            {
+              "scope": "cpu_fixture_exact_checkpoint_optimizer_rng_cursor_resume",
+              "artifact_kind": "cpu_fixture",
+              "hardware": "Apple M3 Max CPU",
+              "raw_path": "runs/nine-model-qa-baseline/final-nine_model.txt",
+              "sha256": "0d0b5a6ad1dae55087d7c9a66d0fd577af2dbfb40515f2acfeec4d10df0a92d8"
+            }
+          ]
+        },
+        "initial_export": {
+          "status": "PENDING",
+          "evidence": [
+            {
+              "scope": "actual_untrained_native_CPU_prototype_export_and_graph",
+              "artifact_kind": "untrained_source_prototype",
+              "family": "dspark",
+              "activation_bits": 8,
+              "profile": "ffn15 and ffn15_fusion CPU prototypes separately documented",
+              "hardware": "Apple M3 Max CPU",
+              "optimizer_updates": 0,
+              "raw_path": "experiments/nine-model-qat-preparation/native-cpu-artifacts.md",
+              "limit": "not a selected candidate initial export, trained checkpoint, final export, CUDA graph, or quality/throughput result"
+            },
+            {
+              "scope": "actual_untrained_native_CPU_prototype_export_and_graph",
+              "artifact_kind": "untrained_source_prototype",
+              "family": "dspark",
+              "activation_bits": 1,
+              "profile": "ffn15 and ffn15_fusion CPU prototypes separately documented",
+              "hardware": "Apple M3 Max CPU",
+              "optimizer_updates": 0,
+              "raw_path": "experiments/nine-model-qat-preparation/native-cpu-artifacts.md",
+              "limit": "not a selected candidate initial export, trained checkpoint, final export, CUDA graph, or quality/throughput result"
+            },
+            {
+              "scope": "actual_untrained_native_CPU_prototype_export_and_graph",
+              "artifact_kind": "untrained_source_prototype",
+              "family": "dflash",
+              "activation_bits": 8,
+              "profile": "ffn15 and ffn15_fusion CPU prototypes separately documented",
+              "hardware": "Apple M3 Max CPU",
+              "optimizer_updates": 0,
+              "raw_path": "experiments/nine-model-qat-preparation/native-cpu-artifacts.md",
+              "limit": "not a selected candidate initial export, trained checkpoint, final export, CUDA graph, or quality/throughput result"
+            },
+            {
+              "scope": "actual_untrained_native_CPU_prototype_export_and_graph",
+              "artifact_kind": "untrained_source_prototype",
+              "family": "dflash",
+              "activation_bits": 1,
+              "profile": "ffn15 and ffn15_fusion CPU prototypes separately documented",
+              "hardware": "Apple M3 Max CPU",
+              "optimizer_updates": 0,
+              "raw_path": "experiments/nine-model-qat-preparation/native-cpu-artifacts.md",
+              "limit": "not a selected candidate initial export, trained checkpoint, final export, CUDA graph, or quality/throughput result"
+            }
+          ],
+          "pending_reason": "The source-derived untrained CPU prototype exports are not bound as the selected profile initial export in resolved configs."
+        },
+        "lifecycle": {
+          "status": "PASS",
+          "evidence": [
+            {
+              "scope": "cpu_fixture_campaign_success_STOP_failure_resume_export_eval_lifecycle",
+              "artifact_kind": "cpu_fixture",
+              "hardware": "Apple M3 Max CPU",
+              "raw_path": "runs/nine-model-qa-baseline/final-nine_model.txt",
+              "sha256": "0d0b5a6ad1dae55087d7c9a66d0fd577af2dbfb40515f2acfeec4d10df0a92d8"
+            }
+          ]
+        }
       }
     },
     "dflash_q4": {
@@ -493,6 +1110,18 @@
           "evidence": []
         },
         "export": {
+          "status": "PENDING",
+          "evidence": []
+        }
+      },
+      "prelaunch_status": "PENDING",
+      "prelaunch_pending_reason": "Original frozen Q4 model/export receipt and control binding are not locally available in this bundle.",
+      "prelaunch_requirements": {
+        "source": {
+          "status": "PENDING",
+          "evidence": []
+        },
+        "initial_export": {
           "status": "PENDING",
           "evidence": []
         }
@@ -585,6 +1214,220 @@
           "status": "PENDING",
           "evidence": []
         }
+      },
+      "prelaunch_status": "PENDING",
+      "prelaunch_pending_reason": "Production TRAIN data/admission and model-bound calibration initialization are absent; selected initial export/config and campaign choices are not frozen.",
+      "prelaunch_requirements": {
+        "source": {
+          "status": "PASS",
+          "evidence": [
+            {
+              "scope": "actual_original_source_model_identity_CPU_export_chain",
+              "artifact_kind": "development_source_model",
+              "hardware": "Apple M3 Max CPU metadata/receipt audit; no source model bytes loaded by QA",
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source identity is joined; selected production profile/config and data admission remain unbound"
+            }
+          ]
+        },
+        "data": {
+          "status": "PENDING",
+          "evidence": [
+            {
+              "scope": "cpu_synthetic_capture_import_portability_fixtures_only",
+              "artifact_kind": "cpu_fixture",
+              "hardware": "Apple M3 Max CPU",
+              "raw_path": "runs/nine-model-qa-baseline/capture-author-final.txt",
+              "sha256": "816cb8ca78724c11bfda83b1e7b1039055f477789e0867dd8a9a91dcba888dbf",
+              "limit": "no complete authenticated production TRAIN capture/admission for these six candidate cells"
+            }
+          ]
+        },
+        "calibration_initialization": {
+          "status": "PENDING",
+          "evidence": [
+            {
+              "scope": "source_descriptor_and_partial_EAGLE_fit_only",
+              "artifact_kind": "limited_initializer_evidence",
+              "hardware": "Apple M3 Max CPU",
+              "raw_path": "experiments/nine-model-qat-preparation/eagle-fusion-cpu-20261004.md",
+              "limit": "EAGLE historical 256-fit/128-validation excludes code and has worse post-norm direction; block original FC/gamma extracted but production TRAIN fits absent"
+            }
+          ]
+        },
+        "ownership": {
+          "status": "PASS",
+          "evidence": [
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dspark",
+              "activation_bits": 8,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            },
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dspark",
+              "activation_bits": 1,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            },
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dflash",
+              "activation_bits": 8,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            },
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dflash",
+              "activation_bits": 1,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            }
+          ]
+        },
+        "hard_forward": {
+          "status": "PASS",
+          "evidence": [
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dspark",
+              "activation_bits": 8,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            },
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dspark",
+              "activation_bits": 1,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            },
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dflash",
+              "activation_bits": 8,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            },
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dflash",
+              "activation_bits": 1,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            }
+          ]
+        },
+        "resume": {
+          "status": "PASS",
+          "evidence": [
+            {
+              "scope": "cpu_fixture_exact_checkpoint_optimizer_rng_cursor_resume",
+              "artifact_kind": "cpu_fixture",
+              "hardware": "Apple M3 Max CPU",
+              "raw_path": "runs/nine-model-qa-baseline/final-nine_model.txt",
+              "sha256": "0d0b5a6ad1dae55087d7c9a66d0fd577af2dbfb40515f2acfeec4d10df0a92d8"
+            }
+          ]
+        },
+        "initial_export": {
+          "status": "PENDING",
+          "evidence": [
+            {
+              "scope": "actual_untrained_native_CPU_prototype_export_and_graph",
+              "artifact_kind": "untrained_source_prototype",
+              "family": "dspark",
+              "activation_bits": 8,
+              "profile": "ffn15 and ffn15_fusion CPU prototypes separately documented",
+              "hardware": "Apple M3 Max CPU",
+              "optimizer_updates": 0,
+              "raw_path": "experiments/nine-model-qat-preparation/native-cpu-artifacts.md",
+              "limit": "not a selected candidate initial export, trained checkpoint, final export, CUDA graph, or quality/throughput result"
+            },
+            {
+              "scope": "actual_untrained_native_CPU_prototype_export_and_graph",
+              "artifact_kind": "untrained_source_prototype",
+              "family": "dspark",
+              "activation_bits": 1,
+              "profile": "ffn15 and ffn15_fusion CPU prototypes separately documented",
+              "hardware": "Apple M3 Max CPU",
+              "optimizer_updates": 0,
+              "raw_path": "experiments/nine-model-qat-preparation/native-cpu-artifacts.md",
+              "limit": "not a selected candidate initial export, trained checkpoint, final export, CUDA graph, or quality/throughput result"
+            },
+            {
+              "scope": "actual_untrained_native_CPU_prototype_export_and_graph",
+              "artifact_kind": "untrained_source_prototype",
+              "family": "dflash",
+              "activation_bits": 8,
+              "profile": "ffn15 and ffn15_fusion CPU prototypes separately documented",
+              "hardware": "Apple M3 Max CPU",
+              "optimizer_updates": 0,
+              "raw_path": "experiments/nine-model-qat-preparation/native-cpu-artifacts.md",
+              "limit": "not a selected candidate initial export, trained checkpoint, final export, CUDA graph, or quality/throughput result"
+            },
+            {
+              "scope": "actual_untrained_native_CPU_prototype_export_and_graph",
+              "artifact_kind": "untrained_source_prototype",
+              "family": "dflash",
+              "activation_bits": 1,
+              "profile": "ffn15 and ffn15_fusion CPU prototypes separately documented",
+              "hardware": "Apple M3 Max CPU",
+              "optimizer_updates": 0,
+              "raw_path": "experiments/nine-model-qat-preparation/native-cpu-artifacts.md",
+              "limit": "not a selected candidate initial export, trained checkpoint, final export, CUDA graph, or quality/throughput result"
+            }
+          ],
+          "pending_reason": "The source-derived untrained CPU prototype exports are not bound as the selected profile initial export in resolved configs."
+        },
+        "lifecycle": {
+          "status": "PASS",
+          "evidence": [
+            {
+              "scope": "cpu_fixture_campaign_success_STOP_failure_resume_export_eval_lifecycle",
+              "artifact_kind": "cpu_fixture",
+              "hardware": "Apple M3 Max CPU",
+              "raw_path": "runs/nine-model-qa-baseline/final-nine_model.txt",
+              "sha256": "0d0b5a6ad1dae55087d7c9a66d0fd577af2dbfb40515f2acfeec4d10df0a92d8"
+            }
+          ]
+        }
       }
     },
     "dflash_a1": {
@@ -674,6 +1517,220 @@
           "status": "PENDING",
           "evidence": []
         }
+      },
+      "prelaunch_status": "PENDING",
+      "prelaunch_pending_reason": "Production TRAIN data/admission and model-bound calibration initialization are absent; selected initial export/config and campaign choices are not frozen.",
+      "prelaunch_requirements": {
+        "source": {
+          "status": "PASS",
+          "evidence": [
+            {
+              "scope": "actual_original_source_model_identity_CPU_export_chain",
+              "artifact_kind": "development_source_model",
+              "hardware": "Apple M3 Max CPU metadata/receipt audit; no source model bytes loaded by QA",
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source identity is joined; selected production profile/config and data admission remain unbound"
+            }
+          ]
+        },
+        "data": {
+          "status": "PENDING",
+          "evidence": [
+            {
+              "scope": "cpu_synthetic_capture_import_portability_fixtures_only",
+              "artifact_kind": "cpu_fixture",
+              "hardware": "Apple M3 Max CPU",
+              "raw_path": "runs/nine-model-qa-baseline/capture-author-final.txt",
+              "sha256": "816cb8ca78724c11bfda83b1e7b1039055f477789e0867dd8a9a91dcba888dbf",
+              "limit": "no complete authenticated production TRAIN capture/admission for these six candidate cells"
+            }
+          ]
+        },
+        "calibration_initialization": {
+          "status": "PENDING",
+          "evidence": [
+            {
+              "scope": "source_descriptor_and_partial_EAGLE_fit_only",
+              "artifact_kind": "limited_initializer_evidence",
+              "hardware": "Apple M3 Max CPU",
+              "raw_path": "experiments/nine-model-qat-preparation/eagle-fusion-cpu-20261004.md",
+              "limit": "EAGLE historical 256-fit/128-validation excludes code and has worse post-norm direction; block original FC/gamma extracted but production TRAIN fits absent"
+            }
+          ]
+        },
+        "ownership": {
+          "status": "PASS",
+          "evidence": [
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dspark",
+              "activation_bits": 8,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            },
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dspark",
+              "activation_bits": 1,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            },
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dflash",
+              "activation_bits": 8,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            },
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dflash",
+              "activation_bits": 1,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            }
+          ]
+        },
+        "hard_forward": {
+          "status": "PASS",
+          "evidence": [
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dspark",
+              "activation_bits": 8,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            },
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dspark",
+              "activation_bits": 1,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            },
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dflash",
+              "activation_bits": 8,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            },
+            {
+              "scope": "actual_source_model_CPU_zero_update_with_synthetic_features",
+              "artifact_kind": "development_synthetic_inputs",
+              "family": "dflash",
+              "activation_bits": 1,
+              "hardware": "Apple M3 Max CPU; CUDA unavailable",
+              "optimizer_updates": 0,
+              "raw_path": "runs/nine-model-qa-baseline/actual-cpu-artifact-joins.json",
+              "sha256": "31aacfa335fa478cc07a3c3afd9c7a44fda0dc274a8a0c7141ea675a65057d45",
+              "limit": "source/model/ownership/hard-forward development only; not production TRAIN, production admission, CUDA, or quality"
+            }
+          ]
+        },
+        "resume": {
+          "status": "PASS",
+          "evidence": [
+            {
+              "scope": "cpu_fixture_exact_checkpoint_optimizer_rng_cursor_resume",
+              "artifact_kind": "cpu_fixture",
+              "hardware": "Apple M3 Max CPU",
+              "raw_path": "runs/nine-model-qa-baseline/final-nine_model.txt",
+              "sha256": "0d0b5a6ad1dae55087d7c9a66d0fd577af2dbfb40515f2acfeec4d10df0a92d8"
+            }
+          ]
+        },
+        "initial_export": {
+          "status": "PENDING",
+          "evidence": [
+            {
+              "scope": "actual_untrained_native_CPU_prototype_export_and_graph",
+              "artifact_kind": "untrained_source_prototype",
+              "family": "dspark",
+              "activation_bits": 8,
+              "profile": "ffn15 and ffn15_fusion CPU prototypes separately documented",
+              "hardware": "Apple M3 Max CPU",
+              "optimizer_updates": 0,
+              "raw_path": "experiments/nine-model-qat-preparation/native-cpu-artifacts.md",
+              "limit": "not a selected candidate initial export, trained checkpoint, final export, CUDA graph, or quality/throughput result"
+            },
+            {
+              "scope": "actual_untrained_native_CPU_prototype_export_and_graph",
+              "artifact_kind": "untrained_source_prototype",
+              "family": "dspark",
+              "activation_bits": 1,
+              "profile": "ffn15 and ffn15_fusion CPU prototypes separately documented",
+              "hardware": "Apple M3 Max CPU",
+              "optimizer_updates": 0,
+              "raw_path": "experiments/nine-model-qat-preparation/native-cpu-artifacts.md",
+              "limit": "not a selected candidate initial export, trained checkpoint, final export, CUDA graph, or quality/throughput result"
+            },
+            {
+              "scope": "actual_untrained_native_CPU_prototype_export_and_graph",
+              "artifact_kind": "untrained_source_prototype",
+              "family": "dflash",
+              "activation_bits": 8,
+              "profile": "ffn15 and ffn15_fusion CPU prototypes separately documented",
+              "hardware": "Apple M3 Max CPU",
+              "optimizer_updates": 0,
+              "raw_path": "experiments/nine-model-qat-preparation/native-cpu-artifacts.md",
+              "limit": "not a selected candidate initial export, trained checkpoint, final export, CUDA graph, or quality/throughput result"
+            },
+            {
+              "scope": "actual_untrained_native_CPU_prototype_export_and_graph",
+              "artifact_kind": "untrained_source_prototype",
+              "family": "dflash",
+              "activation_bits": 1,
+              "profile": "ffn15 and ffn15_fusion CPU prototypes separately documented",
+              "hardware": "Apple M3 Max CPU",
+              "optimizer_updates": 0,
+              "raw_path": "experiments/nine-model-qat-preparation/native-cpu-artifacts.md",
+              "limit": "not a selected candidate initial export, trained checkpoint, final export, CUDA graph, or quality/throughput result"
+            }
+          ],
+          "pending_reason": "The source-derived untrained CPU prototype exports are not bound as the selected profile initial export in resolved configs."
+        },
+        "lifecycle": {
+          "status": "PASS",
+          "evidence": [
+            {
+              "scope": "cpu_fixture_campaign_success_STOP_failure_resume_export_eval_lifecycle",
+              "artifact_kind": "cpu_fixture",
+              "hardware": "Apple M3 Max CPU",
+              "raw_path": "runs/nine-model-qa-baseline/final-nine_model.txt",
+              "sha256": "0d0b5a6ad1dae55087d7c9a66d0fd577af2dbfb40515f2acfeec4d10df0a92d8"
+            }
+          ]
+        }
       }
     }
   },
@@ -752,7 +1809,7 @@
       "capture_portability"
     ],
     "hardware": null,
-    "reason": "Human opened RTX5080 for development, then directed \u201cpause all 5080 usage continue mac only\u201d; QA made no device query and no admission receipt exists."
+    "reason": "Separate runtime gate; RTX5080 remains paused and QA made no device query."
   },
   "production_profiles": {
     "all_nine_profile_statuses": "PENDING",
@@ -928,5 +1985,61 @@
       "raw_path": "runs/nine-model-qa-baseline/owner-block-fusion-suite.txt",
       "sha256": "d848fa839030aedafa2d053a4ead27aab5e86800f0ae58c454752c0850ec340f"
     }
+  },
+  "prelaunch_campaign_status": "PENDING",
+  "prelaunch_campaign_missing": [
+    "complete authenticated production TRAIN captures and per-candidate data admissions",
+    "selected model-bound calibration initializations and source/fit validation",
+    "resolved six candidate configs and selected profile recipes",
+    "original Q4 control artifact/export bindings",
+    "human-selected bounded training/evaluation budget and immutable inputs"
+  ],
+  "campaign_outcome_status": "PENDING",
+  "campaign_outcome_missing": [
+    "committed trained candidate checkpoints",
+    "final exported candidates from committed checkpoints",
+    "matched native evaluation results against original frozen Q4 controls",
+    "quality, acceptance and throughput conclusions"
+  ],
+  "final_qa_refresh": {
+    "integrated_main": "e9107d68409bab767056d8a09626439940e74404",
+    "hardware": "Apple M3 Max CPU; macOS; CUDA unavailable; no GPU query or remote activity",
+    "python": "3.11.15 from /Users/pippo/github/binary-eagle-decoding/.venv/bin/python",
+    "torch": "2.14.0",
+    "cwd": "/private/tmp/nine-model-qat-20261004/qa",
+    "run_directory": "/private/tmp/nine-model-qat-20261004/qa/runs/nine-model-qa-baseline",
+    "runs": [
+      {
+        "name": "independent_prelaunch_ledger_and_CPU_library_closure",
+        "command": "NINE_MODEL_CODE_ROOT=/Users/pippo/github/binary-eagle-decoding NINE_MODEL_CPU_CAPTURE_SCRIPT=/Users/pippo/github/binary-eagle-decoding/scripts/capture_nine_model_train_data.py PYTHONPATH=/Users/pippo/github/binary-eagle-decoding/src:/Users/pippo/github/binary-eagle-decoding/scripts /Users/pippo/github/binary-eagle-decoding/.venv/bin/python -m unittest discover -s tests -p 'test_nine_model_prelaunch_ledger_contracts.py' -v",
+        "result": "6 tests PASS",
+        "raw_path": "runs/nine-model-qa-baseline/prelaunch-ledger-final.txt",
+        "sha256": "832873fea55795d617e3d60584d80ad9330cb8a70a9b83b98fbf616f3db2124d",
+        "cleanup": "Temporary directory fixtures self-cleaned; no persistent process or hardware resources used."
+      },
+      {
+        "name": "integrated_development_CPU_capture_refusal_and_cleanup_fixtures",
+        "command": "PYTHONPATH=src:scripts .venv/bin/python -m unittest discover -s tests -p 'test_nine_model_cpu_capture.py' -v",
+        "result": "14 tests PASS, including interrupted blocked producer close and monitor-thread join",
+        "raw_path": "runs/nine-model-qa-baseline/cpu_capture_pilot_final.txt",
+        "sha256": "f470c069aaaaa55f6db0fa2dd3d48403f6e5a9d8cd0dc0509817294a101eeda8",
+        "cleanup": "Injected producers and temporary paths closed/removed; no actual capture or model load started."
+      },
+      {
+        "name": "integrated_production_capture_scope_regressions",
+        "command": "PYTHONPATH=src:scripts .venv/bin/python -m unittest discover -s tests -p 'test_nine_model_train_capture.py' -v",
+        "result": "19 tests PASS using synthetic fixtures",
+        "raw_path": "runs/nine-model-qa-baseline/prod_capture_final.txt",
+        "sha256": "9391f8c37238565571d864e7930c734f56bdca16db8857085450e5d95331b44c",
+        "cleanup": "Temporary fixture data removed; no production corpus scan or native capture started."
+      },
+      {
+        "name": "QA-owned lint_and_format",
+        "command": "/Users/pippo/github/binary-eagle-decoding/.venv/bin/ruff check tests/test_nine_model_prelaunch_ledger_contracts.py && /Users/pippo/github/binary-eagle-decoding/.venv/bin/ruff format --check tests/test_nine_model_prelaunch_ledger_contracts.py",
+        "result": "PASS; clean and already formatted",
+        "cleanup": "Read-only checks; no process or resource state changed."
+      }
+    ],
+    "readiness": "Every aggregate and prelaunch profile remains PENDING. CPU tests and source-bound CPU zero-update evidence establish neither production TRAIN readiness nor CUDA/SM120 readiness."
   }
 }

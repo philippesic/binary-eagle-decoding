@@ -135,3 +135,34 @@ These runs use synthetic temporary files and mocked stage/resource boundaries on
 The independent A8 arithmetic test now reflects `fixed_w1a8_finite_reciprocal_v2`: a finite F32 subnormal row whose `127/absmax` reciprocal overflows must quantize through the finite normalized path, using scalar F64 division, cast the normalized value to F32, then round-to-nearest-even and clamp. A new scalar-row oracle covers reciprocal-overflow values and maximum subnormals, including signed zero; NaN and both infinities still must be rejected. Against integrated arithmetic source `3834996`, the independent contract suite passes 15/15 on Apple M3 Max CPU. Raw output: `runs/nine-model-qa-baseline/qa-contracts-finite-reciprocal-revision.txt`, SHA256 `0370579400a052fb0b125796f4f322c1d60b11ca16c3695778b59d32f6023f21`. This updates only the arithmetic contract and makes no readiness claim.
 
 The focused owner arithmetic suite also passes 11/11, including its tiny reciprocal-overflow and RNE tie cases: `runs/nine-model-qa-baseline/owner-block-fusion-suite.txt`, SHA256 `d848fa839030aedafa2d053a4ead27aab5e86800f0ae58c454752c0850ec340f`. Independent QA remains CPU-only.
+
+## Final integrated source refresh — October 4, 2026
+
+The final source map is pinned to integrated main
+`e9107d68409bab767056d8a09626439940e74404`, with llama.cpp submodule
+`624f50e74f51b6af93bf6b879f84703e726df172`. `qa-ledger.json` contains 49
+repository-relative source paths whose SHA256 values were recomputed from that
+checkout. The source map is current as of that commit; the CPU development
+capture and loaded-library closure additions are included.
+
+Independent refresh runs used the established project Python 3.11.15 / PyTorch
+2.14.0 environment on Apple M3 Max CPU. Exact commands, raw paths and hashes
+are machine-readable in the JSON ledger. The prelaunch-ledger counterexample
+suite passes 6/6, including the aggregate-PASS bypass, false production scopes,
+CPU-golden/receipt scope, and extra GPU-library runtime rejection cases. The
+bounded CPU capture safety suite passes 14/14, including blocked-producer STOP,
+resource-floor interruption and monitor-thread cleanup. The production capture
+schema/regression suite passes 19/19 on synthetic fixtures. QA-owned Ruff and
+format checks pass. Runs and temporary fixtures are under the ignored QA run
+directory; no production capture, model load, GPU query, SSH, or remote task was
+started.
+
+The actual-source CPU zero-update checks, original FC/NORM descriptor hashes,
+and untrained CPU graph/export receipts remain development evidence only. They
+used synthetic inputs and do not prove production TRAIN data admission,
+calibration correctness on captured production data, trained checkpoints,
+quality, throughput, CUDA, SM75, or SM120 behavior. Every aggregate campaign
+profile and every production prelaunch profile remains `PENDING`; fresh SM120
+admission also remains `PENDING`. The 1,183 Ruff findings, 73 baseline format
+findings, and 12 stop-control errors from the normalized historical full-suite
+baseline remain separately recorded and are not waived by the focused passes.
