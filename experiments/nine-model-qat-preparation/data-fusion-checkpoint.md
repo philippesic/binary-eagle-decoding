@@ -200,3 +200,60 @@ full-vocabulary batches. It launched zero producers, changed neither failed
 report nor original receipt, and grants no production or CUDA readiness:
 `results/nine-model-qat-preparation/development-cpu-generated-protocol-audit-20261004/report.json`.
 The source hashes and new report pin are reported with the reviewed commit.
+
+The replay-golden follow-up (`4d05859`) requires exact
+`caller_current_student_prefix` freshness and excludes generated prompt/history
+metadata in both saved goldens and freshly replayed producer receipts. Independent
+QA verified actual attempts 01/02 still import as generated chains and cannot be
+relabeled as replay goldens. The integrated package passed 74 focused CPU tests.
+
+Root-approved attempt 03 then completed **all nine authentic original TRAIN
+chains and six CPU goldens** on Apple M3 Max with the frozen native F16 target,
+F16 KV and zero optimizer updates. Its source was published main `4cba39c`.
+Actual teacher PID 1978 shared supervisor PGID 1957, closed and was reaped with
+return code 0. The exact four CPU project DYLD libraries passed the path/hash
+closure. System Metal is separately recorded; native Mac mapping remains
+unchecked. Artifact scope is `development_CPU`, `DEVELOPMENT_CPU_ONLY`, with
+SM120 readiness PENDING. The original two failed attempts remain unchanged.
+
+Attempt 03 elapsed 93.007194 seconds, so cumulative capture time was
+139.152521 seconds against the original 1800-second cap. Peak sampled combined
+owner/producer RSS was 8,770,224,128 bytes against 12 GiB, minimum available memory
+14,987,984,896 bytes against the 4 GiB live floor, and retained capture size
+565,604,996 bytes against 8 GiB. Main ignored report:
+`results/nine-model-qat-preparation/development-cpu-pilot-capture-20261004-03/capture-report.json`,
+SHA256 `312396136b2b52ff3c5b1830f40b2ebd68cdf7d151beb1ba38c5a4006b21d140`.
+It pins both imported manifests/completed admissions and CPU-only golden files.
+
+After that producer closed, root approved four sequential CPU fits (DSpark and
+DFlash, A8 and A1), using each family's actual original BF16-promoted FC/gamma
+and exact F32 norm epsilon. Each used 96 calibration-fit rows and 96
+prompt-disjoint calibration-validation rows across prose/code/reasoning. Native
+full-vocabulary teachers were retained but the fusion fitting reference is the
+original promoted-F32 FC CPU product of captured native features. These are
+coordinate diagnostics, not native acceptance or quality measurements.
+
+| Profile | Raw validation relative SSE | Post-norm validation relative SSE |
+|---|---:|---:|
+| DSpark A8 | 0.012557 | 0.861737 |
+| DSpark A1 | 0.692043 | 1.304644 |
+| DFlash A8 | 0.021948 | 0.784016 |
+| DFlash A1 | 0.584944 | 1.356983 |
+
+All four fits passed, with orientation rescue OFF, zero coordinate flips and
+`preserve_reference_magnitudes`; candidate/control NPZ hashes are identical per
+profile. The whole independently bounded fit phase took 16.307379 seconds
+against 720 seconds; each process took about 4.05 seconds against 180 seconds.
+Peak sampled owner/child RSS was 1,412,644,864 bytes against 12 GiB; minimum
+available memory was 19,098,353,664 bytes. The conservative array estimate is
+833,617,920 bytes against the 1 GiB array cap and excludes process overhead.
+All owned fit groups were closed/reaped, with no further model runs authorized.
+
+Main ignored `results/nine-model-qat-preparation/development-cpu-pilot-fusion-20261004/`
+contains the four profile directories, phase report and strict three-field
+latent-policy locators in `artifact-index.json`. Phase report SHA256:
+`0aae6b5c0faafc4ba2f6d35edcd59db58a98db8c25c4a05e79f1a5224bc25d77`.
+Artifact index SHA256:
+`e59edcd2c235c4fbca800892dde1bc86199db57729177e93371b006a8c490800`.
+Fitting output totals 1,048,741,564 bytes. Whole-model initializer integration,
+native export/trajectory gates, long corpus coverage and quality remain PENDING.
