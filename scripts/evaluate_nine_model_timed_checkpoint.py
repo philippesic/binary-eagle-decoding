@@ -38,7 +38,16 @@ from run_nine_model_lane_endpoint import (  # noqa: E402
     stop_owned_server,
 )
 
+from w1a1_eagle.continuous_budget import (  # noqa: E402
+    baseline_cases,
+    baseline_control_outputs,
+    research_bindings,
+    research_continuation_decision,
+    validate_collection_evidence,
+    validate_research_policy,
+)
 from w1a1_eagle.nine_model_pipeline import (  # noqa: E402
+    Files,
     atomic_json,
     cleanup_descendants,
     deferred_termination,
@@ -151,6 +160,8 @@ def validate_plan(locator, lane, admission, files):
     )
     for record in dev["evidence"]:
         files.check(record)
+    if plan.get("research_continuation_policy"):
+        validate_research_policy(plan["research_continuation_policy"], research_bindings(plan))
     return plan, protocol
 
 
@@ -160,14 +171,21 @@ def cell_order(candidate, repetition):
     return shifted if repetition % 2 == 0 else tuple(reversed(shifted))
 
 
-def matched_report(plan, records, diagnostics, hardware, *, fixture=False):
+def matched_report(plan, records, diagnostics, hardware, *, fixture=False, measurement_only=False):
     candidate = plan["candidate"]
     require(
         {row["cell"] for row in records} == {candidate, "initial", "eagle_q4", "target_only"},
         "four matched timed evaluation cells required",
     )
+    research = plan.get("research_continuation_policy")
+    collecting = measurement_only or research is not None
     report = aggregate(
-        plan, [r for r in records if r["cell"] != "initial"], diagnostics, hardware, fixture=fixture
+        plan,
+        [r for r in records if r["cell"] != "initial"],
+        diagnostics,
+        hardware,
+        fixture=fixture,
+        measurement_only=collecting,
     )
     initial_plan = dict(plan, candidate="initial")
     initial = aggregate(
@@ -176,6 +194,7 @@ def matched_report(plan, records, diagnostics, hardware, *, fixture=False):
         diagnostics,
         hardware,
         fixture=fixture,
+        measurement_only=collecting,
     )
     report["cells"]["initial"] = initial["cells"]["initial"]
     # Both aggregates independently check pairing against the same target rows.
@@ -186,6 +205,16 @@ def matched_report(plan, records, diagnostics, hardware, *, fixture=False):
             cell["acceptance_rate"] = counts["accepted"] / counts["proposed"]
     report["schema"] = "nine_model_timed_matched_report_v1"
     report["initial_model"] = plan["initial"]
+    if collecting:
+        report["strict_quality_status"] = (
+            "FAILED"
+            if "FAILED" in (report["strict_quality_status"], initial["strict_quality_status"])
+            else "PASS"
+        )
+    if research and not measurement_only:
+        report.update(
+            research_continuation_decision(research, research_bindings(plan), records, diagnostics)
+        )
     return report
 
 
@@ -251,7 +280,11 @@ def evaluate(
             port = protocol["port"]
             require(available_port("127.0.0.1", port), "native port occupied")
             command = native_command(bundle, protocol, native_cell, models.get(cell), port)
-            verbosity = protocol.get("diagnostic_log_verbosity", 4) if diagnostic else protocol.get("clean_log_verbosity", 3)
+            verbosity = (
+                protocol.get("diagnostic_log_verbosity", 4)
+                if diagnostic
+                else protocol.get("clean_log_verbosity", 3)
+            )
             command += ["--log-verbosity", str(verbosity)]
             proc = None
             with (stage / "server.log").open("wb") as log:
@@ -389,6 +422,7 @@ def evaluate(
         directory / "measurements.json",
         {"clean_records": records, "diagnostic_records": diagnostics},
     )
+    report["measurements"] = pin(directory / "measurements.json")
     atomic_json(directory / "report.json", report)
     return pin(directory / "report.json")
 
@@ -711,9 +745,10 @@ def evaluate_checkpoint(
     )
     authorization()
     proof = release()
+    report_value = json.loads(files.check(report).read_text())
     receipt = {
         "schema": "nine_model_timed_evaluation_receipt_v1",
-        "status": "PASS",
+        "status": "FAILED" if report_value.get("strict_quality_status") == "FAILED" else "PASS",
         "completed": True,
         "candidate": context["lane"]["candidate"],
         "bundle_sha256": lane_locator["sha256"],
@@ -729,8 +764,78 @@ def evaluate_checkpoint(
         "milestone_seconds": request["milestone_seconds"],
         "campaign_complete": False,
     }
+    if plan.get("research_continuation_policy"):
+        for key in (
+            "measurement_status",
+            "strict_quality_status",
+            "continuation_status",
+            "research_only",
+            "research_continuation_policy",
+            "research_bindings",
+        ):
+            receipt[key] = report_value[key]
     # Recheck source/request pins after the full comparison before publishing.
     files.check(request_locator)
     validate_plan(plan_locator, context["lane"], context["admission_plan"], files)
     atomic_json(directory / "receipt.json", receipt)
     return pin(directory / "receipt.json")
+
+
+def collect_failed_zero_baseline(plan, progress_locator, evidence_locator, output):
+    """CPU-only honest reconstruction from already completed raw 0h collection.
+
+    This emits no continuation authority. A separately reviewed, hash-bound
+    operational policy must explicitly authorize its exact original failure cases.
+    """
+    bindings = research_bindings(plan)
+    from w1a1_eagle.continuous_budget import checked_locator
+
+    progress = json.loads(checked_locator(progress_locator).read_text())
+    evidence = validate_collection_evidence(bindings, evidence_locator, progress_locator)
+    records, diagnostics = progress["clean_records"], progress["diagnostic_records"]
+    cases = baseline_cases(bindings, records, diagnostics)
+    report = matched_report(plan, records, diagnostics, evidence["hardware"], measurement_only=True)
+    require(
+        report["strict_quality_status"] == "FAILED", "genuine strict zero parity failure required"
+    )
+    report.update(
+        schema="native_zero_research_measurement_v1",
+        bindings=bindings,
+        progress=progress_locator,
+        collection_evidence=evidence_locator,
+        allowed_cases=cases,
+        control_outputs=baseline_control_outputs(bindings, records, diagnostics),
+        continuation_status="NOT_AUTHORIZED",
+        optimizer_updates=0,
+    )
+    require(not Path(output).exists(), "preserve honest zero collection evidence")
+    atomic_json(Path(output), report)
+    return pin(output)
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="CPU-only strict-failed zero baseline reconstruction"
+    )
+    parser.add_argument("--plan", type=Path, required=True)
+    parser.add_argument("--plan-sha256", required=True)
+    parser.add_argument("--progress", type=Path, required=True)
+    parser.add_argument("--progress-sha256", required=True)
+    parser.add_argument("--collection-evidence", type=Path, required=True)
+    parser.add_argument("--collection-evidence-sha256", required=True)
+    parser.add_argument("--output", type=Path, required=True)
+    args = parser.parse_args()
+    files = Files()
+    plan = json.loads(files.check({"path": str(args.plan), "sha256": args.plan_sha256}).read_text())
+    print(
+        json.dumps(
+            collect_failed_zero_baseline(
+                plan,
+                {"path": str(args.progress), "sha256": args.progress_sha256},
+                {"path": str(args.collection_evidence), "sha256": args.collection_evidence_sha256},
+                args.output,
+            )
+        )
+    )

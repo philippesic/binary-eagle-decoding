@@ -154,7 +154,7 @@ class TimedEvaluation:
         result = json.loads(checked_locator(locator).read_text())
         if (
             result.get("schema") != "nine_model_timed_evaluation_receipt_v1"
-            or result.get("status") != "PASS"
+            or not validate_evaluation_continuation(result)
             or result.get("completed") is not True
             or result.get("request") != request_locator
             or any(
@@ -397,3 +397,418 @@ class TrainingBudget:
         self.active = None
         self._persist()
         return self.used
+
+
+def _research_require(condition, message):
+    if not condition:
+        raise ValueError(message)
+
+
+def _research_json(locator):
+    return json.loads(checked_locator(locator).read_text())
+
+
+def _research_digest(value):
+    return hashlib.sha256(
+        json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+
+
+def _artifact_identity(value):
+    """Allow authenticated relocated aliases of identical bytes, never new models."""
+    if isinstance(value, dict):
+        if set(value) == {"path", "sha256"}:
+            checked_locator(value)
+            return {"sha256": value["sha256"]}
+        return {key: _artifact_identity(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_artifact_identity(item) for item in value]
+    return value
+
+
+def research_bindings(plan):
+    return {
+        "candidate": plan["candidate"],
+        "target": plan["target"],
+        "target_policy": plan["target_policy"],
+        "runtime": plan["runtime"],
+        "protocol": plan["protocol"],
+        "prompts": plan["prompts"],
+        "initial_model": plan["initial"]["model"],
+        "q4_model": plan["control"]["model"],
+        "gpu_uuid": plan["gpu_uuid"],
+    }
+
+
+def checked_measurement_rows(bindings, records, diagnostics):
+    """Require complete actual raw token/count/finish joins and paired coverage."""
+    protocol = _research_json(bindings["protocol"])
+    prompts = [
+        json.loads(line)
+        for line in checked_locator(bindings["prompts"]).read_text().splitlines()
+        if line.strip()
+    ]
+    identifiers = {row["id"] for row in prompts}
+    _research_require(
+        len(identifiers) == len(prompts) == 24 and protocol["repetitions"] == 5,
+        "research policy requires actual complete 24-prompt five-repetition suite",
+    )
+    cells = {bindings["candidate"], "initial", "eagle_q4", "target_only"}
+    result = []
+    for rows, expected_reps, kind in (
+        (records, set(range(5)), "clean"),
+        (diagnostics, {0}, "diagnostic"),
+    ):
+        expected = {
+            (cell, rep, prompt) for cell in cells for rep in expected_reps for prompt in identifiers
+        }
+        actual = {(r["cell"], r["repetition"], r["prompt_id"]) for r in rows}
+        _research_require(
+            actual == expected and len(rows) == len(expected),
+            "incomplete/duplicate research measurement coverage",
+        )
+        for row in rows:
+            raw = _research_json(row["raw_result"])
+            tokens = row["generated_token_ids"]
+            _research_require(
+                isinstance(tokens, list)
+                and tokens
+                and all(type(t) is int and t >= 0 for t in tokens)
+                and tokens == raw.get("generated_token_ids")
+                and type(row["output_tokens"]) is int
+                and row["output_tokens"] > 0
+                and row["output_tokens"] == raw.get("completion_tokens")
+                and type(row["latency_s"]) in (int, float)
+                and math.isfinite(row["latency_s"])
+                and row["latency_s"] > 0
+                and row["latency_s"] == raw.get("request_wall_s")
+                and raw.get("finish_reason") in {"stop", "length"},
+                "raw token/count/finish/timing evidence missing or changed",
+            )
+            if row["cell"] != "target_only":
+                counters = row.get("speculative")
+                _research_require(
+                    counters == raw.get("speculative")
+                    and isinstance(counters, dict)
+                    and all(
+                        type(counters.get(k)) is int and counters[k] >= 0
+                        for k in ("proposed", "accepted", "rounds")
+                    )
+                    and counters["proposed"] > 0
+                    and counters["rounds"] > 0
+                    and counters["accepted"] <= counters["proposed"],
+                    "raw native speculative counters missing or changed",
+                )
+                if kind == "diagnostic":
+                    _research_require(
+                        row.get("round_summary", {}).get("rounds", 0) > 0,
+                        "native diagnostic rounds missing",
+                    )
+            result.append({**row, "measurement_kind": kind, "finish_reason": raw["finish_reason"]})
+    return result
+
+
+def _full_output(row):
+    return {
+        "token_ids": row["generated_token_ids"],
+        "finish_reason": row["finish_reason"],
+        "output_tokens": row["output_tokens"],
+    }
+
+
+def _first_divergence(left, right):
+    return next(
+        (i for i, (a, b) in enumerate(zip(left, right)) if a != b), min(len(left), len(right))
+    )
+
+
+def baseline_cases(bindings, records, diagnostics):
+    rows = checked_measurement_rows(bindings, records, diagnostics)
+    table = {}
+    for row in rows:
+        key = (row["cell"], row["prompt_id"])
+        output = _full_output(row)
+        _research_require(
+            table.setdefault(key, output) == output,
+            "baseline control/candidate output varies across repetitions/diagnostics",
+        )
+    cases = {}
+    for prompt in {r["prompt_id"] for r in rows}:
+        target, q4 = table[("target_only", prompt)], table[("eagle_q4", prompt)]
+        _research_require(
+            table[(bindings["candidate"], prompt)] == table[("initial", prompt)],
+            "zero candidate and calibrated initial outputs differ",
+        )
+        if q4 != target:
+            _research_require(
+                q4["token_ids"] != target["token_ids"],
+                "finish/count-only failure is not a known numeric token branch",
+            )
+            _research_require(
+                table[("initial", prompt)] in (target, q4),
+                "zero initial differs from both authoritative baseline branches",
+            )
+            cases[prompt] = {
+                "target": target,
+                "q4": q4,
+                "first_divergence_index": _first_divergence(target["token_ids"], q4["token_ids"]),
+            }
+        else:
+            _research_require(
+                table[("initial", prompt)] == target,
+                "new zero-initial correctness failure outside shared Q4 case",
+            )
+    _research_require(cases, "known shared target/Q4 failure absent; use strict path")
+    return cases
+
+
+def baseline_control_outputs(bindings, records, diagnostics):
+    rows = checked_measurement_rows(bindings, records, diagnostics)
+    result = {}
+    for row in rows:
+        if row["cell"] in {"target_only", "eagle_q4"}:
+            pair = result.setdefault(row["prompt_id"], {})
+            output = _full_output(row)
+            _research_require(
+                pair.setdefault(row["cell"], output) == output,
+                "baseline controls vary across repetitions/diagnostics",
+            )
+    return result
+
+
+def validate_collection_evidence(bindings, evidence_locator, progress_locator):
+    """Preserve actual failed controller status separately from complete collection."""
+    evidence = _research_json(evidence_locator)
+    _research_require(
+        evidence.get("schema") == "native_zero_measurement_evidence_v1"
+        and evidence.get("progress") == progress_locator
+        and _artifact_identity(evidence.get("bindings")) == _artifact_identity(bindings)
+        and evidence.get("hardware", {}).get("compute_capability") == [12, 0]
+        and evidence["hardware"].get("gpu_uuid") == bindings["gpu_uuid"],
+        "actual zero source/hardware evidence differs",
+    )
+    failed = _research_json(evidence["failed_status"])
+    _research_require(
+        failed.get("status") in {"failed", "FAILED"}, "original strict failed status required"
+    )
+    zero = _research_json(evidence["zero_preparation"])
+    _research_require(
+        zero.get("schema") == "nine_model_preparation_v1"
+        and zero.get("status") == "PASS"
+        and zero.get("optimizer_updates") == 0
+        and zero.get("checkpoint", {}).get("cursor", {}).get("step") == 0,
+        "actual zero-update preparation receipt required",
+    )
+    models = evidence["model_ancestry"]
+    _research_require(
+        models[bindings["candidate"]]["sha256"]
+        == models["initial"]["sha256"]
+        == bindings["initial_model"]["sha256"]
+        and models["eagle_q4"]["sha256"] == bindings["q4_model"]["sha256"],
+        "actual zero/control model bytes differ",
+    )
+    for model in models.values():
+        checked_locator(model)
+    resources = evidence.get("resource_returns", [])
+    dispatch = evidence.get("dispatch_proofs", [])
+    _research_require(
+        len(resources) == 24
+        and len(dispatch) == 2
+        and len({_research_digest(r) for r in resources}) == 24
+        and len({_research_digest(r) for r in dispatch}) == 2,
+        "complete per-cell/repetition resource and both model dispatch proofs required",
+    )
+    for locator in resources:
+        result = _research_json(locator)
+        release = result.get("release", result.get("actual_release", {}))
+        snapshot = result.get("resources", {})
+        _research_require(
+            release.get("owned_process_groups_absent") is True
+            and release.get("owned_cuda_pids_absent") is True
+            and release.get("other_context_pids") == []
+            and snapshot.get("dxg_holders") == []
+            and snapshot.get("gpu_uuid") == bindings["gpu_uuid"],
+            "actual collection resource release failed",
+        )
+    for locator in dispatch:
+        result = _research_json(locator)
+        _research_require(
+            result.get("schema") == "nine_model_observed_w1_dispatch_v1"
+            and result.get("status") == "PASS"
+            and result.get("activation_bits") == 8
+            and len(set(result.get("packed_names", []))) == 16,
+            "actual sixteen-projection A8 native dispatch proof missing",
+        )
+    return evidence
+
+
+def validate_research_policy(locator, bindings):
+    policy = _research_json(locator)
+    _research_require(
+        policy.get("schema") == "native_research_continuation_policy_v1"
+        and policy.get("scope") == "research_only_no_deployment_admission"
+        and policy.get("strict_quality_status") == "FAILED"
+        and _artifact_identity(policy.get("bindings")) == _artifact_identity(bindings),
+        "research policy source/model/runtime/protocol differs",
+    )
+    _research_require(
+        bindings["target_policy"] == {"immutable": True, "weights": "f16", "kv": "f16"},
+        "immutable F16 target/KV required",
+    )
+    for name, record in policy["controller_sources"].items():
+        _research_require(
+            name
+            in {
+                "scripts/run_nine_model_lane_endpoint.py",
+                "scripts/evaluate_nine_model_timed_checkpoint.py",
+                "scripts/run_nine_model_lane.py",
+                "src/w1a1_eagle/continuous_budget.py",
+            },
+            "unknown research consumer source",
+        )
+        _research_require(
+            artifact_locator(Path(__file__).resolve().parents[2] / name)["sha256"]
+            == record["sha256"],
+            "research consumer deployed source changed",
+        )
+        checked_locator(record)
+    _research_require(
+        len(policy["controller_sources"]) == 4, "complete active consumer source inventory required"
+    )
+    review = _research_json(policy["review"])
+    body = {key: value for key, value in policy.items() if key != "review"}
+    _research_require(
+        review.get("schema") == "native_research_operational_review_v1"
+        and review.get("status") == "REVIEWED"
+        and review.get("policy_body_sha256") == _research_digest(body)
+        and review.get("new_scientific_approval_claimed") is False,
+        "explicit source-bound operational review required",
+    )
+    checked_locator(review["approved_plan"])
+    checked_locator(review["standing_start_authorization"])
+    historical = _research_json(review["historical_failure"])
+    baseline = _research_json(policy["baseline_report"])
+    _research_require(
+        baseline.get("schema") == "native_zero_research_measurement_v1"
+        and baseline.get("measurement_status") == "MEASUREMENT_COMPLETE"
+        and baseline.get("strict_quality_status") == "FAILED"
+        and _artifact_identity(baseline["bindings"]) == _artifact_identity(bindings),
+        "genuine zero baseline differs",
+    )
+    progress = _research_json(baseline["progress"])
+    validate_collection_evidence(bindings, baseline["collection_evidence"], baseline["progress"])
+    cases = baseline_cases(bindings, progress["clean_records"], progress["diagnostic_records"])
+    _research_require(
+        baseline.get("control_outputs")
+        == baseline_control_outputs(
+            bindings, progress["clean_records"], progress["diagnostic_records"]
+        ),
+        "baseline complete control outputs changed",
+    )
+    _research_require(
+        cases == baseline["allowed_cases"] == policy["allowed_cases"]
+        and historical.get("allowed_cases") == cases
+        and historical.get("strict_quality_status") == "FAILED",
+        "reviewed original shared target/Q4 failure cases/full IDs differ",
+    )
+    return policy
+
+
+def research_continuation_decision(locator, bindings, records, diagnostics):
+    policy = validate_research_policy(locator, bindings)
+    cases = policy["allowed_cases"]
+    baseline = _research_json(policy["baseline_report"])
+    controls = baseline["control_outputs"]
+    rows = checked_measurement_rows(bindings, records, diagnostics)
+    table = {(r["measurement_kind"], r["cell"], r["repetition"], r["prompt_id"]): r for r in rows}
+    mismatches = []
+    for row in rows:
+        prompt = row["prompt_id"]
+        target = table[(row["measurement_kind"], "target_only", row["repetition"], prompt)]
+        output, target_output = _full_output(row), _full_output(target)
+        if row["cell"] in {"target_only", "eagle_q4"}:
+            _research_require(
+                output == controls[prompt][row["cell"]], "baseline complete control output changed"
+            )
+        if output != target_output:
+            mismatches.append(
+                {
+                    "prompt_id": prompt,
+                    "cell": row["cell"],
+                    "repetition": row["repetition"],
+                    "measurement_kind": row["measurement_kind"],
+                }
+            )
+        if prompt in cases:
+            case = cases[prompt]
+            if row["cell"] in {"target_only", "eagle_q4"}:
+                _research_require(
+                    output == case["target" if row["cell"] == "target_only" else "q4"],
+                    "known control branch changed",
+                )
+            else:
+                _research_require(
+                    output in (case["target"], case["q4"]),
+                    "candidate/initial output differs from both reviewed complete branches",
+                )
+        else:
+            _research_require(
+                output == target_output, "new strict correctness failure outside reviewed prompt"
+            )
+    return {
+        "measurement_status": "MEASUREMENT_COMPLETE",
+        "strict_quality_status": "FAILED" if mismatches else "PASS",
+        "continuation_status": "RESEARCH_CONTINUATION_ALLOWED",
+        "research_only": True,
+        "research_continuation_policy": locator,
+        "research_bindings": bindings,
+        "strict_mismatches": mismatches,
+    }
+
+
+def validate_evaluation_continuation(result):
+    """Actively reauthenticate a research receipt before any exact-state restore."""
+    if result.get("status") == "PASS" and result.get("research_continuation_policy") is None:
+        _research_require(
+            result.get("strict_quality_status", "PASS") == "PASS",
+            "strict FAILED cannot be renamed PASS",
+        )
+        return True
+    _research_require(
+        result.get("status") == "FAILED"
+        and result.get("completed") is True
+        and result.get("measurement_status") == "MEASUREMENT_COMPLETE"
+        and result.get("strict_quality_status") == "FAILED"
+        and result.get("continuation_status") == "RESEARCH_CONTINUATION_ALLOWED",
+        "strict failed evaluation cannot resume",
+    )
+    report = _research_json(result["evaluation"])
+    plan = _research_json(result["evaluation_plan"])
+    _research_require(
+        plan.get("research_continuation_policy") == result["research_continuation_policy"]
+        and _artifact_identity(research_bindings(plan))
+        == _artifact_identity(result["research_bindings"])
+        and result["candidate"] == plan["candidate"]
+        and result["protocol"] == plan["protocol"],
+        "exact evaluation plan/request research policy bindings differ",
+    )
+    _research_require(
+        report["research_continuation_policy"] == result["research_continuation_policy"]
+        and report["research_bindings"] == result["research_bindings"],
+        "research report/receipt policy joins differ",
+    )
+    raw = _research_json(report["measurements"])
+    decision = research_continuation_decision(
+        result["research_continuation_policy"],
+        result["research_bindings"],
+        raw["clean_records"],
+        raw["diagnostic_records"],
+    )
+    _research_require(
+        all(
+            result.get(k) == decision[k]
+            for k in ("measurement_status", "strict_quality_status", "continuation_status")
+        ),
+        "research continuation decision changed",
+    )
+    return True

@@ -563,7 +563,7 @@ def native_command(plan, protocol, cell, model, port, *, diagnostic=False):
     ]
 
 
-def aggregate(plan, records, diagnostics, hardware, *, fixture=False):
+def aggregate(plan, records, diagnostics, hardware, *, fixture=False, measurement_only=False):
     require(
         fixture
         or (
@@ -637,11 +637,12 @@ def aggregate(plan, records, diagnostics, hardware, *, fixture=False):
         for row in records
         if row["cell"] == "target_only"
     }
-    for row in records:
-        require(
-            row["generated_token_ids"] == target[(row["repetition"], row["prompt_id"])],
-            "greedy verifier token sequence differs",
-        )
+    mismatches = [
+        row
+        for row in records
+        if row["generated_token_ids"] != target[(row["repetition"], row["prompt_id"])]
+    ]
+    require(measurement_only or not mismatches, "greedy verifier token sequence differs")
     reference = tables["eagle_q4"]
     candidate = tables[plan["candidate"]]
     candidate["speed_vs_original_eagle_q4"] = (
@@ -668,6 +669,15 @@ def aggregate(plan, records, diagnostics, hardware, *, fixture=False):
         "instrumentation_in_clean_timing": False,
         "native_execution_proof_scope": "matching fresh diagnostic pass only",
         "remaining_candidates": plan["remaining_candidates"],
+        **(
+            {
+                "measurement_status": "MEASUREMENT_COMPLETE",
+                "strict_quality_status": "FAILED" if mismatches else "PASS",
+                "continuation_status": "NOT_AUTHORIZED",
+            }
+            if measurement_only
+            else {}
+        ),
     }
 
 

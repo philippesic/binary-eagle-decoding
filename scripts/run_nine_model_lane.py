@@ -295,9 +295,16 @@ def run_training_lifecycle(
         result = json.loads(files.check(evaluated).read_text())
         request_locator = endpoint["timed_evaluation_request"]
         request = json.loads(files.check(request_locator).read_text())
+        from w1a1_eagle.continuous_budget import validate_evaluation_continuation
+
+        continuation = (
+            result.get("status") == "PASS" and result.get("strict_quality_status", "PASS") == "PASS"
+        )
+        if result.get("research_continuation_policy"):
+            continuation = validate_evaluation_continuation(result)
         require(
-            result.get("schema") == "nine_model_timed_evaluation_receipt_v1"
-            and result.get("status") == "PASS"
+            continuation
+            and result.get("schema") == "nine_model_timed_evaluation_receipt_v1"
             and result.get("completed") is True
             and result.get("request") == request_locator
             and result.get("checkpoint") == endpoint["checkpoint"]
@@ -318,7 +325,10 @@ def run_training_lifecycle(
         state.update(
             pending_training=None,
             evaluation_receipt=evaluated,
-            evaluation_status="PASS",
+            evaluation_status=result["status"],
+            strict_quality_status=result.get("strict_quality_status", result["status"]),
+            measurement_status=result.get("measurement_status", "MEASUREMENT_COMPLETE"),
+            continuation_status=result.get("continuation_status", "STRICT_PASS"),
             status="training_complete" if final else "awaiting_evaluation",
         )
         atomic_json(state_path, state)
