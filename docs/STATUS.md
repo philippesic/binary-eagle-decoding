@@ -4,30 +4,33 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Active DSpark A8 server startup repair — October 6, 15:31 PDT
+## Active DSpark A8 zero-hour evaluation — October 6, 15:55 PDT
 
-Human authorized starting DSpark A8 and hourly health/healing. The old automation
-is deleted; `dspark-a8-hourly-health-and-healing` is ACTIVE on the same chat.
-Root remains sole RTX5080/SSH operator. No paid optimizer updates have begun.
+Human authorized DSpark A8 and hourly health/healing. Old automation deleted;
+`dspark-a8-hourly-health-and-healing` ACTIVE. Root remains sole RTX5080 operator.
+No paid optimizer updates yet; full43,200trainer-second allocation remains.
 
-Completed actual full144 calibration plus11 TRAIN diagnostic captures, exact
-10-case cold GPU replay,96/48 fusion fit, initial TRAIN shard/pair, CUDA model
-forward/backward/full-moment memory gate, zero checkpoint/export, native goldens,
-independent Portable8 QA and seven-row CUDA model graph test. Export SHA
-`ea1bc6896f046a936eb5c712520c36d150d9dd99823f5bffaaa34897f178bdf6`.
+Actual native repair build and argument regressions passed. Real CUDA test passed
+with seven trained slots, batch/ubatch32 and explicit invalid8-row rejection.
+Parent209f72f0/native5eb221ec53 published; frozenecff teacher/data/binaries preserved.
+All calibration, cold replay, fusion fit, CUDA full-moment memory, checkpoint/export,
+goldens and independent Portable8 evidence remain authenticated.
 
-The zero-hour native comparison failed before prompts: llama-server constructs a
-32-token reserve graph for the trained seven-slot Markov head. Exact output
-capacity also incorrectly reserves8. Raw attempt01 preserved; owned GPU release
-PASS, no training seconds charged. A bounded native worker is fixing synthetic
-reserve sizing while preserving batch/ubatch32 and seven real draft slots.
+Zero-hour four-cell native comparison is actually running as
+`dspark-a8-zero-native-20261006-02`, supervisor88477/birth26169010,
+child88488/birth26169014, boot517c4a36-e475-4a5f-9fa6-65de57edc6fe.
+Original startup failure is preserved; scoped native repair1 passed startup.
+Do not interrupt or duplicate this healthy evaluation. Exact handles/stop procedure
+are in the monitor registry and latest goal checkpoint.
 
-Next: review/build/test narrow native fix in a new private runtime; retry0h with
-explicit capture/inference provenance, complete24+96 held-out measurements,
-resolve strict quality against actual evidence, finalize fresh six-gate admission,
-then43,200 trainer-seconds with4/8/12h native checks and5/15minute startup checks.
-Preserved EAGLE strict equality failure stays FAILED; no tolerance/waiver invented.
-Latest exact jobs, workers and artifacts are in the active goal checkpoint.
+Next: finish full24×5+diagnostic comparison and96 initial quality confirmation,
+reconcile actual strict quality/controller response, fresh final sixSM120 gates,
+then paid optimizer updates plus5/15minute startup checks and hourly healing.
+A metadata plan-builder environment mismatch failed closed before lane publication;
+scoped helper correction pending, without affecting the healthy native job.
+Between-milestone fixed48 teacher-forced validation helper is being prepared;
+CPU diagnostics will be clearly separate from native acceptance and exact resume.
+No numeric tolerance, quality waiver or deployment success is invented.
 
 Human resumed RTX5080 and revised the same unfinished campaign. First evaluate
 preserved EAGLE A8, then DSpark A8, DFlash A8, EAGLE A1, DSpark A1, DFlash A1.

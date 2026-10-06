@@ -3048,4 +3048,48 @@ Nextbuildfinish+actualargparser/author32-32blocksmoke, materializeexplicitmixed
 capture/inferencev2runtime+admission, rununiquezero-native-repair1,96initialconfirmation,
 canonicaltimedlane/admission thenpositiveupdates/early5-15minutehealth. Noqualitywaiver.
 
+## Actual repaired zero-hour native evaluation — October 6, 15:55 PDT
+
+Build01finished0 at22:47:11UTC; all362actions/actualtest-arg-parserPASS,
+provenance5efc1d58619fe41bc4821cecb91743934887cd6b4195b4b1df003926fe112e43.
+Actualauthor32/32CUDAmodelsmoke job01finished0 at22:49:48UTC, supervisor88302
+birth26152801,child88313birth26152806/PGID88313; actualseven-rowcomputePASS,
+real8-rowstrictguardchecked, ownedgroup/DXG/compute releasePASS. Modelproof
+bd2903e38c0e5af707f7f56495cd5f870d1c147c2d42d08041cfea9f4476c64e.
+Native5eb221ec53 andparentgitlink209f72f0 published. Fulltrainingcheckout90a7 unchanged;
+frozenecff teacher/build and capture4ba3 remainpreserved, mixedprovenanceexplicit.
+
+Newruntime566afa46f84c457f815f8d4f7fade08ddea23cd2560fff4529b8f81c58ef3413,
+productioninputs cdb2181af75cf20cb07094a333dbd7f741597682f41165c78f05c04d38db01ec,
+admission-plan2f4515fce05919f857d4f33a1ea9725f8ec46580ec7991b6db5e105aa234a2ee prepared.
+Initialrootmaterializerfailedstrictlocatorcheckbecausebuildproof includedbytes;
+no outputpublished, rawtoolfailurepreserved; exactpath/SHA projectionrepairPASS.
+Originalinitializer/config/checkpoint/teacher/data bytes unchanged, paidupdates0.
+
+LiveGPUevaluation dspark-a8-zero-native-20261006-02 started22:52:12UTC,
+socketbinary-eagle-runtime/sessionroot-dspark-a8-zero-native-20261006-02,
+fullcheckoutROOT/runs/checkouts/dspark-full-training-20261006-01 source90a7d07e.
+Supervisor88477birth26169010,child88488birth26169014/PGID88488,
+boot517c4a36-e475-4a5f-9fa6-65de57edc6fe, GPU44ceb8b5-b67a-a317-fee3-f01c9201994e.
+StopauthenticateidentitythenTERM88477;90sgrace/reapandcompleteGPUabsenceproof.
+WrapperSHAc9a6cf6bb7df4179141f817426b732b3ac6ddbad50897c65bd8cbe3dc005ba1d;
+outputROOT/results/dspark-launch-20261006/zero-native-repair1,
+statuszero-native-repair1-status.json. Actual14cleanrequests observed/startupPASS.
+Originalzero-native attempt01/rawfailure preserved; nativeincidentrepairs_used1.
+Nooptimizerorchargedtrainersecond. Preservehealthyjobthroughsource/docsrotation.
+
+Independent96wrapperreview acceptednine negative/positive cases afterclosing
+emptyIDs/count/finishfalsePASS, rawcounterbinding andinitialforeigncontextgaps.
+FinalhelperSHA2b43b6ec5f56116a5626f1012b47fdc3f7ae04d840523a21ca03244bbed71232,
+exactbytestransferred. Onepass384diagnosticrequests,no5repthroughputclaim.
+Timedplanv2 created0f5df137... withfreshdevelopmentadmission9a344a510...;
+canonicalbuild_lane rejected environment mismatch beforepublication because
+builderusedruntime.envwhileadmission addsphysicalCUDA_VISIBLE_DEVICES. Preservev2;
+/root/dspark_native_protocol_packet ownsignoredbuilderrepair/newv3 only.
+/root/dspark_recipe_implementation ownsignoredCPU-only fixed48cal-validation
+checkpointdiagnostic helper; noCUDAheader/optimizer/RNG/cursor mutation, noSSH/GPU.
+RootownsGPU/integration/docs; remainingworkerscomplete. No essentialnewhumanchoice.
+Nextfull0hmeasurements/quality,96initialconfirmation, reviewedstrictpolicyifnecessary,
+actualcanonicaltimedlane/freshsixSM120admission, thenpositivepaidupdatesand5/15minutehealth.
+
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->
