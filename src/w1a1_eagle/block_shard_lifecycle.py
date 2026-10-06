@@ -1837,6 +1837,11 @@ def freeze_capture_schedule(schedule_locator, *, plan_root):
         "generation_variant_sha256": schedule["generation_variant"]["receipt_sha256"],
     }
     source.update({"module:" + key: digest for key, digest in schedule["source_modules"].items()})
+    for name, digest in deployed_source_pins().items():
+        _require(
+            name not in source or source[name] == digest, "capture/provider shared source changed"
+        )
+        source[name] = digest
     source.update(
         {f"source:{r['kind']}:{r['shard']}": r["sha256"] for r in schedule["source_files"]}
     )
