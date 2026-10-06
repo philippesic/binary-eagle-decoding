@@ -9,8 +9,8 @@ model_auto_compact_token_limit = 630000
 hooks = true
 
 [agents]
-default_subagent_model = "gpt-6-luna"
-default_subagent_reasoning_effort = "high"
+# General workers inherit the coordinator; named roles retain their own routing.
+max_concurrent_threads_per_session = 8
 
 [[hooks.SessionStart]]
 matcher = "^(startup|resume|compact)$"

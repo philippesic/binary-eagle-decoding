@@ -73,8 +73,9 @@ def main() -> None:
             "checkpoint docs/STATUS.md and the active docs/goals/ file: objective, "
             "completed work, commits, tests, live agents, remote jobs, exact next "
             "actions, and unresolved user decisions. Finish or explicitly transfer "
-            "live work; then launch a fresh successor Codex task with that file as "
-            "the handoff and stop continuing this long-running session. "
+            "live work; rotate bounded native workers when useful. Create a fresh "
+            "successor user-owned chat only with explicit human authorization; "
+            "otherwise continue the active objective here using the checkpoint. "
             "Do not interrupt an in-flight GPU job solely for this rotation."
         )
     else:

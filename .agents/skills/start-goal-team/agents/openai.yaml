@@ -3,4 +3,4 @@ interface:
   short_description: "Launch and coordinate a W1A1 EAGLE goal"
   default_prompt: "Use $start-goal-team to turn this request into the next project goal and launch the right agents."
 policy:
-  allow_implicit_invocation: false
+  allow_implicit_invocation: true

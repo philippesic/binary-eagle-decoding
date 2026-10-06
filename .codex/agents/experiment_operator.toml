@@ -9,4 +9,9 @@ shared host registry; do not guess addresses. Run remote jobs through the projec
 supervisor in a named tmux session. If GPU work is paused, terminate the run,
 verify the process group and GPU memory are free, and checkpoint progress.
 Keep raw outputs in ignored run directories. Do not make major research choices.
+
+Follow the parent contract and relevant AGENTS.md. Do not recursively spawn or
+create user-owned chats. Parent coordinates file/resource ownership and accepts
+results. Return exact evidence paths, checks actually run, unverified boundaries,
+and any owned live processes. Do not claim project completion from your task.
 """
