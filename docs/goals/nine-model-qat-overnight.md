@@ -2900,4 +2900,75 @@ frozenrequests; exactactor/export/native/fullAdam/backward/resumeadmission; init
 24+96nativecontrolboundresults; thenfirstpositiveoptimizerupdates+5/15minchecks.
 All43200seconds preserved,noextraEAGLE/2080work, no invented quality-gate waiver.
 
+## Safe real-model admission checkpoint — October 6, 15:04 PDT
+
+Same fullcampaign/humanstartDSparkA8/hourlyhealing authorization. No pendingold
+450/750question; no newgoal/chat/operator. NativeGoalUI historicalBLOCKEDisnot
+currentauthorization. Allboundedworkersfinished; rootownsremainingadmission/run.
+Latesttrackedmaina19dbe00 plus45b94b2lesson; sourcecheckoutfull-training-20261006-01
+frozena19dbe00, capture4ba unchanged. Source13shard/16packet/54lane-export-timed
+checksPASS; independentrecipe/diagnostics/source/archive/replay reviewscomplete.
+
+All14cal chunks144prompts and11TRAINdiag PASS. Cal raw54,299,815,913 bytes.
+Detachedserialcal jobfinished0; completeactualGPUreleased. Rootactualcoldreplay10
+prompts/three domainsalltokens/features/logits/native historicalbytesmatchesoriginal.
+ActualpubSHAc8f12b6a9843adf7b06b1ab80431136ee727db217b37be08ab856c4e2f197e57,
+admission67d91a694b540266ac754beddd39c8ab580ceced7eeb0a7b76aaffafa6677f53.
+Persistentcal0/proof+verifiedactualarchive(ba25282a827b6ae6f79a8d647b80eea7f4bc76877c49dd12eba3b95931c8be72)
+retainactualproofoutof24GiBTRAINcache; cal-specificevidenceledgerneverclaimsTRAIN
+cachepublication. Originalnonteacher/golden161filesreverified. ColdGPUgroup81655
+andsupervisor81650 absent; fullDXG/compute releasePASS. Metadatafinalizerfailed
+boolreleaseadapter afteractualGPUgatePASS; preserved, repairedonlybookkeepingwith
+actualLinuxResources identity receipt. No repeatedGPUtrialorrawfailureerasure.
+
+Full155mergedpreparation initiallyfailedlabel_policy omission inaggregateproducer
+joins. Rawfailure/partialpreparation-merged preserved. Frozenprovider/selfSHAcould
+notbehotpatched; scopedignored repaircopiedONLYmissingfieldfrom15authenticated
+originalper-shardreceipts; allrawnative/tensorbytesunchanged, strictBlockDataset
+PASS. Correctpreparation-merged-v2/manifest SHAb97a60483d23d30917b341d0ebff07827749a3cfeae813beb7f0125d9b9a8a2c,
+admission579f587a129f043a38fdd61506dfef533ac691f73fdf973475661e27b32bfad4.
+ActualCPUfit job02finished0,96fit/48validation,32rows/chain,up8flips/row/3GiB/1800s.
+Report5ad9707ab1a6495e981f7ddf786c20632f7c7f2621b1c1f3a58c3118a343cb4e;
+postnormcandidate0.6292682695412166 vscontrol0.8718244155898383. Wholecandidate
+selected, no per-rowvalidationmixing/nativequalityclaim. FormerCPUfit01failed
+joinbeforefitting; preserved. TRAINinitialchunk0547 actualGPUcapturefinished0,
+pube56468cc3e57a28d235bffd04978f8c3b23f93d98970f06a29d36334ab311ec4.
+Cached4,082,901,656bytes; initialpairsource-00-0204/source-00-0344 distinctgroups.
+OriginalmetastoreSHAc944193bbc0d90f2206d62bf91799267c84f108a9192db94ccb85fda20d74eda.
+Providerdescriptorrotating-data-v2-replay.json/plan9c6b6e86... identitye7bc0ceb...
+unchanged. Actualsourceall9856eligible, notallcapturedorconsumed.
+
+Actualpacketinputs e705a66889b635891d420b2a10ea4f64946827c07fb053ef519defc3f4f4dab7;
+logicaldataadmission5ba8aefca54ac951a8d4e0bb3e59cfd81aa7d0af8e410ea07e95faa4e33b134a.
+Operationalwhole-lanewallcap604800s protectsfixed43200trainerallocation amidmeasured
+bulkpreparation costs; no claim12hwalltime. Trainerlimitsremainelapsed-only.
+Primary24protocole698c9550c112e5c63e2482e0a5f81a3b2f5dc0a88569e55727de4ad80f9daf2.
+Actual96nativechatfile766763ab... prepared; 1passqualityadapterstillpending. Primary
+existing5rep/2warmup protocolunchanged. Originalfixed24file131a3...rowsnosplit;
+timedrouteinheritsactualfile-leveldevelopmentauthority, freshDSparkdisjointness
+admissionstillmustbindunchangedbody/source. Sourcepolicyreviewfoundcurrentaggregate/
+timedreceipt/lane/budgetconsumerallrequirePASS: no honestshared-control research
+continuationimplementedyet. PreserveoldstrictFAIL; measureactual0hbeforepolicy
+resolutionagainstapprovedbounds orhumanessentialscientificexception. Noinventedtolerance.
+
+ActualCUDAinitial_prepare job01finished0 from21:56:42UTC–21:57:18, supervisor82571
+child82572; birthnotobservedbeforecompletion, neverinvented. Forward/backward/memory
+PASS/optimizerupdates0. Fullmomentreservation3,251,486,720B, peakallocated10,857,870,848B,
+peakreserved11,064,573,952B, GPUfree4,524,605,440B, hostavail18,382,315,520B.
+Checkpointstep0elapsed0 SHA0385e017eb095d109f91dfdb786c964f996675579b1b89e278b1c144e9568391,
+source3092fb9ee0112cf400c3b6b20e031c87606adf339c565d321bcabce3bb95d8fa;
+request85e9bc53e3b70b705b4aa4eadbc6ccd3da026e2cbba6cb7fe99f000920b64a7c.
+GPUreleasePASS; cachedstudentownerreleasedwithactualreceipt.
+
+EXPORTCOMPLETED0: detachedroot-dspark-a8-initial-export-20261006-01/socketbinary-eagle-runtime,
+checkoutROOT/runs/checkouts/dspark-full-training-20261006-01, started22:00:24UTC,
+supervisor82694 birth25858230, child82699 birth25858235 PGID82699,
+boot517c4a36-e475-4a5f-9fa6-65de57edc6fe, GPU44ceb8b5-b67a-a317-fee3-f01c9201994e.
+Stopverify/TERM82694 thenproveownedgroup/DXG/compute release. RootMCP$259/%290Linux
+and%291Mactransferonly. ActualregistryROOT/results/dspark-launch-20261006/initial-export-live.json;
+localruns/nine-model-qat-overnight/monitor-registration.json updated. NooptimizerGPUjob.
+Nextverifyownedexportrelease; nativegoldens/QA/bind/admission sequentialrelease; actual
+0h24+96; policyifnecessary; launchtruepositiveoptimizerupdatesand5/15minutehealth.
+Nooptimizerstep/trainersecondcharged. NoextraEAGLEtraining/2080/querysealed/final9claim.
+
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->

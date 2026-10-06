@@ -4,34 +4,32 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Active DSpark A8 implementation and capture deployment — October 6, 13:39 PDT
+## Active DSpark A8 model admission — October 6, 15:04 PDT
 
-Human authorized the reviewed full-pool DSpark A8 plan and hourly health/healing.
-Old `nine-model-overnight-qat-monitor` is deleted; replacement
-`dspark-a8-hourly-health-and-healing` is ACTIVE on the same root chat.
-The previous scientific data-choice blocker is resolved by this instruction.
-Root remains sole RTX5080 operator; no optimizer update has occurred yet.
+Human authorized starting the reviewed DSpark A8 run and hourly health/healing.
+Old nine-model monitor is deleted; replacement dspark-a8-hourly-health-and-healing
+is ACTIVE on the same root chat. Root remains sole RTX5080 operator.
 
-Frozen data commit `47782923` integrated and published as `4ba3f88b`:
-58 CPU tests pass, five native tests skipped pending actual capture.
-All 10,000 original prompt identities remain: 9,856 TRAIN, 96 fit, 48 validation.
-All 22 original source files and the immutable capture packet were transported.
-Remote checkout is `runs/checkouts/dspark-data-capture-20261006-01` at `4ba3f88b`.
-Genuine calibration chunk 0 is running since 13:38 PDT after exact file/device admission.
-Run dspark-a8-calibration-20261006-02: supervisor80229/birth25366797,
-child80234/birth25366803/PGID80234, native80254, boot517c4a36-e475-4a5f-9fa6-65de57edc6fe.
-First attempt failed missing GGUF import before native GPU use; failure preserved,
-release proved and helper path repaired. No optimizer time charged.
-Recipe and telemetry are integrated/published; independent reviews closed all
-budget/RNG/final-export issues and verified diagnostic arithmetic/RNG equivalence.
-Controller/replay/archive fixes are independently checked; actual remote global
-plan now opens with all deployed helper hashes after a preserved preflight failure.
-The latest source is04b58bdb. Actual GPU backward/resume/native admission remains
-pending; the healthy serial preparation supervisor is80386/child80391, PGID80391.
+Completed: all144 calibration prompts plus11 TRAIN diagnostic prompts captured;
+actual10-case/three-domain cold GPU replay matches every original tensor hash;
+first actual TRAIN cache shard/pair admitted; full96/48 fusion fit completed.
+Discrete initializer postnorm validation relative error0.629 versus scale-only0.872.
+Real CUDA zero-update model forward/backward/full-Adam-moment memory PASS:
+10.31GiB peak reserved,4.52GB GPU free at backward,3.25GB reserved moments.
+Initial checkpoint step0/elapsed0 SHA0385e017eb095d109f91dfdb786c964f996675579b1b89e278b1c144e9568391.
 
-See the latest goal checkpoint for exact evidence, ownership and next actions.
-Historical blocked/proposal/old-monitor entries below are superseded by current
-human authorization; historical failures and EAGLE overage remain unchanged.
+No paid optimizer updates yet. Actual CUDA restore/export completed successfully as
+`dspark-a8-initial-export-20261006-01`, supervisor82694/birth25858230,
+child82699/birth25858235/PGID82699, boot517c4a36-e475-4a5f-9fa6-65de57edc6fe.
+Root verified ownership and release between every GPU phase. Sourcea19dbe00.
+Next: export, native goldens/independent QA/fresh native admission, actual0h
+24+96 evaluation, then43,200 trainer-seconds with0/4/8/12 native checkpoints.
+Existing strict target-only equality failure stays preserved; controller currently
+requires PASS receipts, so research-continuation policy must be resolved against
+actual0h evidence and approved bounds, never silently waived. All workers finished.
+
+Detailed evidence, failed wrappers and corrected metadata joins are preserved in
+the latest goal checkpoint and ignored results/dspark-launch-20261006/.
 
 Human resumed RTX5080 and revised the same unfinished campaign. First evaluate
 preserved EAGLE A8, then DSpark A8, DFlash A8, EAGLE A1, DSpark A1, DFlash A1.
