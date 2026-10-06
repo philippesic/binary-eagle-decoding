@@ -1,0 +1,268 @@
+{
+  "schema": "dspark_a8_run_proposal_v1",
+  "status": "PROPOSED_NOT_LAUNCHED_NOT_ADMITTED",
+  "candidate": "dspark_a8",
+  "proposal_is_not_a_production_config": true,
+  "data": {
+    "original_train_pool_prompts": 10000,
+    "optimizer_prompts": 9856,
+    "domains": {
+      "prose": 3286,
+      "code": 3285,
+      "reasoning": 3285
+    },
+    "calibration_fit_prompts": 96,
+    "calibration_validation_prompts": 48,
+    "role_selector_sha256": "6de06976383246d4b512558fa45cf67780546ae11f121ed31f376e81ee1d7ea5",
+    "selector_path": "results/dspark-next-run-plan-20261006/full-train-singleton-calibration-selector.proposed.v2.json",
+    "canonical_grouping": "transitive_original_group_or_topic_plus_content_disjointness",
+    "no_optimizer_deduplication_or_prompt_crop": true,
+    "source_length_calibration_strata": {
+      "fit_per_domain": [
+        16,
+        12,
+        4
+      ],
+      "validation_per_domain": [
+        8,
+        6,
+        2
+      ],
+      "quantile_boundaries": [
+        0.5,
+        0.9,
+        1
+      ]
+    },
+    "seed": 8101,
+    "trajectory_preference": "verified_existing_committed_F16_target_token_ids_excluding_rejected_draft_branches",
+    "fallback_requires_explicit_corpus_variant_freeze": "fresh_target_greedy_max512_natural_EOG",
+    "capture_context_capacity": 4096,
+    "max_new_tokens_if_fresh": 512,
+    "taps": [
+      2,
+      10,
+      18,
+      26,
+      34
+    ],
+    "feature_dtype": "float32",
+    "teacher_logits_dtype": "float32",
+    "teacher_vocab": 151936,
+    "teacher_softmax_temperature": 1.0,
+    "generation_temperature": 0.0,
+    "thinking": false,
+    "main_anchor_stride": 7,
+    "all_seven_supported_labels": false,
+    "order": "seeded_balanced_whole_group_shards_then_within_shard_chains_chronological_anchors",
+    "shard_bytes": 8589934592,
+    "max_active_and_staging_shards": 3,
+    "eviction_requires_original_tensor_sha_replay_or_verified_archive": true,
+    "all_available_labels_with_partial_tail_mask": true,
+    "native_forward_slots": 7,
+    "existing_committed_continuations_not_cut_to_fresh512_limit": true
+  },
+  "model": {
+    "snapshot_revision": "3457dff1417cb84927f6098a5fcb7cee85c934b7",
+    "profile": "ffn15_fusion",
+    "binary_projections": 16,
+    "activation_bits": 8,
+    "weight_bits": 1,
+    "latent_initialization": "preserve_reference_magnitudes",
+    "trainable": "latent_sign_and_row_scale_offset_only",
+    "frozen": [
+      "private_embedding",
+      "private_full_vocab_head",
+      "attention_projections",
+      "norms",
+      "Markov_U_V_and_scale"
+    ],
+    "student_gradients_through_frozen_modules": true,
+    "teacher_parameters_trainable": false,
+    "target_verifier_kv": "f16",
+    "floating_training_reference": "f32_source_values_with_f16_cache_boundaries",
+    "TF32": false,
+    "block_slots": 7,
+    "mask_token_id": 151669,
+    "conditioning": "captured_prefix",
+    "p_min": 0
+  },
+  "fusion": {
+    "fit_rows_per_chain": 32,
+    "max_total_rows": 3072,
+    "max_array_bytes": 2147483648,
+    "cpu_max_seconds": 1800,
+    "max_coordinate_flips_per_row": 8,
+    "orientation_rescue_default": false,
+    "score": [
+      "raw_amplitude_SSE",
+      "post_original_RMSNorm",
+      "cosine",
+      "native_zero_update_decisions"
+    ],
+    "selection_unit": "whole_initializer",
+    "source_gamma_epsilon_bits_preserved": true
+  },
+  "objective": {
+    "ce_coefficient": 0.1,
+    "full_probability_l1_coefficient": 0.9,
+    "depth_decay": 0.7788007830714049,
+    "normalization": "sum_weighted_valid_labels_across_effective_batch",
+    "new_exact_component_normalization_required": true
+  },
+  "optimizer": {
+    "type": "AdamW",
+    "masters_and_moments_dtype": "float32",
+    "betas": [
+      0.9,
+      0.999
+    ],
+    "eps": 1e-08,
+    "weight_decay": 0,
+    "peak_sign_lr": 0.001,
+    "peak_scale_lr": 1e-05,
+    "warmup_trainer_seconds": 864,
+    "warmup_fraction": 0.02,
+    "decay": "time_based_cosine",
+    "final_lr_ratio": 0.1,
+    "final_sign_lr": 0.0001,
+    "final_scale_lr": 1e-06,
+    "global_grad_norm": 1,
+    "latent_clip": [
+      -1,
+      1
+    ],
+    "effective_scales_nonnegative": true,
+    "effective_batch_blocks": 2,
+    "distinct_chains_and_groups_per_batch": true,
+    "microbatch_default": 1,
+    "gradient_accumulation_default": 2,
+    "vector_microbatch2": "optional_same_effective_batch_admitted_execution",
+    "fused_fp32_backend": "optional_numerically_admitted_and_measured_otherwise_serial",
+    "new_source_features_required": [
+      "scheduler",
+      "accumulation",
+      "global_rng",
+      "production_fused_backend_selection"
+    ]
+  },
+  "budget": {
+    "trainer_seconds": 43200,
+    "max_steps": null,
+    "max_tokens": null,
+    "max_epochs": null,
+    "native_milestones_seconds": [
+      0,
+      14400,
+      28800,
+      43200
+    ],
+    "health_early_seconds": [
+      300,
+      900
+    ],
+    "health_wall_interval_seconds": 7200,
+    "periodic_checkpoint_trainer_seconds": 900,
+    "capture_startup_reconstruction_export_eval_excluded": true,
+    "normal_active_loop_and_periodic_checkpoint_overhead_charged": true,
+    "completed_update_overshoot_preserved": true
+  },
+  "retention": {
+    "keep_recent": 3,
+    "max_checkpoints": 10,
+    "max_bytes": 60129542144,
+    "protected": [
+      "initial",
+      "milestones",
+      "endpoint",
+      "incidents"
+    ],
+    "shard_boundaries_not_all_protected_stop_anchors": true,
+    "includes_next_writer_and_failed_staging": true,
+    "separate_export_capture_log_budgets": true
+  },
+  "validation": {
+    "fixed_primary_native_prompts": 24,
+    "domains_each_primary": 8,
+    "repetitions": 5,
+    "warmups": 2,
+    "runtime_ctx": 2048,
+    "runtime_batch": 32,
+    "runtime_ubatch": 32,
+    "max_output_tokens": 128,
+    "runtime_seed": 42,
+    "temperature": 0,
+    "thinking": false,
+    "dspark_draft_slots": 7,
+    "q4_eagle_draft_slots": 5,
+    "cells": [
+      "trained_candidate",
+      "calibrated_zero_update_candidate",
+      "immutable_Q4_EAGLE",
+      "target_only"
+    ],
+    "calibration_development_diagnostic_prompts": 48,
+    "diagnostic_anchors_per_prompt_max": 4,
+    "supplemental_unsealed_confirmation_prompts": 96,
+    "supplemental_initial_final_only": true,
+    "supplemental_selector_pending": true,
+    "sealed_final_unopened": true,
+    "known_strict_target_parity_failure": "REMAINS_FAILED_CONTROLLER_POLICY_PRELAUNCH_REVIEW_REQUIRED"
+  },
+  "resource_initial_policy": {
+    "gpu": "RTX5080_SM120_only",
+    "sole_operator": "root",
+    "max_cuda_reserved_bytes": 12884901888,
+    "min_cuda_free_bytes": 1073741824,
+    "min_host_available_bytes": 4294967296,
+    "min_disk_free_bytes": 10737418240,
+    "max_incident_exact_state_repairs": 2,
+    "full_moment_backwards_save_restore_memory_admission_required": true
+  },
+  "execution_adoption_gate": {
+    "same_effective_batch_and_initialization": true,
+    "FP32_loss_atol": 1e-06,
+    "FP32_loss_rtol": 1e-05,
+    "FP32_grad_atol": 1e-06,
+    "FP32_grad_rtol": 0.0001,
+    "aggregate_grad_relative_l2_max": 0.0001,
+    "optimizer_param_moment_atol": 1e-07,
+    "optimizer_param_moment_rtol": 1e-05,
+    "exact_masks_codes_prefixes_counters_rng_restore": true,
+    "fixed_admission_native_decisions_no_regression": true,
+    "timing_repeats": 3,
+    "minimum_median_complete_step_gain": 0.05,
+    "not_a_promised_gain": true,
+    "failure_selects_serial_fallback": true
+  },
+  "prelaunch_implementation_gates": [
+    "full_pool_group_topic_validation",
+    "partial_tail_short_response_EOS_masks_and_teacher_Markov_joins",
+    "logical_shard_capture_cursor_replay_and_clock_lifecycle",
+    "exact_normalized_loss",
+    "time_scheduler_resume",
+    "effective_batch2_and_rng_pairing",
+    "persistent_block_telemetry",
+    "time_checkpoint_cadence",
+    "production_optimizer_backend_selection",
+    "actual_teacher_fusion_actor_native_fullmoment_admission",
+    "phase_cost_storage_and_wall_projection",
+    "supplemental_unsealed_selector",
+    "known_parity_controller_policy_review"
+  ],
+  "not_enabled_by_this_proposal": [
+    "learned_A8_or_affine_low_inertia_stack",
+    "Bop_SGD_EWGS_dampening",
+    "live_student_prefix_refresh",
+    "randomized_anchors",
+    "fusion_bias_rank_correction",
+    "norm_gain_attached_EAGLE_context_tail",
+    "data_filtering_SFDD_AdaSPEC_VAT",
+    "confidence_training_or_adaptive_controller",
+    "private_head_quantization_or_learning",
+    "A1_staging_or_learned_thresholds",
+    "new_architecture_or_SM75_kernel_experiments"
+  ],
+  "all_historical_optimization_dispositions": "dspark-a8-next-run-plan-20261006.md",
+  "changes_are_author_informed_hypotheses_not_proven_optimal": true
+}

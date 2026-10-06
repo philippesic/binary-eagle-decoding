@@ -2690,4 +2690,49 @@ faithful exposure/recipe, then implementation/admission/sequential training; rou
 truthful observability work can proceed within existing scope without changing
 loss/order/accounting. OriginalQ4 exactbytes/finalscope remain separate later gates.
 
+## Complete DSpark A8 proposal prepared — October6, 2026
+
+Human requested the complete next-run plan and all historical configuration/
+optimization dispositions, then asked whether omissions/duration explain EAGLE's
+10.33%versusQ426.49% deficit. Three bounded read-only source/inventory/advisor
+workers completed. No GPU/source/config/model execution or changes; plan artifacts
+are explicitly PROPOSED_NOT_LAUNCHED_NOT_ADMITTED, not production configs.
+
+Reports: experiments/nine-model-qat-overnight/dspark-a8-next-run-plan-20261006.md
+and dspark-a8-next-run.proposed.json. Proposed full original10000 assignments:
+9856optimizerTRAIN(3286prose/3285code/3285reasoning),96fit,48calibration-validation.
+Verified all10 source index SHA pins; original split grouping is transitive
+groupORtopic,9969components.25multi-record groups/56prompts remain entirely in
+TRAIN; calibration selects144globallysingletoncomponents with unique content.
+Selector6de06976383246d4b512558fa45cf67780546ae11f121ed31f376e81ee1d7ea5,
+feasibilityf31c2d23a50b9f97dc49032a614bba66e82af29fb9bd8570f2f77480f05488bf,
+ignored results/dspark-next-run-plan-20261006/. No prompt/dev/sealed bodies read.
+
+Main proposed fixedW1A8/FFN15+fusion/captured-target recipe includes exact normalized
+0.1CE+.9fullL1,exp(-depth/4), source-magnitude latents, AdamF32,1e-3/1e-5 peakLR,
+2%timewarmup/cosine10%floor, effectivebatch2distinctgroups, preserved12h/4-8-12h
+checks, group-aware balanced shard order, fuller telemetry and timed checkpoints.
+Optional execution paths require numeric/decision/resume/real-rate proof and have
+serial fallback. The report names source implementation gaps including partial
+EOG loss masks/fullpoolcache/replay/globalcursor/normalizedloss/scheduler/batching/
+telemetry/backend selection and parity-controller review; nothing is represented
+as already enabled. Real phase-cost/storage projection is required before claim
+of practical elapsed run time. Existing captured committed tokens are preferred
+only with valid complete ancestry; fresh generation is an explicitly frozen
+variant, never a silent replacement. Exact dataset/teacher gates remain.
+
+Astra follow-up checked plan and historical EAGLE data: no omitted option has
+proved recovery of16.16acceptance points or0.645×Q4throughput. Old combinedlearned/
+affine/lowinertia arm lost; bodydamage/exposure/prefixalignment/clip scheduling
+are hypotheses for the current checkpoint. Historical KLpilot was BF16PyTorch
+heldout evaluation, NOTnative; corrected wording. Old2h andnew14.43h curves
+cannot be joined. No extraEAGLEtraining or alteredmodelorder selected.
+
+Human requested proposal, not launch. Current nativeGoal stays BLOCKED for
+training; scientific approval of the concrete recipe/exposure is pending. All
+workers complete; root alone ownsGPU/MCP. Next after selected plan: implement
+required contracts, test/admit actualphysicalmodel andresource lifecycle, then
+run the full43,200sDSparkA8 allocation with measured checkpoints. Preserve all
+existingoriginalreceipts/controlbytes/sealed data/unrelatedwork; no newGoal/chat.
+
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->

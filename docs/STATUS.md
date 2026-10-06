@@ -21,6 +21,13 @@ a bounded released-position-weighting ablation if selected—not an optimizer sw
 Offline DSpark target-prefix training is supported by official source. Our local
 CE/L1/depth/anchor/batch/schedule choices are restricted QAT hypotheses, not proven
 best. Preserve all12h allocations and4/8/12h native measurements.
+**Next-run proposal:** [Complete DSpark A8 plan](../experiments/nine-model-qat-overnight/dspark-a8-next-run-plan-20261006.md)
+and [proposed settings](../experiments/nine-model-qat-overnight/dspark-a8-next-run.proposed.json)
+are written for human review:9,856 optimizer prompts,96fit/48calibration-validation,
+original full-pool grouping/length coverage, normalized objective, explicit schedule/
+batch/telemetry, and every historical optimization disposition. Exact selector
+feasibility is verified; full production implementation/admission remains pending.
+No training or recipe change was launched by writing the proposal.
 **Dataset correction:** admitted EAGLE data has10,000 TRAIN prompts and3,899,930
 supervised rows. Paused step344724 consumed4,218 unique prompts/1,639,464 rows,
 epoch0/cursor345558. Root incorrectly called consumed counts dataset capacity
