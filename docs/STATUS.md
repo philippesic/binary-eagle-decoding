@@ -4,7 +4,7 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Active: twelve-hour nine-model campaign — October 6, 02:07 PDT
+## Blocked: twelve-hour nine-model campaign — October 6, 02:08 PDT
 
 Human resumed RTX5080 and revised the same unfinished campaign. First evaluate
 preserved EAGLE A8, then DSpark A8, DFlash A8, EAGLE A1, DSpark A1, DFlash A1.
@@ -15,7 +15,8 @@ F16 target/verifier/KV, original TRAIN ancestry and held-out protocol remain.
 EAGLE A8 already consumed14.43h: preserve that overage and verified344724
 checkpoint; no repeat/extra training before evaluation. Old4/8/12h acceptance
 results do not exist. Root remains sole GPUoperator; fresh source/resource/device
-checks precede execution. Native Goal ACTIVE. Trained A8 native counters measured over five repetitions
+checks precede execution. Native Goal BLOCKED pending the human block-data
+choice after three consecutive impasse observations. Trained A8 native counters measured over five repetitions
 of 24 prompts: 4,765 / 46,125 accepted (**10.3306%**), versus original Q4
 8,025 / 30,290 (**26.4939%**). Complete A8/Q4 outputs match all 120 paired
 requests; both differ from target-only on one prompt at token 98. Strict

@@ -2568,4 +2568,29 @@ fusion/initializer/export/QA/fresh SM120 admission, then follow sequential12h
 training and actual measured checkpoints. Old Q4/sealed final authority remain
 later real inputs. No successor user-owned chat or operator transfer.
 
+## Scientific input blocker recorded — October 6, 02:08 PDT
+
+Previous turn NO_PROGRESS: no new decision or live job; unchanged source/packet
+checks are not training supervision. Third consecutive genuine impasse observation
+confirms the same pending human450/750 TRAIN exposure and captured/live-prefix
+choice. Independent actionable preparation is exhausted at this launch boundary.
+Native update_goal returned BLOCKED; the objective remains unfinished and keeps
+all six trained candidates/three original controls and the revised schedule.
+No preparation-only packet, metadata or build evidence substitutes for completion.
+
+No job/worker is running and no resource/process was stopped by this status change.
+Root operator/transport identities and packet07 pins remain as above. SAME2h
+heartbeat stays ACTIVE and quiet for unchanged non-actionable state; it cannot
+select scientific data or restart training. Preserve failed quality gate, old
+checkpoint/accounting/source evidence and all unrelated work.
+
+Human input reopens the actionable boundary:450captured,750captured or450live
+(as asked in the pending owner-chat question). Then fresh frozen protocol/source/
+resource/storage admission and genuine production preparation, followed by the
+same DSparkA8→DFlashA8→EAGLEA1→DSparkA1→DFlashA1 order,12h allocations,4/8/12h
+native acceptance and2h plus5/15min health checks. Do not infer an answer from
+elapsed time, UI default or automatic continuation. Exact original blockQ4 files
+and final-held-out scope remain later required inputs, not reasons to fabricate
+controls or change the success criteria. No successor chat or ownership transfer.
+
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->
