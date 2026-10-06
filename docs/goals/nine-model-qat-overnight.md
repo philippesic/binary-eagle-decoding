@@ -3020,4 +3020,32 @@ acceptance/throughput required, sixcandidates/threeoriginalQ4 controls unfinishe
 Stopprocedureforanynewjob: authenticateexactsupervisorPID/birth/boot, TERMthatPID,
 remote_jobreapsownedgroup; requirecompleteownedgroup/DXG/computeabsencebeforefree.
 
+## Native repair build registered — October 6, 15:42 PDT
+
+Nativefix commits f588e3e97 +5eb221ec53 source reviewed independently:
+49,152 reservegeometry cases PASS; exact32/32 configuration and real8-rowreject
+regression prepared. ActualC++/CUDA/servertests stillpending. Newisolatednative
+checkout ROOT/runs/checkouts/native-seven-5eb221-20261006, privatebuild
+ROOT/runs/build/native-seven-5eb221-sm120-20261006; oldecff teacher/build/data preserved.
+DetachedCPUbuild dspark-native-seven-sm120-build-20261006-01 started22:35:37UTC,
+socketbinary-eagle-runtime/sessionroot-dspark-native-seven-sm120-build-20261006-01,
+checkout ROOT/runs/checkouts/dspark-full-training-20261006-01. Supervisor83651
+birth26069486, child83665birth26069490PGID83665; boot517c4a36-e475-4a5f-9fa6-65de57edc6fe.
+CPU2jobs/12GiBmemorycap/noSwap. StopauthenticateidentitythenTERM83651; remote_job
+reapsownedgroup. BuildscriptSHA5caa3cc6c7261ebf9db7b5f1c43ec67a34130da7f5029b9eb4920887945ffc45.
+Healthybuild observed130/362actions; noGPUjob/optimizerupdate. Preservebuildwhilewaiting.
+
+Timedclean3/diag4 enforcement90a7d07e integrated/publishedandactualremotecheckout
+advanced onlyafterexport/golden/model/evaljobsfinished. Independent20CPUtests+
+50argvchecksPASS; 245otherQA/43training-source pinsunchanged. Authenticremoteproof
+results/dspark-launch-20261006/remote-source-delta90.json binds actualcommit90a7d07ee56d6df81078177c97971d3c6117e1d7
+and evaluator6975620821b90dc39e0789c048c6a98d1d32a787ab958bfcd8d635b39cc32eaa.
+NewimmutablePortable8ledger5bae56cc829e1e9b891d69249fd0662b399f0757d9c3471590b0212d13e6ccaa
+transferredexactbytes, freshnative/runtimegates remainpending. Independenthelperreview
+/root/dspark_native_reserve_review read-only96wrapper/build_actual_plan inprogress;
+protocol/QA/sourceworkerscomplete. RootonlySSH/GPU/build/docsoperator.
+Nextbuildfinish+actualargparser/author32-32blocksmoke, materializeexplicitmixed
+capture/inferencev2runtime+admission, rununiquezero-native-repair1,96initialconfirmation,
+canonicaltimedlane/admission thenpositiveupdates/early5-15minutehealth. Noqualitywaiver.
+
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->
