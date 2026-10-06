@@ -2845,4 +2845,59 @@ No reduction ofpromptcount/precision/teacher/objective. Physicalcal probe defaul
 chainIDs require derivedprompt-basedlogicalID binding preservingoriginalmanifest,
 allnative/tensorbytes andprovenance before globalpublication; controllerassigned.
 
+## Safe source/capture checkpoint — October 6, 14:08 PDT
+
+Same authorized DSpark12h/0-4-8-12h native checks/hourlyhealing objective; no new
+human decision or paused GPU request. Oldmonitor deleted/replacementactive.
+Actual serial calibration+firstTRAIN preparation running since20:43:24UTC:
+socket binary-eagle-runtime, root-dspark-a8-calibration-batch-20261006-01,
+frozen4ba3f88b checkout runs/checkouts/dspark-data-capture-20261006-01.
+Supervisor80386 birth25396138, child80391 birth25396143 PGID80391,
+boot517c4a36-e475-4a5f-9fa6-65de57edc6fe. Stopverify/TERM80386 thenproveowned
+process/DXG/compute release. Driver ROOT/results/dspark-launch-20261006/calibration-driver.py
+SHA8db85a1f7f9df3019d0b3b4a47cb9dd77bde32e85c24705230df7c275a77f0ff.
+Progress calibration-driver-progress.json; live calibration-batch-live.json.
+98/144cal prompts in9chunksPASS at14:02PDT; firstchunk10prompts152.30s/3.69GB.
+Actualoptimizerupdates0. Latesthealthcapture-health-15min.json provesidentities,
+18GBhostavailable/~5GBGPUfree/disk159GB; currentnativePIDchangesperchunk.
+Bulkphase healthy; preserve while coordinator/source changes occur.
+
+Reviewed recipe integrateda4e63cee/a15c5bf4/c18c6bc8/dd7cffe1; owner71CPUchecks,
+independent13endpointtestscloseP1finalexportcounterexamplewith0newsteps/time.
+Telemetryed1f824e (workerd4902f1) owner76CPUchecks/independent14tests+16384masks:
+per-slotteacherforcing/survival clearlynotnativeacceptance, domain/length/depth,
+fixed128coordinate per-layer samples every100updates, exactRNG/gradient/resume.
+Controllerd498dc1e (worker62acd0f) 3P1source/replay/archivecounterexamplesclosed
+withactualCPUarrayancestry/rebindproof. Parent39integrationtestsPASS and12new
+sourcechecksPASS. Sourcetrainingcheckout runs/checkouts/dspark-full-training-20261006-01
+now04b58bdb; capturecheckout4ba unchanged. Sourceinventoryfix28191ea5/d2fe38d0
+initiallypatchedwrongadapter: invalidlogicalv1 preserved, actualopenfailedclosed.
+04b58bdb (workerfd52211) testsreal10000/911schedule andfixesactualadapter.
+Rootactualremotev2 freeze/open PASS: logical-plan-v2.json
+fileSHA9c6b6e86e9cdc9765371668d42f72e992f5644538c66533d46f144c5615c46f3,
+identitye7bc0ceb3defed6a318821014eecb0f31f2ec21b38d7a8cea9031fd25a277420.
+Descriptorrotating-data-v2.json -> dedicatedTRAINcacheoutside64GiBcalprep;
+seed8101initialchain source-00-0204/shardchunk-0547, order9856.
+Invalidv1logical-plan.json/d909... andrawcal0-rebind.log remain preserved.
+Cal0logical-ID metadatarebindnowexecutingpreservingallnative/tensorbytes.
+
+Confirmation96selector32/domain frozenSHA4e1086e53edcf7551aeec1dc96736fad2c859e7d66b4011b2f49e51c8875097e,
+primary results/dspark-confirmation-selector-20261006. Current24suite usesactual
+fixed-development SHA131a3db7958ff6aa818b23019297654507d5b80bed3c298349417b7e3b2ba081,
+joined24IDs/domains tooriginalDEVindexes; oldA-manifestqat-revisit isdifferent
+historicalsuite. Rootserialized96exactoriginalchatcontents,body/indexSHAchecked;
+confirmation-native-prompts.jsonl SHA766763ab769f463d850cc07092c1141b565fb15b523a048818109bbd7a619204.
+Onlyinitial/finalconfirmation, neverTRAIN/sealed orrepeatedrecipesearch.
+
+Boundedworkersrecipe/data/reviews/selectorcomplete,noownedjobs. Controllerowner
+/root/dspark_shard_controller finishesoperationalJSON/commandsprimary
+results/dspark-launch-20261006/controller-handoff; placeholdersfailclosednotadmitted.
+RootownsGPU/docs/integration. NativeGoalUIhistoricalBLOCKEDstillnotcurrentworkblock.
+Next: complete144cal+firstTRAINdiag, collectderivedcal0manifest; actualcold3domain
+replayproofpersistentcalarchiveBEFOREeviction; merged144+TRAINadmission/3GiBbounded
+FCfit(8flips/rowapproved); prepareactualTRAINfirsttworeserve shardschunk0547 via
+frozenrequests; exactactor/export/native/fullAdam/backward/resumeadmission; initial
+24+96nativecontrolboundresults; thenfirstpositiveoptimizerupdates+5/15minchecks.
+All43200seconds preserved,noextraEAGLE/2080work, no invented quality-gate waiver.
+
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->

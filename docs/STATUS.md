@@ -22,9 +22,12 @@ Run dspark-a8-calibration-20261006-02: supervisor80229/birth25366797,
 child80234/birth25366803/PGID80234, native80254, boot517c4a36-e475-4a5f-9fa6-65de57edc6fe.
 First attempt failed missing GGUF import before native GPU use; failure preserved,
 release proved and helper path repaired. No optimizer time charged.
-Recipe and rotating-shard controller workers remain active; independent review
-closed budget/RNG issues and identified final-export publication recovery, now
-assigned for repair. Actual GPU backward/resume/native admission remains pending.
+Recipe and telemetry are integrated/published; independent reviews closed all
+budget/RNG/final-export issues and verified diagnostic arithmetic/RNG equivalence.
+Controller/replay/archive fixes are independently checked; actual remote global
+plan now opens with all deployed helper hashes after a preserved preflight failure.
+The latest source is04b58bdb. Actual GPU backward/resume/native admission remains
+pending; the healthy serial preparation supervisor is80386/child80391, PGID80391.
 
 See the latest goal checkpoint for exact evidence, ownership and next actions.
 Historical blocked/proposal/old-monitor entries below are superseded by current
