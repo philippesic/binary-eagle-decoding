@@ -1272,3 +1272,25 @@ paths/URLs for the exact original DSpark/DFlashQ4 files, without2080 access.
 No answer recorded by09:52PDT; recommendation/default selection is not approval.
 Exposure choice does not itself select sufficient long-training allocation or
 prove resource/device admission. Healthy EAGLE A8 continues independently.
+
+## Training-recipe audit recommendation — October6, 2026
+
+The human requested an Astra think/source/web audit; the [report](../experiments/nine-model-qat-overnight/astra-training-audit-20261006.md)
+and independent critical-source review are complete. Current EAGLE dataset is
+10,000 admitted TRAIN prompts/3,899,930 supervised trace identities;4,218/1,639,464
+are consumed counters. The old450/750-only choice omitted a legitimate original-
+pool captured-prefix shard/cache route. Official DSpark uses target predecessors;
+live prefixes are an optional ablation, not a required correction. Recommend
+original-pool captured-prefix preparation, with actual resource-safe lifecycle
+implementation/admission, rather than permanent storage-driven reduction. No
+exposure/recipe choice has yet been selected or implemented by this advisory audit.
+
+Operational history/coverage reporting is supported immediately; scientific
+changes remain proposals. Local CE/L1 ratio, position weighting, anchor sampling,
+batch and LR scheduling differ from official full-precision recipes. One matched
+position-weighting ablation has stronger justification than a broad optimizer
+sweep, but improvement under W1QAT is unproved and extra GPU time requires its
+own selection. Preserve12trainer-hours per remaining model and measured4/8/12h
+checkpoints; no paper establishes optimal duration here. No silent changes to
+initialization/precision/trainable scope/verification/numeric gate or held-out
+inputs. Current native quality failure and negative Q4-throughput result remain.

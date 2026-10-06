@@ -2634,4 +2634,60 @@ unchanged GPU-free campaign as currently training. All other workers/jobs remain
 finished; root remains sole RTX5080 operator, no2080access. SAME heartbeat quiet
 on unchanged state; pending scientific recipe decisions remain human-owned.
 
+## Astra audit complete and independently accepted — October6, 12:04PDT
+
+Human-requested think/source/web audit completed in scoped Astra worker.
+Report49756413cbff723448e62ae71c69840581b88185, parent integrationb6128bf1:
+experiments/nine-model-qat-overnight/astra-training-audit-20261006.md.
+Independent bounded reviewer found no substantive blocker:8/8 metadata and17/17
+frozen math-source hashes match; direct official DeepSpec configs/model/loss and
+DFlash paper support critical conditioning/weighting/profile claims. Reviewer
+receipt results/audit-independent-review/astra-training-audit-20261006-review.json.
+Astra separately reaggregated720 clean records/full raw-sequence joins; no new
+native evaluation.35 raw source/web/evidence files archived to primary
+results/astra-training-audit-20261006/worker-evidence/, hash manifest adjacent.
+No GPU/SSH/model/capture/training by either worker; root's transport was metadata
+read/copy only. Both workers complete/no live processes. Root sole RTX5080 owner.
+
+Corrected data: admitted10,000 TRAIN prompts/3,899,930 supervised trace identities/
+822,166 rounds across320shards; consumed4,218/1,639,464 at epoch0/cursor345558,
+about42%, not a4,218-item dataset repeatedly trained to convergence. Actual paid
+recipe is fixed A8/hardCE, binary_optimization=null, no affine/fusion option,
+no persistent-sign diagnostics and disabled periodic dev; don't infer active
+training from optional current features. The final signs moved, but one gradient
+snapshot cannot establish typical clipping/churn; history/window telemetry needed.
+
+Offline captured-target predecessors are an official DSpark recipe, not an
+invalid default requiring live student-prefix queries.450/750 are constrained
+subsets (4.5%/7.5% of originalpool), not architecture limits. Preferred proposal:
+original-pool captured-prefix data with exact bounded shard/cache lifecycle,
+full context/teachers/ancestry and fresh admission. This remains unimplemented
+and unselected; don't claim a full captured block dataset exists.
+
+Confirmed recipe differences: local CE+L1 defaults relative1:1, uniform depth,
+fixed anchors, one block/update and constant block LR; official DSparkQwen3
+CE:L1=0.1:0.9, exp(-position/4), different anchor/batch/schedule choices. Published
+full-precision defaults are hypotheses for W1QAT, not proof of improvement. The
+selected DeepSpec DFlash profile is correctly separated from original paper
+layout. Keep private head/Markov/attention/fusion trainability scopes explicit.
+
+Recommendations: operational actual-recipe/exposure summary and preserved block
+metrics first; original-pool captured-prefix bounded storage decision; actual
+small-shard full pipeline/native/backward/resume admission; at most one separately
+selected matched depth-weighting ablation, then only diagnostics-driven alternatives.
+No sprawling optimizer sweep, silent staging/head/scope change, corpus reduction,
+new numeric tolerance or altered held-out denominator. Preserve five12h allocations,
+4/8/12h native acceptance/throughput and2h/5and15min health. More hours isn't proven
+remedy; no intermediate EAGLE native learning curve or optimal-duration evidence.
+
+Actual EAGLE10.3306%vsQ426.4939%/initial2.3932%,0.64536×Q4 requestthroughput;
+strict target-only gate FAILED and all120 A8/Q4 paired outputs match as before.
+No all9 endpoint completion. Native Goal still BLOCKED for training pending human
+recipe/exposure choice; this separate authorized research task is complete. Updated
+options include original10,000-pool captured-prefix sharding, not only prior subset
+question. No new Goal or successor chat. Next human research decision selects
+faithful exposure/recipe, then implementation/admission/sequential training; routine
+truthful observability work can proceed within existing scope without changing
+loss/order/accounting. OriginalQ4 exactbytes/finalscope remain separate later gates.
+
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->

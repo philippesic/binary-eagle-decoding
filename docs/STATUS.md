@@ -12,10 +12,15 @@ Allocation: 12 cumulative trainer-hours per model; native acceptance at 4/8/12 h
 Health checks every 2 h, with operational extra startup checks at 5/15 minutes.
 F16 target/verifier/KV, original TRAIN ancestry and held-out protocol remain.
 
-**October6 research update:** human authorized an Astra source/web training audit.
-Report owner astra_training_audit, isolated /tmp/astra-training-audit-20261006,
-branch audit/astra-training-20261006. Training remains stopped; no scientific
-recipe, allocation or exposure change is selected by this review.
+**October6 research update:** the human-authorized [Astra training audit](../experiments/nine-model-qat-overnight/astra-training-audit-20261006.md)
+is complete and independently checked. Eight frozen metadata hashes,17 math-source
+hashes and critical primary recipe claims match;720 native records were recomputed.
+Training remains stopped; no recipe, allocation or exposure change was implemented.
+Recommend original-pool captured-prefix sharding, truthful metric histories, then
+a bounded released-position-weighting ablation if selected—not an optimizer sweep.
+Offline DSpark target-prefix training is supported by official source. Our local
+CE/L1/depth/anchor/batch/schedule choices are restricted QAT hypotheses, not proven
+best. Preserve all12h allocations and4/8/12h native measurements.
 **Dataset correction:** admitted EAGLE data has10,000 TRAIN prompts and3,899,930
 supervised rows. Paused step344724 consumed4,218 unique prompts/1,639,464 rows,
 epoch0/cursor345558. Root incorrectly called consumed counts dataset capacity
