@@ -34,7 +34,7 @@ below preserve earlier coordinators and completed worker assignments.
 
 | Worker | Ownership | Live status |
 |---|---|---|
-| Root coordinator | sole remote/5080 operator, durable status and exact live registration | healthy admitted EAGLE A8 QAT running |
+| Root coordinator | durable status and future resume coordination | human pause applied; training/watcher stopped and GPU released; no remote use |
 | `/root/overnight_5080_operator` Luna high | prior remote operator; preserved operator report | interrupted after model capacity failures; no remote commands authorized |
 | `/root/overnight_bundle_owner` Sol high | staged production bundle and narrow source repairs | completed/published; no remote ownership |
 | `/root/overnight_independent_qa` Luna high | independent source/packet/failure checks and qa.md; no SSH/GPU | source/portable packet and initial live metadata review complete |
@@ -71,8 +71,8 @@ to authentic full teacher support; no silent hardCE substitution.
 
 ## Durable monitor and launch controls
 
-Heartbeat `nine-model-overnight-qat-monitor` ACTIVE, same current chat,
-30-minute interval; created via automation_update/readback confirmed. Its
+Heartbeat `nine-model-overnight-qat-monitor` is now PAUSED by human request,
+same current chat/30-minute interval; app update and saved readback confirmed. Its
 prompt keeps healthy unchanged state quiet and notifies meaningful progress,
 failure/recovery, completion or required user action. Old A8 monitor stays PAUSED. Exact live registration is stored outside Git in
 `runs/nine-model-qat-overnight/monitor-registration.json`; operators must update
