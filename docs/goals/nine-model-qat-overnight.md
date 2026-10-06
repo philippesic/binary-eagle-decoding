@@ -2433,4 +2433,72 @@ gate relaxation or remaining-five training launch. Next: accept bounded importer
 finding/fix if necessary, finish incremental storage admission, then require the
 human's pending exposure/conditioning answer before the expensive native capture.
 
+## Bounded importer and storage checkpoint — October 6, 01:53 PDT
+
+Same full six-trained-candidate/three-original-Q4 objective ACTIVE; revised
+12 h per remaining model, native acceptance at 4/8/12 h, health every 2 h plus
+5/15-minute early checks. EAGLE A8 remains the completed native observation at
+14.43 paid trainer-hours; do not repeat training. No remaining-five GPU job is
+running. Root retains exclusive RTX5080/MCP ownership and SAME ACTIVE heartbeat.
+No RTX2080Ti queries/control or successor chat transfer.
+
+Source a8d44a3111280532114c34f396510fcf09ffd475, parent integration303bef45,
+fixes concrete retained-mmap FD/RSS growth: all complete integrity/finite/native
+receipt audits stream one chain then close; training caches one chain and copies
+full context and all seven full-vocabulary F32 teacher rows. Optimizer/cursor,
+mask and conditioning semantics are preserved. Worker104 CPU checks PASS;
+independent48 dense/indexed DSpark/DFlash batches match the old implementation
+exactly, all fields/cursors. Independent101 tests PASS,5 skipped,1 C++ source
+check unavailable in uninitialized reviewer worktree; worker's matching clean
+native source check passes. Parent17 bounds/proposal checks PASS. Old source-bound
+admissions reject; actual capture/consumers need new pins and fresh admissions.
+
+Actual Linux CPU stress, bounded-block-maps-linux-20261006-01, frozen archive
+runs/checkouts/bounded-block-maps-a8d44a-20261006:450 synthetic-target indexed F32
+chains, RLIMIT_NOFILE64, peak8 FDs, peak RSS growth5,152,768B; late NaN and post-
+eviction mutation reject. Supervisor74948/timeout74953 exit0 and both absent,
+boot517c4a36-e475-4a5f-9fa6-65de57edc6fe. No CUDA model was loaded. Mac equivalent
+peak7 FDs/growth4,964,352B. Source/test/supervisor files directly SHA-verified
+before launch. Raw logs/receipts and independent tests are copied locally under
+results/twelve-hour-qa/bounded-block-maps/. These tiny-chain stress results do
+not establish production full-corpus RSS or SM120 training memory admission.
+
+Independent review found an operational overhead: per16-row audit callbacks
+would recursively rescan the retained output tree ~83,700 times for two450-chain
+imports. Bounded source worker is addressing only callback phase separation:
+frequent wall/RSS/MemAvailable/free-disk checks remain; full retained storage
+checks remain at chain/import/producer-write boundaries. No full hash/finite
+check or gate is removed. Follow-up d464c26c4a2f619d2ef5a6814469898265dc2e78 is accepted, integrated
+as78c986ce:52 worker checks,24 parent capture tests and3 independent focused
+checks PASS. No legacy fallback or gate changed.
+
+[Storage ledger](../../experiments/nine-model-qat-overnight/block-storage-20261006.md)
+excludes already allocated assets and accounts initial/resume/Adam/protected
+4/8/12 h checkpoints/NPZ/GGUF/writer peaks. Both capture-only options and first
+DSpark A8 phase fit observed189,381,636,096B. Full four-block worst-case retention
+exceeds this snapshot: keep_recent3 peaks249,707,063,187B or283,143,315,987B.
+These are conservative proposal/reference envelopes, not measured impossibility.
+A byte-verified completed-model archive route may use observed Mac142GiB free;
+per-file safety/reserve/restore ledger and actual size checks are still needed.
+No artifact deleted/archived or full-campaign storage admitted.
+
+Safe worker rotation: block_capture_plans, block_import_memory, capture_plan_review,
+bounded_maps_review and block_storage_ledger completed read-only/bounded ownership.
+All bounded workers and the related source follow-up are complete; no live
+worker, owned CPU process or transferred remote rights remain.
+Parent owns docs/integration; no live remote CPU/GPU job remains. Integration
+worktree /tmp/binary-eagle-twelve-hour-goal, branchgoal/twelve-hour-schedule-20261005.
+Unrelated user untracked overnight20261002 work remains preserved.
+
+Next exact actions: publish integrated source/checkpoint; regenerate proposals
+only with current immutable source
+inventory. Require actual human exposure/conditioning choice before native
+production capture. Then fresh storage/resource/source/native-library joins,
+full-corpus import/fusion/initializer/independent QA/SM120 admission, sequential
+DSpark A8→DFlash A8→EAGLE A1→DSpark A1→DFlash A1, exact timed checkpoints/resumes.
+Strict target-only parity failure remains FAILED, with bounded near-tie evidence;
+no relaxed numeric gate. Exact original block-Q4 bytes and final-held-out
+scope/authority remain pending. Unselected packet05 is historical planning proof,
+not current-source execution or training admission.
+
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->
