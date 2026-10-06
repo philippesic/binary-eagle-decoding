@@ -19,10 +19,10 @@ is prioritized with delegated24h cumulativetrainerallocation and frequent
 checkpoints; remaining candidates queue without premature readiness claims.
 30-minute heartbeat `nine-model-overnight-qat-monitor` is ACTIVE in the successor chat.
 **QAT is actively running onRTX5080/SM120**: calibrated fixed EAGLE W1A8,
-333810updates with committed333750 checkpoint; all required fresh admission/source/
+342892updates with committed342750 checkpoint; all required fresh admission/source/
 device gates PASS. Finite18selected gradients, actual sign/scale movement and
-cache/batchedhead execution;8.16GBGPUfree/18.08GBhostavailable. ActualTRAIN
-coverage4085prompts/1587481rows at50265.46trainerseconds; no quality/win claim.
+cache/batchedhead execution;8.16GBGPUfree/18.11GBhostavailable. ActualTRAIN
+coverage4195prompts/1630638rows at51659.91trainerseconds; no quality/win claim.
 
 Run eagle-a8-qat-overnight-20261005-04; supervisor55097/controller55098/trainer
 55398. Root is sole remote operator.24h cumulative allocation/no smaller cap,
@@ -274,6 +274,12 @@ updates/9500labels; preceding1000=4.849568, latest1000=5.768972, all finite grad
 Different training examples prevent a matched quality-trend claim; CE cannot
 be converted to native draft acceptance. Original metric rows archived outside
 Git; no GPU evaluation/pause/job/source change. Healthy original QAT continues.
+
+**17:34 PDT scheduled health PASS:**342892updates/checkpoint342750,
+51659.91trainerseconds,4195TRAINprompts/1630638rows,18finitegradients/finite loss.
+Same five handles/supervisors/clean30a-cc9 source/plan; resource and checkpoint
+freshness pass. Healthy trainer/passive watcher continue unchanged, full Goal
+ACTIVE; current acceptance pending; next18:04PDT. No repair/new job/runtime change.
 
 **07:50 PDT exclusive transfer:** fresh successor chat owns the same unfinished
 goal after explicit local registration transfer and SAME heartbeat retarget.
