@@ -682,6 +682,14 @@ def run_block(args, spec, hardware):
         spec["limits"].get("max_seconds"),
         atomic_json,
     )
+    existing_budget = budget.path.exists()
+    # Validate and settle uncertain prior work before gradients or checkpoints.
+    # Loading leaves the active clock stopped, so reconstruction stays excluded.
+    cursor = replace(cursor, elapsed_seconds=budget.load(cursor.elapsed_seconds))
+    if existing_budget and not args.resume:
+        raise ValueError("existing training budget requires exact checkpoint resume")
+    if budget.maximum is not None and cursor.elapsed_seconds >= budget.maximum:
+        raise ValueError("training budget allocation exhausted before startup smoke")
 
     def shard_boundary(error):
         nonlocal cursor

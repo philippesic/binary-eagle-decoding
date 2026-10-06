@@ -362,6 +362,91 @@ class RecipeRunloopTests(unittest.TestCase):
             result = launcher.run_block(args, spec, {"device": "synthetic CPU"})
         return result, model
 
+    def test_invalid_or_reused_budget_fails_before_actual_gradients_or_publication(self):
+        import train_nine_model_qat as launcher
+
+        valid = {
+            "schema": "continuous_training_budget_v1",
+            "source_sha256": "c" * 64,
+            "max_seconds": 43200.0,
+            "training_seconds": 1.0,
+            "active_attempt": None,
+        }
+        cases = (
+            ("corrupt", {**valid, "source_sha256": "d" * 64}, "contract differs"),
+            ("invalid", {**valid, "training_seconds": -1.0}, "budget is invalid"),
+            ("reused", valid, "requires exact checkpoint resume"),
+        )
+        for label, ledger, message in cases:
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as folder:
+                root = Path(folder)
+                (root / "budget-used.json").write_text(json.dumps(ledger))
+                with (
+                    patch.object(launcher, "smoke_block", wraps=launcher.smoke_block) as smoke,
+                    patch.object(
+                        launcher, "save_block_checkpoint", wraps=launcher.save_block_checkpoint
+                    ) as publish,
+                ):
+                    with self.assertRaisesRegex(ValueError, message):
+                        self.transaction(root)
+                    smoke.assert_not_called()
+                    publish.assert_not_called()
+                self.assertFalse((root / "checkpoints").exists())
+
+    def test_expired_resumed_budget_fails_before_gradients_or_new_checkpoint(self):
+        import train_nine_model_qat as launcher
+
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            self.transaction(root)
+            ledger = json.loads((root / "budget-used.json").read_text())
+            ledger["training_seconds"] = 43200.0
+            (root / "budget-used.json").write_text(json.dumps(ledger))
+            previous = (root / "checkpoints/latest.json").read_bytes()
+            with (
+                patch.object(launcher, "smoke_block", wraps=launcher.smoke_block) as smoke,
+                patch.object(
+                    launcher, "save_block_checkpoint", wraps=launcher.save_block_checkpoint
+                ) as publish,
+            ):
+                with self.assertRaisesRegex(ValueError, "allocation exhausted"):
+                    self.transaction(root, resume=True)
+                smoke.assert_not_called()
+                publish.assert_not_called()
+            self.assertEqual((root / "checkpoints/latest.json").read_bytes(), previous)
+
+    def test_early_crash_charge_is_retained_and_startup_stays_unbilled(self):
+        import train_nine_model_qat as launcher
+
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            self.transaction(root)
+            ledger = json.loads((root / "budget-used.json").read_text())
+            # Same-boot dead attempt: the helper's monotonic clock begins at100.
+            ledger["active_attempt"] = {
+                "boot_id": "test-boot",
+                "pid": 999999,
+                "process_birth": "old",
+                "started_monotonic": 50.0,
+                "reserved_seconds": 1000.0,
+            }
+            (root / "budget-used.json").write_text(json.dumps(ledger))
+            real_smoke = launcher.smoke_block
+
+            def startup(*args, **kwargs):
+                settled = json.loads((root / "budget-used.json").read_text())
+                self.assertIsNone(settled["active_attempt"])
+                self.assertEqual(settled["training_seconds"], 1051.0)
+                return real_smoke(*args, **kwargs)
+
+            with (
+                patch("w1a1_eagle.continuous_budget.boot_identity", return_value="test-boot"),
+                patch("w1a1_eagle.continuous_budget.process_birth", return_value=None),
+                patch.object(launcher, "smoke_block", side_effect=startup),
+            ):
+                result, _ = self.transaction(root, resume=True)
+            self.assertEqual(result["counters"]["elapsed_seconds"], 2052.0)
+
     def test_shard_boundary_keeps_completed_pair_pending_reservation_and_paid_checkpoint(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
