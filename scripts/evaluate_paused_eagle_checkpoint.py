@@ -10,12 +10,14 @@ training state, old receipt, plan, watcher or optimizer is changed.
 from __future__ import annotations
 
 import argparse
+import copy
 import fcntl
 import json
 import math
 import os
 import signal
 import sys
+from collections import Counter
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -90,6 +92,98 @@ def validate_joint(joint, npz, base):
     require(joint.get("projections") == expected, "exact all-nine projection names/shapes required")
 
 
+def development_authority(plan, files, *, loader=None):
+    """Authenticate file-level split authority for the original bare-row schema."""
+    require(
+        plan["prompts"]["sha256"] == endpoint.ORIGINAL_DEVELOPMENT_PROMPTS_SHA256,
+        "only exact original development prompt bytes supported",
+    )
+    path = files.check(plan["prompts"])
+    admission = read(files.check(plan["development_admission"]))
+    require(
+        admission.get("schema") == "nine_model_lane_development_admission_v1"
+        and admission.get("split") == "development"
+        and admission.get("training_disjoint") is True
+        and admission.get("prompts") == plan["prompts"]
+        and admission.get("frozen_training_source") == plan["training_source"]
+        and isinstance(admission.get("evidence"), list)
+        and admission["evidence"],
+        "authenticated original development/disjoint TRAIN authority required",
+    )
+    for record in admission["evidence"]:
+        files.check(record)
+    rows = (endpoint.load_opaque_prompts if loader is None else loader)(path)
+    require(
+        len(rows) == 24
+        and Counter(row.get("domain") for row in rows) == {"code": 8, "prose": 8, "reasoning": 8},
+        "original24 development domain inventory differs",
+    )
+    require(
+        all("split" not in row or row["split"] == "development" for row in rows),
+        "explicit prompt split conflicts with admitted development authority",
+    )
+    authority = {
+        "schema": "paused_eagle_file_level_development_authority_v1",
+        "prompts": plan["prompts"],
+        "admission": plan["development_admission"],
+        "evidence": admission["evidence"],
+        "frozen_training_source_sha256": plan["training_source_sha256"],
+        "row_count": len(rows),
+        "domain_counts": dict(Counter(row["domain"] for row in rows)),
+        "missing_row_split_count": sum("split" not in row for row in rows),
+        "adaptation": (
+            "missing row split inherited in memory from authenticated "
+            "file-level development admission"
+        ),
+        "original_prompt_bytes_changed": False,
+    }
+    return authority, rows
+
+
+@contextmanager
+def admitted_development_rows(plan, files):
+    """Scope metadata adaptation to one authenticated locator; restore always."""
+    original = endpoint.load_opaque_prompts
+
+    def load(path):
+        require(
+            Path(path).resolve() == Path(plan["prompts"]["path"]),
+            "prompt adaptation locator differs",
+        )
+        _, rows = development_authority(plan, files, loader=original)
+        adapted = copy.deepcopy(rows)
+        for row in adapted:
+            row.setdefault("split", "development")
+        return adapted
+
+    endpoint.load_opaque_prompts = load
+    try:
+        yield
+    finally:
+        endpoint.load_opaque_prompts = original
+
+
+def validate_export(plan, files, checkpoint, model, audit_record):
+    files.check(model)
+    audit = read(files.check(audit_record))
+    require(
+        audit.get("serialization_audit_passed") is True
+        and audit.get("base_gguf") == plan["base_model"]
+        and audit.get("checkpoint") == checkpoint["records"]["joint.npz"]
+        and audit.get("checkpoint_manifest") == checkpoint["records"]["joint.json"]
+        and audit.get("output") == model
+        and audit.get("activation_bits") == 8
+        and set(audit.get("projections", {})) == set(SOURCE_NAMES),
+        "trained serialization must join exact paused publication",
+    )
+    return {
+        "model": model,
+        "audit": audit_record,
+        "checkpoint_kind": "paused_trained_snapshot",
+        "checkpoint": checkpoint["records"]["resume"],
+    }
+
+
 def publication(plan, files, directory, resume_sha, *, initial=False):
     directory = Path(directory).resolve()
     outer = read(directory / "manifest.json")
@@ -148,12 +242,14 @@ def inspect(args):
         policy["export_wall_seconds"] <= 600 and policy["evaluation_wall_seconds"] <= 1200,
         "bounded export600/evaluation1200 caps required",
     )
+    authority, _ = development_authority(plan, files)
     checkpoint = Path(args.checkpoint_dir).resolve()
     training = Path(plan["training_run_dir"]) / "training"
     require(
         checkpoint.parent == training / "checkpoints", "checkpoint outside original training run"
     )
     selected = publication(plan, files, checkpoint, args.expected_resume_sha)
+    selected["development_prompt_authority"] = authority
     outer = selected["outer"]
     require(
         checkpoint.name
@@ -217,6 +313,27 @@ def inspect(args):
         Path(args.control_path).resolve() == Path(plan["gpu_control_path"]).resolve(),
         "pause control path differs",
     )
+    existing = [
+        getattr(args, name, None)
+        for name in (
+            "existing_export",
+            "existing_export_sha256",
+            "existing_export_audit",
+            "existing_export_audit_sha256",
+        )
+    ]
+    require(
+        not any(existing) or all(existing),
+        "existing export requires model/audit paths and SHA256s together",
+    )
+    if all(existing):
+        selected["existing_export"] = validate_export(
+            plan,
+            files,
+            selected,
+            checked(files, existing[0], existing[1]),
+            checked(files, existing[2], existing[3]),
+        )
     return plan, files, policy, protocol, selected, initial, budget
 
 
@@ -362,6 +479,9 @@ def run(args):
             *initial["publication"]["records"].values(),
             initial["model"],
             initial["audit"],
+            plan["prompts"],
+            plan["development_admission"],
+            *checkpoint["development_prompt_authority"]["evidence"],
         ]
         release = {"status": "PENDING"}
 
@@ -437,47 +557,41 @@ def run(args):
                     "original_training_budget_complete": False,
                 },
             )
-            export_dir = output / "export"
-            export_dir.mkdir()
-            command = [
-                plan["serializer_python_invocation"],
-                plan["serializer"]["path"],
-                "--base",
-                plan["base_model"]["path"],
-                "--checkpoint",
-                checkpoint["records"]["joint.npz"]["path"],
-                "--manifest",
-                checkpoint["records"]["joint.json"]["path"],
-                "--output",
-                str(export_dir / "trained.gguf"),
-                "--audit",
-                str(export_dir / "export-audit.json"),
-            ]
-            runner.authorization = authorization
-            runner.run(
-                command,
-                directory=output / "export-process",
-                stop_path=output / "STOP",
-                wall_seconds=policy["export_wall_seconds"],
-            )
-            released()
-            audit = read(export_dir / "export-audit.json")
-            trained = {
-                "model": endpoint.pin(export_dir / "trained.gguf"),
-                "audit": endpoint.pin(export_dir / "export-audit.json"),
-                "checkpoint_kind": "paused_trained_snapshot",
-                "checkpoint": checkpoint["records"]["resume"],
-            }
-            require(
-                audit.get("serialization_audit_passed") is True
-                and audit.get("base_gguf") == plan["base_model"]
-                and audit.get("checkpoint") == checkpoint["records"]["joint.npz"]
-                and audit.get("checkpoint_manifest") == checkpoint["records"]["joint.json"]
-                and audit.get("output") == trained["model"]
-                and audit.get("activation_bits") == 8
-                and set(audit.get("projections", {})) == set(SOURCE_NAMES),
-                "trained serialization must join exact paused publication",
-            )
+            if "existing_export" in checkpoint:
+                trained = checkpoint["existing_export"]
+                atomic_json(output / "existing-export-reuse.json", trained)
+            else:
+                export_dir = output / "export"
+                export_dir.mkdir()
+                command = [
+                    plan["serializer_python_invocation"],
+                    plan["serializer"]["path"],
+                    "--base",
+                    plan["base_model"]["path"],
+                    "--checkpoint",
+                    checkpoint["records"]["joint.npz"]["path"],
+                    "--manifest",
+                    checkpoint["records"]["joint.json"]["path"],
+                    "--output",
+                    str(export_dir / "trained.gguf"),
+                    "--audit",
+                    str(export_dir / "export-audit.json"),
+                ]
+                runner.authorization = authorization
+                runner.run(
+                    command,
+                    directory=output / "export-process",
+                    stop_path=output / "STOP",
+                    wall_seconds=policy["export_wall_seconds"],
+                )
+                released()
+                trained = validate_export(
+                    plan,
+                    files,
+                    checkpoint,
+                    endpoint.pin(export_dir / "trained.gguf"),
+                    endpoint.pin(export_dir / "export-audit.json"),
+                )
             records.extend((trained["model"], trained["audit"]))
             comparisons = {}
             for label, exported in (
@@ -485,7 +599,10 @@ def run(args):
                 ("calibrated_zero_update", initial),
             ):
                 cell_authorization()
-                with wall_cap(policy["evaluation_wall_seconds"]):
+                with (
+                    wall_cap(policy["evaluation_wall_seconds"]),
+                    admitted_development_rows(plan, files),
+                ):
                     receipt = endpoint.evaluate_endpoint(
                         plan,
                         files,
@@ -502,6 +619,7 @@ def run(args):
                     "independent_comparison": True,
                     "helper_report": receipt["report"],
                     "evaluated_model": exported["model"],
+                    "development_prompt_authority": checkpoint["development_prompt_authority"],
                     "initial_optimizer_updates": 0 if label == "calibrated_zero_update" else None,
                     "cells": summarize(report),
                 }
@@ -562,6 +680,10 @@ def parser():
         "initial-audit-sha256",
     ):
         cli.add_argument("--" + name, required=True)
+    cli.add_argument("--existing-export", type=Path)
+    cli.add_argument("--existing-export-sha256")
+    cli.add_argument("--existing-export-audit", type=Path)
+    cli.add_argument("--existing-export-audit-sha256")
     cli.add_argument("--availability", type=Path)
     cli.add_argument("--supervisor-state", type=Path)
     cli.add_argument("--start", action="store_true")

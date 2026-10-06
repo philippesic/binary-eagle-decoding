@@ -41,6 +41,7 @@ class PausedTests(unittest.TestCase):
                     "src/w1a1_eagle/nine_model_pipeline.py",
                 )
             },
+            "training_source": {"factory": "fixture", "split": "train"},
             "gpu_control_path": str(root / "control.json"),
             "gpu_uuid": "GPU-fixture",
             "controller_identity": {"pid": 10, "start_ticks": 1, "boot_id": "old"},
@@ -51,6 +52,32 @@ class PausedTests(unittest.TestCase):
             "serializer_python_invocation": sys.executable,
             "serializer": paused.endpoint.pin(ROOT / "scripts/export_recurrent_binary.py"),
         }
+        prompts = root / "original-development.jsonl"
+        rows = [
+            {
+                "domain": domain,
+                "id": f"original:{domain}:{ordinal}",
+                "messages": [{"role": "user", "content": f"original {domain} {ordinal}"}],
+            }
+            for domain in ("code", "prose", "reasoning")
+            for ordinal in range(8)
+        ]
+        prompts.write_text("\n".join(json.dumps(row) for row in rows) + "\n")
+        plan["prompts"] = paused.endpoint.pin(prompts)
+        evidence = write(
+            root / "disjoint-evidence.json", {"fixture": "authenticated disjoint original dev"}
+        )
+        plan["development_admission"] = write(
+            root / "development-admission.json",
+            {
+                "schema": "nine_model_lane_development_admission_v1",
+                "split": "development",
+                "training_disjoint": True,
+                "prompts": plan["prompts"],
+                "frozen_training_source": plan["training_source"],
+                "evidence": [evidence],
+            },
+        )
 
         def publish(directory, step):
             resume = write(
@@ -153,6 +180,9 @@ class PausedTests(unittest.TestCase):
         with (
             patch.object(paused, "INITIAL_SHA256", args.initial_model_sha256),
             patch.object(
+                paused.endpoint, "ORIGINAL_DEVELOPMENT_PROMPTS_SHA256", plan["prompts"]["sha256"]
+            ),
+            patch.object(
                 paused.endpoint,
                 "validate_plan",
                 return_value=(plan, paused.endpoint.Files(), policy, protocol),
@@ -170,6 +200,68 @@ class PausedTests(unittest.TestCase):
             self.assertEqual(result[-2]["optimizer_updates"], 0)
             self.assertFalse(args.output_root.exists())
             self.assertEqual(before, {p: p.read_bytes() for p in before})
+
+    def test_original_unsplit_rows_inherit_only_admitted_file_authority_and_restore(self):
+        with tempfile.TemporaryDirectory() as temp:
+            _, plan, _, _ = self.fixture(Path(temp).resolve())
+            path = Path(plan["prompts"]["path"])
+            before = path.read_bytes()
+            original = paused.endpoint.load_opaque_prompts
+            with patch.object(
+                paused.endpoint, "ORIGINAL_DEVELOPMENT_PROMPTS_SHA256", plan["prompts"]["sha256"]
+            ):
+                authority, rows = paused.development_authority(plan, paused.endpoint.Files())
+                self.assertEqual(authority["missing_row_split_count"], 24)
+                with self.assertRaisesRegex(RuntimeError, "fixture interruption"):
+                    with paused.admitted_development_rows(plan, paused.endpoint.Files()):
+                        adapted = paused.endpoint.load_opaque_prompts(path)
+                        self.assertTrue(all(row["split"] == "development" for row in adapted))
+                        self.assertEqual(
+                            [row["messages"] for row in adapted], [row["messages"] for row in rows]
+                        )
+                        with self.assertRaisesRegex(ValueError, "locator differs"):
+                            paused.endpoint.load_opaque_prompts(path.with_name("other.jsonl"))
+                        raise RuntimeError("fixture interruption")
+                self.assertIs(paused.endpoint.load_opaque_prompts, original)
+            self.assertEqual(path.read_bytes(), before)
+
+    def test_bad_explicit_train_inventory_authority_or_prompt_hash_rejected(self):
+        for mutation, message in (
+            ("split", "split conflicts"),
+            ("inventory", "inventory"),
+            ("source", "authority"),
+            ("disjoint", "authority"),
+            ("wrong_hash", "original development"),
+        ):
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as temp:
+                _, plan, _, _ = self.fixture(Path(temp).resolve())
+                path = Path(plan["prompts"]["path"])
+                rows = paused.endpoint.load_opaque_prompts(path)
+                admission = paused.read(plan["development_admission"]["path"])
+                original_hash = plan["prompts"]["sha256"]
+                if mutation in ("split", "inventory"):
+                    if mutation == "split":
+                        rows[0]["split"] = "train"
+                    else:
+                        rows[0]["domain"] = "prose"
+                    path.write_text("\n".join(json.dumps(row) for row in rows) + "\n")
+                    plan["prompts"] = paused.endpoint.pin(path)
+                    admission["prompts"] = plan["prompts"]
+                elif mutation == "source":
+                    admission["frozen_training_source"] = {"other": "train"}
+                elif mutation == "disjoint":
+                    admission["training_disjoint"] = False
+                plan["development_admission"] = write(
+                    Path(plan["development_admission"]["path"]), admission
+                )
+                expected_hash = "d" * 64 if mutation == "wrong_hash" else plan["prompts"]["sha256"]
+                with patch.object(
+                    paused.endpoint, "ORIGINAL_DEVELOPMENT_PROMPTS_SHA256", expected_hash
+                ):
+                    with self.assertRaisesRegex(ValueError, message):
+                        paused.development_authority(plan, paused.endpoint.Files())
+                if mutation == "wrong_hash":
+                    self.assertEqual(plan["prompts"]["sha256"], original_hash)
 
     def test_source_resume_joint_and_accounting_rejections(self):
         for mutation, expected in (
@@ -207,10 +299,17 @@ class PausedTests(unittest.TestCase):
     def test_exact_initial_model_and_zero_publication(self):
         with tempfile.TemporaryDirectory() as temp:
             args, plan, policy, protocol = self.fixture(Path(temp).resolve())
-            with patch.object(
-                paused.endpoint,
-                "validate_plan",
-                return_value=(plan, paused.endpoint.Files(), policy, protocol),
+            with (
+                patch.object(
+                    paused.endpoint,
+                    "validate_plan",
+                    return_value=(plan, paused.endpoint.Files(), policy, protocol),
+                ),
+                patch.object(
+                    paused.endpoint,
+                    "ORIGINAL_DEVELOPMENT_PROMPTS_SHA256",
+                    plan["prompts"]["sha256"],
+                ),
             ):
                 with self.assertRaisesRegex(ValueError, "exact original"):
                     paused.inspect(args)
@@ -316,7 +415,7 @@ class PausedTests(unittest.TestCase):
         self.assertEqual(signal.getsignal(signal.SIGALRM), before)
         self.assertEqual(signal.getitimer(signal.ITIMER_REAL), (0.0, 0.0))
 
-    def lifecycle(self, *, fail=False):
+    def lifecycle(self, *, fail=False, reuse=False):
         with tempfile.TemporaryDirectory() as temp:
             args, plan, policy, protocol = self.fixture(Path(temp).resolve())
             args.start = True
@@ -368,8 +467,33 @@ class PausedTests(unittest.TestCase):
                         },
                     )
 
+            if reuse:
+                prior = Path(temp) / "prior-export"
+                model = write(prior / "trained.gguf", {"fixture": "previous verified export"})
+                audit = write(
+                    prior / "audit.json",
+                    {
+                        "serialization_audit_passed": True,
+                        "base_gguf": plan["base_model"],
+                        "checkpoint": paused.endpoint.pin(args.checkpoint_dir / "A8/joint.npz"),
+                        "checkpoint_manifest": paused.endpoint.pin(
+                            args.checkpoint_dir / "A8/joint.json"
+                        ),
+                        "output": model,
+                        "activation_bits": 8,
+                        "projections": {name: {} for name in paused.SOURCE_NAMES},
+                    },
+                )
+                args.existing_export = Path(model["path"])
+                args.existing_export_sha256 = model["sha256"]
+                args.existing_export_audit = Path(audit["path"])
+                args.existing_export_audit_sha256 = audit["sha256"]
+
             def evaluate(_plan, _files, _protocol, exported, directory, _stop, authorize):
                 authorize()
+                rows = paused.endpoint.load_opaque_prompts(Path(plan["prompts"]["path"]))
+                self.assertEqual(len(rows), 24)
+                self.assertTrue(all(row["split"] == "development" for row in rows))
                 calls.append(exported["checkpoint_kind"])
                 if fail:
                     raise RuntimeError("actual evaluator failure preserved")
@@ -392,6 +516,11 @@ class PausedTests(unittest.TestCase):
 
             with (
                 patch.object(paused, "INITIAL_SHA256", args.initial_model_sha256),
+                patch.object(
+                    paused.endpoint,
+                    "ORIGINAL_DEVELOPMENT_PROMPTS_SHA256",
+                    plan["prompts"]["sha256"],
+                ),
                 patch.object(
                     paused.endpoint,
                     "validate_plan",
@@ -428,7 +557,11 @@ class PausedTests(unittest.TestCase):
                 self.assertFalse((args.output_root / "result.json").exists())
                 self.assertTrue((args.checkpoint_dir / "resume.pt").exists())
                 return
-            self.assertEqual(calls, ["export", "paused_trained_snapshot", "calibrated_zero_update"])
+            self.assertEqual(
+                calls,
+                ([] if reuse else ["export"])
+                + ["paused_trained_snapshot", "calibrated_zero_update"],
+            )
             self.assertEqual(result["accounted_training_seconds"], 51950.921720)
             self.assertFalse(result["original_training_budget_complete"])
             self.assertFalse(result["campaign_complete"])
@@ -440,6 +573,34 @@ class PausedTests(unittest.TestCase):
 
     def test_failed_helper_preserves_error_checkpoint_and_release_receipt(self):
         self.lifecycle(fail=True)
+
+    def test_existing_verified_export_reused_without_serializer_launch(self):
+        self.lifecycle(reuse=True)
+
+    def test_existing_export_requires_all_locators_and_exact_publication_join(self):
+        with tempfile.TemporaryDirectory() as temp:
+            args, plan, policy, protocol = self.fixture(Path(temp).resolve())
+            args.existing_export = Path(temp) / "prior.gguf"
+            with self.assertRaisesRegex(ValueError, "paths and SHA256s"):
+                self.inspect(args, plan, policy, protocol)
+            checkpoint = paused.publication(
+                plan, paused.endpoint.Files(), args.checkpoint_dir, args.expected_resume_sha
+            )
+            model = write(Path(temp) / "prior.gguf", {"fixture": "existing export"})
+            audit = write(
+                Path(temp) / "prior-audit.json",
+                {
+                    "serialization_audit_passed": True,
+                    "base_gguf": plan["base_model"],
+                    "checkpoint": {**checkpoint["records"]["joint.npz"], "sha256": "d" * 64},
+                    "checkpoint_manifest": checkpoint["records"]["joint.json"],
+                    "output": model,
+                    "activation_bits": 8,
+                    "projections": {name: {} for name in paused.SOURCE_NAMES},
+                },
+            )
+            with self.assertRaisesRegex(ValueError, "exact paused publication"):
+                paused.validate_export(plan, paused.endpoint.Files(), checkpoint, model, audit)
 
 
 if __name__ == "__main__":
