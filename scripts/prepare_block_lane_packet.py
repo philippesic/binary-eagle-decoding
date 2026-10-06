@@ -740,10 +740,11 @@ def source_commands(output, inputs, runtime, request):
         "max-array-bytes": calibration["max_array_bytes"],
         "max-seconds": calibration["max_seconds"],
         "latent-initialization": "preserve_reference_magnitudes",
-        "coordinate-flips": calibration.get("max_coordinate_flips_per_row", 0),
         "output-dir": str(Path(inputs["initializer"]["fit_report"]["path"]).parent),
     }.items():
         fit.extend(["--" + flag, str(value)])
+    if "max_coordinate_flips_per_row" in calibration:
+        fit.extend(["--coordinate-flips", str(calibration["max_coordinate_flips_per_row"])])
     target = runtime["inputs"]["target"]
     return {
         "schema": "block_lane_source_commands_v1",
