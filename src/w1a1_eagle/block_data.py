@@ -319,6 +319,7 @@ def import_capture_plan(
     max_capture_bytes=1024**3,
     admission_output=None,
     budget_check=None,
+    audit_budget_check=None,
 ):
     """Materialize a manifest from pinned original native receipts, without tensor copies.
 
@@ -326,6 +327,8 @@ def import_capture_plan(
     inventory and runtime manifest. It selects prompt-disjoint roles explicitly;
     it does not invent prompt membership or capture teachers. Raw producer files
     are retained read-only and only the small token arrays are materialized.
+    budget_check runs at each source-chain boundary. The read-only finite audit
+    can use a lightweight audit_budget_check; old callers reuse budget_check.
     """
     plan_path = Path(plan_path).resolve()
     output = Path(output_dir).resolve()
@@ -503,7 +506,7 @@ def import_capture_plan(
         manifest_path,
         expected_sha256=file_sha256(manifest_path),
         audit_only=True,
-        budget_check=budget_check,
+        budget_check=budget_check if audit_budget_check is None else audit_budget_check,
     )
     audited.write_admission(admission_output or output / "completed-admission.json")
     return manifest_path

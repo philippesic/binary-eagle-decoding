@@ -420,6 +420,106 @@ class CaptureTests(unittest.TestCase):
             self.assertIn(reason, result["failure"]["message"])
             self.assertEqual(SyntheticNativeTeacher.instances, [])
 
+    def test_import_audit_resource_checks_do_not_rescan_retained_tree(self):
+        from unittest.mock import patch
+
+        original_import = capture.import_capture_plan
+        original_tree = capture.tree_bytes
+        counts = {"chain": 0, "audit": 0}
+
+        def imported(*args, **kwargs):
+            full, lightweight = kwargs["budget_check"], kwargs["audit_budget_check"]
+
+            def chain_boundary():
+                counts["chain"] += 1
+                full()
+
+            def audit_slice():
+                counts["audit"] += 1
+                before = tree.call_count
+                lightweight()
+                self.assertEqual(tree.call_count, before)
+
+            return original_import(
+                *args,
+                **(kwargs | {"budget_check": chain_boundary, "audit_budget_check": audit_slice}),
+            )
+
+        with (
+            patch.object(capture, "tree_bytes", wraps=original_tree) as tree,
+            patch.object(capture, "import_capture_plan", side_effect=imported),
+            patch.object(capture, "host_available_bytes", return_value=10**9) as available,
+        ):
+            # Override run_'s fixed available_query to count every resource check.
+            result = capture.run_capture(
+                self.path,
+                self.pin,
+                self.root / "output",
+                execute=True,
+                teacher_factory=SyntheticNativeTeacher,
+                device_query=lambda: {"name": "fixture CUDA", "compute_capability": [7, 5]},
+                rss_query=lambda: 0,
+                available_query=available,
+            )
+        self.assertEqual(result["status"], "PASS", result["failure"])
+        self.assertEqual(counts["chain"], 2 * result["selected_prompt_count"])
+        self.assertGreater(counts["audit"], counts["chain"] * 3)
+        # Every non-audit resource check still performs the complete tree scan;
+        # final retained-byte reporting adds one scan without a resource check.
+        self.assertEqual(tree.call_count + counts["audit"], available.call_count + 1)
+
+    def test_memory_and_free_disk_floors_reject_inside_read_only_audit(self):
+        from unittest.mock import patch
+
+        original_import = capture.import_capture_plan
+        for reason in ("available", "RSS", "disk"):
+            state = {"inside_audit": False, "audit_checks": 0}
+
+            def imported(*args, **kwargs):
+                lightweight = kwargs["audit_budget_check"]
+
+                def audit_slice():
+                    state["audit_checks"] += 1
+                    state["inside_audit"] = state["audit_checks"] >= 3
+                    try:
+                        lightweight()
+                    finally:
+                        state["inside_audit"] = False
+
+                return original_import(*args, **(kwargs | {"audit_budget_check": audit_slice}))
+
+            def failing(which):
+                return reason == which and state["inside_audit"]
+
+            with (
+                patch.object(capture, "import_capture_plan", side_effect=imported),
+                patch.object(
+                    capture.shutil,
+                    "disk_usage",
+                    side_effect=lambda _: type(
+                        "Disk", (), {"free": 0 if failing("disk") else 10**9}
+                    )(),
+                ),
+            ):
+                output = self.root / f"audit-floor-{reason}"
+                result = capture.run_capture(
+                    self.path,
+                    self.pin,
+                    output,
+                    execute=True,
+                    teacher_factory=SyntheticNativeTeacher,
+                    device_query=lambda: {"name": "fixture CUDA", "compute_capability": [7, 5]},
+                    rss_query=lambda: 10**9 if failing("RSS") else 0,
+                    available_query=lambda: 0 if failing("available") else 10**9,
+                )
+            self.assertGreaterEqual(state["audit_checks"], 3)
+            self.assertEqual(result["status"], "FAIL")
+            self.assertEqual(result["failure"]["type"], "MemoryError")
+            expected = "MemAvailable" if reason == "available" else reason
+            self.assertIn(expected, result["failure"]["message"])
+            self.assertTrue(SyntheticNativeTeacher.instances[-1].closed)
+            self.assertFalse((output / "dspark/completed-admission.json").exists())
+
     def test_golden_prompt_boundary_not_fabricated_or_truncated(self):
         self.plan["caps"]["max_eagle_golden_tokens"] = 1
         self.persist()

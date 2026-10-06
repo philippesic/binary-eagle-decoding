@@ -717,7 +717,7 @@ def run_capture(
         else "actual Linux MemAvailable; separate from GPU resource release"
     )
 
-    def budget():
+    def budget(*, full_storage=True):
         if clock() - start >= caps["total_timeout_seconds"]:
             raise TimeoutError("capture total wall cap reached")
         available = available_query()
@@ -751,7 +751,10 @@ def run_capture(
         )
         if measured_rss > caps["max_host_rss_bytes"]:
             raise MemoryError("capture owner plus native producer host RSS cap reached")
-        if tree_bytes(output) > caps["max_total_bytes"]:
+        # Retained-tree enumeration belongs at write/chain/family boundaries.
+        # Read-only finite slices still check time, available memory, RSS and
+        # free disk on every callback, without rescanning unchanged files.
+        if full_storage and tree_bytes(output) > caps["max_total_bytes"]:
             raise MemoryError("capture retained storage cap reached")
         if shutil.disk_usage(output).free < caps["min_free_disk_bytes"]:
             raise MemoryError("capture free disk floor reached")
@@ -977,6 +980,7 @@ def run_capture(
                 output_dir=output / family,
                 max_capture_bytes=caps["max_total_bytes"],
                 budget_check=budget,
+                audit_budget_check=lambda: budget(full_storage=False),
             )
             budget()
             manifests[family] = {"path": str(manifest), "sha256": file_sha256(manifest)}
