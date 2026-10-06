@@ -437,7 +437,17 @@ def summarize(report):
     return result
 
 
+def comparison_names(selection):
+    require(selection in {"both", "trained", "initial"}, "unknown comparison selection")
+    return {
+        "both": ("paused_trained_snapshot", "calibrated_zero_update"),
+        "trained": ("paused_trained_snapshot",),
+        "initial": ("calibrated_zero_update",),
+    }[selection]
+
+
 def run(args):
+    requested = comparison_names(getattr(args, "comparison", "both"))
     plan, files, policy, protocol, checkpoint, initial, budget = inspect(args)
     if not args.start:
         return {
@@ -447,6 +457,7 @@ def run(args):
             "checkpoint": checkpoint,
             "initial": initial,
             "accounted_training_seconds": budget["training_seconds"],
+            "comparisons_requested": requested,
         }
     require(
         args.availability and args.supervisor_state, "fresh availability/supervisor paths required"
@@ -555,12 +566,13 @@ def run(args):
                     "fresh_supervisor": supervisor,
                     "availability": endpoint.pin(args.availability),
                     "original_training_budget_complete": False,
+                    "comparisons_requested": requested,
                 },
             )
             if "existing_export" in checkpoint:
                 trained = checkpoint["existing_export"]
                 atomic_json(output / "existing-export-reuse.json", trained)
-            else:
+            elif "paused_trained_snapshot" in requested:
                 export_dir = output / "export"
                 export_dir.mkdir()
                 command = [
@@ -592,12 +604,14 @@ def run(args):
                     endpoint.pin(export_dir / "trained.gguf"),
                     endpoint.pin(export_dir / "export-audit.json"),
                 )
-            records.extend((trained["model"], trained["audit"]))
+            else:
+                trained = None  # Initial-only evaluation requires no new trained export.
+            if trained is not None:
+                records.extend((trained["model"], trained["audit"]))
             comparisons = {}
-            for label, exported in (
-                ("paused_trained_snapshot", trained),
-                ("calibrated_zero_update", initial),
-            ):
+            candidates = {"paused_trained_snapshot": trained, "calibrated_zero_update": initial}
+            for label in requested:
+                exported = candidates[label]
                 cell_authorization()
                 with (
                     wall_cap(policy["evaluation_wall_seconds"]),
@@ -633,8 +647,9 @@ def run(args):
                 "accounted_training_seconds": budget["training_seconds"],
                 "original_max_training_seconds": budget["max_seconds"],
                 "comparisons": comparisons,
+                "comparisons_requested": requested,
                 "comparison_scope": (
-                    "two independent paired development comparisons; "
+                    f"{len(requested)} independent paired development comparison(s); "
                     "no pooled or four-cell interleaved claim"
                 ),
                 "owned_release": release,
@@ -652,6 +667,7 @@ def run(args):
                     "status": "failed",
                     "campaign_complete": False,
                     "original_training_budget_complete": False,
+                    "comparisons_requested": requested,
                     "checkpoint": checkpoint,
                     "error_type": type(error).__name__,
                     "error": str(error),
@@ -684,6 +700,7 @@ def parser():
     cli.add_argument("--existing-export-sha256")
     cli.add_argument("--existing-export-audit", type=Path)
     cli.add_argument("--existing-export-audit-sha256")
+    cli.add_argument("--comparison", choices=("both", "trained", "initial"), default="both")
     cli.add_argument("--availability", type=Path)
     cli.add_argument("--supervisor-state", type=Path)
     cli.add_argument("--start", action="store_true")

@@ -415,10 +415,11 @@ class PausedTests(unittest.TestCase):
         self.assertEqual(signal.getsignal(signal.SIGALRM), before)
         self.assertEqual(signal.getitimer(signal.ITIMER_REAL), (0.0, 0.0))
 
-    def lifecycle(self, *, fail=False, reuse=False):
+    def lifecycle(self, *, fail=False, reuse=False, comparison="both"):
         with tempfile.TemporaryDirectory() as temp:
             args, plan, policy, protocol = self.fixture(Path(temp).resolve())
             args.start = True
+            args.comparison = comparison
             write(args.plan, {"fixture": "frozen plan"})
             owner = {"pid": 101, "start_ticks": 1, "boot_id": "fresh"}
             supervisor = {"pid": 102, "start_ticks": 2, "boot_id": "fresh"}
@@ -496,7 +497,7 @@ class PausedTests(unittest.TestCase):
                 self.assertTrue(all(row["split"] == "development" for row in rows))
                 calls.append(exported["checkpoint_kind"])
                 if fail:
-                    raise RuntimeError("actual evaluator failure preserved")
+                    raise RuntimeError("greedy verifier token sequence differs")
                 report = {
                     "cells": {
                         "eagle_a8": {
@@ -544,13 +545,16 @@ class PausedTests(unittest.TestCase):
                 patch.object(Path, "home", return_value=Path(temp)),
             ):
                 if fail:
-                    with self.assertRaisesRegex(RuntimeError, "failure preserved"):
+                    with self.assertRaisesRegex(RuntimeError, "verifier token sequence differs"):
                         paused.run(args)
                     result = paused.read(args.output_root / "failure.json")
                 else:
                     result = paused.run(args)
             if fail:
-                self.assertEqual(calls, ["export", "paused_trained_snapshot"])
+                expected = list(paused.comparison_names(comparison))
+                export_calls = [] if reuse or comparison == "initial" else ["export"]
+                self.assertEqual(calls, export_calls + expected[:1])
+                self.assertEqual(result["comparisons_requested"], expected)
                 self.assertEqual(result["owned_release"]["status"], "PASS")
                 self.assertFalse(result["original_training_budget_complete"])
                 self.assertEqual(result["error_type"], "RuntimeError")
@@ -559,14 +563,17 @@ class PausedTests(unittest.TestCase):
                 return
             self.assertEqual(
                 calls,
-                ([] if reuse else ["export"])
-                + ["paused_trained_snapshot", "calibrated_zero_update"],
+                ([] if reuse or comparison == "initial" else ["export"])
+                + list(paused.comparison_names(comparison)),
             )
             self.assertEqual(result["accounted_training_seconds"], 51950.921720)
             self.assertFalse(result["original_training_budget_complete"])
             self.assertFalse(result["campaign_complete"])
             self.assertEqual(result["owned_release"]["status"], "PASS")
-            self.assertEqual(len(result["comparisons"]), 2)
+            self.assertEqual(
+                tuple(result["comparisons_requested"]), paused.comparison_names(comparison)
+            )
+            self.assertEqual(set(result["comparisons"]), set(paused.comparison_names(comparison)))
 
     def test_mocked_lifecycle_exports_then_two_independent_comparisons(self):
         self.lifecycle()
@@ -576,6 +583,18 @@ class PausedTests(unittest.TestCase):
 
     def test_existing_verified_export_reused_without_serializer_launch(self):
         self.lifecycle(reuse=True)
+
+    def test_initial_only_reuses_export_and_executes_one_strict_comparison(self):
+        self.lifecycle(reuse=True, comparison="initial")
+
+    def test_initial_only_failed_verifier_gate_stays_failed_with_raw_error(self):
+        self.lifecycle(reuse=True, comparison="initial", fail=True)
+
+    def test_initial_only_needs_no_trained_serialization(self):
+        self.lifecycle(comparison="initial")
+
+    def test_trained_only_executes_one_requested_comparison(self):
+        self.lifecycle(reuse=True, comparison="trained")
 
     def test_existing_export_requires_all_locators_and_exact_publication_join(self):
         with tempfile.TemporaryDirectory() as temp:
