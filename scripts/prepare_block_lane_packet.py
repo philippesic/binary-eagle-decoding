@@ -74,6 +74,13 @@ PRODUCERS = (
     "capture_block_qat_teacher.py",
     "check_block_capture_portability.py",
 )
+TIMED_PRODUCERS = (
+    "evaluate_nine_model_timed_checkpoint.py",
+    "export_nine_model_lane_candidate.py",
+    "evaluate_nine_model_native.py",
+    "run_nine_model_lane_endpoint.py",
+    "run_nine_model_lane.py",
+)
 
 
 def read(files, locator):
@@ -451,6 +458,12 @@ def prepare(inputs, output):
         budget.get("schema") == "nine_model_selected_budget_v1",
         "supplied single-candidate operational budget required",
     )
+    execution_controls = builder.selected_execution_controls(
+        {**inputs, "profile": "fixed_reference" if bits == 8 else "direct_a1"},
+        family,
+        budget["candidates"][name]["training_limits"],
+        files,
+    )
     dataset, extent = load_data(files, inputs, runtime)
     reference, epsilon = validate_reference(files, inputs, runtime)
     require(
@@ -516,6 +529,7 @@ def prepare(inputs, output):
                 "qat_overrides": qat,
                 "checkpoint_every": inputs["checkpoint_every"],
                 "resource_floors": inputs["resource_floors"],
+                **execution_controls,
                 "native_markers": [
                     "CUDA packed W1A8 INT8 dispatch"
                     if bits == 8
@@ -618,6 +632,7 @@ def prepare(inputs, output):
             "coverage_policy": inputs["coverage_policy"],
             "budget": inputs["budget"],
             "calibration_policy": inputs["calibration_policy"],
+            **execution_controls,
             "status": "PENDING",
             "production_ready": False,
             "model_loaded": False,
@@ -1098,6 +1113,23 @@ def finalize(args):
     descriptor = read(files, builder.pin(args.packet / "production-inputs.json"))
     plan = {"path": str(args.admission_plan.resolve()), "sha256": args.admission_plan_sha256}
     files.check(plan)
+    timed_path = getattr(args, "timed_evaluation_plan", None)
+    timed_sha = getattr(args, "timed_evaluation_plan_sha256", None)
+    require(
+        (timed_path is None) == (timed_sha is None),
+        "timed evaluation plan requires both path and SHA256",
+    )
+    if timed_path is not None:
+        timed_locator = {"path": str(timed_path.resolve()), "sha256": timed_sha}
+        timed_plan = read(files, timed_locator)
+        source = timed_plan.get("source")
+        require(isinstance(source, dict), "timed evaluation plan source inventory required")
+        for producer in TIMED_PRODUCERS:
+            require(
+                builder.pin(ROOT / "scripts" / producer) in source.values(),
+                "timed evaluation plan lacks current producer source pin: " + producer,
+            )
+        descriptor["timed_evaluation_plan"] = timed_locator
     require(
         not (args.packet / "lane-inputs.json").exists() and not args.output.exists(),
         "preserve finalized source lane history",
@@ -1245,6 +1277,8 @@ def main():
     command.add_argument("--packet", type=Path, required=True)
     command.add_argument("--admission-plan", type=Path, required=True)
     command.add_argument("--admission-plan-sha256", required=True)
+    command.add_argument("--timed-evaluation-plan", type=Path)
+    command.add_argument("--timed-evaluation-plan-sha256")
     command.add_argument("--output", type=Path, required=True)
     command = sub.add_parser("export-initial")
     command.add_argument("--packet", type=Path, required=True)

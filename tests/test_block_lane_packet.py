@@ -458,6 +458,139 @@ def golden_bind_args(output):
 
 
 class PacketTests(unittest.TestCase):
+    def test_timed_finalization_forwards_authenticated_plan_and_current_source_pins(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve()
+            output = root / "packet"
+            write(output / "production-inputs.json", {"inputs": {}})
+            admission = write(root / "admission.json", {})
+            source = {}
+            for name in packet.TIMED_PRODUCERS:
+                path = root / "scripts" / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("# metadata test source; never executed\n")
+                source[name] = packet.builder.pin(path)
+            timed = write(root / "timed.json", {"source": source})
+            args = SimpleNamespace(
+                packet=output,
+                output=output / "lane.json",
+                admission_plan=Path(admission["path"]),
+                admission_plan_sha256=admission["sha256"],
+                timed_evaluation_plan=Path(timed["path"]),
+                timed_evaluation_plan_sha256=timed["sha256"],
+            )
+            captured = []
+
+            def build_lane(descriptor, path):
+                captured.append(copy.deepcopy(descriptor))
+                return {"status": "PASS"}
+
+            with (
+                patch.object(packet, "ROOT", root),
+                patch.object(
+                    packet.importlib,
+                    "import_module",
+                    return_value=SimpleNamespace(build_lane=build_lane),
+                ),
+            ):
+                report = packet.finalize(args)
+            self.assertEqual(captured[0]["timed_evaluation_plan"], timed)
+            self.assertEqual(captured[0]["inputs"]["admission_plan"], admission)
+            self.assertEqual(report["status"], "PENDING_fresh_native_admission")
+            self.assertFalse(report["production_ready"])
+
+    def test_timed_finalization_refuses_unpaired_mutated_or_missing_source_pins(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve()
+            write(root / "production-inputs.json", {"inputs": {}})
+            admission = write(root / "admission.json", {})
+            timed = write(root / "timed.json", {"source": {}})
+            args = SimpleNamespace(
+                packet=root,
+                output=root / "lane.json",
+                admission_plan=Path(admission["path"]),
+                admission_plan_sha256=admission["sha256"],
+                timed_evaluation_plan=Path(timed["path"]),
+                timed_evaluation_plan_sha256=None,
+            )
+            with self.assertRaisesRegex(ValueError, "both path and SHA256"):
+                packet.finalize(args)
+            args.timed_evaluation_plan_sha256 = "0" * 64
+            with self.assertRaisesRegex(ValueError, "artifact changed"):
+                packet.finalize(args)
+            args.timed_evaluation_plan_sha256 = timed["sha256"]
+            with patch.object(packet, "TIMED_PRODUCERS", ("prepare_block_lane_packet.py",)):
+                with self.assertRaisesRegex(ValueError, "current producer source pin"):
+                    packet.finalize(args)
+            self.assertFalse(args.output.exists())
+            self.assertFalse((root / "lane-inputs.json").exists())
+
+    def test_optional_retention_schedule_and_protocol_reach_materialized_config(self):
+        for family in ("dspark", "dflash"):
+            for bits in (8, 1):
+                with tempfile.TemporaryDirectory() as tmp:
+                    root = Path(tmp).resolve()
+                    descriptor, _, _ = fixture(root, family, bits)
+                    budget = packet.read(packet.Files(), descriptor["budget"])
+                    budget["candidates"][descriptor["candidate"]].update(
+                        training_limits={
+                            "max_steps": None,
+                            "max_supervised_tokens": None,
+                            "max_seconds": 43200,
+                            "max_epochs": None,
+                        },
+                        wall_seconds=54000,
+                    )
+                    descriptor["budget"] = write(root / "timed-budget.json", budget)
+                    descriptor.update(
+                        checkpoint_retention={
+                            "keep_recent": 3,
+                            "max_checkpoints": 8,
+                            "max_bytes": 40 * 1024**3,
+                        },
+                        evaluation_milestones_seconds=[14400, 28800, 43200],
+                        evaluation_protocol=write(
+                            root / "protocol.json", {"schema": "fixture-protocol"}
+                        ),
+                    )
+                    output = root / "packet"
+                    packet.prepare(descriptor, output)
+                    spec = trainer.load_spec(output / f"configs/{family}_a{bits}.json")
+                    for key in (
+                        "checkpoint_retention",
+                        "evaluation_milestones_seconds",
+                        "evaluation_protocol",
+                    ):
+                        self.assertEqual(spec[key], descriptor[key])
+                        published = json.loads((output / "packet-inputs.json").read_text())
+                        self.assertEqual(published[key], descriptor[key])
+
+    def test_invalid_optional_packet_controls_refuse_before_publication(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve()
+            descriptor, _, _ = fixture(root)
+            for index, change in enumerate(
+                (
+                    {
+                        "checkpoint_retention": {
+                            "keep_recent": 0,
+                            "max_checkpoints": 2,
+                            "max_bytes": 99,
+                        }
+                    },
+                    {"evaluation_milestones_seconds": [14400, 28800, 43200]},
+                    {"evaluation_protocol": write(root / "protocol.json", {})},
+                    {
+                        "evaluation_milestones_seconds": [14400, 28800, 43200],
+                        "evaluation_protocol": write(root / "protocol-2.json", {}),
+                    },
+                )
+            ):
+                output = root / f"invalid-{index}"
+                with self.subTest(change=change), self.assertRaises(ValueError):
+                    packet.prepare(descriptor | change, output)
+                self.assertFalse(output.exists())
+
     def test_draft_inspection_is_pending_without_models_gpu_or_campaign_pass(self):
         report = packet.inspect_inputs({"schema": packet.INPUT_SCHEMA, "candidate": "dspark_a8"})
         self.assertEqual(report["status"], "PENDING")

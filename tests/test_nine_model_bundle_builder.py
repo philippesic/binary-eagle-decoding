@@ -203,6 +203,15 @@ class PausedLaunchTests(unittest.TestCase):
 
 
 class SixSourceConfigTests(unittest.TestCase):
+    def set_timed_budget(self, descriptor, budgets):
+        for entry in budgets.values():
+            entry["training_limits"]["max_seconds"] = 43200
+        path = Path(descriptor["budget"]["path"])
+        content = json.loads(path.read_text())
+        content["candidates"] = budgets
+        path.write_text(json.dumps(content))
+        descriptor["budget"]["sha256"] = sha256(path)
+
     def fixture(self, root):
         def pin(path):
             return {"path": str(path), "sha256": sha256(path)}
@@ -288,6 +297,103 @@ class SixSourceConfigTests(unittest.TestCase):
                 self.assertEqual(
                     spec["initialization"]["latent_initialization"]["policy"],
                     "preserve_reference_magnitudes",
+                )
+                for field in (
+                    "checkpoint_retention",
+                    "evaluation_milestones_seconds",
+                    "evaluation_protocol",
+                ):
+                    self.assertNotIn(field, spec)
+
+    def test_explicit_execution_controls_reach_real_source_configs(self):
+        import train_nine_model_qat as trainer
+
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            descriptor, budgets = self.fixture(root)
+            self.set_timed_budget(descriptor, budgets)
+            protocol = root / "protocol.json"
+            protocol.write_text(json.dumps({"schema": "source-fixture-protocol"}))
+            locator = {"path": str(protocol), "sha256": sha256(protocol)}
+            retention = {"keep_recent": 3, "max_checkpoints": 8, "max_bytes": 40 * 1024**3}
+            for name, selected in descriptor["candidates"].items():
+                selected.update(
+                    evaluation_milestones_seconds=[14400, 28800, 43200],
+                    evaluation_protocol=locator,
+                )
+                if not name.startswith("eagle"):
+                    selected["checkpoint_retention"] = retention
+            result = builder.materialize_configs(descriptor, root / "configs")
+            for name, pin in result["configs"].items():
+                spec = trainer.load_spec(pin["path"])
+                self.assertEqual(pin["sha256"], sha256(Path(pin["path"])))
+                self.assertEqual(spec["evaluation_milestones_seconds"], [14400, 28800, 43200])
+                self.assertEqual(spec["evaluation_protocol"], locator)
+                if name.startswith("eagle"):
+                    self.assertNotIn("checkpoint_retention", spec)
+                else:
+                    self.assertEqual(spec["checkpoint_retention"], retention)
+
+    def test_invalid_optional_controls_refuse_even_without_source_validation(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            descriptor, budgets = self.fixture(root)
+            self.set_timed_budget(descriptor, budgets)
+            protocol = root / "protocol.json"
+            protocol.write_text("{}")
+            locator = {"path": str(protocol), "sha256": sha256(protocol)}
+            good = {
+                "evaluation_milestones_seconds": [14400, 28800, 43200],
+                "evaluation_protocol": locator,
+            }
+            cases = [
+                {"checkpoint_retention": None},
+                {"checkpoint_retention": {"keep_recent": 1, "max_checkpoints": 1}},
+                {
+                    "checkpoint_retention": {
+                        "keep_recent": True,
+                        "max_checkpoints": 2,
+                        "max_bytes": 99,
+                    }
+                },
+                {"checkpoint_retention": {"keep_recent": 3, "max_checkpoints": 2, "max_bytes": 99}},
+                {"evaluation_protocol": locator},
+                {"evaluation_milestones_seconds": [14400, 28800, 43200]},
+                *[
+                    {**good, "evaluation_milestones_seconds": values}
+                    for values in (
+                        None,
+                        [],
+                        [True, 43200],
+                        [14400, 14400, 43200],
+                        [28800, 14400, 43200],
+                        [14400, float("inf"), 43200],
+                        [14400, 28800],
+                        [1, 2, 43200],
+                        [14400, 28800, 43201],
+                    )
+                ],
+                {**good, "evaluation_protocol": {**locator, "extra": True}},
+                {**good, "evaluation_protocol": {**locator, "sha256": "0" * 64}},
+                {**good, "profile": "a8_to_a1_reset"},
+            ]
+            original = dict(descriptor["candidates"]["dspark_a8"])
+            for index, change in enumerate(cases):
+                with self.subTest(change=change):
+                    descriptor["candidates"]["dspark_a8"] = original | change
+                    output = root / f"invalid-{index}"
+                    with self.assertRaises(ValueError):
+                        builder.materialize_configs(descriptor, output, source_validate=False)
+                    self.assertFalse(output.exists())
+            descriptor["candidates"]["dspark_a8"] = original
+            descriptor["candidates"]["eagle_a8"]["checkpoint_retention"] = {
+                "keep_recent": 1,
+                "max_checkpoints": 2,
+                "max_bytes": 99,
+            }
+            with self.assertRaisesRegex(ValueError, "only by the block saver"):
+                builder.materialize_configs(
+                    descriptor, root / "eagle-retention", source_validate=False
                 )
 
     def test_three_warm_profiles_use_real_curriculum_and_block_source_apis(self):

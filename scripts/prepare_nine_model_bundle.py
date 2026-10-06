@@ -11,6 +11,7 @@ import argparse
 import copy
 import importlib
 import json
+import math
 import re
 import sys
 from pathlib import Path
@@ -187,6 +188,64 @@ def inspect_descriptor(descriptor, files):
     return sorted(set(pending))
 
 
+def selected_execution_controls(selected, family, limits, files):
+    """Validate explicit optional controls before publishing any source configs."""
+    controls = {}
+    if "checkpoint_retention" in selected:
+        from w1a1_eagle.block_training import BlockCheckpointRetention
+
+        policy = selected["checkpoint_retention"]
+        require(family != "eagle", "checkpoint_retention is supported only by the block saver")
+        require(
+            isinstance(policy, dict)
+            and set(policy) == {"keep_recent", "max_checkpoints", "max_bytes"},
+            "explicit checkpoint retention fields required",
+        )
+        BlockCheckpointRetention(**policy)
+        controls["checkpoint_retention"] = copy.deepcopy(policy)
+    schedule = "evaluation_milestones_seconds" in selected
+    protocol = "evaluation_protocol" in selected
+    require(
+        schedule == protocol, "evaluation milestones and pinned protocol must be supplied together"
+    )
+    if schedule:
+        milestones = selected["evaluation_milestones_seconds"]
+        cap = limits.get("max_seconds")
+        require(
+            selected["profile"] in {"fixed_reference", "direct_a1"},
+            "evaluation milestones require a direct precision lane",
+        )
+        require(
+            isinstance(milestones, list)
+            and bool(milestones)
+            and all(
+                type(value) in {int, float} and math.isfinite(value) and value > 0
+                for value in milestones
+            )
+            and all(left < right for left, right in zip(milestones, milestones[1:]))
+            and type(cap) in {int, float}
+            and math.isfinite(cap)
+            and milestones[-1] == cap,
+            "evaluation milestones require increasing positive finite seconds "
+            "ending at the trainer cap",
+        )
+        require(
+            milestones == [14400, 28800, 43200] and cap == 43200,
+            "production evaluation milestones require the selected 4/8/12-hour schedule",
+        )
+        locator = selected["evaluation_protocol"]
+        require(
+            isinstance(locator, dict) and set(locator) == {"path", "sha256"},
+            "evaluation protocol requires an exact path/SHA256 locator",
+        )
+        files.check(locator)
+        controls.update(
+            evaluation_milestones_seconds=copy.deepcopy(milestones),
+            evaluation_protocol=copy.deepcopy(locator),
+        )
+    return controls
+
+
 def materialize_configs(descriptor, directory, *, source_validate=True):
     """Six actual source configs from selected artifact references and budget.
 
@@ -197,6 +256,15 @@ def materialize_configs(descriptor, directory, *, source_validate=True):
     budget = json.loads(files.check(descriptor["budget"]).read_text())
     names = selected_candidates(descriptor)
     selected_budget(budget, names, staged=descriptor.get("schema") == "nine_model_lane_inputs_v1")
+    execution_controls = {
+        name: selected_execution_controls(
+            descriptor["candidates"][name],
+            name.split("_")[0],
+            budget["candidates"][name]["training_limits"],
+            files,
+        )
+        for name in names
+    }
     directory = Path(directory).resolve()
     require(not directory.exists(), "config publication already exists")
     directory.mkdir(parents=True)
@@ -229,6 +297,7 @@ def materialize_configs(descriptor, directory, *, source_validate=True):
             "device": "cuda:0",
             "initialization": initializer,
             "resource_floors": selected.get("resource_floors", {}),
+            **execution_controls[name],
         }
         limits = budget["candidates"][name]["training_limits"]
         if family == "eagle":
