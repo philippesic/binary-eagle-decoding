@@ -205,7 +205,9 @@ class PausedLaunchTests(unittest.TestCase):
 class SixSourceConfigTests(unittest.TestCase):
     def set_timed_budget(self, descriptor, budgets):
         for entry in budgets.values():
-            entry["training_limits"]["max_seconds"] = 43200
+            entry["training_limits"] = {
+                key: 43200 if key == "max_seconds" else None for key in entry["training_limits"]
+            }
         path = Path(descriptor["budget"]["path"])
         content = json.loads(path.read_text())
         content["candidates"] = budgets
@@ -323,6 +325,20 @@ class SixSourceConfigTests(unittest.TestCase):
                 )
                 if not name.startswith("eagle"):
                     selected["checkpoint_retention"] = retention
+                else:
+                    template = json.loads(
+                        Path(selected["eagle_config_template"]["path"]).read_text()
+                    )
+                    template["training"].update(
+                        max_steps=7,
+                        max_tokens=11,
+                        max_epochs=2,
+                        max_seconds=1,
+                        development_lifecycle="embedded",
+                    )
+                    path = root / f"{name}-template.json"
+                    path.write_text(json.dumps(template))
+                    selected["eagle_config_template"] = {"path": str(path), "sha256": sha256(path)}
             result = builder.materialize_configs(descriptor, root / "configs")
             for name, pin in result["configs"].items():
                 spec = trainer.load_spec(pin["path"])
@@ -331,8 +347,54 @@ class SixSourceConfigTests(unittest.TestCase):
                 self.assertEqual(spec["evaluation_protocol"], locator)
                 if name.startswith("eagle"):
                     self.assertNotIn("checkpoint_retention", spec)
+                    continuous = json.loads(Path(spec["eagle_config"]["path"]).read_text())
+                    self.assertEqual(continuous["training"]["development_lifecycle"], "standalone")
+                    limits = {
+                        key: continuous["training"][key]
+                        for key in ("max_steps", "max_tokens", "max_seconds", "max_epochs")
+                    }
                 else:
                     self.assertEqual(spec["checkpoint_retention"], retention)
+                    limits = spec["limits"]
+                self.assertEqual(limits, budgets[name]["training_limits"])
+                self.assertEqual(limits["max_seconds"], 43200)
+                self.assertTrue(all(v is None for k, v in limits.items() if k != "max_seconds"))
+
+    def test_timed_limits_reject_early_caps_and_missing_fields_before_publication(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            descriptor, budgets = self.fixture(root)
+            self.set_timed_budget(descriptor, budgets)
+            protocol = root / "protocol.json"
+            protocol.write_text("{}")
+            locator = {"path": str(protocol), "sha256": sha256(protocol)}
+            for name in ("eagle_a8", "eagle_a1", "dspark_a8", "dflash_a1"):
+                descriptor["candidates"][name].update(
+                    evaluation_milestones_seconds=[14400, 28800, 43200],
+                    evaluation_protocol=locator,
+                )
+                expected = dict(budgets[name]["training_limits"])
+                for key in expected.keys() - {"max_seconds"}:
+                    for missing in (False, True):
+                        with self.subTest(candidate=name, key=key, missing=missing):
+                            changed = dict(expected)
+                            if missing:
+                                changed.pop(key)
+                            else:
+                                changed[key] = 1
+                            budgets[name]["training_limits"] = changed
+                            path = Path(descriptor["budget"]["path"])
+                            content = json.loads(path.read_text())
+                            content["candidates"] = budgets
+                            path.write_text(json.dumps(content))
+                            descriptor["budget"]["sha256"] = sha256(path)
+                            output = root / f"invalid-{name}-{key}-{missing}"
+                            with self.assertRaisesRegex(ValueError, "elapsed-only training limits"):
+                                builder.materialize_configs(
+                                    descriptor, output, source_validate=False
+                                )
+                            self.assertFalse(output.exists())
+                budgets[name]["training_limits"] = expected
 
     def test_invalid_optional_controls_refuse_even_without_source_validation(self):
         with tempfile.TemporaryDirectory() as folder:

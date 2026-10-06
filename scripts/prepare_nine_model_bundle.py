@@ -233,6 +233,17 @@ def selected_execution_controls(selected, family, limits, files):
             milestones == [14400, 28800, 43200] and cap == 43200,
             "production evaluation milestones require the selected 4/8/12-hour schedule",
         )
+        limit_keys = {
+            "max_steps",
+            "max_tokens" if family == "eagle" else "max_supervised_tokens",
+            "max_seconds",
+            "max_epochs",
+        }
+        require(
+            set(limits) == limit_keys
+            and all(limits[key] is None for key in limit_keys - {"max_seconds"}),
+            "timed evaluation requires explicit elapsed-only training limits",
+        )
         locator = selected["evaluation_protocol"]
         require(
             isinstance(locator, dict) and set(locator) == {"path", "sha256"},
