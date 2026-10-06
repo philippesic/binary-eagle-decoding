@@ -108,6 +108,29 @@ class ProposalTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "selectors differ"):
             self.prepare()
 
+    def test_separate_native_artifacts_preserve_client_and_ancestry(self):
+        runtime_root = Path("/home/philip/shared-artifacts")
+        summaries = self.prepare(native_artifact_root=runtime_root)
+        for summary in summaries:
+            directory = self.root / "output" / f"captured-prefix-{summary['train_prompts']}"
+            plan = proposals.load_json(directory / "remote-plan.json")
+            self.assertEqual(plan["native"]["binary"], {
+                "path": str(runtime_root / proposals.BINARY_RELATIVE),
+                "sha256": proposals.BINARY_SHA,
+            })
+            self.assertEqual(plan["native"]["target"], {
+                "path": str(runtime_root / "models/gguf/Qwen3-4B-f16.gguf"),
+                "sha256": proposals.TARGET_SHA,
+            })
+            self.assertTrue(plan["native"]["client_source"]["path"].startswith("/home/philip/project/scripts/"))
+            self.assertEqual(plan["native"]["source_revision"], proposals.NATIVE_REVISION)
+            self.assertEqual(plan["native"]["tokenizer_metadata_sha256"], "b" * 64)
+            self.assertFalse(summary["selected_for_execution"])
+
+    def test_relative_native_artifact_root_fails(self):
+        with self.assertRaisesRegex(ValueError, "absolute"):
+            self.prepare(native_artifact_root=Path("relative-runtime"))
+
     def test_tampered_source_fails_before_plan(self):
         with (self.stage / "train-00000.index.jsonl").open("a") as stream:
             stream.write("{}\n")

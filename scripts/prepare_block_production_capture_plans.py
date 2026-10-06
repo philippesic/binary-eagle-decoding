@@ -129,11 +129,13 @@ def disk_gate(required, observed):
 
 
 def prepare(*, options_dir, depth_evidence, source_root, checkout_root, asset_root,
-            output_root, build_provenance=None, verified_transfer=None, observed_free_disk_bytes=None):
+            output_root, build_provenance=None, verified_transfer=None, observed_free_disk_bytes=None,
+            native_artifact_root=None):
     options_dir, source_root, output_root = map(Path, (options_dir, source_root, output_root))
     checkout_root, asset_root = Path(checkout_root), Path(asset_root)
-    if not checkout_root.is_absolute() or not asset_root.is_absolute():
-        raise ValueError("explicit absolute remote checkout and asset roots required")
+    native_artifact_root = checkout_root if native_artifact_root is None else Path(native_artifact_root)
+    if any(not p.is_absolute() for p in (checkout_root, asset_root, native_artifact_root)):
+        raise ValueError("explicit absolute remote checkout, asset and native artifact roots required")
     depth_path = require_file(depth_evidence, DEPTH_SHA)
     depths = load_json(depth_path)
     if depths["status"] != STATUS:
@@ -195,8 +197,8 @@ def prepare(*, options_dir, depth_evidence, source_root, checkout_root, asset_ro
         target_pins = load_json(files["target-source-pins.json"]["local"]["path"])
         if any(native[k] != target_pins[k] for k in ("tokenizer_metadata_sha256", "chat_template_sha256")):
             raise ValueError("historical tokenizer/template differs from actual target metadata pins")
-        native["binary"] = {"path": str(checkout_root / BINARY_RELATIVE), "sha256": BINARY_SHA}
-        native["target"]["path"] = str(checkout_root / "models/gguf/Qwen3-4B-f16.gguf")
+        native["binary"] = {"path": str(native_artifact_root / BINARY_RELATIVE), "sha256": BINARY_SHA}
+        native["target"]["path"] = str(native_artifact_root / "models/gguf/Qwen3-4B-f16.gguf")
         native["client_source"]["path"] = str(checkout_root / client_relative)
         runtime = {
             "schema": "nine_model_train_capture_runtime_v1", "binary_sha256": BINARY_SHA,
@@ -295,6 +297,8 @@ def main():
     parser.add_argument("--checkout-root", type=Path, required=True, help="actual remote source checkout/root")
     parser.add_argument("--asset-root", type=Path, required=True, help="actual verified remote transport root")
     parser.add_argument("--output-root", type=Path, required=True)
+    parser.add_argument("--native-artifact-root", type=Path,
+                        help="absolute remote runtime/weight root; defaults to checkout-root")
     parser.add_argument("--build-provenance", type=Path)
     parser.add_argument("--verified-transfer", type=Path)
     parser.add_argument("--observed-free-disk-bytes", type=int)
