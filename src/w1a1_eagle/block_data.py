@@ -12,7 +12,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import mmap
 import random
+import threading
+from collections import OrderedDict
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -308,7 +312,13 @@ def validate_native_receipt(native, chain, tokens, producer, vocab_size, target_
 
 
 def import_capture_plan(
-    plan_path, *, expected_sha256, output_dir, max_capture_bytes=1024**3, admission_output=None
+    plan_path,
+    *,
+    expected_sha256,
+    output_dir,
+    max_capture_bytes=1024**3,
+    admission_output=None,
+    budget_check=None,
 ):
     """Materialize a manifest from pinned original native receipts, without tensor copies.
 
@@ -359,6 +369,8 @@ def import_capture_plan(
         raise ValueError("empty native capture import plan")
     output.mkdir(parents=True)
     for index, source in enumerate(plan["chains"]):
+        if budget_check is not None:
+            budget_check()
         expected = {
             "chain_id",
             "prompt_id",
@@ -487,7 +499,12 @@ def import_capture_plan(
     manifest_path = output / "manifest.json"
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
     # Re-read the exact completed bytes and reject all shape/split/prefix errors.
-    audited = BlockDataset(manifest_path, expected_sha256=file_sha256(manifest_path))
+    audited = BlockDataset(
+        manifest_path,
+        expected_sha256=file_sha256(manifest_path),
+        audit_only=True,
+        budget_check=budget_check,
+    )
     audited.write_admission(admission_output or output / "completed-admission.json")
     return manifest_path
 
@@ -531,6 +548,15 @@ class BlockDataset:
     The external manifest pin is an owner admission, not self-authentication.
     The inventory and independently pinned producer receipt bind every chain's
     original TRAIN membership and actual native target/hardware ancestry.
+
+    Construction audits one chain at a time and closes every private mapping.
+    Training lazily caches at most max_mapped_chains (one by default). Public
+    access copies full context and seven full-vocabulary teacher rows, so cache
+    eviction/close never invalidates an active NumPy batch or Torch view. Caller
+    retention of multiple copied batches and model/workspace memory are separate
+    from this mapping bound; storage_summary reports their per-block geometry.
+    Page advice is optional: without it, audit RSS can reach one full chain's
+    mapped bytes plus finite-check temporaries, never the whole mapped corpus.
     """
 
     def __init__(
@@ -543,7 +569,16 @@ class BlockDataset:
         verify_artifacts=True,
         admission_path=None,
         admission_sha256=None,
+        audit_only=False,
+        max_mapped_chains=1,
+        budget_check=None,
     ):
+        self.audit_only = audit_only
+        if type(audit_only) is not bool:
+            raise ValueError("audit_only must be boolean")
+        self.max_mapped_chains = _positive(max_mapped_chains, "max_mapped_chains")
+        self._map_lock = threading.RLock()
+        self._budget_check = budget_check
         self.path = Path(manifest_path).resolve()
         if not _hash(expected_sha256) or file_sha256(self.path) != expected_sha256:
             raise ValueError("manifest differs from external SHA256 pin")
@@ -669,7 +704,8 @@ class BlockDataset:
             or receipt.get("capture_mode") != "target_only_autoregressive_train"
         ):
             raise ValueError("producer receipt does not join target/TRAIN/tap/vocabulary contract")
-        self._arrays = {}
+        self._arrays = OrderedDict()
+        self._array_bytes = {}
         self.chains = {}
         self.native_receipts = {}
         prompt_splits = {}
@@ -713,80 +749,204 @@ class BlockDataset:
                 if key in map_ and map_[key] != chain["split"]:
                     raise ValueError("calibration splits must be prompt/content disjoint")
                 map_[key] = chain["split"]
-            tokens = self._array(chain["tokens"], np.dtype("int64"), verify_artifacts)
-            features = self._array(chain["features"], np.dtype("float32"), verify_artifacts)
-            logits = (
-                None
-                if chain["logits"] is None
-                else self._array(chain["logits"], np.dtype("float32"), verify_artifacts)
-            )
-            if (
-                tokens.ndim != 1
-                or len(tokens) < 2
-                or np.any(tokens < 0)
-                or np.any(tokens >= self.vocab_size)
-            ):
-                raise ValueError("target tokens outside full vocabulary")
-            if features.shape != (len(tokens), 5, self.target_width):
-                raise ValueError("five-tap feature shape differs from captured token sequence")
-            indices = chain.get("logits_indices")
-            if "logits_indices" in chain:
-                if logits is None or indices is None:
-                    raise ValueError("indexed teacher requires an explicit row map and logits")
-                validate_logits_indices(indices, len(tokens))
-            if logits is not None and logits.shape != (
-                len(indices) if indices is not None else len(tokens),
-                self.vocab_size,
-            ):
-                raise ValueError("exact full-vocabulary teacher logits required")
-            if not 1 <= _positive(chain["prompt_length"], "prompt_length") < len(tokens):
-                raise ValueError("prompt boundary outside captured chain")
-            anchors = chain["anchors"]
-            if (
-                not isinstance(anchors, list)
-                or not anchors
-                or any(type(a) is not int for a in anchors)
-                or anchors != sorted(set(anchors))
-                or anchors[0] < chain["prompt_length"] - 1
-                or anchors[-1] + 7 >= len(tokens)
-            ):
-                raise ValueError("chronological anchors lack complete teacher horizon")
-            if indices is not None:
-                validate_logits_indices(
-                    indices, len(tokens), expected=block_teacher_indices(anchors)
+            # No mapped arrays escape the complete per-chain admission audit.
+            with self._mapped_chain(chain, verify_artifacts=verify_artifacts) as arrays:
+                tokens, features, logits = arrays
+                if (
+                    tokens.ndim != 1
+                    or len(tokens) < 2
+                    or np.any(tokens < 0)
+                    or np.any(tokens >= self.vocab_size)
+                ):
+                    raise ValueError("target tokens outside full vocabulary")
+                if features.shape != (len(tokens), 5, self.target_width):
+                    raise ValueError("five-tap feature shape differs from captured token sequence")
+                indices = chain.get("logits_indices")
+                if "logits_indices" in chain:
+                    if logits is None or indices is None:
+                        raise ValueError("indexed teacher requires an explicit row map and logits")
+                    validate_logits_indices(indices, len(tokens))
+                if logits is not None and logits.shape != (
+                    len(indices) if indices is not None else len(tokens),
+                    self.vocab_size,
+                ):
+                    raise ValueError("exact full-vocabulary teacher logits required")
+                if not 1 <= _positive(chain["prompt_length"], "prompt_length") < len(tokens):
+                    raise ValueError("prompt boundary outside captured chain")
+                anchors = chain["anchors"]
+                if (
+                    not isinstance(anchors, list)
+                    or not anchors
+                    or any(type(a) is not int for a in anchors)
+                    or anchors != sorted(set(anchors))
+                    or anchors[0] < chain["prompt_length"] - 1
+                    or anchors[-1] + 7 >= len(tokens)
+                ):
+                    raise ValueError("chronological anchors lack complete teacher horizon")
+                if indices is not None:
+                    validate_logits_indices(
+                        indices, len(tokens), expected=block_teacher_indices(anchors)
+                    )
+                if indices is not None:
+                    validate_logits_indices(
+                        receipt.get("chains", {}).get(cid, {}).get("logits_indices"),
+                        len(tokens),
+                        expected=indices,
+                    )
+                if receipt.get("chains", {}).get(cid) != {
+                    "tokens_sha256": chain["tokens"]["sha256"],
+                    "features_sha256": chain["features"]["sha256"],
+                    "logits_sha256": None if chain["logits"] is None else chain["logits"]["sha256"],
+                    "prompt_id": chain["prompt_id"],
+                    "prompt_sha256": chain["prompt_sha256"],
+                    "prompt_length": chain["prompt_length"],
+                    "native_receipt_sha256": None
+                    if chain["native_receipt"] is None
+                    else chain["native_receipt"]["sha256"],
+                } | ({"logits_indices": indices} if indices is not None else {}):
+                    raise ValueError("chain artifacts/prompt boundary differ from producer receipt")
+                if producer["kind"] == "native_target_only":
+                    if chain["native_receipt"] is None:
+                        raise ValueError(
+                            "production chain requires original native producer receipt"
+                        )
+                    native = json.loads(
+                        self._artifact(chain["native_receipt"], verify_artifacts=True).read_text()
+                    )
+                    validate_native_receipt(
+                        native, chain, tokens, producer, self.vocab_size, self.target_width
+                    )
+                    self.native_receipts[cid] = native
+                self.chains[cid] = chain
+                self._array_bytes[cid] = (
+                    tokens.nbytes,
+                    features.nbytes,
+                    0 if logits is None else logits.nbytes,
                 )
-            if indices is not None:
-                validate_logits_indices(
-                    receipt.get("chains", {}).get(cid, {}).get("logits_indices"),
-                    len(tokens),
-                    expected=indices,
-                )
-            if receipt.get("chains", {}).get(cid) != {
-                "tokens_sha256": chain["tokens"]["sha256"],
-                "features_sha256": chain["features"]["sha256"],
-                "logits_sha256": None if chain["logits"] is None else chain["logits"]["sha256"],
-                "prompt_id": chain["prompt_id"],
-                "prompt_sha256": chain["prompt_sha256"],
-                "prompt_length": chain["prompt_length"],
-                "native_receipt_sha256": None
-                if chain["native_receipt"] is None
-                else chain["native_receipt"]["sha256"],
-            } | ({"logits_indices": indices} if indices is not None else {}):
-                raise ValueError("chain artifacts/prompt boundary differ from producer receipt")
-            if producer["kind"] == "native_target_only":
-                if chain["native_receipt"] is None:
-                    raise ValueError("production chain requires original native producer receipt")
-                native = json.loads(
-                    self._artifact(chain["native_receipt"], verify_artifacts=True).read_text()
-                )
-                validate_native_receipt(
-                    native, chain, tokens, producer, self.vocab_size, self.target_width
-                )
-                self.native_receipts[cid] = native
-            self.chains[cid] = chain
-            self._arrays[cid] = (tokens, features, logits)
         if not self.chains:
             raise ValueError("empty block capture")
+
+    def _budget(self):
+        if self._budget_check is not None:
+            self._budget_check()
+
+    @staticmethod
+    def _close_arrays(arrays):
+        # Only private mappings are closed; public data access always copies.
+        for value in arrays:
+            if isinstance(value, np.memmap):
+                value._mmap.close()
+
+    @contextmanager
+    def _mapped_chain(self, chain, *, verify_artifacts=True, audit=True):
+        arrays = []
+        try:
+            for name, dtype in (
+                ("tokens", "int64"),
+                ("features", "float32"),
+                ("logits", "float32"),
+            ):
+                self._budget()
+                record = chain[name]
+                arrays.append(
+                    None
+                    if record is None
+                    else self._array(
+                        record,
+                        np.dtype(dtype),
+                        verify_artifacts,
+                        audit=audit,
+                    )
+                )
+            yield tuple(arrays)
+        finally:
+            self._close_arrays(arrays)
+            self._budget()
+
+    def _check_chain(self, chain):
+        for name in ("tokens", "features", "logits"):
+            record = chain[name]
+            if record is not None:
+                path = (self.path.parent / record["path"]).resolve()
+                if _fingerprint(path) != {
+                    k: v for k, v in self._fingerprints[str(path)].items() if k != "sha256"
+                }:
+                    raise ValueError("consumed capture artifact changed after admission")
+
+    @contextmanager
+    def _chain_arrays(self, chain_id):
+        if self.audit_only:
+            raise ValueError("audit-only dataset prohibits batch/feature use")
+        # Serializes mapping/copying, so another consumer cannot evict live views.
+        with self._map_lock:
+            chain = self.chains[chain_id]
+            self._check_chain(chain)
+            if chain_id not in self._arrays:
+                while len(self._arrays) >= self.max_mapped_chains:
+                    _, arrays = self._arrays.popitem(last=False)
+                    self._close_arrays(arrays)
+                arrays = []
+                try:
+                    for name, dtype in (
+                        ("tokens", "int64"),
+                        ("features", "float32"),
+                        ("logits", "float32"),
+                    ):
+                        record = chain[name]
+                        arrays.append(
+                            None
+                            if record is None
+                            else self._array(
+                                record,
+                                np.dtype(dtype),
+                                True,
+                                audit=False,
+                            )
+                        )
+                    self._check_chain(chain)
+                except BaseException:
+                    self._close_arrays(arrays)
+                    raise
+                self._arrays[chain_id] = tuple(arrays)
+            self._arrays.move_to_end(chain_id)
+            yield self._arrays[chain_id]
+
+    def has_teacher(self, chain_id):
+        return self.chains[chain_id]["logits"] is not None
+
+    def copy_golden_prefix(self, chain_id, length):
+        """Copy the exact full prefix features and its full-vocabulary last teacher."""
+        with self._chain_arrays(chain_id) as arrays:
+            tokens, features, logits = arrays
+            if type(length) is not int or not 1 <= length <= len(tokens) or logits is None:
+                raise ValueError("golden prefix boundary/teacher invalid")
+            indices = self.chains[chain_id].get("logits_indices")
+            offset = length - 1
+            if indices is not None:
+                if offset not in indices:
+                    raise ValueError("golden prefix teacher absent from exact row map")
+                offset = indices.index(offset)
+            prefix = tuple(int(t) for t in tokens[:length])
+            context = np.array(features[:length], dtype=np.float32, copy=True)
+            teacher = np.array(logits[offset : offset + 1], dtype=np.float32, copy=True)
+            if not np.isfinite(context).all() or not np.isfinite(teacher).all():
+                raise ValueError("consumed native golden prefix nonfinite")
+            return prefix, context, teacher
+
+    def copy_feature_rows(self, chain_id, positions):
+        """Copy selected calibration rows without exposing cache-backed views."""
+        with self._chain_arrays(chain_id) as arrays:
+            selected = np.array(arrays[1][positions], dtype=np.float32, copy=True)
+            if not np.isfinite(selected).all():
+                raise ValueError("consumed native context features nonfinite")
+            return selected
+
+    def close(self):
+        """Release private cache mappings; already returned batches remain valid."""
+        with self._map_lock:
+            for arrays in self._arrays.values():
+                self._close_arrays(arrays)
+            self._arrays.clear()
 
     def _artifact(self, record, *, verify_artifacts):
         if (
@@ -804,12 +964,19 @@ class BlockDataset:
             or admitted != fingerprint | {"sha256": record["sha256"]}
         ):
             raise ValueError("completed admission does not bind this exact artifact")
-        if not path.is_file() or (not admitted and file_sha256(path) != record["sha256"]):
+        previous = self._fingerprints.get(str(path))
+        if previous is not None and (
+            fingerprint is None or previous != fingerprint | {"sha256": record["sha256"]}
+        ):
+            raise ValueError("capture artifact changed after admission")
+        if not path.is_file() or (
+            not admitted and previous is None and file_sha256(path) != record["sha256"]
+        ):
             raise ValueError("capture artifact missing or SHA256 differs")
         self._fingerprints[str(path)] = fingerprint | {"sha256": record["sha256"]}
         return path
 
-    def _array(self, record, dtype, verify_artifacts):
+    def _array(self, record, dtype, verify_artifacts, *, audit=True):
         path = self._artifact(record, verify_artifacts=verify_artifacts)
         if "shape" in record:
             shape = record["shape"]
@@ -830,78 +997,89 @@ class BlockDataset:
             value = np.memmap(path, mode="r", dtype="<f4", shape=tuple(shape))
         else:
             value = np.load(path, mmap_mode="r", allow_pickle=False)
-        if value.dtype != dtype or not value.flags.c_contiguous:
-            raise ValueError("capture requires contiguous exact native dtype")
-        # Check in bounded row slices rather than forming a full logits bool tensor.
-        if self._fully_audited:
-            for first in range(0, len(value), 16):
-                if not np.isfinite(value[first : first + 16]).all():
-                    raise ValueError("capture array contains nonfinite values")
-        return value
+        try:
+            if value.dtype != dtype or not value.flags.c_contiguous:
+                raise ValueError("capture requires contiguous exact native dtype")
+            # Full finite audit in bounded slices. Discard read pages where the
+            # platform supports advice; correctness never depends on advice.
+            if audit and self._fully_audited:
+                for first in range(0, len(value), 16):
+                    self._budget()
+                    if not np.isfinite(value[first : first + 16]).all():
+                        raise ValueError("capture array contains nonfinite values")
+                    if hasattr(value._mmap, "madvise") and hasattr(mmap, "MADV_DONTNEED"):
+                        try:
+                            value._mmap.madvise(mmap.MADV_DONTNEED)
+                        except (OSError, ValueError):
+                            pass
+                self._check_array_fingerprint(path)
+            return value
+        except BaseException:
+            self._close_arrays((value,))
+            raise
+
+    def _check_array_fingerprint(self, path):
+        if _fingerprint(path) != {
+            k: v for k, v in self._fingerprints[str(path)].items() if k != "sha256"
+        }:
+            raise ValueError("capture artifact changed during audit")
 
     def load_block(self, chain_id: str, block_index: int, *, require_teacher=False) -> BlockBatch:
         chain = self.chains[chain_id]
         if type(block_index) is not int or not 0 <= block_index < len(chain["anchors"]):
             raise ValueError("block index outside chain")
-        tokens, features, logits = self._arrays[chain_id]
-        anchor = chain["anchors"][block_index]
-        for name in ("tokens", "features", "logits"):
-            record = chain[name]
-            if record is not None:
-                path = (self.path.parent / record["path"]).resolve()
-                if _fingerprint(path) != {
-                    k: v for k, v in self._fingerprints[str(path)].items() if k != "sha256"
-                }:
-                    raise ValueError("consumed capture artifact changed after admission")
-        for first in range(0, anchor, 16):
-            if not np.isfinite(features[first : first + 16]).all():
-                raise ValueError("consumed native context features nonfinite")
-        begin = 0  # both selected releases use the admitted author-layout path
-        labels = np.full(7, -1, dtype=np.int64)
-        labels[begin:] = tokens[anchor + 1 : anchor + 8 - begin]
-        predecessors = np.full(7, -1, dtype=np.int64)
-        predecessors[begin] = tokens[anchor]
-        predecessors[begin + 1 :] = labels[begin:-1]
-        teacher = None
-        if require_teacher and logits is None:
-            raise ValueError("exact full-vocabulary teacher logits absent")
-        if logits is not None:
-            if 7 * self.vocab_size * 4 > self.max_teacher_bytes:
-                raise MemoryError("per-block full-vocabulary teacher exceeds declared bound")
-            teacher = np.zeros((7, self.vocab_size), dtype=np.float32)
-            indices = chain.get("logits_indices")
-            if indices is None:
-                teacher[begin:] = logits[anchor : anchor + 7 - begin]
-            else:
-                # Admission proves complete coverage of absolute positions.
-                offsets = np.searchsorted(indices, np.arange(anchor, anchor + 7 - begin))
-                for slot, offset in enumerate(offsets, start=begin):
-                    teacher[slot] = logits[offset]
-            if not np.isfinite(teacher).all():
-                raise ValueError("consumed full-vocabulary teacher nonfinite")
-        prefix = tuple(int(t) for t in tokens[: anchor + 1])
-        hashes = (None,) * begin + tuple(
-            token_sha256(tokens[: anchor + i + 1]) for i in range(7 - begin)
-        )
-        noise = np.full(7, self.manifest["mask_token_id"], dtype=np.int64)
-        noise[0] = tokens[anchor]
-        return BlockBatch(
-            self.manifest["family"],
-            chain_id,
-            block_index,
-            features[:anchor],
-            prefix,
-            noise,
-            np.arange(anchor, anchor + 7, dtype=np.int64),
-            labels,
-            np.arange(7) >= begin,
-            np.ones((7, anchor + 7), dtype=bool),
-            teacher,
-            hashes,
-            predecessors,
-            self.manifest["producer"]["target_sha256"],
-            self.sha256,
-        )
+        with self._chain_arrays(chain_id) as arrays:
+            tokens, features, logits = arrays
+            anchor = chain["anchors"][block_index]
+            for first in range(0, anchor, 16):
+                if not np.isfinite(features[first : first + 16]).all():
+                    raise ValueError("consumed native context features nonfinite")
+            begin = 0  # both selected releases use the admitted author-layout path
+            labels = np.full(7, -1, dtype=np.int64)
+            labels[begin:] = tokens[anchor + 1 : anchor + 8 - begin]
+            predecessors = np.full(7, -1, dtype=np.int64)
+            predecessors[begin] = tokens[anchor]
+            predecessors[begin + 1 :] = labels[begin:-1]
+            teacher = None
+            if require_teacher and logits is None:
+                raise ValueError("exact full-vocabulary teacher logits absent")
+            if logits is not None:
+                if 7 * self.vocab_size * 4 > self.max_teacher_bytes:
+                    raise MemoryError("per-block full-vocabulary teacher exceeds declared bound")
+                teacher = np.zeros((7, self.vocab_size), dtype=np.float32)
+                indices = chain.get("logits_indices")
+                if indices is None:
+                    teacher[begin:] = logits[anchor : anchor + 7 - begin]
+                else:
+                    # Admission proves complete coverage of absolute positions.
+                    offsets = np.searchsorted(indices, np.arange(anchor, anchor + 7 - begin))
+                    for slot, offset in enumerate(offsets, start=begin):
+                        teacher[slot] = logits[offset]
+                if not np.isfinite(teacher).all():
+                    raise ValueError("consumed full-vocabulary teacher nonfinite")
+            prefix = tuple(int(t) for t in tokens[: anchor + 1])
+            hashes = (None,) * begin + tuple(
+                token_sha256(tokens[: anchor + i + 1]) for i in range(7 - begin)
+            )
+            noise = np.full(7, self.manifest["mask_token_id"], dtype=np.int64)
+            noise[0] = tokens[anchor]
+            return BlockBatch(
+                self.manifest["family"],
+                chain_id,
+                block_index,
+                np.array(features[:anchor], dtype=np.float32, copy=True),
+                prefix,
+                noise,
+                np.arange(anchor, anchor + 7, dtype=np.int64),
+                labels,
+                np.arange(7) >= begin,
+                np.ones((7, anchor + 7), dtype=bool),
+                teacher,
+                hashes,
+                predecessors,
+                self.manifest["producer"]["target_sha256"],
+                self.sha256,
+            )
 
     def order(self, split, seed, epoch=0):
         if split not in SPLITS or type(seed) is not int or type(epoch) is not int or epoch < 0:
@@ -984,11 +1162,22 @@ class BlockDataset:
         return {
             "chains": len(self.chains),
             "blocks": sum(len(c["anchors"]) for c in self.chains.values()),
-            "feature_bytes": sum(f.nbytes for _, f, _ in self._arrays.values()),
-            "teacher_bytes": sum(
-                0 if logits is None else logits.nbytes for _, _, logits in self._arrays.values()
-            ),
+            "feature_bytes": sum(sizes[1] for sizes in self._array_bytes.values()),
+            "teacher_bytes": sum(sizes[2] for sizes in self._array_bytes.values()),
             "max_block_teacher_bytes": 7 * self.vocab_size * 4,
+            "max_cached_chains": 0 if self.audit_only else self.max_mapped_chains,
+            "max_audit_mapped_chains": 1,
+            "max_chain_array_bytes": max(sum(sizes) for sizes in self._array_bytes.values()),
+            "max_cache_array_bytes": 0
+            if self.audit_only
+            else sum(
+                sorted((sum(sizes) for sizes in self._array_bytes.values()), reverse=True)[
+                    : self.max_mapped_chains
+                ]
+            ),
+            "max_block_context_bytes": max(
+                c["anchors"][-1] * 5 * self.target_width * 4 for c in self.chains.values()
+            ),
             "producer_hardware": self.manifest["producer"]["hardware"],
             "portability_status": "requires_fresh_target_device_trajectory_check",
         }

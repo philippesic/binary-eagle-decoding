@@ -39,7 +39,6 @@ def select_rows(dataset, split, rows_per_chain, max_total_rows):
         if chain["split"] != split:
             continue
         # Features are layer inputs at committed context rows, before anchor.
-        _, features, _ = dataset._arrays[cid]
         stop = chain["anchors"][-1]
         count = min(stop, rows_per_chain)
         if count == 0:
@@ -47,7 +46,7 @@ def select_rows(dataset, split, rows_per_chain, max_total_rows):
         if count > remaining:
             raise MemoryError("calibration row cap cannot cover all selected prompt groups")
         positions = np.unique(np.linspace(0, stop - 1, count).astype(int))
-        chunks.append(np.asarray(features[positions]).reshape(len(positions), -1))
+        chunks.append(dataset.copy_feature_rows(cid, positions).reshape(len(positions), -1))
         selected.append(
             {
                 "chain_id": cid,

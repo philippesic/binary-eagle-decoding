@@ -235,6 +235,21 @@ class NativeCaptureGoldens:
                 raise ValueError("golden source changed after admission")
         return None
 
+    def has_teacher(self, chain_id):
+        return self._arrays[chain_id][2] is not None
+
+    def copy_golden_prefix(self, chain_id, length):
+        self.load_block(chain_id, 0, require_teacher=True)
+        tokens, features, logits = self._arrays[chain_id]
+        if type(length) is not int or not 1 <= length <= len(tokens):
+            raise ValueError("golden prefix boundary invalid")
+        offset = 0 if len(logits) == 1 else length - 1
+        return (
+            tuple(int(t) for t in tokens[:length]),
+            np.array(features[:length], copy=True),
+            np.array(logits[offset : offset + 1], copy=True),
+        )
+
 
 def compare_matrix(reference, current, *, atol, rtol, chunk_rows=16):
     if (
@@ -302,8 +317,7 @@ def select_goldens(dataset, max_tokens, max_cases):
             chain = dataset.chains[cid]
             if chain["domain"] != domain:
                 continue
-            tokens, _, logits = dataset._arrays[cid]
-            if logits is None:
+            if not dataset.has_teacher(cid):
                 continue
             eligible = [
                 (index, anchor)
@@ -438,8 +452,8 @@ def run_gate(
         )
         for cid, length in cases:
             chain = dataset.chains[cid]
-            tokens, saved_features, saved_logits = dataset._arrays[cid]
-            prefix = [int(t) for t in tokens[:length]]
+            tokens, saved_features, saved_last = dataset.copy_golden_prefix(cid, length)
+            prefix = list(tokens)
             ancestry = {
                 k: chain[k] for k in ("prompt_id", "prompt_sha256", "domain", "prompt_length")
             }
@@ -478,9 +492,6 @@ def run_gate(
                 fresh_features,
                 atol=args.feature_atol,
                 rtol=args.feature_rtol,
-            )
-            saved_last = (
-                saved_logits[:1] if len(saved_logits) == 1 else saved_logits[length - 1 : length]
             )
             logit_check = compare_matrix(
                 saved_last,

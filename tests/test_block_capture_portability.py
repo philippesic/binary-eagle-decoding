@@ -80,11 +80,7 @@ class PortabilityTests(unittest.TestCase):
                 if stop:
                     raise InterruptedError("synthetic STOP")
                 cid = chain_ancestry["prompt_id"]
-                _, features, logits = owner.dataset._arrays[cid]
-                fresh_features = np.asarray(features[: len(tokens)]).copy()
-                fresh_logits = np.asarray(
-                    logits[:1] if len(logits) == 1 else logits[len(tokens) - 1 : len(tokens)]
-                ).copy()
+                _, fresh_features, fresh_logits = owner.dataset.copy_golden_prefix(cid, len(tokens))
                 if mutation:
                     mutation(fresh_features, fresh_logits)
                 root = owner.root / f"fresh-{cid}"
@@ -194,11 +190,11 @@ class PortabilityTests(unittest.TestCase):
         cases = []
         for cid, chain in self.dataset.chains.items():
             receipt = json.loads(Path(chain["native_receipt"]["path"]).read_text())
-            tokens, features, logits = self.dataset._arrays[cid]
+            tokens, features, logits = self.dataset.copy_golden_prefix(cid, 3)
             files = {}
             for name, array in (
                 ("features", np.asarray(features[:3, :3])),
-                ("logits", np.asarray(logits[2:3])),
+                ("logits", logits),
             ):
                 path = self.root / f"eagle-{cid}-{name}.f32"
                 np.ascontiguousarray(array).tofile(path)
@@ -217,7 +213,7 @@ class PortabilityTests(unittest.TestCase):
                         "kv_reused_from_same_chain": False,
                     }
                 ],
-                tokens=tokens[:3].tolist(),
+                tokens=list(tokens[:3]),
                 tap_ids=list(gate.EAGLE_TAPS),
                 features_shape=[3, 3, 2],
                 logits_shape=[1, 32],

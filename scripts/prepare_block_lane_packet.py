@@ -206,7 +206,7 @@ def load_data(files, inputs, runtime):
         )
     if inputs["objective"] == "full_probability_l1" and inputs["conditioning"] == "captured_prefix":
         require(
-            all(dataset._arrays[c["chain_id"]][2] is not None for c in train),
+            all(c["logits"] is not None for c in train),
             "offline exact probability L1 requires all selected TRAIN anchor teachers",
         )
     return dataset, extent

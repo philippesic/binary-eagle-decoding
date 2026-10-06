@@ -79,7 +79,7 @@ def main():
         "profiles": {
             "hard_ce_target_prefix": "PASS",
             "exact_soft_teacher_target_prefix": "PASS"
-            if all(logits is not None for _, _, logits in dataset._arrays.values())
+            if all(c["logits"] is not None for c in dataset.chains.values())
             else "PENDING: missing full-vocabulary logits",
             "student_prefix_after_divergence": "EXCLUDED: requires fresh exact-prefix recapture",
         },

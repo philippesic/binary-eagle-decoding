@@ -959,6 +959,7 @@ def run_capture(
         runtime_pin = cost["runtime"]
         manifests = {}
         for family in ("dspark", "dflash"):
+            budget()
             block_plan = {
                 "schema": "block_capture_plan_v1",
                 "family": family,
@@ -975,7 +976,9 @@ def run_capture(
                 expected_sha256=pin["sha256"],
                 output_dir=output / family,
                 max_capture_bytes=caps["max_total_bytes"],
+                budget_check=budget,
             )
+            budget()
             manifests[family] = {"path": str(manifest), "sha256": file_sha256(manifest)}
         eagle_pin = write_json(
             output / "eagle-goldens.json",

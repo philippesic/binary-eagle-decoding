@@ -388,6 +388,22 @@ class NativeRawImportTests(unittest.TestCase):
         self.assertEqual(batch.context_features.shape, (9, 5, 2))
         self.assertIsInstance(dataset._arrays["chain0"][1], np.memmap)
 
+    def test_import_streams_audit_and_checks_existing_budget(self):
+        checks, audits = [], []
+        constructor = BlockDataset
+
+        def audit(*args, **kwargs):
+            self.assertTrue(kwargs["audit_only"])
+            dataset = constructor(*args, **kwargs)
+            self.assertFalse(dataset._arrays)
+            audits.append(dataset)
+            return dataset
+
+        with patch("w1a1_eagle.block_data.BlockDataset", side_effect=audit):
+            self.import_(budget_check=lambda: checks.append(True))
+        self.assertEqual(len(audits), 1)
+        self.assertGreater(len(checks), len(self.plan["chains"]) * 3)
+
     def test_raw_capture_import_bound_refuses(self):
         with self.assertRaisesRegex(MemoryError, "bound"):
             self.import_(max_capture_bytes=20)
