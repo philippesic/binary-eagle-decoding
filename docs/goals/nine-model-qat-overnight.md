@@ -2169,4 +2169,52 @@ Root alone controls transport $259 / @288 / %290. Next: integrate tested prompt
 adapter repair, fresh release/lease, current A8 native comparison; finish bounded
 controller recovery and combined source tests, then production block preparation.
 
+## Native comparison running; timed source accepted — October 5, 23:43 PDT
+
+Run eagle-a8-paused-native-20261005-02 started 23:39:12 PDT in detached Linux
+tmux binary-eagle-runtime / root-eagle-a8-paused-native-20261005-02. Checkout
+runs/checkouts/paused-eagle-eval-4288cb2 at 4288cb2021a8b908879d137439a866c672d8a421;
+adapter SHA 11a6e1a5709a7c380b0db92db7594ace51e91ceae8bae8eff9a67d2375193f40.
+Exact frozen c254 helper and cc9 native runtime remain selected. Run01 CPU export
+is reused after authenticating its joint/base/audit/model joins. Original prompt
+bytes are unchanged; file-level admitted split metadata is adapted only in memory.
+Fourteen owner/independent CPU regressions pass; no arbitrary split gate waived.
+
+Live supervisor 65693 / birth 20331005; controller 65698 / birth 20331011;
+boot 517c4a36-e475-4a5f-9fa6-65de57edc6fe. Parent observed 72 clean trained/Q4/
+target records at 23:41, no failure. This is partial runtime progress, not final
+acceptance. Actual group/birth identities for each native server are written in
+its stage process.json. Stop: output STOP sentinel plus SIGINT to exact current
+supervisor after birth/boot verification; 90-second supervisor grace; prove all
+recorded server groups and CUDA/DXG holders absent before reporting free.
+
+Output: results/nine-model-qat-overnight/eagle-a8-paused-native-20261005-02.
+Fresh release proof before launch SHA
+16dd62d092bd774815cb578fcbe10aa9bd74a44975f3b01e54682f8eb844e3de;
+fresh startup lease SHA
+9218f28cb6bab66a4cb3cd73492711e957aecbcfc432284579bd98b4fe136ce3.
+Comparisons: five clean repetitions, two warmups/cell, original24 unsealed dev
+prompts, 128-output cap, F16 target/KV, target-only and original Q4_0. Separate
+native diagnostic pass. Current trained versus initial comparisons are separate
+paired sweeps, each with fresh Q4/target controls. Wait for complete report/parity/
+diagnostic/release gates before reporting acceptance or total-request throughput.
+
+Timed code integrated through 725b8477; parent combined 86 CPU tests PASS.
+Raw evidence: results/twelve-hour-qa/combined-source-tests-02.log in parent
+integration worktree. Prior combined failure was an invalid timed test retaining
+max_steps=1; valid explicit elapsed-only budget now tested, defaults byte-identical.
+Independent review confirms newer periodic progress recovery with rollback refusal
+and nine request/receipt/controller crash windows across three families plus
+corruption/acknowledgment checks. A derived recovery receipt records zero recovery
+updates and never inflates completion. Ambiguous duplicate exports fail closed.
+Actual SM120 timed train/export/evaluation/resume remains unverified until genuine
+next-lane preparation and hardware execution. One existing CPU A1 gradient test
+failure reproduces on untouched baseline; source gate was not weakened.
+
+All bounded source owners/reviewers finished, no remote authority. Root owns the
+healthy comparison and SAME two-hour heartbeat. Block exposure/conditioning still
+awaits the human choice; indexed native build needs corrected pinned toolchain,
+then selected production capture/calibration/model/admission. Do not compile on
+remote CPUs during native timing or claim remaining five models are training.
+
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->
