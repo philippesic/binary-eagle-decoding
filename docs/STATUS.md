@@ -4,7 +4,7 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Active: twelve-hour nine-model campaign — October 6, 00:09 PDT
+## Active: twelve-hour nine-model campaign — October 6, 00:48 PDT
 
 Human resumed RTX5080 and revised the same unfinished campaign. First evaluate
 preserved EAGLE A8, then DSpark A8, DFlash A8, EAGLE A1, DSpark A1, DFlash A1.
@@ -20,8 +20,14 @@ of 24 prompts: 4,765 / 46,125 accepted (**10.3306%**), versus original Q4
 8,025 / 30,290 (**26.4939%**). Complete A8/Q4 outputs match all 120 paired
 requests; both differ from target-only on one prompt at token 98. Strict
 quality gate FAILED and is preserved; no deployment/performance success claim.
-Untrained calibrated A8 comparison is now running separately, same protocol.
-A bounded raw-logit probe will investigate the shared discrepancy after release.
+Untrained A8 measured **2.3932%** (1,485 / 62,050); training improves acceptance
+4.32×. Both complete sweeps and the bounded raw-logit probe are finished, GPU
+release proved. The probe reproduced a small ranking flip shared with Q4.
+[Native report](../experiments/nine-model-qat-overnight/current-eagle-a8-acceptance-20261006.md)
+preserves the failed quality gate and exact provenance.
+Corrected indexed SM120 runtime build is active (two jobs, 12 GiB memory cap).
+Original block bases/calibration references/TRAIN source are being staged; no
+production capture or new model training has started.
 Timed source passes 86 combined CPU checks plus 18 current adapter checks and
 independent recovery review; next-lane actual SM120 execution remains pending.
 SAME heartbeat ACTIVE every 2 hours; root alone owns RTX5080. Block exposure

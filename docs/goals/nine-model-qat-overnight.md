@@ -2271,4 +2271,61 @@ results/twelve-hour-qa/worker-evidence/manifest.json in primary local workspace.
 No remaining-five training launched. Human block exposure/conditioning choice
 still pending; compile corrected indexed runtime after native timing completes.
 
+## EAGLE observations complete; block runtime and assets — October 6, 00:48 PDT
+
+Both current native sweeps finished 360 clean + 72 diagnostic records each.
+Initial A8 accepted 1,485 / 62,050 = 2.3932%, 0.117951 accepted/round; trained
+10.3306% is4.3166× initialization but below Q4 26.4939%. Trained request speed
+92.8508 tokens/s =0.64536× its paired Q4; initial70.4592 =0.49268× its own Q4.
+Every clean raw measurement pin independently SHA-verified after Mac transfer.
+Both A8/Q4 complete outputs/counts/finish reasons match all120 pairs. Strict
+native target-only parity remains FAILED, shared at one late near-tie prompt.
+
+Actual three-arm bounded probe61312f1 reproduced original outputs and common
+first98 IDs/rendered prompt. Raw sampled/emitted/nonreplay joins and causal
+prefix checks passed, noNaNs. A8/Q4 identical scores at98: token1519 31.634883881,
+token12 31.629983902 (gap+0.004899979); target-only31.624923706/31.630243301
+(gap-0.005319595). Source dispatch depends on actual column count; numerical
+sensitivity supported, batching only a hypothesis. No further open-ended numeric
+diagnostic, arbitrary threshold or historic gate relabeling. Probe supervisor
+69464/controller69469 absent, all owned servers/context groups released PASS.
+SummarySHA175303f902f286e4e163b56825ce3a472f365a3fa1a2abb2b3dc74c0ece858be;
+ancestrySHA12042d0b894481a175461d102ac36c7d96168a59adcad3cf7c1e18c85f151633.
+Probe initial leaseaad0b2e08ec6fa639ffa19a9a4323b30a428f620d0efd91d1f209c1a1852bede;
+prelaunch release48668d7f7aecd9769b80496955e15a1cdebfccc70b1ca3d8550f88891dbf70cb.
+18 owner/independent/root CPU probe checks PASS; real native diagnostic now PASS
+for evidence collection only. Trained14.43h accounting/snapshot untouched.
+
+Current report: experiments/nine-model-qat-overnight/current-eagle-a8-acceptance-20261006.md.
+Raw/derived evidence local primary results/twelve-hour-qa/native-raw/ and
+results/twelve-hour-qa/eagle-current-native-summary.json. Original absolute remote
+paths remain in raw JSON, with explicit local mapping and original SHA pins.
+
+Indexed ecff SM120 build native-indexed-sm120-build-20261006-03 started00:32:12PDT,
+using separate native worktree runs/checkouts/native-indexed-ecff-20261005;
+output runs/build/native-indexed-ecff-sm120-20261005-v2. Supervisor69786/birth20648999,
+child69791/birth20649006, unchangedboot; detached Linux tmux root-<run> under
+binary-eagle-runtime. Two compile jobs, actual systemd user scope12GiB memory
+maximum/zero swap; scope preflight PASS. CMake/Ninja paths explicit; all2109
+private compatibility-header bytes verified against original manifest277f7cec...
+Flags match successful CUDA13.1/GCC15.2 setup, arch120, graphs/FAON, forcecuBLAS/
+MMQOFF, testsON. At00:36,118/362 actions, healthy; build/runtime admission not
+claimed complete. Stop exact supervisor SIGINT after birth/boot check, prove
+all descendant compile groups gone; preserve partial build/raw failures.
+
+Fresh remote path inventory found block originals/references/copied TRAIN shard
+absent at canonical paths. Independent Mac originals verified;23 files /5,692,192,234B
+are being transferred to new data/block-production-assets-20261006-01, no overwrites.
+Includes original BF16 bases and ancestry metadata, F32 extracted FC/norm references,
+original copied TRAIN shard/index/corpus/source pins only; no sealed final payload.
+After transport completion, verify every actual remote byte against transfermanifest.
+A copied base/proposal does not establish production capture/calibration/readiness.
+
+Root sole operator. MCP control $259/@288/%290; additional read-only/asset transport
+@289/%291, same owner (SSH only through MCP). SAME120-minute heartbeat ACTIVE;
+native Goal ACTIVE. No next-model QAT launched. Human block exposure/conditioning
+question remains essential and pending; original block-Q4 files/final authority
+also pending. Continue build and genuine asset preparation without inventing
+scientific approval or running unadmitted training. All bounded workers finished.
+
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->
