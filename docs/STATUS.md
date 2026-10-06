@@ -4,40 +4,38 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Active: nine-model RTX5080 overnight QAT — October 4, 23:41 PDT
+## Paused: nine-model RTX5080 overnight QAT — October 5, 17:41 PDT
 
-Human declared RTX5080 fully available and authorized relevant QAT as soon
-as preflight passes, 30-minute healthcheck/repair and continued healthy runs
-overnight/into morning. Root resumed5080 locally and created a new ACTIVE
-native Goal carrying the full unfinished nine-model objective. RTX2080Ti
-remains outside this team's scope.
+Human explicitly paused training and all RTX5080 use. The local RTX5080 flag
+blocks new work. Both recorded supervisors were interrupted, the trainer stopped
+gracefully, and all five owned processes/groups are absent. Complete privileged
+DXG census and NVIDIA compute-app census are empty; utilization is 0%. The GPU
+is released from this project. RTX2080Ti remains untouched and outside scope.
 
-[Active overnight goal](goals/nine-model-qat-overnight.md) records sole owner
-`01a10c8a-22bb-7380-9a8c-d9802a51b679`, new successor as sole GPU operator.
-All transferred bounded workers are complete. First ready calibratedfixedA8 lane
-is prioritized with delegated24h cumulativetrainerallocation and frequent
-checkpoints; remaining candidates queue without premature readiness claims.
-30-minute heartbeat `nine-model-overnight-qat-monitor` is ACTIVE in the successor chat.
-**QAT is actively running onRTX5080/SM120**: calibrated fixed EAGLE W1A8,
-342892updates with committed342750 checkpoint; all required fresh admission/source/
-device gates PASS. Finite18selected gradients, actual sign/scale movement and
-cache/batchedhead execution;8.16GBGPUfree/18.11GBhostavailable. ActualTRAIN
-coverage4195prompts/1630638rows at51659.91trainerseconds; no quality/win claim.
+[Paused overnight goal](goals/nine-model-qat-overnight.md) retains the unchanged
+unfinished six-candidate/three-original-Q4 objective and coordinator
+`01a10c8a-22bb-7380-9a8c-d9802a51b679`. No training or evaluation is running.
+The SAME30-minute heartbeat is PAUSED, saved configuration readback verified.
+EAGLE W1A8 stopped at **344,724 updates**, saved checkpoint344724, with
+**51,950.92 trainer-seconds (14.43 h)** and 4,218 TRAIN prompts/1,639,464 rows.
+The 2,788,094,948-byte resume checkpoint was directly SHA256-verified:
+`34978ea458afdc43794edf4a26e5d80a860ce0fd6c1d16ac1a3961203a591423`.
+Budget active attempt is null; the original86,400-second allocation is unchanged.
+No native acceptance/throughput result exists for this paused calibrated run.
 
-Run eagle-a8-qat-overnight-20261005-04; supervisor55097/controller55098/trainer
-55398. Root is sole remote operator.24h cumulative allocation/no smaller cap,
-checkpoints250/keep3;30-minute heartbeat ACTIVE. Actual run passed1000 without
-periodic evaluation stop. Keep healthy training active into morning; remaining
-five candidates/fullnine-model endpoint preparation/evaluation stay unfinished.
-DirectA1 packet source passes14 independentchecks; authentic CPU-only A1fusion
-calibration completed1536fit/768validation rows without interrupting A8. Actual
-A1 actor/export/SM120 admission remainsPENDING.
-Latest live handles and source/checkpoint proof are in the linked goal and
-ignored monitor registration. All previous failed attempts are retained.
-Separate passiveendpoint watcher56606/56611 is armed on frozenplan9f989383...;
-waits for naturalbudgetcompletion/exactcheckpoint/ownedrelease beforeCPUexport
-and originalQ4/target-only development comparison. No newGPUsidejob; healthy
-trainer remains untouched. Source/packetQA passed, actualevaluation PENDING.
+Training run `eagle-a8-qat-overnight-20261005-04` and passive watcher
+`eagle-a8-endpoint-watch-20261005-01` are interrupted by human request. The
+watcher is disarmed; its raw signal failure remains preserved. Independent
+release proof is recorded despite its internal release field being PENDING.
+Resume requires explicit human authorization, fresh resource/ownership checks,
+exact checkpoint/accounting preservation and new bindings for retired process
+identities. The remaining five candidates, original block-control files and
+full nine-model evaluation remain unfinished. A1 CPU calibration/source metadata
+are preserved; actual actor/export/SM120 admission remains pending.
+
+The dated entries below are historical; the latest pause overrides their active
+training instructions. Detailed stop/release evidence is in the linked goal and
+ignored `human-pause-20261005-1741.json` receipt.
 
 **05:15 PDT safe rotation checkpoint:** all bounded workers finished. Block
 lane adapter and concrete balanced capture/storage proposals are integrated;

@@ -1,6 +1,11 @@
 # Nine-model RTX5080 overnight QAT
 
-## Active objective and direct authorization
+**Current state: PAUSED by human request, October 5, 17:41 PDT.** Training and
+endpoint watcher stopped; all owned groups/compute contexts released. SAME
+heartbeat PAUSED. Full unfinished objective is preserved; no new5080 use until
+explicit human resume. Latest pause checkpoint is at the end of this file.
+
+## Unfinished objective and original authorization
 
 October 4, 23:41 PDT / October 5, 06:41 UTC. Human: “5080 is fully available,
 go ahead and continue your work there. when all preflight is ready, i want
@@ -9,7 +14,7 @@ you to start running relevant qat on the 5080, and simply monitor it every
 not stop it. i expect to wake up in the morning to qat still actively being
 run. set a new slash goal and go for it”.
 
-This supersedes Mac-only/no5080 access and the preparation-only training
+At that time this superseded Mac-only/no5080 access and the preparation-only training
 boundary. Root resumed local5080 flag and created a new ACTIVE native Goal.
 This is the sole current goal; it carries the entire unfinished preparation
 objective from [the preparation record](nine-model-qat-preparation.md),
@@ -93,18 +98,17 @@ chat turns and ownership rotation. Human pause/stop takes priority.
 
 ## Current evidence and next action
 
-Calibrated EAGLE W1A8 QAT is admitted and actively running on RTX5080/SM120.
-All fresh receipt gates and strict source/device checks passed. It has passed
-342892 optimizer updates with a committed342750 checkpoint (earlier2750 bytes SHA-verified), finite gradients and
-actual cache/head execution. Root owns the exact live supervisor/controller/
-trainer and transport recorded in the latest checkpoint below and ignored
-monitor registration. The30-minute heartbeat is ACTIVE; preserve healthy
-24h training across morning, idle chat and monitor ticks.
+Calibrated EAGLE W1A8 QAT is human-paused after344,724 updates and51,950.92
+trainer-seconds onRTX5080/SM120. Final stopped resume checkpoint SHA is directly
+verified. All former five supervisor/controller/trainer identities and owned
+groups are absent; complete DXG and compute-app censuses are empty. SAME
+30-minute heartbeat PAUSED. No ongoing GPU ownership/use is claimed.
 
 Other five candidates and final nine-model export/evaluation remain unfinished.
-Continue quiet healthchecks; repair concrete failures from exact committed
-state only after owned release. Do not mutate the running source/config/lane/
-lease or stop it to sample another lane. Dated sections below preserve history.
+Do not run healthcheck/repair/training/evaluation or restart from a paused monitor.
+Resume only after explicit human authorization with preserved exact checkpoint/
+accounting and fresh source/device/ownership bindings. Dated sections preserve
+history; the latest pause supersedes their earlier active-run instructions.
 
 
 ## Production source and durability milestone — October 5, 00:01 PDT
@@ -2005,5 +2009,54 @@ unchanged/about9.65trainerhours remain/no wall ETA. Next around18:04PDT.
 Current calibrated native acceptance PENDING; originalsource-pinned A1 queues
 after natural trainer AND endpoint release. Other model/device/controls/held-out
 gates and09:25human inputs stay pending;17:04keep-training instruction preserved.
+
+## Human pause; full RTX5080 release — October 5, 17:41 PDT
+
+Human explicitly requested: "ok pause trainging and all 5080 use". This supersedes
+the earlier keep-training instruction. Immediately marked onlyRTX5080 paused in
+the shared local host registry; RTX2080Ti untouched. Verified exact original boot
+and five PID/birth identities, wrote endpoint/lane/training STOP sentinels, sent
+SIGINT to watcher supervisor56606 and primary supervisor55097, and SIGTERM to
+original trainer55398 for graceful checkpoint save. No broad-name kill or new job.
+
+Both remote_job supervisors record intentional SIGINT interruptions/exit1:
+watcher endedOctober6,00:39:00.434469UTC; primary ended00:39:14.330564UTC
+(October5,17:39PDT). Trainer status is stopped; all five recorded PIDs and their
+owned groups are absent. Watcher raw endpoint state says failed/"campaign signal15"
+and internal owned_release PENDING. This is the preserved human interruption,
+not a scientific/model failure; external complete release evidence below is
+independent. Automatic endpoint is disarmed, no export/evaluation was launched.
+
+Stopped checkpoint344,724, epoch0/cursor345,558:
+`/home/philip/binary-eagle-decoding/runs/checkouts/nine-model-qat-overnight-5f53740/runs/eagle-a8-qat-overnight-20261005-04/lane/training/checkpoints/step-000000344724-e000000-r000000345558/resume.pt`.
+File size2,788,094,948bytes; direct stream SHA256 PASS:
+34978ea458afdc43794edf4a26e5d80a860ce0fd6c1d16ac1a3961203a591423.
+Full resume checkpoint retained; source/config/data ancestry and optimizer/RNG/
+cursor serialization unchanged. No restore/restart is claimed. Training ledger
+settled51,950.921720trainerseconds (14.43h), active_attempt=null, max86,400 unchanged;
+34,449.078280seconds remain in that original allocation. Coverage4,218TRAINprompts/
+1,639,464distinct supervised rows. All earlier failures/runs remain preserved.
+
+AtOctober6,00:40:58.589525UTC (October5,17:40:58PDT), fixed hash-bound privileged
+read-only DXG observer returned complete=true/effectiveUID0/holders=[] with same
+boot517c4a36-e475-4a5f-9fa6-65de57edc6fe and PIDnamespace. NVIDIA compute-app
+census empty; memory snapshot3,082MiBused/12,896MiBfree/utilization0%, reflecting
+idle/display baseline rather than zero driver memory. Project GPU/context release
+PASS. Sole MCPSSH transport is closed after final proof; no remote use continues.
+
+SAME `nine-model-overnight-qat-monitor` updated PAUSED through app API and saved
+configuration readback confirmed exact target. Native Goal pause follows this
+durable checkpoint. Ignored local structured proof:
+`results/nine-model-qat-overnight/human-pause-20261005-1741.json`, SHA
+82edd401b58ec0ab13830876d9cf6acb166f1b1275b6ef8699115cd9bc1576c8;
+adjacent raw stop/status/root-census/checkpoint-hash evidence retained.
+
+Full six-candidate/three-original-Q4 objective remains unfinished. No new5080
+work, remote healthcheck, QAT, repair, capture, export or evaluation until explicit
+human resume. Resume needs fresh availability/ownership/source/device checks,
+exact committed checkpoint plus unchanged paid accounting, and fresh lane/endpoint
+bindings for retired process identities; do not reuse the old watcher as armed.
+A1 calibration/source preparation and block options/controls/sealed-final gates
+are preserved as pending. No current calibrated acceptance/throughput result.
 
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->
