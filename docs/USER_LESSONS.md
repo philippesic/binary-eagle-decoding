@@ -762,3 +762,19 @@ additional proof protocols or redoing completed audit work.
   separately. Epoch/cursor counters and optimizer updates are different again.
   Read the appropriate original receipt before making dataset-count comparisons
   or recommending a smaller corpus because of a misunderstood denominator.
+
+### 2026-10-06: Check the frozen execution environment, not only source hashes
+
+- Root's first DSpark calibration attempt failed before native GPU construction
+  because a fresh checkout did not inherit the GGUF Python helper path. CPU
+  planning and correct file hashes had not tested the actual import environment.
+- Raw failure stayed preserved; complete GPU release was verified, the explicit
+  existing helper path passed imports, and genuine capture then passed ten
+  prompts. No trainer time or model state was lost; no user mistake occurred.
+- Run exact-environment imports before detached launch. A later release wrapper
+  call also passed integers where process identity dictionaries were required;
+  preserve that wrapper failure and use actual API-shaped identities. Do not
+  label a failed bookkeeping probe as release evidence. The serial driver has
+  a fresh complete census before each native phase and old identities were
+  independently absent. Keep admission calls and dependent launches sequential
+  so their returned verdict is inspected before the mutation.
