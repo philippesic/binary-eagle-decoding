@@ -2383,4 +2383,54 @@ optimizer/RNG/cursor/accounting. Do not repeat EAGLE training or old audits.
 Current strict target-only parity failure/numeric evidence remains recorded;
 no silent change to original quality gates or numerical thresholds.
 
+## Two concrete capture proposals validated — October 6, 01:34 PDT
+
+Previous goal turn classified PROGRESS: actual native EAGLE observations, indexed
+build/CUDA primitive evidence and byte-verified block assets changed next actions.
+This continuation adds concrete, unselected capture packets; it is not a verified
+wait on training. No GPU job is running, and the human exposure choice is still
+pending. Same full six-candidate/three-original-Q4 objective remains ACTIVE.
+
+Source owner3142d437 prepared both 450/750 captured-prefix proposals: source
+selectors are exact original shard0,32 fit/16 validation/150or250 TRAIN per domain,
+full512 prompt +128 generated tokens/640 chain rows, full-context F32 five taps,
+F32 all151936 vocabulary logits at126 retained/129 temporary rows. Parent11 CPU
+checks and independent11 checks PASS; original-byte and rehashed duplicate-group
+attacks reject. Both actual original local plans pass current producer. No model,
+teacher, CUDA execution, role selection, precision reduction or crop occurred.
+
+Actual remote path audit found historical packet04 points to a missing client in
+the old dirty primary checkout. Preserve04 unchanged; do not publish it as
+launchable. Root staged clean frozen source at
+runs/checkouts/block-capture-plans-3142d43 and regenerated packet05 with this
+explicit client root. Both packet05 plans pass real remote default CPU planning,
+exit0 / PENDING_NATIVE_CAPTURE / failure=null. This validates schema, path, source,
+content/group/role joins and cost geometry, not native realization or admission.
+
+Packet05 local: results/nine-model-qat-overnight/
+block-production-capture-plans-20261006-05/; remote: same relative path inside the
+new frozen checkout. Proposal manifest SHA
+62c294511a3a7100f61c997c8f47e56d5ae16cb455a61ed763fcaac9e7074d7c.
+Remote450 plan4406468212422f5d1c3d61fee74819f86a693225dd1af2c8f253c010127ad219;
+remote750 plane3c1cafd3e8ac2217a4a3f3a624763b08b9c1bb33ec5c4ceafdc870c70c2b2dd.
+Remote planning reports13c4216dd6d02bd59b1ce26f3b63914e38c62374c4f29194373a5e63785b82d2
+and9155730232b324a7ee130928f9b0309b3b7eda342b752128da294f93b3bf0f45,
+under remote-validation-{450,750}-01/. Historical source receipts untouched.
+
+Fresh disk189,381,636,096B at08:10UTC (~176.375GiB). Capture-only requirements,
+including10GiB reserve:450 77,121,547,123B;750 110,557,799,923B. Both fit this
+snapshot; future four-block-model checkpoint/initial/export/storage ledger is
+NOT admitted. Actual native target/client/library rehash, supervisor limits,
+importer RSS/FD peaks and fresh owned availability still required before capture.
+The strict producer runtime schema stays unchanged; actual library/build/transport
+provenance is separate. Both options remain PROPOSAL_ONLY_NOT_SELECTED.
+
+One bounded read-only explorer now checks concrete mmap/RSS/FD behavior of the
+full-sized importer; no GPU rights. This addresses the stated preparation risk,
+not a repeat corpus/source audit. Root alone owns MCP$259/@288/%290 and transfer
+@289/%291. SAME120-minute heartbeat/Goal ACTIVE; no hidden data choice, numeric
+gate relaxation or remaining-five training launch. Next: accept bounded importer
+finding/fix if necessary, finish incremental storage admission, then require the
+human's pending exposure/conditioning answer before the expensive native capture.
+
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->

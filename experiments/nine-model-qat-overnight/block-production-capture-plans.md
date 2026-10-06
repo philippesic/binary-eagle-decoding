@@ -145,7 +145,7 @@ selecting 450 or dropping data.
 ## Reproduction and remaining gates
 
 The final local ignored packet is
-`results/nine-model-qat-overnight/block-production-capture-plans-20261006-04/`
+`results/nine-model-qat-overnight/block-production-capture-plans-20261006-05/`
 in the primary workspace. Each `captured-prefix-{450,750}/` contains original
 option bytes, `local-plan.json`, `remote-plan.json`, the two derived corpus
 manifests, strict `runtime.json`, actual producer cost and `proposal.json`.
@@ -160,7 +160,7 @@ python3 scripts/prepare_block_production_capture_plans.py \
   --options-dir /Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-overnight/block-capture-options-20261005 \
   --depth-evidence /Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-overnight/block-exposure-depth-options-20261005/evidence.json \
   --source-root /Users/pippo/github/binary-eagle-decoding \
-  --checkout-root /home/philip/binary-eagle-decoding \
+  --checkout-root /home/philip/binary-eagle-decoding/runs/checkouts/block-capture-plans-3142d43 \
   --asset-root /home/philip/binary-eagle-decoding/data/block-production-assets-20261006-01 \
   --build-provenance /Users/pippo/github/binary-eagle-decoding/results/twelve-hour-qa/block-runtime-proof/runs/checkouts/nine-model-qat-overnight-5f53740/runs/native-indexed-sm120-build-20261006-03/build-provenance.json \
   --verified-transfer /Users/pippo/github/binary-eagle-decoding/results/twelve-hour-qa/block-runtime-proof/data/block-production-assets-20261006-01/verified-transfer.json \
@@ -178,7 +178,7 @@ a model. All SSH/transport remains the root owner's tmux MCP responsibility.
 python3 - <<'PY'
 import json, subprocess, sys
 from pathlib import Path
-base = Path('results/nine-model-qat-overnight/block-production-capture-plans-20261006-04')
+base = Path('results/nine-model-qat-overnight/block-production-capture-plans-20261006-05')
 for count in (450, 750):
     root = base / f'captured-prefix-{count}'
     proposal = json.loads((root / 'proposal.json').read_text())
@@ -206,3 +206,14 @@ synthetic producer CPU tests PASS; both real original selector proposals pass
 actual `prepare_plan` on the local source snapshot. No remote validation, model
 load, GPU operation, native capture, scientific selection or production-readiness
 claim was made by this worker. No live process is owned.
+
+Parent validation, October 6, 2026: the old primary remote checkout lacks the
+teacher client. Packet04 remains historical and unlaunchable at that client
+locator. Packet05 was regenerated with frozen checkout
+`/home/philip/binary-eagle-decoding/runs/checkouts/block-capture-plans-3142d43`.
+Both unchanged packet05 remote plans pass the actual producer's default CPU
+planning command on the host, with `PENDING_NATIVE_CAPTURE` and no failures.
+No model or teacher was executed. Parent11checks and independent11checks PASS;
+independent original-byte and rehashed duplicate-group tamper probes reject.
+The old report's statement that remote validation is unverified is superseded
+by this dated parent evidence; actual capture/admission remains pending.

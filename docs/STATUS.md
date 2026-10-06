@@ -4,7 +4,7 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Active: twelve-hour nine-model campaign — October 6, 01:03 PDT
+## Active: twelve-hour nine-model campaign — October 6, 01:34 PDT
 
 Human resumed RTX5080 and revised the same unfinished campaign. First evaluate
 preserved EAGLE A8, then DSpark A8, DFlash A8, EAGLE A1, DSpark A1, DFlash A1.
@@ -34,6 +34,11 @@ Timed source passes 86 combined CPU checks plus 18 current adapter checks and
 independent recovery review; next-lane actual SM120 execution remains pending.
 SAME heartbeat ACTIVE every 2 hours; root alone owns RTX5080. Block exposure
 choice remains pending; DSpark/DFlash/A1 training has not started.
+Both unselected captured-prefix exposure proposals are now concrete and pass
+actual remote CPU planning: 450/750 TRAIN prompts ×128 tokens, full context and
+F32 indexed full-vocabulary teachers. [Plans](../experiments/nine-model-qat-overnight/block-production-capture-plans.md)
+use frozen source; capture-only storage fits the observed snapshot. Full-campaign
+storage and importer RSS/FD admission remain pending. No native capture started.
 The [existing goal](goals/nine-model-qat-overnight.md) retains full six+three scope.
 Pending block exposure/conditioning and original control files remain real inputs;
 EAGLE evaluation and bounded independent CPU/source preparation proceed.
