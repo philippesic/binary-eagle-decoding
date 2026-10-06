@@ -4,32 +4,30 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Active DSpark A8 model admission — October 6, 15:04 PDT
+## Active DSpark A8 server startup repair — October 6, 15:31 PDT
 
-Human authorized starting the reviewed DSpark A8 run and hourly health/healing.
-Old nine-model monitor is deleted; replacement dspark-a8-hourly-health-and-healing
-is ACTIVE on the same root chat. Root remains sole RTX5080 operator.
+Human authorized starting DSpark A8 and hourly health/healing. The old automation
+is deleted; `dspark-a8-hourly-health-and-healing` is ACTIVE on the same chat.
+Root remains sole RTX5080/SSH operator. No paid optimizer updates have begun.
 
-Completed: all144 calibration prompts plus11 TRAIN diagnostic prompts captured;
-actual10-case/three-domain cold GPU replay matches every original tensor hash;
-first actual TRAIN cache shard/pair admitted; full96/48 fusion fit completed.
-Discrete initializer postnorm validation relative error0.629 versus scale-only0.872.
-Real CUDA zero-update model forward/backward/full-Adam-moment memory PASS:
-10.31GiB peak reserved,4.52GB GPU free at backward,3.25GB reserved moments.
-Initial checkpoint step0/elapsed0 SHA0385e017eb095d109f91dfdb786c964f996675579b1b89e278b1c144e9568391.
+Completed actual full144 calibration plus11 TRAIN diagnostic captures, exact
+10-case cold GPU replay,96/48 fusion fit, initial TRAIN shard/pair, CUDA model
+forward/backward/full-moment memory gate, zero checkpoint/export, native goldens,
+independent Portable8 QA and seven-row CUDA model graph test. Export SHA
+`ea1bc6896f046a936eb5c712520c36d150d9dd99823f5bffaaa34897f178bdf6`.
 
-No paid optimizer updates yet. Actual CUDA restore/export completed successfully as
-`dspark-a8-initial-export-20261006-01`, supervisor82694/birth25858230,
-child82699/birth25858235/PGID82699, boot517c4a36-e475-4a5f-9fa6-65de57edc6fe.
-Root verified ownership and release between every GPU phase. Sourcea19dbe00.
-Next: export, native goldens/independent QA/fresh native admission, actual0h
-24+96 evaluation, then43,200 trainer-seconds with0/4/8/12 native checkpoints.
-Existing strict target-only equality failure stays preserved; controller currently
-requires PASS receipts, so research-continuation policy must be resolved against
-actual0h evidence and approved bounds, never silently waived. All workers finished.
+The zero-hour native comparison failed before prompts: llama-server constructs a
+32-token reserve graph for the trained seven-slot Markov head. Exact output
+capacity also incorrectly reserves8. Raw attempt01 preserved; owned GPU release
+PASS, no training seconds charged. A bounded native worker is fixing synthetic
+reserve sizing while preserving batch/ubatch32 and seven real draft slots.
 
-Detailed evidence, failed wrappers and corrected metadata joins are preserved in
-the latest goal checkpoint and ignored results/dspark-launch-20261006/.
+Next: review/build/test narrow native fix in a new private runtime; retry0h with
+explicit capture/inference provenance, complete24+96 held-out measurements,
+resolve strict quality against actual evidence, finalize fresh six-gate admission,
+then43,200 trainer-seconds with4/8/12h native checks and5/15minute startup checks.
+Preserved EAGLE strict equality failure stays FAILED; no tolerance/waiver invented.
+Latest exact jobs, workers and artifacts are in the active goal checkpoint.
 
 Human resumed RTX5080 and revised the same unfinished campaign. First evaluate
 preserved EAGLE A8, then DSpark A8, DFlash A8, EAGLE A1, DSpark A1, DFlash A1.

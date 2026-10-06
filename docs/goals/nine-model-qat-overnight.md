@@ -2971,4 +2971,53 @@ Nextverifyownedexportrelease; nativegoldens/QA/bind/admission sequentialrelease;
 0h24+96; policyifnecessary; launchtruepositiveoptimizerupdatesand5/15minutehealth.
 Nooptimizerstep/trainersecondcharged. NoextraEAGLEtraining/2080/querysealed/final9claim.
 
+## Safe zero-hour startup incident checkpoint — October 6, 15:31 PDT
+
+Same authorized DSpark A8/fullcampaign objective,43,200trainer-seconds perremaining
+model, hourly healing plus5/15minute startup,4/8/12h native. Old monitor deleted;
+replacementACTIVE. Root01a10c8a-22bb-7380-9a8c-d9802a51b679 ownsGPU/SSH only.
+No new user decision, chat, Goal or exposure question. Main source d0d032d0;
+full runtime checkout a19dbe00, frozen capture4ba3f88b/nativeecff untouched.
+
+Actual export ea1bc6896f046a936eb5c712520c36d150d9dd99823f5bffaaa34897f178bdf6
+and audit d67035cbdcf8c7e9261fb8714630037b56950ca75bd3d9e81a0b177a3d310e25 PASS.
+Three actual native goldens SHA13f62f74098b2117f1d0273d7a5e8fc2f26e1725ae432f1aee365f8e298e35cf.
+Independent Portable8 ledger8ab2b8d388190768b5d147c5f6b71b4ebbaf9bc6cc1a80c7025af5b27f8ec693:
+246source/45receipt pins,63CPU+6negativechecks PASS; no freshSM120 bundleclaim.
+Production binding01a42518d361aa7f889c4a8fd5969d2be85fce21f48e4e3dc4011747adc53304
+and admission-plan0d9cfd6d318e046599a352b196da7564b978a44b9c93c0fd445bd72d59350d64 prepared,
+notexecutedfinalsixgates. Actual native test-block-binary jobinitial-native-model01
+finished0, seven-row CUDA graphPASS. Allprior jobscomplete; GPUreleased.
+
+Actual0h attemptdspark-a8-zero-native-20261006-01 ran22:23:44–22:23:56UTC,
+supervisor83357/child83362PGID83362. Childactualstatus identitybirth25998170,
+boot517c4a36-e475-4a5f-9fa6-65de57edc6fe; supervisorbirth unobservedbeforefinish.
+Remote ROOT/results/dspark-launch-20261006/zero-native-status.json provesempty
+owned/DXG/computecontext census, GPUfree14,586,740,736B/host19,806,961,664B.
+Raw server.log inzero-native/rep-00/dspark_a8 says W1AxMarkovblockexceedstrainedsize.
+No measurement oroptimizerstep. repairs_used0. Do notrepeatoldoutputdirectory.
+
+Worker/root/dspark_native_capacity_fix resumesbounded isolated/tmp/native-dspark-seven-capacity
+fromf588e3e97ca259574ea239a4d86c2788c05d47c6. Exactoutputcapacity7/generic+1
+plus48argumentregression cases sourcePASS; C++notrun. Capacityaloneinsufficient:
+contextgraphreserveusesubatch32tokenrows. Expandedownedcommon/speculative.cpp,
+src/llama-context.cpp, tests/test-arg-parser.cpp andtests/test-block-binary.cpp
+fornarrow authorW1AxMarkovblock7syntheticreserve sizing, preservingactualconfigured
+32/32 andnmax7/runtimeinvaliddecodeguard. NoSSH/GPU/build/push; rootreview/buildowns.
+Protocolworker/root/dspark_native_protocol_packet ownsignoredtimedplan/development
+admission builder plus96one-passqualitywrapper only; no trackedsource/docs orGPU.
+Otherboundedworkerscomplete. No workerresourcehandoffornewuserchat.
+
+Nextroot: acceptactualnativefixdiff/test, newprivateSM120server/testbuild with
+exactnewrevision/runtimepin inventory while preserving ecff teacher/data; retry0h
+repair1 withnewuniqueoutputs/provenance. Full24 currentdevdisjointness7700c294...
+and96file766763ab... prepared. Separate96onepassquality adapterinprogress.
+Thenactualstrictqualityreceipt/policy resolutionifnecessary(noinventedwaiver),
+finaltimedlane andfreshsixSM120gatesboundlaneSHA, paidtrainingpositiveupdates+
+finiteobjective/gradients/source/RNG/cursorproof and5/15minute startup checks.
+StrictEAGLE target-only FAIL remainshistoricFAIL. All0/4/8/12model/protocol/control
+acceptance/throughput required, sixcandidates/threeoriginalQ4 controls unfinished.
+Stopprocedureforanynewjob: authenticateexactsupervisorPID/birth/boot, TERMthatPID,
+remote_jobreapsownedgroup; requirecompleteownedgroup/DXG/computeabsencebeforefree.
+
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->
