@@ -17,7 +17,11 @@ Frozen data commit `47782923` integrated and published as `4ba3f88b`:
 All 10,000 original prompt identities remain: 9,856 TRAIN, 96 fit, 48 validation.
 All 22 original source files and the immutable capture packet were transported.
 Remote checkout is `runs/checkouts/dspark-data-capture-20261006-01` at `4ba3f88b`.
-First genuine calibration capture is next, after exact file/device admission.
+Genuine calibration chunk 0 is running since 13:38 PDT after exact file/device admission.
+Run dspark-a8-calibration-20261006-02: supervisor80229/birth25366797,
+child80234/birth25366803/PGID80234, native80254, boot517c4a36-e475-4a5f-9fa6-65de57edc6fe.
+First attempt failed missing GGUF import before native GPU use; failure preserved,
+release proved and helper path repaired. No optimizer time charged.
 Recipe and rotating-shard controller workers remain active; independent review
 closed budget/RNG issues and identified final-export publication recovery, now
 assigned for repair. Actual GPU backward/resume/native admission remains pending.

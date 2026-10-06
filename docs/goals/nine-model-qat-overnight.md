@@ -2817,4 +2817,32 @@ admission, then first positive optimizer update and healthy startup observations
 Do not weaken preserved EAGLE target-only parity failure or original Q4 ancestry.
 Capture/startup/evaluation time excluded; real trainer time boundaries enforced.
 
+## Actual calibration started — October 6, 13:38 PDT
+
+Full source/device read-back PASS:22originalfiles,six data modules,native teacher
+and F16 target match frozen pins. Detached actual capture run
+`dspark-a8-calibration-20261006-02`, socket binary-eagle-runtime,
+session root-dspark-a8-calibration-20261006-02, frozen checkout4ba3f88b.
+Supervisor80229 birth25366797, child80234 birth25366803 PGID80234,
+native teacher80254; boot517c4a36-e475-4a5f-9fa6-65de57edc6fe.
+Stop: verify supervisor identity then TERM80229; remote_job owns/reapschildgroup,
+then require processabsence and privileged DXG/compute release. Actualreceipt
+remote results/dspark-launch-20261006/calibration0000-live-registration02.json.
+Output runs/dspark-a8-full-pool-20261006-01/calibration-0000.
+First run01 failed missinggguf before native construction; rawfailurepreserved,
+complete releasePASS, envPYTHONPATH primarythird_party/llama.cpp/gguf-py repaired
+and actualimportPASS. Healthy native capture has22actualreceipts observed;
+optimizertrainingstillnotstarted. Root exclusive GPU owner unchanged.
+
+Routine resource decision preservesall96fit/48validation and32rows/prompt:
+separate calibration preparation cap64GiB (actualuniqueinodes includes failed
+staging+next8GiBwriter), declaredfitarraycap3GiB vs2.14GiB conservativeestimate.
+This explicitly extends temporary calibration storage, not simultaneous24GiB
+TRAINrawcache claim. KeepTRAINcache24GiB, checkpoints56GiB,exports12GiB,
+compactmetadata2GiB,freefloor10GiB; freshactual189GBdisk allows full reserve sum.
+Actualmeasured admission stillrequired beforeevery writer andfullCUDAmodelrun.
+No reduction ofpromptcount/precision/teacher/objective. Physicalcal probe default
+chainIDs require derivedprompt-basedlogicalID binding preservingoriginalmanifest,
+allnative/tensorbytes andprovenance before globalpublication; controllerassigned.
+
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->
