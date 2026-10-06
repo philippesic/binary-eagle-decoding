@@ -557,6 +557,40 @@ class ResearchContinuationTests(unittest.TestCase):
             "config_sha256": lane["config"]["sha256"],
         }
 
+    def test_historical_evidence_cannot_execute_export_or_callbacks(self):
+        plan, binding, records, diagnostics, policy, _ = self.fixture()
+        receipt = self.receipt_fixture(plan, binding, records, diagnostics, policy)
+        report = api._research_json(receipt["evaluation"])
+        exported = report["trained_export"]
+        context = exporter.validate_endpoint(
+            exported["frozen_lane"],
+            exported["lane_state"],
+            exported["supervisor_state"],
+            exported["training_receipt"],
+            checkpoint_mode="timed_evidence",
+        )
+        self.assertEqual(api._research_json(exported["supervisor_state"])["pid"], 98765)
+        output = self.root.resolve() / "forbidden-evidence-export"
+        calls = []
+
+        def forbidden(name):
+            def callback(*args, **kwargs):
+                calls.append(name)
+                raise AssertionError(f"evidence mode reached {name}")
+
+            return callback
+
+        with self.assertRaisesRegex(ValueError, "read-only timed evidence"):
+            exporter.export_endpoint(
+                context,
+                output,
+                release_check=forbidden("release check"),
+                cpu_admission=forbidden("CPU admission"),
+                run=forbidden("serializer"),
+            )
+        self.assertEqual(calls, [])
+        self.assertFalse(output.exists())
+
     def test_stage_relabel_duplicate_process_wrong_argv_input_and_old_checkpoint_replay_stop(self):
         plan, binding, records, diagnostics, policy, baseline = self.fixture()
         baseline_value = api._research_json(baseline)

@@ -576,6 +576,10 @@ def export_endpoint(
     cpu_admission must check fresh host RAM/disk for serialized and export peaks.
     Neither callback may stop a healthy trainer. Failed output directories stay.
     """
+    require(
+        context.get("checkpoint_mode") != "timed_evidence",
+        "read-only timed evidence cannot execute an export",
+    )
     require(callable(release_check) and callable(cpu_admission), "fresh runtime callbacks required")
     require(
         type(wall_seconds) in (int, float) and math.isfinite(wall_seconds) and wall_seconds > 0,
