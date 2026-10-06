@@ -251,6 +251,8 @@ def evaluate(
             port = protocol["port"]
             require(available_port("127.0.0.1", port), "native port occupied")
             command = native_command(bundle, protocol, native_cell, models.get(cell), port)
+            verbosity = protocol.get("diagnostic_log_verbosity", 4) if diagnostic else protocol.get("clean_log_verbosity", 3)
+            command += ["--log-verbosity", str(verbosity)]
             proc = None
             with (stage / "server.log").open("wb") as log:
                 try:
