@@ -33,6 +33,10 @@ class BlockCursor:
     stage: str = "direct"
     unique_blocks: tuple[str, ...] = ()
     data_cursor: dict | None = None
+    scheduler_state: dict | None = None
+    batch_reservation: dict | None = None
+    telemetry: dict | None = None
+    last_checkpoint_seconds: float = 0.0
     stage_updates: int | None = None
     stage_supervised_tokens: int | None = None
 
@@ -55,6 +59,18 @@ class BlockCursor:
                 raise ValueError("precision stage exposure counters invalid")
         if self.data_cursor is not None and not isinstance(self.data_cursor, dict):
             raise ValueError("data cursor must be an exact provider payload")
+        if self.scheduler_state is not None:
+            from .block_recipe import validate_schedule
+
+            validate_schedule(self.scheduler_state, self.elapsed_seconds)
+        if (
+            not math.isfinite(self.last_checkpoint_seconds)
+            or not 0 <= self.last_checkpoint_seconds <= self.elapsed_seconds
+        ):
+            raise ValueError("checkpoint cadence clock invalid")
+        for field in ("batch_reservation", "telemetry"):
+            if getattr(self, field) is not None and not isinstance(getattr(self, field), dict):
+                raise ValueError("checkpoint transaction/telemetry payload invalid")
         object.__setattr__(self, "unique_blocks", tuple(self.unique_blocks))
         if len(set(self.unique_blocks)) != len(self.unique_blocks):
             raise ValueError("unique block coverage contains duplicates")
@@ -91,7 +107,16 @@ def _cpu_tree(value):
     return value
 
 
-def _validate_optimizer(model, optimizer, saved, *, expected_updates, serialized=False):
+def _validate_optimizer(
+    model,
+    optimizer,
+    saved,
+    *,
+    expected_updates,
+    serialized=False,
+    scheduler_state=None,
+    elapsed_seconds=0.0,
+):
     """Exact stage-local Adam publication/recovery contract, before mutation."""
     if type(expected_updates) is not int or expected_updates < 0:
         raise ValueError("optimizer stage update count must be a nonnegative integer")
@@ -108,12 +133,20 @@ def _validate_optimizer(model, optimizer, saved, *, expected_updates, serialized
         raise ValueError("optimizer must own exactly current student parameters")
     if any(p.dtype != torch.float32 for p in parameters):
         raise ValueError("optimizer checkpoint masters/moments must be F32")
-    expected = optimizer.state_dict()
+    expected = block_optimizer(model).state_dict()
     if not isinstance(saved, dict) or set(saved) != set(expected):
         raise ValueError("optimizer checkpoint inventory differs")
     groups = saved["param_groups"]
     if not isinstance(groups, list) or len(groups) != len(expected["param_groups"]):
         raise ValueError("optimizer checkpoint family count differs")
+    if scheduler_state is not None:
+        from .block_recipe import validate_schedule
+
+        ratio = validate_schedule(scheduler_state, elapsed_seconds)
+        for reference in expected["param_groups"]:
+            reference["lr"] = {"sign": model.config.sign_lr, "scale": model.config.scale_lr}[
+                reference["family"]
+            ] * ratio
     for group, reference in zip(groups, expected["param_groups"]):
         if set(group) != set(reference) or any(group[k] != reference[k] for k in reference):
             raise ValueError("optimizer checkpoint family/options/rates differ")
@@ -172,6 +205,7 @@ def _runtime(model):
             for name in (
                 "block_qat.py",
                 "block_training.py",
+                "block_recipe.py",
                 "recurrent_qat.py",
                 "recurrent_binary.py",
             )
@@ -364,7 +398,12 @@ def save_block_checkpoint(
 ):
     validate_source(source)
     _validate_optimizer(
-        model, optimizer, optimizer.state_dict(), expected_updates=cursor.stage_updates
+        model,
+        optimizer,
+        optimizer.state_dict(),
+        expected_updates=cursor.stage_updates,
+        scheduler_state=cursor.scheduler_state,
+        elapsed_seconds=cursor.elapsed_seconds,
     )
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
@@ -426,7 +465,7 @@ def save_block_checkpoint(
     prune = []
     if retention is not None:
         protected = set(protect)
-        if cursor.step == 0:
+        if cursor.step == 0 and cursor.batch_reservation is None:
             protected.add("initial")
         if cursor.stage == "a1_final" and cursor.stage_updates == 0:
             protected.add("transition_destination")
@@ -540,7 +579,13 @@ def load_block_checkpoint(model, optimizer, source, receipt):
             elif value != tensor:
                 raise ValueError("binary checkpoint parameter contract differs")
     _validate_optimizer(
-        model, optimizer, saved["optimizer"], expected_updates=cursor.stage_updates, serialized=True
+        model,
+        optimizer,
+        saved["optimizer"],
+        expected_updates=cursor.stage_updates,
+        serialized=True,
+        scheduler_state=cursor.scheduler_state,
+        elapsed_seconds=cursor.elapsed_seconds,
     )
     # Validate RNG in isolation and restore the caller's RNG before any mutation.
     original = rng_state(str(model.token_embd.device))

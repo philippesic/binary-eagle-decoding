@@ -34,7 +34,15 @@ from w1a1_eagle.block_qat import (  # noqa: E402
     block_contract,
     block_loss,
     block_optimizer,
+    block_train_batch,
     block_train_step,
+)
+from w1a1_eagle.block_recipe import (  # noqa: E402
+    BlockRunPolicy,
+    apply_schedule,
+    schedule_state,
+    seed_all,
+    update_history,
 )
 from w1a1_eagle.block_training import (  # noqa: E402
     BlockCheckpointRetention,
@@ -58,6 +66,8 @@ from w1a1_eagle.continuous_qat import (  # noqa: E402
     ContinuousTrainer,
     atomic_json,
     build_lanes,
+    restore_rng,
+    rng_state,
     sha256,
 )
 from w1a1_eagle.continuous_resources import (  # noqa: E402
@@ -77,6 +87,30 @@ def load_spec(path):
         raise ValueError("production profiles require explicit cuda:0")
     if not isinstance(spec.get("candidate"), str) or not spec["candidate"]:
         raise ValueError("candidate name required")
+    if "block_run_policy" in spec:
+        policy = BlockRunPolicy(**spec["block_run_policy"])
+        cfg = BlockQATConfig(**spec["qat"])
+        if (
+            cfg.family != "dspark"
+            or cfg.activation_bits != 8
+            or cfg.objective != "full_probability_l1"
+            or cfg.conditioning != "captured_prefix"
+            or cfg.cross_entropy_weight != 0.1
+            or cfg.probability_l1_weight != 0.9
+            or cfg.depth_decay != math.exp(-0.25)
+            or cfg.seed != 8101
+            or cfg.profile != "ffn15_fusion"
+            or cfg.latent_initialization != "preserve_reference_magnitudes"
+            or spec.get("teacher") is not None
+            or spec.get("checkpoint_retention")
+            != {"keep_recent": 3, "max_checkpoints": 10, "max_bytes": 56 * 1024**3}
+            or spec.get("evaluation_milestones_seconds") != [14400, 28800, 43200]
+            or (cfg.sign_lr, cfg.scale_lr, cfg.max_grad_norm) != (1e-3, 1e-5, 1.0)
+            or spec.get("precision_stage", "direct") != "direct"
+            or spec.get("limits", {}).get("max_seconds") != policy.total_seconds
+            or any(v is not None for k, v in spec["limits"].items() if k != "max_seconds")
+        ):
+            raise ValueError("approved DSpark recipe/config/allocation differs")
     if "checkpoint_retention" in spec:
         if spec["family"] == "eagle":
             raise ValueError("checkpoint_retention is supported only by the block saver")
@@ -110,7 +144,9 @@ def load_spec(path):
                 raise ValueError("positive finite training limit required")
         if not any(value is not None for value in limits.values()):
             raise ValueError("at least one hard training cap required")
-        if type(spec.get("checkpoint_every")) is not int or spec["checkpoint_every"] < 1:
+        if "block_run_policy" not in spec and (
+            type(spec.get("checkpoint_every")) is not int or spec["checkpoint_every"] < 1
+        ):
             raise ValueError("positive checkpoint cadence required")
         if spec.get("precision_stage", "direct") not in {"direct", "a8_to_a1"}:
             raise ValueError("unsupported precision stage")
@@ -213,6 +249,7 @@ def training_source_identity():
         "scripts/capture_block_qat_teacher.py",
         "src/w1a1_eagle/block_qat.py",
         "src/w1a1_eagle/block_training.py",
+        "src/w1a1_eagle/block_recipe.py",
         "src/w1a1_eagle/block_data.py",
         "src/w1a1_eagle/qat_initialization.py",
         "src/w1a1_eagle/qat_admission.py",
@@ -223,6 +260,8 @@ def training_source_identity():
     ]
     from w1a1_eagle.continuous_runtime import ADMISSION_FILES, MATH_FILES
 
+    if (ROOT / "src/w1a1_eagle/block_shard_lifecycle.py").exists():
+        files.append("src/w1a1_eagle/block_shard_lifecycle.py")
     files.extend("src/w1a1_eagle/" + name for name in MATH_FILES)
     files.extend("scripts/" + name for name in ADMISSION_FILES)
     # Missing production modules cannot emit a complete readiness inventory.
@@ -414,13 +453,18 @@ def block_inputs(spec, bundle_sha):
         not isinstance(admission, dict) or set(admission) != {"path", "sha256"}
     ):
         raise ValueError("completed block data admission must pin path and SHA together")
-    dataset = BlockDataset(
-        data["path"],
-        expected_sha256=data["sha256"],
-        allow_synthetic=False,
-        admission_path=None if admission is None else admission["path"],
-        admission_sha256=None if admission is None else admission["sha256"],
-    )
+    if data.get("provider") == "rotating_block_v1":
+        from w1a1_eagle.block_shard_lifecycle import open_provider
+
+        dataset = open_provider(data)
+    else:
+        dataset = BlockDataset(
+            data["path"],
+            expected_sha256=data["sha256"],
+            allow_synthetic=False,
+            admission_path=None if admission is None else admission["path"],
+            admission_sha256=None if admission is None else admission["sha256"],
+        )
     if (
         dataset.manifest["family"] != config.family
         or dataset.vocab_size != config.vocab_size
@@ -430,7 +474,7 @@ def block_inputs(spec, bundle_sha):
         raise ValueError("model/data five-tap/full-vocabulary geometry differs")
     source = {
         "base_gguf_sha256": spec["model"]["sha256"],
-        "data_manifest_sha256": data["sha256"],
+        "data_manifest_sha256": dataset.sha256,
         "bundle_sha256": bundle_sha,
         "synthetic": False,
         "target_sha256": dataset.manifest["producer"]["target_sha256"],
@@ -582,6 +626,9 @@ def smoke_block(
 def run_block(args, spec, hardware):
     from w1a1_eagle.block_data import BlockCursor as DataCursor
 
+    policy = BlockRunPolicy(**spec["block_run_policy"]) if "block_run_policy" in spec else None
+    if not args.resume:
+        seed_all(spec.get("qat", {}).get("seed", 8101))
     boundary = timed_evaluation(args, spec, spec["limits"].get("max_seconds"))
     resources(spec, "before block loading")
     model, dataset, source = block_inputs(spec, args.bundle_sha256)
@@ -618,13 +665,86 @@ def run_block(args, spec, hardware):
                 model, source_checkpoint_sha256="0" * 64, in_place=True
             )
         cursor = load_block_checkpoint(model, optimizer, source, receipt)
-    first, _ = dataset.next_block(
-        DataCursor(**cursor.data_cursor),
-        require_teacher=model.config.objective == "full_probability_l1" and not spec.get("teacher"),
+
+    def restore_data(payload):
+        if hasattr(dataset, "restore_cursor"):
+            return dataset.restore_cursor(payload)
+        return DataCursor(**payload)
+
+    if policy is not None and cursor.scheduler_state is None:
+        if cursor.step:
+            raise ValueError("progressed recipe checkpoint lacks persisted schedule")
+        cursor = replace(cursor, scheduler_state=schedule_state(policy, 0.0))
+        apply_schedule(optimizer, model.config, cursor.scheduler_state, cursor.elapsed_seconds)
+    budget = TrainingBudget(
+        args.run_dir / "budget-used.json",
+        args.bundle_sha256,
+        spec["limits"].get("max_seconds"),
+        atomic_json,
     )
+
+    def shard_boundary(error):
+        nonlocal cursor
+        # Settle the active loop BEFORE publication and external bulk capture.
+        # Startup is never billed; unresolved crash time is conservatively loaded.
+        if budget.active is None:
+            budget.load(cursor.elapsed_seconds)
+        cursor = replace(
+            cursor, elapsed_seconds=budget.finish(), batch_reservation=error.reservation
+        )
+        committed = checkpoint()
+        request = {
+            "shard_ids": list(error.shard_ids),
+            "reservation": error.reservation,
+            "plan_sha256": dataset.sha256,
+        }
+        atomic_json(
+            args.run_dir / "status.json",
+            {
+                "schema": SCHEMA,
+                "status": "shard_required",
+                "checkpoint": committed,
+                "cursor": asdict(cursor),
+                "shard_request": request,
+            },
+        )
+        return {
+            "schema": "nine_model_stage_receipt_v1",
+            "stage": args.stage_name,
+            "status": "PASS",
+            "committed": True,
+            "completion_reason": "shard_required",
+            "bundle_sha256": args.bundle_sha256,
+            "config_sha256": sha256(args.config),
+            "checkpoint": {k: committed[k] for k in ("path", "sha256")},
+            "counters": asdict(cursor),
+            "shard_request": request,
+            "hardware": hardware,
+            "artifact_kind": "synthetic" if source["synthetic"] else "production",
+        }
+
+    # The optional provider module is imported only for the approved recipe.
+    if policy is not None:
+        from w1a1_eagle.block_shard_lifecycle import ShardRequired
+
+        try:
+            initial_batches, _ = dataset.reserve_batch(
+                restore_data(cursor.data_cursor), 2, reservation=cursor.batch_reservation
+            )
+        except ShardRequired as error:
+            return shard_boundary(error)
+        first = max(initial_batches, key=lambda b: len(b.prefix_tokens))
+        del initial_batches
+    else:
+        first, _ = dataset.next_block(
+            restore_data(cursor.data_cursor),
+            require_teacher=model.config.objective == "full_probability_l1"
+            and not spec.get("teacher"),
+        )
     with native_teacher(spec, source, args.run_dir) as teacher:
         if args.prepare_only and cursor.step:
             raise ValueError("prepare-only cannot restore real optimizer progress")
+        smoke_rng = rng_state(str(model.token_embd.device))
         smoke, training_memory = smoke_with_training_memory(
             model.parameters(),
             spec,
@@ -657,6 +777,7 @@ def run_block(args, spec, hardware):
             )
             smoke = {"A8": smoke, "A1": a1_smoke}
             training_memory = {"A8": training_memory, "A1": a1_memory}
+        restore_rng(smoke_rng, str(model.token_embd.device))
         footprint = resources(spec, "after actual block forward/backward")
         if args.smoke_zero_updates:
             return {
@@ -696,12 +817,7 @@ def run_block(args, spec, hardware):
                 "training_memory": training_memory,
                 "resources": footprint,
             }
-        budget = TrainingBudget(
-            args.run_dir / "budget-used.json",
-            args.bundle_sha256,
-            spec["limits"].get("max_seconds"),
-            atomic_json,
-        )
+        latest = receipt if args.resume else checkpoint("initial")
         budget.begin(cursor.elapsed_seconds)
         cursor = replace(cursor, elapsed_seconds=budget.elapsed())
         stopped = False
@@ -713,7 +829,6 @@ def run_block(args, spec, hardware):
 
         for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP):
             previous_handlers[sig] = signal.signal(sig, stop)
-        latest = receipt if args.resume else checkpoint("initial")
         unique = set(cursor.unique_blocks)
 
         def capped():
@@ -737,20 +852,63 @@ def run_block(args, spec, hardware):
                 if capped() or (boundary is not None and boundary.due(cursor.elapsed_seconds)):
                     break
                 resources(spec, "block optimizer update")
-                batch, next_data = dataset.next_block(
-                    DataCursor(**cursor.data_cursor),
-                    require_teacher=model.config.objective == "full_probability_l1"
-                    and teacher is None,
+                if policy is None:
+                    batch, next_data = dataset.next_block(
+                        restore_data(cursor.data_cursor),
+                        require_teacher=model.config.objective == "full_probability_l1"
+                        and teacher is None,
+                    )
+                    batches = [batch]
+                else:
+                    try:
+                        batches, next_data = dataset.reserve_batch(
+                            restore_data(cursor.data_cursor),
+                            policy.effective_batch_blocks,
+                            reservation=cursor.batch_reservation,
+                        )
+                    except ShardRequired as error:
+                        return shard_boundary(error)
+                    if (
+                        len(batches) != 2
+                        or len({b.chain_id for b in batches}) != 2
+                        or len({dataset.group_id(b) for b in batches}) != 2
+                    ):
+                        raise ValueError(
+                            "effective batch must contain distinct chains and canonical groups"
+                        )
+                    cursor = replace(
+                        cursor, scheduler_state=schedule_state(policy, cursor.elapsed_seconds)
+                    )
+                    apply_schedule(
+                        optimizer, model.config, cursor.scheduler_state, cursor.elapsed_seconds
+                    )
+                if policy is None:
+                    metrics, _ = block_train_step(
+                        model, optimizer, tensor_batch(batches[0]), teacher_callback=teacher
+                    )
+                else:
+                    metrics, _ = block_train_batch(
+                        model,
+                        optimizer,
+                        [tensor_batch(b) for b in batches],
+                        teacher_callback=teacher,
+                        return_outputs=False,
+                    )
+                for batch in batches:
+                    unique.add(f"{batch.chain_id}:{batch.block_index}")
+                telemetry = update_history(
+                    cursor.telemetry,
+                    metrics,
+                    step=cursor.step + 1,
+                    elapsed=budget.elapsed(),
+                    chains=[b.chain_id for b in batches],
+                    groups=[dataset.group_id(b) for b in batches] if policy else [],
                 )
-                metrics, _ = block_train_step(
-                    model, optimizer, tensor_batch(batch), teacher_callback=teacher
-                )
-                unique.add(f"{batch.chain_id}:{batch.block_index}")
                 cursor = replace(
                     cursor,
                     step=cursor.step + 1,
                     epoch=next_data.epoch,
-                    block_index=cursor.block_index + 1,
+                    block_index=cursor.block_index + len(batches),
                     supervised_tokens=cursor.supervised_tokens + metrics["supervised_tokens"],
                     presented_tokens=cursor.presented_tokens + metrics["presented_tokens"],
                     stage_updates=cursor.stage_updates + 1,
@@ -759,6 +917,8 @@ def run_block(args, spec, hardware):
                     elapsed_seconds=budget.elapsed(),
                     unique_blocks=tuple(sorted(unique)),
                     data_cursor=next_data.payload(),
+                    batch_reservation=None,
+                    telemetry=telemetry,
                 )
                 if boundary is not None and boundary.due(cursor.elapsed_seconds):
                     break
@@ -776,7 +936,13 @@ def run_block(args, spec, hardware):
                         latest = checkpoint("transition_destination")
                     # Transition retains training source cost/cursor; its own exact
                     # checkpoints bind A1 and fresh moments from this point onward.
-                elif cursor.step % spec["checkpoint_every"] == 0:
+                elif (
+                    cursor.elapsed_seconds - cursor.last_checkpoint_seconds
+                    >= policy.checkpoint_seconds
+                    if policy is not None
+                    else cursor.step % spec["checkpoint_every"] == 0
+                ):
+                    cursor = replace(cursor, last_checkpoint_seconds=cursor.elapsed_seconds)
                     latest = checkpoint()
                 atomic_json(
                     args.run_dir / "status.json",

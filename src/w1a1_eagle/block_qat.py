@@ -49,6 +49,7 @@ class BlockQATConfig:
     profile: str = "ffn15_fusion"
     objective: str = "hard_ce"
     conditioning: str = "native_greedy"
+    cross_entropy_weight: float = 1.0
     probability_l1_weight: float = 1.0
     depth_decay: float = 1.0
     sign_lr: float = 1e-3
@@ -103,6 +104,8 @@ class BlockQATConfig:
             raise ValueError("unsupported block objective")
         if self.objective == "full_probability_l1" and self.family != "dspark":
             raise ValueError("probability L1 profile belongs to DSpark")
+        if not math.isfinite(self.cross_entropy_weight) or self.cross_entropy_weight <= 0:
+            raise ValueError("CE coefficient must be finite and positive")
         if not math.isfinite(self.probability_l1_weight) or self.probability_l1_weight < 0:
             raise ValueError("probability L1 weight invalid")
         if not math.isfinite(self.depth_decay) or not 0 < self.depth_decay <= 1:
@@ -399,9 +402,15 @@ class BlockDrafter(nn.Module):
                 )
             columns.append(column)
             if cfg.conditioning == "captured_prefix":
-                predecessor = int(batch.labels[slot])
-                if not 0 <= predecessor < cfg.vocab_size and slot < cfg.block_size - 1:
+                # Unavailable tail targets must never index the Markov codebook.
+                # Their seven noise states remain computed but unsupported.
+                label = int(batch.labels[slot])
+                if 0 <= label < cfg.vocab_size:
+                    predecessor = label
+                elif bool(batch.loss_mask[slot]):
                     raise ValueError("captured Markov predecessor label invalid")
+                else:
+                    predecessor = cfg.mask_token_id
             else:
                 predecessor = int(column.detach().argmax())
         # Always compute seven trained states/columns. The caller may return a
@@ -414,6 +423,17 @@ class BlockDrafter(nn.Module):
             tuple(noise_kv),
             cfg.conditioning,
         )
+
+
+def block_supported_mask(batch, config):
+    mask = batch.loss_mask.clone()
+    if config.family == "dspark" and config.conditioning == "captured_prefix":
+        captured = getattr(batch, "predecessor_ids", None)
+        if captured is not None:
+            if captured.shape != (config.block_size,):
+                raise ValueError("captured predecessor layout invalid")
+            mask &= (captured.to(mask.device) >= 0) & (captured.to(mask.device) < config.vocab_size)
+    return mask
 
 
 def block_loss(output: BlockOutput, batch, config: BlockQATConfig, *, teacher_callback=None):
@@ -429,7 +449,7 @@ def block_loss(output: BlockOutput, batch, config: BlockQATConfig, *, teacher_ca
     logits = output.logits
     device = logits.device
     labels = batch.labels.to(device).clone()
-    mask = batch.loss_mask.to(device).clone()
+    mask = block_supported_mask(batch, config).to(device)
     captured = getattr(batch, "predecessor_ids", None)
     teacher = getattr(batch, "teacher_logits", None)
     if teacher_callback is not None:
@@ -476,8 +496,16 @@ def block_loss(output: BlockOutput, batch, config: BlockQATConfig, *, teacher_ca
             .abs()
             .sum(-1)
         )
-    loss = ((ce + config.probability_l1_weight * probability_l1) * weights).sum() / weights.sum()
+    ce_sum = (ce * weights).sum()
+    l1_sum = (probability_l1 * weights).sum()
+    denominator = weights.sum()
+    loss = (
+        config.cross_entropy_weight * ce_sum + config.probability_l1_weight * l1_sum
+    ) / denominator
     return loss, {
+        "weighted_denominator": float(denominator.detach()),
+        "ce": float((ce_sum / denominator).detach()),
+        "probability_l1": float((l1_sum / denominator).detach()),
         "supervised_tokens": int(mask.sum()),
         "presented_tokens": int(batch.loss_mask.sum()),
         "prefix_mismatch_tokens": int((batch.loss_mask.to(device) & ~mask).sum()),
@@ -502,6 +530,8 @@ def block_optimizer(model):
                 "family": "scale",
             },
         ],
+        betas=(0.9, 0.999),
+        eps=1e-8,
         weight_decay=0,
         foreach=False,
         **({"fused": True} if cfg.optimizer_backend == "fused_fp32_probe" else {}),
@@ -509,16 +539,69 @@ def block_optimizer(model):
 
 
 def block_train_step(model, optimizer, batch, *, teacher_callback=None, update: bool = True):
+    metrics, outputs = block_train_batch(
+        model, optimizer, [batch], teacher_callback=teacher_callback, update=update
+    )
+    return metrics, outputs[0]
+
+
+def block_train_batch(
+    model, optimizer, batches, *, teacher_callback=None, update=True, return_outputs=True
+):
+    """Microbatch-one accumulation with a single supported-token denominator.
+
+    Captured-prefix support is known before forwards, so each graph is freed
+    before the next microbatch. Greedy replay needs its actual forward mask;
+    retain those graphs only for legacy multi-block diagnostic callers.
+    """
+    if not batches:
+        raise ValueError("nonempty effective batch required")
     owned = [p for group in optimizer.param_groups for p in group["params"]]
-    expected = list(model.parameters())
+    expected = [p for p in model.parameters() if p.requires_grad]
     if len(owned) != len(expected) or {id(p) for p in owned} != {id(p) for p in expected}:
         raise ValueError("optimizer owns exactly student binary signs/scales")
     optimizer.zero_grad(set_to_none=True)
-    output = model(batch)
-    loss, counters = block_loss(output, batch, model.config, teacher_callback=teacher_callback)
-    if not loss.requires_grad or not bool(torch.isfinite(loss)):
-        raise ValueError("finite differentiable block loss required")
-    loss.backward()
+    weights = (
+        model.config.depth_decay
+        ** torch.arange(model.config.block_size, device=model.token_embd.device).float()
+    )
+    denominator = None
+    if model.config.conditioning == "captured_prefix":
+        denominator = sum(
+            float(weights[block_supported_mask(b, model.config).to(weights.device)].sum())
+            for b in batches
+        )
+        if denominator <= 0:
+            raise ValueError("effective batch has no supported labels")
+    outputs, records, retained = [], [], []
+    for batch in batches:
+        output = model(batch)
+        loss, counters = block_loss(output, batch, model.config, teacher_callback=teacher_callback)
+        if not loss.requires_grad or not bool(torch.isfinite(loss)):
+            raise ValueError("finite differentiable block loss required")
+        records.append({**counters, "loss": float(loss.detach())})
+        if denominator is not None:
+            (loss * (counters["weighted_denominator"] / denominator)).backward()
+        else:
+            retained.append(loss)
+        # Do not keep graph tensors alive across the accumulation transaction.
+        if return_outputs:
+            outputs.append(
+                BlockOutput(
+                    output.logits.detach(),
+                    output.predecessor_ids.detach(),
+                    tuple((k.detach(), v.detach()) for k, v in output.context_kv),
+                    tuple(s.detach() for s in output.layer_states),
+                    tuple((k.detach(), v.detach()) for k, v in output.noise_kv),
+                    output.conditioning,
+                )
+            )
+        del output, loss
+    if denominator is None:
+        denominator = sum(r["weighted_denominator"] for r in records)
+        sum(
+            loss * r["weighted_denominator"] / denominator for loss, r in zip(retained, records)
+        ).backward()
     if not all(p.grad is not None and bool(torch.isfinite(p.grad).all()) for p in expected):
         raise ValueError("missing/nonfinite student gradient before optimizer update")
     norm = torch.nn.utils.clip_grad_norm_(
@@ -533,19 +616,32 @@ def block_train_step(model, optimizer, batch, *, teacher_callback=None, update: 
                 module.project_scales_()
         if not all(bool(torch.isfinite(p).all()) for p in expected):
             raise ValueError("nonfinite student after optimizer update")
-    flips = torch.stack(
-        [
-            ((m.latent_sign.detach() < 0) != old).sum()
-            for m, old in zip(model.binary_linears().values(), before)
-        ]
-    ).sum()
+    modules = list(model.binary_linears().values())
+    flips = sum(int(((m.latent_sign.detach() < 0) != old).sum()) for m, old in zip(modules, before))
+    scales = torch.cat([m.effective_scales().detach().reshape(-1) for m in modules])
+    signs = sum(m.latent_sign.numel() for m in modules)
     return {
-        **counters,
-        "loss": float(loss.detach()),
+        **{
+            k: sum(r[k] for r in records)
+            for k in ("supervised_tokens", "presented_tokens", "prefix_mismatch_tokens")
+        },
+        **{
+            k: sum(r[k] * r["weighted_denominator"] for r in records) / denominator
+            for k in ("loss", "ce", "probability_l1")
+        },
+        "weighted_denominator": denominator,
+        "normalization": "weighted_valid_token_mean",
+        "conditioning": model.config.conditioning,
+        "effective_batch_blocks": len(batches),
         "gradient_norm": float(norm),
-        "sign_flips": int(flips),
+        "clipped": bool(norm > model.config.max_grad_norm),
+        "sign_flips": flips,
+        "sign_flip_fraction": flips / signs,
+        "scale_min": float(scales.min()),
+        "scale_mean": float(scales.mean()),
+        "scale_max": float(scales.max()),
         "optimizer_updated": update,
-    }, output
+    }, outputs
 
 
 def block_contract(config):
