@@ -65,6 +65,7 @@ def deployed_source_pins():
             "src/w1a1_eagle/block_shard_lifecycle.py",
             "src/w1a1_eagle/nine_model_pipeline.py",
             "src/w1a1_eagle/block_data.py",
+            "scripts/prepare_block_production_capture_plans.py",
         )
     }
 
