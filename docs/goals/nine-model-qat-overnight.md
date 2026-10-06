@@ -3151,4 +3151,59 @@ otherwise freshmatched0h. Finishauthenticpolicy/review/finaltimedlane/sixSM120
 gates thenpositiveoptimizerupdates+5/15minutehealth, hourlyhealing. All43200s
 remain. No2080access/newgoal/userchat/operatortransfer; no currenthumanchoicepending.
 
+## Final prelaunch source checkpoint — October 6, 16:54 PDT
+
+SameapprovedDSpark12h/hourlyhealing objective; positiveoptimizerupdates0. AllGPU
+jobsfinishedandownedreleaseproved. OldmonitorDELETED/newhourlyACTIVE. Rootsole
+operatorwithMCP259/panes290Linux/291Mac; no2080 ornewuserchat. Mainb253f72
+pluscurrentcheckpoint; fulloldruntimecheckout90a7 keptimmutable, native5eb221ec53
+publishedprivatebuildandoldcaptureecff/4ba preserved.
+
+Actualfixed48CPUvalidation03finished0 at23:36:32UTC after23:30:33start.
+Supervisor90686birth26399093,child90691birth26399101PGID90691,boot517c4a36-e475-4a5f-9fa6-65de57edc6fe.
+Reporta7b657d105f3fa26a9e30fc831263f1dccbac57c745b8c52eecdd032395890ed:
+48prompts/192anchors/1344labels, CE5.4038022306437306, fullprobabilityL11.3459242253253858,
+combined1.7517120102420447; nooptimizer/RNG/cursor/header/checkpointmutation or
+GPUquery. CPU2threads/12GiBcap/4GiBsystemheadroom guard, about6minactualcost;
+selection-conditionedCPUdiagnostic, notnativeacceptance. FirstCPUattemptfailed
+missingGGUFimport; secondfailedprematurestep0unitbound. Bothrawfailurespreserved.
+ActualinitialFFNblk4down15values>1,max1.5078125;FC94,max1.4765625, zerooptimizer
+state. Correctreference-magnitudeinitializer isunclippeduntilfirstpostoptimizer
+clamp. Helperrepair2 1be49e3b1429dd17f4a2504a9000abba1509658da9e987b6b417858181cebd7e
+independentlyaccepted5tests/14negatives, exactinitialbase+initializer equality;
+positive-stepboundsunchanged. Old14edhelperandalloriginaloperatorstatusfilesretained.
+
+Authenticzero collectionevidence a3ab6c52b098e64bac78853df296e8151eebd0febf436df34b40a80001260df4
+createdROOT/results/dspark-launch-20261006/zero-native-collection-evidence-v1.json,
+progress625d1d8bcc02cb97394a8fc52f0f7b6623dbb6749974fc4fe8b2b764f59304ee.
+Contains24actualstageprocess/lineage/log/resource/model joins,2actualdispatch
+audit joins, originalFAILEDstatus andactualzero prep; no continuationauthority.
+Originalactualstatus hasstrict_quality_gateFAIL/failureValueError/480+96/zero
+updates, no genericstatuskey. Authenticlocalcopyzero-native-repair1-status.actual.json
+andactualDSPARKargvprocess copy suppliedsourceowner; realmode draft-dspark,
+Q4mode draft-eagle3. No rewritingrawstatus tofitmockfixtures.
+
+Controllerfeature25e4358/repair7822d4b remainUNACTIVATED/NOTACCEPTED pending
+lastindependentproofs. /root/dspark_shard_controller owns isolated
+/Users/pippo/github/dspark-research-parity, five sourcefiles plusfocusedtests:
+run_nine_model_lane_endpoint, evaluate_nine_model_timed_checkpoint,
+run_nine_model_lane, continuous_budget, export_nine_model_lane_candidate.
+Fix2 adds exact16DSpark projectioninventory/admitted-shape/auditbinding, genuine
+serializedcheckpoint→NPZ/model via narrowread-onlytimed_evidence mode preserving
+defaultlive/finalchecks, futuretimednonce/request/context joins inactualstages,
+andexplicitfifthsource pin BEFOREvalidatorimport. Currenttests/commit delivery
+inprogress; reviewer/root/dspark_research_policy_review completedtwo negative
+reviewsandmustbereactivatedonfinalrepair. Otherboundedworkerscomplete/nolivejobs.
+
+Nextroot: finalsourcecommit independentacceptance, integrate/publish scopedcode,
+createNEWimmutabletrainercheckout andsourceboundmetadata/zero prepare/export
+(budgetfile in43trainingidentitychanged). Preserveold90a7 source/history. Reuse
+fullnative0baseline ONLYactualnewinitialGGUFdigestexactea1bc689... andsame
+runtime/target/control/protocol/prompts; otherwise remeasure. Reconstructhonest
+completedFAILED baseline, explicitreviewedresearch-onlypolicy/defaultstrict
+preserved (newscientificapprovalclaimedfalse). Finaltimedlane/sixSM120gates
+thenpositiveoptimizerupdates, finiteCE/L1/gradients/checkpoint/source/process
+proof and5/15minutehealth. All43200trainerseconds remain; no frozenprovider,
+pipeline, data, objective, optimizer or0/4/8/12protocol changes authorized.
+
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->
