@@ -3120,10 +3120,13 @@ independentlyaccepted4tests/all43sourcejoins/48prompts16domain/192anchors1344lab
 Authenticatestypedinitialadmission orpaidfinalizedlane; bundlecomesverifiedlaneSHA,
 neverinitialbundleforpaidstate. Recreatesonlystudentparameters onCPU, nooptimizer/
 RNG/cursor/CUDAheader mutation/query; selection-conditioned CE/L1/top1, notnative.
-ActualCPUzero jobdspark-a8-cpu-validation-zero-20261006-01 running inold90a7 checkout,
+ActualCPUzero jobdspark-a8-cpu-validation-zero-20261006-01 finished1 inold90a7 checkout,
 socketbinary-eagle-runtime/sessionroot-dspark-a8-cpu-validation-zero-20261006-01;
 12GiBmemorycap/noSwap,2threads/nice10,1800sbound, externalMemAvailable>=16GiB
-start/>=4GiBduring guard. Exactidentities pending currentstate result; neverinvent.
+start/>=4GiBduring guard. Supervisor90396/child90411 finishedbeforebirthcapture; noidentityinvented.
+Run23:15:56–23:16:02UTC failedmissinggguf beforeactualCPUforward. Rawstdout/
+operator-status preserved; exactexistingPYTHONPATH importrepair/newuniqueattempt
+planned. Rootomittedpreviouslyknownenvironmentsetting; noGPUorparameterchange.
 Operatorrequest generated fromgenuineoriginalpaths andinitialcheckpoint/receipt.
 
 Newtimedplanv3 0bcc0e685ed170af6b8a3ce9b46cea1c945d6d8e2ff625b2cdf4789213cb12fb
