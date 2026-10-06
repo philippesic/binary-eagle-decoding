@@ -4,18 +4,27 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Active DSpark A8 launch preparation — October 6, 13:04 PDT
+## Active DSpark A8 implementation and capture deployment — October 6, 13:39 PDT
 
-**Latest human instruction:** cancel the old automated task and start DSpark A8
-with hourly health/healing. Old nine-model-overnight-qat-monitor is DELETED
-(app confirmed); new dspark-a8-hourly-health-and-healing is ACTIVE every hour,
-root chat unchanged. The reviewed DSpark plan is authorized for implementation,
-admission and launch; do not ask the obsolete450/750 question again.
-Four scoped workers implement data, recipe, shard controller and metadata support.
-No optimizer updates yet; report implementing/capturing/admitting honestly.
-Root alone controls RTX5080 through MCP; fresh complete release/resource proof
-precedes any model launch. All historical blocked/proposal text below is superseded
-by this authorization, not by fabricated production readiness.
+Human authorized the reviewed full-pool DSpark A8 plan and hourly health/healing.
+Old `nine-model-overnight-qat-monitor` is deleted; replacement
+`dspark-a8-hourly-health-and-healing` is ACTIVE on the same root chat.
+The previous scientific data-choice blocker is resolved by this instruction.
+Root remains sole RTX5080 operator; no optimizer update has occurred yet.
+
+Frozen data commit `47782923` integrated and published as `4ba3f88b`:
+58 CPU tests pass, five native tests skipped pending actual capture.
+All 10,000 original prompt identities remain: 9,856 TRAIN, 96 fit, 48 validation.
+All 22 original source files and the immutable capture packet were transported.
+Remote checkout is `runs/checkouts/dspark-data-capture-20261006-01` at `4ba3f88b`.
+First genuine calibration capture is next, after exact file/device admission.
+Recipe and rotating-shard controller workers remain active; independent review
+closed budget/RNG issues and identified final-export publication recovery, now
+assigned for repair. Actual GPU backward/resume/native admission remains pending.
+
+See the latest goal checkpoint for exact evidence, ownership and next actions.
+Historical blocked/proposal/old-monitor entries below are superseded by current
+human authorization; historical failures and EAGLE overage remain unchanged.
 
 Human resumed RTX5080 and revised the same unfinished campaign. First evaluate
 preserved EAGLE A8, then DSpark A8, DFlash A8, EAGLE A1, DSpark A1, DFlash A1.

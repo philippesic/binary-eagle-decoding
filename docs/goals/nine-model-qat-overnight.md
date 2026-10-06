@@ -2775,4 +2775,46 @@ DXGrelease/resourcescheck andpreparingfulloriginalTRAINtransport. No model start
 yet; availability proofneededbeforecapture. Next integrate/testcontracts, begin
 genuinecalibration/fullpoolcapture/modeladmission,thenactual43,200strainedrun.
 
+## Safe implementation checkpoint — October 6, 13:39 PDT
+
+Same unfinished six-trained/three-Q4 campaign; human-authorized DSpark A8 first,
+43,200 cumulative trainer seconds, acceptance 0/4/8/12 hours, hourly health and
+5/15-minute startup checks. No pending human scientific choice for this launch.
+Native Goal UI remains historically BLOCKED; work authorization is resumed.
+
+Data source `47782923` cherry-picked/pushed as `4ba3f88b`; 58 CPU tests PASS,
+five native tests SKIP. Frozen packet `results/dspark-full-pool-implementation-20261006-frozen/`
+handoff SHA158bd2f19267ca8d9753b1e3f935daddf437eba05a57589bdf44ab81db09e91c,
+first plan SHA58ee574a3c9cfca6f676312c1a152cdf6cd830666026cf5a3ec442730357740d.
+All original 20 TRAIN source/index files plus two corpus metadata files transported;
+read-back hashes/resource admission are in progress. Fresh native fallback variant
+is explicitly selected: native_target_generated_plus_indexed_replay_v1.
+No optimizer or GPU capture has started at this checkpoint.
+
+Root exclusive operator MCP session$259, Linux pane%290, Mac transfer pane%291;
+host philip@192.168.4.24, root /home/philip/binary-eagle-decoding. Detached socket
+binary-eagle-runtime. Frozen capture checkout runs/checkouts/dspark-data-capture-20261006-01
+at4ba3f88b. Plans runs/dspark-a8-full-pool-20261006-01/plans.
+Latest complete availability receipt results/dspark-launch-20261006/availability.json:
+empty DXG/compute census, GPU13,911MiB free, disk189,295,161,344 bytes.
+Boot517c4a36-e475-4a5f-9fa6-65de57edc6fe; GPU44ceb8b5-b67a-a317-fee3-f01c9201994e.
+All older jobs remain stopped; new actual run handles will be appended on launch.
+
+Live workers: recipe owner /root/dspark_recipe_implementation repairs authentic
+completed-endpoint export recovery (zero gradients/counters/time); base961e84aa,
+fixes c09984a6 and82e1a3e have68CPU checks PASS but not integrated yet. Controller
+/root/dspark_shard_controller owns provider/lifecycle/packet/lane/exporter logical
+SHA branches, complete144 calibration merge, archival/replay gate and tests.
+Independent recipe reviewer completed HOLD for final-export issue, both original
+budget/RNG issues CLOSED. Data/ancestry/research workers finished, no owned jobs.
+
+Next exact sequence: remote verify all22 source hashes + six data module hashes +
+native teacher/target bytes; detached remote_job actual chunk0000 capture; record
+supervisor/child birth/boot/PGID and STOP procedure. Complete144 calibration plus
+first TRAIN shard, actual cold replay proof before eviction; integrate reviewed
+recipe/controller; fit/export/init/native/CUDA full optimizer and exact resume
+admission, then first positive optimizer update and healthy startup observations.
+Do not weaken preserved EAGLE target-only parity failure or original Q4 ancestry.
+Capture/startup/evaluation time excluded; real trainer time boundaries enforced.
+
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->
