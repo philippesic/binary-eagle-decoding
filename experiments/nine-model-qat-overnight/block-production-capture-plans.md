@@ -160,7 +160,8 @@ python3 scripts/prepare_block_production_capture_plans.py \
   --options-dir /Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-overnight/block-capture-options-20261005 \
   --depth-evidence /Users/pippo/github/binary-eagle-decoding/results/nine-model-qat-overnight/block-exposure-depth-options-20261005/evidence.json \
   --source-root /Users/pippo/github/binary-eagle-decoding \
-  --checkout-root /home/philip/binary-eagle-decoding/runs/checkouts/block-capture-plans-3142d43 \
+  --checkout-root /home/philip/binary-eagle-decoding/runs/checkouts/block-capture-current-963869e \
+  --native-artifact-root /home/philip/binary-eagle-decoding \
   --asset-root /home/philip/binary-eagle-decoding/data/block-production-assets-20261006-01 \
   --build-provenance /Users/pippo/github/binary-eagle-decoding/results/twelve-hour-qa/block-runtime-proof/runs/checkouts/nine-model-qat-overnight-5f53740/runs/native-indexed-sm120-build-20261006-03/build-provenance.json \
   --verified-transfer /Users/pippo/github/binary-eagle-decoding/results/twelve-hour-qa/block-runtime-proof/data/block-production-assets-20261006-01/verified-transfer.json \
@@ -217,3 +218,14 @@ No model or teacher was executed. Parent11checks and independent11checks PASS;
 independent original-byte and rehashed duplicate-group tamper probes reject.
 The old report's statement that remote validation is unverified is superseded
 by this dated parent evidence; actual capture/admission remains pending.
+
+Parent path correction, October 6: frozen source checkouts do not contain the
+shared native build or F16 weight files. Packets05/06 validate planning/schema
+but have nonexistent native binary/target locators; preserve them as historical,
+not executable. Commit963869e separates `--checkout-root` (client/source) from
+`--native-artifact-root` (runtime/weights), retaining old defaults for historical
+callers. Thirteen focused tests pass, including separate-root and relative-root
+rejection checks. New packet07 uses the corrected explicit roots and current
+bounded-importer source. Actual native file existence/hash and remote CPU plan
+checks are recorded in its parent validation receipt; no native capture or
+scientific proposal selection follows from planning PASS.

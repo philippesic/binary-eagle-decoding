@@ -710,3 +710,16 @@ additional proof protocols or redoing completed audit work.
 - Read the actual helper API before launch. Separate execution, cleanup and
   receipt-publication outcomes; an ambiguous wrapper exit is not permission to
   duplicate successful underlying work or claim overall PASS.
+
+### 2026-10-06: Source checkouts and native artifacts have different roots
+
+- Root moved a capture client into a frozen checkout using a helper whose
+  checkout-root also relocated the native binary and target weights. Those
+  shared artifacts were not copied there. Default CPU planning passed because
+  it checks schema/source joins rather than executing the native model.
+- No native capture was launched, and no user error occurred. A subsequent
+  direct existence check exposed the missing binary/target locators. Historical
+  packets stay unchanged; new explicit artifact-root binding corrects the paths.
+- After any locator rebind, verify every actual client/binary/target path and
+  hash independently. Planning PASS never proves native launchability. Keep
+  source checkout, shared build and immutable data roots explicit.

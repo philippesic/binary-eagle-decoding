@@ -54,3 +54,26 @@ an explicit per-file ledger, complete independent destination hashes, fresh disk
 reserves on both hosts and proof that no active job references those files. This
 route is not yet implemented or storage admission. No unrelated protected data
 may be removed, and no RTX2080Ti access is needed.
+
+Read-only dependency follow-up: after natural completed12h evaluation and owned
+release, old4h/8h NPZ and GGUF payloads are outside the final collector's required
+online graph. Moving just those payloads preserves normal timed-state validation;
+estimated reclaim is7,313,232,572B per DSpark or7,002,055,868B per DFlash. Keep all
+JSON/raw evidence online. Select by authenticated export receipts, not globs.
+
+Old4h/8h resume files are different: `TimedEvaluation.__init__` hashes every
+completed request checkpoint. They can be archived only with mandatory exact
+original-path restoration before any timed recovery/reconstruction. Final
+12h resume/sidecar/NPZ/manifest/GGUF/audit, original base/target/initialGGUF/audit,
+fusion initializer and source graph remain final-collector dependencies.
+Never rewrite settled ledgers or timed state to bypass these links. The normal
+controller may finish with completed4h/8h and pending12h because it returns
+after final evaluation without another trainer acknowledgment.
+
+The larger illustrative archive subset (old two timed resumes/exports plus two
+unreferenced recent slots for retention3) could reclaim about99.85GiB across
+four lanes. This needs actual per-file dependency checks, sizes, independent
+destination hashes, fresh reserves and restore verification; source read-only
+lookup is not archive execution or storage admission. Restoring during a live
+collector would violate its cached inode/stat identity checks; use a fresh
+validation process after byte-identical restoration.

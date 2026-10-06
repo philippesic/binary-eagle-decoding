@@ -2501,4 +2501,71 @@ no relaxed numeric gate. Exact original block-Q4 bytes and final-held-out
 scope/authority remain pending. Unselected packet05 is historical planning proof,
 not current-source execution or training admission.
 
+## Current-source capture paths closed — October 6, 02:07 PDT
+
+Previous turn PROGRESS: published bounded mapping/budget fixes, Linux stress and
+storage ledger. This turn PROGRESS: actual path/source rebind exposed and repaired
+missing native artifact paths; source963869e7 separates frozen client checkout
+from shared runtime/weight roots.13 focused CPU checks PASS. No dataset, precision,
+role selector, full context, vocabulary, objective or allocation changed. No
+native teacher/model/GPU execution or remaining-five training occurred.
+
+Historical packets05/06 default CPU planning passes are preserved, but their
+binary/target paths under the frozen checkout do not exist. They are not
+executable; root recorded its contribution in USER_LESSONS. Corrected packet07
+uses client checkout runs/checkouts/block-capture-current-963869e and explicit
+native artifact root /home/philip/binary-eagle-decoding. Exact real teacher binary,
+F16 target and client files were freshly SHA-verified; both actual default remote
+CPU planning commands exit0 with statusPENDING/failure=null. Actual capture
+remains pending. Current importer eab41eef4e66a8d0034d82d4fab05e63e226e494fe6becf19c96695f3f1ca32d
+and capture script588491ca220c54d408bb9da8bc3f45c64060230948cf72ff7c4844495a74c4bf
+match local/current remote source. Source receipt binds helper/client/importer.
+
+Packet07 proposals79bb7d1e20a979108ae47b32f4945c06003fe477a74d60f4aa04a976ad1bfb35;
+450plan4abd086efd203ecc4bbfbf0736060133083ba36c14b38146c64a3e0712c929cb;
+750plan4e653026085102ca1ecd75f8ce3a67d7f40887046d1866b009234a3cb7d0d279.
+Parent receipt5f360552207d7746f70129306ecfe247ed6deba5537d95869604a1a589a259ef;
+reports2ff35ee38f9a0e02c03e957622706d6bc48a4778fdeb650e88eebabcdf84de00 and
+bfc8cc30571457f3b687410303d1fdbc22b49202d5979352ecf7747b6d594a1f.
+All20 original packet files byte-match remote transport. Local raw receipt/report
+copies results/twelve-hour-qa/block-capture-packet07-remote/; original localpacket
+results/nine-model-qat-overnight/block-production-capture-plans-20261006-07/.
+Fresh disk189,322,579,968B before packet transfer; both capture-only envelopes fit
+that snapshot. Fresh complete execution resources/storage still required.
+
+Bounded storage follow-up identifies archive dependencies: old4h/8h NPZ/GGUF
+payloads are outside final collector/normal timed-state required online graph;
+old4h/8h resume checkpoints ARE rehashed at each timed reconstruction. Archive
+those only with mandatory byte-identical original-path restore before recovery.
+Keep final/initial/source/control/receipt graphs online. No archive/removal made.
+The [updated ledger](../../experiments/nine-model-qat-overnight/block-storage-20261006.md)
+preserves source's completed4h/8h,pending12h natural final-state behavior.
+
+[Original Q4 lookup](../../experiments/nine-model-qat-overnight/original-q4-recovery-20261006.md)
+found original HF snapshots and historical converter/CPU quantizer source/binary,
+but current BF16 container hashes differ and literal old metadata/argv are absent.
+Exact reconstruction is a hypothesis, not recovered originals. No conversion or
+quantization launched; original control pins remain immutable. Accessible exact
+files/serialization provenance remain pending without RTX2080Ti access.
+
+All bounded workers are complete; no remote CPU/GPU job remains. Root remains
+sole operator and controls MCP$259/@288/%290 plus transfer@289/%291; same boot
+517c4a36-e475-4a5f-9fa6-65de57edc6fe. SAME heartbeat/native Goal ACTIVE. EAGLE's
+14.43 paid hours and actual measured10.33%vs26.49%/2.39% remain preserved, strict
+quality failure not relaxed. Same full six+three objective, model order and12h
+allocations/4h acceptance/2h health/5and15min startup checks unchanged.
+
+Independent preparation is now at the scientific launch boundary. Require the
+pending human450/750 exposure and captured/live prefix choice before actual
+production capture; further unchanged status polls are no progress, not a live
+training wait. Record this first genuine impasse observation after completed
+preparation; do not yet mark Goal blocked. If the same condition persists through
+three consecutive impasse turns with no meaningful safe action, mark blocked per
+native Goal rules, preserving full objective. Do not manufacture approval or
+more source tasks merely to keep the Goal active. Once input arrives, select and
+freeze protocol/selector/fit-row/resource/storage joins, perform genuine capture,
+fusion/initializer/export/QA/fresh SM120 admission, then follow sequential12h
+training and actual measured checkpoints. Old Q4/sealed final authority remain
+later real inputs. No successor user-owned chat or operator transfer.
+
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->
