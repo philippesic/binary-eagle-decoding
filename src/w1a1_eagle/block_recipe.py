@@ -85,7 +85,9 @@ def apply_schedule(optimizer, config, state, elapsed):
         group["lr"] = {"sign": config.sign_lr, "scale": config.scale_lr}[group["family"]] * ratio
 
 
-def update_history(history, metrics, *, step, elapsed, chains, groups):
+def update_history(
+    history, metrics, *, step, elapsed, chains, groups, exposure=None, diagnostics=None
+):
     """Persist bounded rolling observations and exact cumulative components."""
     value = copy.deepcopy(history or {})
     totals = value.setdefault(
@@ -113,6 +115,22 @@ def update_history(history, metrics, *, step, elapsed, chains, groups):
     totals["sign_flips"] += metrics["sign_flips"]
     value["unique_chains"] = sorted(set(value.get("unique_chains", [])) | set(chains))
     value["unique_groups"] = sorted(set(value.get("unique_groups", [])) | set(groups))
+    if exposure is not None:
+        from .block_diagnostics import accumulate_exposure
+
+        accumulate_exposure(value, exposure, metrics)
+    if diagnostics is not None:
+        value["diagnostic_sample_state"] = diagnostics["state"]
+        if diagnostics["sample"] is not None:
+            value["layer_samples"] = [
+                *value.get("layer_samples", []),
+                {
+                    "step": step,
+                    "elapsed_seconds": elapsed,
+                    "layers": diagnostics["sample"],
+                    "semantics": diagnostics["semantics"],
+                },
+            ][-32:]
     record = {"step": step, "elapsed_seconds": elapsed, **metrics}
     value["recent"] = [*value.get("recent", []), record][-60:]
     samples = value.setdefault("samples", [])

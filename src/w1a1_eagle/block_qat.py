@@ -240,6 +240,9 @@ class BlockBinaryLinear(RowBinaryLinear):
         with torch.no_grad():
             raw = input.float()
             codes, scale, _ = fixed_activation_codes(raw, 8)
+            observer = getattr(self, "_diagnostic_a8", None)
+            if observer is not None:
+                observer(codes)
             signs = (
                 torch.where(self.latent_sign < 0, -1.0, 1.0)
                 if self._round_hard_signs is None
@@ -546,7 +549,14 @@ def block_train_step(model, optimizer, batch, *, teacher_callback=None, update: 
 
 
 def block_train_batch(
-    model, optimizer, batches, *, teacher_callback=None, update=True, return_outputs=True
+    model,
+    optimizer,
+    batches,
+    *,
+    teacher_callback=None,
+    update=True,
+    return_outputs=True,
+    diagnostics=False,
 ):
     """Microbatch-one accumulation with a single supported-token denominator.
 
@@ -579,7 +589,12 @@ def block_train_batch(
         loss, counters = block_loss(output, batch, model.config, teacher_callback=teacher_callback)
         if not loss.requires_grad or not bool(torch.isfinite(loss)):
             raise ValueError("finite differentiable block loss required")
-        records.append({**counters, "loss": float(loss.detach())})
+        diagnostic = {}
+        if diagnostics:
+            from .block_diagnostics import slot_metrics
+
+            diagnostic = slot_metrics(output, batch, model.config)
+        records.append({**counters, **diagnostic, "loss": float(loss.detach())})
         if denominator is not None:
             (loss * (counters["weighted_denominator"] / denominator)).backward()
         else:
@@ -629,6 +644,20 @@ def block_train_batch(
             k: sum(r[k] * r["weighted_denominator"] for r in records) / denominator
             for k in ("loss", "ce", "probability_l1")
         },
+        **(
+            {
+                field: [sum(r[field][i] for r in records) for i in range(model.config.block_size)]
+                for field in (
+                    "slot_supported",
+                    "teacher_forced_top1_hits",
+                    "captured_prefix_survival_supported",
+                    "captured_prefix_survival_hits",
+                )
+            }
+            if diagnostics
+            else {}
+        ),
+        **({"diagnostic_semantics": records[0]["diagnostic_semantics"]} if diagnostics else {}),
         "weighted_denominator": denominator,
         "normalization": "weighted_valid_token_mean",
         "conditioning": model.config.conditioning,

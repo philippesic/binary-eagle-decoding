@@ -302,6 +302,7 @@ def _runtime(model):
                 "block_qat.py",
                 "block_training.py",
                 "block_recipe.py",
+                "block_diagnostics.py",
                 "recurrent_qat.py",
                 "recurrent_binary.py",
             )

@@ -250,6 +250,7 @@ def training_source_identity():
         "src/w1a1_eagle/block_qat.py",
         "src/w1a1_eagle/block_training.py",
         "src/w1a1_eagle/block_recipe.py",
+        "src/w1a1_eagle/block_diagnostics.py",
         "src/w1a1_eagle/block_data.py",
         "src/w1a1_eagle/qat_initialization.py",
         "src/w1a1_eagle/qat_admission.py",
@@ -983,13 +984,24 @@ def run_block(args, spec, hardware):
                         model, optimizer, tensor_batch(batches[0]), teacher_callback=teacher
                     )
                 else:
-                    metrics, _ = block_train_batch(
-                        model,
-                        optimizer,
-                        [tensor_batch(b) for b in batches],
-                        teacher_callback=teacher,
-                        return_outputs=False,
+                    from w1a1_eagle.block_diagnostics import (
+                        BlockDiagnosticSession,
+                        exposure_metadata,
                     )
+
+                    diagnostic_session = BlockDiagnosticSession(
+                        model, cursor.telemetry, cursor.step + 1
+                    )
+                    with diagnostic_session.capture(model):
+                        metrics, _ = block_train_batch(
+                            model,
+                            optimizer,
+                            [tensor_batch(b) for b in batches],
+                            teacher_callback=teacher,
+                            return_outputs=False,
+                            diagnostics=True,
+                        )
+                    layer_diagnostics = diagnostic_session.finish(model)
                 for batch in batches:
                     unique.add(f"{batch.chain_id}:{batch.block_index}")
                 telemetry = update_history(
@@ -999,6 +1011,8 @@ def run_block(args, spec, hardware):
                     elapsed=budget.elapsed(),
                     chains=[b.chain_id for b in batches],
                     groups=[dataset.group_id(b) for b in batches] if policy else [],
+                    exposure=exposure_metadata(dataset, batches) if policy else None,
+                    diagnostics=layer_diagnostics if policy else None,
                 )
                 cursor = replace(
                     cursor,
