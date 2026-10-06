@@ -211,7 +211,14 @@ class BlockCheckpointRetention:
             raise ValueError("checkpoint retention count cannot admit recent window")
 
 
-_PROTECTIONS = {"initial", "transition_source", "transition_destination", "endpoint", "stop"}
+_PROTECTIONS = {
+    "initial",
+    "transition_source",
+    "transition_destination",
+    "endpoint",
+    "stop",
+    "milestone",
+}
 
 
 def _checkpoint_name(cursor):

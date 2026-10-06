@@ -46,7 +46,14 @@ from w1a1_eagle.block_training import (  # noqa: E402
     save_block_checkpoint,
     transition_a8_to_a1,
 )
-from w1a1_eagle.continuous_budget import TrainingBudget  # noqa: E402
+from w1a1_eagle.continuous_budget import (  # noqa: E402
+    TIMED_TRAINING_TIME_POLICY,
+    TimedEvaluation,
+    TrainingBudget,
+    artifact_locator,
+    checked_locator,
+    validate_evaluation_milestones_seconds,
+)
 from w1a1_eagle.continuous_qat import (  # noqa: E402
     ContinuousTrainer,
     atomic_json,
@@ -128,7 +135,72 @@ def load_spec(path):
     )
     if spec["candidate"] != f"{spec['family']}_a{final_bits}":
         raise ValueError("candidate cell name differs from final family/activation precision")
+    if "evaluation_milestones_seconds" in spec or "evaluation_protocol" in spec:
+        if spec.get("precision_stage", "direct") != "direct":
+            raise ValueError("timed evaluation supports direct training only")
+        if spec["family"] == "eagle":
+            api = importlib.import_module("train_continuous_w1ax")
+            _, continuous = api.load_config(Path(spec["eagle_config"]["path"]))
+            maximum = continuous.max_seconds
+            if continuous.development_lifecycle != "standalone" or any(
+                getattr(continuous, key) is not None
+                for key in ("max_steps", "max_tokens", "max_epochs")
+            ):
+                raise ValueError("timed EAGLE requires standalone elapsed-only allocation")
+        else:
+            maximum = spec["limits"].get("max_seconds")
+            if any(
+                value is not None for key, value in spec["limits"].items() if key != "max_seconds"
+            ):
+                raise ValueError("timed block training requires elapsed-only allocation")
+        milestones = validate_evaluation_milestones_seconds(
+            spec.get("evaluation_milestones_seconds"), maximum
+        )
+        if milestones != (14400, 28800, 43200) or maximum != 43200:
+            raise ValueError("production timed evaluation requires fixed 4/8/12 trainer-hours")
+        checked_locator(spec.get("evaluation_protocol"))
     return spec
+
+
+def timed_evaluation(args, spec, maximum):
+    """Authenticate a pending result before reconstructing any trainer state."""
+    supplied_path = getattr(args, "evaluation_receipt", None)
+    supplied_sha = getattr(args, "evaluation_receipt_sha256", None)
+    if bool(supplied_path) != bool(supplied_sha):
+        raise ValueError("evaluation receipt requires path and SHA256 together")
+    if "evaluation_milestones_seconds" not in spec:
+        if (
+            supplied_path
+            or getattr(args, "evaluation_protocol", None)
+            or getattr(args, "evaluation_protocol_sha256", None)
+        ):
+            raise ValueError("evaluation artifact supplied without a timed schedule")
+        return None
+    protocol = spec["evaluation_protocol"]
+    override = getattr(args, "evaluation_protocol", None)
+    override_sha = getattr(args, "evaluation_protocol_sha256", None)
+    if bool(override) != bool(override_sha):
+        raise ValueError("evaluation protocol requires path and SHA256 together")
+    if override is not None and {"path": str(override), "sha256": override_sha} != protocol:
+        raise ValueError("evaluation protocol override differs from frozen trainer spec")
+    boundary = TimedEvaluation(
+        args.run_dir,
+        spec["evaluation_milestones_seconds"],
+        maximum,
+        candidate=spec["candidate"],
+        bundle_sha256=args.bundle_sha256,
+        config_sha256=sha256(args.config),
+        protocol=protocol,
+        atomic_write=atomic_json,
+    )
+    if supplied_path and not args.resume:
+        raise ValueError("evaluation receipt requires explicit resume")
+    boundary.authorize_resume(
+        None if supplied_path is None else {"path": str(supplied_path), "sha256": supplied_sha}
+    )
+    if len(boundary.state["completed"]) == len(boundary.milestones):
+        raise ValueError("all timed evaluations complete; training restart forbidden")
+    return boundary
 
 
 def training_source_identity():
@@ -510,6 +582,7 @@ def smoke_block(
 def run_block(args, spec, hardware):
     from w1a1_eagle.block_data import BlockCursor as DataCursor
 
+    boundary = timed_evaluation(args, spec, spec["limits"].get("max_seconds"))
     resources(spec, "before block loading")
     model, dataset, source = block_inputs(spec, args.bundle_sha256)
     optimizer = block_optimizer(model)
@@ -536,6 +609,10 @@ def run_block(args, spec, hardware):
     )
     if args.resume:
         receipt = json.loads((args.run_dir / "checkpoints/latest.json").read_text())
+        if boundary is not None:
+            boundary.require_checkpoint(
+                {key: receipt[key] for key in ("path", "sha256")}, receipt["cursor"]
+            )
         if receipt["cursor"]["stage"] == "a1_final":
             model, optimizer, _ = transition_a8_to_a1(
                 model, source_checkpoint_sha256="0" * 64, in_place=True
@@ -657,7 +734,7 @@ def run_block(args, spec, hardware):
                     stopped = True
                     break
                 cursor = replace(cursor, elapsed_seconds=budget.elapsed())
-                if capped():
+                if capped() or (boundary is not None and boundary.due(cursor.elapsed_seconds)):
                     break
                 resources(spec, "block optimizer update")
                 batch, next_data = dataset.next_block(
@@ -683,6 +760,8 @@ def run_block(args, spec, hardware):
                     unique_blocks=tuple(sorted(unique)),
                     data_cursor=next_data.payload(),
                 )
+                if boundary is not None and boundary.due(cursor.elapsed_seconds):
+                    break
                 if cursor.stage == "a8_warm_start" and cursor.step >= spec["a8_warmup_steps"]:
                     latest = checkpoint("transition_source")
                     del optimizer
@@ -710,10 +789,14 @@ def run_block(args, spec, hardware):
                     },
                 )
             cursor = replace(cursor, elapsed_seconds=budget.finish())
+            milestone_due = (
+                not stopped and boundary is not None and boundary.due(cursor.elapsed_seconds)
+            )
+            protection = "stop" if stopped else "milestone" if milestone_due else "endpoint"
             if latest is None or latest["cursor"] != json.loads(json.dumps(asdict(cursor))):
-                latest = checkpoint("stop" if stopped else "endpoint")
+                latest = checkpoint(protection)
             elif retention is not None:
-                latest = protect_block_checkpoint(latest, "stop" if stopped else "endpoint")
+                latest = protect_block_checkpoint(latest, protection)
             if stopped:
                 atomic_json(
                     args.run_dir / "status.json",
@@ -737,7 +820,25 @@ def run_block(args, spec, hardware):
                 raise ValueError(
                     "budget ended before required final A1 exposure; checkpoint retained"
                 )
-            exported = export_block_checkpoint(model, source, args.run_dir / "final-export")
+            request = None
+            # Preserve partial export attempts after a serializer failure. No
+            # pending request is committed until the export has succeeded.
+            export_dir = (
+                args.run_dir
+                / "timed-evaluation"
+                / f"milestone-{len(boundary.state['completed']):02d}"
+                / f"export-{time.time_ns()}"
+                if milestone_due
+                else args.run_dir / "final-export"
+            )
+            exported = export_block_checkpoint(model, source, export_dir)
+            if milestone_due:
+                request = boundary.publish(
+                    {key: latest[key] for key in ("path", "sha256")},
+                    cursor.elapsed_seconds,
+                    artifact_locator(budget.path),
+                    json.loads(json.dumps(asdict(cursor))),
+                )
             return {
                 "schema": "nine_model_stage_receipt_v1",
                 "stage": args.stage_name,
@@ -746,7 +847,18 @@ def run_block(args, spec, hardware):
                 "bundle_sha256": args.bundle_sha256,
                 "config_sha256": sha256(args.config),
                 "committed": True,
-                "completion_reason": "approved_budget_complete",
+                "completion_reason": (
+                    "timed_evaluation_boundary"
+                    if milestone_due
+                    and len(boundary.state["completed"]) < len(boundary.milestones) - 1
+                    else "approved_budget_complete"
+                ),
+                **({"timed_evaluation_request": request} if request is not None else {}),
+                **(
+                    {"training_time_policy": TIMED_TRAINING_TIME_POLICY}
+                    if request is not None
+                    else {}
+                ),
                 "checkpoint": {"path": latest["path"], "sha256": latest["sha256"]},
                 "exports": {
                     spec["candidate"]: {
@@ -820,6 +932,10 @@ def eagle_inputs(spec, args):
 def run_eagle(args, spec, hardware):
     if spec.get("precision_stage") == "a8_to_a1":
         return run_eagle_curriculum(args, spec, hardware)
+    # The frozen EAGLE maximum is available before model reconstruction.
+    api = importlib.import_module("train_continuous_w1ax")
+    _, effective = api.load_config(Path(spec["eagle_config"]["path"]))
+    boundary = timed_evaluation(args, spec, effective.max_seconds)
     provider, lanes, config = eagle_inputs(spec, args)
     from w1a1_eagle.qat_admission import VerifiedTrainingAdmission
 
@@ -833,7 +949,14 @@ def run_eagle(args, spec, hardware):
             candidate=spec["candidate"],
         )
     )
-    trainer = ContinuousTrainer(provider, lanes, config, args.run_dir, training_admission=admission)
+    trainer = ContinuousTrainer(
+        provider,
+        lanes,
+        config,
+        args.run_dir,
+        training_admission=admission,
+        timed_evaluation=boundary,
+    )
     if args.resume:
         trainer.resume()
     from w1a1_eagle.recurrent_provider import audit_provider_round
@@ -894,7 +1017,9 @@ def run_eagle(args, spec, hardware):
             "source": provider.source_metadata,
         }
     trainer.run()
-    if trainer.stop_requested or not trainer.capped():
+    if trainer.stop_requested or (
+        not trainer.capped() and trainer.timed_evaluation_request is None
+    ):
         raise InterruptedError(
             "STOP/intermediate development boundary retains checkpoint; no final receipt"
         )
@@ -912,7 +1037,23 @@ def run_eagle(args, spec, hardware):
         "bundle_sha256": args.bundle_sha256,
         "config_sha256": sha256(args.config),
         "committed": True,
-        "completion_reason": "approved_budget_complete",
+        "completion_reason": (
+            "timed_evaluation_boundary"
+            if boundary is not None
+            and len(boundary.state["completed"]) < len(boundary.milestones) - 1
+            or not trainer.capped()
+            else "approved_budget_complete"
+        ),
+        **(
+            {"timed_evaluation_request": trainer.timed_evaluation_request}
+            if trainer.timed_evaluation_request is not None
+            else {}
+        ),
+        **(
+            {"training_time_policy": TIMED_TRAINING_TIME_POLICY}
+            if trainer.timed_evaluation_request is not None
+            else {}
+        ),
         "checkpoint": {"path": trainer.checkpoint["path"], "sha256": trainer.checkpoint["sha256"]},
         "exports": {
             spec["candidate"]: {
@@ -1125,6 +1266,10 @@ def main():
     parser.add_argument("--admission", type=Path)
     parser.add_argument("--allow-cuda", action="store_true")
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--evaluation-receipt", type=Path)
+    parser.add_argument("--evaluation-receipt-sha256")
+    parser.add_argument("--evaluation-protocol", type=Path)
+    parser.add_argument("--evaluation-protocol-sha256")
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--smoke-zero-updates", action="store_true")
     mode.add_argument("--prepare-only", action="store_true")

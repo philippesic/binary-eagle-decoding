@@ -514,6 +514,7 @@ class ContinuousTrainer:
         development_evaluator=None,
         expected_recipe=None,
         training_admission=None,
+        timed_evaluation=None,
     ):
         if [lane.name for lane in lanes] != [f"A{bits}" for bits in config.activation_bits]:
             raise ValueError("continuous lane inventory differs from declared activation_bits")
@@ -556,6 +557,8 @@ class ContinuousTrainer:
             if not isinstance(training_admission, VerifiedTrainingAdmission):
                 raise ValueError("typed current-package production admission required")
         self.training_admission = training_admission
+        self.timed_evaluation = timed_evaluation
+        self.timed_evaluation_request = None
         self.evaluator = development_evaluator
         self.last_status_monotonic = 0.0
         self.stop_requested = False
@@ -768,7 +771,7 @@ class ContinuousTrainer:
         atomic_json(self.run_dir / "dual_smoke.json", report)
         return report
 
-    def save(self) -> None:
+    def save(self, *, protect_milestone=False) -> None:
         resources = self.resources()
         if torch.device(self.config.device).type == "cuda":
             admission = require_host_memory(
@@ -793,6 +796,12 @@ class ContinuousTrainer:
             if self.checkpoint is not None and self.checkpoint["path"] == str(
                 destination / "resume.pt"
             ):
+                if protect_milestone:
+                    manifest_path = destination / "manifest.json"
+                    manifest = json.loads(manifest_path.read_text())
+                    if manifest.get("sha256") != self.checkpoint["sha256"]:
+                        raise ValueError("milestone checkpoint publication differs")
+                    atomic_json(manifest_path, {**manifest, "protected_milestone": True})
                 return
             raise RuntimeError("durable checkpoint already exists; resume recovery required")
         temp = parent / ("." + destination.name + ".tmp")
@@ -870,6 +879,7 @@ class ContinuousTrainer:
                 for lane in self.lanes
             },
             "optimizer_rng_cursor_exact": True,
+            **({"protected_milestone": True} if protect_milestone else {}),
         }
         atomic_json(temp / "manifest.json", manifest)
         for file in temp.rglob("*"):
@@ -897,7 +907,11 @@ class ContinuousTrainer:
         }
         atomic_json(self.run_dir / "latest.json", self.checkpoint)
         for old in sorted(parent.glob("step-*"))[: -self.config.keep_checkpoints]:
-            shutil.rmtree(old)
+            if (
+                json.loads((old / "manifest.json").read_text()).get("protected_milestone")
+                is not True
+            ):
+                shutil.rmtree(old)
 
     def resume(self) -> None:
         """Recover the highest complete directory; latest.json is advisory.
@@ -938,6 +952,11 @@ class ContinuousTrainer:
         path = directory / "resume.pt"
         if path.is_symlink() or not path.is_file() or sha256(path) != manifest.get("sha256"):
             raise ValueError("resume checkpoint path/hash mismatch")
+        if self.timed_evaluation is not None:
+            self.timed_evaluation.require_checkpoint(
+                {"path": str(path), "sha256": manifest["sha256"]},
+                {key: manifest[key] for key in ("step", "epoch", "cursor")},
+            )
         if set(manifest.get("exports", {})) != {lane.name for lane in self.lanes}:
             raise ValueError("published checkpoint export inventory is incomplete")
         for lane in self.lanes:
@@ -1166,6 +1185,12 @@ class ContinuousTrainer:
             )
 
     def run(self, *, require_smoke: bool = True) -> None:
+        if self.timed_evaluation is not None:
+            if self.config.development_lifecycle != "standalone":
+                raise ValueError("timed evaluation requires standalone trainer release")
+            if self.config.max_seconds != self.timed_evaluation.contract["max_seconds"]:
+                raise ValueError("timed evaluation allocation differs from trainer allocation")
+            self.timed_evaluation.authorize_resume()
         self.require_optimization_readiness()
         if require_smoke and not self.smoke_passed:
             raise ValueError("dual resource/math smoke must pass before optimization")
@@ -1200,7 +1225,10 @@ class ContinuousTrainer:
                         self.stop_requested = True
                         break
                     persist_training_time()
-                    if self.capped():
+                    if self.capped() or (
+                        self.timed_evaluation is not None
+                        and self.timed_evaluation.due(self.elapsed_seconds)
+                    ):
                         break
                     if len(batch.prefix_token_ids) > self.config.max_prefix_tokens:
                         raise ValueError("accepted prefix exceeds declared memory-safe token cap")
@@ -1404,9 +1432,16 @@ class ContinuousTrainer:
                             "epoch": self.epoch,
                         }
                     )
+                    if self.timed_evaluation is not None and self.timed_evaluation.due(
+                        self.elapsed_seconds
+                    ):
+                        break
                     if self.step % self.config.checkpoint_every == 0:
                         self.save()
-                    if self.step % self.config.development_every == 0:
+                    if (
+                        self.timed_evaluation is None
+                        and self.step % self.config.development_every == 0
+                    ):
                         self.save()
                         if self.config.development_lifecycle == "standalone":
                             atomic_json(
@@ -1426,7 +1461,14 @@ class ContinuousTrainer:
                             atomic_json(self.run_dir / "development.json", result)
                     if self.should_publish_running_status(self.step):
                         self.status("running", **self.resources())
-                if self.stop_requested or self.capped():
+                if (
+                    self.stop_requested
+                    or self.capped()
+                    or (
+                        self.timed_evaluation is not None
+                        and self.timed_evaluation.due(self.elapsed_seconds)
+                    )
+                ):
                     break
                 if not yielded and self.cursor == 0:
                     raise ValueError("provider yielded no rounds")
@@ -1435,7 +1477,37 @@ class ContinuousTrainer:
                 self.epoch += 1
                 self.cursor = 0
             persist_training_time()
-            self.save()
+            milestone_due = (
+                not self.stop_requested
+                and self.timed_evaluation is not None
+                and self.timed_evaluation.due(self.elapsed_seconds)
+            )
+            if milestone_due:
+                # Stop the trainer clock before boundary publication. Periodic
+                # checkpoints remain charged; reconstruction/eval/publication do not.
+                self.elapsed_seconds = budget.finish()
+            self.save(protect_milestone=milestone_due)
+            if milestone_due:
+                from .continuous_budget import artifact_locator
+
+                self.timed_evaluation_request = self.timed_evaluation.publish(
+                    {key: self.checkpoint[key] for key in ("path", "sha256")},
+                    self.elapsed_seconds,
+                    artifact_locator(budget.path),
+                    {
+                        "step": self.step,
+                        "epoch": self.epoch,
+                        "cursor": self.cursor,
+                        "supervised_tokens": self.tokens,
+                        "elapsed_seconds": self.elapsed_seconds,
+                    },
+                )
+                self.status(
+                    "awaiting_timed_evaluation",
+                    timed_evaluation_request=self.timed_evaluation_request,
+                    **self.resources(),
+                )
+                return
             if not self.stop_requested and self.config.development_lifecycle == "standalone":
                 atomic_json(
                     self.run_dir / "development-request.json",
