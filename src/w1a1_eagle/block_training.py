@@ -37,6 +37,7 @@ class BlockCursor:
     scheduler_state: dict | None = None
     batch_reservation: dict | None = None
     telemetry: dict | None = None
+    completed_endpoint: dict | None = None
     last_checkpoint_seconds: float = 0.0
     stage_updates: int | None = None
     stage_supervised_tokens: int | None = None
@@ -69,7 +70,7 @@ class BlockCursor:
             or not 0 <= self.last_checkpoint_seconds <= self.elapsed_seconds
         ):
             raise ValueError("checkpoint cadence clock invalid")
-        for field in ("batch_reservation", "telemetry"):
+        for field in ("batch_reservation", "telemetry", "completed_endpoint"):
             if getattr(self, field) is not None and not isinstance(getattr(self, field), dict):
                 raise ValueError("checkpoint transaction/telemetry payload invalid")
         object.__setattr__(self, "unique_blocks", tuple(self.unique_blocks))
@@ -632,7 +633,7 @@ def protect_block_checkpoint(receipt, reason):
     return value
 
 
-def load_block_checkpoint(model, optimizer, source, receipt):
+def load_block_checkpoint(model, optimizer, source, receipt, *, restore_rng_state=True):
     validate_source(source)
     path = Path(receipt["path"])
     if path.is_symlink() or sha256(path) != receipt["sha256"]:
@@ -685,14 +686,16 @@ def load_block_checkpoint(model, optimizer, source, receipt):
     # Validate RNG in isolation and restore the caller's RNG before any mutation.
     original = _block_rng_state(model.token_embd.device)
     _validate_block_rng(saved["rng"], model.token_embd.device, original)
-    try:
-        _restore_block_rng(saved["rng"], model.token_embd.device)
-    finally:
-        _restore_block_rng(original, model.token_embd.device)
+    if restore_rng_state:
+        try:
+            _restore_block_rng(saved["rng"], model.token_embd.device)
+        finally:
+            _restore_block_rng(original, model.token_embd.device)
     for name, module in current.items():
         module.load_state_dict(saved["linears"][name], strict=True)
     optimizer.load_state_dict(copy.deepcopy(saved["optimizer"]))
-    _restore_block_rng(saved["rng"], model.token_embd.device)
+    if restore_rng_state:
+        _restore_block_rng(saved["rng"], model.token_embd.device)
     return cursor
 
 

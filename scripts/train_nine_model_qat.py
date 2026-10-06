@@ -664,7 +664,13 @@ def run_block(args, spec, hardware):
             model, optimizer, _ = transition_a8_to_a1(
                 model, source_checkpoint_sha256="0" * 64, in_place=True
             )
-        cursor = load_block_checkpoint(model, optimizer, source, receipt)
+        cursor = load_block_checkpoint(
+            model,
+            optimizer,
+            source,
+            receipt,
+            restore_rng_state=receipt["cursor"].get("completed_endpoint") is None,
+        )
 
     def restore_data(payload):
         if hasattr(dataset, "restore_cursor"):
@@ -688,8 +694,90 @@ def run_block(args, spec, hardware):
     cursor = replace(cursor, elapsed_seconds=budget.load(cursor.elapsed_seconds))
     if existing_budget and not args.resume:
         raise ValueError("existing training budget requires exact checkpoint resume")
+
+    def publish_endpoint(latest, milestone_due):
+        request = None
+        # Preserve partial export attempts after a serializer failure. No
+        # pending request is committed until the export has succeeded.
+        export_dir = (
+            args.run_dir
+            / "timed-evaluation"
+            / f"milestone-{len(boundary.state['completed']):02d}"
+            / f"export-{time.time_ns()}"
+            if milestone_due
+            else args.run_dir / "final-export"
+        )
+        exported = export_block_checkpoint(model, source, export_dir)
+        if milestone_due:
+            request = boundary.publish(
+                {key: latest[key] for key in ("path", "sha256")},
+                cursor.elapsed_seconds,
+                artifact_locator(budget.path),
+                json.loads(json.dumps(asdict(cursor))),
+            )
+        return {
+            "schema": "nine_model_stage_receipt_v1",
+            "stage": args.stage_name,
+            "status": "PASS",
+            "artifact_kind": "synthetic" if source["synthetic"] else "production",
+            "bundle_sha256": args.bundle_sha256,
+            "config_sha256": sha256(args.config),
+            "committed": True,
+            "completion_reason": (
+                "timed_evaluation_boundary"
+                if milestone_due and len(boundary.state["completed"]) < len(boundary.milestones) - 1
+                else "approved_budget_complete"
+            ),
+            **({"timed_evaluation_request": request} if request is not None else {}),
+            **({"training_time_policy": TIMED_TRAINING_TIME_POLICY} if request is not None else {}),
+            "checkpoint": {"path": latest["path"], "sha256": latest["sha256"]},
+            "exports": {
+                spec["candidate"]: {
+                    "checkpoint": {
+                        "path": exported["npz"],
+                        "sha256": sha256(Path(exported["npz"])),
+                    },
+                    "manifest": {
+                        "path": exported["manifest"],
+                        "sha256": sha256(Path(exported["manifest"])),
+                    },
+                    "base_gguf_sha256": source["base_gguf_sha256"],
+                }
+            },
+            "counters": asdict(cursor),
+            "hardware": hardware,
+        }
+
     if budget.maximum is not None and cursor.elapsed_seconds >= budget.maximum:
-        raise ValueError("training budget allocation exhausted before startup smoke")
+        completed = cursor.completed_endpoint
+        expected = {
+            "schema": "block_completed_endpoint_v1",
+            "allocation_seconds": budget.maximum,
+            "bundle_sha256": args.bundle_sha256,
+            "config_sha256": sha256(args.config),
+            "budget_ledger": artifact_locator(budget.path) if existing_budget else None,
+        }
+        if (
+            not args.resume
+            or policy is None
+            or completed != expected
+            or cursor.step <= 0
+            or cursor.supervised_tokens <= 0
+            or cursor.batch_reservation is not None
+            or cursor.stage != "direct"
+            or cursor.elapsed_seconds != receipt["cursor"]["elapsed_seconds"]
+            or budget.active is not None
+        ):
+            raise ValueError("training budget allocation exhausted before startup smoke")
+        # Exact settled bytes are pinned inside the source-bound checkpoint.
+        ledger = json.loads(checked_locator(completed["budget_ledger"]).read_text())
+        if (
+            ledger["active_attempt"] is not None
+            or ledger["training_seconds"] != cursor.elapsed_seconds
+        ):
+            raise ValueError("completed endpoint accounting differs; repair forbidden")
+        milestone_due = boundary is not None and boundary.due(cursor.elapsed_seconds)
+        return publish_endpoint(receipt, milestone_due)
 
     def shard_boundary(error):
         nonlocal cursor
@@ -966,6 +1054,22 @@ def run_block(args, spec, hardware):
             milestone_due = (
                 not stopped and boundary is not None and boundary.due(cursor.elapsed_seconds)
             )
+            if (
+                policy is not None
+                and not stopped
+                and cursor.step > 0
+                and cursor.elapsed_seconds >= policy.total_seconds
+            ):
+                cursor = replace(
+                    cursor,
+                    completed_endpoint={
+                        "schema": "block_completed_endpoint_v1",
+                        "allocation_seconds": budget.maximum,
+                        "bundle_sha256": args.bundle_sha256,
+                        "config_sha256": sha256(args.config),
+                        "budget_ledger": artifact_locator(budget.path),
+                    },
+                )
             protection = "stop" if stopped else "milestone" if milestone_due else "endpoint"
             if latest is None or latest["cursor"] != json.loads(json.dumps(asdict(cursor))):
                 latest = checkpoint(protection)
@@ -994,62 +1098,7 @@ def run_block(args, spec, hardware):
                 raise ValueError(
                     "budget ended before required final A1 exposure; checkpoint retained"
                 )
-            request = None
-            # Preserve partial export attempts after a serializer failure. No
-            # pending request is committed until the export has succeeded.
-            export_dir = (
-                args.run_dir
-                / "timed-evaluation"
-                / f"milestone-{len(boundary.state['completed']):02d}"
-                / f"export-{time.time_ns()}"
-                if milestone_due
-                else args.run_dir / "final-export"
-            )
-            exported = export_block_checkpoint(model, source, export_dir)
-            if milestone_due:
-                request = boundary.publish(
-                    {key: latest[key] for key in ("path", "sha256")},
-                    cursor.elapsed_seconds,
-                    artifact_locator(budget.path),
-                    json.loads(json.dumps(asdict(cursor))),
-                )
-            return {
-                "schema": "nine_model_stage_receipt_v1",
-                "stage": args.stage_name,
-                "status": "PASS",
-                "artifact_kind": "synthetic" if source["synthetic"] else "production",
-                "bundle_sha256": args.bundle_sha256,
-                "config_sha256": sha256(args.config),
-                "committed": True,
-                "completion_reason": (
-                    "timed_evaluation_boundary"
-                    if milestone_due
-                    and len(boundary.state["completed"]) < len(boundary.milestones) - 1
-                    else "approved_budget_complete"
-                ),
-                **({"timed_evaluation_request": request} if request is not None else {}),
-                **(
-                    {"training_time_policy": TIMED_TRAINING_TIME_POLICY}
-                    if request is not None
-                    else {}
-                ),
-                "checkpoint": {"path": latest["path"], "sha256": latest["sha256"]},
-                "exports": {
-                    spec["candidate"]: {
-                        "checkpoint": {
-                            "path": exported["npz"],
-                            "sha256": sha256(Path(exported["npz"])),
-                        },
-                        "manifest": {
-                            "path": exported["manifest"],
-                            "sha256": sha256(Path(exported["manifest"])),
-                        },
-                        "base_gguf_sha256": source["base_gguf_sha256"],
-                    }
-                },
-                "counters": asdict(cursor),
-                "hardware": hardware,
-            }
+            return publish_endpoint(latest, milestone_due)
         finally:
             budget.finish()
             for sig, previous in previous_handlers.items():

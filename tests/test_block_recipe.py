@@ -447,6 +447,41 @@ class RecipeRunloopTests(unittest.TestCase):
                 publish.assert_not_called()
             self.assertEqual((root / "checkpoints/latest.json").read_bytes(), previous)
 
+    def test_crash_charge_expiring_incomplete_checkpoint_cannot_enter_export_repair(self):
+        import train_nine_model_qat as launcher
+
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            self.transaction(root)
+            ledger = json.loads((root / "budget-used.json").read_text())
+            ledger["active_attempt"] = {
+                "boot_id": "prior-boot",
+                "pid": 999999,
+                "process_birth": "dead",
+                "started_monotonic": 50.0,
+                "reserved_seconds": 43200.0 - ledger["training_seconds"],
+            }
+            (root / "budget-used.json").write_text(json.dumps(ledger))
+            with (
+                patch("w1a1_eagle.continuous_budget.boot_identity", return_value="new-boot"),
+                patch.object(launcher, "smoke_block") as smoke,
+                patch.object(launcher, "export_block_checkpoint") as export,
+                patch.object(launcher, "save_block_checkpoint") as publish,
+            ):
+                with self.assertRaisesRegex(ValueError, "allocation exhausted"):
+                    self.transaction(root, resume=True)
+                smoke.assert_not_called()
+                export.assert_not_called()
+                publish.assert_not_called()
+            recovered = json.loads((root / "budget-used.json").read_text())
+            self.assertEqual(recovered["training_seconds"], 43200.0)
+            self.assertIsNone(recovered["active_attempt"])
+            self.assertIsNone(
+                json.loads((root / "checkpoints/latest.json").read_text())["cursor"][
+                    "completed_endpoint"
+                ]
+            )
+
     def test_early_crash_charge_is_retained_and_startup_stays_unbilled(self):
         import train_nine_model_qat as launcher
 
