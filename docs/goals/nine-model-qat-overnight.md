@@ -2328,4 +2328,59 @@ question remains essential and pending; original block-Q4 files/final authority
 also pending. Continue build and genuine asset preparation without inventing
 scientific approval or running unadmitted training. All bounded workers finished.
 
+## Indexed build and actual CUDA primitives complete — October 6, 01:03 PDT
+
+The corrected indexed ecff SM120 build finished successfully, all362 actions,
+supervisor exit0; no compile worker remains. Build provenance
+runs/checkouts/nine-model-qat-overnight-5f53740/runs/
+native-indexed-sm120-build-20261006-03/build-provenance.json,
+SHA b65884e17e8b0f293bb6a92178059d5d6ff4b5055f17c35f2ce7f4e6df2e17f9.
+Actual artifact SHA values:
+- llama-server31c58fb213c57f9b1a99e09642b00963d7d37599b74da1b07e73b08f62be20f1
+- llama-block-teacher63eacbb8e600488c76122dfd29d2da168a8a371db7c244b2b10d90d1d21c478f
+- test-backend-ops80b46e2c6a33eb86cd3c020588b9261c94970943c7df3ea77ca60e596f93d673
+- test-block-binary4319caceebbd938d330ea24947fd2fc7f167a0927f6fc95a803adbc33d306d33
+All actual runtime libraries, compile_commands and CMakeCache are separately
+hashed in the provenance. Sourceecff, CUDAarch120 and original private include
+manifest pins verified. Build alone did not grant model/data readiness.
+
+Actual CUDA oracle indexed-native-cuda-oracle-20261006-01 executed272/272 cases,
+A1/A8 and reduction widths2560/4096/7680/9728/12800 PASS. Native child74368
+exited0; process-exit records cleanup PASS. Root's ad-hoc wrapper then wrongly
+called nonexistent SubprocessRunner.stop_all and supervisor exited1. Preserve
+that failure; do not relabel successful natural wrapper completion. No GPU
+rerun was needed: independent CPU reconciliation authenticated actual raw kernel
+log/exit, all kernel/controller/supervisor identities/groups absent, full empty
+CUDA/DXG census and return-to-baseline resources. Reconciliation
+results/nine-model-qat-overnight/indexed-native-cuda-oracle-20261006-01/
+independent-reconciliation.json, SHA
+fcc69e4a43b1db34dae078a52a2457f8cf7003846d2c29349bc5905d94f7d859.
+Kernel PASS is scoped to primitive correctness; real production capture,
+calibration, complete model admission and timed CUDA training remain PENDING.
+
+All23 staged original block assets /5,692,192,234bytes are directly byte-verified
+on the5080 host under data/block-production-assets-20261006-01. Receipt
+verified-transfer.json SHA
+9921b8815179df7902f865a8e24fc7ae480c637a3982b4cf379a211c5f2e9039.
+Original versions/ancestry and F32 references preserved; the original TRAIN
+shard/index and opaque corpus metadata copied, no sealed held-out payload.
+Copied source is not newly captured teacher data or calibrated production models.
+
+Root alone owns the now-released GPU; no remaining training/capture is running.
+Both local MCP panes remain under root; no other chat/operator transfer. All
+bounded workers finished. Native Goal ACTIVE; SAME heartbeat ACTIVE every2h,
+quiet unless meaningful change. Do not mark the full six+three objective complete.
+
+Essential pending human research input: choose450or750 balanced original TRAIN
+prompts ×128target tokens and captured versus live student-prefix conditioning.
+The async question offered450/captured,750/captured,450/live; no reply is approval.
+Original blockQ4 bytes and final-held-out authority also remain pending. Next:
+after actual choice, freeze selector/protocol/resource/storage/fit-row policy;
+source-pinned production indexed capture, distinct production fusionfits,
+initialized actor/export/independent QA/fresh SM120 admission; then DSparkA8
+43,200trainer-seconds with measured4/8/12h checkpoints and preserved source/
+optimizer/RNG/cursor/accounting. Do not repeat EAGLE training or old audits.
+Current strict target-only parity failure/numeric evidence remains recorded;
+no silent change to original quality gates or numerical thresholds.
+
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->

@@ -698,3 +698,15 @@ additional proof protocols or redoing completed audit work.
 - Root queued a repair to a worker that had completed. Independent review noticed
   no turn had started; root explicitly restarted it and verified acknowledgment.
   Use followup_task for completed workers and inspect execution state.
+
+### 2026-10-06: Inspect cleanup APIs before an ad-hoc GPU wrapper
+
+- Root launched a bounded primitive oracle with a nonexistent
+  SubprocessRunner.stop_all call. Native272/272 cases and runner-owned cleanup
+  passed, then the wrapper failed while publishing bookkeeping. No user error.
+- Source inspection confirmed runner.run already cleans exact owned descendants.
+  Independent release/census and raw exit verification recovered scoped kernel
+  evidence without rerunning GPU work; the original wrapper failure stays intact.
+- Read the actual helper API before launch. Separate execution, cleanup and
+  receipt-publication outcomes; an ambiguous wrapper exit is not permission to
+  duplicate successful underlying work or claim overall PASS.
