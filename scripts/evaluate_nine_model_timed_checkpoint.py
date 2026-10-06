@@ -7,6 +7,7 @@ sequencer. Final-only historical endpoint validation remains the default.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import signal
@@ -196,7 +197,7 @@ def evaluate(
     prompts = load_opaque_prompts(files.check(plan["prompts"]))
     require(
         prompts
-        and all(p.get("split") == "development" for p in prompts)
+        and all(p.get("split") in (None, "development") for p in prompts)
         and len({p["id"] for p in prompts}) == len(prompts),
         "unique admitted development prompts required",
     )
@@ -388,6 +389,239 @@ def evaluate(
     )
     atomic_json(directory / "report.json", report)
     return pin(directory / "report.json")
+
+
+def recover_boundary_receipt(lane, lane_locator, run_dir, attempt, admission_path, state, files):
+    """Recover a published boundary without reconstructing a GPU trainer.
+
+    The trainer request can precede its state rename and outer receipt. Preserve
+    both original paths; derive a new recovery receipt only from authenticated
+    settled accounting, checkpoint counters and existing serialized exports.
+    Full tensor/source validation still precedes export in evaluate_checkpoint.
+    """
+    from w1a1_eagle.continuous_budget import TimedEvaluation
+
+    training_dir = Path(run_dir) / "training"
+    if not (training_dir / "timed-evaluation-state.json").exists() and not any(
+        training_dir.glob("timed-evaluation/milestone-*/request.json")
+    ):
+        return None
+    spec = json.loads(files.check(lane["config"]).read_text())
+    budget = json.loads(files.check(lane["budget"]).read_text())
+    maximum = budget["candidates"][lane["candidate"]]["training_limits"]["max_seconds"]
+    boundary = TimedEvaluation(
+        training_dir,
+        spec["evaluation_milestones_seconds"],
+        maximum,
+        candidate=lane["candidate"],
+        bundle_sha256=lane_locator["sha256"],
+        config_sha256=lane["config"]["sha256"],
+        protocol=spec["evaluation_protocol"],
+        atomic_write=atomic_json,
+    )
+    request_locator = boundary.state["pending"]
+    if request_locator is None:
+        index = len(boundary.state["completed"])
+        orphan = training_dir / "timed-evaluation" / f"milestone-{index:02d}" / "request.json"
+        if not orphan.exists():
+            return None
+        request_locator = pin(orphan)
+    request = boundary._request(request_locator)
+    require(
+        request["milestone_index"] == len(boundary.state["completed"]),
+        "recovered pending milestone order differs",
+    )
+    if state.get("evaluation_receipt") is not None:
+        result = json.loads(files.check(state["evaluation_receipt"]).read_text())
+        if result.get("request") == request_locator:
+            boundary._result(state["evaluation_receipt"], request_locator, request)
+            # First consumption remains trainer-owned and requires exact checkpoint.
+            return None
+    current_ledger = json.loads((training_dir / "budget-used.json").read_text())
+    frozen_ledger = json.loads(files.check(request["budget_ledger"]).read_text())
+    require(
+        all(
+            current_ledger.get(key) == frozen_ledger.get(key)
+            for key in (
+                "schema",
+                "source_sha256",
+                "max_seconds",
+                "active_attempt",
+                "training_seconds",
+            )
+        ),
+        "recovery requires unchanged settled training ledger",
+    )
+    original_plan = json.loads(files.check(lane["admission_plan"]).read_text())
+    source = original_plan["candidates"][lane["candidate"]]["source_bindings"]
+    source_digest = hashlib.sha256(
+        json.dumps(source, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+    expected_budget_source = (
+        source_digest if lane["candidate"].startswith("eagle_") else lane_locator["sha256"]
+    )
+    require(
+        frozen_ledger.get("source_sha256") == expected_budget_source,
+        "recovery settled ledger source differs",
+    )
+    checkpoint = files.check(request["checkpoint"])
+    require(
+        training_dir / "checkpoints" in checkpoint.parents, "recovery checkpoint outside trainer"
+    )
+    family, precision = lane["candidate"].split("_")
+    counters = request["counters"]
+    latest_path = training_dir / ("latest.json" if family == "eagle" else "checkpoints/latest.json")
+    latest = json.loads(latest_path.read_text())
+    require(
+        {key: latest[key] for key in ("path", "sha256")} == request["checkpoint"],
+        "recovery latest checkpoint differs from pending boundary",
+    )
+    if family == "eagle":
+        outer = json.loads((checkpoint.parent / "manifest.json").read_text())
+        require(
+            outer.get("schema") == "continuous_joint_w1ax_v1"
+            and outer.get("optimizer_rng_cursor_exact") is True
+            and outer.get("source_sha256") == source_digest
+            and outer.get("sha256") == request["checkpoint"]["sha256"]
+            and all(outer.get(key) == counters.get(key) for key in ("step", "epoch", "cursor")),
+            "recovery EAGLE checkpoint counter join differs",
+        )
+        lane_name = "A" + precision[1:]
+        exported = {
+            "checkpoint": {
+                "path": str(checkpoint.parent / lane_name / "joint.npz"),
+                "sha256": outer["exports"][lane_name]["joint.npz"],
+            },
+            "manifest": {
+                "path": str(checkpoint.parent / lane_name / "joint.json"),
+                "sha256": outer["exports"][lane_name]["joint.json"],
+            },
+        }
+    else:
+        sidecar = checkpoint.with_suffix(".receipt.json")
+        side = json.loads(sidecar.read_text()) if sidecar.exists() else latest
+        require(
+            side.get("schema") == "block_qat_checkpoint_v1"
+            and side.get("committed") is True
+            and side.get("source_sha256")
+            == hashlib.sha256(
+                json.dumps(
+                    {**source, "bundle_sha256": lane_locator["sha256"]},
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ).encode()
+            ).hexdigest()
+            and side.get("cursor") == counters
+            and {key: side[key] for key in ("path", "sha256")} == request["checkpoint"],
+            "recovery block checkpoint counter join differs",
+        )
+        pairs = [
+            (directory / "binary.npz", directory / "binary.json")
+            for directory in Path(request_locator["path"]).parent.glob("export-*")
+            if directory.is_dir()
+            and not directory.is_symlink()
+            and (directory / "binary.npz").is_file()
+            and (directory / "binary.json").is_file()
+        ]
+        require(len(pairs) == 1, "recovery requires one complete preserved block export pair")
+        exported = {"checkpoint": pin(pairs[0][0]), "manifest": pin(pairs[0][1])}
+    for record in exported.values():
+        files.check(record)
+    joint = json.loads(files.check(exported["manifest"]).read_text())
+    require(
+        joint.get("checkpoint_sha256") == exported["checkpoint"]["sha256"]
+        and joint.get("activation_bits") == int(precision[1:]),
+        "recovery serializer hash/precision differs",
+    )
+    expected_base = (
+        source["common_source_sha256"]["base_draft_gguf"]
+        if family == "eagle"
+        else source["base_gguf_sha256"]
+    )
+    require(
+        joint.get("base_gguf_sha256") == expected_base, "recovery serializer base ancestry differs"
+    )
+    exported["base_gguf_sha256"] = joint["base_gguf_sha256"]
+    originals = []
+    for path in (Path(run_dir) / "attempts").glob("*/training-attempts/*/train-receipt.json"):
+        value = json.loads(path.read_text())
+        if value.get("timed_evaluation_request") != request_locator:
+            continue
+        require(
+            value.get("schema") == "nine_model_stage_receipt_v1"
+            and value.get("status") == "PASS"
+            and value.get("artifact_kind") == "production"
+            and value.get("committed") is True
+            and value.get("candidate", lane["candidate"]) == lane["candidate"]
+            and value.get("stage") == lane["candidate"] + "/train"
+            and value.get("bundle_sha256") == lane_locator["sha256"]
+            and value.get("config_sha256") == lane["config"]["sha256"]
+            and value.get("checkpoint") == request["checkpoint"]
+            and value.get("counters") == counters
+            and value.get("exports") == {lane["candidate"]: exported}
+            and value.get("hardware", {}).get("gpu_uuid") == lane["gpu_uuid"]
+            and value["hardware"].get("compute_capability") == [12, 0]
+            and value.get("completion_reason")
+            == (
+                "approved_budget_complete"
+                if request["final_training_complete"]
+                else "timed_evaluation_boundary"
+            ),
+            "retained boundary receipt provenance differs",
+        )
+        originals.append(pin(path))
+    require(len(originals) <= 1, "duplicate retained boundary receipts require explicit recovery")
+    if originals:
+        receipt = originals[0]
+    else:
+        admission_locator = pin(admission_path)
+        admitted = json.loads(files.check(admission_locator).read_text())
+        require(
+            admitted.get("schema") == "nine_model_training_admission_v1"
+            and admitted.get("status") == "PASS"
+            and admitted.get("artifact_kind") == "production"
+            and admitted.get("candidate") == lane["candidate"]
+            and admitted.get("bundle_sha256") == lane_locator["sha256"]
+            and admitted.get("config_sha256") == lane["config"]["sha256"]
+            and admitted.get("gpu_uuid") == lane["gpu_uuid"]
+            and admitted.get("compute_capability") == [12, 0],
+            "recovered boundary admission/hardware provenance differs",
+        )
+        directory = Path(attempt) / "boundary-recovery" / __import__("uuid").uuid4().hex
+        directory.mkdir(parents=True, exist_ok=False)
+        recovered = {
+            "schema": "nine_model_stage_receipt_v1",
+            "stage": lane["candidate"] + "/train",
+            "status": "PASS",
+            "artifact_kind": "production",
+            "committed": True,
+            "bundle_sha256": lane_locator["sha256"],
+            "config_sha256": lane["config"]["sha256"],
+            "checkpoint": request["checkpoint"],
+            "counters": counters,
+            "exports": {lane["candidate"]: exported},
+            "hardware": {
+                "gpu_uuid": admitted["gpu_uuid"],
+                "compute_capability": admitted["compute_capability"],
+            },
+            "completion_reason": "approved_budget_complete"
+            if request["final_training_complete"]
+            else "timed_evaluation_boundary",
+            "timed_evaluation_request": request_locator,
+            "training_time_policy": request["training_time_policy"],
+            "recovery": {
+                "original_outer_receipt": "ABSENT",
+                "request": request_locator,
+                "admission": admission_locator,
+                "optimizer_updates_performed": 0,
+            },
+        }
+        atomic_json(directory / "train-receipt.json", recovered)
+        receipt = pin(directory / "train-receipt.json")
+    if boundary.state["pending"] is None:
+        boundary.state["pending"] = request_locator
+        boundary.write(boundary.path, boundary.state)
+    return receipt
 
 
 def evaluate_checkpoint(

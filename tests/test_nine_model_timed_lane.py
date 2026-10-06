@@ -3,6 +3,7 @@
 import copy
 import json
 import os
+import shutil
 import sys
 import tempfile
 import unittest
@@ -16,6 +17,7 @@ import export_nine_model_lane_candidate as exporter  # noqa: E402
 import run_nine_model_lane as lane_api  # noqa: E402
 import test_nine_model_lane_candidate_export as export_fixtures  # noqa: E402
 
+from w1a1_eagle.continuous_budget import TimedEvaluation  # noqa: E402
 from w1a1_eagle.nine_model_pipeline import Files, atomic_json  # noqa: E402
 
 
@@ -274,6 +276,224 @@ class TimedLaneTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "token sequence"):
             evaluation.matched_report(plan, records, [], {}, fixture=True)
 
+    def recovery_fixture(self, root, family, outer_receipt, orphan_request=False):
+        root = root.resolve()
+        fixtures = export_fixtures.LaneExportTests()
+        f = fixtures.fixture(root, family)
+        lane = f["lane"]
+        lane["admission_plan"] = f["write"](root / "plan.json", f["plan"])
+        protocol = f["write"](root / "protocol.json", {})
+        spec = json.loads(Path(lane["config"]["path"]).read_text())
+        spec.update(evaluation_milestones_seconds=[4, 8, 10], evaluation_protocol=protocol)
+        lane["config"] = f["write"](Path(lane["config"]["path"]), spec)
+        lane["timed_evaluation_plan"] = {"path": "test-plan", "sha256": "a" * 64}
+        lane["training_wall_seconds"] = 30
+        run = root / "run"
+        training = run / "training"
+        source = f["plan"]["candidates"][lane["candidate"]]["source_bindings"]
+        ledger = {
+            "schema": "continuous_training_budget_v1",
+            "source_sha256": exporter.digest(source)
+            if family == "eagle"
+            else f["locators"][0]["sha256"],
+            "max_seconds": 10,
+            "active_attempt": None,
+            "training_seconds": 10.0,
+        }
+        ledger_pin = f["write"](training / "budget-used.json", ledger)
+        boundary = TimedEvaluation(
+            training,
+            [4, 8, 10],
+            10,
+            candidate=lane["candidate"],
+            bundle_sha256=f["locators"][0]["sha256"],
+            config_sha256=lane["config"]["sha256"],
+            protocol=protocol,
+            atomic_write=atomic_json,
+        )
+        request = boundary.publish(
+            f["receipt"]["checkpoint"], 10.0, ledger_pin, f["receipt"]["counters"]
+        )
+        if orphan_request:
+            boundary.path.unlink()
+        latest_path = training / ("latest.json" if family == "eagle" else "checkpoints/latest.json")
+        f["write"](latest_path, f["receipt"]["checkpoint"])
+        if family != "eagle":
+            original = f["receipt"]["exports"][lane["candidate"]]
+            destination = Path(request["path"]).parent / "export-original"
+            destination.mkdir()
+            shutil.copyfile(original["checkpoint"]["path"], destination / "binary.npz")
+            shutil.copyfile(original["manifest"]["path"], destination / "binary.json")
+            original["checkpoint"] = exporter.pin(destination / "binary.npz")
+            original["manifest"] = exporter.pin(destination / "binary.json")
+        f["receipt"].update(
+            completion_reason="timed_evaluation_boundary",
+            config_sha256=lane["config"]["sha256"],
+            timed_evaluation_request=request,
+        )
+        if outer_receipt:
+            f["write"](
+                run / "attempts/original/training-attempts/original-child/train-receipt.json",
+                f["receipt"],
+            )
+        admitted = {
+            "schema": "nine_model_training_admission_v1",
+            "status": "PASS",
+            "artifact_kind": "production",
+            "candidate": lane["candidate"],
+            "bundle_sha256": f["locators"][0]["sha256"],
+            "config_sha256": lane["config"]["sha256"],
+            "gpu_uuid": lane["gpu_uuid"],
+            "compute_capability": [12, 0],
+        }
+        admission = f["write"](root / "admission.json", admitted)
+        return f, run, request, Path(admission["path"])
+
+    def test_publication_crash_matrix_recovers_same_boundary_without_trainer_launch(self):
+        for family in ("eagle", "dspark", "dflash"):
+            for outer, orphan in ((False, True), (False, False), (True, False)):
+                with (
+                    self.subTest(family=family, outer=outer, orphan=orphan),
+                    tempfile.TemporaryDirectory() as tmp,
+                ):
+                    root = Path(tmp).resolve()
+                    f, run, request, admitted = self.recovery_fixture(root, family, outer, orphan)
+                    state_path = run / "state.json"
+                    state = {
+                        "schema": "nine_model_lane_state_v1",
+                        "status": "training",
+                        "candidate": f["lane"]["candidate"],
+                        "bundle_sha256": f["locators"][0]["sha256"],
+                        "campaign_complete": False,
+                    }
+                    supervisor = root / "supervisor.json"
+                    atomic_json(
+                        supervisor,
+                        {"status": "running", "pid": os.getpid(), "supervisor_pid": os.getppid()},
+                    )
+                    calls = []
+
+                    class NoTrainer:
+                        def run(self, *a, **k):
+                            raise AssertionError("published boundary relaunched trainer")
+
+                    def released():
+                        state["owned_release"] = {
+                            "owned_process_groups_absent": True,
+                            "owned_cuda_pids_absent": True,
+                        }
+                        return state["owned_release"]
+
+                    def evaluate_boundary(*args, **kwargs):
+                        calls.append(args[3])
+                        context = exporter.validate_endpoint(*args[:4], checkpoint_mode="timed")
+                        self.assertEqual(
+                            context["checkpoint"],
+                            json.loads(Path(request["path"]).read_text())["checkpoint"],
+                        )
+                        self.assertEqual(context["receipt"]["counters"], f["receipt"]["counters"])
+                        raise RuntimeError("evaluated same boundary")
+
+                    with (
+                        patch.object(lane_api, "validate_plan", return_value=(f["plan"], Files())),
+                        patch.object(evaluation, "validate_plan", return_value=({}, {})),
+                        patch.object(
+                            exporter, "validate_lane", return_value=(f["lane"], Files(), f["plan"])
+                        ),
+                    ):
+                        with self.assertRaisesRegex(RuntimeError, "evaluated same boundary"):
+                            lane_api.run_training_lifecycle(
+                                f["lane"],
+                                f["locators"][0],
+                                run,
+                                run / "attempts/recovery",
+                                admitted,
+                                supervisor,
+                                state,
+                                state_path,
+                                Files(),
+                                NoTrainer(),
+                                None,
+                                released,
+                                lambda: None,
+                                resume=True,
+                                evaluator=evaluate_boundary,
+                            )
+                    self.assertEqual(len(calls), 1)
+                    self.assertEqual(state["pending_training"], calls[0])
+                    recovered = json.loads(Path(calls[0]["path"]).read_text())
+                    if outer:
+                        self.assertIn("original-child", calls[0]["path"])
+                    else:
+                        self.assertEqual(recovered["recovery"]["optimizer_updates_performed"], 0)
+                    gate = json.loads((run / "training/timed-evaluation-state.json").read_text())
+                    self.assertEqual(gate["pending"], request)
+                    self.assertEqual(
+                        json.loads(Path(request["path"]).read_text())["elapsed_seconds"], 10.0
+                    )
+
+    def test_recovery_rejects_changed_ledger_counter_and_export_hash(self):
+        for corruption in ("ledger", "counter", "export"):
+            with self.subTest(corruption=corruption), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp).resolve()
+                f, run, request, admitted = self.recovery_fixture(root, "dspark", False)
+                if corruption == "ledger":
+                    path = run / "training/budget-used.json"
+                    value = json.loads(path.read_text())
+                    value["training_seconds"] += 1
+                    atomic_json(path, value)
+                elif corruption == "counter":
+                    path = Path(f["receipt"]["checkpoint"]["path"]).with_suffix(".receipt.json")
+                    value = json.loads(path.read_text())
+                    value["cursor"]["step"] += 1
+                    atomic_json(path, value)
+                else:
+                    path = Path(f["receipt"]["exports"][f["lane"]["candidate"]]["manifest"]["path"])
+                    value = json.loads(path.read_text())
+                    value["checkpoint_sha256"] = "b" * 64
+                    atomic_json(path, value)
+                with self.assertRaises(ValueError):
+                    evaluation.recover_boundary_receipt(
+                        f["lane"],
+                        f["locators"][0],
+                        run,
+                        run / "attempts/recovery",
+                        admitted,
+                        {},
+                        Files(),
+                    )
+                self.assertFalse((run / "attempts/recovery").exists())
+
+    def test_native_loop_rejects_explicit_train_and_unknown_prompt_split_before_launch(self):
+        for split in ("train", "heldout", "unknown"):
+            with self.subTest(split=split), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp).resolve()
+                path = root / "prompts.jsonl"
+                path.write_text(
+                    json.dumps(
+                        {
+                            "id": "p",
+                            "domain": "code",
+                            "split": split,
+                            "messages": [{"role": "user", "content": "tiny"}],
+                        }
+                    )
+                )
+                with patch.object(evaluation.subprocess, "Popen") as launch:
+                    with self.assertRaisesRegex(ValueError, "unique admitted development prompts"):
+                        evaluation.evaluate(
+                            {"prompts": exporter.pin(path)},
+                            Files(),
+                            {},
+                            {},
+                            root / "evaluation",
+                            root / "STOP",
+                            lambda: None,
+                            None,
+                            None,
+                        )
+                    launch.assert_not_called()
+
     def test_native_loop_stops_each_owned_server_and_preserves_failed_identity(self):
         for crash in (False, True):
             with self.subTest(crash=crash), tempfile.TemporaryDirectory() as tmp:
@@ -289,7 +509,7 @@ class TimedLaneTests(unittest.TestCase):
                     json.dumps(
                         {
                             "id": "p",
-                            "split": "development",
+                            "domain": "code",
                             "messages": [{"role": "user", "content": "tiny"}],
                         }
                     )

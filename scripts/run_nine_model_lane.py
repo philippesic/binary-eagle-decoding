@@ -132,6 +132,13 @@ def run_training_lifecycle(
     while True:
         authorization()
         pending = state.get("pending_training")
+        if timed and resume and pending is None:
+            from evaluate_nine_model_timed_checkpoint import recover_boundary_receipt
+
+            release()
+            pending = recover_boundary_receipt(
+                lane, lane_locator, run_dir, attempt, admission_path, state, files
+            )
         if pending:
             receipt = files.check(pending)
         else:
