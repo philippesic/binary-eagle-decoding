@@ -442,6 +442,8 @@ def research_bindings(plan):
 
 def checked_measurement_rows(bindings, records, diagnostics):
     """Require complete actual raw token/count/finish joins and paired coverage."""
+    from benchmark_native_eagle import request_body
+
     protocol = _research_json(bindings["protocol"])
     prompts = [
         json.loads(line)
@@ -449,6 +451,15 @@ def checked_measurement_rows(bindings, records, diagnostics):
         if line.strip()
     ]
     identifiers = {row["id"] for row in prompts}
+    prompt_map = {row["id"]: row for row in prompts}
+    request_config = {
+        "evaluation": {
+            "max_output_tokens": protocol["max_output_tokens"],
+            "temperature": 0.0,
+            "seed": protocol["seed"],
+            "enable_thinking": False,
+        }
+    }
     _research_require(
         len(identifiers) == len(prompts) == 24 and protocol["repetitions"] == 5,
         "research policy requires actual complete 24-prompt five-repetition suite",
@@ -468,6 +479,15 @@ def checked_measurement_rows(bindings, records, diagnostics):
             "incomplete/duplicate research measurement coverage",
         )
         for row in rows:
+            raw_path = checked_locator(row["raw_result"])
+            request_path = raw_path.parent / "request.json"
+            request_locator = row.get("raw_request", artifact_locator(request_path))
+            _research_require(
+                checked_locator(request_locator) == request_path
+                and _research_json(request_locator)
+                == request_body(request_config, prompt_map[row["prompt_id"]]),
+                "raw request differs from frozen prompt/protocol",
+            )
             raw = _research_json(row["raw_result"])
             tokens = row["generated_token_ids"]
             _research_require(
@@ -576,6 +596,177 @@ def baseline_control_outputs(bindings, records, diagnostics):
     return result
 
 
+def validate_native_stages(bindings, records, diagnostics, stages, models, producer_sources):
+    """Authenticate executed process/model/input/stage joins, not locator counts."""
+    from benchmark_native_eagle import request_body
+
+    from w1a1_eagle.nine_model_pipeline import validate_cuda_dispatch
+
+    _research_require(
+        models["initial"]["sha256"] == bindings["initial_model"]["sha256"]
+        and models["eagle_q4"]["sha256"] == bindings["q4_model"]["sha256"],
+        "executed initial/Q4 control model bytes differ",
+    )
+    root = Path(__file__).resolve().parents[2]
+    required_sources = {
+        "scripts/evaluate_nine_model_timed_checkpoint.py",
+        "scripts/benchmark_native_eagle.py",
+        "src/w1a1_eagle/nine_model_pipeline.py",
+    }
+    _research_require(
+        set(producer_sources) == required_sources, "complete known native producer sources required"
+    )
+    for name, locator in producer_sources.items():
+        checked_locator(locator)
+        if name != "scripts/evaluate_nine_model_timed_checkpoint.py":
+            _research_require(
+                artifact_locator(root / name)["sha256"] == locator["sha256"],
+                "native request/dispatch producer source differs",
+            )
+    protocol = _research_json(bindings["protocol"])
+    prompts = [
+        json.loads(line)
+        for line in checked_locator(bindings["prompts"]).read_text().splitlines()
+        if line.strip()
+    ]
+    by_id = {prompt["id"]: (i, prompt) for i, prompt in enumerate(prompts)}
+    cells = {bindings["candidate"], "initial", "eagle_q4", "target_only"}
+    expected = {(c, r, False) for c in cells for r in range(5)} | {(c, 0, True) for c in cells}
+    table, identities = {}, set()
+    _research_require(len(stages) == len(expected), "all24 actual native stages required")
+    for stage in stages:
+        key = (stage["cell"], stage["repetition"], stage["diagnostic"])
+        _research_require(
+            key in expected and key not in table, "missing/duplicate/relabelled native stage"
+        )
+        process_path = checked_locator(stage["process"])
+        directory = process_path.parent
+        _research_require(
+            directory.name == stage["cell"]
+            and directory.parent.name
+            == ("diagnostic" if stage["diagnostic"] else f"rep-{stage['repetition']:02d}"),
+            "native stage directory identity differs",
+        )
+        process = _research_json(stage["process"])
+        identity = process["kernel_identity"]
+        _research_require(
+            type(process.get("pid")) is int
+            and process["pid"] == process.get("pgid") == identity.get("pid")
+            and type(identity.get("start_ticks")) is int
+            and identity.get("boot_id")
+            and _research_digest(identity) not in identities,
+            "actual unique native process birth identity required",
+        )
+        identities.add(_research_digest(identity))
+        argv = process["argv"]
+        _research_require(isinstance(argv, list) and argv, "actual native argv required")
+        checked_locator({"path": argv[0], "sha256": bindings["runtime"]["binary"]["sha256"]})
+
+        def option(name):
+            _research_require(argv.count(name) == 1, "native option missing/duplicated: " + name)
+            return argv[argv.index(name) + 1]
+
+        checked_locator({"path": option("-m"), "sha256": bindings["target"]["sha256"]})
+        expected_model = (
+            bindings["target"] if stage["cell"] == "target_only" else models[stage["cell"]]
+        )
+        _research_require(
+            _artifact_identity(stage["model"]) == _artifact_identity(expected_model),
+            "stage executed model differs",
+        )
+        if stage["cell"] == "target_only":
+            _research_require(
+                "-md" not in argv and option("--spec-type") == "none",
+                "target-only native mode changed",
+            )
+        else:
+            checked_locator({"path": option("-md"), "sha256": expected_model["sha256"]})
+            family = "eagle" if stage["cell"] == "eagle_q4" else bindings["candidate"].split("_")[0]
+            _research_require(
+                option("--spec-type") == "draft-eagle3"
+                and option("--spec-draft-n-max") == str(protocol["draft_lengths"][family])
+                and option("--spec-draft-p-min") == "0"
+                and option("--spec-draft-type-k") == option("--spec-draft-type-v") == "f16",
+                "native speculative/controller protocol changed",
+            )
+        for flag, value in (
+            ("--ctx-size", protocol["context_tokens"]),
+            ("--batch-size", protocol["batch_tokens"]),
+            ("--ubatch-size", protocol["microbatch_tokens"]),
+            ("--cache-type-k", "f16"),
+            ("--cache-type-v", "f16"),
+        ):
+            _research_require(
+                option(flag) == str(value), "native protocol/precision argv differs: " + flag
+            )
+        lineage = _research_json(stage["lineage"])
+        _research_require(
+            checked_locator(stage["lineage"]).parent == directory
+            and identity in lineage["kernel_identities"],
+            "native process lineage differs",
+        )
+        resource = _research_json(stage["resource_return"])
+        _research_require(
+            checked_locator(stage["resource_return"]).parent == directory,
+            "resource proof belongs to another stage",
+        )
+        release, snapshot = resource["release"], resource["resources"]
+        _research_require(
+            release.get("owned_process_groups_absent") is True
+            and release.get("owned_cuda_pids_absent") is True
+            and release.get("other_context_pids") == []
+            and snapshot.get("dxg_holders") == []
+            and snapshot.get("gpu_uuid") == bindings["gpu_uuid"]
+            and snapshot.get("boot_id") == identity["boot_id"],
+            "stage actual resource/process release differs",
+        )
+        log = checked_locator(stage["server_log"])
+        _research_require(log.parent == directory, "server log belongs to another stage")
+        if stage["diagnostic"] and stage["cell"] in {bindings["candidate"], "initial"}:
+            dispatch = _research_json(stage["dispatch"])
+            _research_require(
+                checked_locator(stage["dispatch"]).parent == directory,
+                "dispatch belongs to another stage",
+            )
+            audit = _research_json(stage["export_audit"])
+            _research_require(
+                audit.get("serialization_audit_passed") is True
+                and _artifact_identity(audit["output"]) == _artifact_identity(expected_model),
+                "stage model/dispatch audit differs",
+            )
+            actual = validate_cuda_dispatch(
+                log.read_text(errors="replace"), audit, activation_bits=8
+            )
+            _research_require(actual == dispatch, "actual log/dispatch/projection evidence differs")
+        table[key] = directory
+    _research_require(set(table) == expected, "actual native stage coverage differs")
+    request_config = {
+        "evaluation": {
+            "max_output_tokens": protocol["max_output_tokens"],
+            "temperature": 0.0,
+            "seed": protocol["seed"],
+            "enable_thinking": False,
+        }
+    }
+    for diagnostic, rows in ((False, records), (True, diagnostics)):
+        for row in rows:
+            directory = table[(row["cell"], row["repetition"], diagnostic)]
+            ordinal, prompt = by_id[row["prompt_id"]]
+            measurement = checked_locator(row["raw_result"])
+            _research_require(
+                measurement == directory / f"prompt-{ordinal:04d}" / "measurement.json",
+                "raw measurement stage/prompt ordinal differs",
+            )
+            request_path = measurement.parent / "request.json"
+            request_locator = row.get("raw_request", artifact_locator(request_path))
+            _research_require(
+                checked_locator(request_locator) == request_path
+                and _research_json(request_locator) == request_body(request_config, prompt),
+                "raw request differs from frozen prompt/protocol",
+            )
+    return True
+
+
 def validate_collection_evidence(bindings, evidence_locator, progress_locator):
     """Preserve actual failed controller status separately from complete collection."""
     evidence = _research_json(evidence_locator)
@@ -609,36 +800,15 @@ def validate_collection_evidence(bindings, evidence_locator, progress_locator):
     )
     for model in models.values():
         checked_locator(model)
-    resources = evidence.get("resource_returns", [])
-    dispatch = evidence.get("dispatch_proofs", [])
-    _research_require(
-        len(resources) == 24
-        and len(dispatch) == 2
-        and len({_research_digest(r) for r in resources}) == 24
-        and len({_research_digest(r) for r in dispatch}) == 2,
-        "complete per-cell/repetition resource and both model dispatch proofs required",
+    progress = _research_json(progress_locator)
+    validate_native_stages(
+        bindings,
+        progress["clean_records"],
+        progress["diagnostic_records"],
+        evidence["stages"],
+        models,
+        evidence["producer_sources"],
     )
-    for locator in resources:
-        result = _research_json(locator)
-        release = result.get("release", result.get("actual_release", {}))
-        snapshot = result.get("resources", {})
-        _research_require(
-            release.get("owned_process_groups_absent") is True
-            and release.get("owned_cuda_pids_absent") is True
-            and release.get("other_context_pids") == []
-            and snapshot.get("dxg_holders") == []
-            and snapshot.get("gpu_uuid") == bindings["gpu_uuid"],
-            "actual collection resource release failed",
-        )
-    for locator in dispatch:
-        result = _research_json(locator)
-        _research_require(
-            result.get("schema") == "nine_model_observed_w1_dispatch_v1"
-            and result.get("status") == "PASS"
-            and result.get("activation_bits") == 8
-            and len(set(result.get("packed_names", []))) == 16,
-            "actual sixteen-projection A8 native dispatch proof missing",
-        )
     return evidence
 
 
@@ -766,6 +936,64 @@ def research_continuation_decision(locator, bindings, records, diagnostics):
     }
 
 
+def validate_research_export_join(result, report):
+    """Reject reuse of another evaluated checkpoint/model's raw collection."""
+    exported = _research_json(report["export_receipt"])
+    _research_require(
+        exported == report["trained_export"]
+        and exported.get("schema") == "nine_model_lane_endpoint_export_v1"
+        and exported.get("artifact_kind") == "production"
+        and exported["candidate"] == result["candidate"]
+        and exported["checkpoint"] == result["checkpoint"]
+        and exported["training_receipt"] == result["training_receipt"]
+        and exported["frozen_lane"]["sha256"] == result["bundle_sha256"]
+        and exported["config"]["sha256"] == result["config_sha256"],
+        "evaluated export/checkpoint/training receipt differs",
+    )
+    training = _research_json(result["training_receipt"])
+    request = _research_json(result["request"])
+    _research_require(
+        training.get("schema") == "nine_model_stage_receipt_v1"
+        and training.get("status") == "PASS"
+        and training.get("committed") is True
+        and training["checkpoint"] == result["checkpoint"]
+        and training["bundle_sha256"] == result["bundle_sha256"]
+        and training["config_sha256"] == result["config_sha256"]
+        and training["timed_evaluation_request"] == result["request"]
+        and training["counters"] == request["counters"],
+        "exact committed training request/export joins differ",
+    )
+    checked_locator(result["checkpoint"])
+    candidate = result["candidate"]
+    inputs = training["exports"][candidate]
+    audit = _research_json(exported["audit"])
+    manifest = _research_json(inputs["manifest"])
+    checked_locator(inputs["checkpoint"])
+    _research_require(
+        audit.get("serialization_audit_passed") is True
+        and audit.get("family") == candidate.split("_")[0]
+        and audit["output"] == exported["model"]
+        and audit["checkpoint"] == {"sha256": inputs["checkpoint"]["sha256"]}
+        and audit["manifest"] == {"sha256": inputs["manifest"]["sha256"]}
+        and set(audit["projections"]) == set(manifest["projections"]),
+        "actual evaluated model serialization inputs differ",
+    )
+    checked_locator(exported["model"])
+    _research_require(
+        report["model_ancestry"][candidate] == exported["model"],
+        "raw candidate evaluated model differs from checkpoint export",
+    )
+    raw = _research_json(report["measurements"])
+    validate_native_stages(
+        result["research_bindings"],
+        raw["clean_records"],
+        raw["diagnostic_records"],
+        report["native_stages"],
+        report["model_ancestry"],
+        report["producer_sources"],
+    )
+
+
 def validate_evaluation_continuation(result):
     """Actively reauthenticate a research receipt before any exact-state restore."""
     if result.get("status") == "PASS" and result.get("research_continuation_policy") is None:
@@ -797,6 +1025,7 @@ def validate_evaluation_continuation(result):
         and report["research_bindings"] == result["research_bindings"],
         "research report/receipt policy joins differ",
     )
+    validate_research_export_join(result, report)
     raw = _research_json(report["measurements"])
     decision = research_continuation_decision(
         result["research_continuation_policy"],

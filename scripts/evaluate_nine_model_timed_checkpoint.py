@@ -246,7 +246,7 @@ def evaluate(
     for model in models.values():
         files.check(model)
     bundle = {"inputs": {"binary": plan["runtime"]["binary"], "target": plan["target"]}}
-    records, diagnostics = [], []
+    records, diagnostics, native_stages = [], [], []
     started = time.monotonic()
     request_config = {
         "evaluation": {
@@ -366,7 +366,12 @@ def evaluate(
                             "generated_token_ids": result["generated_token_ids"],
                             "speculative": result["speculative"],
                             "raw_result": pin(destination / "measurement.json"),
+                            "raw_request": pin(destination / "request.json")
+                            if (destination / "request.json").exists()
+                            else None,
                         }
+                        if row["raw_request"] is None:
+                            del row["raw_request"]
                         if diagnostic and cell != "target_only":
                             row["round_summary"] = round_summary(
                                 rows(trace)[before:],
@@ -411,13 +416,42 @@ def evaluate(
                 require("dense fallback" not in text.lower(), "native dense fallback prohibited")
                 actual = validate_cuda_dispatch(text, audits[cell], activation_bits=bits)
                 atomic_json(stage / "actual-dispatch.json", actual)
+            stage_record = {
+                "cell": cell,
+                "repetition": rep,
+                "diagnostic": diagnostic,
+                "process": pin(stage / "process.json"),
+                "lineage": pin(stage / "process-lineage.json"),
+                "server_log": pin(stage / "server.log"),
+                "resource_return": pin(stage / "resource-return.json"),
+                "model": plan["target"] if cell == "target_only" else models[cell],
+            }
+            if quantized and diagnostic:
+                stage_record.update(
+                    dispatch=pin(stage / "actual-dispatch.json"),
+                    export_audit=(
+                        exported["audit"] if cell == candidate else plan["initial"]["audit"]
+                    ),
+                )
+            native_stages.append(stage_record)
     report = matched_report(plan, records, diagnostics, baseline)
     report.update(
         model_ancestry=models,
         target=plan["target"],
         trained_export=exported,
         development_admission=plan["development_admission"],
+        native_stages=native_stages,
+        producer_sources={
+            name: pin(ROOT / name)
+            for name in (
+                "scripts/evaluate_nine_model_timed_checkpoint.py",
+                "scripts/benchmark_native_eagle.py",
+                "src/w1a1_eagle/nine_model_pipeline.py",
+            )
+        },
     )
+    if plan.get("research_continuation_policy"):
+        report["export_receipt"] = pin(Path(exported["audit"]["path"]).parent / "receipt.json")
     atomic_json(
         directory / "measurements.json",
         {"clean_records": records, "diagnostic_records": diagnostics},
