@@ -2092,4 +2092,33 @@ Initial independent CPU assignments: frozen EAGLE evaluation route/commands,
 timed4h acceptance/resume support, block production/capture readiness. Workers
 have no SSH/GPU authority and no recursive teams; root owns docs/actual launches.
 
+## Fresh availability and implementation milestone — October 5, 23:24 PDT
+
+Root remains sole RTX5080 owner. New MCP transport $259 / @288 / %290 is
+connected to Ubuntu through Windows SSH. Original boot is unchanged. Fresh
+SM120 observation confirms CUDA census empty, complete DXG holders empty, all
+former owned groups absent, 14,590,935,040 GPU bytes free, 19,968,679,936 host
+bytes available and 196,091,285,504 disk bytes free. Remote primary checkout is
+dirty; preserve it and use isolated frozen source. No RTX2080 operations.
+
+Remote read-only proof: results/nine-model-qat-overnight/
+resume-availability-20261005-2320.json, SHA
+bfac0a06fe5f846d2bfa3768c557abbd9294fc8110bbbc750422f90f93cfcc2a.
+Checkpoint344724 outer manifest and historical budget agree with paused state;
+old 86,400-second receipt remains interrupted, not approved-budget-complete.
+
+SAME heartbeat updated ACTIVE, every 2 hours. Native Goal ACTIVE. Four bounded
+CPU owners now implement: paused EAGLE adapter; fixed-budget timed trainer and
+milestone retention; packet policy propagation; serialized single-lane native
+evaluation/resume. Parent alone performs remote operations. Audits establish
+that existing code has no automatic 4-hour boundary and final-only endpoint
+cannot admit this interrupted snapshot. These are real source gaps being fixed,
+not runtime behavior already claimed. Packet owner reports 28 CPU tests; parent
+integration and independent verification remain pending.
+
+Next: integrate tested paused EAGLE adapter, export current checkpoint and run
+honest native trained/initial/Q4/target comparisons. Independently finish timed
+boundary integration and production block preparation. Human exposure/conditioning
+question remains pending. No new training, export or CUDA evaluation launched yet.
+
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->
