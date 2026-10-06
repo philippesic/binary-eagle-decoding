@@ -1942,4 +1942,42 @@ adjacent raw command/result/capture retained. Full GoalACTIVE/unfinished,
 healthy allocation unchanged, about10.04trainerhours remain/no wall ETA.
 Next regular check17:34PDT remains unchanged by this additional human check-in.
 
+## Human loss/acceptance-method explanation — October 5, 17:27 PDT
+
+Human asked how prior2h acceptance was measured and whether training reports loss.
+Clarified prior study reached its7,200accounted trainer-second endpoint, exported
+completed checkpoints, then ran a separate native24-unsealed-dev-prompt comparison
+onRTX5080/SM120. This is not an interim acceptance result from the current24h run.
+The current trainer does log hard-CE/token loss on recorded TRAIN states; native
+accepted/proposed and accepted/round require actual draft/verifier execution.
+
+Bounded read-only scalar-log analysis atOctober6,00:27:33UTC (October5,17:27PDT):
+original same-boot trainer55398/birth12966638 live. Steps338252–339251:1000updates/
+4869supervised labels, token-weightedCE4.849567628. Steps339252–340251:1000updates/
+4631labels, token-weightedCE5.768972006. Combined2000updates/9500labels CE5.297753067.
+All logged gradients finite in both windows. Latest single-batchCE3.387800694;
+latest-window per-round range0.000560–25.891577. Different TRAIN examples/windows
+are unpaired, so the rise is not proof of deterioration, nor are finite gradients
+proof of improving held-out quality. No acceptance-rate estimate from CE.
+
+First read targeted current log only and found fewer2001rows after ordinary
+rotation. Changed strategy to read current plus backup, deduplicated steps and
+required contiguous2001rows and positive cumulative-token deltas. Preserved the
+caller-only failed query; no trainer failure/repair was inferred. Re-read exact
+cutoff340251 and reproduced both weighted means within1e-12 before archiving
+2001original metric rows. Remote ignored source snapshot:
+`/home/philip/binary-eagle-decoding/results/nine-model-qat-overnight/a8-loss-observation-20261005-1727/source-rows.jsonl`,
+SHA83636e4212bf51c0cb2d441e03feab442fbbb284be4e8273777464033690d544.
+Local scalar summary `results/nine-model-qat-overnight/loss-windows-20261005-1727.json`
+and adjacent raw failed/successful query evidence retained outsideGit. Summary
+identifies original log paths, byte hashes, sample ranges and denominators.
+
+Root acknowledged communication gap: earlier updates should have included
+available windowed loss and explained endpoint measurement, rather than only
+repeating that acceptance was unmeasured. No user mistake; training remains
+uninterrupted, source/config/budget/endpoint unchanged and full GoalACTIVE.
+Next regular full health check17:34PDT remains; this targeted loss observation
+does not replace full resource/identity/source health evidence. Current calibrated
+native acceptance stays PENDING natural endpoint; other nine-model gates pending.
+
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->

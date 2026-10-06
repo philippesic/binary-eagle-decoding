@@ -666,3 +666,19 @@ additional proof protocols or redoing completed audit work.
   clock domain. Keep supervisor start separate, preserve serialized identity
   types when joining /proc evidence, and re-observe a failed query before making
   any claim about trainer failure. Initial goal wording is corrected in place.
+
+### 2026-10-05: Report available loss while native acceptance is pending
+
+- Context: human repeatedly asked current A8 acceptance, then asked how earlier
+  two-hour acceptance was measured and whether training reports loss.
+- Evidence: old study evaluated completed7200second endpoints on24dev prompts;
+  current24h run has no native acceptance yet but logs TRAIN CE. A bounded
+  rotation-aware read found token-weightedCE5.30 over2000updates/9500labels.
+- Agent contribution/status: confirmed communication gap. Root repeatedly gave
+  historical acceptance/unmeasured-current status and health counts without
+  surfacing available averaged loss or explaining separate endpoint evaluation.
+  Human question was reasonable; no user mistake or training failure.
+- Correction: report window ranges, denominators, scalar loss and its limits;
+  archive original inputs before log rotation removes them. Distinguish TRAIN
+  fit, matched held-out quality and native draft/verifier acceptance. Different
+  examples cannot establish a quality trend, and CE is not an acceptance rate.

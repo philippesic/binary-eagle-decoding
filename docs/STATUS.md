@@ -267,6 +267,14 @@ CPU pilots, production readiness pending/no QAT. EAGLEQ4 control is available;
 exact original blockQ4 files are absent from this campaign. Current calibrated
 A8/untrained acceptance remains unmeasured; old13.07% is historical. FullGoalACTIVE.
 
+**17:27 PDT loss explanation:** previous2h acceptance was measured after its
+7200trainer-second endpoint, through separate24-prompt native development runs.
+Current TRAIN cross-entropy is available: token-weighted mean5.297753 over2000
+updates/9500labels; preceding1000=4.849568, latest1000=5.768972, all finite grads.
+Different training examples prevent a matched quality-trend claim; CE cannot
+be converted to native draft acceptance. Original metric rows archived outside
+Git; no GPU evaluation/pause/job/source change. Healthy original QAT continues.
+
 **07:50 PDT exclusive transfer:** fresh successor chat owns the same unfinished
 goal after explicit local registration transfer and SAME heartbeat retarget.
 Predecessor makes no remote calls after dispatch; healthy trainer/watcher are
