@@ -682,3 +682,19 @@ additional proof protocols or redoing completed audit work.
   archive original inputs before log rotation removes them. Distinguish TRAIN
   fit, matched held-out quality and native draft/verifier acceptance. Different
   examples cannot establish a quality trend, and CE is not an acceptance rate.
+
+### 2026-10-05: Verify the actual launch seam and restart completed workers
+
+- Context: revised timed campaign needed current A8 acceptance and new serialized
+  checkpoints. No user error or scientific model failure occurred.
+- Agent contribution: root launched a new native build before consulting the
+  existing successful toolchain flags; missing CMake PATH and known private CUDA
+  compatibility include caused two CPU-only failures. Read actual build provenance
+  before launch and reuse pinned settings rather than reconstruct them from memory.
+- The old endpoint helper assumed development rows carry split metadata, while
+  the exact admitted historical file stores only domain/id/messages. Mock fixtures
+  mirrored the assumption. Test real artifact schema at adapter seams and retain
+  file-level admission authority; do not rewrite inputs or relax arbitrary gates.
+- Root queued a repair to a worker that had completed. Independent review noticed
+  no turn had started; root explicitly restarted it and verified acknowledgment.
+  Use followup_task for completed workers and inspect execution state.

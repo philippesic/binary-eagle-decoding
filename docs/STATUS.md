@@ -4,7 +4,7 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Active: twelve-hour nine-model campaign — October 5, 23:24 PDT
+## Active: twelve-hour nine-model campaign — October 5, 23:35 PDT
 
 Human resumed RTX5080 and revised the same unfinished campaign. First evaluate
 preserved EAGLE A8, then DSpark A8, DFlash A8, EAGLE A1, DSpark A1, DFlash A1.
@@ -15,10 +15,14 @@ F16 target/verifier/KV, original TRAIN ancestry and held-out protocol remain.
 EAGLE A8 already consumed14.43h: preserve that overage and verified344724
 checkpoint; no repeat/extra training before evaluation. Old4/8/12h acceptance
 results do not exist. Root remains sole GPUoperator; fresh source/resource/device
-checks precede execution. Native Goal ACTIVE; no new GPU job launched yet. Fresh RTX5080 census shows
-no CUDA/DXG holders, 14.59 GB GPU free and 19.97 GB host available. SAME
-heartbeat is ACTIVE at two-hour cadence. Timed trainer/evaluation lifecycle
-implementation and honest paused-checkpoint comparison adapter are in progress.
+checks precede execution. Native Goal ACTIVE. Current A8 snapshot CPU export PASS; model SHA
+`6d3a8c1bc8b1c634f00a677ad466c00944c00f8c1accac4ff06e82403bdf60c9`.
+First comparison attempt stopped before GPU inference: original admitted
+development rows lack the split field assumed by the old helper. Exact prompt
+bytes and file-level disjointness remain frozen; bounded schema repair proceeds.
+Owned release PASS, no CUDA/DXG holders. SAME heartbeat ACTIVE every 2 hours.
+Timed trainer/lifecycle source is integrated in a temporary worktree; final
+recovery repair, combined checks and actual CUDA timing smoke remain pending.
 The [existing goal](goals/nine-model-qat-overnight.md) retains full six+three scope.
 Pending block exposure/conditioning and original control files remain real inputs;
 EAGLE evaluation and bounded independent CPU/source preparation proceed.

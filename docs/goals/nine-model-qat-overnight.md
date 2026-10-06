@@ -2121,4 +2121,52 @@ honest native trained/initial/Q4/target comparisons. Independently finish timed
 boundary integration and production block preparation. Human exposure/conditioning
 question remains pending. No new training, export or CUDA evaluation launched yet.
 
+## Current EAGLE export and bounded repairs — October 5, 23:35 PDT
+
+Actual CPU inspection PASS against original frozen helper checkout c2544aa:
+step 344724, all nine joint projections, exact resume and zero-update ancestry,
+51,950.921720 trainer seconds, original allocation still 86,400 seconds.
+
+New supervised run eagle-a8-paused-native-20261005-01 used adapter b1ef3aaa,
+helper c2544aa and frozen native cc9; controller 65414 / birth 20280219,
+supervisor 65409 / birth 20280212, unchanged boot. Both are now absent. CPU
+serializer completed: trained model SHA
+6d3a8c1bc8b1c634f00a677ad466c00944c00f8c1accac4ff06e82403bdf60c9;
+audit SHA 904439bd7ea2e45807b428fbf3835662079b4fab11d26210d64b9d5e52f3151e.
+Output: results/nine-model-qat-overnight/eagle-a8-paused-native-20261005-01.
+
+Native helper rejected missing row-level split metadata before any GPU server.
+Original SHA-pinned 24-row development file has domain/id/messages only; its
+planner selects eight development prompts per domain and file-level admission
+proves TRAIN disjointness. Preserve original bytes, failed attempt and protocol;
+repair the adapter's metadata seam using that exact authenticated authority,
+reject explicit conflicting splits. No acceptance result or completed budget is
+claimed. Failure receipt SHA
+2ced41816365535213ed00bc8a5d79545214fd87d2ad4dee475366281384b8b9;
+actual owned release PASS, complete DXG census empty, GPU free 14,590,935,040 B.
+Fresh prelaunch release proof with exact historical identities (superseding the
+earlier observation's identity-free group check):
+data/nine-model-overnight/eagle-a8-paused-native-20261005-01/fresh-release.json,
+SHA 3a71b769242814e55d28a287f0c511dc4b40cf0c204ef9f5ad9a15d797a7a9f8.
+
+Four source partitions integrated into parent temporary tree through e440092f.
+Parent 12 timed-training tests PASS. Independent review verified later periodic
+checkpoint recovery and rollback rejection. Controller request/receipt/state crash
+window repair remains active; exact unsplit-prompt regression is being added.
+Clock policy: active optimizer loop and periodic checkpoint overhead charged;
+startup/reconstruction, boundary publication/export and native evaluation excluded.
+Keep fixed 43,200-second threshold and record actual completed-update overage.
+
+Native indexed ecff source is staged in its own remote worktree. Two CPU build
+attempts exited before runtime: missing unqualified CMake, then known CUDA13.1 /
+glibc noexcept declaration mismatch. Existing successful build's exact private
+compatibility include and tool paths identified; preserve failures and use those
+settings next. No successful ecff SM120 build/capture/admission is claimed.
+Do not compile concurrently with native timing. Block exposure/conditioning
+question remains pending; no block capture or training launched.
+
+Root alone controls transport $259 / @288 / %290. Next: integrate tested prompt
+adapter repair, fresh release/lease, current A8 native comparison; finish bounded
+controller recovery and combined source tests, then production block preparation.
+
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->
