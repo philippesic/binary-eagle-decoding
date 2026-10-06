@@ -1,9 +1,12 @@
 # Nine-model RTX5080 overnight QAT
 
-**Current state: PAUSED by human request, October 5, 17:41 PDT.** Training and
-endpoint watcher stopped; all owned groups/compute contexts released. SAME
-heartbeat PAUSED. Full unfinished objective is preserved; no new5080 use until
-explicit human resume. Latest pause checkpoint is at the end of this file.
+**Current state: ACTIVE under revised human schedule, October 5, 23:11 PDT.**
+RTX5080 explicitly available again. Evaluate preserved EAGLE A8 first; then
+DSpark A8, DFlash A8, EAGLE A1, DSpark A1, DFlash A1. Allocations12 cumulative
+trainer-hours; native acceptance at4/8/12h; healthchecks every2h plus operational
+startup checks5/15minutes. Preserve actual old EAGLE14.43h accounting. Former
+jobs/watcher stay stopped; fresh execution gates required. Full six+three
+scope/F16/ancestry/held-out constraints preserved; operative checkpoint at end.
 
 ## Unfinished objective and original authorization
 
@@ -2058,5 +2061,35 @@ exact committed checkpoint plus unchanged paid accounting, and fresh lane/endpoi
 bindings for retired process identities; do not reuse the old watcher as armed.
 A1 calibration/source preparation and block options/controls/sealed-final gates
 are preserved as pending. No current calibrated acceptance/throughput result.
+
+## Human revised schedule and resume — October 5, 23:11 PDT
+
+Human explicitly resumed5080 and selected12h/model, acceptance every4h,
+two-hour healthchecks plus extra early checks. Evaluate paused EAGLE A8 now;
+then DSpark A8, DFlash A8, EAGLE A1, DSpark A1, DFlash A1. This supersedes old
+24h cap/pause/A1-next order and does not replace the unfinished research scope.
+Native GoalACTIVE; local5080 flag resumed. Root01a10c8a-22bb-7380-9a8c-d9802a51b679
+sole GPUoperator; no2080 operations. New MCPsession$259 initialized, no job yet.
+
+- EAGLE A8: evaluate step344724/SHA34978ea4... at51,950.921720trainerseconds
+  against primary original Q4_0, exact calibrated untrained A8 and target-only.
+  Preserve14.43h overage; do not repeat paid QAT, fabricate earlier4/8/12h native
+  results or relabel the interrupted86,400s receipt approved-budget-complete.
+- Other five:43,200 cumulative trainer-seconds; committed native checkpoints at
+  14,400/28,800/43,200s, owned GPUrelease, matched evaluation, exact optimizer/
+  RNG/cursor/source/accounting restore. Eval/startup excluded from training time.
+  Inspect/implement/test actual timed boundary support; prose is not enforcement.
+- SAME heartbeat becomes every2h. Parent selects operational extra startup
+  checks5/15minutes. Max2 exact-state repairs per incident; pause immediately.
+- Success: six genuine trained endpoints, three original Q4 controls, unchanged
+  F16 target/verifier/KV and held-out protocol, measured native acceptance AND
+  complete throughput/resource-safe lifecycle. CPU/source fixtures are not CUDA.
+- Pending scientific block exposure/conditioning and exact original controls
+  remain; ask essential input while EAGLE evaluation proceeds. Do not wait for
+  all six ready models or a custom sequencer before an admitted lane.
+
+Initial independent CPU assignments: frozen EAGLE evaluation route/commands,
+timed4h acceptance/resume support, block production/capture readiness. Workers
+have no SSH/GPU authority and no recursive teams; root owns docs/actual launches.
 
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->

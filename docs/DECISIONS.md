@@ -1,5 +1,17 @@
 # Decision log
 
+## Selected: twelve-hour sequential campaign — October 5, 23:11 PDT
+
+Human resumed RTX5080: evaluate preserved EAGLE A8 now, then DSpark A8,
+DFlash A8, EAGLE A1, DSpark A1, DFlash A1. Twelve-hour allocations and four-hour
+native acceptance boundaries explicitly selected; two-hour healthchecks with
+extra early checks. Parent picks startup5/15minutes operationally. Preserve
+EAGLE's old14.43h paid overage/checkpoint; no retraining or retroactive results.
+Serialize released-GPU evaluation and exact-state/accounting restore; eval time
+excluded from training. This supersedes old24h/pause/A1-next controls. Block
+exposure/conditioning and original-Q4 file locations remain pending; first
+EAGLE evaluation proceeds independently.
+
 ## Selected: A8 integration and controlled QAT comparison — October 3, 2026
 
 The human selected the proposed QAT repair team and monitored comparison,

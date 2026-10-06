@@ -4,7 +4,23 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Paused: nine-model RTX5080 overnight QAT — October 5, 17:41 PDT
+## Active: twelve-hour nine-model campaign — October 5, 23:11 PDT
+
+Human resumed RTX5080 and revised the same unfinished campaign. First evaluate
+preserved EAGLE A8, then DSpark A8, DFlash A8, EAGLE A1, DSpark A1, DFlash A1.
+Allocation: 12 cumulative trainer-hours per model; native acceptance at4/8/12h.
+Healthchecks every2h, with operational extra startup checks at5/15minutes.
+F16 target/verifier/KV, original TRAIN ancestry and held-out protocol remain.
+
+EAGLE A8 already consumed14.43h: preserve that overage and verified344724
+checkpoint; no repeat/extra training before evaluation. Old4/8/12h acceptance
+results do not exist. Root remains sole GPUoperator; fresh source/resource/device
+checks precede execution. Native GoalACTIVE; no new GPUjob launched yet.
+The [existing goal](goals/nine-model-qat-overnight.md) retains full six+three scope.
+Pending block exposure/conditioning and original control files remain real inputs;
+EAGLE evaluation and bounded independent CPU/source preparation proceed.
+
+## Historical pause: October 5, 17:41 PDT
 
 Human explicitly paused training and all RTX5080 use. The local RTX5080 flag
 blocks new work. Both recorded supervisors were interrupted, the trainer stopped
