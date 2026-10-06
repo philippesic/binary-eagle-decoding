@@ -2217,4 +2217,58 @@ awaits the human choice; indexed native build needs corrected pinned toolchain,
 then selected production capture/calibration/model/admission. Do not compile on
 remote CPUs during native timing or claim remaining five models are training.
 
+## Trained native counters; initial comparison running — October 6, 00:09 PDT
+
+Run02 completed all 360 clean requests and 72 diagnostic records, actual nine
+projection CUDA dispatch validation passed. Strict aggregate rejected greedy
+verifier token equality; preserve raw failure and approved-budget-incomplete
+status. Candidate and original Q4 each differ from target-only on only one of
+24 prompts, gsm8k:train-006474 at zero-based generated token 98, identically in
+all five repetitions. Within-cell output arrays are stable. CPU analysis of all
+120 complete candidate/Q4 token arrays, lengths and finish reasons finds no
+mismatch. This supports the negative primary-Q4 observation, not deployment
+correctness or relaxed target-only quality success.
+
+Measured native counters (denominators are actual proposed drafts and rounds):
+- Trained A8: accepted 4,765 / proposed 46,125 = 10.3306%; rounds 9,380.
+- Original Q4: accepted 8,025 / proposed 30,290 = 26.4939%; rounds 6,155.
+- Both emitted 14,290 tokens across 120 requests. A8 request time 153.902756 s;
+  Q4 99.322384 s; target-only 152.451414 s. Raw values remain qualified by the
+  failed target-only gate; source/precision/runtime/inputs are unchanged.
+
+Run02 complete raw progress SHA
+b954bb86c4da3cbca10380c7fa2c15c00e87100d48a514a744faa1e450d1a213;
+input ancestry SHA
+1f218c915fca475b1492b001e38a2f9b167a43d06cb454ae9dd42d2cee01a9a7.
+Primary pairing analysis is adjacent primary-q4-pairing-analysis.json. Failure
+receipt preserves actual complete release PASS, no CUDA/DXG holders. Run02
+supervisor/controller are absent; no models are left resident from that attempt.
+
+Fresh initial-only run eagle-a8-paused-native-20261006-03 started 00:03:47 PDT,
+checkout runs/checkouts/paused-eagle-eval-b900e2e, adapter b900e2e9 / source SHA
+21bb8cdabeec950d8ea7eaf7b4f0cdfb1299859bd546cef062632323260426bb.
+Supervisor 67532 / birth 20478473, controller 67537 / birth 20478479; unchanged
+boot517c4a36-e475-4a5f-9fa6-65de57edc6fe. At00:06, 76 clean records, healthy.
+Output results/nine-model-qat-overnight/eagle-a8-paused-native-20261006-03.
+Startup lease SHA fc9fed0191496b74bcfbee4dacc6cfd795fcbd79d9ba6357eb05b68d2d920f4b.
+Uses exact calibrated zero-update model b2f6... and independent fresh Q4/target
+controls; trained export reuse is validated but trained sweep is not repeated.
+All strict parity/ancestry/resource gates remain unchanged. Stop procedure same
+exact supervisor SIGINT + output STOP, 90-second grace, complete release proof.
+
+Focused source advisor identifies existing cc9 W1AX_VERIFY_TRACE_JSONL/POSITIONS
+for untouched raw top-five logits, sampled/emitted/replay and causal-prefix joins.
+Backend sampling is default false and actual saved response confirms false.
+Target matrix dispatch depends on actual columns; near-tie numeric sensitivity
+is only a hypothesis. Root assigned eagle_parity_probe a bounded source-only
+runner; it has no GPU rights. After initial sweep release, diagnose only the
+failing original request with exact warmups/preceding request order and F16
+precision; no timing claims or reused historical numeric thresholds.
+
+Main source through1e2f5e0e published; current adapter selector54b41a32 has18CPU
+checks PASS. Full86checks and independent recovery evidence archived under
+results/twelve-hour-qa/worker-evidence/manifest.json in primary local workspace.
+No remaining-five training launched. Human block exposure/conditioning choice
+still pending; compile corrected indexed runtime after native timing completes.
+
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->
