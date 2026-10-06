@@ -4,33 +4,30 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Active DSpark A8 zero-hour evaluation — October 6, 15:55 PDT
+## Active DSpark A8 final prelaunch checks — October 6, 16:20 PDT
 
-Human authorized DSpark A8 and hourly health/healing. Old automation deleted;
-`dspark-a8-hourly-health-and-healing` ACTIVE. Root remains sole RTX5080 operator.
-No paid optimizer updates yet; full43,200trainer-second allocation remains.
+Old automation deleted; hourly health/healing ACTIVE. Same approved DSpark12h
+objective; no paid optimizer updates yet. Root remains sole RTX5080 operator.
 
-Actual native repair build and argument regressions passed. Real CUDA test passed
-with seven trained slots, batch/ubatch32 and explicit invalid8-row rejection.
-Parent209f72f0/native5eb221ec53 published; frozenecff teacher/data/binaries preserved.
-All calibration, cold replay, fusion fit, CUDA full-moment memory, checkpoint/export,
-goldens and independent Portable8 evidence remain authenticated.
+Completed native repair, model/memory/export/goldens/QA, full zero-hour5×24 and
+one-pass96 confirmation. Zero-hour acceptance14.328% versus primary Q426.494%;
+request throughput105.94 versus144.02tok/s. All216 DSpark/Q4 full outputs match.
+Strict target-only parity remains FAILED on one primary and one supplemental
+prompt shared with Q4. All native jobs finished and owned GPU release proved.
 
-Zero-hour four-cell native comparison is actually running as
-`dspark-a8-zero-native-20261006-02`, supervisor88477/birth26169010,
-child88488/birth26169014, boot517c4a36-e475-4a5f-9fa6-65de57edc6fe.
-Original startup failure is preserved; scoped native repair1 passed startup.
-Do not interrupt or duplicate this healthy evaluation. Exact handles/stop procedure
-are in the monitor registry and latest goal checkpoint.
+Next: finish actual fixed48 CPU loss diagnostic (firstattempt failed missingGGUF
+import; preserved and environment repaired), accept independently reviewed
+research-only controller/checkpoint proof joins, then fresh source-bound zero
+preparation/export/sixSM120 gates and positive optimizer updates. Default strict
+correctness stays strict; scientificFAILED receipts remain FAILED. Healthy12h
+continuation cannot be unlocked by stale measurements for another checkpoint.
 
-Next: finish full24×5+diagnostic comparison and96 initial quality confirmation,
-reconcile actual strict quality/controller response, fresh final sixSM120 gates,
-then paid optimizer updates plus5/15minute startup checks and hourly healing.
-A metadata plan-builder environment mismatch failed closed before lane publication;
-scoped helper correction pending, without affecting the healthy native job.
-Between-milestone fixed48 teacher-forced validation helper is being prepared;
-CPU diagnostics will be clearly separate from native acceptance and exact resume.
-No numeric tolerance, quality waiver or deployment success is invented.
+Because the controller changes an accounted-source file, the old90a7 checkout,
+checkpoint and raw native evidence remain preserved. New immutable trainer
+checkout and genuine zero state are required; reuse the measured native baseline
+only when the new initial exported model bytes are actually identical. Hourly
+healing plus5/15minute optimizer startup checks and4/8/12h acceptance remain.
+Exact handles, commits, raw paths and pending review are in the active goal.
 
 Human resumed RTX5080 and revised the same unfinished campaign. First evaluate
 preserved EAGLE A8, then DSpark A8, DFlash A8, EAGLE A1, DSpark A1, DFlash A1.
