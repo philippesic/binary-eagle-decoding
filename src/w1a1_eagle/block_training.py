@@ -12,6 +12,7 @@ import hashlib
 import json
 import math
 import os
+import random
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 
@@ -105,6 +106,100 @@ def _cpu_tree(value):
     if isinstance(value, tuple):
         return tuple(_cpu_tree(v) for v in value)
     return value
+
+
+def _block_rng_state(device):
+    """Keep Python/NumPy/CPU state plus every CUDA generator on CUDA runs."""
+    state = rng_state(str(device))
+    selected = torch.device(device)
+    if selected.type == "cuda":
+        index = selected.index
+        if index is None:
+            index = torch.cuda.current_device()
+        state.update(
+            cuda_device_count=torch.cuda.device_count(),
+            cuda_device_index=index,
+            cuda_all=[value.cpu().clone() for value in torch.cuda.get_rng_state_all()],
+        )
+    return state
+
+
+def _validate_block_rng(state, device, reference):
+    """Validate inventory and generator schemas before any caller mutation."""
+    if not isinstance(state, dict) or set(state) != set(reference):
+        raise ValueError("block RNG inventory differs from actual device")
+    try:
+        python = state["python"]
+        if (
+            not isinstance(python, tuple)
+            or len(python) != 3
+            or python[0] != reference["python"][0]
+            or not isinstance(python[1], tuple)
+            or len(python[1]) != len(reference["python"][1])
+            or any(type(v) is not int for v in python[1])
+            or (python[2] is not None and not math.isfinite(python[2]))
+        ):
+            raise ValueError("Python generator schema differs")
+        random.Random().setstate(python)
+        numpy = state["numpy"]
+        if (
+            not isinstance(numpy, tuple)
+            or len(numpy) != 5
+            or numpy[0] != reference["numpy"][0]
+            or not isinstance(numpy[1], np.ndarray)
+            or numpy[1].dtype != reference["numpy"][1].dtype
+            or numpy[1].shape != reference["numpy"][1].shape
+            or type(numpy[2]) is not int
+            or not 0 <= numpy[2] <= numpy[1].size
+            or type(numpy[3]) is not int
+            or numpy[3] not in (0, 1)
+            or not math.isfinite(numpy[4])
+        ):
+            raise ValueError("NumPy generator schema differs")
+        np.random.RandomState().set_state(numpy)
+    except (TypeError, ValueError, IndexError) as error:
+        raise ValueError("invalid block RNG Python/NumPy state") from error
+
+    def tensor(value, template):
+        if (
+            not isinstance(value, torch.Tensor)
+            or value.device.type != "cpu"
+            or value.dtype != torch.uint8
+            or value.ndim != 1
+            or value.shape != template.shape
+            or not value.numel()
+        ):
+            raise ValueError("invalid block RNG byte tensor schema")
+
+    tensor(state["torch"], reference["torch"])
+    try:
+        torch.Generator(device="cpu").set_state(state["torch"])
+    except RuntimeError as error:
+        raise ValueError("invalid block RNG CPU generator state") from error
+    if torch.device(device).type == "cuda":
+        count, index = state["cuda_device_count"], state["cuda_device_index"]
+        if (
+            type(count) is not int
+            or count != reference["cuda_device_count"]
+            or type(index) is not int
+            or index != reference["cuda_device_index"]
+            or not 0 <= index < count
+            or not isinstance(state["cuda_all"], list)
+            or len(state["cuda_all"]) != count
+            or len(reference["cuda_all"]) != count
+        ):
+            raise ValueError("block RNG CUDA device count/index differs")
+        tensor(state["cuda"], reference["cuda"])
+        for saved, actual in zip(state["cuda_all"], reference["cuda_all"]):
+            tensor(saved, actual)
+        if not torch.equal(state["cuda"], state["cuda_all"][index]):
+            raise ValueError("block RNG selected CUDA state differs from inventory")
+
+
+def _restore_block_rng(state, device):
+    restore_rng(state, str(device))
+    if torch.device(device).type == "cuda":
+        torch.cuda.set_rng_state_all(state["cuda_all"])
 
 
 def _validate_optimizer(
@@ -426,7 +521,7 @@ def save_block_checkpoint(
         "cursor": json.loads(json.dumps(asdict(cursor))),
         "linears": {k: _cpu_tree(m.state_dict()) for k, m in model.binary_linears().items()},
         "optimizer": _cpu_tree(optimizer.state_dict()),
-        "rng": rng_state(str(model.token_embd.device)),
+        "rng": _block_rng_state(model.token_embd.device),
     }
     temp = checkpoint.with_suffix(".tmp")
     remaining_bytes = None
@@ -588,15 +683,16 @@ def load_block_checkpoint(model, optimizer, source, receipt):
         elapsed_seconds=cursor.elapsed_seconds,
     )
     # Validate RNG in isolation and restore the caller's RNG before any mutation.
-    original = rng_state(str(model.token_embd.device))
+    original = _block_rng_state(model.token_embd.device)
+    _validate_block_rng(saved["rng"], model.token_embd.device, original)
     try:
-        restore_rng(saved["rng"], str(model.token_embd.device))
+        _restore_block_rng(saved["rng"], model.token_embd.device)
     finally:
-        restore_rng(original, str(model.token_embd.device))
+        _restore_block_rng(original, model.token_embd.device)
     for name, module in current.items():
         module.load_state_dict(saved["linears"][name], strict=True)
     optimizer.load_state_dict(copy.deepcopy(saved["optimizer"]))
-    restore_rng(saved["rng"], str(model.token_embd.device))
+    _restore_block_rng(saved["rng"], model.token_embd.device)
     return cursor
 
 

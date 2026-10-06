@@ -393,6 +393,38 @@ class RecipeRunloopTests(unittest.TestCase):
                     publish.assert_not_called()
                 self.assertFalse((root / "checkpoints").exists())
 
+    def test_live_budget_owner_fails_before_gradients_or_publication(self):
+        import train_nine_model_qat as launcher
+
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            ledger = {
+                "schema": "continuous_training_budget_v1",
+                "source_sha256": "c" * 64,
+                "max_seconds": 43200.0,
+                "training_seconds": 1.0,
+                "active_attempt": {
+                    "boot_id": "same-boot",
+                    "pid": 12345,
+                    "process_birth": "alive",
+                    "started_monotonic": 50.0,
+                    "reserved_seconds": 1000.0,
+                },
+            }
+            (root / "budget-used.json").write_text(json.dumps(ledger))
+            before = (root / "budget-used.json").read_bytes()
+            with (
+                patch("w1a1_eagle.continuous_budget.boot_identity", return_value="same-boot"),
+                patch("w1a1_eagle.continuous_budget.process_birth", return_value="alive"),
+                patch.object(launcher, "smoke_block") as smoke,
+                patch.object(launcher, "save_block_checkpoint") as publish,
+            ):
+                with self.assertRaisesRegex(ValueError, "owner is still alive"):
+                    self.transaction(root)
+                smoke.assert_not_called()
+                publish.assert_not_called()
+            self.assertEqual((root / "budget-used.json").read_bytes(), before)
+
     def test_expired_resumed_budget_fails_before_gradients_or_new_checkpoint(self):
         import train_nine_model_qat as launcher
 
