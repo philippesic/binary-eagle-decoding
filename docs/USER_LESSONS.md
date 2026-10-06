@@ -736,3 +736,17 @@ additional proof protocols or redoing completed audit work.
   question with a recommendation. Do not describe an active monitor as active
   training or preparation evidence as a production launch. The scientific
   choice remains human-owned; silence/default UI selection is not an answer.
+
+### 2026-10-06: Distinguish the prompt corpus from teacher caches
+
+- Human asked why DSpark/DFlash cannot reuse EAGLE's existing dataset. Root's
+  450/750-versus-live choice framed bounded subsets as the only route forward,
+  omitting the existing documented alternative of an exact shard lifecycle.
+- Original TRAIN prompts can be reused. EAGLE's three captured layer inputs
+  do not supply the block models' five required inputs; DSpark's selected loss
+  additionally needs full-vocabulary teacher distributions. Recapturing those
+  tensors is different from choosing a new prompt corpus.
+- Explain these separately and include full-corpus reuse with bounded storage
+  as an engineering option. Do not present disk-driven subset proposals as an
+  architectural requirement or imply that current source already implements
+  the full sharded cache/replay lifecycle.
