@@ -778,3 +778,16 @@ additional proof protocols or redoing completed audit work.
   a fresh complete census before each native phase and old identities were
   independently absent. Keep admission calls and dependent launches sequential
   so their returned verdict is inspected before the mutation.
+
+### 2026-10-06: Repeated release-adapter mistake is an operator error
+
+- After the genuine10-prompt SM120 cold replay passed every original tensor
+  hash, root's metadata finalizer passed boolean True to ShardCache.release.
+  That API requires the structured actual LinuxResources release receipt.
+  The wrapper failed after admission and nonteacher restoration had completed.
+- No GPU or data loss occurred. Root preserved the failure, revalidated the
+  already-created replay gate, and repaired only release bookkeeping with exact
+  PID/birth/boot identities. Earlier integer/identity mismatch should have led
+  root to inspect both sides of the adapter before this call. No user error.
+- Read the exact interface and pass through the observed receipt; never invent
+  success booleans, repeat successful GPU work, or erase a wrapper failure.
