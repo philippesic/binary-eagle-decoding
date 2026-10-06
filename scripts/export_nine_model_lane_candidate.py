@@ -379,9 +379,14 @@ def validate_endpoint(
         require(spec["limits"] == limits, "block config training limits differ")
         data_locator = {key: spec["data"][key] for key in ("path", "sha256")}
         files.check(data_locator)
+        data_identity = data_locator["sha256"]
+        if spec["data"].get("provider") == "rotating_block_v1":
+            from w1a1_eagle.block_shard_lifecycle import FrozenShardPlan
+
+            data_identity = FrozenShardPlan.load(data_locator).sha256
         require(
-            source.get("data_manifest_sha256") == data_locator["sha256"],
-            "block TRAIN manifest ancestry differs",
+            source.get("data_manifest_sha256") == data_identity,
+            "block TRAIN logical corpus ancestry differs",
         )
         from w1a1_eagle.block_training import BlockCursor
 

@@ -85,6 +85,14 @@ def validate_lane(path, expected_sha256):
     )
     if lane.get("timed_evaluation_plan"):
         files.check(lane["timed_evaluation_plan"])
+    spec = json.loads(Path(lane["config"]["path"]).read_text())
+    if spec.get("data", {}).get("provider") == "rotating_block_v1":
+        from w1a1_eagle.block_shard_lifecycle import validate_controller_config
+
+        require(
+            spec.get("shard_lifecycle") is not None, "rotating provider needs executable controller"
+        )
+        validate_controller_config(spec["shard_lifecycle"], spec["data"], lane["source"])
     return lane, files, plan
 
 
@@ -128,11 +136,22 @@ def run_training_lifecycle(
 
         admission_plan, _ = validate_plan(Path(lane["admission_plan"]["path"]))
         validate_timed_plan(timed, lane, admission_plan, files)
+    spec = json.loads(files.check(lane["config"]).read_text())
+    shard_config, cache = spec.get("shard_lifecycle"), None
+    if shard_config:
+        from w1a1_eagle.block_shard_lifecycle import ShardCache, validate_controller_config
+
+        shard_plan = validate_controller_config(shard_config, spec["data"], lane["source"])
+        cache = ShardCache(
+            shard_plan,
+            shard_config["cache_root"],
+            replay_admission=shard_config.get("replay_admission"),
+        )
     receipt_to_resume = state.get("evaluation_receipt")
     while True:
         authorization()
         pending = state.get("pending_training")
-        if timed and resume and pending is None:
+        if timed and resume and pending is None and not state.get("pending_shard_resume"):
             from evaluate_nine_model_timed_checkpoint import recover_boundary_receipt
 
             release()
@@ -171,6 +190,11 @@ def run_training_lifecycle(
                         "--evaluation-receipt-sha256",
                         receipt_to_resume["sha256"],
                     ]
+            if cache is not None:
+                proof = release()
+                if cache.state["owner"]:
+                    cache.release(cache.state["owner"]["owner"], released_proof=proof)
+                cache.acquire("lane-controller", "student")
             state.update(status="training")
             atomic_json(state_path, state)
             runner.run(
@@ -180,11 +204,14 @@ def run_training_lifecycle(
                 wall_seconds=lane["training_wall_seconds"],
             )
         endpoint = json.loads(receipt.read_text())
+        is_shard_boundary = endpoint.get("completion_reason") == "shard_required"
         reasons = (
             {"approved_budget_complete", "timed_evaluation_boundary"}
             if timed
             else {"approved_budget_complete"}
         )
+        if cache is not None:
+            reasons = reasons | {"shard_required"}
         require(
             endpoint.get("schema") == "nine_model_stage_receipt_v1"
             and endpoint.get("stage") == lane["candidate"] + "/train"
@@ -197,7 +224,11 @@ def run_training_lifecycle(
             and endpoint.get("hardware", {}).get("gpu_uuid") == lane["gpu_uuid"]
             and endpoint["hardware"].get("compute_capability") == [12, 0]
             and type(endpoint.get("counters", {}).get("step")) is int
-            and endpoint["counters"]["step"] > 0,
+            and (
+                endpoint["counters"]["step"] >= 0
+                if is_shard_boundary
+                else endpoint["counters"]["step"] > 0
+            ),
             "positive-update committed exact lane endpoint missing",
         )
         files.check(endpoint["checkpoint"])
@@ -208,8 +239,38 @@ def run_training_lifecycle(
             status="awaiting_evaluation" if timed else "training_complete",
         )
         atomic_json(state_path, state)
-        release()
+        proof = release()
+        if cache is not None and cache.state["owner"]:
+            cache.release(cache.state["owner"]["owner"], released_proof=proof)
         atomic_json(state_path, state)
+        if is_shard_boundary:
+            from w1a1_eagle.block_shard_lifecycle import restore_requested_shards
+
+            require(cache is not None, "shard boundary without frozen executable shard controller")
+            require(
+                endpoint["shard_request"]["reservation"]["cursor"]
+                == endpoint["counters"]["data_cursor"],
+                "shard request consumed cursor differs",
+            )
+            state.update(status="restoring_shards", pending_shard_resume=True)
+            atomic_json(state_path, state)
+            phases = restore_requested_shards(
+                shard_config,
+                endpoint["shard_request"],
+                cache=cache,
+                run_dir=run_dir,
+                attempt=attempt,
+                runner=runner,
+                release=release,
+                authorization=authorization,
+                source=lane["source"],
+            )
+            state.setdefault("shard_phases", []).extend(phases)
+            state.update(pending_training=None, status="training")
+            atomic_json(state_path, state)
+            resume = True
+            continue
+        state["pending_shard_resume"] = False
         if not timed:
             state.update(pending_training=None, evaluation_status="PENDING")
             return
@@ -336,7 +397,13 @@ def main(argv=None):
             "successful endpoint cannot restart training",
         )
         state["previous_attempt"] = previous
-        for key in ("pending_training", "evaluation_receipt", "evaluations"):
+        for key in (
+            "pending_training",
+            "evaluation_receipt",
+            "evaluations",
+            "pending_shard_resume",
+            "shard_phases",
+        ):
             if key in previous:
                 state[key] = previous[key]
     lock_path = Path.home() / ".config/binary-eagle-decoding/rtx5080-campaign.lock"

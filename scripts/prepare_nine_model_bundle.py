@@ -191,6 +191,14 @@ def inspect_descriptor(descriptor, files):
 def selected_execution_controls(selected, family, limits, files):
     """Validate explicit optional controls before publishing any source configs."""
     controls = {}
+    for key in ("block_run_policy", "shard_lifecycle"):
+        if key in selected:
+            require(family == "dspark", "DSpark-specific block lifecycle required")
+            if key == "block_run_policy":
+                from w1a1_eagle.block_recipe import BlockRunPolicy
+
+                BlockRunPolicy(**selected[key])
+            controls[key] = copy.deepcopy(selected[key])
     if "checkpoint_retention" in selected:
         from w1a1_eagle.block_training import BlockCheckpointRetention
 
@@ -484,6 +492,22 @@ def admission_source_bindings(selected, spec, files, target_sha256):
         require("bundle_sha256" not in source, "EAGLE provider source must not bind wrapper bundle")
         return source
     data = spec["data"]
+    if data.get("provider") == "rotating_block_v1":
+        from w1a1_eagle.block_shard_lifecycle import validate_logical_admission
+
+        require(
+            data.get("admission") == selected["data_admission"], "logical admission config differs"
+        )
+        plan, _ = validate_logical_admission(data, selected["data_admission"])
+        require(
+            plan.value["source"]["target_sha256"] == target_sha256, "logical target source differs"
+        )
+        return {
+            "base_gguf_sha256": spec["model"]["sha256"],
+            "data_manifest_sha256": plan.sha256,
+            "synthetic": False,
+            "target_sha256": target_sha256,
+        }
     manifest = json.loads(files.check({key: data[key] for key in ("path", "sha256")}).read_text())
     require(
         data.get("admission") == selected["data_admission"],
@@ -614,19 +638,26 @@ def materialize_admission_plan(descriptor, output, *, fixture=False, inspect_dra
         if not fixture and family != "eagle":
             from w1a1_eagle.block_data import BlockDataset
 
-            dataset = BlockDataset(
-                spec["data"]["path"],
-                expected_sha256=spec["data"]["sha256"],
-                allow_synthetic=False,
-                verify_artifacts=False,
-                admission_path=selected["data_admission"]["path"],
-                admission_sha256=selected["data_admission"]["sha256"],
-            )
+            if spec["data"].get("provider") == "rotating_block_v1":
+                from w1a1_eagle.block_shard_lifecycle import open_provider
+
+                dataset = open_provider(spec["data"])
+                dataset.reserve_batch(dataset.cursor(), 2, require_teacher=True)
+            else:
+                dataset = BlockDataset(
+                    spec["data"]["path"],
+                    expected_sha256=spec["data"]["sha256"],
+                    allow_synthetic=False,
+                    verify_artifacts=False,
+                    admission_path=selected["data_admission"]["path"],
+                    admission_sha256=selected["data_admission"]["sha256"],
+                )
             require(
                 dataset.manifest["family"] == family
                 and dataset.manifest["producer"]["target_sha256"] == inputs["target"]["sha256"],
                 "production block data/native source family/target differs",
             )
+            dataset.close()
         source["candidate:" + name + ":data_admission"] = selected["data_admission"]
         if family != "eagle":
             source["candidate:" + name + ":data_manifest"] = {
@@ -922,14 +953,23 @@ def build(descriptor, output, *, inspect_draft=False):
             data = spec["data"]
             files.check({key: data[key] for key in ("path", "sha256")})
             module = importlib.import_module("w1a1_eagle.block_data")
-            module.BlockDataset(
-                data["path"],
-                expected_sha256=data["sha256"],
-                allow_synthetic=False,
-                verify_artifacts=False,
-                admission_path=selected["data_admission"]["path"],
-                admission_sha256=selected["data_admission"]["sha256"],
-            )
+            if data.get("provider") == "rotating_block_v1":
+                from w1a1_eagle.block_shard_lifecycle import open_provider
+
+                provider = open_provider(data)
+                try:
+                    provider.reserve_batch(provider.cursor(), 2, require_teacher=True)
+                finally:
+                    provider.close()
+            else:
+                module.BlockDataset(
+                    data["path"],
+                    expected_sha256=data["sha256"],
+                    allow_synthetic=False,
+                    verify_artifacts=False,
+                    admission_path=selected["data_admission"]["path"],
+                    admission_sha256=selected["data_admission"]["sha256"],
+                )
         else:
             ready = selected["data_admission"]
             evidence = json.loads(files.check(ready).read_text())

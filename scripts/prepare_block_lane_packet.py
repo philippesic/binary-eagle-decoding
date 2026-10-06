@@ -91,6 +91,14 @@ def artifact(locator):
     return {key: locator[key] for key in ("path", "sha256")}
 
 
+def dataset_identity(data):
+    if data.get("provider") == "rotating_block_v1":
+        from w1a1_eagle.block_shard_lifecycle import FrozenShardPlan
+
+        return FrozenShardPlan.load(artifact(data)).sha256
+    return data["sha256"]
+
+
 def inspect_inputs(value):
     """A draft inspection cannot create a production readiness claim."""
     require(value.get("schema") == INPUT_SCHEMA, "block packet inputs schema differs")
@@ -144,18 +152,39 @@ def authorization(files, value):
 
 
 def load_data(files, inputs, runtime):
-    manifest = read(files, inputs["data"])
-    admission = read(files, inputs["data_admission"])
+    rotating = inputs["data"].get("provider") == "rotating_block_v1"
+    data = inputs.get("preparation_data") if rotating else inputs["data"]
+    data_admission = (
+        inputs.get("preparation_data_admission") if rotating else inputs["data_admission"]
+    )
+    require(
+        data is not None and data_admission is not None,
+        "actual compact calibration/TRAIN preparation required",
+    )
+    logical_plan = None
+    if rotating:
+        from w1a1_eagle.block_shard_lifecycle import validate_logical_admission
+
+        logical_plan, admitted = validate_logical_admission(
+            inputs["data"], inputs["data_admission"]
+        )
+        require(
+            admitted["preparation_data"] == data
+            and admitted["preparation_admission"] == data_admission,
+            "logical/calibration preparation artifact join differs",
+        )
+    manifest = read(files, data)
+    admission = read(files, data_admission)
     require(
         admission.get("schema") == "block_data_completed_admission_v1"
-        and admission.get("manifest_sha256") == inputs["data"]["sha256"],
+        and admission.get("manifest_sha256") == data["sha256"],
         "completed current-host native data admission required",
     )
     dataset = BlockDataset(
-        inputs["data"]["path"],
-        expected_sha256=inputs["data"]["sha256"],
-        admission_path=inputs["data_admission"]["path"],
-        admission_sha256=inputs["data_admission"]["sha256"],
+        data["path"],
+        expected_sha256=data["sha256"],
+        admission_path=data_admission["path"],
+        admission_sha256=data_admission["sha256"],
         allow_synthetic=False,
     )
     family = inputs["candidate"].split("_")[0]
@@ -180,9 +209,24 @@ def load_data(files, inputs, runtime):
         all(type(n) is int and n > 9 for n in minimums),
         "coverage policy must explicitly exceed development nine-chain pilot",
     )
+    if logical_plan is not None:
+        for cid, chain in dataset.chains.items():
+            require(
+                all(
+                    chain[key] == logical_plan.chains[cid][key]
+                    for key in ("prompt_id", "prompt_sha256", "domain", "split")
+                ),
+                "preparation/global selector differs",
+            )
+        dataset.logical_plan = logical_plan
     train = [chain for chain in dataset.chains.values() if chain["split"] == "train"]
     extent = {
-        "unique_train_prompts": len({chain["prompt_id"] for chain in train}),
+        "unique_train_prompts": (
+            logical_plan.role_counts["train"]
+            if logical_plan is not None
+            else len({chain["prompt_id"] for chain in train})
+        ),
+        "initial_captured_train_prompts": len({chain["prompt_id"] for chain in train}),
         "train_blocks": sum(len(chain["anchors"]) for chain in train),
         "train_potential_teacher_rows": sum(len(chain["anchors"]) * 7 for chain in train),
     }
@@ -257,16 +301,16 @@ def validate_initializer(files, inputs, metadata, dataset):
     require(
         config.activation_bits == bits
         and config.zero_scale_orientation_rescue is False
-        and config.max_coordinate_flips_per_row == 0
+        and config.max_coordinate_flips_per_row == policy.get("max_coordinate_flips_per_row", 0)
         and config.latent_initialization == "preserve_reference_magnitudes"
         and config.reference_kind == "block_source_weight_magnitudes"
         and config.max_seconds == policy["max_seconds"]
-        and report["fit"]["events"] == []
+        and (config.max_coordinate_flips_per_row > 0 or report["fit"]["events"] == [])
         and report["fit"]["arithmetic"] == ARITHMETIC[bits],
         "separate fixed-arithmetic A8/direct A1 scale-only fit required; probes off",
     )
     require(
-        report["data_sha256"] == inputs["data"]["sha256"]
+        report["data_sha256"] == inputs.get("preparation_data", inputs["data"])["sha256"]
         and report["weights_sha256"] == metadata["weights_sha256"]
         and report["norm_sha256"] == metadata["norm_sha256"]
         and report["reference_metadata_sha256"] == inputs["reference"]["metadata"]["sha256"]
@@ -494,6 +538,28 @@ def prepare(inputs, output):
         not set(overrides) & forbidden,
         "recipe/precision/objective/probe controls cannot be overridden",
     )
+    backend = inputs.get("optimizer_backend", "serial")
+    require(
+        backend in {"serial", "fused_fp32_probe"}, "explicit implemented optimizer backend required"
+    )
+    if backend == "fused_fp32_probe":
+        receipt = read(files, inputs["optimizer_backend_admission"])
+        require(
+            receipt.get("schema") == "block_optimizer_backend_admission_v1"
+            and receipt.get("status") == "PASS"
+            and receipt.get("backend") == backend
+            and receipt.get("actual_cuda_full_step") is True
+            and receipt.get("numeric_native_memory_save_restore_pass") is True
+            and receipt.get("timing_repeats") == 3
+            and receipt.get("median_complete_step_gain", 0) >= 0.05,
+            "fused backend needs actual numeric/native/full-moment/complete-step admission",
+        )
+        for record in receipt["source"].values():
+            files.check(record)
+        require(
+            builder.pin(ROOT / "src/w1a1_eagle/block_qat.py") in receipt["source"].values(),
+            "fused backend admission source differs",
+        )
     qat = asdict(
         BlockQATConfig(
             **overrides,
@@ -505,7 +571,7 @@ def prepare(inputs, output):
             norm_eps=epsilon,
             latent_initialization="preserve_reference_magnitudes",
             initialization_encoding="policy_latents",
-            optimizer_backend="serial",
+            optimizer_backend=backend,
         )
     )
     require(
@@ -655,10 +721,12 @@ def source_commands(output, inputs, runtime, request):
     python, script = sys.executable, str(ROOT / "scripts/prepare_block_lane_packet.py")
     fit = [python, str(ROOT / "scripts/fit_block_fusion.py")]
     for flag, value in {
-        "manifest": inputs["data"]["path"],
-        "manifest-sha256": inputs["data"]["sha256"],
-        "admission": inputs["data_admission"]["path"],
-        "admission-sha256": inputs["data_admission"]["sha256"],
+        "manifest": inputs.get("preparation_data", inputs["data"])["path"],
+        "manifest-sha256": inputs.get("preparation_data", inputs["data"])["sha256"],
+        "admission": inputs.get("preparation_data_admission", inputs["data_admission"])["path"],
+        "admission-sha256": inputs.get("preparation_data_admission", inputs["data_admission"])[
+            "sha256"
+        ],
         "weights": refs["weights"]["path"],
         "weights-sha256": refs["weights"]["sha256"],
         "norm": refs["norm"]["path"],
@@ -804,7 +872,7 @@ def checkpoint_join(packet, files):
     config = BlockQATConfig(**spec["qat"])
     source = {
         "base_gguf_sha256": spec["model"]["sha256"],
-        "data_manifest_sha256": spec["data"]["sha256"],
+        "data_manifest_sha256": dataset_identity(spec["data"]),
         "bundle_sha256": request_pin["sha256"],
         "synthetic": False,
         "target_sha256": descriptor["inputs"]["target"]["sha256"],
@@ -820,16 +888,22 @@ def checkpoint_join(packet, files):
     checkpoint = receipt["checkpoint"]
     cursor = BlockCursor(**checkpoint["cursor"])
     data = spec["data"]
-    dataset = BlockDataset(
-        data["path"],
-        expected_sha256=data["sha256"],
-        admission_path=data["admission"]["path"],
-        admission_sha256=data["admission"]["sha256"],
-    )
+    if data.get("provider") == "rotating_block_v1":
+        from w1a1_eagle.block_shard_lifecycle import open_provider
+
+        dataset = open_provider(data)
+    else:
+        dataset = BlockDataset(
+            data["path"],
+            expected_sha256=data["sha256"],
+            admission_path=data["admission"]["path"],
+            admission_sha256=data["admission"]["sha256"],
+        )
     require(
         cursor.data_cursor == dataset.cursor(seed=config.seed).payload(),
         "initial checkpoint exact dataset/order/position cursor differs",
     )
+    dataset.close()
     require(
         cursor.step
         == cursor.epoch

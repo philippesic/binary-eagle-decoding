@@ -88,6 +88,10 @@ def build_lane(descriptor, output):
         "completed production data source differs",
     )
     source = dict(plan["source"])
+    if spec.get("data", {}).get("provider") == "rotating_block_v1":
+        from w1a1_eagle.block_shard_lifecycle import validate_controller_config
+
+        validate_controller_config(spec["shard_lifecycle"], spec["data"], source)
     for path in (Path(__file__), ROOT / "scripts/run_nine_model_lane.py"):
         source[str(path.relative_to(ROOT))] = builder.pin(path)
     value = {
