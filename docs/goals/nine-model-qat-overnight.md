@@ -2735,4 +2735,44 @@ required contracts, test/admit actualphysicalmodel andresource lifecycle, then
 run the full43,200sDSparkA8 allocation with measured checkpoints. Preserve all
 existingoriginalreceipts/controlbytes/sealed data/unrelatedwork; no newGoal/chat.
 
+## Human authorized DSpark launch and hourly healing — October6, 13:04PDT
+
+Human: canceltheautomatedtask andstarttrainingDSparkA8withanhourlyhealth/healing
+monitor. This accepts proceeding with the reviewed concrete plan, replaces the
+old data-choice blocker and2h monitor. Old automationnine-model-overnight-qat-monitor
+DELETED viaapp confirmedandfilegone. New dspark-a8-hourly-health-and-healing ACTIVE
+FREQHOURLY/interval1, same rootthread01a10c8a-22bb-7380-9a8c-d9802a51b679. No duplicate
+operator/chat. NativeGoalUIlastreadBLOCKEDishistorical;currenthumanworkauthorization
+allowsimplementation/admission/launch, no toolavailabletoresumeUIstatus andno newGoal
+created. Fresh blocked audit would start anew if genuine blocker repeats.
+
+Approved9856TRAIN+96fit48validation/fullnativeF32teacher/fixedW1A8FFN15fusion
+normalized.1CE+.9L1/positiondecay/schedule/batch2/12h4-8-12checks preserved.
+No silent shrink to450 or1epoch, no extraEAGLEupdates, no2080queries. Early5/15
+checks remain; root reports actual firstpositiveoptimizerstep, not prep as training.
+
+Useful team scoped currentmain7d7bd4b: dataworker /tmp/dspark-data-contract owns
+block_data/captureproducer/newfullpoolplan +narrowPythonclientpartialreplay; recipe
+worker /tmp/binary-eagle-dspark-recipe ownsblock_qat/block_training/trainloop plus
+policy/tests; shardcontroller ownsrunlane/packet/newprovider/lifecycle; metadata
+Luna operator read-onlyancestry/20TRAINfilepintransferinventory,noSSH/GPU. No recursive
+agents/pushrights; rootownsdocs/integrationandsoleMCP$259/%290control,%291transfer.
+
+Interface: controllerprovider restore_cursor/reserve_batch(2distinctgroups) keeps
+immutableglobalplan plusfirstsealedcapturehashes outsidecache. Missingphysicalshard
+raisesShardRequired beforegradients; trainer checkpoints unchangedconsumedcursor
+plusreservation, closesbudgetand exits/releases; controllerrestores/capturesfresh
+thenexactresume. Futureactualanchorcounts sealedfirstcapture; globalanchorPOLICY
+isimmutable. No duplication of recipe pairing queue.
+
+Actual ecffC++ truncatesindexedgenerationtail; Python alone cannot recover it.
+Dataworker implements opt-in generation(logitsnone)+same-token/history indexed
+replay toretainallavailablepositions using existingbinary, bothactualreceipts
+bound. No densepromptlogitsdefault ornewnativebuild assumed. ShortEOSsafetychecked
+atnative seam; source/helper changes getfreshpins. BaselineGPU13,911MiBfree,
+CUDAcomputeempty, hostMemAvailable19751156kB; root is nowrunningcompletehash-bound
+DXGrelease/resourcescheck andpreparingfulloriginalTRAINtransport. No model started
+yet; availability proofneededbeforecapture. Next integrate/testcontracts, begin
+genuinecalibration/fullpoolcapture/modeladmission,thenactual43,200strainedrun.
+
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->

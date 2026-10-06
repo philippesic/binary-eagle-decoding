@@ -4,12 +4,23 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Blocked: twelve-hour nine-model campaign — October 6, 02:08 PDT
+## Active DSpark A8 launch preparation — October 6, 13:04 PDT
+
+**Latest human instruction:** cancel the old automated task and start DSpark A8
+with hourly health/healing. Old nine-model-overnight-qat-monitor is DELETED
+(app confirmed); new dspark-a8-hourly-health-and-healing is ACTIVE every hour,
+root chat unchanged. The reviewed DSpark plan is authorized for implementation,
+admission and launch; do not ask the obsolete450/750 question again.
+Four scoped workers implement data, recipe, shard controller and metadata support.
+No optimizer updates yet; report implementing/capturing/admitting honestly.
+Root alone controls RTX5080 through MCP; fresh complete release/resource proof
+precedes any model launch. All historical blocked/proposal text below is superseded
+by this authorization, not by fabricated production readiness.
 
 Human resumed RTX5080 and revised the same unfinished campaign. First evaluate
 preserved EAGLE A8, then DSpark A8, DFlash A8, EAGLE A1, DSpark A1, DFlash A1.
 Allocation: 12 cumulative trainer-hours per model; native acceptance at 4/8/12 h.
-Health checks every 2 h, with operational extra startup checks at 5/15 minutes.
+Health checks now hourly, with extra startup checks at 5/15 minutes.
 F16 target/verifier/KV, original TRAIN ancestry and held-out protocol remain.
 
 **October6 research update:** the human-authorized [Astra training audit](../experiments/nine-model-qat-overnight/astra-training-audit-20261006.md)
