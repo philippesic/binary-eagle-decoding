@@ -123,6 +123,7 @@ def validate_endpoint(
     files=None,
     checkpoint_loader=None,
     checkpoint_mode="final",
+    source_run_directory=None,
 ):
     """Validate original typed endpoint and serialized state; no release claim."""
     files = Files() if files is None else files
@@ -131,9 +132,21 @@ def validate_endpoint(
     state_path = files.check(lane_state_locator)
     state = json.loads(state_path.read_text())
     supervisor = json.loads(files.check(supervisor_locator).read_text())
-    require(checkpoint_mode in {"final", "timed"}, "unknown checkpoint validation mode")
-    timed = checkpoint_mode == "timed"
-    if timed:
+    require(
+        checkpoint_mode in {"final", "timed", "timed_evidence"},
+        "unknown checkpoint validation mode",
+    )
+    timed = checkpoint_mode in {"timed", "timed_evidence"}
+    if checkpoint_mode == "timed_evidence":
+        require(
+            supervisor.get("status") == "running"
+            and type(supervisor.get("pid")) is int
+            and supervisor["pid"] > 0
+            and type(supervisor.get("supervisor_pid")) is int
+            and supervisor["supervisor_pid"] > 0,
+            "immutable timed producer supervisor evidence required",
+        )
+    if checkpoint_mode == "timed":
         require(
             supervisor.get("status") == "running"
             and supervisor.get("pid") == os.getpid()
@@ -249,7 +262,13 @@ def validate_endpoint(
     exported = receipt["exports"][name]
     require(exported.get("base_gguf_sha256") == base["sha256"], "base export ancestry differs")
     checkpoint = files.check(receipt["checkpoint"])
-    run = state_path.parent / "training"
+    require(
+        source_run_directory is None or checkpoint_mode == "timed_evidence",
+        "source run override is evidence-only",
+    )
+    run = (
+        state_path.parent if source_run_directory is None else Path(source_run_directory)
+    ) / "training"
     require(run / "checkpoints" in checkpoint.parents, "checkpoint outside original trainer")
     for record in (exported["checkpoint"], exported["manifest"]):
         require(run in files.check(record).parents, "export outside original trainer")

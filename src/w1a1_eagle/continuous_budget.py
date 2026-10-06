@@ -435,6 +435,7 @@ def research_bindings(plan):
         "protocol": plan["protocol"],
         "prompts": plan["prompts"],
         "initial_model": plan["initial"]["model"],
+        "initial_audit": plan["initial"]["audit"],
         "q4_model": plan["control"]["model"],
         "gpu_uuid": plan["gpu_uuid"],
     }
@@ -596,7 +597,17 @@ def baseline_control_outputs(bindings, records, diagnostics):
     return result
 
 
-def validate_native_stages(bindings, records, diagnostics, stages, models, producer_sources):
+def validate_native_stages(
+    bindings,
+    records,
+    diagnostics,
+    stages,
+    models,
+    producer_sources,
+    *,
+    candidate_audit=None,
+    execution_context=None,
+):
     """Authenticate executed process/model/input/stage joins, not locator counts."""
     from benchmark_native_eagle import request_body
 
@@ -608,10 +619,36 @@ def validate_native_stages(bindings, records, diagnostics, stages, models, produ
         "executed initial/Q4 control model bytes differ",
     )
     root = Path(__file__).resolve().parents[2]
+    required_names = {"fc"} | {
+        f"blk.{layer}.ffn_{part}" for layer in range(5) for part in ("gate", "up", "down")
+    }
+    initial_audit = _research_json(bindings["initial_audit"])
+    _research_require(
+        initial_audit.get("family") == "dspark"
+        and initial_audit.get("profile") == "ffn15_fusion"
+        and initial_audit.get("activation_bits") == 8
+        and initial_audit.get("serialization_audit_passed") is True
+        and _artifact_identity(initial_audit["output"])
+        == _artifact_identity(bindings["initial_model"])
+        and set(initial_audit.get("projections", {})) == required_names,
+        "admitted initial exact DSpark16 projection audit required",
+    )
+    expected_shapes = {name: item["shape"] for name, item in initial_audit["projections"].items()}
+    _research_require(
+        all(
+            isinstance(shape, list)
+            and len(shape) == 2
+            and all(type(n) is int and n > 0 for n in shape)
+            for shape in expected_shapes.values()
+        ),
+        "admitted DSpark projection shapes missing",
+    )
+    candidate_audit = bindings["initial_audit"] if candidate_audit is None else candidate_audit
     required_sources = {
         "scripts/evaluate_nine_model_timed_checkpoint.py",
         "scripts/benchmark_native_eagle.py",
         "src/w1a1_eagle/nine_model_pipeline.py",
+        "scripts/evaluate_nine_model_native.py",
     }
     _research_require(
         set(producer_sources) == required_sources, "complete known native producer sources required"
@@ -648,6 +685,12 @@ def validate_native_stages(bindings, records, diagnostics, stages, models, produ
             "native stage directory identity differs",
         )
         process = _research_json(stage["process"])
+        if execution_context is not None:
+            _research_require(
+                process.get("execution_context") == execution_context
+                and directory.parent.parent == Path(execution_context["evaluation_directory"]),
+                "native measurements belong to another request/evaluation attempt",
+            )
         identity = process["kernel_identity"]
         _research_require(
             type(process.get("pid")) is int
@@ -683,7 +726,7 @@ def validate_native_stages(bindings, records, diagnostics, stages, models, produ
             checked_locator({"path": option("-md"), "sha256": expected_model["sha256"]})
             family = "eagle" if stage["cell"] == "eagle_q4" else bindings["candidate"].split("_")[0]
             _research_require(
-                option("--spec-type") == "draft-eagle3"
+                option("--spec-type") == ("draft-eagle3" if family == "eagle" else "draft-dspark")
                 and option("--spec-draft-n-max") == str(protocol["draft_lengths"][family])
                 and option("--spec-draft-p-min") == "0"
                 and option("--spec-draft-type-k") == option("--spec-draft-type-v") == "f16",
@@ -728,7 +771,26 @@ def validate_native_stages(bindings, records, diagnostics, stages, models, produ
                 checked_locator(stage["dispatch"]).parent == directory,
                 "dispatch belongs to another stage",
             )
+            expected_audit = (
+                candidate_audit
+                if stage["cell"] == bindings["candidate"]
+                else bindings["initial_audit"]
+            )
+            _research_require(
+                stage["export_audit"] == expected_audit,
+                "diagnostic audit not bound to admitted/trained export",
+            )
             audit = _research_json(stage["export_audit"])
+            _research_require(
+                audit.get("family") == "dspark"
+                and audit.get("profile") == "ffn15_fusion"
+                and audit.get("activation_bits") == 8
+                and audit.get("base_gguf") == initial_audit["base_gguf"]
+                and set(audit.get("projections", {})) == required_names
+                and {name: item["shape"] for name, item in audit["projections"].items()}
+                == expected_shapes,
+                "exact admitted DSpark16 names/shapes/family/profile/bits/source base differ",
+            )
             _research_require(
                 audit.get("serialization_audit_passed") is True
                 and _artifact_identity(audit["output"]) == _artifact_identity(expected_model),
@@ -737,7 +799,10 @@ def validate_native_stages(bindings, records, diagnostics, stages, models, produ
             actual = validate_cuda_dispatch(
                 log.read_text(errors="replace"), audit, activation_bits=8
             )
-            _research_require(actual == dispatch, "actual log/dispatch/projection evidence differs")
+            _research_require(
+                actual == dispatch and len(actual["packed_names"]) == 16,
+                "actual exact16 log/dispatch/projection evidence differs",
+            )
         table[key] = directory
     _research_require(set(table) == expected, "actual native stage coverage differs")
     request_config = {
@@ -779,9 +844,36 @@ def validate_collection_evidence(bindings, evidence_locator, progress_locator):
         "actual zero source/hardware evidence differs",
     )
     failed = _research_json(evidence["failed_status"])
-    _research_require(
-        failed.get("status") in {"failed", "FAILED"}, "original strict failed status required"
-    )
+    if failed.get("schema") == "dspark_zero_measurement_status_v1":
+        _research_require(
+            failed.get("strict_quality_gate") == "FAIL"
+            and failed.get("measurement_complete") is True
+            and failed.get("clean_records") == 480
+            and failed.get("diagnostic_records") == 96
+            and failed.get("optimizer_updates") == 0
+            and failed.get("current_and_initial_same_exact_model") is True
+            and _artifact_identity(research_bindings(failed["source_plan"]))
+            == _artifact_identity(bindings)
+            and failed.get("owner", {}).get("boot_id") == evidence["hardware"].get("boot_id")
+            and type(failed["owner"].get("pid")) is int
+            and type(failed["owner"].get("start_ticks")) is int
+            and failed.get("owned_release", {}).get("owned_process_groups_absent") is True
+            and failed["owned_release"].get("owned_cuda_pids_absent") is True
+            and failed["owned_release"].get("other_context_pids") == []
+            and failed.get("failure", {}).get("type") == "ValueError"
+            and failed["failure"].get("message") == "greedy verifier token sequence differs",
+            "actual completed zero strict-parity failure status required",
+        )
+    else:
+        _research_require(
+            failed.get("status") in {"failed", "FAILED"}, "original strict failed status required"
+        )
+    if evidence.get("remote_job_state"):
+        job = _research_json(evidence["remote_job_state"])
+        _research_require(
+            job.get("status") == "finished" and job.get("exit_code") == 1,
+            "original failed zero collector remote-job closure differs",
+        )
     zero = _research_json(evidence["zero_preparation"])
     _research_require(
         zero.get("schema") == "nine_model_preparation_v1"
@@ -833,6 +925,7 @@ def validate_research_policy(locator, bindings):
                 "scripts/evaluate_nine_model_timed_checkpoint.py",
                 "scripts/run_nine_model_lane.py",
                 "src/w1a1_eagle/continuous_budget.py",
+                "scripts/export_nine_model_lane_candidate.py",
             },
             "unknown research consumer source",
         )
@@ -843,7 +936,7 @@ def validate_research_policy(locator, bindings):
         )
         checked_locator(record)
     _research_require(
-        len(policy["controller_sources"]) == 4, "complete active consumer source inventory required"
+        len(policy["controller_sources"]) == 5, "complete active consumer source inventory required"
     )
     review = _research_json(policy["review"])
     body = {key: value for key, value in policy.items() if key != "review"}
@@ -950,6 +1043,34 @@ def validate_research_export_join(result, report):
         and exported["config"]["sha256"] == result["config_sha256"],
         "evaluated export/checkpoint/training receipt differs",
     )
+    # Reauthenticate all five reviewed consumers BEFORE importing pure export validation.
+    validate_research_policy(result["research_continuation_policy"], result["research_bindings"])
+    from export_nine_model_lane_candidate import validate_endpoint, validate_export
+
+    source_run = exported.get("source_run_directory")
+    if source_run is not None:
+        originals = _research_json(exported["original_export_receipt"])
+        _research_require(
+            source_run == str(Path(originals["lane_state"]["path"]).parent.resolve()),
+            "original source run directory differs",
+        )
+        for key in ("lane_state", "supervisor_state"):
+            ancestry = exported["snapshot_ancestry"][key]
+            _research_require(
+                ancestry["original"] == originals[key]
+                and ancestry["snapshot"] == exported[key]
+                and ancestry["original"]["sha256"] == ancestry["snapshot"]["sha256"],
+                "immutable source snapshot bytes/provenance differ",
+            )
+    context = validate_endpoint(
+        exported["frozen_lane"],
+        exported["lane_state"],
+        exported["supervisor_state"],
+        exported["training_receipt"],
+        checkpoint_mode="timed_evidence",
+        source_run_directory=source_run,
+    )
+    validate_export(context, report["export_receipt"])
     training = _research_json(result["training_receipt"])
     request = _research_json(result["request"])
     _research_require(
@@ -984,6 +1105,29 @@ def validate_research_export_join(result, report):
         "raw candidate evaluated model differs from checkpoint export",
     )
     raw = _research_json(report["measurements"])
+    execution = report["execution_context"]
+    supervisor = _research_json(exported["supervisor_state"])
+    owner = execution["owner_identity"]
+    _research_require(
+        owner["pid"] == supervisor["pid"]
+        and owner.get("boot_id")
+        and type(owner.get("start_ticks")) is int
+        and all(
+            _research_json(stage["process"])["kernel_identity"]["boot_id"] == owner["boot_id"]
+            for stage in report["native_stages"]
+        ),
+        "immutable producer supervision/source epoch differs",
+    )
+    _research_require(
+        execution.get("schema") == "native_timed_evaluation_attempt_v1"
+        and execution["request"] == result["request"]
+        and execution["training_receipt"] == result["training_receipt"]
+        and execution["checkpoint"] == result["checkpoint"]
+        and execution["model"] == exported["model"]
+        and execution["attempt_nonce"] == Path(execution["evaluation_directory"]).parent.name
+        and report["execution_context"] == result["execution_context"],
+        "fresh timed request/evaluation attempt identity differs",
+    )
     validate_native_stages(
         result["research_bindings"],
         raw["clean_records"],
@@ -991,6 +1135,8 @@ def validate_research_export_join(result, report):
         report["native_stages"],
         report["model_ancestry"],
         report["producer_sources"],
+        candidate_audit=exported["audit"],
+        execution_context=execution,
     )
 
 

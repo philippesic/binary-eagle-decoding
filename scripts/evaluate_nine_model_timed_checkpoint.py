@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import os
 import signal
 import subprocess
 import sys
@@ -311,6 +312,11 @@ def evaluate(
                                 "pgid": proc.pid,
                                 "kernel_identity": identity,
                                 "argv": command,
+                                **(
+                                    {"execution_context": plan["execution_context"]}
+                                    if plan.get("execution_context")
+                                    else {}
+                                ),
                             },
                         )
                     finally:
@@ -447,11 +453,13 @@ def evaluate(
                 "scripts/evaluate_nine_model_timed_checkpoint.py",
                 "scripts/benchmark_native_eagle.py",
                 "src/w1a1_eagle/nine_model_pipeline.py",
+                "scripts/evaluate_nine_model_native.py",
             )
         },
     )
     if plan.get("research_continuation_policy"):
-        report["export_receipt"] = pin(Path(exported["audit"]["path"]).parent / "receipt.json")
+        report["execution_context"] = plan["execution_context"]
+        report["export_receipt"] = plan["research_export_receipt"]
     atomic_json(
         directory / "measurements.json",
         {"clean_records": records, "diagnostic_records": diagnostics},
@@ -766,6 +774,38 @@ def evaluate_checkpoint(
     )
     authorization()
     release()
+    if plan.get("research_continuation_policy"):
+        # Snapshot historical source state, without changing checkpoint or model bytes.
+        exported_value = json.loads((directory / "export/receipt.json").read_text())
+        exported_value["snapshot_ancestry"] = {}
+        exported_value["source_run_directory"] = str(
+            Path(exported_value["lane_state"]["path"]).parent.resolve()
+        )
+        for key in ("lane_state", "supervisor_state"):
+            original_locator = exported_value[key]
+            source_path = files.check(exported_value[key])
+            destination = directory / "export" / ("immutable-" + key + ".json")
+            destination.write_bytes(source_path.read_bytes())
+            exported_value[key] = pin(destination)
+            exported_value["snapshot_ancestry"][key] = {
+                "original": original_locator,
+                "snapshot": exported_value[key],
+            }
+        exported_value["original_export_receipt"] = pin(directory / "export/receipt.json")
+        immutable_export = directory / "export/research-receipt.json"
+        atomic_json(immutable_export, exported_value)
+        plan["research_export_receipt"] = pin(immutable_export)
+        exported = exported_value
+        plan["execution_context"] = {
+            "schema": "native_timed_evaluation_attempt_v1",
+            "request": request_locator,
+            "training_receipt": training_locator,
+            "checkpoint": context["checkpoint"],
+            "model": exported["model"],
+            "attempt_nonce": directory.name,
+            "owner_identity": process_identity(os.getpid()),
+            "evaluation_directory": str((directory / "evaluation").resolve()),
+        }
     report = evaluate(
         plan,
         files,
@@ -806,6 +846,7 @@ def evaluate_checkpoint(
             "research_only",
             "research_continuation_policy",
             "research_bindings",
+            "execution_context",
         ):
             receipt[key] = report_value[key]
     # Recheck source/request pins after the full comparison before publishing.

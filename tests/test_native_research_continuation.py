@@ -2,14 +2,20 @@
 
 import copy
 import json
+import shutil
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
+
+import torch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / "src"), str(ROOT / "scripts")]
 import evaluate_nine_model_timed_checkpoint as evaluator  # noqa: E402
+import export_nine_model_lane_candidate as exporter  # noqa: E402
+import test_nine_model_lane_candidate_export as export_fixtures  # noqa: E402
 
 from w1a1_eagle import continuous_budget as api  # noqa: E402
 
@@ -40,9 +46,28 @@ class ResearchContinuationTests(unittest.TestCase):
         ]
         prompt_file = self.root / "prompts.jsonl"
         prompt_file.write_text("\n".join(json.dumps(r) for r in prompts))
+        self.serialized = export_fixtures.LaneExportTests().fixture(
+            self.root / "serialized", "dspark", 8
+        )
         target, model, q4, binary = [
             self.write({"CPU_fixture": name}) for name in ("target", "initial", "q4", "runtime")
         ]
+        target = self.serialized["plan"]["target"]
+        names = {"fc"} | {
+            f"blk.{layer}.ffn_{part}" for layer in range(5) for part in ("gate", "up", "down")
+        }
+        self.projection_names = sorted(names)
+        initial_audit = self.write(
+            {
+                "serialization_audit_passed": True,
+                "output": model,
+                "family": "dspark",
+                "profile": "ffn15_fusion",
+                "activation_bits": 8,
+                "base_gguf": {"sha256": self.serialized["saved"]["source"]["base_gguf_sha256"]},
+                "projections": {name: {"shape": [2, 32]} for name in names},
+            }
+        )
         plan = {
             "candidate": candidate,
             "target": target,
@@ -60,7 +85,7 @@ class ResearchContinuationTests(unittest.TestCase):
                 }
             ),
             "prompts": api.artifact_locator(prompt_file),
-            "initial": {"model": model},
+            "initial": {"model": model, "audit": initial_audit},
             "control": {"model": q4},
             "gpu_uuid": "GPU-CPU-fixture",
             "frozen_lane": self.write({"fixture": True}),
@@ -77,18 +102,11 @@ class ResearchContinuationTests(unittest.TestCase):
                 "scripts/evaluate_nine_model_timed_checkpoint.py",
                 "scripts/benchmark_native_eagle.py",
                 "src/w1a1_eagle/nine_model_pipeline.py",
+                "scripts/evaluate_nine_model_native.py",
             )
         }
         stages = []
-        audits = {}
-        for cell in (candidate, "initial"):
-            audits[cell] = self.write(
-                {
-                    "serialization_audit_passed": True,
-                    "output": models[cell],
-                    "projections": {f"fixture{i}": {"shape": [2, 32]} for i in range(16)},
-                }
-            )
+        audits = {candidate: initial_audit, "initial": initial_audit}
         request_config = {
             "evaluation": {
                 "max_output_tokens": 128,
@@ -111,36 +129,15 @@ class ResearchContinuationTests(unittest.TestCase):
                         "boot_id": "CPU-fixture-boot",
                         "start_ticks": 1000 + pid,
                     }
-                    argv = [
-                        binary["path"],
-                        "-m",
-                        target["path"],
-                        "--ctx-size",
-                        "2048",
-                        "--batch-size",
-                        "32",
-                        "--ubatch-size",
-                        "32",
-                        "--cache-type-k",
-                        "f16",
-                        "--cache-type-v",
-                        "f16",
-                        "--spec-type",
-                        "none" if cell == "target_only" else "draft-eagle3",
-                    ]
-                    if cell != "target_only":
-                        argv += [
-                            "-md",
-                            models[cell]["path"],
-                            "--spec-draft-n-max",
-                            "5" if cell == "eagle_q4" else "7",
-                            "--spec-draft-p-min",
-                            "0",
-                            "--spec-draft-type-k",
-                            "f16",
-                            "--spec-draft-type-v",
-                            "f16",
-                        ]
+                    from evaluate_nine_model_native import native_command
+
+                    argv = native_command(
+                        {"inputs": {"binary": binary, "target": target}},
+                        api._research_json(plan["protocol"]),
+                        candidate if cell == "initial" else cell,
+                        None if cell == "target_only" else models[cell],
+                        18290,
+                    )
                     process = self.write(
                         {"pid": pid, "pgid": pid, "kernel_identity": identity, "argv": argv},
                         str(stage_path / "process.json"),
@@ -170,14 +167,14 @@ class ResearchContinuationTests(unittest.TestCase):
                             "backend": "CUDA",
                             "device": 0,
                             "activation_bits": 8,
-                            "packed": f"fixture{i}.w1a1_packed",
+                            "packed": name + ".w1a1_packed",
                             "logical_k": 32,
                             "rows": 2,
                             "packed_type": "i32",
                             "packed_words": 1,
                             "tokens": 7,
                         }
-                        for i in range(16)
+                        for name in self.projection_names
                     ]
                     log_path.write_text(
                         "\n".join("W1AX_ADMISSION_TRACE " + json.dumps(r) for r in trace)
@@ -271,7 +268,7 @@ class ResearchContinuationTests(unittest.TestCase):
                 "schema": "native_zero_measurement_evidence_v1",
                 "progress": progress,
                 "bindings": binding,
-                "hardware": hardware,
+                "hardware": {**hardware, "boot_id": "CPU-fixture-boot"},
                 "failed_status": self.write(
                     {"status": "FAILED", "reason": "strict parity CPU fixture"}
                 ),
@@ -299,6 +296,7 @@ class ResearchContinuationTests(unittest.TestCase):
                 "scripts/evaluate_nine_model_timed_checkpoint.py",
                 "scripts/run_nine_model_lane.py",
                 "src/w1a1_eagle/continuous_budget.py",
+                "scripts/export_nine_model_lane_candidate.py",
             )
         }
         body = {
@@ -406,38 +404,76 @@ class ResearchContinuationTests(unittest.TestCase):
         baseline = api._research_json(api._research_json(policy)["baseline_report"])
         evidence = api._research_json(baseline["collection_evidence"])
         report = api.research_continuation_decision(policy, binding, records, diagnostics)
-        checkpoint = self.write({"fixture": "actual CPU checkpoint bytes"})
-        config = self.write({"fixture": "actual config"})
-        counters = {"step": 1, "elapsed_seconds": 14400.0}
-        request = self.write(
-            {"checkpoint": checkpoint, "protocol": plan["protocol"], "counters": counters}
+        f = self.serialized
+        write = f["write"]
+        frozen, state, supervisor, old_training = f["locators"]
+        lane = f["lane"]
+        spec = api._research_json(lane["config"])
+        spec.update(evaluation_protocol=plan["protocol"], evaluation_milestones_seconds=[10])
+        lane["config"] = write(Path(lane["config"]["path"]), spec)
+        frozen = write(Path(frozen["path"]), lane)
+        checkpoint_path = Path(f["receipt"]["checkpoint"]["path"])
+        saved = f["saved"]
+        saved["source"]["bundle_sha256"] = frozen["sha256"]
+        torch.save(saved, checkpoint_path)
+        checkpoint = api.artifact_locator(checkpoint_path)
+        side = api._research_json(
+            api.artifact_locator(checkpoint_path.with_suffix(".receipt.json"))
         )
-        projection_manifest = self.write({"projections": {f"fixture{i}": {} for i in range(16)}})
-        npz = self.write({"fixture": "actual projection input bytes"})
-        training = self.write(
+        side.update(**checkpoint, source_sha256=exporter.digest(saved["source"]))
+        write(checkpoint_path.with_suffix(".receipt.json"), side)
+        counters = f["receipt"]["counters"]
+        request = self.write(
             {
-                "schema": "nine_model_stage_receipt_v1",
-                "status": "PASS",
-                "committed": True,
+                "schema": "nine_model_timed_evaluation_request_v1",
+                "candidate": plan["candidate"],
+                "bundle_sha256": frozen["sha256"],
+                "config_sha256": lane["config"]["sha256"],
                 "checkpoint": checkpoint,
-                "bundle_sha256": plan["frozen_lane"]["sha256"],
-                "config_sha256": config["sha256"],
-                "timed_evaluation_request": request,
+                "protocol": plan["protocol"],
                 "counters": counters,
-                "exports": {
-                    plan["candidate"]: {"checkpoint": npz, "manifest": projection_manifest}
-                },
+                "elapsed_seconds": counters["elapsed_seconds"],
+                "milestone_seconds": 10,
+                "milestone_index": 0,
+                "budget_ledger": self.write(
+                    {"schema": "continuous_training_budget_v1", "training_seconds": 10.0}
+                ),
+                "final_training_complete": True,
             }
         )
+        training_value = {
+            **f["receipt"],
+            "checkpoint": checkpoint,
+            "bundle_sha256": frozen["sha256"],
+            "config_sha256": lane["config"]["sha256"],
+            "timed_evaluation_request": request,
+        }
+        training = write(Path(old_training["path"]), training_value)
+        state_value = api._research_json(state)
+        state_value.update(
+            status="awaiting_evaluation", bundle_sha256=frozen["sha256"], train_receipt=training
+        )
+        state = write(Path(state["path"]), state_value)
+        supervisor = write(
+            Path(supervisor["path"]), {"status": "running", "pid": 98765, "supervisor_pid": 98764}
+        )
+        patcher = patch.object(
+            exporter, "validate_lane", return_value=(lane, exporter.Files(), f["plan"])
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        context = exporter.validate_endpoint(
+            frozen, state, supervisor, training, checkpoint_mode="timed_evidence"
+        )
         model = plan["initial"]["model"]
+        initial_audit = api._research_json(plan["initial"]["audit"])
+        projection_inputs = training_value["exports"][plan["candidate"]]
         audit = self.write(
             {
-                "serialization_audit_passed": True,
-                "family": "dspark",
-                "output": model,
-                "checkpoint": {"sha256": npz["sha256"]},
-                "manifest": {"sha256": projection_manifest["sha256"]},
-                "projections": {f"fixture{i}": {"shape": [2, 32]} for i in range(16)},
+                **initial_audit,
+                "schema": "block_binary_export_v1",
+                "checkpoint": {"sha256": projection_inputs["checkpoint"]["sha256"]},
+                "manifest": {"sha256": projection_inputs["manifest"]["sha256"]},
             }
         )
         exported = {
@@ -446,18 +482,63 @@ class ResearchContinuationTests(unittest.TestCase):
             "candidate": plan["candidate"],
             "checkpoint": checkpoint,
             "training_receipt": training,
-            "frozen_lane": plan["frozen_lane"],
-            "config": config,
+            "frozen_lane": frozen,
+            "config": lane["config"],
             "model": model,
             "audit": audit,
+            "lane_state": state,
+            "supervisor_state": supervisor,
+            "campaign_complete": False,
         }
+        export_receipt = self.write(exported)
+        exporter.validate_export(context, export_receipt)
+        future = self.root / "future-attempt" / "evaluation"
+        future.mkdir(parents=True)
+        execution = {
+            "schema": "native_timed_evaluation_attempt_v1",
+            "request": request,
+            "training_receipt": training,
+            "checkpoint": checkpoint,
+            "model": model,
+            "attempt_nonce": "future-attempt",
+            "owner_identity": {"pid": 98765, "boot_id": "CPU-fixture-boot", "start_ticks": 987651},
+            "evaluation_directory": str(future.resolve()),
+        }
+        stages = copy.deepcopy(evidence["stages"])
+        for stage in stages:
+            old_directory = Path(stage["process"]["path"]).parent
+            new_directory = future / old_directory.parent.name / old_directory.name
+            shutil.copytree(old_directory, new_directory)
+            for key in ("process", "lineage", "resource_return", "server_log", "dispatch"):
+                if key in stage:
+                    stage[key] = api.artifact_locator(new_directory / Path(stage[key]["path"]).name)
+            process = api._research_json(stage["process"])
+            process["pid"] += 1000
+            process["pgid"] += 1000
+            process["kernel_identity"]["pid"] += 1000
+            process["kernel_identity"]["start_ticks"] += 1000
+            process["execution_context"] = execution
+            stage["process"] = write(Path(stage["process"]["path"]), process)
+            stage["lineage"] = write(
+                Path(stage["lineage"]["path"]), {"kernel_identities": [process["kernel_identity"]]}
+            )
+            if stage["cell"] == plan["candidate"] and stage["diagnostic"]:
+                stage["export_audit"] = audit
+        future_records, future_diagnostics = copy.deepcopy(records), copy.deepcopy(diagnostics)
+        for row in future_records + future_diagnostics:
+            for key in ("raw_result", "raw_request"):
+                old = Path(row[key]["path"])
+                row[key] = api.artifact_locator(future / old.relative_to(self.root.resolve()))
         report.update(
-            measurements=self.write({"clean_records": records, "diagnostic_records": diagnostics}),
-            export_receipt=self.write(exported),
+            measurements=self.write(
+                {"clean_records": future_records, "diagnostic_records": future_diagnostics}
+            ),
+            export_receipt=export_receipt,
             trained_export=exported,
             model_ancestry=evidence["model_ancestry"],
-            native_stages=evidence["stages"],
+            native_stages=stages,
             producer_sources=evidence["producer_sources"],
+            execution_context=execution,
         )
         evaluation = self.write(report)
         return {
@@ -472,8 +553,8 @@ class ResearchContinuationTests(unittest.TestCase):
             "checkpoint": checkpoint,
             "training_receipt": training,
             "request": request,
-            "bundle_sha256": plan["frozen_lane"]["sha256"],
-            "config_sha256": config["sha256"],
+            "bundle_sha256": frozen["sha256"],
+            "config_sha256": lane["config"]["sha256"],
         }
 
     def test_stage_relabel_duplicate_process_wrong_argv_input_and_old_checkpoint_replay_stop(self):
@@ -506,6 +587,119 @@ class ResearchContinuationTests(unittest.TestCase):
             api.validate_evaluation_continuation(
                 {**result, "checkpoint": self.write({"new": "unmeasured checkpoint"})}
             )
+
+    def test_empty_projection_audit_counterfeit_serialized_weights_and_old_attempt_stop(self):
+        plan, binding, records, diagnostics, policy, baseline = self.fixture()
+        baseline_value = api._research_json(baseline)
+        evidence = api._research_json(baseline_value["collection_evidence"])
+        initial = api._research_json(plan["initial"]["audit"])
+        empty = self.write({**initial, "projections": {}})
+        altered = copy.deepcopy(evidence)
+        for stage in altered["stages"]:
+            if stage["diagnostic"] and "export_audit" in stage:
+                stage["export_audit"] = empty
+        with self.assertRaisesRegex(ValueError, "audit"):
+            api.validate_collection_evidence(
+                binding, self.write(altered), baseline_value["progress"]
+            )
+        result = self.receipt_fixture(plan, binding, records, diagnostics, policy)
+        self.assertTrue(api.validate_evaluation_continuation(result))
+        report = api._research_json(result["evaluation"])
+        reused = {**report, "native_stages": evidence["stages"]}
+        with self.assertRaisesRegex(ValueError, "request/evaluation attempt"):
+            api.validate_evaluation_continuation({**result, "evaluation": self.write(reused)})
+        # All JSON assertions are coherently rebound; only actual serialized
+        # latent bytes vs old projection NPZ distinguish the counterfeit.
+        saved = torch.load(result["checkpoint"]["path"], map_location="cpu", weights_only=False)
+        saved["linears"]["fc"]["latent_sign"][0, 0] += 0.25
+        checkpoint_path = Path(result["checkpoint"]["path"])
+        torch.save(saved, checkpoint_path)
+        changed = api.artifact_locator(checkpoint_path)
+        side_path = checkpoint_path.with_suffix(".receipt.json")
+        side = api._research_json(api.artifact_locator(side_path))
+        side.update(**changed)
+        self.write(side, str(side_path))
+        request = self.write({**api._research_json(result["request"]), "checkpoint": changed})
+        training_old = api._research_json(result["training_receipt"])
+        training = self.write(
+            {**training_old, "checkpoint": changed, "timed_evaluation_request": request},
+            str(Path(result["training_receipt"]["path"])),
+        )
+        exported = dict(report["trained_export"], checkpoint=changed, training_receipt=training)
+        lane_state = api._research_json(exported["lane_state"])
+        exported["lane_state"] = self.write(
+            {**lane_state, "train_receipt": training}, str(Path(exported["lane_state"]["path"]))
+        )
+        modified_report = {
+            **report,
+            "trained_export": exported,
+            "export_receipt": self.write(exported),
+        }
+        counterfeit = {
+            **result,
+            "checkpoint": changed,
+            "request": request,
+            "training_receipt": training,
+            "evaluation": self.write(modified_report),
+        }
+        with self.assertRaisesRegex(ValueError, "serialized|latent|projection|NPZ"):
+            api.validate_evaluation_continuation(counterfeit)
+
+    def test_actual_zero_failure_status_schema_is_preserved_and_validated(self):
+        plan, binding, _, _, _, baseline = self.fixture()
+        baseline_value = api._research_json(baseline)
+        evidence = api._research_json(baseline_value["collection_evidence"])
+        status = {
+            "schema": "dspark_zero_measurement_status_v1",
+            "strict_quality_gate": "FAIL",
+            "clean_records": 480,
+            "diagnostic_records": 96,
+            "optimizer_updates": 0,
+            "current_and_initial_same_exact_model": True,
+            "measurement_complete": True,
+            "failure": {"type": "ValueError", "message": "greedy verifier token sequence differs"},
+            "owner": {"pid": 88488, "start_ticks": 26169014, "boot_id": "CPU-fixture-boot"},
+            "owned_release": {
+                "owned_process_groups_absent": True,
+                "owned_cuda_pids_absent": True,
+                "other_context_pids": [],
+            },
+            "source_plan": plan,
+        }
+        original = self.write(status)
+        derived = {
+            **evidence,
+            "failed_status": original,
+            "remote_job_state": self.write({"status": "finished", "exit_code": 1}),
+        }
+        api.validate_collection_evidence(binding, self.write(derived), baseline_value["progress"])
+        self.assertEqual(api._research_json(original), status)
+        for key, value in (
+            ("measurement_complete", False),
+            ("optimizer_updates", 1),
+            ("clean_records", 479),
+        ):
+            bad = {**derived, "failed_status": self.write({**status, key: value})}
+            with self.assertRaises(ValueError):
+                api.validate_collection_evidence(
+                    binding, self.write(bad), baseline_value["progress"]
+                )
+
+    def test_changed_fifth_export_validator_rejects_before_import_validation(self):
+        _, binding, _, _, policy, _ = self.fixture()
+        original = api.artifact_locator
+
+        def changed(path):
+            value = original(path)
+            if Path(path).name == "export_nine_model_lane_candidate.py":
+                return {**value, "sha256": "0" * 64}
+            return value
+
+        with (
+            patch.object(api, "artifact_locator", side_effect=changed),
+            self.assertRaisesRegex(ValueError, "deployed source"),
+        ):
+            api.validate_research_policy(policy, binding)
 
     def test_receipt_consumer_actively_rechecks_failed_policy_and_rejects_scientific_rename(self):
         plan, binding, records, diagnostics, policy, _ = self.fixture()
