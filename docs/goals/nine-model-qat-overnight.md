@@ -3092,4 +3092,60 @@ RootownsGPU/integration/docs; remainingworkerscomplete. No essentialnewhumanchoi
 Nextfull0hmeasurements/quality,96initialconfirmation, reviewedstrictpolicyifnecessary,
 actualcanonicaltimedlane/freshsixSM120admission, thenpositivepaidupdatesand5/15minutehealth.
 
+## Completed zero-hour evidence and source review checkpoint — October 6, 16:18 PDT
+
+SamehumanstartDSparkA8/hourlyhealing,43200trainerseconds/4-8-12h objective. Old
+monitorDELETED/newACTIVE. Rootsoleoperator; no paidoptimizerupdate. Bothnative
+collectionsfinished; source/research-controller repair andCPUvalidation proceed.
+Actual480clean+96diag zerojob02 ended23:04:47UTC/exit1 solelystrictparityFAIL.
+All120DSpark/initial/Q4fulloutputsidentical, eachtarget115/120; onlyoriginal
+gsm8k:train-006474 token98. Nativeaccepted6995/proposed48820=14.3281442%,
+7135rounds,14290outputs/134.8878709s=105.939844tok/s vsQ48025/30290=26.4938924%,
+144.024529tok/s. Current/initialsameexactzero model, nottwoindependentcheckpoints.
+Rawfailure/progress/status/plan preserved; derivedzero-derived-comparison.json
+pinsoriginalinputs. Completeownedgroup/DXG/compute releasePASS, GPUfree14.59GB.
+No deployment/performancewin claim; strictFAILED staysFAILED.
+
+Actualone-pass96confirmation01 started23:06:02UTC, ended23:14:27UTC/exit2
+forstrictqualityFAIL. All384diagnosticrequests validated. All96DSpark/initial/Q4
+outputsidentical; target95/96. Sharedadditionalmagicoder:line-009389-index-2129
+outcome hasmatchingfinish/counts, no candidate-onlydifference. DSpark5807/40160
+=14.4596614%, Q46732/24425=27.5619243%. Instrumentedqualitycounts only/no
+five-rep throughputclaim. Report3231c0e4bd09610797f029803f8a4fd2b8515f3dcb710d46808ab87f25e7fd97.
+Supervisor89964birth26251975,child89979birth26251979/PGID89979, boot517c4a36-e475-4a5f-9fa6-65de57edc6fe;
+completeactualreleasePASS. Oldsource90a7fullcheckoutmuststayimmutableforhistory.
+
+IgnoredCPUfixed48helper14edc73d4e4ece7954f5fdeaa2711a32a70c5dc47921710d972dfbbd9bfe1b47
+independentlyaccepted4tests/all43sourcejoins/48prompts16domain/192anchors1344labels.
+Authenticatestypedinitialadmission orpaidfinalizedlane; bundlecomesverifiedlaneSHA,
+neverinitialbundleforpaidstate. Recreatesonlystudentparameters onCPU, nooptimizer/
+RNG/cursor/CUDAheader mutation/query; selection-conditioned CE/L1/top1, notnative.
+ActualCPUzero jobdspark-a8-cpu-validation-zero-20261006-01 running inold90a7 checkout,
+socketbinary-eagle-runtime/sessionroot-dspark-a8-cpu-validation-zero-20261006-01;
+12GiBmemorycap/noSwap,2threads/nice10,1800sbound, externalMemAvailable>=16GiB
+start/>=4GiBduring guard. Exactidentities pending currentstate result; neverinvent.
+Operatorrequest generated fromgenuineoriginalpaths andinitialcheckpoint/receipt.
+
+Newtimedplanv3 0bcc0e685ed170af6b8a3ce9b46cea1c945d6d8e2ff625b2cdf4789213cb12fb
+bindsadmissionenvironmentexactly/newbuilder647bbe9602f29e52ac2c8e53ad2164a4254fe3d4aa999e68cf42c7755d28aea8.
+Full96CPUartifactbindingsPASS; noGPUbeforestartflag. Oldv2environmentfailure preserved.
+Controllerfeature25e4358 in/Users/pippo/github/dspark-research-parity has4new/54legacy
+lane/12budgettestsPASS, butindependentreviewNOTACCEPTED: P1 oldrawmeasurements
+couldauthorize newcheckpoint; copiedstageproofs lackprocess/model joins; rawrequests
+lackoriginalprompt/protocol binding. Owner/root/dspark_shard_controller repairs
+4ownedfiles/tests inisolatedworktree, noSSH/GPU/activation. Reviewer
+/root/dspark_research_policy_review waitsfortestedevidence; otherboundedworkerscomplete.
+Opt-inreviewedresearchonlystatuskeepsstrictFAILED and activelycheckscontinuation;
+no newscientificapproval/deploymentwaiver claimed/defaultstrict unchanged.
+
+Nextroot: preservehealthyCPUjob/checkactualfinitefixed48cost; acceptcontroller
+repairsindependently, reconstructactualfull0hbaselinefromallrawstage/request/export
+proofs. Becausecontinuous_budget in43trainingidentitychanges, NEWimmutabletraining
+checkout/metadata/config plusfreshzero prepare/export/admissionrequired. DoNOT
+hot-rebindoldcheckpoint/header ormutateold90a7 source. Native0reuseONLYifnewinitial
+GGUFactualSHA exactlyea1bc689... andsameallruntime/control/target/protocol/prompts;
+otherwise freshmatched0h. Finishauthenticpolicy/review/finaltimedlane/sixSM120
+gates thenpositiveoptimizerupdates+5/15minutehealth, hourlyhealing. All43200s
+remain. No2080access/newgoal/userchat/operatortransfer; no currenthumanchoicepending.
+
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->

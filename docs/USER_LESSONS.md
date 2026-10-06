@@ -791,3 +791,19 @@ additional proof protocols or redoing completed audit work.
   root to inspect both sides of the adapter before this call. No user error.
 - Read the exact interface and pass through the observed receipt; never invent
   success booleans, repeat successful GPU work, or erase a wrapper failure.
+
+### 2026-10-06: Match a promised training plan to executable consumers
+
+- Root had source/test evidence for the DSpark recipe but found the promised
+  fixed48 teacher-forced validation had no executor during prelaunch. A bounded
+  CPU diagnostic helper now has explicit initial/paid checkpoint phases, immutable
+  header/state protection and independent source/math tests; actual execution
+  is still required. This omission and resulting delay are agent contributions.
+- The timed plan builder also used runtime environment fields while the canonical
+  lane uses admission environment with the physical CUDA UUID. Metadata checks
+  missed it; actual build_lane rejected before publication. Raw failedv2 is
+  preserved, and correctedv3 passes the canonical environment shape.
+- Check every promised metric against its actual producer, source binding,
+  invocation and consumer. Exercise the canonical path before claiming complete
+  readiness; a count of unrelated tests does not prove absent work implemented.
+  Keep preparation and positive optimizer updates distinct in user updates.
