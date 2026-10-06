@@ -111,6 +111,21 @@ def build_lane(descriptor, output):
         "resource_policy": plan["resource_policy"],
         "training_wall_seconds": limits["wall_seconds"],
     }
+    if descriptor.get("timed_evaluation_plan"):
+        from evaluate_nine_model_timed_checkpoint import validate_plan as validate_timed_plan
+
+        locator = descriptor["timed_evaluation_plan"]
+        validate_timed_plan(locator, value, plan, files)
+        value["timed_evaluation_plan"] = locator
+        timed = json.loads(files.check(locator).read_text())
+        require(
+            all(
+                key not in value["source"] or value["source"][key] == record
+                for key, record in timed["source"].items()
+            ),
+            "timed plan cannot replace original source pins",
+        )
+        value["source"].update(timed["source"])
     require(not output.exists(), "preserve previous lane publication")
     atomic_json(output, value)
     return {

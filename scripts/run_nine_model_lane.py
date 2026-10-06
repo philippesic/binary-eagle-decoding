@@ -83,6 +83,8 @@ def validate_lane(path, expected_sha256):
         lane["training_wall_seconds"] == budget["candidates"][lane["candidate"]]["wall_seconds"],
         "lane operational wall cap differs",
     )
+    if lane.get("timed_evaluation_plan"):
+        files.check(lane["timed_evaluation_plan"])
     return lane, files, plan
 
 
@@ -91,6 +93,170 @@ def committed_training_checkpoint(run_dir, candidate):
     return training / (
         "latest.json" if candidate.startswith("eagle_") else "checkpoints/latest.json"
     )
+
+
+def run_training_lifecycle(
+    lane,
+    lane_locator,
+    run_dir,
+    attempt,
+    admission_path,
+    supervisor_path,
+    state,
+    state_path,
+    files,
+    runner,
+    resources,
+    release,
+    authorization,
+    *,
+    resume=False,
+    evaluator=None,
+):
+    """A child must exit and release before export/eval, and eval before resume.
+
+    Durable pending_training survives controller crashes; retries evaluate that
+    same committed checkpoint in a new attempt, never retrain a paid boundary.
+    """
+    if evaluator is None:
+        from evaluate_nine_model_timed_checkpoint import evaluate_checkpoint
+
+        evaluator = evaluate_checkpoint
+    timed = lane.get("timed_evaluation_plan")
+    if timed:
+        from evaluate_nine_model_timed_checkpoint import validate_plan as validate_timed_plan
+
+        admission_plan, _ = validate_plan(Path(lane["admission_plan"]["path"]))
+        validate_timed_plan(timed, lane, admission_plan, files)
+    receipt_to_resume = state.get("evaluation_receipt")
+    while True:
+        authorization()
+        pending = state.get("pending_training")
+        if pending:
+            receipt = files.check(pending)
+        else:
+            stage = Path(attempt) / "training-attempts" / uuid.uuid4().hex
+            receipt = stage / "train-receipt.json"
+            command = [
+                sys.executable,
+                str(ROOT / "scripts/train_nine_model_qat.py"),
+                "--config",
+                lane["config"]["path"],
+                "--run-dir",
+                str(Path(run_dir) / "training"),
+                "--bundle-sha256",
+                lane_locator["sha256"],
+                "--stage-name",
+                lane["candidate"] + "/train",
+                "--completion-output",
+                str(receipt),
+                "--allow-cuda",
+                "--admission",
+                str(admission_path),
+            ]
+            if resume and committed_training_checkpoint(run_dir, lane["candidate"]).is_file():
+                command.append("--resume")
+                if receipt_to_resume:
+                    files.check(receipt_to_resume)
+                    command += [
+                        "--evaluation-receipt",
+                        receipt_to_resume["path"],
+                        "--evaluation-receipt-sha256",
+                        receipt_to_resume["sha256"],
+                    ]
+            state.update(status="training")
+            atomic_json(state_path, state)
+            runner.run(
+                command,
+                directory=stage / "train",
+                stop_path=Path(run_dir) / "STOP",
+                wall_seconds=lane["training_wall_seconds"],
+            )
+        endpoint = json.loads(receipt.read_text())
+        reasons = (
+            {"approved_budget_complete", "timed_evaluation_boundary"}
+            if timed
+            else {"approved_budget_complete"}
+        )
+        require(
+            endpoint.get("schema") == "nine_model_stage_receipt_v1"
+            and endpoint.get("stage") == lane["candidate"] + "/train"
+            and endpoint.get("artifact_kind") == "production"
+            and endpoint.get("status") == "PASS"
+            and endpoint.get("committed") is True
+            and endpoint.get("completion_reason") in reasons
+            and endpoint.get("bundle_sha256") == lane_locator["sha256"]
+            and endpoint.get("config_sha256") == lane["config"]["sha256"]
+            and endpoint.get("hardware", {}).get("gpu_uuid") == lane["gpu_uuid"]
+            and endpoint["hardware"].get("compute_capability") == [12, 0]
+            and type(endpoint.get("counters", {}).get("step")) is int
+            and endpoint["counters"]["step"] > 0,
+            "positive-update committed exact lane endpoint missing",
+        )
+        files.check(endpoint["checkpoint"])
+        training = {"path": str(receipt), "sha256": sha256(receipt)}
+        state.update(
+            train_receipt=training,
+            pending_training=training,
+            status="awaiting_evaluation" if timed else "training_complete",
+        )
+        atomic_json(state_path, state)
+        release()
+        atomic_json(state_path, state)
+        if not timed:
+            state.update(pending_training=None, evaluation_status="PENDING")
+            return
+        evaluation_attempt = Path(attempt) / "evaluations" / uuid.uuid4().hex
+        authorization()
+        evaluated = evaluator(
+            lane_locator,
+            {"path": str(state_path), "sha256": sha256(state_path)},
+            {"path": str(supervisor_path), "sha256": sha256(supervisor_path)},
+            training,
+            timed,
+            evaluation_attempt,
+            files=files,
+            observer=resources,
+            runner=runner,
+            release=release,
+            authorization=authorization,
+            stop_path=Path(run_dir) / "STOP",
+        )
+        authorization()
+        release()
+        result = json.loads(files.check(evaluated).read_text())
+        request_locator = endpoint["timed_evaluation_request"]
+        request = json.loads(files.check(request_locator).read_text())
+        require(
+            result.get("schema") == "nine_model_timed_evaluation_receipt_v1"
+            and result.get("status") == "PASS"
+            and result.get("completed") is True
+            and result.get("request") == request_locator
+            and result.get("checkpoint") == endpoint["checkpoint"]
+            and result.get("candidate") == lane["candidate"]
+            and result.get("bundle_sha256") == lane_locator["sha256"]
+            and result.get("config_sha256") == lane["config"]["sha256"]
+            and result.get("protocol") == request["protocol"]
+            and result.get("owned_release", {}).get("owned_process_groups_absent") is True
+            and result["owned_release"].get("owned_cuda_pids_absent") is True,
+            "authenticated exact-checkpoint evaluation receipt missing",
+        )
+        files.check(result["evaluation"])
+        final = endpoint["completion_reason"] == "approved_budget_complete"
+        require(
+            request.get("final_training_complete") is final, "training completion request differs"
+        )
+        state.setdefault("evaluations", []).append(evaluated)
+        state.update(
+            pending_training=None,
+            evaluation_receipt=evaluated,
+            evaluation_status="PASS",
+            status="training_complete" if final else "awaiting_evaluation",
+        )
+        atomic_json(state_path, state)
+        if final:
+            return
+        resume, receipt_to_resume = True, evaluated
 
 
 def main(argv=None):
@@ -102,6 +268,10 @@ def main(argv=None):
     parser.add_argument("--resume", action="store_true")
     args = parser.parse_args(argv)
     lane, files, plan = validate_lane(args.lane, args.lane_sha256)
+    if lane.get("timed_evaluation_plan"):
+        from evaluate_nine_model_timed_checkpoint import validate_plan as validate_timed_plan
+
+        validate_timed_plan(lane["timed_evaluation_plan"], lane, plan, files)
     if not args.start:
         print(
             json.dumps(
@@ -159,6 +329,9 @@ def main(argv=None):
             "successful endpoint cannot restart training",
         )
         state["previous_attempt"] = previous
+        for key in ("pending_training", "evaluation_receipt", "evaluations"):
+            if key in previous:
+                state[key] = previous[key]
     lock_path = Path.home() / ".config/binary-eagle-decoding/rtx5080-campaign.lock"
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     resources = LinuxResources(lane["gpu_uuid"])
@@ -169,7 +342,12 @@ def main(argv=None):
         proof = resources.require_released(runner.process_groups, runner.process_identities)
         observed = resources.snapshot()
         resource_gate(observed, baseline, lane["resource_policy"])
+        require(
+            proof.get("other_context_pids") == [] and observed.get("dxg_holders") == [],
+            "foreign GPU contexts forbid lane continuation",
+        )
         state.update(owned_release=proof, resource_return=observed)
+        return proof
 
     with lock_path.open("a") as owner:
         fcntl.flock(owner, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -206,51 +384,21 @@ def main(argv=None):
                 release()
                 state.update(status="training", admission=selected, attempt=str(attempt))
                 atomic_json(state_path, state)
-                receipt = attempt / "train-receipt.json"
-                command = [
-                    sys.executable,
-                    str(ROOT / "scripts/train_nine_model_qat.py"),
-                    "--config",
-                    lane["config"]["path"],
-                    "--run-dir",
-                    str(args.run_dir / "training"),
-                    "--bundle-sha256",
-                    args.lane_sha256,
-                    "--stage-name",
-                    lane["candidate"] + "/train",
-                    "--completion-output",
-                    str(receipt),
-                    "--allow-cuda",
-                    "--admission",
-                    str(admission_path),
-                ]
-                if (
-                    args.resume
-                    and committed_training_checkpoint(args.run_dir, lane["candidate"]).is_file()
-                ):
-                    command.append("--resume")
-                runner.run(
-                    command,
-                    directory=attempt / "train",
-                    stop_path=args.run_dir / "STOP",
-                    wall_seconds=lane["training_wall_seconds"],
-                )
-                endpoint = json.loads(receipt.read_text())
-                require(
-                    endpoint.get("status") == "PASS"
-                    and endpoint.get("committed") is True
-                    and endpoint.get("completion_reason") == "approved_budget_complete"
-                    and endpoint.get("bundle_sha256") == args.lane_sha256
-                    and endpoint.get("config_sha256") == lane["config"]["sha256"]
-                    and endpoint.get("counters", {}).get("step", 0) > 0,
-                    "positive-update committed endpoint missing",
-                )
-                files.check(endpoint["checkpoint"])
-                release()
-                state.update(
-                    status="training_complete",
-                    train_receipt={"path": str(receipt), "sha256": sha256(receipt)},
-                    evaluation_status="PENDING",
+                run_training_lifecycle(
+                    lane,
+                    {"path": str(args.lane), "sha256": args.lane_sha256},
+                    args.run_dir,
+                    attempt,
+                    admission_path,
+                    args.supervisor_state,
+                    state,
+                    state_path,
+                    files,
+                    runner,
+                    resources,
+                    release,
+                    authorization,
+                    resume=args.resume,
                 )
         except BaseException as error:
             with deferred_termination():

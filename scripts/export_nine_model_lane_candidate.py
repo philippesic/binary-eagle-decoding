@@ -13,6 +13,7 @@ import argparse
 import hashlib
 import json
 import math
+import os
 import subprocess
 import sys
 from dataclasses import asdict
@@ -121,6 +122,7 @@ def validate_endpoint(
     *,
     files=None,
     checkpoint_loader=None,
+    checkpoint_mode="final",
 ):
     """Validate original typed endpoint and serialized state; no release claim."""
     files = Files() if files is None else files
@@ -129,16 +131,28 @@ def validate_endpoint(
     state_path = files.check(lane_state_locator)
     state = json.loads(state_path.read_text())
     supervisor = json.loads(files.check(supervisor_locator).read_text())
+    require(checkpoint_mode in {"final", "timed"}, "unknown checkpoint validation mode")
+    timed = checkpoint_mode == "timed"
+    if timed:
+        require(
+            supervisor.get("status") == "running"
+            and supervisor.get("pid") == os.getpid()
+            and supervisor.get("supervisor_pid") == os.getppid(),
+            "timed controller supervision differs",
+        )
     require(
-        supervisor.get("status") == "finished"
-        and type(supervisor.get("exit_code")) is int
-        and supervisor["exit_code"] == 0
-        and supervisor.get("received_signal") is None,
+        timed
+        or (
+            supervisor.get("status") == "finished"
+            and type(supervisor.get("exit_code")) is int
+            and supervisor["exit_code"] == 0
+            and supervisor.get("received_signal") is None
+        ),
         "natural successful supervisor required",
     )
     require(
         state.get("schema") == "nine_model_lane_state_v1"
-        and state.get("status") == "training_complete"
+        and state.get("status") == ("awaiting_evaluation" if timed else "training_complete")
         and state.get("candidate") == lane["candidate"]
         and state.get("bundle_sha256") == lane_locator["sha256"]
         and state.get("campaign_complete") is False
@@ -154,7 +168,12 @@ def validate_endpoint(
         and receipt.get("artifact_kind") == "production"
         and receipt.get("status") == "PASS"
         and receipt.get("committed") is True
-        and receipt.get("completion_reason") == "approved_budget_complete"
+        and receipt.get("completion_reason")
+        in (
+            {"timed_evaluation_boundary", "approved_budget_complete"}
+            if timed
+            else {"approved_budget_complete"}
+        )
         and receipt.get("bundle_sha256") == lane_locator["sha256"]
         and receipt.get("config_sha256") == lane["config"]["sha256"]
         and type(counters.get("step")) is int
@@ -185,9 +204,35 @@ def validate_endpoint(
         and limits["max_seconds"] > 0
         and type(elapsed) in (int, float)
         and math.isfinite(elapsed)
-        and elapsed >= limits["max_seconds"],
+        and elapsed >= (0 if timed else limits["max_seconds"]),
         "full cumulative training budget required",
     )
+    if timed:
+        request = json.loads(files.check(receipt["timed_evaluation_request"]).read_text())
+        require(
+            request.get("schema") == "nine_model_timed_evaluation_request_v1"
+            and request.get("candidate") == name
+            and request.get("bundle_sha256") == lane_locator["sha256"]
+            and request.get("config_sha256") == lane["config"]["sha256"]
+            and request.get("checkpoint") == receipt["checkpoint"]
+            and request.get("elapsed_seconds") == elapsed
+            and request.get("protocol") == spec.get("evaluation_protocol")
+            and request.get("milestone_seconds") in spec.get("evaluation_milestones_seconds", [])
+            and elapsed >= request["milestone_seconds"],
+            "timed request/checkpoint/protocol/accounting differs",
+        )
+        milestones = spec["evaluation_milestones_seconds"]
+        require(
+            type(request.get("milestone_index")) is int
+            and 0 <= request["milestone_index"] < len(milestones)
+            and milestones[request["milestone_index"]] == request["milestone_seconds"]
+            and request.get("final_training_complete")
+            is (receipt["completion_reason"] == "approved_budget_complete")
+            and (not request["final_training_complete"] or elapsed >= limits["max_seconds"]),
+            "timed boundary/final accounting differs",
+        )
+        files.check(request["protocol"])
+        files.check(request["budget_ledger"])
     selected = plan["candidates"][name]
     source = selected["source_bindings"]
     require(source and "bundle_sha256" not in source, "original training source bindings required")
@@ -231,6 +276,7 @@ def validate_endpoint(
         supervisor_state=supervisor_locator,
         checkpoint=receipt["checkpoint"],
         exported=exported,
+        checkpoint_mode=checkpoint_mode,
     )
     if family == "eagle":
         from w1a1_eagle.continuous_qat import ContinuousConfig, immutable_config
@@ -521,6 +567,7 @@ def export_endpoint(
         context["lane_state"],
         context["supervisor_state"],
         context["train_receipt"],
+        checkpoint_mode=context.get("checkpoint_mode", "final"),
     )
     directory = Path(directory).absolute()
     require(
@@ -553,6 +600,7 @@ def export_endpoint(
         context["lane_state"],
         context["supervisor_state"],
         context["train_receipt"],
+        checkpoint_mode=context.get("checkpoint_mode", "final"),
     )
     require(release_check(context) is True, "actual runtime release changed during CPU export")
     result = {
