@@ -750,3 +750,15 @@ additional proof protocols or redoing completed audit work.
   as an engineering option. Do not present disk-driven subset proposals as an
   architectural requirement or imply that current source already implements
   the full sharded cache/replay lifecycle.
+
+### 2026-10-06: Consumed coverage is not admitted dataset size
+
+- Root answered4,218 TRAIN prompts/1,639,464 rows as EAGLE dataset capacity.
+  Actual frozen preparation-ready admits10,000 prompts/3,899,930 rows; the lower
+  counts are stopped trainer unique exposure at epoch0/cursor345558. Astra caught
+  the conflation; root independently copied/authenticated ready/status and
+  corrected the user. No user error or lost data occurred.
+- Label source corpus size, admitted capture extent, and consumed unique coverage
+  separately. Epoch/cursor counters and optimizer updates are different again.
+  Read the appropriate original receipt before making dataset-count comparisons
+  or recommending a smaller corpus because of a misunderstood denominator.

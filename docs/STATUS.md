@@ -12,6 +12,16 @@ Allocation: 12 cumulative trainer-hours per model; native acceptance at 4/8/12 h
 Health checks every 2 h, with operational extra startup checks at 5/15 minutes.
 F16 target/verifier/KV, original TRAIN ancestry and held-out protocol remain.
 
+**October6 research update:** human authorized an Astra source/web training audit.
+Report owner astra_training_audit, isolated /tmp/astra-training-audit-20261006,
+branch audit/astra-training-20261006. Training remains stopped; no scientific
+recipe, allocation or exposure change is selected by this review.
+**Dataset correction:** admitted EAGLE data has10,000 TRAIN prompts and3,899,930
+supervised rows. Paused step344724 consumed4,218 unique prompts/1,639,464 rows,
+epoch0/cursor345558. Root incorrectly called consumed counts dataset capacity
+in chat; actual frozen ready/status receipts resolve this. Full-corpus reuse and
+exact shard lifecycle are valid review options alongside smaller subsets.
+
 EAGLE A8 already consumed14.43h: preserve that overage and verified344724
 checkpoint; no repeat/extra training before evaluation. Old4/8/12h acceptance
 results do not exist. Root remains sole GPUoperator; fresh source/resource/device

@@ -2593,4 +2593,45 @@ elapsed time, UI default or automatic continuation. Exact original blockQ4 files
 and final-held-out scope remain later required inputs, not reasons to fabricate
 controls or change the success criteria. No successor chat or ownership transfer.
 
+## Human-authorized Astra training audit — October6, 11:55PDT
+
+Human requested an Astra agent to think and do web research across data, training
+techniques, duration and other training-quality factors. Scoped worker
+/root/astra_training_audit (Astra medium, research_advisor) owns only new report
+experiments/nine-model-qat-overnight/astra-training-audit-20261006.md in isolated
+/tmp/astra-training-audit-20261006, branch audit/astra-training-20261006. No
+recursive workers, GPU/SSH, source/config/model/data changes or push rights.
+Root owns transport/docs/integration/independent acceptance. Existing native
+training Goal remains BLOCKED; review is active useful human-authorized work,
+not a new Goal or a training launch. Same six+three scope/schedule preserved.
+
+Important actual-data correction: frozen preparation-ready.teacher_coverage
+binds10,000 TRAIN prompts and3,899,930 rows; stopped trainer status344724 shows
+unique_prompts4218,unique_supervised_rows1639464,presented_supervised_tokens1639464,
+epoch0,cursor345558,51950.921720s. Consumed coverage is NOT dataset capacity.
+Root's last count/reuse answers incorrectly called4218 the dataset size; user
+correction issued immediately. Keep original receipts/history untouched.
+Root copied8 actual lane/config/continuous/effective/ready/status/latest/budget
+metadata files, verified all file SHA pins and original config/ready joins.
+Local results/astra-training-audit-20261006/frozen-metadata/results/
+astra-training-audit-20261006/, manifest
+ca7e1dc3d346cd15ee11e91386dfc58d2ea5aedd855ad83b0bbe492405c2f99b.
+No weights/teacher tensors loaded or GPU process started/stopped for this read.
+
+First source/web findings remain preliminary: current block defaults differ
+from released recipes; offline DSpark captured-target predecessors are supported
+by official training code, so live prefixes are not automatically superior.
+Astra is comparing exact frozen30a EAGLE recipe against current optional features
+and original public code; source presence does not prove it was active in training.
+Full original prompt/TRAIN reuse and faithful bounded shard/capture lifecycle are
+valid alternatives to storage-driven450/750 proposals. No data reduction, on-policy
+switch, changed numeric gate or shortened12h allocation is authorized by findings.
+
+Next: let bounded audit finish with primary citations/precise source evidence,
+independently accept/integrate its report and corrected durable state, give human
+prioritized measured gaps vs experimental hypotheses. Do not characterize the
+unchanged GPU-free campaign as currently training. All other workers/jobs remain
+finished; root remains sole RTX5080 operator, no2080access. SAME heartbeat quiet
+on unchanged state; pending scientific recipe decisions remain human-owned.
+
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->
