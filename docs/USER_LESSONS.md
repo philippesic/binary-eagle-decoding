@@ -723,3 +723,16 @@ additional proof protocols or redoing completed audit work.
 - After any locator rebind, verify every actual client/binary/target path and
   hash independently. Planning PASS never proves native launchability. Keep
   source checkout, shared build and immutable data roots explicit.
+
+### 2026-10-06: Explain a blocked campaign at an interactive check-in
+
+- After the revised training request, independent preparation finished and the
+  goal became blocked at02:08PDT on the unanswered exposure/conditioning choice.
+  Unchanged scheduled checks stayed quiet as instructed; no training progressed.
+  At10:26PDT the human asked, “hello? what happened”. This is a coordination
+  concern; do not infer a user mistake or a failed running trainer.
+- Root must lead an interactive answer with actual running/stopped state, the
+  time of the block and completed measurements, then surface one concise data
+  question with a recommendation. Do not describe an active monitor as active
+  training or preparation evidence as a production launch. The scientific
+  choice remains human-owned; silence/default UI selection is not an answer.
