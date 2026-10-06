@@ -31,8 +31,10 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from w1a1_eagle.block_data import (  # noqa: E402
     BLOCK_LOGITS_SELECTION,
+    PARTIAL_LABEL_POLICY,
     DOMAINS,
     GENERATED_PREFIX_CONTRACT,
+    identity,
     REPLAY_PREFIX_CONTRACT,
     SPLITS,
     TAPS,
@@ -40,6 +42,7 @@ from w1a1_eagle.block_data import (  # noqa: E402
     file_sha256,
     generated_block_anchors,
     import_capture_plan,
+    joined_generation_source,
     validate_logits_indices,
     validate_native_generation,
 )
@@ -104,6 +107,128 @@ def selected_jsonl_rows(path, positions, max_row_bytes):
     return selected
 
 
+
+APPROVED_DSPARK_SELECTOR_SHA256 = "6de06976383246d4b512558fa45cf67780546ae11f121ed31f376e81ee1d7ea5"
+
+
+def canonical_groups(records):
+    """Original transitive group OR topic components; never content-deduplicate."""
+    parents = list(range(len(records)))
+    lookup = {}
+
+    def find(i):
+        while parents[i] != i:
+            parents[i] = parents[parents[i]]
+            i = parents[i]
+        return i
+
+    for i, row in enumerate(records):
+        for key in (row["source_group"], row["source_topic"]):
+            if key is None:
+                continue
+            if key in lookup:
+                parents[find(i)] = find(lookup[key])
+            else:
+                lookup[key] = i
+    components = {}
+    for i, row in enumerate(records):
+        components.setdefault(find(i), []).append(row)
+    for rows in components.values():
+        group = "original_group_component:" + content_hash(sorted(r["prompt_id"] for r in rows))
+        for row in rows:
+            row["group_id"] = group
+    return components
+
+
+def validate_full_pool_contract(pin, base, corpus_pin):
+    """Authenticate ALL original TRAIN bodies/indices and approved role/group joins.
+
+    Reading TRAIN only is intentional: no development or sealed bodies are opened.
+    This CPU validation is source preparation, never tensor/native admission.
+    """
+    path = pinned(pin, base)
+    contract = json.loads(path.read_text())
+    if (set(contract) != {"schema", "selector", "original_corpus", "source_corpus"}
+        or contract["schema"] != "dspark_full_pool_source_contract_v1"
+        or contract["selector"]["sha256"] != APPROVED_DSPARK_SELECTOR_SHA256
+        or contract["source_corpus"] != corpus_pin):
+        raise ValueError("full-pool source/selector contract differs")
+    selector = json.loads(pinned(contract["selector"], path.parent).read_text())
+    original = json.loads(pinned(contract["original_corpus"], path.parent).read_text())
+    source_path = pinned(corpus_pin, base)
+    source = json.loads(source_path.read_text())
+    if (selector["seed"] != 8101
+        or selector["source_manifest"]["sha256"] != contract["original_corpus"]["sha256"]
+        or len(original["files"]["train"]["shards"]) != 10):
+        raise ValueError("approved ten-shard corpus ancestry differs")
+    shards = source["files"]["train"]["shards"]
+    if len(shards) != 10 or len(selector["source_indexes"]) != 10:
+        raise ValueError("all ten original TRAIN shards required")
+    records = []
+    source_bytes = 0
+    source_files = []
+    for shard_id, shard in enumerate(shards):
+        expected = original["files"]["train"]["shards"][shard_id]
+        if {k: v for k, v in shard.items() if k not in ("prompts", "index")} != {
+            k: v for k, v in expected.items() if k not in ("prompts", "index")
+        } or selector["source_indexes"][shard_id]["sha256"] != shard["index_sha256"]:
+            raise ValueError("source shard/index pin differs from approved original")
+        files = {k: pinned({"path": shard[k], "sha256": shard[k + "_sha256"]}, source_path.parent)
+                 for k in ("prompts", "index")}
+        source_bytes += sum(p.stat().st_size for p in files.values())
+        source_files.extend({"path": str(p), "sha256": shard[k + "_sha256"]} for k, p in files.items())
+        positions = set(range(expected["prompts_count"]))
+        rows = {k: selected_jsonl_rows(p, positions, 1024**2) for k, p in files.items()}
+        # Also reject extra nonblank records: selector must cover the exact pool.
+        for source_file in files.values():
+            with source_file.open("rb") as stream:
+                if sum(bool(line.strip()) for line in stream) != len(positions):
+                    raise ValueError("source shard record count differs")
+        for ordinal in sorted(positions):
+            prompt, index = rows["prompts"][ordinal], rows["index"][ordinal]
+            if (prompt.get("id") != index.get("id") or prompt.get("domain") != index.get("domain")
+                or content_hash(prompt.get("messages")) != index.get("content_sha256")
+                or any(r.get(k, "TRAIN") not in ("train", "TRAIN")
+                       for r in (prompt, index) for k in ("split", "source_split", "role"))):
+                raise ValueError("full-pool original TRAIN body/index content/domain join differs")
+            if not isinstance(index.get("group_id", index.get("group")), str):
+                raise ValueError("original source group required")
+            records.append({"shard": shard_id, "row": ordinal, "prompt_id": index["id"],
+                            "content_sha256": index["content_sha256"], "domain": index["domain"],
+                            "source_group": index.get("group_id", index.get("group")),
+                            "source_topic": index.get("topic"), "category": index.get("category"),
+                            "input_tokens": index["input_tokens"]})
+    components = canonical_groups(records)
+    choices = selector["selection"]
+    if len(records) != 10000 or len(choices) != 10000 or len({r["prompt_id"] for r in records}) != 10000:
+        raise ValueError("full-pool must retain all 10000 original prompts exactly once")
+    counts = {s: {d: 0 for d in DOMAINS} for s in SPLITS}
+    role_maps = {k: {} for k in ("prompt_id", "group_id", "content_sha256")}
+    by_location = {}
+    for row, selected in zip(records, choices):
+        if any(selected.get(k) != v for k, v in row.items()) or selected["split"] not in SPLITS:
+            raise ValueError("selector exact source/group/topic/uncropped-length join differs")
+        role = selected["split"]
+        for key, lookup in role_maps.items():
+            value = row[key]
+            if value in lookup and lookup[value] != role:
+                raise ValueError("canonical group/topic/content cross-role leakage")
+            lookup[value] = role
+        counts[role][row["domain"]] += 1
+        by_location[(row["shard"], row["row"])] = selected
+    if counts != {"train": {"prose": 3286, "code": 3285, "reasoning": 3285},
+                  "calibration_fit": dict.fromkeys(DOMAINS, 32),
+                  "calibration_validation": dict.fromkeys(DOMAINS, 16)}:
+        raise ValueError("approved full-pool role/domain counts differ")
+    repeated = [rows for rows in components.values() if len(rows) > 1]
+    if any(by_location[(r["shard"], r["row"])]["split"] != "train" for rows in repeated for r in rows):
+        raise ValueError("all multi-record source components must remain in optimizer TRAIN")
+    return by_location, {"counts": counts, "source_bytes": source_bytes,
+                         "source_files": source_files, "canonical_components": len(components),
+                         "multi_record_components": len(repeated),
+                         "multi_record_prompts": sum(map(len, repeated))}
+
+
 def prepare_plan(plan_path, expected_sha256, *, execution_profile="production_CUDA"):
     """Authenticate explicit TRAIN source selection and report conservative costs."""
     path = pinned({"path": str(Path(plan_path).resolve()), "sha256": expected_sha256}, Path.cwd())
@@ -128,11 +253,20 @@ def prepare_plan(plan_path, expected_sha256, *, execution_profile="production_CU
     if cpu:
         fields |= {"execution_profile", "cpu_build"}
     if (
-        set(plan) not in (fields, fields | {"teacher_logits_layout"})
+        not fields <= set(plan) or set(plan) - fields - {"teacher_logits_layout", "full_pool_contract", "label_policy", "capture_goldens"}
         or plan["schema"] != "nine_model_train_capture_plan_v1"
         or (cpu and plan["execution_profile"] != "development_CPU")
     ):
         raise ValueError("unsupported explicit TRAIN capture plan")
+    partial = plan.get("label_policy") == PARTIAL_LABEL_POLICY
+    if "label_policy" in plan and not partial:
+        raise ValueError("unsupported partial-label policy")
+    if partial and plan.get("teacher_logits_layout", "dense") != "indexed":
+        raise ValueError("partial capture requires explicit indexed replay")
+    capture_goldens = plan.get("capture_goldens", True)
+    if type(capture_goldens) is not bool:
+        raise ValueError("capture_goldens must be boolean")
+    golden_requests = 6 if capture_goldens else 0
     if plan["input_mode"] not in ("raw_text", "native_chat"):
         raise ValueError("explicit raw_text or native_chat input mode required")
     if plan["objective"] not in ("hard_ce", "exact_soft"):
@@ -150,7 +284,7 @@ def prepare_plan(plan_path, expected_sha256, *, execution_profile="production_CU
     if set(generation) != {"max_new_tokens", "algorithm"} or generation["algorithm"] != "greedy":
         raise ValueError("native target-only greedy generation required")
     positive(generation["max_new_tokens"], "max_new_tokens")
-    if generation["max_new_tokens"] < 8:
+    if generation["max_new_tokens"] < 8 and not partial:
         raise ValueError("seven-slot author profile requires at least eight generated tokens")
     caps = plan["caps"]
     cap_fields = {
@@ -250,10 +384,14 @@ def prepare_plan(plan_path, expected_sha256, *, execution_profile="production_CU
     cpu_build = validate_cpu_build(plan["cpu_build"], native, path.parent) if cpu else None
     corpus = json.loads(corpus_path.read_text())
     shards = corpus["files"]["train"]["shards"]
+    full_pool = None
+    if "full_pool_contract" in plan:
+        full_pool, full_pool_summary = validate_full_pool_contract(
+            plan["full_pool_contract"], path.parent, plan["corpus"])
     selected = plan["selection"]
     if cpu and len(selected) > 9:
         raise ValueError("development_CPU supports only the bounded nine-chain pilot")
-    if not isinstance(selected, list) or not selected or len(selected) + 6 > caps["max_requests"]:
+    if not isinstance(selected, list) or not selected or len(selected) * (2 if partial else 1) + golden_requests > caps["max_requests"]:
         raise ValueError("selected capture/golden requests exceed explicit count cap")
     records, loaded, source_bytes = (
         [],
@@ -268,6 +406,10 @@ def prepare_plan(plan_path, expected_sha256, *, execution_profile="production_CU
                 "selection requires exact original shard/row/content/domain/split joins"
             )
         shard_id, row_id = choice["shard"], choice["row"]
+        if full_pool is not None:
+            approved = full_pool.get((shard_id, row_id))
+            if approved is None or any(choice[k] != approved.get("content_sha256" if k == "prompt_sha256" else k) for k in choice):
+                raise ValueError("chunk selection differs from immutable global role selector")
         if type(shard_id) is not int or not 0 <= shard_id < len(shards):
             raise ValueError("original TRAIN shard ordinal invalid")
         if choice["domain"] not in DOMAINS or choice["split"] not in SPLITS:
@@ -329,10 +471,11 @@ def prepare_plan(plan_path, expected_sha256, *, execution_profile="production_CU
             domain = row.get("domain", row.get("category"))
             if domain is not None and domain != choice["domain"]:
                 raise ValueError("original TRAIN domain differs")
-        group = index.get("group_id", index.get("group"))
+        group = (full_pool[(shard_id, row_id)]["group_id"] if full_pool is not None
+                 else index.get("group_id", index.get("group")))
         if not isinstance(group, str) or not group:
             raise ValueError("original source group identity required")
-        if choice["prompt_id"] in seen_ids or digest in seen_content or group in seen_groups:
+        if choice["prompt_id"] in seen_ids or (full_pool is None and (digest in seen_content or group in seen_groups)):
             raise ValueError("prompt/content/group overlap among selected TRAIN-derived roles")
         seen_ids.add(choice["prompt_id"])
         seen_content.add(digest)
@@ -351,13 +494,13 @@ def prepare_plan(plan_path, expected_sha256, *, execution_profile="production_CU
                 },
             }
         )
-    if any(min(c.values()) < 1 or len(set(c.values())) != 1 for c in counts.values()):
+    if full_pool is None and any(min(c.values()) < 1 or len(set(c.values())) != 1 for c in counts.values()):
         raise ValueError("each TRAIN-derived role requires all three domains with balanced counts")
     # Hard CE omits block logits; every EAGLE portability golden retains final full logits.
-    feature_bytes = caps["max_tokens_per_chain"] * 4 * 5 * width
+    feature_bytes = caps["max_tokens_per_chain"] * 4 * 5 * width * (2 if partial else 1)
     retained_teacher_rows = (
         (
-            len(block_teacher_indices(generated_block_anchors(1, 1 + generation["max_new_tokens"])))
+            len(block_teacher_indices(generated_block_anchors(1, 1 + generation["max_new_tokens"], partial=partial), 1 + generation["max_new_tokens"] if partial else None))
             if layout == "indexed"
             else caps["max_tokens_per_chain"]
         )
@@ -378,7 +521,7 @@ def prepare_plan(plan_path, expected_sha256, *, execution_profile="production_CU
     index_map_metadata_bytes = 7 * (64 + 16 * retained_teacher_rows) if layout == "indexed" else 0
     bound = (
         len(records) * (request_bytes + 65536 + index_map_metadata_bytes)
-        + 3 * (golden_bytes + 65536)
+        + (3 * (golden_bytes + 65536) if capture_goldens else 0)
         + source_bytes
     )
     largest_request = max(request_bytes, 4 * (caps["max_eagle_golden_tokens"] * 5 * width + vocab))
@@ -397,7 +540,7 @@ def prepare_plan(plan_path, expected_sha256, *, execution_profile="production_CU
             "plan_sha256": expected_sha256,
             "selected_prompt_count": len(records),
             "counts": counts,
-            "max_native_requests": len(records) + 6,
+            "max_native_requests": len(records) * (2 if partial else 1) + golden_requests,
             "max_chain_rows": len(records) * caps["max_tokens_per_chain"],
             "max_prompt_tokens": caps["max_prompt_tokens"],
             "max_new_tokens": generation["max_new_tokens"],
@@ -417,6 +560,7 @@ def prepare_plan(plan_path, expected_sha256, *, execution_profile="production_CU
             "max_wall_seconds": caps["total_timeout_seconds"],
             "full_vocab_teacher": plan["objective"] == "exact_soft",
             "coverage_selected_by": "external_pinned_plan",
+            **({"full_pool_source": full_pool_summary, "label_policy": PARTIAL_LABEL_POLICY} if full_pool is not None else {}),
             "capture_portability": "PENDING fresh device numeric/decision gate",
             "corpus": plan["corpus"],
             "runtime": {"path": str(runtime_path), "sha256": file_sha256(runtime_path)},
@@ -652,12 +796,19 @@ def run_capture(
     available_query=None,
     clock=time.monotonic,
     execution_profile="production_CUDA",
+    chain_ids=None,
 ):
     cpu = execution_profile == "development_CPU"
     injected = teacher_factory is not None
     plan, records, cost = prepare_plan(
         plan_path, expected_sha256, execution_profile=execution_profile
     )
+    if chain_ids is not None and (
+        not isinstance(chain_ids, dict) or set(chain_ids) != {r["prompt_id"] for r in records}
+        or any(not isinstance(cid, str) or not cid for cid in chain_ids.values())
+        or len(set(chain_ids.values())) != len(chain_ids)
+    ):
+        raise ValueError("logical shard exact unique prompt/chain ID map differs")
     device_query = device_query or (mac_cpu_device if cpu else cuda_device)
     rss_query = rss_query or (mac_rss_bytes if cpu else rss_bytes)
     available_query = available_query or (mac_available_bytes if cpu else host_available_bytes)
@@ -871,6 +1022,7 @@ def run_capture(
                 if plan["objective"] == "exact_soft"
                 else "none",
                 chain_ancestry=ancestry,
+                **({"label_policy": PARTIAL_LABEL_POLICY} if plan.get("label_policy") == PARTIAL_LABEL_POLICY else {}),
             )
             validate_generated(receipt, r, plan, device, execution_profile=execution_profile)
             if cpu and not injected:
@@ -881,23 +1033,25 @@ def run_capture(
             ):
                 raise MemoryError("actual native request/shard bytes exceed explicit bound")
             receipt_pin = write_json(output / "receipts" / f"{len(chains):06d}-block.json", receipt)
-            tokens, length = receipt["tokens"], receipt["prompt_length"]
-            anchors = generated_block_anchors(length, len(tokens))
+            generation_receipt = joined_generation_source(receipt) if "generation_source" in receipt else receipt
+            tokens, length = receipt["tokens"], generation_receipt["prompt_length"]
+            anchors = generated_block_anchors(length, len(tokens), partial=plan.get("label_policy") == PARTIAL_LABEL_POLICY)
             if not anchors:
                 raise ValueError("native generated chain has no complete seven-slot author horizon")
             chains.append(
                 {k: r[k] for k in ("prompt_id", "prompt_sha256", "domain", "split")}
                 | {
-                    "chain_id": f"chain-{len(chains):06d}",
+                    "chain_id": chain_ids[r["prompt_id"]] if chain_ids is not None else f"chain-{len(chains):06d}",
                     "prompt_length": length,
                     "anchors": anchors,
                     "include_logits": plan["objective"] == "exact_soft",
                     "native_receipt": receipt_pin,
+                    **({"label_policy": PARTIAL_LABEL_POLICY} if plan.get("label_policy") == PARTIAL_LABEL_POLICY else {}),
                 }
             )
             report["completed_prompt_count"] = len(chains)
             budget()
-            if r["domain"] in {g["domain"] for g in goldens}:
+            if not plan.get("capture_goldens", True) or r["domain"] in {g["domain"] for g in goldens}:
                 continue
             if length >= caps["max_eagle_golden_tokens"]:
                 raise ValueError(
@@ -954,7 +1108,7 @@ def run_capture(
                     "prompt_id": r["prompt_id"],
                     "domain": r["domain"],
                     "split": r["split"],
-                    "generation_receipt": receipt_pin,
+                    "generation_receipt": receipt.get("generation_source", receipt_pin),
                     "native_receipt": golden_pin,
                 }
             )
@@ -984,46 +1138,48 @@ def run_capture(
             )
             budget()
             manifests[family] = {"path": str(manifest), "sha256": file_sha256(manifest)}
-        eagle_pin = write_json(
-            output / "eagle-goldens.json",
-            {
-                "schema": "nine_model_cpu_development_goldens_v1"
-                if cpu
-                else "nine_model_train_capture_goldens_v1",
-                "family": "eagle",
-                "tap_ids": list(EAGLE_TAPS),
-                "target_sha256": native["target"]["sha256"],
-                "train_inventory": inventory_pin,
-                "vocab_size": plan["vocab_size"],
-                "target_width": plan["target_width"],
-                "cases": [{k: g[k] for k in ("chain_id", "native_receipt")} for g in goldens],
-            },
-        )
-        from check_block_capture_portability import NativeCaptureGoldens
-
-        if not cpu:
-            NativeCaptureGoldens(eagle_pin["path"], expected_sha256=eagle_pin["sha256"])
-        block_golden_pins = {}
-        for family in ("dspark", "dflash"):
-            pin = write_json(
-                output / f"{family}-goldens.json",
+        eagle_pin, block_golden_pins = None, {}
+        if plan.get("capture_goldens", True):
+            eagle_pin = write_json(
+                output / "eagle-goldens.json",
                 {
                     "schema": "nine_model_cpu_development_goldens_v1"
                     if cpu
                     else "nine_model_train_capture_goldens_v1",
-                    "family": family,
-                    "tap_ids": list(TAPS),
+                    "family": "eagle",
+                    "tap_ids": list(EAGLE_TAPS),
                     "target_sha256": native["target"]["sha256"],
                     "train_inventory": inventory_pin,
                     "vocab_size": plan["vocab_size"],
                     "target_width": plan["target_width"],
-                    "cases": block_goldens,
+                    "cases": [{k: g[k] for k in ("chain_id", "native_receipt")} for g in goldens],
                 },
             )
+            from check_block_capture_portability import NativeCaptureGoldens
+
             if not cpu:
-                NativeCaptureGoldens(pin["path"], expected_sha256=pin["sha256"])
-            block_golden_pins[family] = pin
-        write_json(output / "eagle-generation-joins.json", {"cases": goldens})
+                NativeCaptureGoldens(eagle_pin["path"], expected_sha256=eagle_pin["sha256"])
+            block_golden_pins = {}
+            for family in ("dspark", "dflash"):
+                pin = write_json(
+                    output / f"{family}-goldens.json",
+                    {
+                        "schema": "nine_model_cpu_development_goldens_v1"
+                        if cpu
+                        else "nine_model_train_capture_goldens_v1",
+                        "family": family,
+                        "tap_ids": list(TAPS),
+                        "target_sha256": native["target"]["sha256"],
+                        "train_inventory": inventory_pin,
+                        "vocab_size": plan["vocab_size"],
+                        "target_width": plan["target_width"],
+                        "cases": block_goldens,
+                    },
+                )
+                if not cpu:
+                    NativeCaptureGoldens(pin["path"], expected_sha256=pin["sha256"])
+                block_golden_pins[family] = pin
+            write_json(output / "eagle-generation-joins.json", {"cases": goldens})
         budget()
         report.update(
             status="PASS",
@@ -1172,6 +1328,17 @@ def validate_replay(receipt, tokens, taps, native, device, *, execution_profile=
 
 
 def validate_generated(receipt, record, plan, device, *, execution_profile="production_CUDA"):
+    if plan.get("label_policy") == PARTIAL_LABEL_POLICY:
+        source = joined_generation_source(receipt)
+        validate_generated(source, record, {k: v for k, v in (plan | {"objective": "hard_ce"}).items()
+                                          if k != "label_policy"}, device, execution_profile=execution_profile)
+        validate_replay(receipt, source["tokens"], TAPS, plan["native"], device,
+                        execution_profile=execution_profile)
+        expected = block_teacher_indices(generated_block_anchors(source["prompt_length"], len(source["tokens"]), partial=True), len(source["tokens"]))
+        validate_logits_indices(receipt.get("logits_indices"), len(source["tokens"]), expected=expected)
+        if receipt.get("logits_mode") != "indexed" or receipt.get("logits_shape") != [len(expected), plan["vocab_size"]]:
+            raise ValueError("partial indexed replay does not retain all loss-bearing rows")
+        return
     tokens = receipt.get("tokens")
     if (
         not isinstance(tokens, list)
@@ -1248,11 +1415,106 @@ def validate_generated(receipt, record, plan, device, *, execution_profile="prod
         raise ValueError("generated prefix differs from original TRAIN ancestry")
 
 
+
+def run_shard_publication(request_path, output_path, **capture_kwargs):
+    """First actual capture publication for the bounded logical shard controller.
+
+    Restoring original bytes belongs to verified archive/replay ownership. This
+    producer refuses a recapture claim when original_identity is already sealed.
+    """
+    request_path, output_path = Path(request_path).resolve(), Path(output_path).resolve()
+    request = json.loads(request_path.read_text())
+    fields = {"schema", "plan", "plan_sha256", "shard", "directory", "original_identity",
+              "generation_variant", "capture_bytes_bound"}
+    if not fields <= set(request) or set(request) - fields - {"original_metadata", "replay_admission", "replay_probe"} or request["schema"] != "block_shard_restore_request_v1":
+        raise ValueError("unsupported logical shard producer request")
+    global_path = pinned(request["plan"], request_path.parent)
+    global_plan = json.loads(global_path.read_text())
+    if (global_plan.get("schema") != "block_logical_shard_plan_v1"
+        or identity(global_plan) != request["plan_sha256"]
+        or global_plan.get("generation_variant") != request["generation_variant"]
+        or request["capture_bytes_bound"] != 8*1024**3):
+        raise ValueError("logical shard plan/generation/8 GiB identity differs")
+    if request["original_identity"] is not None:
+        if "original_metadata" not in request:
+            raise ValueError("original shard identity already sealed: verified archive/replay restoration required")
+        from replay_dspark_shard import replay
+        return replay(request_path, output_path, **capture_kwargs)
+    directory = Path(request["directory"])
+    if not directory.is_absolute() or directory.exists():
+        raise ValueError("fresh absolute owned physical shard directory required")
+    directory = directory.resolve()
+    shard = request["shard"]
+    ids = global_plan["shards"][shard]
+    mapping = {global_plan["chains"][cid]["prompt_id"]: cid for cid in ids}
+    if len(mapping) != len(ids):
+        raise ValueError("logical shard duplicate prompt ownership")
+    plan_pin = global_plan["capture_plans"][shard]["remote"]
+    plan_path = pinned(plan_pin, global_path.parent)
+    capture_plan = json.loads(plan_path.read_text())
+    if (set(mapping) != {r["prompt_id"] for r in capture_plan["selection"]}
+        or capture_plan.get("label_policy") != PARTIAL_LABEL_POLICY
+        or capture_plan["caps"]["max_total_bytes"] > request["capture_bytes_bound"]):
+        raise ValueError("physical capture selection/partial labels/storage differs from global shard")
+    by_prompt = {global_plan["chains"][cid]["prompt_id"]: global_plan["chains"][cid] for cid in ids}
+    for row in capture_plan["selection"]:
+        if any(row[k] != by_prompt[row["prompt_id"]][k] for k in ("prompt_sha256", "domain", "split")):
+            raise ValueError("physical shard source/role differs from immutable logical plan")
+    report = run_capture(plan_path, plan_pin["sha256"], directory, execute=True,
+                         chain_ids=mapping, **capture_kwargs)
+    if report["status"] != "PASS":
+        raise RuntimeError("native shard capture/import failed: " + json.dumps(report["failure"]))
+    manifest = report["manifests"]["dspark"]
+    admission_path = directory / "dspark/completed-admission.json"
+    admission = {"path": str(admission_path), "sha256": file_sha256(admission_path)}
+    # No external tensor/receipt may masquerade as this physical publication.
+    from w1a1_eagle.block_data import BlockDataset
+    ds = BlockDataset(manifest["path"], expected_sha256=manifest["sha256"],
+                      admission_path=admission["path"], admission_sha256=admission["sha256"])
+    try:
+        if set(ds.chains) != set(ids):
+            raise ValueError("actual native chain membership differs from logical shard")
+        for pin in ds._fingerprints.values():
+            # Global runtime/original TRAIN inventory may live outside, tensors
+            # and native generation/replay receipts must be physically owned.
+            p = Path(pin["path"])
+            if p.suffix in (".npy", ".f32") and not p.is_relative_to(directory):
+                raise ValueError("physical shard tensor escapes owned directory")
+        for chain in ds.chains.values():
+            for kind in ("tokens", "features", "logits", "native_receipt"):
+                if chain[kind] is not None and not Path(chain[kind]["path"]).is_relative_to(directory):
+                    raise ValueError("physical shard native artifact escapes owned directory")
+        for native in ds.native_receipts.values():
+            if "generation_source" in native:
+                source_pin = native["generation_source"]
+                if not Path(source_pin["path"]).is_relative_to(directory):
+                    raise ValueError("physical shard original generation receipt escapes directory")
+                original = joined_generation_source(native)
+                if any(not Path(r["path"]).is_relative_to(directory) for r in original["files"].values()):
+                    raise ValueError("physical shard original generation tensor escapes directory")
+        seal = {cid: {"artifacts": {k: c[k]["sha256"] for k in ("tokens", "features", "logits", "native_receipt")},
+                      "anchors": c["anchors"], "prompt_length": c["prompt_length"],
+                      "logits_indices": c.get("logits_indices")} for cid, c in ds.chains.items()}
+    finally:
+        ds.close()
+    if tree_bytes(directory) > request["capture_bytes_bound"]:
+        raise MemoryError("actual complete shard publication exceeds immutable 8 GiB bound")
+    write_json(directory / "original-tensor-seal.json", {"schema": "block_shard_original_tensor_seal_v1",
+                                                       "plan_sha256": request["plan_sha256"], "shard": shard,
+                                                       "identity": seal})
+    return write_json(output_path, {"schema": "block_shard_publication_v1", "status": "PASS",
+                      "request": {"path": str(request_path), "sha256": file_sha256(request_path)},
+                      "plan_sha256": request["plan_sha256"], "shard": shard, "directory": str(directory),
+                      "manifest": manifest, "admission": admission})
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--plan", type=Path, required=True)
-    parser.add_argument("--plan-sha256", required=True)
-    parser.add_argument("--output-root", type=Path, required=True)
+    parser.add_argument("--plan", type=Path)
+    parser.add_argument("--plan-sha256")
+    parser.add_argument("--output-root", type=Path)
+    parser.add_argument("--request", type=Path, help="Pinned logical controller first-capture request")
+    parser.add_argument("--output", type=Path, help="Actual controller publication receipt")
     parser.add_argument("--execute", action="store_true")
     parser.add_argument(
         "--development-cpu",
@@ -1260,6 +1522,13 @@ def main():
         help="Explicit local Mac CPU data development; never CUDA readiness",
     )
     args = parser.parse_args()
+    if args.request is not None:
+        if args.output is None or args.plan is not None or args.development_cpu:
+            parser.error("--request requires --output and the coordinated CUDA producer")
+        print(json.dumps(run_shard_publication(args.request, args.output)))
+        return 0
+    if args.plan is None or args.plan_sha256 is None or args.output_root is None:
+        parser.error("--plan, --plan-sha256 and --output-root required without --request")
     report = run_capture(
         args.plan,
         args.plan_sha256,

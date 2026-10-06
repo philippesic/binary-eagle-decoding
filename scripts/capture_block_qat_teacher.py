@@ -31,6 +31,7 @@ from gguf import GGUFReader
 
 from w1a1_eagle.block_data import (
     BLOCK_LOGITS_SELECTION,
+    PARTIAL_LABEL_POLICY,
     block_teacher_indices,
     generated_block_anchors,
     validate_logits_indices,
@@ -224,7 +225,31 @@ class NativeTeacher:
         tap_ids,
         logits_mode="all",
         chain_ancestry=None,
+        label_policy=None,
     ):
+        if label_policy is not None:
+            if label_policy != PARTIAL_LABEL_POLICY or logits_mode != "indexed":
+                raise ValueError("partial-label generation requires all_available_v1 indexed replay")
+            # ecff native generated-index mode physically truncates incomplete tails.
+            # Generate honestly without logits, then replay exact tokens and decode
+            # partitions with an explicit map. Keep both original receipts/payloads.
+            generated = self.generate_capture(
+                messages=messages, prompt_text=prompt_text, template_mode=template_mode,
+                max_new_tokens=max_new_tokens, max_prompt_tokens=max_prompt_tokens,
+                tap_ids=tap_ids, logits_mode="none", chain_ancestry=chain_ancestry)
+            tokens = generated["tokens"]
+            anchors = generated_block_anchors(generated["prompt_length"], len(tokens), partial=True)
+            indices = block_teacher_indices(anchors, len(tokens))
+            if not indices:
+                raise ValueError("native generation has no observed loss-bearing decision")
+            replay = self.capture_prefix(
+                tokens, tap_ids, logits_mode="indexed", logits_indices=indices,
+                chain_ancestry=generated["chain_ancestry"],
+                decode_history=generated["decode_history"])
+            source = self.root / generated["id"] / "receipt.json"
+            replay["generation_source"] = {"path": str(source.resolve()), "sha256": sha256(source)}
+            self._save_receipt(replay)
+            return replay
         self._validate_taps(tap_ids)
         if logits_mode not in ("all", "last", "none", "indexed"):
             raise ValueError("unsupported logits mode")

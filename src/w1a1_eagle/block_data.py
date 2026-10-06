@@ -31,23 +31,28 @@ REPLAY_PREFIX_CONTRACT = "teacher_forced_exact_caller_token_ids"
 GENERATED_PREFIX_CONTRACT = "native_tokenized_prompt_then_target_only_greedy"
 
 
+PARTIAL_LABEL_POLICY = "all_available_v1"
+
+
 BLOCK_LOGITS_SELECTION = {"kind": "block_anchors", "stride": 7, "horizon": 7}
 
 
-def block_teacher_indices(anchors):
-    """Sorted absolute union of ALL seven potentially eligible rows per anchor."""
-    return sorted({row for anchor in anchors for row in range(anchor, anchor + 7)})
+def block_teacher_indices(anchors, token_count=None):
+    """Sorted union of all eligible rows; optional token bound retains valid tails."""
+    return sorted({row for anchor in anchors
+                   for row in range(anchor, min(anchor + 7, token_count - 1)
+                                    if token_count is not None else anchor + 7)})
 
 
-def generated_block_anchors(prompt_length, token_count):
-    """The existing complete-horizon policy, including its final boundary."""
+def generated_block_anchors(prompt_length, token_count, *, partial=False):
+    """Default complete horizons; opt-in partial anchors retain every observed label."""
     if (
         type(prompt_length) is not int
         or type(token_count) is not int
         or not 1 <= prompt_length <= token_count
     ):
         raise ValueError("invalid exact prompt/token boundary")
-    return list(range(prompt_length - 1, token_count - 7, 7))
+    return list(range(prompt_length - 1, token_count - 1 if partial else token_count - 7, 7))
 
 
 def validate_logits_indices(indices, token_count, *, expected=None):
@@ -228,6 +233,31 @@ def _fingerprint(path):
     }
 
 
+def joined_generation_source(native):
+    """Read a pinned original generation; indexed replay never impersonates it."""
+    pin = native.get("generation_source")
+    if not isinstance(pin, dict) or set(pin) != {"path", "sha256"} or not _hash(pin["sha256"]):
+        raise ValueError("original generation source path/SHA required")
+    path = Path(pin["path"])
+    if file_sha256(path) != pin["sha256"]:
+        raise ValueError("original generation receipt differs from source pin")
+    source = json.loads(path.read_text())
+    keys = ("tokens", "decode_history", "chain_ancestry", "target_sha256",
+            "producer_binary_sha256", "producer_source_revision", "client_source_sha256",
+            "tokenizer_metadata_sha256", "hardware", "kv_type", "target_precision", "tap_ids")
+    # Replay receipts do not carry tokenizer metadata; original generation does.
+    keys = tuple(k for k in keys if k != "tokenizer_metadata_sha256")
+    if (source.get("schema") != "block_native_teacher_request_v1"
+        or source.get("optimizer_updates") != 0
+        or any(source.get(k) != native.get(k) for k in keys)
+        or source.get("complete") is not True or source.get("logits_mode") != "none"
+        or source.get("teacher_context_reset_between_requests") is not True
+        or native.get("prefix_contract") != REPLAY_PREFIX_CONTRACT
+        or native.get("prefix_freshness") != "caller_current_student_prefix"):
+        raise ValueError("generation/replay exact token/prefix/native source join differs")
+    return source
+
+
 def validate_native_receipt(native, chain, tokens, producer, vocab_size, target_width):
     """Join original target-only producer bytes, exact tokens, and original TRAIN."""
     ancestry = {
@@ -257,11 +287,12 @@ def validate_native_receipt(native, chain, tokens, producer, vocab_size, target_
     if not _hash(native.get("client_source_sha256")) or not native.get("producer_host"):
         raise ValueError("native receipt missing client/host provenance")
     if "generation_identity" in producer:
+        generation = joined_generation_source(native) if "generation_source" in native else native
         pins = producer["generation_identity"]
         if native.get("client_source_sha256") != pins["teacher_client_sha256"]:
             raise ValueError("generated native client differs from pinned runtime")
         validate_native_generation(
-            native,
+            generation,
             prompt_sha256=chain["prompt_sha256"],
             prompt_length=chain["prompt_length"],
             token_count=len(tokens),
@@ -276,7 +307,7 @@ def validate_native_receipt(native, chain, tokens, producer, vocab_size, target_
     indices = chain.get("logits_indices")
     if indices is not None:
         validate_logits_indices(
-            indices, len(tokens), expected=block_teacher_indices(chain["anchors"])
+            indices, len(tokens), expected=block_teacher_indices(chain["anchors"], len(tokens) if chain.get("label_policy") == PARTIAL_LABEL_POLICY else None)
         )
         validate_logits_indices(native.get("logits_indices"), len(tokens), expected=indices)
         if native.get("logits_mode") != "indexed":
@@ -385,7 +416,9 @@ def import_capture_plan(
             "native_receipt",
             "include_logits",
         }
-        if set(source) != expected or type(source["include_logits"]) is not bool:
+        if (set(source) not in (expected, expected | {"label_policy"})
+            or ("label_policy" in source and source["label_policy"] != PARTIAL_LABEL_POLICY)
+            or type(source["include_logits"]) is not bool):
             raise ValueError("capture chain plan fields differ")
         if inventory.get("prompts", {}).get(source["prompt_id"]) != {
             "sha256": source["prompt_sha256"],
@@ -404,15 +437,16 @@ def import_capture_plan(
             "runtime_sha256": file_sha256(runtime_path),
             "hardware": json.dumps(native.get("hardware"), sort_keys=True),
         }
-        if native.get("prefix_contract") == GENERATED_PREFIX_CONTRACT:
+        generation = joined_generation_source(native) if "generation_source" in native else native
+        if generation.get("prefix_contract") == GENERATED_PREFIX_CONTRACT:
             expected_runtime = {
                 "schema": "nine_model_train_capture_runtime_v1",
                 "binary_sha256": current["binary_sha256"],
                 "target_sha256": current["target_sha256"],
                 "native_source_revision": current["native_revision"],
-                "teacher_client_sha256": native.get("client_source_sha256"),
-                "tokenizer_metadata_sha256": native.get("tokenizer_metadata_sha256"),
-                "chat_template_sha256": native.get("target_chat_template_sha256"),
+                "teacher_client_sha256": generation.get("client_source_sha256"),
+                "tokenizer_metadata_sha256": generation.get("tokenizer_metadata_sha256"),
+                "chat_template_sha256": generation.get("target_chat_template_sha256"),
             }
             if runtime != expected_runtime:
                 raise ValueError("generated receipt differs from pinned runtime identity")
@@ -471,6 +505,8 @@ def import_capture_plan(
         }
         if "logits_indices" in chain:
             receipt_chains[cid]["logits_indices"] = chain["logits_indices"]
+        if "label_policy" in chain:
+            receipt_chains[cid]["label_policy"] = chain["label_policy"]
     receipt = {
         "schema": "block_target_capture_receipt_v1",
         "producer": producer,
@@ -711,6 +747,7 @@ class BlockDataset:
         self._array_bytes = {}
         self.chains = {}
         self.native_receipts = {}
+        self._ancestry_artifacts = {}
         prompt_splits = {}
         seen_prompt_hashes = {}
         for chain in m["chains"]:
@@ -728,7 +765,8 @@ class BlockDataset:
                 "native_receipt",
             }
             if (
-                set(chain) not in (keys, keys | {"logits_indices"})
+                set(chain) not in (keys, keys | {"logits_indices"}, keys | {"label_policy"}, keys | {"logits_indices", "label_policy"})
+                or ("label_policy" in chain and chain["label_policy"] != PARTIAL_LABEL_POLICY)
                 or not isinstance(chain["chain_id"], str)
                 or not chain["chain_id"]
             ):
@@ -783,12 +821,14 @@ class BlockDataset:
                     or any(type(a) is not int for a in anchors)
                     or anchors != sorted(set(anchors))
                     or anchors[0] < chain["prompt_length"] - 1
-                    or anchors[-1] + 7 >= len(tokens)
+                    or (anchors[-1] >= len(tokens) - 1 if chain.get("label_policy") == PARTIAL_LABEL_POLICY
+                        else anchors[-1] + 7 >= len(tokens))
+                    or (chain.get("label_policy") == PARTIAL_LABEL_POLICY and anchors != generated_block_anchors(chain["prompt_length"], len(tokens), partial=True))
                 ):
                     raise ValueError("chronological anchors lack complete teacher horizon")
                 if indices is not None:
                     validate_logits_indices(
-                        indices, len(tokens), expected=block_teacher_indices(anchors)
+                        indices, len(tokens), expected=block_teacher_indices(anchors, len(tokens) if chain.get("label_policy") == PARTIAL_LABEL_POLICY else None)
                     )
                 if indices is not None:
                     validate_logits_indices(
@@ -806,7 +846,9 @@ class BlockDataset:
                     "native_receipt_sha256": None
                     if chain["native_receipt"] is None
                     else chain["native_receipt"]["sha256"],
-                } | ({"logits_indices": indices} if indices is not None else {}):
+                } | ({"logits_indices": indices} if indices is not None else {}) | (
+                    {"label_policy": chain["label_policy"]} if "label_policy" in chain else {}
+                ):
                     raise ValueError("chain artifacts/prompt boundary differ from producer receipt")
                 if producer["kind"] == "native_target_only":
                     if chain["native_receipt"] is None:
@@ -819,6 +861,16 @@ class BlockDataset:
                     validate_native_receipt(
                         native, chain, tokens, producer, self.vocab_size, self.target_width
                     )
+                    ancestry = [chain["native_receipt"]]
+                    if "generation_source" in native:
+                        ancestry.append(native["generation_source"])
+                        source = joined_generation_source(native)
+                        self._artifact(native["generation_source"], verify_artifacts=True)
+                        for original_file in source["files"].values():
+                            pin = {"path": original_file["path"], "sha256": original_file["sha256"]}
+                            self._artifact(pin, verify_artifacts=True)
+                            ancestry.append(pin)
+                    self._ancestry_artifacts[cid] = ancestry
                     self.native_receipts[cid] = native
                 self.chains[cid] = chain
                 self._array_bytes[cid] = (
@@ -867,8 +919,7 @@ class BlockDataset:
             self._budget()
 
     def _check_chain(self, chain):
-        for name in ("tokens", "features", "logits"):
-            record = chain[name]
+        for record in [chain[name] for name in ("tokens", "features", "logits")] + self._ancestry_artifacts.get(chain["chain_id"], []):
             if record is not None:
                 path = (self.path.parent / record["path"]).resolve()
                 if _fingerprint(path) != {
@@ -1039,10 +1090,11 @@ class BlockDataset:
                     raise ValueError("consumed native context features nonfinite")
             begin = 0  # both selected releases use the admitted author-layout path
             labels = np.full(7, -1, dtype=np.int64)
-            labels[begin:] = tokens[anchor + 1 : anchor + 8 - begin]
+            valid = min(7, len(tokens) - anchor - 1)
+            labels[:valid] = tokens[anchor + 1 : anchor + 1 + valid]
             predecessors = np.full(7, -1, dtype=np.int64)
             predecessors[begin] = tokens[anchor]
-            predecessors[begin + 1 :] = labels[begin:-1]
+            predecessors[1:valid] = labels[:valid - 1]
             teacher = None
             if require_teacher and logits is None:
                 raise ValueError("exact full-vocabulary teacher logits absent")
@@ -1052,18 +1104,18 @@ class BlockDataset:
                 teacher = np.zeros((7, self.vocab_size), dtype=np.float32)
                 indices = chain.get("logits_indices")
                 if indices is None:
-                    teacher[begin:] = logits[anchor : anchor + 7 - begin]
+                    teacher[:valid] = logits[anchor : anchor + valid]
                 else:
                     # Admission proves complete coverage of absolute positions.
-                    offsets = np.searchsorted(indices, np.arange(anchor, anchor + 7 - begin))
+                    offsets = np.searchsorted(indices, np.arange(anchor, anchor + valid))
                     for slot, offset in enumerate(offsets, start=begin):
                         teacher[slot] = logits[offset]
                 if not np.isfinite(teacher).all():
                     raise ValueError("consumed full-vocabulary teacher nonfinite")
             prefix = tuple(int(t) for t in tokens[: anchor + 1])
-            hashes = (None,) * begin + tuple(
-                token_sha256(tokens[: anchor + i + 1]) for i in range(7 - begin)
-            )
+            hashes = tuple(
+                token_sha256(tokens[: anchor + i + 1]) for i in range(valid)
+            ) + (None,) * (7 - valid)
             noise = np.full(7, self.manifest["mask_token_id"], dtype=np.int64)
             noise[0] = tokens[anchor]
             return BlockBatch(
@@ -1075,7 +1127,7 @@ class BlockDataset:
                 noise,
                 np.arange(anchor, anchor + 7, dtype=np.int64),
                 labels,
-                np.arange(7) >= begin,
+                np.arange(7) < valid,
                 np.ones((7, anchor + 7), dtype=bool),
                 teacher,
                 hashes,
