@@ -19,10 +19,10 @@ is prioritized with delegated24h cumulativetrainerallocation and frequent
 checkpoints; remaining candidates queue without premature readiness claims.
 30-minute heartbeat `nine-model-overnight-qat-monitor` is ACTIVE in the successor chat.
 **QAT is actively running onRTX5080/SM120**: calibrated fixed EAGLE W1A8,
-330999updates with committed330750 checkpoint; all required fresh admission/source/
+333810updates with committed333750 checkpoint; all required fresh admission/source/
 device gates PASS. Finite18selected gradients, actual sign/scale movement and
 cache/batchedhead execution;8.16GBGPUfree/18.08GBhostavailable. ActualTRAIN
-coverage4051prompts/1574220rows at49832.45trainerseconds; no quality/win claim.
+coverage4085prompts/1587481rows at50265.46trainerseconds; no quality/win claim.
 
 Run eagle-a8-qat-overnight-20261005-04; supervisor55097/controller55098/trainer
 55398. Root is sole remote operator.24h cumulative allocation/no smaller cap,
@@ -258,6 +258,14 @@ request: "nevermind just keep training". Read-only query settled PASS at330999/
 checkpoint330750,49832.45trainerseconds; all five exact identities/source/plan and
 finite-gradient/resource gates unchanged. No interim evaluation/export/pause/job
 started. Healthy original training/watcher continue; full GoalACTIVE, next17:34PDT.
+
+**17:11 PDT model-slate status:** live A8 health PASS at333810/checkpoint333750,
+50265.46trainerseconds (14.0h),4085TRAINprompts/1587481rows. A8 remains the only
+QAT job. EAGLEA1 CPUcalibration is complete; actual model/export/CUDAadmission
+await natural A8 endpoint/release. Four DSpark/DFlash binary lanes have source/
+CPU pilots, production readiness pending/no QAT. EAGLEQ4 control is available;
+exact original blockQ4 files are absent from this campaign. Current calibrated
+A8/untrained acceptance remains unmeasured; old13.07% is historical. FullGoalACTIVE.
 
 **07:50 PDT exclusive transfer:** fresh successor chat owns the same unfinished
 goal after explicit local registration transfer and SAME heartbeat retarget.

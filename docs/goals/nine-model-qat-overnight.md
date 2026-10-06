@@ -95,7 +95,7 @@ chat turns and ownership rotation. Human pause/stop takes priority.
 
 Calibrated EAGLE W1A8 QAT is admitted and actively running on RTX5080/SM120.
 All fresh receipt gates and strict source/device checks passed. It has passed
-330999 optimizer updates with a committed330750 checkpoint (earlier2750 bytes SHA-verified), finite gradients and
+333810 optimizer updates with a committed333750 checkpoint (earlier2750 bytes SHA-verified), finite gradients and
 actual cache/head execution. Root owns the exact live supervisor/controller/
 trainer and transport recorded in the latest checkpoint below and ignored
 monitor registration. The30-minute heartbeat is ACTIVE; preserve healthy
@@ -1903,5 +1903,43 @@ adjacent raw command/result/capture preserved. Sole owner/operator/SAME ACTIVE
 monitor unchanged. About10.16trainerhours remain/no wall ETA. Next around17:34PDT.
 Originalsource-pinned A1 queues after natural trainer AND endpoint release;
 remaining model/device/controls/held-out gates and09:25human inputs stay pending.
+
+## Human model-slate status check — October 5, 17:11 PDT
+
+Human asked whether A8 is still training and the status of the other eight.
+Root answered promptly and distinctly: A8 is the sole actual QAT job;
+the other five training candidates have not started QAT, and the three Q4
+models are immutable comparison controls. No readiness is inferred from code.
+
+| Other model | Current authoritative state |
+|---|---|
+| EAGLE W1A1 | Authentic CPUcalibration done1536fit/768validation; original replay/generation joins and handoff metadata ready. Initial actor/export/fullbind/currentQA/freshSM120 admission pending; next after natural A8 endpoint/release. |
+| DSpark W1A8 | Trainer/export/native source and small CPU pilot available; serious TRAIN coverage/teacher data, production fit/model and fresh SM120 admission pending. No QAT. |
+| DSpark W1A1 | Same source/pilot stage; independent A1 fit/model/export/device admission pending. No QAT. |
+| DFlash W1A8 | Source/small CPU pilot available; production TRAIN captures/fit/model and fresh SM120 admission pending. No QAT. |
+| DFlash W1A1 | Same source/pilot stage; independent A1 fit/model/export/device admission pending. No QAT. |
+| EAGLE Q4_0 | Original frozen control available; primary benchmark. No new QAT. |
+| DSpark Q4_0 | Original15FFN control/hash historically recorded; exact original files/export-check receipts still needed in current campaign. No regenerated substitute/2080 access. |
+| DFlash Q4_0 | Same original-control dependency. No regenerated substitute/2080 access. |
+
+Human again asked current acceptance relative toQ4/untrainedA8. Current calibrated
+trained AND initialized-untrained acceptance remain unmeasured; historical2h
+13.07% cannot be substituted. Keep the explicit17:04 "just keep training"
+instruction and original natural endpoint. Block TRAIN exposure/conditioning
+and original-file locations requested09:25 remain unanswered; no choice inferred.
+
+Actual October6,00:11:00UTC (October5,17:11PDT) root read-only health PASS: same
+five exact identities/supervisors/clean30a-cc9/frozen plan. QAT333,810updates/
+50,265.4645trainerseconds,4,085TRAINprompts/1,587,481rows,18finitegradients/finite
+loss5.758478,heartbeat0.0241s. GPUfree8,161,067,008B,hostavailable18,083,778,560B,
+diskfree196,112,572,416B; resources/checkpoint freshness PASS. Watcher still
+passive/GPUqueriedfalse/trainingchangedfalse. No repair/new job/runtime change.
+Checkpoint333,750 SHA6c8cf846607b6b64230340de65b5b8d8e5a5d2dcc0499516b4d786852012f5e6
+is manifest-declared, not newly byte-rehashed. Ignored proof
+`results/nine-model-qat-overnight/health-20261005-all-model-status-1711.json`, SHA
+cd40bd8f2a29efde88a5fabb1b7d8dfeae5181fb2b449f49e91335e1b2f4b838;
+adjacent raw command/result/capture retained. Full GoalACTIVE/unfinished,
+healthy allocation unchanged, about10.04trainerhours remain/no wall ETA.
+Next regular check17:34PDT remains unchanged by this additional human check-in.
 
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->
