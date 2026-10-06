@@ -57,6 +57,26 @@ def tree_bytes(root):
     return total
 
 
+def deployed_source_pins():
+    root = Path(__file__).resolve().parents[2]
+    return {
+        "module:" + name: file_sha256(root / name)
+        for name in (
+            "src/w1a1_eagle/block_shard_lifecycle.py",
+            "src/w1a1_eagle/nine_model_pipeline.py",
+            "src/w1a1_eagle/block_data.py",
+        )
+    }
+
+
+def validate_deployed_source(plan):
+    for name, digest in deployed_source_pins().items():
+        _require(
+            plan.value["source"].get(name) == digest,
+            "frozen deployed provider/source admission changed: " + name,
+        )
+
+
 def freeze_plan(selector, chains, *, source, geometry, generation_variant, shard_bytes=8 * GIB):
     """Freeze whole-group, domain-balanced membership from exact native metadata.
 
@@ -110,7 +130,7 @@ def freeze_plan(selector, chains, *, source, geometry, generation_variant, shard
     value = {
         "schema": PLAN_SCHEMA,
         "selector": selector,
-        "source": source,
+        "source": {**source, **deployed_source_pins()},
         "geometry": geometry,
         "generation_variant": generation_variant,
         "seed": 8101,
@@ -832,6 +852,7 @@ class RotatingBlockProvider:
 def open_provider(data):
     _require(data.get("provider") == "rotating_block_v1", "unknown rotating provider")
     plan = FrozenShardPlan.load({key: data[key] for key in ("path", "sha256")})
+    validate_deployed_source(plan)
     return RotatingBlockProvider(
         plan, ShardCache(plan, data["cache_root"], replay_admission=data.get("replay_admission"))
     )
@@ -846,6 +867,7 @@ def validate_controller_config(config, data, source):
         "controller/provider differs",
     )
     plan = FrozenShardPlan.load(config["plan"])
+    validate_deployed_source(plan)
     _require(
         type(config.get("phase_wall_seconds")) is int and config["phase_wall_seconds"] > 0,
         "bounded capture/reconstruction wall cap required",
@@ -1466,6 +1488,7 @@ def admit_replay(cache, shard, trial_publication, producer, output):
 
 def validate_logical_admission(data, locator):
     plan = FrozenShardPlan.load({key: data[key] for key in ("path", "sha256")})
+    validate_deployed_source(plan)
     value = json.loads(checked(locator).read_text())
     _require(
         value.get("schema") == "block_logical_data_admission_v1"
