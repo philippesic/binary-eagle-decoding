@@ -95,7 +95,7 @@ chat turns and ownership rotation. Human pause/stop takes priority.
 
 Calibrated EAGLE W1A8 QAT is admitted and actively running on RTX5080/SM120.
 All fresh receipt gates and strict source/device checks passed. It has passed
-317982 optimizer updates with a committed317750 checkpoint (earlier2750 bytes SHA-verified), finite gradients and
+330999 optimizer updates with a committed330750 checkpoint (earlier2750 bytes SHA-verified), finite gradients and
 actual cache/head execution. Root owns the exact live supervisor/controller/
 trainer and transport recorded in the latest checkpoint below and ignored
 monitor registration. The30-minute heartbeat is ACTIVE; preserve healthy
@@ -1875,5 +1875,33 @@ healthy86,400trainersecond budget unchanged/about10.71trainerhours remain,
 no wall ETA. Next around17:01PDT (October6,00:00:44UTC). Current calibrated
 native acceptance PENDING; A1 queues after natural trainer AND endpoint release.
 Other model/device/controls/held-out gates and09:25human inputs stay pending.
+
+## Human continuity instruction; settled health — October 5, 17:04 PDT
+
+Human asked for current QAT draft acceptance; root stated no current native result
+and inspected interim options read-only. Before any interim export/evaluation/
+pause/new job, human cancelled that request: "nevermind just keep training".
+Keep original healthy allocation, source/config and passive endpoint unchanged;
+do not pursue interim measurement from this cancelled request. Full six+three
+Goal remains active; current acceptance is still PENDING natural endpoint.
+
+The already-started read-only health command settled exit0. Actual October6,
+00:03:53UTC (October5,17:03PDT) PASS: same five exact boot/birth/PGID identities,
+both running/no-signal supervisors, clean30a/cc9 and frozen endpoint plan rehash.
+QAT330,999updates/49,832.4504trainerseconds,4,051TRAINprompts/1,574,220distinct
+supervised rows,18finitegradients/finite loss0.036994,heartbeat6.1688s.
+Resources/checkpoint freshness PASS:GPUfree8,161,067,008B,
+hostavailable18,082,521,088B,diskfree196,111,347,712B. Watcher still passive,
+GPUqueriedfalse/trainingchangedfalse. No repair/new job/runtime change occurred.
+
+Checkpoint330,750 SHA
+64aa108ea7bd5881ccd67ede0855433d6f6351919a832d0ff15109d4527fb6bb
+is manifest-declared, not newly byte-rehashed. Ignored proof
+`results/nine-model-qat-overnight/health-20261005-1703-keep-training.json`, SHA
+53f112cab69848b1ba062e9e9c7b00694415f5f2966173c98d90c0129e7c3fde;
+adjacent raw command/result/capture preserved. Sole owner/operator/SAME ACTIVE
+monitor unchanged. About10.16trainerhours remain/no wall ETA. Next around17:34PDT.
+Originalsource-pinned A1 queues after natural trainer AND endpoint release;
+remaining model/device/controls/held-out gates and09:25human inputs stay pending.
 
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->
