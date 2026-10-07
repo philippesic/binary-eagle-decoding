@@ -3300,4 +3300,54 @@ rootkeepssamejobownership. SecondboundedSSHretryalsofailed255 at17:35PDT.
 Currentremote phase/GPUrelease remainUNKNOWN. Hourlymonitor will reconcilehost
 access andexactexistingjob before anycontinuation; currenthumanquestionpending.
 
+## Human host correction and prelaunch recovery — October 6, 23:40 PDT
+
+Human:5080 on*.53; startDSpark training thenDFlashA8 whenDSparkdone. Newaddress
+192.168.4.53 insharedhostfile, oldconfig backedup. SSHhostkeysameasold. Rootsole
+operator/no2080/no newgoal/chat. Hourlyheartbeat updated inappACTIVE sameid,
+explicitautomaticDFlashtransition after43,200s/finalacceptance/ownedrelease.
+Allfixedallocations/4-8-12h andearly5/15minutechecks preserved.
+
+Liveinspection: WSLbootchanged from517c4a36 to206feba6-9535-4483-892a-9807057589ee.
+Old92402/92407/92440 absent; tmuxsocketno sessions. Oldjob02 state running remains
+untouched, classifiedINTERRUPTED_BY_WSL_REBOOT through derivedreconciliation
+d22de63262d7bb6b31ecda01336a44943fd330c4b0881007a1ad105ce7e9709e.
+Actualv4zero-operationPASS was durable before reboot; exactreceipt/checkpoint0
+db811b68 and ownedrelease matched. CacheownerNone, physicalGPU/DXG empty,
+~19.96GBhostavailable/14.90GBGPUfree observed. No repeat zero ormodeltraining.
+Localv5draftscriptsneverexecuted; preserveasunusedpreparation.
+
+Unique recovery dspark-a8-v4-prelaunch-20261007-03, sameimmutable925 checkout,
+socketbinary-eagle-runtime/sessionroot-...03, explicitPYTHONPATH/90sremote_job.
+Started06:35:24.783309UTC, ended06:36:45.802590UTC/exit0. Supervisor729 birth
+unobserved beforeexit; controller735birth28178/newboot authenticated through
+actualgold-operationowner. Onlyremainingv4export withnew≤300slease andthree
+actualgoldens. GGUF ea1bc689 exactlyoriginal; NPZ/manifest/auditcontent same,
+newgoldens0b221e14, allownedgroups/CUDA/DXGreleasePASS. No paidupdates.
+
+Rootcollector actualfinished03, oldinterruption andfreshresources sourceinventory:
+source-cutover-v4-authenticated-inventory.json/246current925 pins; key
+interrupted_original_job joinsreconciliation and originaljob02running snapshot.
+Actual23filearchive source-cutover-v4-recovery-evidence.tar SHA
+a71bb63b0a25bdabde9ffd89929793cd915fbdfb0fc404a47997df542771e221.
+Firstdownload racedpublication/0Bfailure preserved; actualsecondtransferPASS
+andremote/localarchiveSHAequal. Allmetadata/rawhistory staysoutofGit.
+
+Worker dspark_actual_portable_qa owns ignoredportable-qa-v4-recovery only,
+helper2a5ca5e55003488e11f3a9de7cf2472ad1a12bc81fcf462991a6d1e1626d1fd1;
+actualarchivevalidation/publication nowrunning, noGPUsource rights.
+DFlashreadiness explorerfinishedreport results/dflash-a8-launch-20261007/readiness.md.
+Worker dflash_rotating_family owns2sourcefiles+focusedtests inisolatedworktree,
+explicitfamily selection/manifestadmission witholdDSparkdefault retained; no
+SSH/GPU/activation. DFlash requireshardCE, ownFCfit/familyplan/replay andbaseline;
+DSparkCE/L1/modelpolicy cannot be copied. Routinefamilyprep alreadyauthorized,
+no pendingmajorhumanchoice. KeepDSpark925 runtime/sourceimmutable.
+
+Rootprepared build-final-lane-v4-recovery.py usesactualrecoveryQA/oldproducer
+aliases, canonicaloriginalmodel/audit andreviewedpolicy127df312. Prepared
+launch-training-v4-recovery.py requiresactualfinished03/currentGPUfree/cacheNone/
+freshlease; unique dspark-a8-twelve-hour-20261007-01. Both UNEXECUTED. Next
+QA→bind/admissionplan/lane→actualsixSM120→positivefiniteupdates→5/15minutehealth.
+KeepDFlashsourceintegration separate fromDSparkQA inventory/sourcefreeze.
+
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->

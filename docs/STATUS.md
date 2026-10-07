@@ -4,7 +4,22 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## DSpark A8 launch awaiting host access — October 6, 17:34 PDT
+## DSpark A8 launch recovered — October 6, 23:40 PDT
+
+Human supplied the new5080 address192.168.4.53 and reconfirmed DSpark A8 next,
+then DFlash A8 after completion. Shared hostfile updated with backup. Same root
+owns the GPU and hourly monitor, now explicitly covering the DFlash transition.
+
+WSL rebooted (newboot206feba6); old job02's running record is preserved as
+interrupted. Actual v4 zero checkpoint/release completed before reboot, so it was
+retained. Recovery03 finished0 at23:36:45PDT: remaining export/goldens only,
+original model bytes unchanged, physicalGPU/owned groups released. Authentic
+23-file recovery archivea71bb63b delivered for incremental portableQA. Paid
+optimizer updates remain0. Next: finishQA, final lane/freshsixSM120 and actual
+training,5/15minutehealth. DFlash family-publication CPU work is isolated;
+no change to immutable925 DSpark runtime/source/recipe.
+
+## Earlier host-access block — October 6, 17:34 PDT
 
 The 5080 host192.168.4.24 became unreachable after the v4 zero checkpoint
 was observed. Both SSH transports timed out; direct port22 check and a bounded
