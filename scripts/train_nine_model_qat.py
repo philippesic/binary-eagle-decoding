@@ -409,25 +409,38 @@ def resources(spec, stage):
 
 
 def block_transaction_resources(spec, model, optimizer):
-    """Release completed gradients/cache before checking the next transaction.
+    """Clear completed gradients; trim cache only after an actual gate failure.
 
     The next batch already clears gradients; moving that release earlier does
     not change accumulation, parameters, moments, or RNG. Never call mid-batch.
     """
-    cuda = model.token_embd.device.type == "cuda"
-    before = None
-    if cuda:
-        torch.cuda.synchronize("cuda:0")
-        before = cuda_memory_snapshot()
     optimizer.zero_grad(set_to_none=True)
-    if cuda:
-        torch.cuda.empty_cache()
     try:
         measured = resources(spec, "block optimizer update")
-    except ResourceLimitError as error:
-        error.resources["before_completed_gradient_cache_release"] = before
-        raise
-    return {**measured, "before_completed_gradient_cache_release": before}
+    except ResourceLimitError as initial_error:
+        before = initial_error.resources
+        if model.token_embd.device.type != "cuda":
+            initial_error.resources = {
+                **before,
+                "cleanup_performed": False,
+                "before_cache_release": before,
+            }
+            raise
+        # Healthy allocator caches stay warm. Only an actually failed unchanged
+        # guard triggers synchronization and release, followed by a strict check.
+        torch.cuda.synchronize("cuda:0")
+        torch.cuda.empty_cache()
+        try:
+            measured = resources(spec, "block optimizer update")
+        except ResourceLimitError as error:
+            error.resources = {
+                **error.resources,
+                "cleanup_performed": True,
+                "before_cache_release": before,
+            }
+            raise
+        return {**measured, "cleanup_performed": True, "before_cache_release": before}
+    return {**measured, "cleanup_performed": False, "before_cache_release": measured}
 
 
 def calibration(locator, config):
