@@ -3422,4 +3422,56 @@ Newrun-dir canbeoutside remote_job'sownuniquerunroot so prepared--resume state
 neednotmutatesupervisorcode. Freshsixadmission→realpaidupdates/actualmemory
 beforeafter→5/15minutehealth. Atmost2repairs perincident; currentlyrepair1.
 
+## Repair 1 source, rollback bootstrap and relaunch — October 7, 00:54 PDT
+
+Actualnewsourcezero/exportjob dspark-a8-memory-r1-zero-export-20261007-01
+finished0:07:23:24.101056–07:24:41.621015UTC. Sup2004/controller2009 birthnot
+observedbeforeexit; actualzeroownerbirthinreceipt. Newinitreceiptb2d4d6ae,
+GGUF ea1bc689/NPZ f4c070be/manifestd941 unchanged;actualownedreleasePASS.
+New29filearchive9d6e411a42444dfd9bd05ff6ac975a5a7de236937feba5633f665161523ccc42;
+inventory148decad source246/43 pure968, onlytraineradapter changed. Carry37cfbabf
+pins originalsettledbudget/cp0/rawfailure, all4.706928438999967s charged/43200cap,
+two lostunsavedupdates/step0rollback/exact_resumefalse. Goldenreuse24acb572
+pins actualP4goldens0b221/clientc5/teacher63/target05/runtime566 and byte-identical
+old/newrequests, cases/data/ancestry; explicitlyreference_only_not_fresh_execution.
+No recaptured unaffectedgoldens orrepeatnative0; allfreshsixgatesrequired.
+
+ActualincrementalPortableQA finalledgerff3cf015b93a456a3a1a41f62f99e23ed8b6605cba1f0447076193365805ad76,
+delta7cc128801afda7a7c50c7f49eae5e78ed6f1f76718f5724a631c5b2922d2dd43,
+eightCPUtests/source246/43/allactualnewzero-export/goldenreuse/carry joinsPASS.
+V1captions inherited925 text; newFINALderivativecorrects them, originalskept.
+Finalbinder5d5d94d7 generated actualnewadmission59802049 and lane
+0a7d98fc5f8dff8eb89abb9dd966332776c9142beacc543bd3e26053a70902ce.
+Same127df312 researchpolicy/unchangedfiveconsumers, strictFAILED preserved.
+Canonicaloriginalmodel/auditrefs maintained; actualnewsource/config/receiptpins
+authentic. FreshsourceCPUvalidation doesnotcharge trainerseconds.
+
+Paid-zero bootstrap actualPASS: ignoredbootstrap-memory-r1-paid-zero.py
+SHA840e31039cc70f247055f14cc09bfee5b10604956e84128edd1bf1d75d2e2cb9 independently
+accepted. Creates genuinenew CUDAzero checkpoint underNEWlaneSHA in
+ROOT/runs/dspark-a8-full-pool-20261006-01/training-memory-r1-lane/training.
+Authenticatesold/newpayloadSHAs and comparesALLlinears/optimizer/RNG/cursor/
+contract/runtime exact, emptymoments/step0. Originaloldcp0 SHA761003a5;
+newcp0 dccdd9e34987ac52bc73d2dd10e2a28a810305475d627adfed57acf5cf3f56c8.
+NEWderivedinitialledgerddd67e48 retains4.706928438999967s/max43200/newlaneSHA;
+originalledgerc4e45f51 untouched. No step2exactresumeclaim. Actualbootstrapowner
+2479birth462894/boot206feba6;physicalGPU/groups/DXGreleasePASS with20.10GBhost/
+14.85GBGPUfree. Source/CPUreview alsoauthenticatesallrawincident/carry antecedents.
+
+Repair1controlleractuallylaunched07:50:47.689466UTC:
+dspark-a8-memory-r1-training-20261007-01, immutableC968 checkout,
+socketbinary-eagle-runtime/sessionroot-dspark-a8-memory-r1-training-20261007-01.
+Supervisor2645birth480460, controller2646birth480468, boot206feba6.
+Controller--run-dir ROOT/runs/dspark-a8-full-pool-20261006-01/training-memory-r1-lane,
+--resume/--start, supervisorstateC968/runs/<run>/state.json;90sgrace/exactPYTHONPATH.
+Rootsoleoperator;Linux%292/Mac%291. Stopauthenticate2645identitythenexactTERM,
+checkpoint/reap/proveownedrelease. Originalfailed925 job/rawstate preserved.
+Current phase CPUvalidation/recovery_prepared; actualfreshadmission and repair
+optimizerupdates UNOBSERVED. Do notduplicate orinterrupthealthypreflight onquiet.
+Next actualsixgates→paidupdates/newmemoryfacts→5/15minutehealth. Atmost2repairs,
+thisisrepair1; preserveallchargedtime/latestcommittedstate ifanotherfailure.
+DFlash next isexplicitinSAMEACTIVEhourlymonitor; sourceprep1099 alreadyaccepted,
+fullDFlashfamily/data/fit/nativeadmission remainrequiredafterDSparkrelease.
+Allboundedworkersfinished; rootcontinueshere/no newchat orownershiptransfer.
+
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->
