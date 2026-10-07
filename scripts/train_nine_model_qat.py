@@ -364,6 +364,26 @@ def tensor_batch(batch):
     return SimpleNamespace(**values)
 
 
+class ResourceLimitError(RuntimeError):
+    """An unchanged resource gate failed, with the actual measured values."""
+
+    def __init__(self, stage, measured):
+        super().__init__("CUDA resource floor/cap failure at " + stage)
+        self.resources = measured
+
+
+def cuda_memory_snapshot():
+    free, total = torch.cuda.mem_get_info("cuda:0")
+    return {
+        "cuda_free_bytes": free,
+        "cuda_total_bytes": total,
+        "cuda_allocated_bytes": torch.cuda.memory_allocated("cuda:0"),
+        "cuda_reserved_bytes": torch.cuda.memory_reserved("cuda:0"),
+        "cuda_peak_allocated_bytes": torch.cuda.max_memory_allocated("cuda:0"),
+        "cuda_peak_reserved_bytes": torch.cuda.max_memory_reserved("cuda:0"),
+    }
+
+
 def resources(spec, stage):
     floors = spec.get("resource_floors", {})
     host = require_host_memory(
@@ -371,20 +391,43 @@ def resources(spec, stage):
         floor_bytes=floors.get("host_available_bytes", 2 * 1024**3),
         stage=stage,
     )
-    free, total = torch.cuda.mem_get_info("cuda:0")
-    reserved = torch.cuda.memory_reserved("cuda:0")
-    if free < floors.get("cuda_free_bytes", 1024**3) or reserved > floors.get(
-        "cuda_reserved_bytes", 14 * 1024**3
-    ):
-        raise RuntimeError("CUDA resource floor/cap failure at " + stage)
-    return {
+    measured = {
         **host,
-        "cuda_free_bytes": free,
-        "cuda_total_bytes": total,
-        "cuda_reserved_bytes": reserved,
-        "cuda_peak_allocated_bytes": torch.cuda.max_memory_allocated("cuda:0"),
-        "cuda_peak_reserved_bytes": torch.cuda.max_memory_reserved("cuda:0"),
+        **cuda_memory_snapshot(),
+        "stage": stage,
+        "limits": {
+            "cuda_free_bytes": floors.get("cuda_free_bytes", 1024**3),
+            "cuda_reserved_bytes": floors.get("cuda_reserved_bytes", 14 * 1024**3),
+        },
     }
+    if (
+        measured["cuda_free_bytes"] < measured["limits"]["cuda_free_bytes"]
+        or measured["cuda_reserved_bytes"] > measured["limits"]["cuda_reserved_bytes"]
+    ):
+        raise ResourceLimitError(stage, measured)
+    return measured
+
+
+def block_transaction_resources(spec, model, optimizer):
+    """Release completed gradients/cache before checking the next transaction.
+
+    The next batch already clears gradients; moving that release earlier does
+    not change accumulation, parameters, moments, or RNG. Never call mid-batch.
+    """
+    cuda = model.token_embd.device.type == "cuda"
+    before = None
+    if cuda:
+        torch.cuda.synchronize("cuda:0")
+        before = cuda_memory_snapshot()
+    optimizer.zero_grad(set_to_none=True)
+    if cuda:
+        torch.cuda.empty_cache()
+    try:
+        measured = resources(spec, "block optimizer update")
+    except ResourceLimitError as error:
+        error.resources["before_completed_gradient_cache_release"] = before
+        raise
+    return {**measured, "before_completed_gradient_cache_release": before}
 
 
 def calibration(locator, config):
@@ -927,6 +970,8 @@ def run_block(args, spec, hardware):
         for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP):
             previous_handlers[sig] = signal.signal(sig, stop)
         unique = set(cursor.unique_blocks)
+        transaction_complete = True
+        last_completed_cursor = cursor
 
         def capped():
             values = {
@@ -948,7 +993,7 @@ def run_block(args, spec, hardware):
                 cursor = replace(cursor, elapsed_seconds=budget.elapsed())
                 if capped() or (boundary is not None and boundary.due(cursor.elapsed_seconds)):
                     break
-                resources(spec, "block optimizer update")
+                update_resources = block_transaction_resources(spec, model, optimizer)
                 if policy is None:
                     batch, next_data = dataset.next_block(
                         restore_data(cursor.data_cursor),
@@ -973,12 +1018,14 @@ def run_block(args, spec, hardware):
                         raise ValueError(
                             "effective batch must contain distinct chains and canonical groups"
                         )
+                    transaction_complete = False
                     cursor = replace(
                         cursor, scheduler_state=schedule_state(policy, cursor.elapsed_seconds)
                     )
                     apply_schedule(
                         optimizer, model.config, cursor.scheduler_state, cursor.elapsed_seconds
                     )
+                transaction_complete = False
                 if policy is None:
                     metrics, _ = block_train_step(
                         model, optimizer, tensor_batch(batches[0]), teacher_callback=teacher
@@ -1002,6 +1049,7 @@ def run_block(args, spec, hardware):
                             diagnostics=True,
                         )
                     layer_diagnostics = diagnostic_session.finish(model)
+                metrics = {**metrics, "resources": update_resources}
                 for batch in batches:
                     unique.add(f"{batch.chain_id}:{batch.block_index}")
                 telemetry = update_history(
@@ -1030,10 +1078,13 @@ def run_block(args, spec, hardware):
                     batch_reservation=None,
                     telemetry=telemetry,
                 )
+                transaction_complete = True
+                last_completed_cursor = cursor
                 if boundary is not None and boundary.due(cursor.elapsed_seconds):
                     break
                 if cursor.stage == "a8_warm_start" and cursor.step >= spec["a8_warmup_steps"]:
                     latest = checkpoint("transition_source")
+                    transaction_complete = False
                     del optimizer
                     model, optimizer, transition = transition_a8_to_a1(
                         model, source_checkpoint_sha256=latest["sha256"], in_place=True
@@ -1041,6 +1092,8 @@ def run_block(args, spec, hardware):
                     cursor = replace(
                         cursor, stage="a1_final", stage_updates=0, stage_supervised_tokens=0
                     )
+                    transaction_complete = True
+                    last_completed_cursor = cursor
                     atomic_json(args.run_dir / "precision-transition.json", transition)
                     if retention is not None:
                         latest = checkpoint("transition_destination")
@@ -1113,8 +1166,64 @@ def run_block(args, spec, hardware):
                     "budget ended before required final A1 exposure; checkpoint retained"
                 )
             return publish_endpoint(latest, milestone_due)
+        except InterruptedError:
+            # A requested STOP has already published its exact checkpoint.
+            raise
+        except Exception as error:
+            # Only a fully committed optimizer AND logical-cursor transaction
+            # can be serialized. An exception inside step/telemetry/transition
+            # may leave partially mutated parameters or moments; never admit it.
+            incident = {
+                "schema": "nine_model_training_incident_v1",
+                "error": f"{type(error).__name__}: {error}",
+                "optimizer_transaction_complete": transaction_complete,
+                "last_completed_cursor": asdict(last_completed_cursor),
+                "resources": getattr(error, "resources", None),
+                "checkpoint": None,
+                "evaluation_permitted": False,
+            }
+            try:
+                incident["training_seconds"] = budget.finish()
+                if transaction_complete:
+                    cursor = replace(cursor, elapsed_seconds=incident["training_seconds"])
+                    if latest["cursor"] != json.loads(json.dumps(asdict(cursor))):
+                        latest = checkpoint("stop")
+                    elif retention is not None:
+                        latest = protect_block_checkpoint(latest, "stop")
+                    incident["checkpoint"] = latest
+                    # 'stop' is the existing protected-retention vocabulary;
+                    # the incident remains FAIL, never a user STOP or endpoint.
+                    incident["retention_protection"] = "stop"
+            except Exception as recovery_error:
+                incident["checkpoint_error"] = f"{type(recovery_error).__name__}: {recovery_error}"
+                error.add_note("incident checkpoint failed: " + incident["checkpoint_error"])
+            try:
+                directory = args.run_dir / "incidents"
+                directory.mkdir(exist_ok=True)
+                path = directory / f"step-{last_completed_cursor.step:012d}-{time.time_ns()}.json"
+                atomic_json(path, incident)
+                atomic_json(
+                    args.run_dir / "status.json",
+                    {
+                        "schema": SCHEMA,
+                        "status": "FAIL",
+                        "incident": artifact_locator(path),
+                        "checkpoint": incident["checkpoint"],
+                        "cursor": asdict(cursor if transaction_complete else last_completed_cursor),
+                        "training_seconds": incident.get("training_seconds"),
+                    },
+                )
+            except Exception as publication_error:
+                error.add_note(f"incident publication failed: {publication_error}")
+            raise
         finally:
-            budget.finish()
+            original_error = sys.exc_info()[1]
+            try:
+                budget.finish()
+            except Exception as settlement_error:
+                if original_error is None:
+                    raise
+                original_error.add_note(f"final budget settlement failed: {settlement_error}")
             for sig, previous in previous_handlers.items():
                 signal.signal(sig, previous)
 
