@@ -3290,4 +3290,14 @@ anyaction; ifhealthy preserveit, iffinished inspectrawoutcomes. Then authentic
 archive→QA→finalbinding→controlleradmission→realtraining→5/15minutechecks.
 Only unresolveduserinput is actualhostavailability/address; no scientificchoice.
 
+V4 localQA finalizer preparation finished: helper6f78864721f862ab20e6a095d909ee16b91ac7b26e4ce543ca97996344806e4c,
+syntaxPASS and oldv3archive rejected as incompletev4 beforepublication. No ledger
+orQA PASS fabricated. Freshsource-cutover-v4-authenticated-inventory includes
+actualfinished0job/rootreleasedGPUproof and246sourcepins; finalizer checks those
+andactual zero/export/goldens. Exact commands/dependencies in ignored
+results/dspark-launch-20261006/portable-qa-v4/README.md. Allworkersfinished;
+rootkeepssamejobownership. SecondboundedSSHretryalsofailed255 at17:35PDT.
+Currentremote phase/GPUrelease remainUNKNOWN. Hourlymonitor will reconcilehost
+access andexactexistingjob before anycontinuation; currenthumanquestionpending.
+
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->
