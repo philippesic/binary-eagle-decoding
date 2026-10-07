@@ -54,36 +54,77 @@ class MemoryReleaseTests(unittest.TestCase):
                 assert_tree_equal(self, a.state_dict(), b.state_dict())
         assert_tree_equal(self, teachers, [full.teacher_logits, tail.teacher_logits])
 
-    def test_cuda_cleanup_precedes_unchanged_failure_and_retains_both_snapshots(self):
+    def test_healthy_cuda_cache_stays_warm_without_sync_or_release(self):
+        model = SimpleNamespace(token_embd=SimpleNamespace(device=SimpleNamespace(type="cuda")))
+        optimizer = SimpleNamespace(
+            zero_grad=lambda **kwargs: self.assertEqual(kwargs, {"set_to_none": True})
+        )
+        measured = {"cuda_allocated_bytes": 9, "cuda_reserved_bytes": 11, "cuda_free_bytes": 3}
+        with (
+            patch.object(torch.cuda, "synchronize") as synchronize,
+            patch.object(torch.cuda, "empty_cache") as empty_cache,
+            patch.object(launcher, "resources", return_value=measured) as guard,
+        ):
+            result = launcher.block_transaction_resources({}, model, optimizer)
+        synchronize.assert_not_called()
+        empty_cache.assert_not_called()
+        guard.assert_called_once_with({}, "block optimizer update")
+        self.assertFalse(result["cleanup_performed"])
+        self.assertEqual(result["before_cache_release"], measured)
+        for key, value in measured.items():
+            self.assertEqual(result[key], value)
+
+    def test_failed_cuda_gate_trims_once_and_rechecks_strictly(self):
         events = []
         model = SimpleNamespace(token_embd=SimpleNamespace(device=SimpleNamespace(type="cuda")))
         optimizer = SimpleNamespace(zero_grad=lambda **kwargs: events.append(("zero_grad", kwargs)))
         before = {"cuda_allocated_bytes": 9, "cuda_reserved_bytes": 15, "cuda_free_bytes": 1}
         after = {"cuda_allocated_bytes": 8, "cuda_reserved_bytes": 13, "cuda_free_bytes": 2}
+        initial_failure = launcher.ResourceLimitError("block optimizer update", before)
         failure = launcher.ResourceLimitError("block optimizer update", after)
+        results = iter((initial_failure, failure))
 
         def fail_guard(*args):
             events.append("guard")
-            raise failure
+            raise next(results)
 
         with (
             patch.object(torch.cuda, "synchronize", side_effect=lambda *_: events.append("sync")),
             patch.object(torch.cuda, "empty_cache", side_effect=lambda: events.append("empty")),
-            patch.object(
-                launcher,
-                "cuda_memory_snapshot",
-                side_effect=lambda: events.append("before") or before,
-            ),
             patch.object(launcher, "resources", side_effect=fail_guard),
         ):
             with self.assertRaises(launcher.ResourceLimitError) as caught:
                 launcher.block_transaction_resources({}, model, optimizer)
         self.assertIs(caught.exception, failure)
         self.assertEqual(
-            events, ["sync", "before", ("zero_grad", {"set_to_none": True}), "empty", "guard"]
+            events, [("zero_grad", {"set_to_none": True}), "guard", "sync", "empty", "guard"]
         )
-        self.assertEqual(failure.resources["before_completed_gradient_cache_release"], before)
+        self.assertTrue(failure.resources["cleanup_performed"])
+        self.assertEqual(failure.resources["before_cache_release"], before)
         self.assertEqual(failure.resources["cuda_reserved_bytes"], 13)
+
+    def test_conditional_cuda_trim_returns_recovered_before_and_after_metrics(self):
+        model = SimpleNamespace(token_embd=SimpleNamespace(device=SimpleNamespace(type="cuda")))
+        optimizer = SimpleNamespace(zero_grad=lambda **_: None)
+        before = {"cuda_allocated_bytes": 9, "cuda_reserved_bytes": 15, "cuda_free_bytes": 1}
+        after = {"cuda_allocated_bytes": 8, "cuda_reserved_bytes": 10, "cuda_free_bytes": 3}
+        with (
+            patch.object(torch.cuda, "synchronize") as synchronize,
+            patch.object(torch.cuda, "empty_cache") as empty_cache,
+            patch.object(
+                launcher,
+                "resources",
+                side_effect=[launcher.ResourceLimitError("guard", before), after],
+            ) as guard,
+        ):
+            result = launcher.block_transaction_resources({}, model, optimizer)
+        synchronize.assert_called_once_with("cuda:0")
+        empty_cache.assert_called_once_with()
+        self.assertEqual(guard.call_count, 2)
+        self.assertTrue(result["cleanup_performed"])
+        self.assertEqual(result["before_cache_release"], before)
+        for key, value in after.items():
+            self.assertEqual(result[key], value)
 
     def test_exact_reserved_cap_and_free_floor_are_preserved(self):
         cap, floor = 12 * 1024**3, 1024**3
