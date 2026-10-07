@@ -3206,4 +3206,57 @@ thenpositiveoptimizerupdates, finiteCE/L1/gradients/checkpoint/source/process
 proof and5/15minutehealth. All43200trainerseconds remain; no frozenprovider,
 pipeline, data, objective, optimizer or0/4/8/12protocol changes authorized.
 
+## Source cutover and exact replay-path repair — October 6, 17:30 PDT
+
+Same human objective: cancel old monitor, train DSpark A8 for43,200 cumulative
+trainer-seconds, hourly health/healing,5/15minute startup checks and4/8/12h native
+acceptance. Root sole5080 operator in same chat; no2080, no new goal/chat/transfer.
+Old monitorDELETED/newhourlyACTIVE. Paid optimizer updates still0.
+
+Published trainer/source92516f8d integrates independently accepted772a0c2;9focused,
+54lane/export/timed,12budget and7export checks passed. Five controller consumers
+authenticate exact checkpoint/source/nonce/process/request/export evidence;
+strictFAILED remainsFAILED. All original90a7/source/native measurements preserved.
+New immutable trainer checkout ROOT/runs/checkouts/dspark-research-training-92516f8d-20261006.
+Native serving5eb221ec53 and oldecff teacher/capture4ba remain unchanged.
+
+Actual v3 zero preparation00:06:19–00:07:00UTC/export repair02 00:12:18–00:13:03/
+goldens00:16:55–00:17:27 all finished0 with actual ownedGPUreleasePASS.
+New initialcheckpoint56ccd6d5; GGUF ea1bc689/NPZ f4c070be/manifest d9416a23
+exactly original. Full16projection/48protected audit equality exceptoutputpath
+proven71539dd2. PortableQA v3 25ae3b67:246source/43trainer pins and40CPUchecks.
+Fresh actual CPUfixed48 reporta7b657d1 passed with CE5.4038/L11.3459, no state mutation.
+
+Actual completedFAILED baseline a64854dd derived from480clean/96diagnostic raw
+measurements, original24stage/dispatch proofs and actual zero receipts; not a
+fresh native measurement. Reviewed research-only policy127df312/review9a70461e
+passed actual CPUvalidation. New scientific approval claimedfalse; nodeployment
+waiver. Default strict remains intact; unknowncandidate-only/control/provenance
+changes halt. Canonical oldzero artifact aliases preserve baseline/audit refs.
+
+V3 final lane attempt produced plan5e5a19f4/descriptor ef7b6042, then failed
+before lane publication: replay producer source differs. Original replay receipt
+67d91a69 binds old90 helper locator; identical relocated925 path cannot replace
+actual producer. No gate relaxed. NEW v4 packet keeps authentic original
+capture/restore/replay paths and hashes. Config changes require genuine fresh
+zero/export/goldens; v3 files/history stay immutable. Admission source must include
+old capture/replay exactlocators via preparation_provenance aliases.
+
+Live detached operation `dspark-a8-v4-prelaunch-20261007-01`, socket
+binary-eagle-runtime/sessionroot-dspark-a8-v4-prelaunch-20261007-01, run under
+925 checkout/runs. Supervisor90sgrace; roottransport MCP259/Linux%290 and%292,
+Mac%291. Boot517c4a36-e475-4a5f-9fa6-65de57edc6fe, GPU44ceb8b5-b67a-a317-fee3-f01c9201994e.
+Authenticate state PID/birth/boot before exactsupervisorTERM; prove release.
+Attempt01 finished1 beforeGPU: root referenced a local-only helper file remotely. Raw failure preserved. Repair1 embeds the reviewed helper bytes directly; unique run dspark-a8-v4-prelaunch-20261007-02 started00:30:32UTC. Actual supervisor92402 birth26758996/controller92407 birth26759001 authenticated on boot above. Preparation is live; no paid updates. Stop exact supervisor92402 after identity check,90sgrace and releaseproof. Do not restart on missing observation.
+Ignored wrapper results/dspark-launch-20261006/run-v4-stages.py.
+Worker dspark_actual_portable_qa owns only ignored portable-qa-v4, no GPU/SSH;
+others completed/no jobs. No pending essential human decision.
+
+Next root: inspect actual v4 stages/identities/releases, supply authentic archived
+receipts toQA, bindfreshgoldens, materializecanonicalartifactdescriptor/admission
+with old helper aliases and newconfig, derivefinaltimedplan/policy source925,
+buildlane, launchdetachedcontroller withfreshverified≤300slease. ActualsixSM120
+gates must pass, then prove positive optimizer updates/finite metrics/source/
+checkpoint/RNG/cursor and5/15minutehealth. Never claim preparation as training.
+
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->

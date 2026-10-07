@@ -4,7 +4,26 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Active DSpark A8 final prelaunch checks — October 6, 16:20 PDT
+## Active DSpark A8 launch repair — October 6, 17:30 PDT
+
+Current trainer source `92516f8d` is integrated, published and independently
+accepted. Fresh v3 CUDA zero preparation/export/three goldens all passed;
+exported model, NPZ and manifest exactly match the measured zero-hour model.
+Actual fixed48 CPU validation passed (CE5.4038, L1 1.3459); strict native parity
+remains FAILED and no paid updates have occurred. Reviewed research-only policy
+127df312 passed CPU validation; it is not deployment admission.
+
+Final v3 lane build failed before publication because a relocated replay-helper
+path did not equal the original actual replay admission's producer locator.
+Preserve that failure. Root now prepares NEW v4 receipts/config with the authentic
+old helper paths and unchanged helper hashes; source925 remains the trainer.
+Fresh v4 zero/export/goldens are detached under root ownership, run
+`dspark-a8-v4-prelaunch-20261007-01`; exact live state belongs in the goal checkpoint.
+Next: finish v4 portable artifact QA, add explicit authentic helper source aliases,
+materialize lane, execute six fresh SM120 admission gates and start actual updates.
+Hourly monitor remains ACTIVE, old automation DELETED. No new human choice pending.
+
+## Earlier prelaunch checkpoint — October 6, 16:20 PDT
 
 Old automation deleted; hourly health/healing ACTIVE. Same approved DSpark12h
 objective; no paid optimizer updates yet. Root remains sole RTX5080 operator.
