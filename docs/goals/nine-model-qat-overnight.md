@@ -3474,4 +3474,66 @@ DFlash next isexplicitinSAMEACTIVEhourlymonitor; sourceprep1099 alreadyaccepted,
 fullDFlashfamily/data/fit/nativeadmission remainrequiredafterDSparkrelease.
 Allboundedworkersfinished; rootcontinueshere/no newchat orownershiptransfer.
 
+## Repair 1 healthy optimizer and shard cycle — October 7, 01:21 PDT
+
+Actualrepair1 sixSM120gatesallPASS, attempt75354290cf894bceb81fc401ac3c32e8.
+OriginalC968 controller2646birth480468/sup2645birth480460/boot206feba6 and
+sameactivehourlymonitor/rootownership preserved. Trainer2971birth526870/PGID2971
+started07:58:31.736UTC. Firstpositiveobservation07:59:49UTC; actualoptimizer
+beginprecededobservation, do notcallthisexactbegin. Native/privatearithmetic/
+source/data/rng/accounting guards unchanged. All4.706928438999967s carry retained.
+
+Actualmemoryboundaryrecovery measured beforecachedreserve~13.524GB/after9.154GB,
+allocated8.938GB,free6.437GB. Same12GiBcurrent-reserve/1GiBfree guard passed after
+conditionaltrim; peakreserved~13.611GB isreportedtruthfully (guardchecksboundary
+currentreserve, notcontinuouspeak). Finite CE/L1/loss/gradnorm/actualAdamupdates.
+Source-onlyexpectation nowhas actualSM120 memorybenefit; no throughputimprovement
+overQ4claimed. Periodicprivatehead/gamma/source precision unchanged.
+
+Firsthealthysegment370updates/137.835017409s, committedcheckpoint93ced877,
+thenordinaryshard_required/closedclock, alltrainerGPUgroupsreleased. Actualshard
+producer3072birth545621/newboot; publications4f711ca1 and3c29f2c8 authenticated
+nativecaptures/metadata returned and exactresumeadvanced. Furthersegment762/
+277.3479s, then1174/425.4947s; twoadditionalnormalcheckpoint/capture/restores
+observed. Latesttransportedsnapshot1564updates/cursor565.2286265560006s/
+committed1564 SHA4942b3ab904a149d92827e5c14abb9cbb2a426ea89e8eeee1ba15df01c0358fd;
+phase restoring_shards/no failure. Atotherobservationsphase training/realprogress.
+DoNOTtreatbulkphase or activeclockpause asstall/duplicate launch opportunity.
+
+RootCPU-onlypassive earlywatcher dspark-a8-memory-r1-startup-health-20261007-01
+finishedaftertwo observations; noCUDAconstruction/healing authority orsecondGPU
+operator. Sup3377/child3382; birthsnotcaptured, jobfinishedstatepreserved. Hook
+anchor firstpositiveobservation1791359989.0. Nominal5minutecheck actuallyoccurred
+632.823seconds afteranchor (LATE); phase training/step820/cp762 andPASS.15minute
+check at900.060seconds, phase restoring_shards/step=cp1174,425.4947trainerseconds,
+19.20GBhostavailable/74.50GBdiskfree, source/identityPASS. Phase-aware metrics
+distinguish noactiveoptimizer duringtargetcapture fromfinite lastpaidtrajectory.
+Don'tclaimexact5minute execution. Hourlymonitor governsremaininghealth/healing.
+
+Actualstartup/live8filearchive results/dspark-launch-20261006/memory-r1-live-startup-evidence.tar
+andmirrormemory-r1-live-startup-evidence containhealthreceipts/bootstrap/live
+controller/trainer/cp state. Source/familyworkersallcompleted/no liveCPUprocess.
+Integrationmain6d2a846 beforethischeckpoint; C968 activecheckoutimmutable.
+
+Liveownedcontroller: C968/runs/dspark-a8-memory-r1-training-20261007-01,
+socketbinary-eagle-runtime/sessionroot-dspark-a8-memory-r1-training-20261007-01.
+Actualrun-dir ROOT/runs/dspark-a8-full-pool-20261006-01/training-memory-r1-lane;
+supervisor2645 exactbirth480460/boot206feba6. STOP throughrun-dir/STOP forgraceful
+checkpoint orauthenticateexactsupervisorandTERM;90sgrace/reapthenfullownedGPU
+releaseproof. Preservehealthyjobwhenrotatingcontext. RootMCP259/pane292Linux,
+291Mac. No2080, newgoal/chat/operator orbudgetrestart. NativeGoalUIhistorical
+blockedstatus isnotcurrentpaused authorization; durablecampaign activelyruns.
+
+Nextsamehourlywake: authenticatecurrentphase/processdescendants/source/bundle;
+loss/finitegradients/actualAdamprogress/checkpoint/generationprogress/resource
+headroom; preservehealthyserialwork. Bound2repairs perincident (memoryrepair1
+successful), preserveallrawfailures. Native4/8/12h checks remaingenuine fourcell
+standalone/releasedGPU/F16targetKV/heldoutQ4controls; exactoptimizer/RNG/cursor/
+source/accounting resume. Full43200trainerseconds, no shortenedallocation.
+AfterDSparkfinalcomplete/nativeevaluation andownedrelease, proceedDFlashA8
+using1099 family-aware source andgenuineDFlash fit/data/nativeadmission/hardCE,
+model-boundbaseline/policy, same12h/hourly/4-8-12h. ThenA1orderunchanged. No
+pendinghumanchoice ornewpermissionrequest; independentDFlashprep maycontinue
+withouttouchingactiveC968 orconcurrentGPUuse. Goal/fullninecampaign unfinished.
+
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->

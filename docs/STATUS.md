@@ -4,7 +4,24 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## DSpark A8 memory repair — October 7, 00:24 PDT
+## DSpark A8 running — October 7, 01:21 PDT
+
+DSpark A8 is progressing on5080 at192.168.4.53. Latest authenticated snapshot:
+1,564 optimizer updates, committed checkpoint1,564,565.229 cumulative trainer-
+seconds (9.42minutes), including all4.707seconds from the failed first attempt.
+Memory repair succeeded under unchanged resource guards; unused cache reclamation
+reduced boundary reserve from~13.5GB to~9.2GB. Finite real loss/gradients observed.
+The controller serially checkpoints, releases and prepares the next shard, then
+restores exact state; those preparation phases are excluded from trainer time.
+
+Startup health observations passed: first nominal5minute observation was late
+at10.55minutes after first positive observation;15minute observation was ontime.
+Hourly health/healing remainsACTIVE. Native acceptance remains scheduled at
+4/8/12 cumulative trainer-hours; no trained acceptance result yet. DFlash A8 is
+explicitly next in the same monitor after fullDSpark completion/final evaluation.
+Rootsoleowner; exact live handles and stop procedure are in the goal checkpoint.
+
+## Earlier memory repair — October 7, 00:24 PDT
 
 The first controller passed all six fresh SM120 gates, then completed two
 optimizer updates before the pre-third-update memory guard stopped it. Raw
