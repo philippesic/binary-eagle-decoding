@@ -198,7 +198,8 @@ class PartialCaptureTests(unittest.TestCase):
                                 max_shard_bytes=100000, max_eagle_golden_tokens=24)
         pin = capture.write_json(case.root / "partial-plan.json", case.plan)
         variant = {"kind": "fresh_greedy", "corpus_variant": full.VARIANT}
-        logical = {"schema": "block_logical_shard_plan_v1", "generation_variant": variant,
+        logical = {"schema": "block_logical_shard_plan_v1", "geometry": {"family": "dspark"},
+                   "generation_variant": variant,
                    "chains": {"global-" + str(i): r for i, r in enumerate(case.plan["selection"])},
                    "shards": {"s0": ["global-" + str(i) for i in range(9)]},
                    "capture_plans": {"s0": {"remote": pin}}}
@@ -237,7 +238,8 @@ class PartialCaptureTests(unittest.TestCase):
         case.plan["caps"].update(max_requests=18, max_request_bytes=100000,
                                 max_shard_bytes=100000, max_eagle_golden_tokens=24)
         pin = capture.write_json(case.root / "partial-plan.json", case.plan)
-        logical = {"schema": "block_logical_shard_plan_v1", "generation_variant": {"kind": "fresh_greedy"},
+        logical = {"schema": "block_logical_shard_plan_v1", "geometry": {"family": "dspark"},
+                   "generation_variant": {"kind": "fresh_greedy"},
                    "chains": {"global-" + str(i): r for i, r in enumerate(case.plan["selection"])},
                    "shards": {"s0": ["global-" + str(i) for i in range(9)]},
                    "capture_plans": {"s0": {"remote": pin}}}

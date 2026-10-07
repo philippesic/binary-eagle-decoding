@@ -1435,9 +1435,21 @@ def run_shard_publication(request_path, output_path, **capture_kwargs):
         or global_plan.get("generation_variant") != request["generation_variant"]
         or request["capture_bytes_bound"] != 8*1024**3):
         raise ValueError("logical shard plan/generation/8 GiB identity differs")
+    geometry = global_plan.get("geometry", {})
+    family = geometry.get("family")
+    if family not in ("dspark", "dflash"):
+        raise ValueError("logical shard family must be dspark or dflash")
     if request["original_identity"] is not None:
         if "original_metadata" not in request:
             raise ValueError("original shard identity already sealed: verified archive/replay restoration required")
+        metadata_path = pinned(request["original_metadata"], request_path.parent)
+        metadata = json.loads(metadata_path.read_text())
+        original_manifest_pin = metadata["files"][metadata["manifest_relative_path"]]
+        original_manifest = json.loads(
+            pinned(original_manifest_pin, metadata_path.parent).read_text()
+        )
+        if any(original_manifest.get(key) != wanted for key, wanted in geometry.items()):
+            raise ValueError("original replay manifest differs from logical shard family/geometry")
         from replay_dspark_shard import replay
         return replay(request_path, output_path, **capture_kwargs)
     directory = Path(request["directory"])
@@ -1456,6 +1468,13 @@ def run_shard_publication(request_path, output_path, **capture_kwargs):
         or capture_plan.get("label_policy") != PARTIAL_LABEL_POLICY
         or capture_plan["caps"]["max_total_bytes"] > request["capture_bytes_bound"]):
         raise ValueError("physical capture selection/partial labels/storage differs from global shard")
+    if any(capture_plan.get(key) != geometry[key]
+           for key in ("vocab_size", "target_width", "mask_token_id") if key in geometry):
+        raise ValueError("native capture geometry differs from logical shard")
+    if "taps" in geometry and geometry["taps"] != list(TAPS):
+        raise ValueError("logical shard must preserve all five native target taps")
+    if "tap_semantics" in geometry and geometry["tap_semantics"] != "native_layer_input_f32":
+        raise ValueError("logical shard native target tap semantics differs")
     by_prompt = {global_plan["chains"][cid]["prompt_id"]: global_plan["chains"][cid] for cid in ids}
     for row in capture_plan["selection"]:
         if any(row[k] != by_prompt[row["prompt_id"]][k] for k in ("prompt_sha256", "domain", "split")):
@@ -1464,14 +1483,16 @@ def run_shard_publication(request_path, output_path, **capture_kwargs):
                          chain_ids=mapping, **capture_kwargs)
     if report["status"] != "PASS":
         raise RuntimeError("native shard capture/import failed: " + json.dumps(report["failure"]))
-    manifest = report["manifests"]["dspark"]
-    admission_path = directory / "dspark/completed-admission.json"
+    manifest = report["manifests"][family]
+    admission_path = directory / family / "completed-admission.json"
     admission = {"path": str(admission_path), "sha256": file_sha256(admission_path)}
     # No external tensor/receipt may masquerade as this physical publication.
     from w1a1_eagle.block_data import BlockDataset
     ds = BlockDataset(manifest["path"], expected_sha256=manifest["sha256"],
                       admission_path=admission["path"], admission_sha256=admission["sha256"])
     try:
+        if any(ds.manifest.get(key) != wanted for key, wanted in geometry.items()):
+            raise ValueError("actual native publication differs from logical shard family/geometry")
         if set(ds.chains) != set(ids):
             raise ValueError("actual native chain membership differs from logical shard")
         for pin in ds._fingerprints.values():

@@ -150,6 +150,10 @@ class FrozenShardPlan:
         self.production = require_full_pool
         self.value = copy.deepcopy(value)
         self.sha256 = identity(self.value)
+        _require(
+            value["geometry"].get("family") in {"dspark", "dflash"},
+            "logical shard family must be dspark or dflash",
+        )
         self.chains = self.value["chains"]
         self.shards = self.value["shards"]
         _require(value.get("schema") == PLAN_SCHEMA, "logical shard plan schema differs")
@@ -1520,6 +1524,11 @@ def write_logical_admission(data, preparation_data, preparation_admission, outpu
             allow_synthetic=False,
         )
         try:
+            for key, wanted in provider.plan.value["geometry"].items():
+                _require(
+                    dataset.manifest.get(key) == wanted,
+                    "preparation logical geometry differs: " + key,
+                )
             roles = {split: set() for split in SPLITS}
             for cid, chain in dataset.chains.items():
                 frozen = provider.chains[cid]
@@ -1583,6 +1592,8 @@ def rebind_physical_manifest(plan, manifest_record, admission_record, output):
     )
     try:
         manifest = json.loads(checked(manifest_record).read_text())
+        for key, wanted in plan.value["geometry"].items():
+            _require(manifest.get(key) == wanted, "rebind logical geometry differs: " + key)
         producer_receipt = json.loads(checked(manifest["producer"]["receipt"]).read_text())
         by_prompt = {chain["prompt_id"]: cid for cid, chain in plan.chains.items()}
         mapping, chains, joins = {}, [], {}
@@ -1672,6 +1683,8 @@ def merge_preparation_manifests(plan, records, output):
         )
         try:
             manifest = json.loads(manifest_path.read_text())
+            for key, wanted in plan.value["geometry"].items():
+                _require(manifest.get(key) == wanted, "merge logical geometry differs: " + key)
             actual = {k: v for k, v in manifest["producer"].items() if k != "receipt"}
             _require(
                 producer is None or producer == actual,
@@ -1745,6 +1758,8 @@ def merge_preparation_manifests(plan, records, output):
         }
         if "logits_indices" in chain:
             joins[cid]["logits_indices"] = chain["logits_indices"]
+        if "label_policy" in chain:
+            joins[cid]["label_policy"] = chain["label_policy"]
     receipt_path = output / "aggregate-producer-receipt.json"
     atomic_json(
         receipt_path,
@@ -1793,13 +1808,22 @@ def merge_preparation_manifests(plan, records, output):
     return result
 
 
-def freeze_capture_schedule(schedule_locator, *, plan_root):
-    """Adapt the authenticated data worker's whole-group byte-bounded schedule."""
+def freeze_capture_schedule(schedule_locator, *, plan_root, family="dspark"):
+    """Bind an authenticated whole-group raw target schedule to one block family.
+
+    Existing DSpark schedules contain target-only, shared five-tap captures and
+    may be explicitly reused for DFlash. The selected family changes the logical
+    plan identity; cache and replay authorities must therefore be admitted anew.
+    Omitting family preserves the original DSpark schema and geometry behavior.
+    """
+    _require(family in {"dspark", "dflash"}, "capture schedule family must be dspark or dflash")
     schedule = json.loads(checked(schedule_locator).read_text())
     root = Path(plan_root).resolve()
+    accepted_schemas = {"dspark_full_pool_capture_schedule_v1"}
+    if family == "dflash":
+        accepted_schemas.add("dflash_full_pool_capture_schedule_v1")
     _require(
-        schedule.get("schema") == "dspark_full_pool_capture_schedule_v1"
-        and schedule["seed"] == 8101,
+        schedule.get("schema") in accepted_schemas and schedule["seed"] == 8101,
         "frozen full-pool capture schedule required",
     )
     selector = {
@@ -1824,7 +1848,11 @@ def freeze_capture_schedule(schedule_locator, *, plan_root):
             _require(
                 native["native"] == first["native"]
                 and native["runtime"] == first["runtime"]
-                and native["generation"] == first["generation"],
+                and native["generation"] == first["generation"]
+                and all(
+                    native[key] == first[key]
+                    for key in ("vocab_size", "target_width", "mask_token_id")
+                ),
                 "capture runtime/variant changes across shards",
             )
     source = {
@@ -1851,7 +1879,7 @@ def freeze_capture_schedule(schedule_locator, *, plan_root):
         "source": source,
         "seed": 8101,
         "geometry": {
-            "family": "dspark",
+            "family": family,
             "vocab_size": first["vocab_size"],
             "target_width": first["target_width"],
             "mask_token_id": first["mask_token_id"],
@@ -1892,6 +1920,7 @@ def main():
     parser.add_argument("--schedule", type=Path)
     parser.add_argument("--schedule-sha256")
     parser.add_argument("--plan-root", type=Path)
+    parser.add_argument("--family", choices=("dspark", "dflash"), default="dspark")
     parser.add_argument("--output", type=Path)
     parser.add_argument("--publication", type=Path)
     parser.add_argument("--publication-sha256")
@@ -1911,7 +1940,9 @@ def main():
     if args.operation == "freeze-schedule":
         _require(not args.output.exists(), "preserve frozen logical plan")
         value = freeze_capture_schedule(
-            {"path": str(args.schedule), "sha256": args.schedule_sha256}, plan_root=args.plan_root
+            {"path": str(args.schedule), "sha256": args.schedule_sha256},
+            plan_root=args.plan_root,
+            family=args.family,
         )
         atomic_json(args.output, value)
         print(json.dumps({"plan": pin(args.output), "plan_sha256": identity(value)}))
