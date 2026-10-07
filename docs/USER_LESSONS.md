@@ -807,3 +807,19 @@ additional proof protocols or redoing completed audit work.
   invocation and consumer. Exercise the canonical path before claiming complete
   readiness; a count of unrelated tests does not prove absent work implemented.
   Keep preparation and positive optimizer updates distinct in user updates.
+
+### 2026-10-06: Preserve actual producer locators across a source cutover
+
+- Root relocated unchanged shard helper bytes to a new trainer checkout without
+  exercising the canonical replay-admission consumer first. That consumer binds
+  the original actual producer locator as well as its hash; the final lane build
+  rejected the relocated path. Fresh packet receipts were therefore required,
+  delaying the human's authorized training launch. No user mistake occurred.
+- Keep immutable actual producer locations for unchanged replay helpers and add
+  exact original aliases to the admission source inventory. New trainer identity
+  can coexist with original capture ancestry. Test the actual canonical joins
+  before GPU preparation; do not reinterpret byte equality as execution ancestry.
+- A later root wrapper referenced a local-only helper filename remotely and
+  failed before GPU work. Its raw failure was preserved and repair embedded the
+  reviewed helper bytes. Verify every remote dependency exists before detached
+  launch; a local script's existence is not remote deployment evidence.

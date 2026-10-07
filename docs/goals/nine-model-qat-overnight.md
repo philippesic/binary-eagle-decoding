@@ -3259,4 +3259,35 @@ buildlane, launchdetachedcontroller withfreshverified≤300slease. ActualsixSM12
 gates must pass, then prove positive optimizer updates/finite metrics/source/
 checkpoint/RNG/cursor and5/15minutehealth. Never claim preparation as training.
 
+## Host access loss and prepared recovery — October 6, 17:34 PDT
+
+Both rootSSH transports%290/%292 disconnected withOperationtimedout. Mac%291
+actual nc port22 check failed00:32:26UTC; freshSSH ConnectTimeout8 failed255.
+Sharedhostfile remains192.168.4.24:22 (unchangedOct2); no guessedaddress/2080.
+Humanhost/addressclarification requested asynchronously. Hostpower/network/WSL
+cause is UNKNOWN; do not call this an observed optimizer failure or GPU release.
+Lastauthenticated02state running: sup92402birth26758996, controller92407birth26759001;
+actual v4 initialprepare receipt existed, process92440birth26759095. Export/
+goldens had not been observed. Detachedjob mayhavecompleted; never duplicate it
+because observations failed. No paidupdateslaunched; all43,200sremain.
+
+Local recovery preparation complete/syntaxchecked, ignoredresults/dspark-launch-20261006:
+collect-v4-evidence.py requiresactualfinished0, allthreePASSoperationreceipts,
+fullphysicalrelease and246sourceinventory before archivingmetadata/goldens/runtime/
+protocol/originalparents. build-final-lane-v4.py authenticbindsnewgoldens+QA,
+addsoriginalcapture/replaylocators inpreparation_provenance inventory, preserves
+canonicalbyteidenticalzero model/audit refs and reviewedpolicy127df312, builds
+newadmission/timed/lane. launch-training-v4.py is PREPARED/UNEXECUTED: actual
+lanevalidation/fullavailableGPU+unpausedcontrol/emptycacheowner/fresh≤300slease,
+unique dspark-a8-twelve-hour-20261007-01 controller under90s remote_job. Fresh
+sixSM120gates/positiveupdates remainPENDING. Do notrunpreparedlauncher blindly.
+
+Worker dspark_actual_portable_qa finishesonlylocalv4finalizer/syntax checks,
+PENDINGauthenticarchivetransfer; noGPUownertransfer. Rootkeepsownership andhourly
+monitorACTIVE; oldmonitorDELETED. Main49b286edcheckpointpublished, trainer925
+immutable. Nextaccess: inspectold02state+kernelidentities+cache+resources BEFORE
+anyaction; ifhealthy preserveit, iffinished inspectrawoutcomes. Then authentic
+archive→QA→finalbinding→controlleradmission→realtraining→5/15minutechecks.
+Only unresolveduserinput is actualhostavailability/address; no scientificchoice.
+
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->

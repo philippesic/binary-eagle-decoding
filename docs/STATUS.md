@@ -4,7 +4,16 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## Active DSpark A8 launch repair — October 6, 17:30 PDT
+## DSpark A8 launch awaiting host access — October 6, 17:34 PDT
+
+The 5080 host192.168.4.24 became unreachable after the v4 zero checkpoint
+was observed. Both SSH transports timed out; direct port22 check and a bounded
+fresh SSH connection failed. Detached preparation may continue; current remote
+phase and GPU release are UNKNOWN. No duplicate launch or stop was attempted.
+Human host/address clarification is pending. Training optimizer updates remain0.
+The hourly monitor stays active and recovery must first reconcile exact live jobs.
+
+## Earlier launch repair — October 6, 17:30 PDT
 
 Current trainer source `92516f8d` is integrated, published and independently
 accepted. Fresh v3 CUDA zero preparation/export/three goldens all passed;
