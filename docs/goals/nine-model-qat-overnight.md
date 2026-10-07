@@ -3350,4 +3350,76 @@ freshlease; unique dspark-a8-twelve-hour-20261007-01. Both UNEXECUTED. Next
 QA→bind/admissionplan/lane→actualsixSM120→positivefiniteupdates→5/15minutehealth.
 KeepDFlashsourceintegration separate fromDSparkQA inventory/sourcefreeze.
 
+## First optimizer attempt and memory repair — October 7, 00:24 PDT
+
+Human sameobjective:DSparkA8 on5080*.53, DFlashA8 afterward;43200cumulative
+trainerseconds/4-8-12h;hourlyhealthand5/15minutestartchecks. Same rootsoleGPUowner,
+no2080/no newgoal/chat/operator. DFlash familycommit0eee5d6c independentlyaccepted
+and integrated1099d6f7;51CPUtests/5externalartifactskips; independent19+11checks/
+4artifactskips. NoDFlashhardwareorproductionlaneclaim; rawsharedcapturestobe
+used withnewfamily/sourceplan/admission. DSpark925 runtimekeptimmutable.
+
+FinalrecoveryPortableQA8bfc3bca passedactual23files/246source/43trainingpins.
+Finalv4lane40430c743966734ff85eee81be7a6bf9176ae2a2078f315f48c259cc075d31c1,
+admissionplan8fb234c2. Unique dspark-a8-twelve-hour-20261007-01 launched06:49:01UTC
+under925 checkout/socketbinary-eagle-runtime/sessionroot-...01. Supervisor1260
+birth109819/controller1261birth109823/boot206feba6. CPUvalidation4minexcluded.
+ActualsixSM120gates allPASS (backward/capture_portability/kernel/memory/model/resources),
+admissionce23c7654f1b27af3ff1625914c8d477bdb5d91a75af2e51df1284e79a06cfb4;
+attempt4117bf32a98c400786c818d9702eb058. Trainer1581birth156939/PGID1581.
+
+Actualtrainercompleted2updates/28supervisedlabels/4presentedblocks. Laststatus
+elapsed4.695786459s, CE3.0819067/fullprobL11.0156926/loss1.2223141, finite
+globalgradnorm8.9866915 clipped1; theseareteacherforcedmetrics, notacceptance.
+Pre-third resources()guard (EVERYtransaction, not256) failed atCUDAfloor/cap.
+Originalexceptionrecords noactualallocated/reserved/free values, so exactcause
+remainsunproved; cache/highwater/completed-gradientresidency are hypotheses.
+Parentfinished1 at06:57:35.374406UTC. Onlycommittedcheckpoint0 (1.626GB), no
+progressedpayload/receipt/tmp. Finallysettledbudget4.706928438999967s. Lost2
+updates'params/moments/RNG cannotbe recovered fromstatus; doNOTclaimexactstep2
+resume. RestorelastCOMMITTEDzero state andretainALLpaidseconds/newtypedcarry
+provenance withinoriginal43200 cap, no budgetrestart orscientificrecipechange.
+
+Originalallstates/logs/receipts preserved. Rootverified1260/1261/1581 andowned
+groups/CUDA/DXG absent;19.97GBhostavailable/14.85GBGPUfree. Rawincident13ae35b1,
+actual7-filearchivef04ea4aaef2c8d5aae2d91e7052dd98e9d67cdee9fe3cc5df28c04cad6c1db87.
+Stale cachelane-controller/student released ONLYusingactualwholeGPUproof;
+memory-incident-owned-release.json recordsold/newowner. No duplicatedlaunch.
+
+Sourceowner dspark_memory_incident delivered0c12d872+conditional968ab3d1,
+PURE925base in/private/tmp/dspark-memory-incident-20261007. Onlytraineradapter/
+focusedtests changed, notFrozenShardPlan/provider/data/budgetsource.51CPUchecks/
+RuffPASS; independenteightchecksplusrealRNGrestoration andnonfiniteAdammoment
+counterexamplesPASS. Healthyboundariesclearcompletedgrads, no sync/cachetrim;
+actualfailedgate triggersoneunusedcachetrim plusSTRICTsame12GiBreserve/1GiBfree
+recheck andmeasuredbefore/afterfacts. Between-completetransaction exception saves
+exactparams/moments/RNG/cursor/paidledger underexistingprotectedstopretention,
+incidentremainsFAIL; partialmid-update neveradmitted. GPUbenefitUNVERIFIED.
+Accepted main integrations e72192d4/1f4729cc published; memoryfeaturebranchpublished.
+
+NEWimmutable remotecheckout ROOT/runs/checkouts/dspark-memory-repair-968ab3d1-20261007
+at968ab3d1 (excludesmainDFlashfamilychanges tokeepdata'sdeployedsourceunchanged).
+NEWpacket-memory-r1/sourceinputbb2835ef... sameoriginalconfig/oldhelperpaths/
+role/data/runtime/init/protocol. Zero/exportjobdspark-a8-memory-r1-zero-export-20261007-01
+detached90s remote_job/exactPYTHONPATH; rootMCP259/%292Linux,%291Mac. Actuallive
+identity/result inspectionpending; doNOTstopforcontextrotation. New43trainer
+identityonlyadapterchanged; actualmodelbyteequality/zeroRNG equivalence required.
+Reuseunchanged actualP4 goldens onlywith c5client/teacher63/target05/runtime566/
+rawprefix checks; fresh sixSM120 stillrequired. No repeat native0 ifsamebytes.
+
+Worker dspark_actual_portable_qa ownsignoredportable-qa-memory-repair1/source
+checkoutlocalpure968 (notmainDFlash). PrepareincrementalQA, acceptonlyauthentic
+newzero/export/source+oldgoldenreuse+originalpaidtimecarry archive. Memoryreview
+acceptedsource, nowindependentlyverifiesactualrawincident/carry antecedents.
+Otherworkersfinished/noGPUrights. No pendinghumanchoice; ordinarycheckpoint
+rollback/operationalrepair alreadywithin authorizedhealing, lostupdatesexplicit.
+
+Rootnext: authenticzero/export→QA→newlane/policyunchanged5consumers; bootstrap
+newpaidruncheckpoint0 fromgenuinenewsource withsource-boundlaneSHA, verifytensor/
+optimizer0/RNG/cursor equality tooldcommitted0; NEWaccountingledgerderivedfrom
+oldsettled4.706928438999967s andnewlaneSHA, preserveoldledger/rawfailure/ancestry.
+Newrun-dir canbeoutside remote_job'sownuniquerunroot so prepared--resume state
+neednotmutatesupervisorcode. Freshsixadmission→realpaidupdates/actualmemory
+beforeafter→5/15minutehealth. Atmost2repairs perincident; currentlyrepair1.
+
 <!-- APPEND_GOAL_CHECKPOINTS_HERE -->

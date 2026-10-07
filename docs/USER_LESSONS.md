@@ -823,3 +823,20 @@ additional proof protocols or redoing completed audit work.
   failed before GPU work. Its raw failure was preserved and repair embedded the
   reviewed helper bytes. Verify every remote dependency exists before detached
   launch; a local script's existence is not remote deployment evidence.
+
+### 2026-10-07: Admission memory is not a complete production-step memory check
+
+- DSpark passed actual model/backward/full-moment reservation admission, but the
+  production loop failed its unchanged memory guard after two real updates. The
+  old guard inspected reserved/free bytes before clearing completed gradients
+  or unused allocator cache and did not record the measured failure values.
+  The exact CUDA cause remains unproved. No user configuration mistake occurred.
+- Root's source did not checkpoint generic exceptions between completed updates;
+  only zero-step state survived. Two updates were lost, while the ledger retained
+  4.706928438999967 paid seconds. CPU tests and zero-update reservation did not
+  establish actual production allocator behavior. These omissions caused delay.
+- Clear completed gradients at a transaction boundary, conditionally reclaim
+  unused cache, retain strict thresholds and measured before/after facts. Save
+  complete optimizer/RNG/cursor state on between-transaction failures; reject
+  partial mid-update state. Restore only the last genuine checkpoint and disclose
+  rollback, retaining charged time rather than calling lost updates exact recovery.

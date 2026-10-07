@@ -4,7 +4,24 @@
 latency and total throughput. FP16 EAGLE is secondary diagnostic context.
 The target/verifier model precision remains as frozen for each experiment.
 
-## DSpark A8 launch recovered — October 6, 23:40 PDT
+## DSpark A8 memory repair — October 7, 00:24 PDT
+
+The first controller passed all six fresh SM120 gates, then completed two
+optimizer updates before the pre-third-update memory guard stopped it. Raw
+failure and the valid zero-step checkpoint are preserved; whole GPU/group/DXG
+release is proved. Ledger charge is4.706928438999967seconds, not startup time.
+The two unsaved updates are lost. Recovery rolls back to the last committed
+zero state and retains that charge within the same43,200second allocation.
+
+Independently accepted repair968ab3d1 clears completed gradients and trims
+unused cache only after a failed guard, then rechecks the unchanged12GiB cap/
+1GiB free floor. It saves complete transactions on between-update failures and
+rejects partial optimizer state. CPU correctness is verified; actual CUDA
+memory improvement remains pending. Fresh immutable repair checkout is based
+on925, keeping the original data/provider source; new zero/export admission
+is in progress. DFlash source support1099d6f7 is separately integrated for next.
+
+## Earlier host recovery — October 6, 23:40 PDT
 
 Human supplied the new5080 address192.168.4.53 and reconfirmed DSpark A8 next,
 then DFlash A8 after completion. Shared hostfile updated with backup. Same root
