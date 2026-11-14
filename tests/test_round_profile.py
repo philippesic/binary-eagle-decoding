@@ -23,7 +23,7 @@ from w1a1_eagle.contracts import Record, record
 from w1a1_eagle.records import canonical
 
 ATTN_Q = "node|0|MUL_MAT|Qcur-2|4096,4,1,1|0:blk.2.attn_q.weight:q4_0:2560,4096,1,1:5898240:1|1:attn_norm-2:f32:2560,4,1,1:40960:0"
-FATTN = "node|1|FLASH_ATTN_EXT|__fattn__-2|128,32,4,1|0:q-2:f32:128,4,32,1:65536:0|1:cache_k_l2 (view):f16:128,256,8,1:524288:0|2:cache_v_l2 (view):f16:128,256,8,1:524288:0"
+FATTN = "node|1|FLASH_ATTN_EXT|node_7|128,32,4,1|0:q-2:f32:128,4,32,1:65536:0|1:cache_k_l2 (view):f16:128,256,8,1:524288:0|2:cache_v_l2 (view):f16:128,256,8,1:524288:0"
 VOCAB = "node|2|MUL_MAT|result_output|248320,3,1,1|0:output.weight:q4_K:2560,248320,1,1:357580800:1|1:result_norm:f32:2560,3,1,1:30720:0"
 UP = "node|3|W1A1_MUL_MAT|node_3|9216,4,1,1|0:blk.0.ffn_up.w1a1_packed:i32:80,9216,1,1:2949120:1|2:ffn_norm-0:f32:2560,4,1,1:40960:0"
 GATE = "fused|4|W1A1_MUL_MAT|node_4|9216,4,1,1|0:blk.0.ffn_gate.w1a1_packed:i32:80,9216,1,1:2949120:1|2:ffn_norm-0:f32:2560,4,1,1:40960:0"
@@ -64,6 +64,8 @@ def test_roles_come_from_weight_names_ops_and_following_norm_weights() -> None:
         "node|6|MUL_MAT|node_6|2560,4,1,1|0:blk.0.ffn_down.weight:q4_K:9216,2560,1,1:13271040:1|1:x:f32:9216,4,1,1:1:0",
         "node|7|ADD|l_out-0|2560,4,1,1|0:a:f32:2560,4,1,1:1:0|1:b:f32:2560,4,1,1:1:0",
         VOCAB,
+        "node|9|MUL_MAT|result_output|248320,3,1,1|0:token_embd.weight:q6_K:2560,248320,1,1:521000000:1",
+        "node|10|GET_ROWS|inp_noise_embd|2560,4,1,1|0:token_embd.weight:q6_K:2560,248320,1,1:521000000:1",
     ]
     assert roles([parse_node(label) for label in labels]) == [
         "attention.norms",
@@ -75,6 +77,8 @@ def test_roles_come_from_weight_names_ops_and_following_norm_weights() -> None:
         "ffn.down",
         "elementwise",
         "vocabulary",
+        "vocabulary",
+        "embedding",
     ]
 
 

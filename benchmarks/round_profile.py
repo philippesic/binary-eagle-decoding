@@ -38,7 +38,7 @@ PHASES = ("draft", "checkpoint", "target", "process", "verify")
 DRAFTER_PHASES = ("draft", "process")
 COPY_KINDS = {1: "host_to_device", 2: "device_to_host", 8: "device_to_device", 10: "peer"}
 WEIGHT_ROLES: tuple[tuple[str, str], ...] = (
-    (r"(^|\.)token_embd\.", "embedding"),
+    (r"(^|\.)token_embd\.", "vocabulary"),
     (r"^fc\.", "fusion"),
     (r"^enc\.", "fusion"),
     (r"\.attn_(q|k|v|qkv|kv)\.", "attention.qkv_projection"),
@@ -330,8 +330,11 @@ def layer(node: Node) -> int | None:
         found = re.search(r"blk\.(\d+)\.", source.name) if source.weight else None
         if found:
             return int(found[1])
-    found = re.search(r"-(\d+)$", node.name)
-    return int(found[1]) if found else None
+    for name in (node.name, *(source.name for source in node.sources)):
+        found = re.search(r"(?:-|_l)(\d+)(?:$| )", name)
+        if found:
+            return int(found[1])
+    return None
 
 
 def roles(nodes: Sequence[Node]) -> list[str]:
