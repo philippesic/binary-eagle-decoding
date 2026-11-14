@@ -1440,4 +1440,236 @@ int32_t llama_model_n_head(const llama_model * model) {
 """,
         ),
     ),
+    "round_profile_nvtx_v1": (
+        (
+            "src/CMakeLists.txt",
+            r"""target_link_libraries(llama PUBLIC ggml)
+""",
+            r"""target_link_libraries(llama PUBLIC ggml)
+find_package(CUDAToolkit REQUIRED)
+target_include_directories(llama PUBLIC ${CUDAToolkit_INCLUDE_DIRS})
+""",
+        ),
+        (
+            "ggml/src/ggml-cuda/ggml-cuda.cu",
+            r"""#include "ggml-cuda.h"
+#include "ggml-impl.h"
+""",
+            r"""#include "ggml-cuda.h"
+#include "ggml-impl.h"
+#include <cstdio>
+#include <cstdlib>
+#include <nvtx3/nvToolsExt.h>
+
+static bool bitdraft_nvtx_nodes() {
+    static const bool enabled = getenv("BITDRAFT_NVTX_NODES") != nullptr;
+    return enabled;
+}
+
+static void bitdraft_nvtx_push_node(const ggml_tensor * node, int index, const char * kind) {
+    char label[4096];
+    int used = snprintf(label, sizeof(label), "%s|%d|%s|%s|%lld,%lld,%lld,%lld", kind, index, ggml_op_desc(node), node->name,
+        (long long) node->ne[0], (long long) node->ne[1], (long long) node->ne[2], (long long) node->ne[3]);
+    for (int j = 0; j < GGML_MAX_SRC && used > 0 && used < (int) sizeof(label); ++j) {
+        const ggml_tensor * src = node->src[j];
+        if (src == nullptr) {
+            continue;
+        }
+        const int weight = src->buffer != nullptr && ggml_backend_buffer_get_usage(src->buffer) == GGML_BACKEND_BUFFER_USAGE_WEIGHTS;
+        used += snprintf(label + used, sizeof(label) - used, "|%d:%s:%s:%lld,%lld,%lld,%lld:%zu:%d", j, src->name, ggml_type_name(src->type),
+            (long long) src->ne[0], (long long) src->ne[1], (long long) src->ne[2], (long long) src->ne[3], ggml_nbytes(src), weight);
+    }
+    nvtxRangePushA(label);
+}
+""",
+        ),
+        (
+            "ggml/src/ggml-cuda/ggml-cuda.cu",
+            r"""                int nodes_to_skip = ggml_cuda_try_fuse(cuda_ctx, cgraph, i);
+""",
+            r"""                if (bitdraft_nvtx_nodes()) {
+                    bitdraft_nvtx_push_node(node, i, "node");
+                }
+                int nodes_to_skip = ggml_cuda_try_fuse(cuda_ctx, cgraph, i);
+                if (bitdraft_nvtx_nodes() && nodes_to_skip != 0) {
+                    for (int fused = 1; fused <= nodes_to_skip; ++fused) {
+                        bitdraft_nvtx_push_node(cgraph->nodes[i + fused], i + fused, "fused");
+                        nvtxRangePop();
+                    }
+                    nvtxRangePop();
+                }
+""",
+        ),
+        (
+            "ggml/src/ggml-cuda/ggml-cuda.cu",
+            r"""                bool ok = ggml_cuda_compute_forward(*cuda_ctx, node);
+""",
+            r"""                bool ok = ggml_cuda_compute_forward(*cuda_ctx, node);
+                if (bitdraft_nvtx_nodes()) {
+                    nvtxRangePop();
+                }
+""",
+        ),
+        (
+            "src/llama-context.cpp",
+            r"""#include "llama-context.h"
+""",
+            r"""#include "llama-context.h"
+#include <nvtx3/nvToolsExt.h>
+""",
+        ),
+        (
+            "src/llama-context.cpp",
+            r"""    const auto gparams = graph_params(res, ubatch, mctx, gtype);
+""",
+            r"""    const auto gparams = graph_params(res, ubatch, mctx, gtype);
+    nvtxRangePushA("llama.graph");
+""",
+        ),
+        (
+            "src/llama-context.cpp",
+            r"""    // set the input data for the input tensors
+    {
+""",
+            r"""    nvtxRangePop();
+    nvtxRangePushA("llama.inputs");
+    {
+""",
+        ),
+        (
+            "src/llama-context.cpp",
+            r"""    const auto status = graph_compute(res->get_gf(), ubatch.n_tokens > 1);
+""",
+            r"""    nvtxRangePop();
+    nvtxRangePushA("llama.compute");
+    const auto status = graph_compute(res->get_gf(), ubatch.n_tokens > 1);
+    nvtxRangePop();
+""",
+        ),
+        (
+            "src/llama-context.cpp",
+            r"""    ggml_backend_sched_synchronize(sched.get());
+
+    // FIXME: if multiple single tokens""",
+            r"""    nvtxRangePushA("llama.sync");
+    ggml_backend_sched_synchronize(sched.get());
+    nvtxRangePop();
+
+    // FIXME: if multiple single tokens""",
+        ),
+        (
+            "common/speculative.cpp",
+            r"""#include "speculative.h"
+""",
+            r"""#include "speculative.h"
+#include <nvtx3/nvToolsExt.h>
+
+namespace {
+struct bitdraft_range {
+    explicit bitdraft_range(const char * label) { nvtxRangePushA(label); }
+    ~bitdraft_range() { nvtxRangePop(); }
+    bitdraft_range(const bitdraft_range &) = delete;
+    bitdraft_range & operator=(const bitdraft_range &) = delete;
+};
+}
+""",
+        ),
+        (
+            "common/speculative.cpp",
+            r"""            LOG_WRN("%s: llama_process returned %d\n", __func__, ret);
+            return;
+        }
+
+        for (llama_seq_id seq_id = 0; seq_id < (llama_seq_id) n_seq; ++seq_id) {
+            if (i_block_beg[seq_id] < 0) {
+""",
+            r"""            LOG_WRN("%s: llama_process returned %d\n", __func__, ret);
+            return;
+        }
+
+        bitdraft_range bitdraft_select("dft.select");
+        for (llama_seq_id seq_id = 0; seq_id < (llama_seq_id) n_seq; ++seq_id) {
+            if (i_block_beg[seq_id] < 0) {
+""",
+        ),
+        (
+            "tools/server/server-context.cpp",
+            r"""#include "server-context.h"
+""",
+            r"""#include "server-context.h"
+#include <nvtx3/nvToolsExt.h>
+""",
+        ),
+        (
+            "tools/server/server-context.cpp",
+            r"""            queue_tasks.yield_to_queue([&]() {
+                common_speculative_draft(spec.get());
+            });
+""",
+            r"""            nvtxRangePushA("srv.draft");
+            queue_tasks.yield_to_queue([&]() {
+                common_speculative_draft(spec.get());
+            });
+            nvtxRangePop();
+""",
+        ),
+        (
+            "tools/server/server-context.cpp",
+            r"""        int ret = 0;
+        queue_tasks.yield_to_queue([&]() {
+            ret = llama_process(ctx_tgt, LLAMA_PROCESS_TYPE_DECODE, batch.view.get());
+            if (ret == 0 && has_output) {
+                llama_synchronize(ctx_tgt);
+            }
+        });
+""",
+            r"""        int ret = 0;
+        nvtxRangePushA(("srv.target|" + std::to_string(batch.view.size())).c_str());
+        queue_tasks.yield_to_queue([&]() {
+            ret = llama_process(ctx_tgt, LLAMA_PROCESS_TYPE_DECODE, batch.view.get());
+            if (ret == 0 && has_output) {
+                llama_synchronize(ctx_tgt);
+            }
+        });
+        nvtxRangePop();
+""",
+        ),
+        (
+            "tools/server/server-context.cpp",
+            r"""            queue_tasks.yield_to_queue([&]() {
+                ok = common_speculative_process(spec.get(), batch.view);
+            });
+""",
+            r"""            nvtxRangePushA("srv.process");
+            queue_tasks.yield_to_queue([&]() {
+                ok = common_speculative_process(spec.get(), batch.view);
+            });
+            nvtxRangePop();
+""",
+        ),
+        (
+            "tools/server/server-context.cpp",
+            r"""        // make checkpoints if needed
+""",
+            r"""        nvtxRangePushA("srv.checkpoint");
+""",
+        ),
+        (
+            "tools/server/server-context.cpp",
+            r"""        // update the batch with the sampled/drafted tokens
+""",
+            r"""        nvtxRangePop();
+""",
+        ),
+        (
+            "tools/server/server-context.cpp",
+            r"""        // speculative decoding - main model sample and accept
+""",
+            r"""        nvtxRangePushA("srv.verify");
+        struct bitdraft_verify_end {
+            ~bitdraft_verify_end() { nvtxRangePop(); }
+        } bitdraft_verify;
+""",
+        ),
+    ),
 }

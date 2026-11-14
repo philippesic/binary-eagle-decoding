@@ -3,11 +3,13 @@ import os
 import re
 import subprocess
 import uuid
+from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
 from dataclasses import asdict
 from pathlib import Path
 from typing import cast
 
-from benchmarks.comparison import Comparison
+from benchmarks.comparison import Arm, Comparison
 from benchmarks.measurement import now, pause, port_number, ready, request
 from benchmarks.runner import native_counts, signature
 from benchmarks.serving import server_arguments
@@ -42,6 +44,105 @@ def find_server(arguments: list[str]) -> ProcessIdentity:
     return found[0]
 
 
+@contextmanager
+def traced_session(
+    profiler: Path,
+    spec: Comparison,
+    arm: Arm,
+    cell: Store,
+    environment: dict[str, str],
+    tracing: Sequence[str],
+    log_name: str,
+) -> Iterator[int]:
+    port = port_number()
+    session_name = "binary-eagle-" + uuid.uuid4().hex
+    arguments = server_arguments(spec, arm, port)
+    argv = [
+        str(profiler),
+        "launch",
+        "--session-new=" + session_name,
+        *tracing,
+        "--cuda-graph-trace=node",
+        "--show-output=true",
+        *arguments,
+    ]
+    cell.atomic(cell.root / "command.json", canonical({"argv": argv}))
+    owner: ProcessIdentity | None = None
+    with (cell.root / log_name).open("wb") as log:
+        process: subprocess.Popen[bytes] = subprocess.Popen(
+            argv,
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            env=environment,
+            start_new_session=True,
+        )
+        try:
+            deadline = now() + 180
+            while not ready(port):
+                if process.poll() is not None or now() >= deadline:
+                    raise ValueError("profiled native server startup failed")
+                pause(0.1)
+            owner = find_server(arguments)
+            subprocess.run(
+                [
+                    str(profiler),
+                    "start",
+                    "--session=" + session_name,
+                    "--sample=none",
+                    "--cpuctxsw=none",
+                    "--force-overwrite=false",
+                    "--output=" + str(cell.root / "trace"),
+                ],
+                stdout=log,
+                stderr=subprocess.STDOUT,
+                env=environment,
+                timeout=30,
+                check=True,
+            )
+            cell.atomic(cell.root / "owner.json", canonical(cast(Record, asdict(owner))))
+            cell.atomic(
+                cell.root / "library-maps.txt", Path(f"/proc/{owner.pid}/maps").read_bytes()
+            )
+            yield port
+            subprocess.run(
+                [str(profiler), "stop", "--session=" + session_name],
+                stdout=log,
+                stderr=subprocess.STDOUT,
+                env=environment,
+                timeout=120,
+                check=True,
+            )
+        finally:
+            subprocess.run(
+                [
+                    str(profiler),
+                    "shutdown",
+                    "--session=" + session_name,
+                    "--kill=sigterm",
+                ],
+                stdout=log,
+                stderr=subprocess.STDOUT,
+                env=environment,
+                timeout=30,
+                check=False,
+            )
+            try:
+                process.wait(timeout=30)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait(timeout=15)
+            cell.atomic(
+                cell.root / "release.json",
+                canonical(
+                    {
+                        "session": session_name,
+                        "launcher_reaped": True,
+                        "server_alive": owner.alive() if owner else None,
+                    }
+                ),
+            )
+
+
 def profile(specification: Path, output: Path) -> Record:
     raw = read(specification)
     if (
@@ -69,121 +170,44 @@ def profile(specification: Path, output: Path) -> Record:
         reference: Record | None = None
         for arm in spec.arms:
             cell = Store(store.root / arm.name)
-            port = port_number()
-            session_name = "binary-eagle-" + uuid.uuid4().hex
-            arguments = server_arguments(spec, arm, port)
-            argv = [
-                str(profiler.path),
-                "launch",
-                "--session-new=" + session_name,
-                "--trace=cuda",
-                "--cuda-graph-trace=node",
-                "--show-output=true",
-                *arguments,
-            ]
-            cell.atomic(cell.root / "command.json", canonical({"argv": argv}))
-            owner: ProcessIdentity | None = None
-            with (cell.root / "server-profiler.log").open("wb") as log:
-                process: subprocess.Popen[bytes] = subprocess.Popen(
-                    argv,
-                    stdout=log,
-                    stderr=subprocess.STDOUT,
-                    env=native_environment(spec.binary.path.parent),
-                    start_new_session=True,
+            with traced_session(
+                profiler.path,
+                spec,
+                arm,
+                cell,
+                native_environment(spec.binary.path.parent),
+                ("--trace=cuda",),
+                "server-profiler.log",
+            ) as port:
+                task = spec.tasks[0]
+                rendered = request(
+                    port,
+                    "apply-template",
+                    {"messages": task["messages"], "tools": task.get("tools", [])},
                 )
-                try:
-                    deadline = now() + 180
-                    while not ready(port):
-                        if process.poll() is not None or now() >= deadline:
-                            raise ValueError("profiled native server startup failed")
-                        pause(0.1)
-                    owner = find_server(arguments)
-                    subprocess.run(
-                        [
-                            str(profiler.path),
-                            "start",
-                            "--session=" + session_name,
-                            "--sample=none",
-                            "--cpuctxsw=none",
-                            "--force-overwrite=false",
-                            "--output=" + str(cell.root / "trace"),
-                        ],
-                        stdout=log,
-                        stderr=subprocess.STDOUT,
-                        env=native_environment(spec.binary.path.parent),
-                        timeout=30,
-                        check=True,
-                    )
-                    cell.atomic(cell.root / "owner.json", canonical(cast(Record, asdict(owner))))
-                    cell.atomic(
-                        cell.root / "library-maps.txt", Path(f"/proc/{owner.pid}/maps").read_bytes()
-                    )
-                    task = spec.tasks[0]
-                    rendered = request(
-                        port,
-                        "apply-template",
-                        {"messages": task["messages"], "tools": task.get("tools", [])},
-                    )
-                    tokens = request(
-                        port,
-                        "tokenize",
-                        {"content": rendered["prompt"], "add_special": True, "parse_special": True},
-                    )["tokens"]
-                    response = request(
-                        port,
-                        "completion",
-                        {
-                            "prompt": tokens,
-                            "n_predict": task["output_cap"],
-                            "temperature": 0,
-                            "seed": 8101,
-                            "cache_prompt": False,
-                            "return_tokens": True,
-                        },
-                    )
-                    cell.atomic(cell.root / "response.json", canonical(response))
-                    current = signature(response)
-                    if reference is None:
-                        reference = current
-                    if current != reference:
-                        raise ValueError("profiler changed greedy output/stopping across arms")
-                    subprocess.run(
-                        [str(profiler.path), "stop", "--session=" + session_name],
-                        stdout=log,
-                        stderr=subprocess.STDOUT,
-                        env=native_environment(spec.binary.path.parent),
-                        timeout=120,
-                        check=True,
-                    )
-                finally:
-                    subprocess.run(
-                        [
-                            str(profiler.path),
-                            "shutdown",
-                            "--session=" + session_name,
-                            "--kill=sigterm",
-                        ],
-                        stdout=log,
-                        stderr=subprocess.STDOUT,
-                        env=native_environment(spec.binary.path.parent),
-                        timeout=30,
-                        check=False,
-                    )
-                    try:
-                        process.wait(timeout=30)
-                    except subprocess.TimeoutExpired:
-                        process.kill()
-                        process.wait(timeout=15)
-                    cell.atomic(
-                        cell.root / "release.json",
-                        canonical(
-                            {
-                                "session": session_name,
-                                "launcher_reaped": True,
-                                "server_alive": owner.alive() if owner else None,
-                            }
-                        ),
-                    )
+                tokens = request(
+                    port,
+                    "tokenize",
+                    {"content": rendered["prompt"], "add_special": True, "parse_special": True},
+                )["tokens"]
+                response = request(
+                    port,
+                    "completion",
+                    {
+                        "prompt": tokens,
+                        "n_predict": task["output_cap"],
+                        "temperature": 0,
+                        "seed": 8101,
+                        "cache_prompt": False,
+                        "return_tokens": True,
+                    },
+                )
+                cell.atomic(cell.root / "response.json", canonical(response))
+                current = signature(response)
+                if reference is None:
+                    reference = current
+                if current != reference:
+                    raise ValueError("profiler changed greedy output/stopping across arms")
             report = cell.root / "trace.nsys-rep"
             if not report.is_file():
                 raise ValueError("profiler did not publish a trace")

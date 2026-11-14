@@ -1,5 +1,6 @@
 import math
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
+from contextlib import AbstractContextManager
 from dataclasses import dataclass, replace
 from itertools import zip_longest
 from pathlib import Path
@@ -10,6 +11,7 @@ from benchmarks.metrics import (
     draft_statistics,
     native_counts,
     reconcile,
+    signature,
     valid_sample,
     verify_generation,
 )
@@ -21,7 +23,7 @@ from w1a1_eagle.contracts import Record, integer, number, record, sequence, stri
 from w1a1_eagle.data import Artifact
 from w1a1_eagle.device import cuda_identity, device_lease
 from w1a1_eagle.identity import source_identity
-from w1a1_eagle.records import artifact, canonical, read, reference
+from w1a1_eagle.records import artifact, canonical, identity, read, reference
 
 WARMUP_TOKENS = 16
 NEAR_BEST = 0.02
@@ -48,6 +50,15 @@ def by_category(task: Record) -> tuple[str, int, str]:
 
 def by_length(task: Record) -> tuple[int, str]:
     return input_tokens(task), string(task["id"])
+
+
+Serve = Callable[[Comparison, Arm, Store, bool], AbstractContextManager[int]]
+
+
+def served(
+    spec: Comparison, arm: Arm, cell: Store, consistent: bool
+) -> AbstractContextManager[int]:
+    return session(spec, arm, cell, consistent=consistent)
 
 
 def spread(items: Sequence[Record], count: int) -> tuple[Record, ...]:
@@ -104,14 +115,21 @@ class Calibration:
 
 
 def measure(
-    plan: Calibration, arm: Arm, depth: int, tasks: tuple[Record, ...], cap: int, cell: Store
+    spec: Comparison,
+    exact: bool,
+    arm: Arm,
+    depth: int,
+    tasks: tuple[Record, ...],
+    cap: int,
+    cell: Store,
+    serve: Serve = served,
 ) -> Record:
     began = now()
-    spec = replace(plan.spec, depth=max(depth, 1))
+    spec = replace(spec, depth=max(depth, 1))
     speculative = arm.drafter is not None
     responses: list[Record] = []
     rows: list[Record] = []
-    with session(spec, arm, cell, consistent=plan.exact) as port:
+    with serve(spec, arm, cell, exact) as port:
         for index, task in enumerate((tasks[0], *tasks)):
             limit = WARMUP_TOKENS if index == 0 else min(cap, integer(task["output_cap"]))
             identifiers = prompt_tokens(port, task, limit, spec.context)
@@ -138,6 +156,7 @@ def measure(
                         "predicted_ms": number(timings["predicted_ms"]),
                         "proposed": counts["proposed"],
                         "accepted": counts["accepted"],
+                        "output_sha256": identity(signature(response)),
                     }
                 )
     if speculative:
@@ -304,7 +323,8 @@ def calibrate(specification: Path, output: Path) -> Record:
         drafter = Arm("drafter", plan.drafter)
         try:
             deep = measure(
-                plan,
+                plan.spec,
+                plan.exact,
                 drafter,
                 plan.max_depth,
                 plan.tasks,
@@ -313,7 +333,8 @@ def calibrate(specification: Path, output: Path) -> Record:
             )
             sessions = [
                 measure(
-                    plan,
+                    plan.spec,
+                    plan.exact,
                     drafter if depth else Arm("target", None),
                     depth,
                     plan.cost_tasks,

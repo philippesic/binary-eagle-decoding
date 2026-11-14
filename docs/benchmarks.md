@@ -28,6 +28,7 @@ explicit paths and the shared saved-reference registry.
 | `verify-greedy`, `verify-sampler`, `profile-native` | Independent decisions, distributions, kernel activation |
 | `reduce-trace` | Structural round accounting, not an independent verifier |
 | `calibrate-depth` | Serving draft depth for one target, drafter, runtime and GPU |
+| `profile-rounds`, `round-profile-report` | Where a drafter's time goes inside one drafting round |
 
 Execution commands freeze source and use [the numerical environment](development.md)
 where needed. Preserve inputs, logs, ownership and failures. Comparison outputs must be
@@ -273,6 +274,54 @@ record by its path and hash. Measured accuracy against panels is in
 [the result](../results/draft-depth-calibration/result.md). Predictions are for the
 calibration's own capped requests; outputs do not check exactness, which remains the
 benchmarks' job. Category recommendations rest on few rounds.
+
+## Round profile
+
+`profile-rounds SPEC [OUTPUT]` splits one drafting round into target verification, drafter
+work and the rest, and splits drafter work by component, for each drafter, depth and prompt
+length band. Re-run it on every new candidate. Schema `round-profile-v1` names a clean greedy
+DEV `comparison` (runtime, server, libraries, target, workload, context), a `diagnostic_build`
+(the `native-build` result of the same runtime with `round_profile_nvtx_v1` appended to its
+`source_edits`; any other difference is refused), the Nsight Systems `profiler` binary, named
+`drafters`, `depths`, `lengths` (bands of `minimum`–`maximum` input tokens with a task count)
+and `output_cap` and `exact` as in calibration. The current inputs are in
+`artifacts/benchmarks/round-profile-specs/` and the diagnostic runtime is
+`artifacts/native/runtime-v6-round-profile`.
+
+Each drafter and depth runs three server sessions under the GPU lease, on the same requests:
+
+| Clock | Runtime | What it measures |
+| --- | --- | --- |
+| `clean` | Unmodified | Server counters: decode ms per derived round and the drafter's generate counter (`draft_ms`) |
+| `phases` | Diagnostic, Nsight, CUDA graphs as served | Named host ranges per round and the GPU work launched inside each |
+| `nodes` | Diagnostic, Nsight, CUDA graphs off, one range per graph node | GPU kernel time per graph node, grouped into components |
+
+The diagnostic runtime marks drafting (`srv.draft`), the target's checkpoint copies, the
+target verification batch, the feature handoff into the drafter's context cache
+(`srv.process`), sampling and acceptance (`srv.verify`), and inside each graph build, input
+upload, launch, synchronisation and the drafter's token selection. With
+`BITDRAFT_NVTX_NODES` set, every graph node, and every node folded into a fused kernel,
+carries its operation, output shape and source tensors. A round runs from one `srv.draft` to
+the next with no prompt batch between them.
+
+Components come from those names, not from a fixed model layout: weight tensor names
+(`blk.N.attn_q`, `ffn_down`, `fc`, `output`, …) first, then operations (flash attention,
+rope, cache writes, top-k), and the drafter phase they run in. The tables `WEIGHT_ROLES`,
+`OP_ROLES` and `GROUPS` in [round_profile.py](../benchmarks/round_profile.py) own that
+mapping; extend them for a new architecture. Each component reports GPU ms per round, weight
+bytes read per round and multiply-adds per slot (one row of its input), from node shapes.
+
+`round-profile.json` holds every clock under its own name, averaged per traced round, with a
+`reconciliation`: the clean drafter counter against the traced draft wall, drafter kernel
+time on the phases and nodes clocks, and the share of nodes-clock drafter time attributed to
+graph nodes. `round-profile.txt` is the short table. Traces stay in the session folders;
+`round-profile-report SPEC OUTPUT` rebuilds both files from them without the GPU.
+
+Limits: Nsight's API tracing lengthens the phases round (measure the gap in each run, never
+pool it with clean time). The nodes clock exists for kernel attribution; its walls are slower
+because graphs are off. The server's `draft_ms` covers only drafting; the feature handoff
+(`srv.process`) is drafter work outside that counter. Clean runs cannot split target
+verification from the handoff and sampling.
 
 ## Live application and instructions
 
