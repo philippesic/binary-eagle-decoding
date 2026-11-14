@@ -725,22 +725,27 @@ def counters(rows: Sequence[Record]) -> Record:
     }
 
 
+def group_of(name: str) -> str | None:
+    if ".layer" in name or (
+        name.startswith("copies.") and name.split(".")[1] not in DRAFTER_PHASES
+    ):
+        return None
+    for title, prefixes in GROUPS:
+        if any(name.startswith(prefix) for prefix in prefixes):
+            return title
+    return None
+
+
 def group(components: Record, gpu: Record) -> dict[str, float]:
     totals: dict[str, float] = {name: 0.0 for name, _ in GROUPS}
     for name, value in components.items():
-        if ".layer" in name:
-            continue
-        for title, prefixes in GROUPS:
-            if any(name.startswith(prefix) for prefix in prefixes):
-                totals[title] += number(record(value)["ms"])
-                break
+        title = group_of(name)
+        if title is not None:
+            totals[title] += number(record(value)["ms"])
     for name, value in gpu.items():
-        for title, prefixes in GROUPS:
-            if any(name.startswith(prefix) for prefix in prefixes) and (
-                not name.startswith("copies.") or name.split(".")[1] in DRAFTER_PHASES
-            ):
-                totals[title] += number(value)
-                break
+        title = group_of(name)
+        if title is not None:
+            totals[title] += number(value)
     return totals
 
 
@@ -869,22 +874,18 @@ def table(result: Record) -> str:
             ]
             lines.append(f"{phase} host exclusive (phases clock, ms): " + ", ".join(parts))
         lines.append(
-            f"{'component (nodes clock, GPU ms/round)':48} {'ms':>8} {'MiB':>8} {'MMAC/slot':>10}"
+            f"{'component (nodes clock, GPU ms/round)':48} {'ms':>8} {'MiB':>8} "
+            f"{'GB/s':>6} {'MMAC/slot':>10}"
         )
         components = record(nodes["components"])
         for title, value in record(nodes["groups"]).items():
-            prefixes = dict(GROUPS)[title]
-            size = sum(
-                number(record(v)["weight_bytes"])
-                for k, v in components.items()
-                if ".layer" not in k and any(k.startswith(p) for p in prefixes)
+            members = [record(v) for k, v in components.items() if group_of(k) == title]
+            size = sum(number(member["weight_bytes"]) for member in members)
+            macs = sum(number(member["macs_per_slot"]) for member in members)
+            rate = size / (number(value) * 1e6) if number(value) > 0 and size else 0.0
+            lines.append(
+                f"{title:48} {number(value):8.3f} {size / 2**20:8.1f} {rate:6.0f} {macs / 1e6:10.1f}"
             )
-            macs = sum(
-                number(record(v)["macs_per_slot"])
-                for k, v in components.items()
-                if ".layer" not in k and any(k.startswith(p) for p in prefixes)
-            )
-            lines.append(f"{title:48} {number(value):8.3f} {size / 2**20:8.1f} {macs / 1e6:10.1f}")
         layered = sorted(
             (int(name.rsplit("layer", 1)[1]), number(record(value)["ms"]))
             for name, value in components.items()
